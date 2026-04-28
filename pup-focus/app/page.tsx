@@ -1,42 +1,18 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { createClient } from "@/lib/supabase/client";
 import { ROUTE_BY_ROLE } from "@/config/routes";
 import { ROLE, type AppRole } from "@/config/roles";
 
-const LOGIN_OPTIONS: Array<{
-  role: AppRole;
-  title: string;
-  description: string;
-}> = [
-  {
-    role: ROLE.ADMIN,
-    title: "Admin Login",
-    description: "Manage faculty accounts, programs, and validation rules.",
-  },
-  {
-    role: ROLE.FACULTY,
-    title: "Faculty Login",
-    description: "Upload curriculum-based compliance requirements.",
-  },
-];
-
 export default function Home() {
-  const searchParams = useSearchParams();
-  const defaultRole =
-    (searchParams.get("role") as AppRole | null) ?? ROLE.FACULTY;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<AppRole>(defaultRole);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const redirectTarget = useMemo(() => ROUTE_BY_ROLE[role], [role]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,8 +36,8 @@ export default function Home() {
     const signedInRole =
       (userData.user?.user_metadata?.role as AppRole | undefined) ??
       (userData.user?.app_metadata?.role as AppRole | undefined) ??
-      role;
-    const nextTarget = ROUTE_BY_ROLE[signedInRole] ?? redirectTarget;
+      ROLE.FACULTY;
+    const nextTarget = ROUTE_BY_ROLE[signedInRole];
 
     setSuccess(
       `Signed in successfully as ${signedInRole === ROLE.ADMIN ? "Admin" : "Faculty"}.`,
@@ -71,67 +47,29 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-10 text-[#fff8e7]">
-      <div className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="space-y-6 rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/70 p-8 shadow-2xl shadow-black/20 backdrop-blur">
-          <div>
-            <div className="flex items-center gap-4">
+    <main className="min-h-screen flex items-center justify-center px-6 py-10 text-[#fff8e7]">
+      <div className="w-full max-w-md">
+        {/* Combined Card */}
+        <section className="rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/80 p-8 shadow-2xl shadow-black/20 backdrop-blur">
+          {/* Header */}
+          <div className="mb-8 text-center">
+            <div className="flex justify-center">
               <BrandMark
                 size={56}
                 className="rounded-full ring-4 ring-[#ffd700]/35 shadow-lg shadow-black/20"
               />
-              <div>
-                <p className="text-sm uppercase tracking-[0.28em] text-[#ffd700]">
-                  Polytechnic University of the Philippines - Bataan Campus
-                </p>
-                <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
-                  PUP FOCUS
-                </h1>
-              </div>
             </div>
-            <p className="mt-4 max-w-2xl text-[#f3d9b3]">
-              Faculty Online Compliance and Uploading System for efficient
-              academic document management.
+            <p className="mt-4 text-sm uppercase tracking-[0.28em] text-[#ffd700]">
+              Polytechnic University of the Philippines - Bataan Campus
             </p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">
+              PUP FOCUS
+            </h1>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {LOGIN_OPTIONS.map((option) => {
-              const active = role === option.role;
-              return (
-                <button
-                  key={option.role}
-                  type="button"
-                  onClick={() => setRole(option.role)}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    active
-                      ? "border-[#ffd700] bg-[#ffd700]/10"
-                      : "border-[rgba(255,215,0,0.18)] bg-[#3f0000]/60 hover:border-[#ffd700]/60"
-                  }`}
-                >
-                  <p className="text-lg font-semibold">{option.title}</p>
-                  <p className="mt-2 text-sm text-[#f3d9b3]">
-                    {option.description}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#3d0000]/80 p-5 text-sm text-[#fff8e7]">
-            <p className="font-medium text-[#fff8e7]">Current login target</p>
-            <p className="mt-1">
-              {role === ROLE.ADMIN ? "Admin Dashboard" : "Faculty Dashboard"}
-            </p>
-            <p className="mt-2 text-[#f3d9b3]">
-              After sign-in, you will be redirected to {redirectTarget}.
-            </p>
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/80 p-8 shadow-2xl shadow-black/20 backdrop-blur">
-          <h2 className="text-2xl font-semibold">Sign In</h2>
-          <p className="mt-2 text-sm text-[#f3d9b3]">
+          {/* Sign In Form */}
+          <h2 className="text-xl font-semibold">Sign In</h2>
+          <p className="mt-1 text-sm text-[#f3d9b3]">
             Enter your institutional email and password to sign in.
           </p>
 
@@ -172,13 +110,6 @@ export default function Home() {
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3d0000]/80 px-4 py-3 text-sm">
-              <span className="text-[#f3d9b3]">Login role</span>
-              <span className="font-medium text-[#fff8e7]">
-                {role === ROLE.ADMIN ? "Admin" : "Faculty"}
-              </span>
-            </div>
-
             {error ? <p className="text-sm text-red-300">{error}</p> : null}
             {success ? (
               <p className="text-sm text-[#ffd700]">{success}</p>
@@ -189,9 +120,8 @@ export default function Home() {
             </Button>
 
             <p className="text-xs text-[#f3d9b3]">
-              {role === ROLE.ADMIN
-                ? "Admin accounts can manage faculty assignments and validate requirements."
-                : "Faculty accounts can submit curriculum-based compliance requirements."}
+              Enter your credentials to access the system. Your role will be
+              determined by your account permissions.
             </p>
           </form>
         </section>
