@@ -1,5 +1,7 @@
 # Faculty Database Persistence - Fixing RLS Issue
 
+<!-- spellcheck: off -->
+
 ## Problem
 
 Faculty accounts are not being saved to the database. This is due to Row Level Security (RLS) being enabled on the `profiles` table without any RLS policies defined.
