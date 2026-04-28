@@ -21,10 +21,25 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  height: 100%;
+  width: 100%;
+}
+
 body {
-  background: var(--background);
+  background-image: url("/images/backgrounds/PUP%20Bataan.webp") !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  min-height: 100vh;
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
+}
+
+/* Remove any tailwind background colors that might override the image */
+body[class*="bg-"] {
+  background-image: url("/images/backgrounds/PUP%20Bataan.webp") !important;
 }
 
 a {
@@ -33,4 +48,14 @@ a {
 
 * {
   border-color: rgb(51 65 85 / 0.5);
+}
+
+/* Semi-transparent overlay for content readability - much lighter */
+[class*="panel"],
+[class*="card"],
+[class*="container"],
+[class*="shell"],
+[class*="sidebar"],
+[class*="form"] {
+  background-color: rgba(95, 0, 0, 0.4) !important;
 }

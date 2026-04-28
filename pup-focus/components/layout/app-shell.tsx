@@ -16,7 +16,7 @@ type AppShellProps = {
 
 export function AppShell({ title, subtitle, nav, children }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,_#5f0000_0%,_#2c0000_100%)] text-[var(--foreground)]">
+    <div className="min-h-screen text-[var(--foreground)]">
       <header className="border-b border-[rgba(255,215,0,0.18)] bg-[#4d0000]/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">

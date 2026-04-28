@@ -71,7 +71,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,215,0,0.18),_transparent_28%),linear-gradient(180deg,_#5f0000_0%,_#2b0000_100%)] px-6 py-10 text-[#fff8e7]">
+    <main className="min-h-screen px-6 py-10 text-[#fff8e7]">
       <div className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
         <section className="space-y-6 rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/70 p-8 shadow-2xl shadow-black/20 backdrop-blur">
           <div>
