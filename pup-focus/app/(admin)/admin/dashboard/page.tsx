@@ -4,7 +4,7 @@ import { AdminFacultyDashboard } from "@/features/faculty-management/components/
 export default function AdminDashboardPage() {
   return (
     <AppShell
-      title="Super Admin Dashboard"
+      title="Admin Dashboard"
       subtitle="Manage faculty accounts, program assignments, and curriculum-based requirement validation"
       nav={[
         { href: "/admin/users", label: "Users" },

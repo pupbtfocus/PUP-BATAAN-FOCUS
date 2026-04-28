@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { createClient } from "@/lib/supabase/client";
 import { ROUTE_BY_ROLE } from "@/config/routes";
-import { ROLE, type AppRole } from "@/config/roles";
+import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 
 export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [bootstrapMessage, setBootstrapMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBootstrapping, setIsBootstrapping] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,11 +41,46 @@ export default function Home() {
       ROLE.FACULTY;
     const nextTarget = ROUTE_BY_ROLE[signedInRole];
 
-    setSuccess(
-      `Signed in successfully as ${signedInRole === ROLE.ADMIN ? "Admin" : "Faculty"}.`,
-    );
+    setSuccess(`Signed in successfully as ${ROLE_LABEL[signedInRole]}.`);
     setIsSubmitting(false);
     window.location.assign(nextTarget);
+  }
+
+  async function onBootstrapSuperAdmin() {
+    setError(null);
+    setSuccess(null);
+    setBootstrapMessage(null);
+    setIsBootstrapping(true);
+
+    try {
+      const response = await fetch("/api/bootstrap/super-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+        password?: string;
+        user?: { email?: string };
+      };
+
+      if (!response.ok) {
+        setBootstrapMessage(result.error ?? "Failed to bootstrap Super Admin");
+        setIsBootstrapping(false);
+        return;
+      }
+
+      setEmail(result.user?.email ?? "superadmin@pup-focus.local");
+      setPassword(result.password ?? "SuperAdmin123!");
+      setBootstrapMessage(
+        "Super Admin account is ready. Use the email and password now filled in the form.",
+      );
+    } catch {
+      setBootstrapMessage("Failed to bootstrap Super Admin account.");
+    } finally {
+      setIsBootstrapping(false);
+    }
   }
 
   return (
@@ -114,9 +151,24 @@ export default function Home() {
             {success ? (
               <p className="text-sm text-[#ffd700]">{success}</p>
             ) : null}
+            {bootstrapMessage ? (
+              <p className="text-sm text-[#ffd700]">{bootstrapMessage}</p>
+            ) : null}
 
             <Button className="w-full" type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Signing in..." : "Continue"}
+            </Button>
+
+            <Button
+              className="w-full"
+              type="button"
+              variant="secondary"
+              onClick={onBootstrapSuperAdmin}
+              disabled={isBootstrapping}
+            >
+              {isBootstrapping
+                ? "Repairing Super Admin..."
+                : "Repair Super Admin Account"}
             </Button>
 
             <p className="text-xs text-[#f3d9b3]">

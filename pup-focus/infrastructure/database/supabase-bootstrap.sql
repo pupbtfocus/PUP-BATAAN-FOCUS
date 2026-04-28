@@ -148,9 +148,10 @@ create index if not exists idx_document_versions_submission on public.document_v
 -- Roles seed
 -- =========================================================
 insert into public.roles (code, name) values
+  ('super_admin', 'Super Admin'),
   ('faculty', 'Faculty'),
   ('program_head', 'Program Head'),
-  ('admin', 'Super Admin')
+  ('admin', 'Admin')
 on conflict (code) do nothing;
 
 -- =========================================================
@@ -191,24 +192,24 @@ where c.code = 'CURR-2026-A'
 on conflict (curriculum_id, requirement_code) do nothing;
 
 -- =========================================================
--- Default admin account
--- Change these values before running if you want a different admin.
+-- Default super admin account
+-- Change these values before running if you want a different super admin.
 -- =========================================================
 do $$
 declare
-  admin_user_id uuid := '6f0c9e6a-6d9f-4d4f-9cb2-b2b1f2f9a001';
-  admin_profile_id uuid := '6f0c9e6a-6d9f-4d4f-9cb2-b2b1f2f9a002';
-  admin_email text := 'admin@pup-focus.local';
-  admin_password text := 'Admin123!';
-  admin_role_id uuid;
+  super_admin_user_id uuid := '6f0c9e6a-6d9f-4d4f-9cb2-b2b1f2f9a001';
+  super_admin_profile_id uuid := '6f0c9e6a-6d9f-4d4f-9cb2-b2b1f2f9a002';
+  super_admin_email text := 'superadmin@pup-focus.local';
+  super_admin_password text := 'SuperAdmin123!';
+  super_admin_role_id uuid;
 begin
-  select id into admin_role_id
+  select id into super_admin_role_id
   from public.roles
-  where code = 'admin'
+  where code = 'super_admin'
   limit 1;
 
-  if admin_role_id is null then
-    raise exception 'Admin role not found. Run role seed first.';
+  if super_admin_role_id is null then
+    raise exception 'Super admin role not found. Run role seed first.';
   end if;
 
   insert into auth.users (
@@ -230,17 +231,17 @@ begin
     email_change_token_new,
     recovery_token
   ) values (
-    admin_user_id,
+    super_admin_user_id,
     '00000000-0000-0000-0000-000000000000',
     'authenticated',
     'authenticated',
-    admin_email,
-    crypt(admin_password, gen_salt('bf')),
+    super_admin_email,
+    crypt(super_admin_password, gen_salt('bf')),
     now(),
     null,
     now(),
     jsonb_build_object('provider', 'email', 'providers', array['email']),
-    jsonb_build_object('full_name', 'PUP FOCUS Admin', 'role', 'admin'),
+    jsonb_build_object('full_name', 'PUP FOCUS Super Admin', 'role', 'super_admin'),
     now(),
     now(),
     '',
@@ -258,10 +259,10 @@ begin
     created_at,
     updated_at
   ) values (
-    admin_profile_id,
-    admin_user_id,
-    'PUP FOCUS Admin',
-    admin_email,
+    super_admin_profile_id,
+    super_admin_user_id,
+    'PUP FOCUS Super Admin',
+    super_admin_email,
     now(),
     now()
   )
@@ -271,7 +272,7 @@ begin
       updated_at = now();
 
   insert into public.user_roles (profile_id, role_id)
-  values (admin_profile_id, admin_role_id)
+  values (super_admin_profile_id, super_admin_role_id)
   on conflict do nothing;
 end $$;
 
@@ -287,6 +288,6 @@ alter table public.submissions enable row level security;
 alter table public.document_versions enable row level security;
 alter table public.review_decisions enable row level security;
 
--- Admin account credentials for first login:
--- email: admin@pup-focus.local
--- password: Admin123!
+-- Super admin account credentials for first login:
+-- email: superadmin@pup-focus.local
+-- password: SuperAdmin123!

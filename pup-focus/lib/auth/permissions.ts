@@ -1,6 +1,7 @@
 import { ROLE, type AppRole } from "@/config/roles";
 
 const PERMISSIONS: Record<AppRole, string[]> = {
+  [ROLE.SUPER_ADMIN]: ["*"],
   [ROLE.FACULTY]: ["submission:create", "submission:view:own"],
   [ROLE.PROGRAM_HEAD]: ["submission:view:program", "submission:review"],
   [ROLE.ADMIN]: ["*"],
