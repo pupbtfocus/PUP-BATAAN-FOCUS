@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { ROUTE_BY_ROLE } from "@/config/routes";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 
+const LOCAL_ADMIN_EMAIL = "admin@pup-focus.local";
+
 export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,9 +41,12 @@ export default function Home() {
       (userData.user?.user_metadata?.role as AppRole | undefined) ??
       (userData.user?.app_metadata?.role as AppRole | undefined) ??
       ROLE.FACULTY;
-    const nextTarget = ROUTE_BY_ROLE[signedInRole];
+    const isLocalAdminAccount =
+      userData.user?.email?.toLowerCase() === LOCAL_ADMIN_EMAIL;
+    const effectiveRole = isLocalAdminAccount ? ROLE.ADMIN : signedInRole;
+    const nextTarget = ROUTE_BY_ROLE[effectiveRole];
 
-    setSuccess(`Signed in successfully as ${ROLE_LABEL[signedInRole]}.`);
+    setSuccess(`Signed in successfully as ${ROLE_LABEL[effectiveRole]}.`);
     setIsSubmitting(false);
     window.location.assign(nextTarget);
   }

@@ -3,6 +3,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE, type AppRole } from "@/config/roles";
 import type { AuthUser } from "@/types/global";
 
+const LOCAL_ADMIN_EMAIL = "admin@pup-focus.local";
+
 export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
   const supabase = await createServerSupabaseClient();
   const {
@@ -13,7 +15,10 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
     return null;
   }
 
-  const role = (user.user_metadata.role as AppRole | undefined) ?? ROLE.FACULTY;
+  const metadataRole =
+    (user.user_metadata.role as AppRole | undefined) ?? ROLE.FACULTY;
+  const role =
+    user.email?.toLowerCase() === LOCAL_ADMIN_EMAIL ? ROLE.ADMIN : metadataRole;
 
   return {
     id: user.id,
