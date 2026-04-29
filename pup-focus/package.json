@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "dev:turbo": "next dev --turbo",
-    "build": "next build --webpack",
+    "build": "npm install && next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
