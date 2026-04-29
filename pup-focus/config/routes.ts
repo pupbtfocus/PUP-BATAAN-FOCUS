@@ -12,6 +12,7 @@ export const PUBLIC_ROUTES = [
   "/",
   "/about",
   "/contact",
+  "/api/auth/callback",
   "/api/bootstrap/super-admin",
   ...AUTH_ROUTES,
 ];
