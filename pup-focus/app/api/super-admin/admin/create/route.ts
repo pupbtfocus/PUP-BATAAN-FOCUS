@@ -114,6 +114,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { error: appUsersError } = await supabase.from("app_users").insert({
+      auth_user_id: authData.user.id,
+      profile_id: profile.id,
+      email,
+      full_name: fullName,
+      role: ROLE.ADMIN,
+    });
+
+    if (appUsersError) {
+      await supabase.from("profiles").delete().eq("id", profile.id);
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return NextResponse.json(
+        { error: appUsersError.message },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json({
       success: true,
       user: {

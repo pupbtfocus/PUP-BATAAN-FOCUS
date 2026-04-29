@@ -137,6 +137,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Add to app_users table for visibility
+    const { error: appUsersError } = await supabase.from("app_users").insert({
+      auth_user_id: authData.user.id,
+      profile_id: profileId,
+      email,
+      full_name: fullName,
+      role: "faculty",
+      program_id: program.id,
+      program_code: program.code,
+      program_name: program.name,
+    });
+
+    if (appUsersError) {
+      return NextResponse.json(
+        { error: appUsersError.message },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json({
       success: true,
       user: {
