@@ -83,7 +83,7 @@ export function AdminFacultyDashboard() {
         setFacultyAccounts(data.faculty || []);
       }
     } catch (error) {
-      console.error("Failed to load faculty:", error);
+      // Error handled by UI state
     } finally {
       setIsLoading(false);
     }
@@ -195,7 +195,7 @@ export function AdminFacultyDashboard() {
         await loadFacultyFromDatabase();
       }
     } catch (error) {
-      console.error("Failed to delete faculty:", error);
+      // Error handled by UI state
     }
   }
 
@@ -291,6 +291,7 @@ export function AdminFacultyDashboard() {
           {activeSection === "faculty" ? (
             <FacultyListPanel
               facultyAccounts={facultyAccounts}
+              isLoading={isLoading}
               onSelectFaculty={setSelectedFacultyId}
               onDeleteFaculty={onDeleteFaculty}
             />
@@ -461,13 +462,32 @@ function AddFacultyPanel({
 
 function FacultyListPanel({
   facultyAccounts,
+  isLoading,
   onSelectFaculty,
   onDeleteFaculty,
 }: {
   facultyAccounts: FacultyAccount[];
+  isLoading: boolean;
   onSelectFaculty: (facultyId: string) => void;
   onDeleteFaculty: (facultyId: string) => void;
 }) {
+  const facultyByProgram = facultyAccounts.reduce(
+    (acc, faculty) => {
+      const programKey = `${faculty.programCode}:::${faculty.programName}`;
+      if (!acc[programKey]) {
+        acc[programKey] = [];
+      }
+
+      acc[programKey].push(faculty);
+      return acc;
+    },
+    {} as Record<string, FacultyAccount[]>,
+  );
+
+  const sortedProgramKeys = Object.keys(facultyByProgram).sort((a, b) =>
+    a.localeCompare(b),
+  );
+
   return (
     <div>
       <h2 className="text-lg font-semibold">Faculty List</h2>
@@ -476,40 +496,74 @@ function FacultyListPanel({
       </p>
 
       <div className="mt-4 space-y-3">
-        {facultyAccounts.length === 0 ? (
+        {isLoading ? (
+          <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
+            Loading faculty accounts...
+          </p>
+        ) : null}
+
+        {!isLoading && facultyAccounts.length === 0 ? (
           <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
             No faculty accounts yet. Add one from the sidebar.
           </p>
-        ) : (
-          facultyAccounts.map((faculty) => (
-            <div
-              key={faculty.id}
-              className="rounded-xl border border-slate-700 bg-slate-950 p-4"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => onSelectFaculty(faculty.id)}
-                  className="text-left"
-                >
-                  <p className="font-medium">{faculty.fullName}</p>
-                  <p className="text-sm text-slate-400">{faculty.email}</p>
-                  <p className="text-xs text-amber-300">
-                    Program: {faculty.programName}
-                  </p>
-                </button>
+        ) : null}
 
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => onDeleteFaculty(faculty.id)}
+        {!isLoading
+          ? sortedProgramKeys.map((programKey) => {
+              const [programCode, programName] = programKey.split(":::");
+              const programFaculty = facultyByProgram[programKey];
+
+              return (
+                <section
+                  key={programKey}
+                  className="rounded-xl border border-slate-700 bg-slate-900/60 p-4"
                 >
-                  Delete
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
+                  <div className="mb-3 border-b border-slate-700 pb-2">
+                    <h3 className="font-semibold text-slate-100">
+                      {programCode} - {programName}
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      {programFaculty.length} faculty member
+                      {programFaculty.length === 1 ? "" : "s"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {programFaculty.map((faculty) => (
+                      <div
+                        key={faculty.id}
+                        className="rounded-xl border border-slate-700 bg-slate-950 p-4"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <button
+                            type="button"
+                            onClick={() => onSelectFaculty(faculty.id)}
+                            className="text-left"
+                          >
+                            <p className="font-medium">{faculty.fullName}</p>
+                            <p className="text-sm text-slate-400">
+                              {faculty.email}
+                            </p>
+                            <p className="text-xs text-amber-300">
+                              Program: {faculty.programName}
+                            </p>
+                          </button>
+
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onDeleteFaculty(faculty.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })
+          : null}
       </div>
     </div>
   );

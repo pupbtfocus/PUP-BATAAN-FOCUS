@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileSelectError || !profile) {
-      console.error("Profile select error:", profileSelectError);
       return NextResponse.json(
         { error: "Failed to retrieve created profile" },
         { status: 400 },
@@ -86,7 +85,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (rolesError || !roles) {
-      console.error("Roles error:", rolesError);
       return NextResponse.json(
         { error: "Failed to find faculty role" },
         { status: 400 },
@@ -101,7 +99,6 @@ export async function POST(request: NextRequest) {
       });
 
     if (roleAssignError) {
-      console.error("Role assignment error:", roleAssignError);
       return NextResponse.json(
         { error: roleAssignError.message },
         { status: 400 },
@@ -116,7 +113,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (programError || !program) {
-      console.error("Program error:", programError);
       return NextResponse.json(
         { error: "Invalid program code" },
         { status: 400 },
@@ -135,7 +131,6 @@ export async function POST(request: NextRequest) {
       });
 
     if (assignmentError) {
-      console.error("Assignment error:", assignmentError);
       return NextResponse.json(
         { error: assignmentError.message },
         { status: 400 },
@@ -152,7 +147,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error", details: String(error) },
       { status: 500 },
