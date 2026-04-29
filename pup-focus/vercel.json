@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install",
+  "buildCommand": "node build-webpack.js",
   "outputDirectory": ".next",
   "framework": "nextjs"
 }
