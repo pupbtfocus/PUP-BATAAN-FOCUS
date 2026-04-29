@@ -16,6 +16,7 @@ Your PUP FOCUS Next.js application is ready to deploy to Vercel with full CI/CD 
 ## Prerequisites
 
 Before starting, ensure you have:
+
 - [ ] Access to your Vercel account (https://vercel.com)
 - [ ] Access to your Supabase project (https://supabase.com)
 - [ ] Access to your GitHub repository (https://github.com/cjaayy/PUP-FOCUS)
@@ -29,16 +30,19 @@ Before starting, ensure you have:
 ### Option A: Use the Automated Setup Script (Recommended)
 
 **Windows:**
+
 ```bash
 .\setup-deployment.bat
 ```
 
 **macOS/Linux:**
+
 ```bash
 bash setup-deployment.sh
 ```
 
 This script will:
+
 1. ✓ Prompt you for Vercel credentials (VERCEL_TOKEN, VERCEL_ORG_ID)
 2. ✓ Automatically configure GitHub Secrets using GitHub CLI
 3. ✓ Guide you through Supabase and Vercel setup
@@ -72,15 +76,18 @@ Your VERCEL_TOKEN: <paste here>
 #### 1.2 Get VERCEL_ORG_ID
 
 **Method 1: From Project Settings**
+
 1. Go to your Vercel project: https://vercel.com/dashboard/project/pup-focus
 2. Click **Settings** → look for **Team ID** or check the URL
 3. The ID follows the pattern: `cjaayys-projects` or similar
 
 **Method 2: Using Vercel CLI**
+
 ```bash
 cd pup-focus
 npx vercel link
 ```
+
 Then check `.vercel/project.json` for `"orgId"`
 
 ```
@@ -100,16 +107,19 @@ Already provided: `prj_3AKAQNKnwflVthWcJoCW7uuzcihn`
 3. Click **"New repository secret"** and add:
 
 #### Secret 1: VERCEL_TOKEN
+
 - **Name**: `VERCEL_TOKEN`
 - **Value**: (from Step 1.1)
 - Click **Add secret**
 
 #### Secret 2: VERCEL_ORG_ID
+
 - **Name**: `VERCEL_ORG_ID`
 - **Value**: (from Step 1.2)
 - Click **Add secret**
 
 #### Secret 3: VERCEL_PROJECT_ID
+
 - **Name**: `VERCEL_PROJECT_ID`
 - **Value**: `prj_3AKAQNKnwflVthWcJoCW7uuzcihn`
 - Click **Add secret**
@@ -141,18 +151,21 @@ SUPABASE_SERVICE_ROLE_KEY: [secret-role-key-here]
 3. Add the following variables:
 
 #### Variable 1: NEXT_PUBLIC_SUPABASE_URL
+
 - **Name**: `NEXT_PUBLIC_SUPABASE_URL`
 - **Value**: `https://[your-project-id].supabase.co`
 - **Environments**: Check all (✓ Production, ✓ Preview, ✓ Development)
 - Click **Save**
 
 #### Variable 2: NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 - **Name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - **Value**: [public-key-from-Supabase]
 - **Environments**: Check all (✓ Production, ✓ Preview, ✓ Development)
 - Click **Save**
 
 #### Variable 3: SUPABASE_SERVICE_ROLE_KEY
+
 - **Name**: `SUPABASE_SERVICE_ROLE_KEY`
 - **Value**: [secret-role-key-from-Supabase]
 - **Environments**: Check only (✓ Production) ← IMPORTANT
@@ -191,6 +204,7 @@ git push origin main
 ```
 
 GitHub Actions will automatically:
+
 1. Run tests and build
 2. Deploy to Vercel production
 3. Deploy preview for any PRs
@@ -229,6 +243,7 @@ GitHub Actions will automatically:
 ### ✓ Step 4: Check Application Logs
 
 In Vercel dashboard:
+
 1. Click **Deployments** → **Production**
 2. Click **Logs**
 3. Verify no errors in application output
@@ -242,6 +257,7 @@ In Vercel dashboard:
 **Cause**: Environment variables not configured in Vercel
 
 **Fix**:
+
 1. Go to Vercel project → **Settings** → **Environment Variables**
 2. Verify all 3 Supabase variables are present
 3. Redeploy: Go to **Deployments** → right-click Production → **Redeploy**
@@ -251,6 +267,7 @@ In Vercel dashboard:
 **Cause**: Callback URL not registered in Supabase or credentials mismatch
 
 **Fix**:
+
 1. Go to Supabase → **Authentication** → **URL Configuration**
 2. Verify callback URL is: `https://pup-focus.vercel.app/api/auth/callback`
 3. Verify environment variables in Vercel match Supabase project credentials
@@ -260,6 +277,7 @@ In Vercel dashboard:
 **Cause**: Invalid VERCEL_TOKEN or VERCEL_ORG_ID
 
 **Fix**:
+
 1. Go to GitHub → Repository **Settings** → **Secrets**
 2. Verify VERCEL_TOKEN and VERCEL_ORG_ID are correct
 3. Delete and recreate if needed
@@ -270,6 +288,7 @@ In Vercel dashboard:
 **Cause**: Similar to production failures, usually environment variables
 
 **Fix**:
+
 1. Create a test PR to see detailed error logs
 2. Check GitHub Actions logs for the specific error
 3. Verify all environment variables are set in Vercel
@@ -322,27 +341,30 @@ GitHub Repository
 
 ## Environment Variables Reference
 
-| Variable | Type | Source | Purpose |
-|----------|------|--------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Public | Supabase API Settings | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Supabase API Settings | Public authentication key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Secret | Supabase API Settings | Server-side admin access (production only) |
+| Variable                        | Type   | Source                | Purpose                                    |
+| ------------------------------- | ------ | --------------------- | ------------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Public | Supabase API Settings | Supabase project URL                       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Supabase API Settings | Public authentication key                  |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Secret | Supabase API Settings | Server-side admin access (production only) |
 
 ---
 
 ## Post-Deployment Monitoring
 
 ### 1. GitHub Actions Monitoring
+
 - URL: https://github.com/cjaayy/PUP-FOCUS/actions
 - Check for: ✓ All workflows passing
 - Alert on: ✗ Failed deployments
 
 ### 2. Vercel Monitoring
+
 - URL: https://vercel.com/dashboard/project/pup-focus
 - Check for: ✓ Production deployment "Ready"
 - Alert on: ✗ Build failures or errors
 
 ### 3. Supabase Monitoring
+
 - URL: https://supabase.com/dashboard
 - Check for: ✓ Auth logs for successful logins
 - Alert on: ✗ Auth failures or configuration issues
