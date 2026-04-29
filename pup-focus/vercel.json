@@ -1,4 +1,5 @@
 {
+  "buildCommand": "bash ./.webpack",
   "installCommand": "npm install",
   "outputDirectory": ".next",
   "framework": "nextjs"
