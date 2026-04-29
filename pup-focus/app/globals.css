@@ -27,19 +27,60 @@ html {
 }
 
 body {
-  background-image: url("/images/backgrounds/PUP%20Bataan.webp") !important;
-  background-size: cover !important;
-  background-attachment: fixed !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
   min-height: 100vh;
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
+  position: relative;
 }
 
-/* Remove any tailwind background colors that might override the image */
+/* Fast crossfading background using two attached images */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  will-change: opacity;
+}
+
+body::before {
+  background-image: url("/images/attachments/IMG_9399.jpeg");
+  opacity: 1;
+  animation: bg-fade 12s linear infinite;
+}
+
+body::after {
+  background-image: url("/images/attachments/IMG_9402.jpeg");
+  opacity: 0;
+  animation: bg-fade 12s linear infinite;
+  animation-delay: 6s;
+}
+
+@keyframes bg-fade {
+  0% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  90% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Ensure Tailwind/bg utilities don't unexpectedly replace the crossfade */
 body[class*="bg-"] {
-  background-image: url("/images/backgrounds/PUP%20Bataan.webp") !important;
+  background-image: none !important;
 }
 
 a {
