@@ -44,15 +44,14 @@ Write-Host ""
 Write-Host "Step 2: Verifying GitHub CLI"
 Write-Host "============================="
 
-try {
-    $gh_version = gh --version 2>$null
-    Write-Host "✓ GitHub CLI found: $gh_version"
-}
-catch {
+if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
     Write-Host "Error: GitHub CLI (gh) is not installed"
     Write-Host "Install from: https://cli.github.com/"
     exit 1
 }
+
+$gh_version = gh --version
+Write-Host "✓ GitHub CLI found: $gh_version"
 
 Write-Host ""
 
@@ -62,22 +61,22 @@ Write-Host "=============================="
 Write-Host ""
 
 Write-Host "Adding VERCEL_TOKEN..."
-gh secret set VERCEL_TOKEN --body "$VERCEL_TOKEN" --repo "$GITHUB_REPO" 2>$null
+gh secret set VERCEL_TOKEN --body "$VERCEL_TOKEN" --repo "$GITHUB_REPO"
 Write-Host "✓ VERCEL_TOKEN set"
 
 Write-Host "Adding VERCEL_ORG_ID..."
-gh secret set VERCEL_ORG_ID --body "$VERCEL_ORG_ID" --repo "$GITHUB_REPO" 2>$null
+gh secret set VERCEL_ORG_ID --body "$VERCEL_ORG_ID" --repo "$GITHUB_REPO"
 Write-Host "✓ VERCEL_ORG_ID set"
 
 Write-Host "Adding VERCEL_PROJECT_ID..."
-gh secret set VERCEL_PROJECT_ID --body "$VERCEL_PROJECT_ID" --repo "$GITHUB_REPO" 2>$null
+gh secret set VERCEL_PROJECT_ID --body "$VERCEL_PROJECT_ID" --repo "$GITHUB_REPO"
 Write-Host "✓ VERCEL_PROJECT_ID set"
 
 Write-Host ""
 
 # Step 4: Gather Supabase Credentials
 Write-Host "Step 4: Gathering Supabase Credentials"
-Write-Host "======================================"
+Write-Host "========================================"
 Write-Host ""
 Write-Host "You need to gather three credentials from your Supabase project:"
 Write-Host ""
@@ -105,7 +104,7 @@ Write-Host ""
 
 # Step 5: Display Vercel Configuration Instructions
 Write-Host "Step 5: Configuring Vercel Environment Variables"
-Write-Host "================================================"
+Write-Host "================================================="
 Write-Host ""
 Write-Host "Please configure these in Vercel project dashboard:"
 Write-Host "https://vercel.com/dashboard/project/pup-focus"
@@ -140,7 +139,7 @@ Write-Host "Step 7: Final Verification"
 Write-Host "=========================="
 Write-Host ""
 Write-Host "✓ GitHub Secrets configured:"
-gh secret list --repo "$GITHUB_REPO" 2>$null | Select-String "VERCEL_|SUPABASE_"
+gh secret list --repo "$GITHUB_REPO" | Select-String "VERCEL_"
 
 Write-Host ""
 Write-Host "Next Steps:"
