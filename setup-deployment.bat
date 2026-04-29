@@ -26,13 +26,15 @@ echo.
 echo You need to gather two credentials from Vercel:
 echo.
 
-set /p VERCEL_TOKEN="Enter your VERCEL_TOKEN (from https://vercel.com/account/tokens): "
+set "VERCEL_TOKEN=%VERCEL_TOKEN%"
+if not defined VERCEL_TOKEN set /p VERCEL_TOKEN="Enter your VERCEL_TOKEN (from https://vercel.com/account/tokens): "
 if "!VERCEL_TOKEN!"=="" (
     echo Error: VERCEL_TOKEN is required
     exit /b 1
 )
 
-set /p VERCEL_ORG_ID="Enter your VERCEL_ORG_ID (from Vercel account settings): "
+set "VERCEL_ORG_ID=%VERCEL_ORG_ID%"
+if not defined VERCEL_ORG_ID set /p VERCEL_ORG_ID="Enter your VERCEL_ORG_ID (from Vercel account settings): "
 if "!VERCEL_ORG_ID!"=="" (
     echo Error: VERCEL_ORG_ID is required
     exit /b 1
@@ -45,34 +47,46 @@ REM Step 2: Verify GitHub CLI is installed
 echo Step 2: Verifying GitHub CLI
 echo =============================
 where gh >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo Error: GitHub CLI (gh) is not installed
-    echo Install from: https://cli.github.com/
-    exit /b 1
-)
-
-for /f "tokens=*" %%i in ('gh --version') do set GH_VERSION=%%i
-echo ^✓ GitHub CLI found: %GH_VERSION%
+if errorlevel 1 goto gh_missing
+echo ^✓ GitHub CLI found
+set GITHUB_CLI_AVAILABLE=1
 echo.
+goto gh_ready
+
+:gh_missing
+echo Error: GitHub CLI (gh) is not installed
+echo Install from: https://cli.github.com/
+echo Continuing with manual GitHub secret setup instructions.
+set GITHUB_CLI_AVAILABLE=0
+echo.
+
+:gh_ready
 
 REM Step 3: Add GitHub Secrets
 echo Step 3: Adding GitHub Secrets
 echo ==============================
 echo.
 
-echo Adding VERCEL_TOKEN...
-gh secret set VERCEL_TOKEN --body "%VERCEL_TOKEN%" --repo "%GITHUB_REPO%"
-echo ^✓ VERCEL_TOKEN set
+if "%GITHUB_CLI_AVAILABLE%"=="1" (
+    echo Adding VERCEL_TOKEN...
+    gh secret set VERCEL_TOKEN --body "%VERCEL_TOKEN%" --repo "%GITHUB_REPO%"
+    echo ^✓ VERCEL_TOKEN set
 
-echo Adding VERCEL_ORG_ID...
-gh secret set VERCEL_ORG_ID --body "%VERCEL_ORG_ID%" --repo "%GITHUB_REPO%"
-echo ^✓ VERCEL_ORG_ID set
+    echo Adding VERCEL_ORG_ID...
+    gh secret set VERCEL_ORG_ID --body "%VERCEL_ORG_ID%" --repo "%GITHUB_REPO%"
+    echo ^✓ VERCEL_ORG_ID set
 
-echo Adding VERCEL_PROJECT_ID...
-gh secret set VERCEL_PROJECT_ID --body "%VERCEL_PROJECT_ID%" --repo "%GITHUB_REPO%"
-echo ^✓ VERCEL_PROJECT_ID set
-
-echo.
+    echo Adding VERCEL_PROJECT_ID...
+    gh secret set VERCEL_PROJECT_ID --body "%VERCEL_PROJECT_ID%" --repo "%GITHUB_REPO%"
+    echo ^✓ VERCEL_PROJECT_ID set
+    echo.
+) else (
+    echo Manual GitHub secret setup required:
+    echo 1. VERCEL_TOKEN = %VERCEL_TOKEN%
+    echo 2. VERCEL_ORG_ID = %VERCEL_ORG_ID%
+    echo 3. VERCEL_PROJECT_ID = %VERCEL_PROJECT_ID%
+    echo.
+)
 
 REM Step 4: Gather Supabase Credentials
 echo Step 4: Gathering Supabase Credentials
@@ -81,19 +95,22 @@ echo.
 echo You need to gather three credentials from your Supabase project:
 echo.
 
-set /p SUPABASE_URL="Enter NEXT_PUBLIC_SUPABASE_URL (from Supabase project settings): "
+set "SUPABASE_URL=%NEXT_PUBLIC_SUPABASE_URL%"
+if not defined SUPABASE_URL set /p SUPABASE_URL="Enter NEXT_PUBLIC_SUPABASE_URL (from Supabase project settings): "
 if "!SUPABASE_URL!"=="" (
     echo Error: NEXT_PUBLIC_SUPABASE_URL is required
     exit /b 1
 )
 
-set /p SUPABASE_ANON_KEY="Enter NEXT_PUBLIC_SUPABASE_ANON_KEY (from Supabase project settings): "
+set "SUPABASE_ANON_KEY=%NEXT_PUBLIC_SUPABASE_ANON_KEY%"
+if not defined SUPABASE_ANON_KEY set /p SUPABASE_ANON_KEY="Enter NEXT_PUBLIC_SUPABASE_ANON_KEY (from Supabase project settings): "
 if "!SUPABASE_ANON_KEY!"=="" (
     echo Error: NEXT_PUBLIC_SUPABASE_ANON_KEY is required
     exit /b 1
 )
 
-set /p SUPABASE_SERVICE_ROLE_KEY="Enter SUPABASE_SERVICE_ROLE_KEY (from Supabase project settings): "
+set "SUPABASE_SERVICE_ROLE_KEY=%SUPABASE_SERVICE_ROLE_KEY%"
+if not defined SUPABASE_SERVICE_ROLE_KEY set /p SUPABASE_SERVICE_ROLE_KEY="Enter SUPABASE_SERVICE_ROLE_KEY (from Supabase project settings): "
 if "!SUPABASE_SERVICE_ROLE_KEY!"=="" (
     echo Error: SUPABASE_SERVICE_ROLE_KEY is required
     exit /b 1
@@ -138,8 +155,16 @@ REM Step 7: Final verification
 echo Step 7: Final Verification
 echo ==========================
 echo.
-echo ^✓ GitHub Secrets configured:
-gh secret list --repo "%GITHUB_REPO%"
+if "%GITHUB_CLI_AVAILABLE%"=="1" (
+    echo ^✓ GitHub Secrets configured:
+    gh secret list --repo "%GITHUB_REPO%"
+) else (
+    echo GitHub Secrets were not set automatically because gh is not installed.
+    echo Add these secrets manually in GitHub repository settings:
+    echo 1. VERCEL_TOKEN
+    echo 2. VERCEL_ORG_ID
+    echo 3. VERCEL_PROJECT_ID
+)
 
 echo.
 echo Next Steps:
