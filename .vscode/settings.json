@@ -1,4 +1,22 @@
 {
   "spellright.language": ["en"],
-  "spellright.documentTypes": ["markdown", "latex", "plaintext"]
+  "spellright.documentTypes": ["markdown", "latex", "plaintext"],
+  "spellright.ignoreWords": [
+    "yml",
+    "tsx",
+    "api",
+    "json",
+    "Monorepo",
+    "GitHub",
+    "Supabase",
+    "Vercel",
+    "Vercel",
+    "anon",
+    "auth",
+    "middleware",
+    "webpack",
+    "npm",
+    "env",
+    "config"
+  ]
 }
