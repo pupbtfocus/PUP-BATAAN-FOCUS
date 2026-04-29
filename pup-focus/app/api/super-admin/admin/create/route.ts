@@ -114,13 +114,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { error: appUsersError } = await supabase.from("app_users").insert({
-      auth_user_id: authData.user.id,
-      profile_id: profile.id,
-      email,
-      full_name: fullName,
-      role: ROLE.ADMIN,
-    });
+    const { error: appUsersError } = await supabase.from("app_users").upsert(
+      {
+        auth_user_id: authData.user.id,
+        profile_id: profile.id,
+        email,
+        full_name: fullName,
+        role: ROLE.ADMIN,
+      },
+      { onConflict: "email" },
+    );
 
     if (appUsersError) {
       await supabase.from("profiles").delete().eq("id", profile.id);
@@ -131,12 +134,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { error: adminTableError } = await supabase.from("admins").insert({
-      profile_id: profile.id,
-      full_name: fullName,
-      email,
-      is_active: true,
-    });
+    const { error: adminTableError } = await supabase.from("admins").upsert(
+      {
+        profile_id: profile.id,
+        full_name: fullName,
+        email,
+        is_active: true,
+      },
+      { onConflict: "email" },
+    );
 
     if (adminTableError) {
       await supabase.from("profiles").delete().eq("id", profile.id);
