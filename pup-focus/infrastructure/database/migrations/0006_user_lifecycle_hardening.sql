@@ -33,6 +33,9 @@ create index if not exists idx_app_users_program_id
 create index if not exists idx_app_users_profile_id
   on public.app_users using btree (profile_id);
 
+-- Disable RLS on app_users to allow service-role client to insert/update
+alter table public.app_users disable row level security;
+
 -- Attach profile/program FKs for app_users if table exists.
 do $$
 begin

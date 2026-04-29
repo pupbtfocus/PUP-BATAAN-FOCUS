@@ -131,6 +131,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { error: adminTableError } = await supabase.from("admins").insert({
+      profile_id: profile.id,
+      full_name: fullName,
+      email,
+      is_active: true,
+    });
+
+    if (adminTableError) {
+      await supabase.from("profiles").delete().eq("id", profile.id);
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return NextResponse.json(
+        { error: adminTableError.message },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json({
       success: true,
       user: {

@@ -199,6 +199,23 @@ export async function POST() {
       );
     }
 
+    const { error: adminTableError } = await supabase.from("admins").upsert(
+      {
+        profile_id: profileId,
+        full_name: SUPER_ADMIN_FULL_NAME,
+        email: SUPER_ADMIN_EMAIL,
+        is_active: true,
+      },
+      { onConflict: "email" },
+    );
+
+    if (adminTableError) {
+      return NextResponse.json(
+        { error: adminTableError.message },
+        { status: 400 },
+      );
+    }
+
     await supabase.auth.admin.updateUserById(authUserId, {
       email_confirm: true,
       user_metadata: {
