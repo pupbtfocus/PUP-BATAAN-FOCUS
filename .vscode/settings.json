@@ -21,5 +21,6 @@
     "npm",
     "env",
     "config"
-  ]
+  ],
+  "spellright.notificationClass": "warning"
 }
