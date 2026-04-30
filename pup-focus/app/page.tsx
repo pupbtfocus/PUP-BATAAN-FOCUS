@@ -12,9 +12,7 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [bootstrapMessage, setBootstrapMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isBootstrapping, setIsBootstrapping] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,60 +44,23 @@ export default function Home() {
     window.location.assign(nextTarget);
   }
 
-  async function onBootstrapSuperAdmin() {
-    setError(null);
-    setSuccess(null);
-    setBootstrapMessage(null);
-    setIsBootstrapping(true);
-
-    try {
-      const response = await fetch("/api/bootstrap/super-admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const result = (await response.json()) as {
-        success?: boolean;
-        error?: string;
-        password?: string;
-        user?: { email?: string };
-      };
-
-      if (!response.ok) {
-        setBootstrapMessage(result.error ?? "Failed to bootstrap Super Admin");
-        setIsBootstrapping(false);
-        return;
-      }
-
-      setEmail(result.user?.email ?? "superadmin@pup-focus.local");
-      setPassword(result.password ?? "SuperAdmin123!");
-      setBootstrapMessage(
-        "Super Admin account is ready. Use the email and password now filled in the form.",
-      );
-    } catch {
-      setBootstrapMessage("Failed to bootstrap Super Admin account.");
-    } finally {
-      setIsBootstrapping(false);
-    }
-  }
-
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-10 text-[#fff8e7]">
-      <div className="w-full max-w-md">
+    <main className="min-h-screen flex items-center justify-center px-4 py-8 text-[#fff8e7]">
+      <div className="w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto">
         {/* Combined Card */}
-        <section className="rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/80 p-8 shadow-2xl shadow-black/20 backdrop-blur">
+        <section className="rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/80 p-6 shadow-2xl shadow-black/20 backdrop-blur">
           {/* Header */}
-          <div className="mb-8 text-center">
+          <div className="mb-6 text-center">
             <div className="flex justify-center">
               <BrandMark
-                size={56}
+                size={48}
                 className="rounded-full ring-4 ring-[#ffd700]/35 shadow-lg shadow-black/20"
               />
             </div>
-            <p className="mt-4 text-sm uppercase tracking-[0.28em] text-[#ffd700]">
+            <p className="mt-3 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
               Polytechnic University of the Philippines - Bataan Campus
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">
+            <h1 className="mt-1 text-2xl font-bold tracking-tight">
               PUP FOCUS
             </h1>
           </div>
@@ -110,7 +71,7 @@ export default function Home() {
             Enter your institutional email and password to sign in.
           </p>
 
-          <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+          <form className="mt-5 space-y-3" onSubmit={onSubmit}>
             <div>
               <label
                 className="block text-sm font-medium text-[#fff8e7]"
@@ -151,30 +112,10 @@ export default function Home() {
             {success ? (
               <p className="text-sm text-[#ffd700]">{success}</p>
             ) : null}
-            {bootstrapMessage ? (
-              <p className="text-sm text-[#ffd700]">{bootstrapMessage}</p>
-            ) : null}
 
             <Button className="w-full" type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Signing in..." : "Continue"}
             </Button>
-
-            <Button
-              className="w-full"
-              type="button"
-              variant="secondary"
-              onClick={onBootstrapSuperAdmin}
-              disabled={isBootstrapping}
-            >
-              {isBootstrapping
-                ? "Repairing Super Admin..."
-                : "Repair Super Admin Account"}
-            </Button>
-
-            <p className="text-xs text-[#f3d9b3]">
-              Enter your credentials to access the system. Your role will be
-              determined by your account permissions.
-            </p>
           </form>
         </section>
       </div>
