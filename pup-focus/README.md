@@ -44,5 +44,4 @@ Management at Polytechnic University of the Philippines - Bataan Campus.
 
 ## Deployment
 
-- Vercel deploy target with Supabase backend services.
 - CI and deployment workflows live in `.github/workflows`.
