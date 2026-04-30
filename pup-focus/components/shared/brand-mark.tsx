@@ -13,11 +13,11 @@ export function BrandMark({ size = 44, className }: BrandMarkProps) {
       aria-hidden="true"
     >
       <Image
-        src="/icons/pngkey.com-phillies-logo-png-528919.png"
+        src="/icons/pup-seal.png"
         alt="PUP FOCUS logo"
         fill
         sizes={`${size}px`}
-        className="object-contain p-1"
+        className="object-contain p-0"
         priority
       />
     </div>

@@ -53,8 +53,8 @@ export default function Home() {
           <div className="mb-6 text-center">
             <div className="flex justify-center">
               <BrandMark
-                size={48}
-                className="rounded-full ring-4 ring-[#ffd700]/35 shadow-lg shadow-black/20"
+                size={80}
+                className="rounded-full shadow-lg shadow-black/20"
               />
             </div>
             <p className="mt-3 text-xs uppercase tracking-[0.28em] text-[#ffd700]">

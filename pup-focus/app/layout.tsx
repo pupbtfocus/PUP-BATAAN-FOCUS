@@ -17,9 +17,12 @@ export const metadata: Metadata = {
   description:
     "Faculty Online Compliance and Uploading System for Efficient Academic Document Management",
   icons: {
-    icon: "/icons/pngkey.com-phillies-logo-png-528919.png",
-    shortcut: "/icons/pngkey.com-phillies-logo-png-528919.png",
-    apple: "/icons/pngkey.com-phillies-logo-png-528919.png",
+    icon: [
+      {
+        url: "/icons/pup-seal.png",
+        type: "image/png",
+      },
+    ],
   },
 };
 
@@ -33,6 +36,11 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
+      <head>
+        <link rel="icon" href="/icons/pup-seal.png" type="image/png" />
+        <link rel="shortcut icon" href="/icons/pup-seal.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/icons/pup-seal.png" />
+      </head>
       <body className="min-h-full flex flex-col text-[var(--foreground)]">
         {children}
       </body>
