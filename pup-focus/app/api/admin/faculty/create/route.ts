@@ -107,11 +107,12 @@ export async function POST(request: NextRequest) {
 
     // Add to app_users table for visibility
     const { error: appUsersError } = await supabase.from("app_users").insert({
-      auth_user_id: authData.user.id,
-      profile_id: profileId,
+      user_id: authData.user.id,
       email,
       full_name: fullName,
       role: "faculty",
+      is_active: true,
+      created_at: new Date().toISOString(),
     });
 
     if (appUsersError) {
