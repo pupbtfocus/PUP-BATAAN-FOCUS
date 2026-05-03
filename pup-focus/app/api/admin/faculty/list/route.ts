@@ -40,7 +40,9 @@ export async function GET() {
       .from("app_users")
       .select(
         `
-        profile_id,
+        id,
+        is_active,
+        created_at,
         profiles(id, full_name, email)
       `,
       )
@@ -62,9 +64,11 @@ export async function GET() {
             : item.profiles;
 
           return {
-            id: item.profile_id,
+            id: item.id,
             fullName: profile?.full_name || "Unknown",
             email: profile?.email || "Unknown",
+            is_active: item.is_active ?? true,
+            created_at: item.created_at || new Date().toISOString(),
             requirementStatus: buildInitialRequirementStatus(),
           };
         })

@@ -62,10 +62,9 @@ export function AdminFacultyDashboard() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDeactivating, setIsDeactivating] = useState(false);
-  const [deactivateError, setDeactivateError] = useState<string | null>(null);
-  const [isActivating, setIsActivating] = useState(false);
-  const [activateError, setActivateError] = useState<string | null>(null);
+  const [loadingFacultyIds, setLoadingFacultyIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [detailsFacultyId, setDetailsFacultyId] = useState<string | null>(null);
 
@@ -187,8 +186,7 @@ export function AdminFacultyDashboard() {
   }
 
   async function onDeactivateFaculty(facultyId: string) {
-    setIsDeactivating(true);
-    setDeactivateError(null);
+    setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
 
     try {
       const response = await fetch("/api/admin/faculty/deactivate", {
@@ -207,20 +205,20 @@ export function AdminFacultyDashboard() {
         );
         // Refresh from database
         await loadFacultyFromDatabase();
-      } else {
-        const errorData = await response.json();
-        setDeactivateError(errorData.error || "Failed to deactivate faculty");
       }
     } catch (error) {
-      setDeactivateError("An error occurred while deactivating the account");
+      console.error("Error deactivating faculty:", error);
     } finally {
-      setIsDeactivating(false);
+      setLoadingFacultyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(facultyId);
+        return next;
+      });
     }
   }
 
   async function onActivateFaculty(facultyId: string) {
-    setIsActivating(true);
-    setActivateError(null);
+    setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
 
     try {
       const response = await fetch("/api/admin/faculty/activate", {
@@ -232,21 +230,20 @@ export function AdminFacultyDashboard() {
       if (response.ok) {
         setFacultyAccounts((prev) =>
           prev.map((faculty) =>
-            faculty.id === facultyId
-              ? { ...faculty, is_active: true }
-              : faculty,
+            faculty.id === facultyId ? { ...faculty, is_active: true } : faculty,
           ),
         );
         // Refresh from database
         await loadFacultyFromDatabase();
-      } else {
-        const errorData = await response.json();
-        setActivateError(errorData.error || "Failed to activate faculty");
       }
     } catch (error) {
-      setActivateError("An error occurred while activating the account");
+      console.error("Error activating faculty:", error);
     } finally {
-      setIsActivating(false);
+      setLoadingFacultyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(facultyId);
+        return next;
+      });
     }
   }
 
@@ -347,8 +344,7 @@ export function AdminFacultyDashboard() {
               }}
               onActivate={onActivateFaculty}
               onDeactivate={onDeactivateFaculty}
-              isActivating={isActivating}
-              isDeactivating={isDeactivating}
+              loadingFacultyIds={loadingFacultyIds}
             />
           ) : null}
 
@@ -511,8 +507,7 @@ function FacultyListPanel({
   onViewDetails,
   onActivate,
   onDeactivate,
-  isActivating,
-  isDeactivating,
+  loadingFacultyIds,
 }: {
   facultyAccounts: FacultyAccount[];
   isLoading: boolean;
@@ -521,8 +516,7 @@ function FacultyListPanel({
   onViewDetails: (facultyId: string) => void;
   onActivate: (facultyId: string) => void;
   onDeactivate: (facultyId: string) => void;
-  isActivating: boolean;
-  isDeactivating: boolean;
+  loadingFacultyIds: Set<string>;
 }) {
   return (
     <div>
@@ -568,20 +562,24 @@ function FacultyListPanel({
                         variant="secondary"
                         size="sm"
                         onClick={() => onDeactivate(faculty.id)}
-                        disabled={isDeactivating}
+                        disabled={loadingFacultyIds.has(faculty.id)}
                         className="text-amber-300 hover:text-amber-200"
                       >
-                        Deactivate
+                        {loadingFacultyIds.has(faculty.id)
+                          ? "Deactivating..."
+                          : "Deactivate"}
                       </Button>
                     ) : (
                       <Button
                         variant="secondary"
                         size="sm"
                         onClick={() => onActivate(faculty.id)}
-                        disabled={isActivating}
+                        disabled={loadingFacultyIds.has(faculty.id)}
                         className="text-green-400 hover:text-green-300"
                       >
-                        Activate
+                        {loadingFacultyIds.has(faculty.id)
+                          ? "Activating..."
+                          : "Activate"}
                       </Button>
                     )}
                     <Button
