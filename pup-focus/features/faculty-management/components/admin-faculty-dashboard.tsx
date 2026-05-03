@@ -16,12 +16,14 @@ import {
 
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 
-type AdminSection = "add" | "faculty" | "requirements";
+type AdminSection = "add" | "faculty" | "requirements" | "details";
 
 type FacultyAccount = {
   id: string;
   fullName: string;
   email: string;
+  is_active: boolean;
+  created_at: string;
   requirementStatus: Record<RequirementCode, RequirementStatus>;
 };
 
@@ -60,6 +62,8 @@ export function AdminFacultyDashboard() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [deactivateError, setDeactivateError] = useState<string | null>(null);
 
   useEffect(() => {
     loadFacultyFromDatabase();
@@ -178,6 +182,36 @@ export function AdminFacultyDashboard() {
     }
   }
 
+  async function onDeactivateFaculty(facultyId: string) {
+    setIsDeactivating(true);
+    setDeactivateError(null);
+
+    try {
+      const response = await fetch("/api/admin/faculty/deactivate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facultyProfileId: facultyId }),
+      });
+
+      if (response.ok) {
+        setFacultyAccounts((prev) =>
+          prev.map((faculty) =>
+            faculty.id === facultyId ? { ...faculty, is_active: false } : faculty,
+          ),
+        );
+        // Refresh from database
+        await loadFacultyFromDatabase();
+      } else {
+        const errorData = await response.json();
+        setDeactivateError(errorData.error || "Failed to deactivate faculty");
+      }
+    } catch (error) {
+      setDeactivateError("An error occurred while deactivating the account");
+    } finally {
+      setIsDeactivating(false);
+    }
+  }
+
   function updateRequirementStatus(
     facultyId: string,
     requirementCode: RequirementCode,
@@ -269,6 +303,12 @@ export function AdminFacultyDashboard() {
               isLoading={isLoading}
               onSelectFaculty={setSelectedFacultyId}
               onDeleteFaculty={onDeleteFaculty}
+              onViewDetails={(facultyId) => {
+                setSelectedFacultyId(facultyId);
+                setActiveSection("details");
+              }}
+              onDeactivate={onDeactivateFaculty}
+              isDeactivating={isDeactivating}
             />
           ) : null}
 
@@ -278,6 +318,13 @@ export function AdminFacultyDashboard() {
               selectedFaculty={selectedFaculty}
               onSelectFaculty={setSelectedFacultyId}
               onUpdateStatus={updateRequirementStatus}
+            />
+          ) : null}
+
+          {activeSection === "details" && selectedFaculty ? (
+            <FacultyDetailsPanel
+              selectedFaculty={selectedFaculty}
+              onBack={() => setActiveSection("faculty")}
             />
           ) : null}
         </section>
@@ -420,11 +467,17 @@ function FacultyListPanel({
   isLoading,
   onSelectFaculty,
   onDeleteFaculty,
+  onViewDetails,
+  onDeactivate,
+  isDeactivating,
 }: {
   facultyAccounts: FacultyAccount[];
   isLoading: boolean;
   onSelectFaculty: (facultyId: string) => void;
   onDeleteFaculty: (facultyId: string) => void;
+  onViewDetails: (facultyId: string) => void;
+  onDeactivate: (facultyId: string) => void;
+  isDeactivating: boolean;
 }) {
   return (
     <div>
@@ -452,7 +505,7 @@ function FacultyListPanel({
                 key={faculty.id}
                 className="rounded-xl border border-slate-700 bg-slate-950 p-4"
               >
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-col gap-3">
                   <button
                     type="button"
                     onClick={() => onSelectFaculty(faculty.id)}
@@ -460,15 +513,39 @@ function FacultyListPanel({
                   >
                     <p className="font-medium">{faculty.fullName}</p>
                     <p className="text-sm text-slate-400">{faculty.email}</p>
+                    <p className={`text-xs mt-1 ${faculty.is_active ? "text-green-400" : "text-red-400"}`}>
+                      Status: {faculty.is_active ? "Active" : "Inactive"}
+                    </p>
                   </button>
 
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => onDeleteFaculty(faculty.id)}
-                  >
-                    Delete
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onViewDetails(faculty.id)}
+                    >
+                      View Details
+                    </Button>
+                    {faculty.is_active && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onDeactivate(faculty.id)}
+                        disabled={isDeactivating}
+                        className="text-amber-300 hover:text-amber-200"
+                      >
+                        {isDeactivating ? "Deactivating..." : "Deactivate"}
+                      </Button>
+                    )}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onDeleteFaculty(faculty.id)}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))
@@ -584,6 +661,93 @@ function RequirementsPanel({
           })}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function FacultyDetailsPanel({
+  selectedFaculty,
+  onBack,
+}: {
+  selectedFaculty: FacultyAccount;
+  onBack: () => void;
+}) {
+  const createdDate = new Date(selectedFaculty.created_at);
+  const formattedDate = createdDate.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onBack}
+        className="mb-4 text-sm text-slate-400 hover:text-slate-200"
+      >
+        ← Back to Faculty List
+      </button>
+
+      <h2 className="text-lg font-semibold">Faculty Details</h2>
+
+      <div className="mt-6 space-y-4">
+        <article className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-semibold text-slate-500">Full Name</p>
+              <p className="text-sm text-slate-200">{selectedFaculty.fullName}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-slate-500">Email</p>
+              <p className="text-sm text-slate-200">{selectedFaculty.email}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-slate-500">Account Status</p>
+              <p
+                className={`text-sm ${
+                  selectedFaculty.is_active
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
+                {selectedFaculty.is_active ? "Active" : "Inactive"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-slate-500">Created Date</p>
+              <p className="text-sm text-slate-200">{formattedDate}</p>
+            </div>
+          </div>
+        </article>
+
+        <article className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+          <h3 className="font-semibold mb-3">Compliance Requirements</h3>
+          <div className="space-y-2">
+            {Object.entries(selectedFaculty.requirementStatus).map(
+              ([code, status]) => (
+                <div key={code} className="flex items-center justify-between">
+                  <p className="text-sm text-slate-400">{code}</p>
+                  <span
+                    className={`text-xs px-2 py-1 rounded ${
+                      status === "validated"
+                        ? "bg-green-900/30 text-green-400"
+                        : status === "uploaded"
+                          ? "bg-yellow-900/30 text-yellow-400"
+                          : "bg-red-900/30 text-red-400"
+                    }`}
+                  >
+                    {statusLabel(status)}
+                  </span>
+                </div>
+              ),
+            )}
+          </div>
+        </article>
+      </div>
     </div>
   );
 }
