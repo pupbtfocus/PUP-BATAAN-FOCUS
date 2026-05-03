@@ -64,6 +64,8 @@ export function AdminFacultyDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [deactivateError, setDeactivateError] = useState<string | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [detailsFacultyId, setDetailsFacultyId] = useState<string | null>(null);
 
   useEffect(() => {
     loadFacultyFromDatabase();
@@ -196,7 +198,9 @@ export function AdminFacultyDashboard() {
       if (response.ok) {
         setFacultyAccounts((prev) =>
           prev.map((faculty) =>
-            faculty.id === facultyId ? { ...faculty, is_active: false } : faculty,
+            faculty.id === facultyId
+              ? { ...faculty, is_active: false }
+              : faculty,
           ),
         );
         // Refresh from database
@@ -304,8 +308,8 @@ export function AdminFacultyDashboard() {
               onSelectFaculty={setSelectedFacultyId}
               onDeleteFaculty={onDeleteFaculty}
               onViewDetails={(facultyId) => {
-                setSelectedFacultyId(facultyId);
-                setActiveSection("details");
+                setDetailsFacultyId(facultyId);
+                setDetailsModalOpen(true);
               }}
               onDeactivate={onDeactivateFaculty}
               isDeactivating={isDeactivating}
@@ -320,14 +324,15 @@ export function AdminFacultyDashboard() {
               onUpdateStatus={updateRequirementStatus}
             />
           ) : null}
-
-          {activeSection === "details" && selectedFaculty ? (
-            <FacultyDetailsPanel
-              selectedFaculty={selectedFaculty}
-              onBack={() => setActiveSection("faculty")}
-            />
-          ) : null}
         </section>
+
+        {detailsModalOpen && detailsFacultyId && (
+          <FacultyDetailsModal
+            facultyId={detailsFacultyId}
+            facultyAccounts={facultyAccounts}
+            onClose={() => setDetailsModalOpen(false)}
+          />
+        )}
       </div>
     </div>
   );
@@ -505,24 +510,31 @@ function FacultyListPanel({
                 key={faculty.id}
                 className="rounded-xl border border-slate-700 bg-slate-950 p-4"
               >
-                <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-4">
                   <button
                     type="button"
                     onClick={() => onSelectFaculty(faculty.id)}
-                    className="text-left"
+                    className="text-left flex-1 min-w-0"
                   >
-                    <p className="font-medium">{faculty.fullName}</p>
-                    <p className="text-sm text-slate-400">{faculty.email}</p>
-                    <p className={`text-xs mt-1 ${faculty.is_active ? "text-green-400" : "text-red-400"}`}>
-                      Status: {faculty.is_active ? "Active" : "Inactive"}
-                    </p>
+                    <p className="font-medium truncate">{faculty.fullName}</p>
+                    <p className="text-sm text-slate-400 truncate">{faculty.email}</p>
                   </button>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span
+                      className={`text-xs px-2 py-1 rounded whitespace-nowrap ${
+                        faculty.is_active
+                          ? "bg-green-900/30 text-green-400"
+                          : "bg-red-900/30 text-red-400"
+                      }`}
+                    >
+                      {faculty.is_active ? "Active" : "Inactive"}
+                    </span>
                     <Button
                       variant="secondary"
                       size="sm"
                       onClick={() => onViewDetails(faculty.id)}
+                      className="text-blue-400 hover:text-blue-300"
                     >
                       View Details
                     </Button>
@@ -534,7 +546,7 @@ function FacultyListPanel({
                         disabled={isDeactivating}
                         className="text-amber-300 hover:text-amber-200"
                       >
-                        {isDeactivating ? "Deactivating..." : "Deactivate"}
+                        Deactivate
                       </Button>
                     )}
                     <Button
@@ -665,13 +677,21 @@ function RequirementsPanel({
   );
 }
 
-function FacultyDetailsPanel({
-  selectedFaculty,
-  onBack,
+function FacultyDetailsModal({
+  facultyId,
+  facultyAccounts,
+  onClose,
 }: {
-  selectedFaculty: FacultyAccount;
-  onBack: () => void;
+  facultyId: string;
+  facultyAccounts: FacultyAccount[];
+  onClose: () => void;
 }) {
+  const selectedFaculty = facultyAccounts.find((f) => f.id === facultyId);
+
+  if (!selectedFaculty) {
+    return null;
+  }
+
   const createdDate = new Date(selectedFaculty.created_at);
   const formattedDate = createdDate.toLocaleDateString("en-US", {
     year: "numeric",
@@ -680,73 +700,91 @@ function FacultyDetailsPanel({
   });
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-4 text-sm text-slate-400 hover:text-slate-200"
-      >
-        ← Back to Faculty List
-      </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Faculty Details</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-200"
+            aria-label="Close modal"
+          >
+            ✕
+          </button>
+        </div>
 
-      <h2 className="text-lg font-semibold">Faculty Details</h2>
+        <div className="space-y-4">
+          <article className="rounded-xl border border-slate-700 bg-slate-900 p-4">
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-slate-500">Full Name</p>
+                <p className="text-sm text-slate-200">
+                  {selectedFaculty.fullName}
+                </p>
+              </div>
 
-      <div className="mt-6 space-y-4">
-        <article className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs font-semibold text-slate-500">Full Name</p>
-              <p className="text-sm text-slate-200">{selectedFaculty.fullName}</p>
+              <div>
+                <p className="text-xs font-semibold text-slate-500">Email</p>
+                <p className="text-sm text-slate-200">{selectedFaculty.email}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-slate-500">
+                  Account Status
+                </p>
+                <p
+                  className={`text-sm ${
+                    selectedFaculty.is_active ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {selectedFaculty.is_active ? "Active" : "Inactive"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-slate-500">
+                  Created Date
+                </p>
+                <p className="text-sm text-slate-200">{formattedDate}</p>
+              </div>
             </div>
+          </article>
 
-            <div>
-              <p className="text-xs font-semibold text-slate-500">Email</p>
-              <p className="text-sm text-slate-200">{selectedFaculty.email}</p>
+          <article className="rounded-xl border border-slate-700 bg-slate-900 p-4">
+            <h3 className="font-semibold mb-3">Compliance Requirements</h3>
+            <div className="space-y-2">
+              {Object.entries(selectedFaculty.requirementStatus).map(
+                ([code, status]) => (
+                  <div key={code} className="flex items-center justify-between">
+                    <p className="text-sm text-slate-400">{code}</p>
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${
+                        status === "validated"
+                          ? "bg-green-900/30 text-green-400"
+                          : status === "uploaded"
+                            ? "bg-yellow-900/30 text-yellow-400"
+                            : "bg-red-900/30 text-red-400"
+                      }`}
+                    >
+                      {statusLabel(status)}
+                    </span>
+                  </div>
+                ),
+              )}
             </div>
+          </article>
+        </div>
 
-            <div>
-              <p className="text-xs font-semibold text-slate-500">Account Status</p>
-              <p
-                className={`text-sm ${
-                  selectedFaculty.is_active
-                    ? "text-green-400"
-                    : "text-red-400"
-                }`}
-              >
-                {selectedFaculty.is_active ? "Active" : "Inactive"}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold text-slate-500">Created Date</p>
-              <p className="text-sm text-slate-200">{formattedDate}</p>
-            </div>
-          </div>
-        </article>
-
-        <article className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-          <h3 className="font-semibold mb-3">Compliance Requirements</h3>
-          <div className="space-y-2">
-            {Object.entries(selectedFaculty.requirementStatus).map(
-              ([code, status]) => (
-                <div key={code} className="flex items-center justify-between">
-                  <p className="text-sm text-slate-400">{code}</p>
-                  <span
-                    className={`text-xs px-2 py-1 rounded ${
-                      status === "validated"
-                        ? "bg-green-900/30 text-green-400"
-                        : status === "uploaded"
-                          ? "bg-yellow-900/30 text-yellow-400"
-                          : "bg-red-900/30 text-red-400"
-                    }`}
-                  >
-                    {statusLabel(status)}
-                  </span>
-                </div>
-              ),
-            )}
-          </div>
-        </article>
+        <div className="mt-6 flex justify-end">
+          <Button
+            onClick={onClose}
+            variant="secondary"
+            className="text-slate-400 hover:text-slate-200"
+          >
+            Close
+          </Button>
+        </div>
       </div>
     </div>
   );
