@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/icons/pup-seal.png",
+        url: "/icons/pup-seal.png?v=2",
         type: "image/png",
       },
     ],
@@ -37,9 +37,13 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
       <head>
-        <link rel="icon" href="/icons/pup-seal.png" type="image/png" />
-        <link rel="shortcut icon" href="/icons/pup-seal.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/icons/pup-seal.png" />
+        <link rel="icon" href="/icons/pup-seal.png?v=2" type="image/png" />
+        <link
+          rel="shortcut icon"
+          href="/icons/pup-seal.png?v=2"
+          type="image/png"
+        />
+        <link rel="apple-touch-icon" href="/icons/pup-seal.png?v=2" />
       </head>
       <body className="min-h-full flex flex-col text-[var(--foreground)]">
         {children}
