@@ -34,12 +34,12 @@ export async function GET(request: NextRequest) {
     const serviceRoleClient = getServiceRoleClient();
     const { data: appUser } = await serviceRoleClient
       .from("app_users")
-      .select("is_active")
-      .eq("user_id", user.id)
-      .single();
+      .select("id, auth_user_id, profile_id, metadata")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
 
-    if (appUser && !appUser.is_active) {
-      // Sign out the user if they are inactive
+    // if metadata has explicit is_active === false, block sign-in
+    if (appUser && appUser.metadata && appUser.metadata.is_active === false) {
       await supabase.auth.signOut();
       return NextResponse.redirect(
         new URL(

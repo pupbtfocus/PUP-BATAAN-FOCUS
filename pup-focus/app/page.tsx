@@ -33,6 +33,23 @@ export default function Home() {
     }
 
     const { data: userData } = await supabase.auth.getUser();
+    // validate account active flag from server
+    try {
+      const resp = await fetch("/api/auth/validate");
+      if (resp.ok) {
+        const body = await resp.json();
+        if (body.is_active === false) {
+          await supabase.auth.signOut();
+          setError(
+            "Your account has been deactivated. Contact an administrator.",
+          );
+          setIsSubmitting(false);
+          return;
+        }
+      }
+    } catch (e) {
+      // ignore validation errors and proceed
+    }
     const signedInRole =
       (userData.user?.user_metadata?.role as AppRole | undefined) ??
       (userData.user?.app_metadata?.role as AppRole | undefined) ??

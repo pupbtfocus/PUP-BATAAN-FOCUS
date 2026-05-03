@@ -14,25 +14,39 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Deactivate the faculty account (soft delete - set is_active to false)
+    // Fetch the app_users row to obtain existing metadata
+    const { data: appUser, error: fetchError } = await supabase
+      .from("app_users")
+      .select("id, auth_user_id, profile_id, metadata")
+      .eq("id", facultyProfileId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error("Error fetching app_user before deactivation:", fetchError);
+      return NextResponse.json(
+        { error: "Failed to fetch faculty account" },
+        { status: 500 },
+      );
+    }
+
+    const existingMetadata = appUser?.metadata ?? {};
+    const updatedMetadata = { ...existingMetadata, is_active: false };
+
     const { error: updateError } = await supabase
       .from("app_users")
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .update({
+        metadata: updatedMetadata,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", facultyProfileId);
 
     if (updateError) {
-      console.error("Error deactivating faculty:", updateError);
+      console.error("Error updating app_users metadata:", updateError);
       return NextResponse.json(
         { error: "Failed to deactivate faculty account" },
         { status: 500 },
       );
     }
-
-    // Also update the faculty table if it exists
-    await supabase
-      .from("faculty")
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq("user_id", facultyProfileId);
 
     return NextResponse.json(
       { success: true, message: "Faculty account deactivated successfully" },

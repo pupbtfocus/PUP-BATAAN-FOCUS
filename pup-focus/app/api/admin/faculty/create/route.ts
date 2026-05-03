@@ -105,13 +105,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Add to app_users table for visibility
+    // Add to app_users table for visibility (use auth_user_id and profile_id)
     const { error: appUsersError } = await supabase.from("app_users").insert({
-      user_id: authData.user.id,
+      auth_user_id: authData.user.id,
+      profile_id: profileId,
       email,
       full_name: fullName,
       role: "faculty",
-      is_active: true,
+      metadata: { is_active: true },
       created_at: new Date().toISOString(),
     });
 

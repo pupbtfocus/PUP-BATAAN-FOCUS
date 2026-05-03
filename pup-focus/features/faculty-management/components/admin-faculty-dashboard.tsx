@@ -230,7 +230,9 @@ export function AdminFacultyDashboard() {
       if (response.ok) {
         setFacultyAccounts((prev) =>
           prev.map((faculty) =>
-            faculty.id === facultyId ? { ...faculty, is_active: true } : faculty,
+            faculty.id === facultyId
+              ? { ...faculty, is_active: true }
+              : faculty,
           ),
         );
         // Refresh from database
