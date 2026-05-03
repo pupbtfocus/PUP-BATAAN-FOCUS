@@ -22,17 +22,8 @@ type FacultyAccount = {
   id: string;
   fullName: string;
   email: string;
-  programCode: string;
-  programName: string;
   requirementStatus: Record<RequirementCode, RequirementStatus>;
 };
-
-const PROGRAMS = [
-  { code: "BSIT", name: "BS Information Technology" },
-  { code: "BSBA", name: "BS Business Administration" },
-  { code: "BSE", name: "BS Entrepreneurship" },
-  { code: "BSA", name: "BS Accountancy" },
-] as const;
 
 function buildInitialRequirementStatus(): Record<
   RequirementCode,
@@ -95,7 +86,6 @@ export function AdminFacultyDashboard() {
       fullName: "",
       email: "",
       password: "",
-      programCode: "",
     },
   });
 
@@ -123,9 +113,6 @@ export function AdminFacultyDashboard() {
 
     return {
       totalFaculty,
-      totalPrograms: new Set(
-        facultyAccounts.map((faculty) => faculty.programCode),
-      ).size,
       totalUploads,
       totalValidated,
     };
@@ -258,14 +245,10 @@ export function AdminFacultyDashboard() {
       </aside>
 
       <div className="space-y-6">
-        <section className="grid gap-4 md:grid-cols-4">
+        <section className="grid gap-4 md:grid-cols-3">
           <StatCard
             label="Faculty Accounts"
             value={String(metrics.totalFaculty)}
-          />
-          <StatCard
-            label="Programs Assigned"
-            value={String(metrics.totalPrograms)}
           />
           <StatCard
             label="Uploaded Requirements"
@@ -372,8 +355,7 @@ function AddFacultyPanel({
     <div>
       <h2 className="text-lg font-semibold">Add Faculty Account</h2>
       <p className="mt-1 text-sm text-slate-400">
-        Assign each faculty member to a program so required uploads follow the
-        curriculum template.
+        Create a new faculty account with email and password.
       </p>
 
       <form
@@ -421,25 +403,6 @@ function AddFacultyPanel({
           <FieldError message={form.formState.errors.password?.message} />
         </div>
 
-        <div>
-          <label className="text-sm text-slate-300" htmlFor="programCode">
-            Program Assignment
-          </label>
-          <select
-            id="programCode"
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-            {...form.register("programCode")}
-          >
-            <option value="">Select program</option>
-            {PROGRAMS.map((program) => (
-              <option key={program.code} value={program.code}>
-                {program.code} - {program.name}
-              </option>
-            ))}
-          </select>
-          <FieldError message={form.formState.errors.programCode?.message} />
-        </div>
-
         {createError ? (
           <p className="rounded-md border border-red-700 bg-red-950/20 px-3 py-2 text-sm text-red-300">
             {createError}
@@ -471,23 +434,6 @@ function FacultyListPanel({
   onSelectFaculty: (facultyId: string) => void;
   onDeleteFaculty: (facultyId: string) => void;
 }) {
-  const facultyByProgram = facultyAccounts.reduce(
-    (acc, faculty) => {
-      const programKey = `${faculty.programCode}:::${faculty.programName}`;
-      if (!acc[programKey]) {
-        acc[programKey] = [];
-      }
-
-      acc[programKey].push(faculty);
-      return acc;
-    },
-    {} as Record<string, FacultyAccount[]>,
-  );
-
-  const sortedProgramKeys = Object.keys(facultyByProgram).sort((a, b) =>
-    a.localeCompare(b),
-  );
-
   return (
     <div>
       <h2 className="text-lg font-semibold">Faculty List</h2>
@@ -508,61 +454,32 @@ function FacultyListPanel({
           </p>
         ) : null}
 
-        {!isLoading
-          ? sortedProgramKeys.map((programKey) => {
-              const [programCode, programName] = programKey.split(":::");
-              const programFaculty = facultyByProgram[programKey];
+        {!isLoading && facultyAccounts.length > 0
+          ? facultyAccounts.map((faculty) => (
+              <div
+                key={faculty.id}
+                className="rounded-xl border border-slate-700 bg-slate-950 p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onSelectFaculty(faculty.id)}
+                    className="text-left"
+                  >
+                    <p className="font-medium">{faculty.fullName}</p>
+                    <p className="text-sm text-slate-400">{faculty.email}</p>
+                  </button>
 
-              return (
-                <section
-                  key={programKey}
-                  className="rounded-xl border border-slate-700 bg-slate-900/60 p-4"
-                >
-                  <div className="mb-3 border-b border-slate-700 pb-2">
-                    <h3 className="font-semibold text-slate-100">
-                      {programCode} - {programName}
-                    </h3>
-                    <p className="text-xs text-slate-400">
-                      {programFaculty.length} faculty member
-                      {programFaculty.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {programFaculty.map((faculty) => (
-                      <div
-                        key={faculty.id}
-                        className="rounded-xl border border-slate-700 bg-slate-950 p-4"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <button
-                            type="button"
-                            onClick={() => onSelectFaculty(faculty.id)}
-                            className="text-left"
-                          >
-                            <p className="font-medium">{faculty.fullName}</p>
-                            <p className="text-sm text-slate-400">
-                              {faculty.email}
-                            </p>
-                            <p className="text-xs text-amber-300">
-                              Program: {faculty.programName}
-                            </p>
-                          </button>
-
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => onDeleteFaculty(faculty.id)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              );
-            })
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onDeleteFaculty(faculty.id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))
           : null}
       </div>
     </div>
@@ -611,10 +528,6 @@ function RequirementsPanel({
             <p>
               <span className="text-slate-400">Selected Faculty:</span>{" "}
               {selectedFaculty.fullName}
-            </p>
-            <p>
-              <span className="text-slate-400">Assigned Program:</span>{" "}
-              {selectedFaculty.programName}
             </p>
           </div>
 

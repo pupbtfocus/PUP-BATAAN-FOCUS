@@ -3,9 +3,9 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 
 export async function POST(request: NextRequest) {
   try {
-    const { fullName, email, password, programCode } = await request.json();
+    const { fullName, email, password } = await request.json();
 
-    if (!fullName || !email || !password || !programCode) {
+    if (!fullName || !email || !password) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -105,38 +105,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get program info
-    const { data: program, error: programError } = await supabase
-      .from("programs")
-      .select("id, code, name")
-      .eq("code", programCode)
-      .single();
-
-    if (programError || !program) {
-      return NextResponse.json(
-        { error: "Invalid program code" },
-        { status: 400 },
-      );
-    }
-
-    // Create faculty program assignment
-    const currentYear = new Date().getFullYear().toString();
-    const { error: assignmentError } = await supabase
-      .from("faculty_program_assignments")
-      .insert({
-        faculty_profile_id: profileId,
-        program_id: program.id,
-        academic_year: currentYear,
-        term: "1",
-      });
-
-    if (assignmentError) {
-      return NextResponse.json(
-        { error: assignmentError.message },
-        { status: 400 },
-      );
-    }
-
     // Add to app_users table for visibility
     const { error: appUsersError } = await supabase.from("app_users").insert({
       auth_user_id: authData.user.id,
@@ -144,9 +112,6 @@ export async function POST(request: NextRequest) {
       email,
       full_name: fullName,
       role: "faculty",
-      program_id: program.id,
-      program_code: program.code,
-      program_name: program.name,
     });
 
     if (appUsersError) {
@@ -162,7 +127,6 @@ export async function POST(request: NextRequest) {
         id: authData.user.id,
         email: authData.user.email,
         fullName,
-        programCode,
       },
     });
   } catch (error) {

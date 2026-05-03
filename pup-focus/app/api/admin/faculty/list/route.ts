@@ -36,16 +36,15 @@ export async function GET() {
 
     const supabase = getServiceRoleClient();
 
-    const { data: assignments, error: queryError } = await supabase
-      .from("faculty_program_assignments")
+    const { data: appUsers, error: queryError } = await supabase
+      .from("app_users")
       .select(
         `
-        faculty_profile_id,
-        program_id,
-        programs(code, name),
+        profile_id,
         profiles(id, full_name, email)
       `,
       )
+      .eq("role", "faculty")
       .limit(100);
 
     if (queryError) {
@@ -56,21 +55,16 @@ export async function GET() {
     }
 
     const faculty =
-      assignments
+      appUsers
         ?.map((item: any) => {
           const profile = Array.isArray(item.profiles)
             ? item.profiles[0]
             : item.profiles;
-          const program = Array.isArray(item.programs)
-            ? item.programs[0]
-            : item.programs;
 
           return {
-            id: item.faculty_profile_id,
+            id: item.profile_id,
             fullName: profile?.full_name || "Unknown",
             email: profile?.email || "Unknown",
-            programCode: program?.code || "Unknown",
-            programName: program?.name || "Unknown",
             requirementStatus: buildInitialRequirementStatus(),
           };
         })
@@ -78,13 +72,7 @@ export async function GET() {
           (value: any, index: number, self: any[]) =>
             self.findIndex((v) => v.id === value.id) === index,
         )
-        .sort((a: any, b: any) => {
-          if (a.programCode !== b.programCode) {
-            return a.programCode.localeCompare(b.programCode);
-          }
-
-          return a.fullName.localeCompare(b.fullName);
-        }) || [];
+        .sort((a: any, b: any) => a.fullName.localeCompare(b.fullName)) || [];
 
     return NextResponse.json({ faculty });
   } catch (error) {
