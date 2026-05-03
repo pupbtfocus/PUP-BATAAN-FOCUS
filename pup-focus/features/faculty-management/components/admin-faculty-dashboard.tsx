@@ -64,6 +64,8 @@ export function AdminFacultyDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [deactivateError, setDeactivateError] = useState<string | null>(null);
+  const [isActivating, setIsActivating] = useState(false);
+  const [activateError, setActivateError] = useState<string | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [detailsFacultyId, setDetailsFacultyId] = useState<string | null>(null);
 
@@ -216,6 +218,38 @@ export function AdminFacultyDashboard() {
     }
   }
 
+  async function onActivateFaculty(facultyId: string) {
+    setIsActivating(true);
+    setActivateError(null);
+
+    try {
+      const response = await fetch("/api/admin/faculty/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facultyProfileId: facultyId }),
+      });
+
+      if (response.ok) {
+        setFacultyAccounts((prev) =>
+          prev.map((faculty) =>
+            faculty.id === facultyId
+              ? { ...faculty, is_active: true }
+              : faculty,
+          ),
+        );
+        // Refresh from database
+        await loadFacultyFromDatabase();
+      } else {
+        const errorData = await response.json();
+        setActivateError(errorData.error || "Failed to activate faculty");
+      }
+    } catch (error) {
+      setActivateError("An error occurred while activating the account");
+    } finally {
+      setIsActivating(false);
+    }
+  }
+
   function updateRequirementStatus(
     facultyId: string,
     requirementCode: RequirementCode,
@@ -311,7 +345,9 @@ export function AdminFacultyDashboard() {
                 setDetailsFacultyId(facultyId);
                 setDetailsModalOpen(true);
               }}
+              onActivate={onActivateFaculty}
               onDeactivate={onDeactivateFaculty}
+              isActivating={isActivating}
               isDeactivating={isDeactivating}
             />
           ) : null}
@@ -473,7 +509,9 @@ function FacultyListPanel({
   onSelectFaculty,
   onDeleteFaculty,
   onViewDetails,
+  onActivate,
   onDeactivate,
+  isActivating,
   isDeactivating,
 }: {
   facultyAccounts: FacultyAccount[];
@@ -481,7 +519,9 @@ function FacultyListPanel({
   onSelectFaculty: (facultyId: string) => void;
   onDeleteFaculty: (facultyId: string) => void;
   onViewDetails: (facultyId: string) => void;
+  onActivate: (facultyId: string) => void;
   onDeactivate: (facultyId: string) => void;
+  isActivating: boolean;
   isDeactivating: boolean;
 }) {
   return (
@@ -517,28 +557,13 @@ function FacultyListPanel({
                     className="text-left flex-1 min-w-0"
                   >
                     <p className="font-medium truncate">{faculty.fullName}</p>
-                    <p className="text-sm text-slate-400 truncate">{faculty.email}</p>
+                    <p className="text-sm text-slate-400 truncate">
+                      {faculty.email}
+                    </p>
                   </button>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span
-                      className={`text-xs px-2 py-1 rounded whitespace-nowrap ${
-                        faculty.is_active
-                          ? "bg-green-900/30 text-green-400"
-                          : "bg-red-900/30 text-red-400"
-                      }`}
-                    >
-                      {faculty.is_active ? "Active" : "Inactive"}
-                    </span>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => onViewDetails(faculty.id)}
-                      className="text-blue-400 hover:text-blue-300"
-                    >
-                      View Details
-                    </Button>
-                    {faculty.is_active && (
+                    {faculty.is_active ? (
                       <Button
                         variant="secondary"
                         size="sm"
@@ -548,7 +573,25 @@ function FacultyListPanel({
                       >
                         Deactivate
                       </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onActivate(faculty.id)}
+                        disabled={isActivating}
+                        className="text-green-400 hover:text-green-300"
+                      >
+                        Activate
+                      </Button>
                     )}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onViewDetails(faculty.id)}
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      View Details
+                    </Button>
                     <Button
                       variant="secondary"
                       size="sm"
@@ -718,7 +761,9 @@ function FacultyDetailsModal({
           <article className="rounded-xl border border-slate-700 bg-slate-900 p-4">
             <div className="space-y-3">
               <div>
-                <p className="text-xs font-semibold text-slate-500">Full Name</p>
+                <p className="text-xs font-semibold text-slate-500">
+                  Full Name
+                </p>
                 <p className="text-sm text-slate-200">
                   {selectedFaculty.fullName}
                 </p>
@@ -726,7 +771,9 @@ function FacultyDetailsModal({
 
               <div>
                 <p className="text-xs font-semibold text-slate-500">Email</p>
-                <p className="text-sm text-slate-200">{selectedFaculty.email}</p>
+                <p className="text-sm text-slate-200">
+                  {selectedFaculty.email}
+                </p>
               </div>
 
               <div>
@@ -735,7 +782,9 @@ function FacultyDetailsModal({
                 </p>
                 <p
                   className={`text-sm ${
-                    selectedFaculty.is_active ? "text-green-400" : "text-red-400"
+                    selectedFaculty.is_active
+                      ? "text-green-400"
+                      : "text-red-400"
                   }`}
                 >
                   {selectedFaculty.is_active ? "Active" : "Inactive"}
