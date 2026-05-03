@@ -123,13 +123,6 @@ export function AdminFacultyDashboard() {
     setCreateError(null);
     setCreateSuccess(null);
 
-    const program = PROGRAMS.find((item) => item.code === input.programCode);
-    if (!program) {
-      setCreateError("Invalid program selected");
-      setIsCreating(false);
-      return;
-    }
-
     try {
       const response = await fetch("/api/admin/faculty/create", {
         method: "POST",
@@ -138,7 +131,6 @@ export function AdminFacultyDashboard() {
           fullName: input.fullName,
           email: input.email,
           password: input.password,
-          programCode: input.programCode,
         }),
       });
 
@@ -152,7 +144,7 @@ export function AdminFacultyDashboard() {
       setCreateSuccess(
         `Faculty account created successfully for ${input.email}`,
       );
-      form.reset({ fullName: "", email: "", password: "", programCode: "" });
+      form.reset({ fullName: "", email: "", password: "" });
 
       // Refresh faculty list from database
       await loadFacultyFromDatabase();
