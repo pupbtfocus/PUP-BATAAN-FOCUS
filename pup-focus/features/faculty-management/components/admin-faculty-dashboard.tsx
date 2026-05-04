@@ -103,28 +103,6 @@ export function AdminFacultyDashboard() {
     [facultyAccounts, selectedFacultyId],
   );
 
-  const metrics = useMemo(() => {
-    const totalFaculty = facultyAccounts.length;
-    const totalUploads = facultyAccounts.reduce((sum, faculty) => {
-      const uploaded = Object.values(faculty.requirementStatus).filter(
-        (status) => status !== "not_submitted",
-      ).length;
-      return sum + uploaded;
-    }, 0);
-    const totalValidated = facultyAccounts.reduce((sum, faculty) => {
-      const validated = Object.values(faculty.requirementStatus).filter(
-        (status) => status === "validated",
-      ).length;
-      return sum + validated;
-    }, 0);
-
-    return {
-      totalFaculty,
-      totalUploads,
-      totalValidated,
-    };
-  }, [facultyAccounts]);
-
   async function onAddFaculty(input: FacultyAccountFormInput) {
     setIsCreating(true);
     setCreateError(null);
@@ -272,8 +250,8 @@ export function AdminFacultyDashboard() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg">
+    <div className="grid items-stretch gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+      <aside className="h-full rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg">
         <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
           Admin Workspace
         </p>
@@ -307,23 +285,8 @@ export function AdminFacultyDashboard() {
         </nav>
       </aside>
 
-      <div className="space-y-6">
-        <section className="grid gap-4 md:grid-cols-3">
-          <StatCard
-            label="Faculty Accounts"
-            value={String(metrics.totalFaculty)}
-          />
-          <StatCard
-            label="Uploaded Requirements"
-            value={String(metrics.totalUploads)}
-          />
-          <StatCard
-            label="Validated Requirements"
-            value={String(metrics.totalValidated)}
-          />
-        </section>
-
-        <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg">
+      <div>
+        <section className="h-full rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg">
           {activeSection === "add" ? (
             <AddFacultyPanel
               form={form}
@@ -369,15 +332,6 @@ export function AdminFacultyDashboard() {
         )}
       </div>
     </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <article className="rounded-lg border border-slate-700 bg-slate-900 p-5">
-      <p className="text-sm text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-bold">{value}</p>
-    </article>
   );
 }
 
@@ -430,14 +384,14 @@ function AddFacultyPanel({
   createSuccess: string | null;
 }) {
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <h2 className="text-lg font-semibold">Add Faculty Account</h2>
       <p className="mt-1 text-sm text-slate-400">
         Create a new faculty account with email and password.
       </p>
 
       <form
-        className="mt-4 space-y-3"
+        className="mt-4 flex flex-1 flex-col gap-3"
         onSubmit={form.handleSubmit(onAddFaculty)}
       >
         <div>
@@ -493,7 +447,7 @@ function AddFacultyPanel({
           </p>
         ) : null}
 
-        <Button className="w-full" type="submit" disabled={isCreating}>
+        <Button className="mt-auto w-full" type="submit" disabled={isCreating}>
           {isCreating ? "Creating account..." : "Add Faculty Account"}
         </Button>
       </form>
