@@ -101,7 +101,11 @@ function statusStyles(status: SubmissionStatus): string {
   return "bg-sky-900/30 text-sky-300 border-sky-800";
 }
 
-export function FacultySubmissionPanel() {
+export function FacultySubmissionPanel({
+  facultyName,
+}: {
+  facultyName?: string | null;
+}) {
   const academicYears = useMemo(() => buildAcademicYears(), []);
   const pastSubmissions = useMemo(() => buildPastSubmissions(), []);
   const [activeView, setActiveView] = useState<PanelView>("submit");
@@ -161,8 +165,17 @@ export function FacultySubmissionPanel() {
   }
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-      <aside className="rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-lg">
+    <section className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)] h-full">
+      <aside className="rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-lg sticky top-28 self-start">
+        {/* Account card at top of sidebar */}
+        <div className="mb-4">
+          <div className="rounded-xl bg-slate-950 p-3">
+            <p className="text-sm text-slate-400">Faculty</p>
+            <p className="mt-1 font-semibold text-slate-100">
+              {facultyName ?? "Faculty"}
+            </p>
+          </div>
+        </div>
         <p className="px-2 text-sm uppercase tracking-[0.22em] text-amber-300">
           Menu
         </p>
@@ -192,9 +205,9 @@ export function FacultySubmissionPanel() {
         </div>
       </aside>
 
-      <div className="space-y-6">
+      <div className="space-y-6 h-full overflow-y-auto">
         {activeView === "submit" && (
-          <article className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
+          <article className="rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-lg min-h-[600px]">
             <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
               Faculty Workspace
             </p>
@@ -332,7 +345,7 @@ export function FacultySubmissionPanel() {
         )}
 
         {activeView === "guide" && (
-          <article className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
+          <article className="rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-lg min-h-[600px]">
             <h3 className="text-lg font-semibold text-slate-100">
               Submission Guide
             </h3>
@@ -364,7 +377,7 @@ export function FacultySubmissionPanel() {
         )}
 
         {activeView === "history" && (
-          <article className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
+          <article className="rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-lg min-h-[600px]">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
