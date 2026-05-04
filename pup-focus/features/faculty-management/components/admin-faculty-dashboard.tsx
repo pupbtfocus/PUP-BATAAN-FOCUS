@@ -589,6 +589,12 @@ function RequirementsPanel({
         params.set("semester", selectedSemester);
       }
 
+      console.log("Fetching verification status with params:", {
+        facultyId: selectedFacultyId,
+        academicYear: selectedAcademicYear,
+        semester: selectedSemester,
+      });
+
       const response = await fetch(
         `/api/admin/faculty/requirements/verification?${params.toString()}`,
       );
@@ -598,16 +604,26 @@ function RequirementsPanel({
       }
 
       const data = await response.json();
+      console.log("Verification response:", data);
+
       const years: string[] = data.availableAcademicYears ?? [];
       const selectedYear = data.selectedAcademicYear ?? "";
       const selectedSem =
         (data.selectedSemester as SemesterOption | undefined) ?? "1st Semester";
+
+      console.log("Setting verification status:", {
+        requirementStatus: data.requirementStatus,
+        years,
+        selectedYear,
+        selectedSem,
+      });
 
       setAvailableAcademicYears(years);
       setAcademicYear(selectedYear);
       setSemester(selectedSem);
       setVerificationStatus(data.requirementStatus ?? null);
     } catch (error) {
+      console.error("Verification fetch error:", error);
       setVerificationError(
         "Unable to load requirements for the selected filter.",
       );
@@ -627,7 +643,27 @@ function RequirementsPanel({
       return;
     }
 
-    fetchVerificationStatus(selectedFaculty.id);
+    // Load available academic years without setting requirement status yet
+    // Requirement status will be set when modal is opened
+    (async () => {
+      try {
+        const response = await fetch(
+          `/api/admin/faculty/requirements/verification?facultyId=${selectedFaculty.id}`,
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const years: string[] = data.availableAcademicYears ?? [];
+          const selectedYear = data.selectedAcademicYear ?? "";
+          setAvailableAcademicYears(years);
+          setAcademicYear(selectedYear);
+          setSemester("1st Semester");
+          // Don't set verification status here - wait for modal to open
+          setVerificationStatus(null);
+        }
+      } catch (error) {
+        console.error("Failed to load academic years");
+      }
+    })();
   }, [selectedFaculty]);
 
   async function onOpenModal() {
@@ -932,42 +968,68 @@ function RequirementsVerificationModal({
           {semester}
         </p>
 
+        <div className="mt-3 rounded-lg border border-amber-700/50 bg-amber-900/20 p-3">
+          <p className="text-xs text-amber-300 font-medium">
+            Requirement Status Guide:
+          </p>
+          <ul className="mt-2 space-y-1 text-xs text-amber-200">
+            <li>
+              • <span className="text-green-400">Validated</span> - Admin
+              approved
+            </li>
+            <li>
+              • <span className="text-yellow-400">Uploaded</span> - Waiting for
+              admin review (has View button)
+            </li>
+            <li>
+              • <span className="text-red-400">Not Submitted</span> - Faculty
+              hasn't submitted yet
+            </li>
+          </ul>
+        </div>
+
         <div className="mt-4 space-y-2">
-          {DEFAULT_REQUIREMENTS.map((code) => {
-            const status = requirementStatus?.[code] ?? "not_submitted";
-            return (
-              <div
-                key={code}
-                className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
-              >
-                <p className="text-sm text-slate-300">
-                  {REQUIREMENT_LABEL[code]}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`rounded px-2 py-1 text-xs ${
-                      status === "validated"
-                        ? "bg-green-900/30 text-green-400"
-                        : status === "uploaded"
-                          ? "bg-yellow-900/30 text-yellow-400"
-                          : "bg-red-900/30 text-red-400"
-                    }`}
-                  >
-                    {statusLabel(status)}
-                  </span>
-                  {status === "uploaded" && (
-                    <button
-                      type="button"
-                      onClick={() => handleViewRequirement(code)}
-                      className="rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+          {requirementStatus ? (
+            DEFAULT_REQUIREMENTS.map((code) => {
+              const status = requirementStatus[code] ?? "not_submitted";
+              return (
+                <div
+                  key={code}
+                  className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
+                >
+                  <p className="text-sm text-slate-300">
+                    {REQUIREMENT_LABEL[code]}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`rounded px-2 py-1 text-xs ${
+                        status === "validated"
+                          ? "bg-green-900/30 text-green-400"
+                          : status === "uploaded"
+                            ? "bg-yellow-900/30 text-yellow-400"
+                            : "bg-red-900/30 text-red-400"
+                      }`}
                     >
-                      View
-                    </button>
-                  )}
+                      {statusLabel(status)}
+                    </span>
+                    {status === "uploaded" && (
+                      <button
+                        type="button"
+                        onClick={() => handleViewRequirement(code)}
+                        className="rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+                      >
+                        View
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <p className="text-sm text-slate-400">
+              No requirements data loaded. Please refresh the modal.
+            </p>
+          )}
         </div>
 
         <div className="mt-6 flex justify-end">

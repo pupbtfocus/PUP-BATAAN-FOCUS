@@ -12,11 +12,7 @@ const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
 const PANEL_VIEWS = ["submit", "history", "status", "guide"] as const;
 
 type PanelView = (typeof PANEL_VIEWS)[number];
-type SubmissionStatus =
-  | "Pending Review"
-  | "Submitted"
-  | "Validated"
-  | "Rejected";
+type HistorySubmissionStatus = "Pending" | "Validated" | "Rejected";
 
 type RequirementStatus = {
   code: RequirementCode;
@@ -30,9 +26,9 @@ type PastSubmission = {
   academicYear: string;
   semester: (typeof SEMESTER_OPTIONS)[number];
   requirementCode: RequirementCode;
-  status: SubmissionStatus;
+  status: HistorySubmissionStatus;
   submittedAt: string;
-  remarks: string;
+  remarks?: string;
 };
 
 type SubmissionFormState = {
@@ -54,87 +50,6 @@ function buildAcademicYears(count = 5): string[] {
   });
 }
 
-function buildPastSubmissions(): PastSubmission[] {
-  return [
-    {
-      id: "sub-001",
-      academicYear: "2025-2026",
-      semester: "1st Semester",
-      requirementCode: "grade_sheet",
-      status: "Validated",
-      submittedAt: "2026-03-18",
-      remarks: "Finalized class records attached.",
-    },
-    {
-      id: "sub-002",
-      academicYear: "2025-2026",
-      semester: "1st Semester",
-      requirementCode: "enhanced_syllabus",
-      status: "Submitted",
-      submittedAt: "2026-03-11",
-      remarks: "Updated course outcomes included.",
-    },
-    {
-      id: "sub-003",
-      academicYear: "2025-2026",
-      semester: "2nd Semester",
-      requirementCode: "midterm_package",
-      status: "Pending Review",
-      submittedAt: "2026-04-02",
-      remarks: "Waiting for admin validation.",
-    },
-    {
-      id: "sub-004",
-      academicYear: "2024-2025",
-      semester: "2nd Semester",
-      requirementCode: "final_package",
-      status: "Validated",
-      submittedAt: "2025-05-19",
-      remarks: "All exam papers uploaded.",
-    },
-    {
-      id: "sub-005",
-      academicYear: "2024-2025",
-      semester: "1st Semester",
-      requirementCode: "class_orientation",
-      status: "Validated",
-      submittedAt: "2025-10-04",
-      remarks: "Orientation photos and narrative report submitted.",
-    },
-  ];
-}
-
-function buildRequirementStatuses(): RequirementStatus[] {
-  return [
-    {
-      code: "grade_sheet",
-      status: "Validated",
-      reviewedAt: "2026-03-20",
-      feedback: "Grade sheets are complete and accurate.",
-    },
-    {
-      code: "enhanced_syllabus",
-      status: "Pending",
-      feedback: "Under review",
-    },
-    {
-      code: "midterm_package",
-      status: "Rejected",
-      reviewedAt: "2026-04-05",
-      feedback: "Missing some required documents. Please resubmit.",
-    },
-    {
-      code: "final_package",
-      status: "Validated",
-      reviewedAt: "2026-05-15",
-    },
-    {
-      code: "class_orientation",
-      status: "Pending",
-    },
-  ];
-}
-
 function requirementStatusStyles(
   status: "Validated" | "Rejected" | "Pending" | "Not Submitted",
 ): string {
@@ -153,7 +68,6 @@ export function FacultySubmissionPanel({
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const academicYears = useMemo(() => buildAcademicYears(), []);
-  const pastSubmissions = useMemo(() => buildPastSubmissions(), []);
   const [activeView, setActiveView] = useState<PanelView>("submit");
   const [form, setForm] = useState<SubmissionFormState>({
     academicYear: academicYears[0] ?? "",
@@ -172,6 +86,9 @@ export function FacultySubmissionPanel({
   const [historySemester, setHistorySemester] = useState<
     (typeof SEMESTER_OPTIONS)[number] | "All"
   >("All");
+  const [pastSubmissions, setPastSubmissions] = useState<PastSubmission[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [requirementStatuses, setRequirementStatuses] = useState<
     RequirementStatus[]
   >([]);
@@ -206,7 +123,27 @@ export function FacultySubmissionPanel({
       }
     }
 
+    async function fetchHistory() {
+      try {
+        setIsLoadingHistory(true);
+        setHistoryError(null);
+        const response = await fetch("/api/faculty/submissions/history");
+        if (!response.ok) {
+          setHistoryError("Failed to load submission history");
+          return;
+        }
+
+        const data = await response.json();
+        setPastSubmissions(data.submissions || []);
+      } catch (error) {
+        setHistoryError("Error loading submission history");
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    }
+
     fetchStatuses();
+    fetchHistory();
   }, []);
 
   const filteredPastSubmissions = useMemo(() => {
@@ -676,7 +613,13 @@ export function FacultySubmissionPanel({
             </div>
 
             <div className="mt-5 space-y-3">
-              {filteredPastSubmissions.length > 0 ? (
+              {isLoadingHistory ? (
+                <p className="text-sm text-slate-400">
+                  Loading submission history...
+                </p>
+              ) : historyError ? (
+                <p className="text-sm text-red-400">{historyError}</p>
+              ) : filteredPastSubmissions.length > 0 ? (
                 filteredPastSubmissions.map((submission) => (
                   <article
                     key={submission.id}
@@ -696,14 +639,18 @@ export function FacultySubmissionPanel({
                       </div>
 
                       <span
-                        className={`rounded-full border px-3 py-1 text-xs font-medium ${statusStyles(submission.status)}`}
+                        className={`rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(submission.status)}`}
                       >
-                        {submission.status}
+                        {submission.status === "Validated"
+                          ? "✓ Validated"
+                          : submission.status === "Rejected"
+                            ? "✗ Rejected"
+                            : "⏳ Pending"}
                       </span>
                     </div>
 
                     <p className="mt-3 text-sm text-slate-300">
-                      {submission.remarks}
+                      {submission.remarks || "No remarks provided."}
                     </p>
                   </article>
                 ))

@@ -101,13 +101,23 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    const { data: appUserRow } = await supabase
+    const { data: appUserRow, error: appUserError } = await supabase
       .from("app_users")
       .select("id, profile_id")
       .eq("id", facultyId)
       .maybeSingle();
 
-    const facultyProfileId = appUserRow?.profile_id ?? facultyId;
+    if (appUserError || !appUserRow?.profile_id) {
+      return NextResponse.json(
+        {
+          error: "Faculty profile not found",
+          details: appUserError?.message || "No profile_id for this faculty",
+        },
+        { status: 404 },
+      );
+    }
+
+    const facultyProfileId = appUserRow.profile_id;
     const assignmentFacultyIds = Array.from(
       new Set([facultyId, facultyProfileId].filter(Boolean)),
     );
@@ -163,6 +173,7 @@ export async function GET(request: NextRequest) {
       .from("submissions")
       .select("requirement_code, status, submitted_at")
       .eq("faculty_profile_id", facultyProfileId)
+      .order("submitted_at", { ascending: false })
       .limit(1000);
 
     if (submissionsError) {
@@ -181,6 +192,7 @@ export async function GET(request: NextRequest) {
       validated: 2,
     };
 
+    // Process submissions: get the best status for each requirement (highest rank)
     for (const row of submissionRows ?? []) {
       const code =
         row.requirement_code as (typeof DEFAULT_REQUIREMENTS)[number];

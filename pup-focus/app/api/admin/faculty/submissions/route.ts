@@ -35,13 +35,23 @@ export async function GET(request: NextRequest) {
     const supabase = getServiceRoleClient();
 
     // Get faculty profile ID
-    const { data: appUserRow } = await supabase
+    const { data: appUserRow, error: appUserError } = await supabase
       .from("app_users")
       .select("profile_id")
       .eq("id", facultyId)
       .maybeSingle();
 
-    const facultyProfileId = appUserRow?.profile_id ?? facultyId;
+    if (appUserError || !appUserRow?.profile_id) {
+      return NextResponse.json(
+        {
+          error: "Faculty profile not found",
+          details: appUserError?.message || "No profile_id for this faculty",
+        },
+        { status: 404 },
+      );
+    }
+
+    const facultyProfileId = appUserRow.profile_id;
 
     // Get submissions with document versions
     const { data: submissions, error: submissionsError } = await supabase
