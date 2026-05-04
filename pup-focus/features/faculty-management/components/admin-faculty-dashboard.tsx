@@ -835,6 +835,10 @@ function RequirementsVerificationModal({
     useState<RequirementCode | null>(null);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
+  const [reviewingSubmissionId, setReviewingSubmissionId] = useState<
+    string | null
+  >(null);
+  const [reviewRemarks, setReviewRemarks] = useState("");
 
   async function handleViewRequirement(code: RequirementCode) {
     setIsLoadingSubmissions(true);
@@ -854,6 +858,49 @@ function RequirementsVerificationModal({
       console.error("Failed to load submissions:", error);
     } finally {
       setIsLoadingSubmissions(false);
+    }
+  }
+
+  async function handleReviewSubmission(
+    submissionId: string,
+    decision: "validated" | "rejected",
+  ) {
+    setReviewingSubmissionId(submissionId);
+    try {
+      // Get current user's profile for reviewer_profile_id
+      const authResponse = await fetch("/api/auth/me");
+      const authData = await authResponse.json();
+      const reviewerProfileId = authData.profile_id;
+
+      const response = await fetch("/api/admin/faculty/submissions/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submissionId,
+          decision,
+          remarks: reviewRemarks,
+          reviewerProfileId,
+        }),
+      });
+
+      if (response.ok) {
+        // Update submissions list to reflect the change
+        setSubmissions(
+          submissions.map((sub) =>
+            sub.id === submissionId ? { ...sub, status: decision } : sub,
+          ),
+        );
+        setReviewRemarks("");
+        alert(`Submission ${decision} successfully!`);
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
+      }
+    } catch (error) {
+      console.error("Failed to review submission:", error);
+      alert("Failed to process review. Please try again.");
+    } finally {
+      setReviewingSubmissionId(null);
     }
   }
 
@@ -927,6 +974,44 @@ function RequirementsVerificationModal({
                         ))}
                       </div>
                     )}
+
+                  {submission.status === "uploaded" && (
+                    <div className="mt-4 space-y-3 border-t border-slate-700 pt-3">
+                      <textarea
+                        placeholder="Add remarks (optional)"
+                        value={reviewRemarks}
+                        onChange={(e) => setReviewRemarks(e.target.value)}
+                        className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300 placeholder-slate-500 outline-none focus:ring focus:ring-amber-300/30"
+                        rows={3}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleReviewSubmission(submission.id, "validated")
+                          }
+                          disabled={reviewingSubmissionId === submission.id}
+                          className="flex-1 rounded-md bg-green-600 px-3 py-2 text-xs text-white font-medium hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {reviewingSubmissionId === submission.id
+                            ? "Approving..."
+                            : "✓ Approve"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleReviewSubmission(submission.id, "rejected")
+                          }
+                          disabled={reviewingSubmissionId === submission.id}
+                          className="flex-1 rounded-md bg-red-600 px-3 py-2 text-xs text-white font-medium hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {reviewingSubmissionId === submission.id
+                            ? "Rejecting..."
+                            : "✗ Reject"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

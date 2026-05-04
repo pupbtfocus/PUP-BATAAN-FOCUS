@@ -102,7 +102,7 @@ export function FacultySubmissionPanel({
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(true);
   const [statusError, setStatusError] = useState<string | null>(null);
 
-  // Fetch real requirement statuses on mount
+  // Fetch real requirement statuses on mount and periodically refresh
   useEffect(() => {
     async function fetchStatuses() {
       try {
@@ -142,8 +142,14 @@ export function FacultySubmissionPanel({
       }
     }
 
+    // Initial load
     fetchStatuses();
     fetchHistory();
+
+    // Refresh statuses every 10 seconds to catch admin approvals
+    const statusInterval = setInterval(fetchStatuses, 10000);
+
+    return () => clearInterval(statusInterval);
   }, []);
 
   const filteredPastSubmissions = useMemo(() => {
@@ -409,16 +415,43 @@ export function FacultySubmissionPanel({
 
         {activeView === "status" && (
           <article className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
-            <div>
-              <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                Requirement Status
-              </p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-100">
-                Validation Status
-              </h3>
-              <p className="mt-2 text-sm text-slate-400">
-                Track the status of all your requirement submissions.
-              </p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
+                  Requirement Status
+                </p>
+                <h3 className="mt-2 text-2xl font-semibold text-slate-100">
+                  Validation Status
+                </h3>
+                <p className="mt-2 text-sm text-slate-400">
+                  Track the status of all your requirement submissions.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsLoadingStatuses(true);
+                  try {
+                    const response = await fetch(
+                      "/api/faculty/submissions/status",
+                    );
+                    if (response.ok) {
+                      const data = await response.json();
+                      setRequirementStatuses(data.requirementStatuses || []);
+                      setStatusCounts(data.counts || null);
+                    }
+                  } catch (error) {
+                    console.error("Refresh error:", error);
+                  } finally {
+                    setIsLoadingStatuses(false);
+                  }
+                }}
+                disabled={isLoadingStatuses}
+                className="whitespace-nowrap rounded-md bg-amber-600 px-3 py-2 text-xs text-white hover:bg-amber-700 disabled:opacity-50"
+                title="Refresh status (auto-refreshes every 10 seconds)"
+              >
+                {isLoadingStatuses ? "⟳ Refreshing..." : "⟳ Refresh"}
+              </button>
             </div>
 
             {statusCounts && !isLoadingStatuses && (

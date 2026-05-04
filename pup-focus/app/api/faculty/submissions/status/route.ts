@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Get faculty profile ID
+    // Always fetch fresh profile_id from database (don't use cached session)
     const { data: appUser, error: appUserError } = await supabase
       .from("app_users")
       .select("profile_id")
@@ -46,6 +46,13 @@ export async function GET(request: NextRequest) {
         { status: 404 },
       );
     }
+
+    console.log(
+      "Faculty profile found:",
+      appUser.profile_id,
+      "for auth_user:",
+      user.id,
+    );
 
     // Get all submissions with review decisions
     const { data: submissions, error: submissionsError } = await supabase
@@ -65,6 +72,12 @@ export async function GET(request: NextRequest) {
       )
       .eq("faculty_profile_id", appUser.profile_id)
       .order("submitted_at", { ascending: false });
+
+    console.log("Submissions query result:", {
+      count: submissions?.length,
+      error: submissionsError,
+      profileId: appUser.profile_id,
+    });
 
     if (submissionsError) {
       logger.error("submissions_fetch_failed", {
@@ -103,7 +116,12 @@ export async function GET(request: NextRequest) {
       let status: "Validated" | "Rejected" | "Pending" | "Not Submitted" =
         "Not Submitted";
 
-      if (latestReview?.decision === "validated") {
+      // Check submission status first (updated by admin approval)
+      if (submission.status === "validated") {
+        status = "Validated";
+      } else if (submission.status === "rejected") {
+        status = "Rejected";
+      } else if (latestReview?.decision === "validated") {
         status = "Validated";
       } else if (latestReview?.decision === "rejected") {
         status = "Rejected";
@@ -139,9 +157,19 @@ export async function GET(request: NextRequest) {
       ).length,
     };
 
+    console.log("Status endpoint returning:", {
+      submissionsCount: submissions?.length,
+      profileId: appUser.profile_id,
+      counts,
+    });
+
     return NextResponse.json({
       requirementStatuses,
       counts,
+      debug: {
+        profileId: appUser.profile_id,
+        submissionsFound: submissions?.length || 0,
+      },
     });
   } catch (error) {
     logger.error("status_endpoint_error", {
