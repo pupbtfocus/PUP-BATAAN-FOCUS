@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DEFAULT_REQUIREMENTS,
@@ -149,6 +149,7 @@ export function FacultySubmissionPanel({
 }: {
   facultyName?: string | null;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const academicYears = useMemo(() => buildAcademicYears(), []);
   const pastSubmissions = useMemo(() => buildPastSubmissions(), []);
   const [activeView, setActiveView] = useState<PanelView>("submit");
@@ -192,16 +193,58 @@ export function FacultySubmissionPanel({
     setSubmissionMessage(null);
 
     try {
-      const referenceId = crypto.randomUUID();
+      const fileInput = fileInputRef.current;
+      const file = fileInput?.files?.[0];
+
+      if (!file) {
+        setSubmissionMessage("Please select a file to submit.");
+        return;
+      }
+
+      // Create FormData with file and metadata
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("academicYear", form.academicYear);
+      formData.append("semester", form.semester);
+      formData.append("requirementCode", form.requirementCode);
+      formData.append("remarks", form.remarks);
+
+      // Call the submission API
+      const response = await fetch("/api/faculty/submissions/create", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setSubmissionMessage(
+          `Error: ${errorData.error || "Failed to submit requirement"}`,
+        );
+        return;
+      }
+
+      const result = await response.json();
+
       setSubmissionMessage(
-        `Queued ${REQUIREMENT_LABEL[form.requirementCode]} for S.Y. ${form.academicYear} ${form.semester}${form.fileName ? ` using ${form.fileName}` : ""}. Reference: ${referenceId}`,
+        `✓ Successfully submitted ${REQUIREMENT_LABEL[form.requirementCode]} for S.Y. ${form.academicYear} ${form.semester}. Reference ID: ${result.submissionId.slice(0, 8)}...`,
       );
+
+      // Reset form
       setForm((prev) => ({
         ...prev,
         requirementCode: DEFAULT_REQUIREMENTS[0],
         fileName: "",
         remarks: "",
       }));
+
+      // Clear file input
+      if (fileInput) {
+        fileInput.value = "";
+      }
+    } catch (error) {
+      setSubmissionMessage(
+        `Error: ${error instanceof Error ? error.message : "An unexpected error occurred"}`,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -342,6 +385,7 @@ export function FacultySubmissionPanel({
                   File to Submit
                 </label>
                 <input
+                  ref={fileInputRef}
                   id="fileName"
                   type="file"
                   className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950 hover:file:bg-amber-400"
