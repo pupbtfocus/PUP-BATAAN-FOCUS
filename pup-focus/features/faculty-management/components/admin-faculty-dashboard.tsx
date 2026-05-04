@@ -15,6 +15,7 @@ import {
 } from "@/features/faculty-management/schemas/faculty-account.schema";
 
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
+type SemesterOption = "1st Semester" | "2nd Semester";
 
 type AdminSection = "add" | "faculty" | "requirements" | "details";
 
@@ -26,6 +27,8 @@ type FacultyAccount = {
   created_at: string;
   requirementStatus: Record<RequirementCode, RequirementStatus>;
 };
+
+const SEMESTER_OPTIONS: SemesterOption[] = ["1st Semester", "2nd Semester"];
 
 function buildInitialRequirementStatus(): Record<
   RequirementCode,
@@ -227,28 +230,6 @@ export function AdminFacultyDashboard() {
     }
   }
 
-  function updateRequirementStatus(
-    facultyId: string,
-    requirementCode: RequirementCode,
-    status: RequirementStatus,
-  ) {
-    setFacultyAccounts((prev) =>
-      prev.map((faculty) => {
-        if (faculty.id !== facultyId) {
-          return faculty;
-        }
-
-        return {
-          ...faculty,
-          requirementStatus: {
-            ...faculty.requirementStatus,
-            [requirementCode]: status,
-          },
-        };
-      }),
-    );
-  }
-
   return (
     <div className="grid items-stretch gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="h-full rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg">
@@ -318,7 +299,6 @@ export function AdminFacultyDashboard() {
               facultyAccounts={facultyAccounts}
               selectedFaculty={selectedFaculty}
               onSelectFaculty={setSelectedFacultyId}
-              onUpdateStatus={updateRequirementStatus}
             />
           ) : null}
         </section>
@@ -568,17 +548,97 @@ function RequirementsPanel({
   facultyAccounts,
   selectedFaculty,
   onSelectFaculty,
-  onUpdateStatus,
 }: {
   facultyAccounts: FacultyAccount[];
   selectedFaculty: FacultyAccount | null;
   onSelectFaculty: (facultyId: string) => void;
-  onUpdateStatus: (
-    facultyId: string,
-    requirementCode: RequirementCode,
-    status: RequirementStatus,
-  ) => void;
 }) {
+  const [academicYear, setAcademicYear] = useState("");
+  const [semester, setSemester] = useState<SemesterOption>("1st Semester");
+  const [availableAcademicYears, setAvailableAcademicYears] = useState<
+    string[]
+  >([]);
+  const [verificationStatus, setVerificationStatus] = useState<Record<
+    RequirementCode,
+    RequirementStatus
+  > | null>(null);
+  const [isLoadingVerification, setIsLoadingVerification] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(
+    null,
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  async function fetchVerificationStatus(
+    selectedFacultyId: string,
+    selectedAcademicYear?: string,
+    selectedSemester?: SemesterOption,
+  ) {
+    setIsLoadingVerification(true);
+    setVerificationError(null);
+
+    try {
+      const params = new URLSearchParams({
+        facultyId: selectedFacultyId,
+      });
+
+      if (selectedAcademicYear) {
+        params.set("academicYear", selectedAcademicYear);
+      }
+
+      if (selectedSemester) {
+        params.set("semester", selectedSemester);
+      }
+
+      const response = await fetch(
+        `/api/admin/faculty/requirements/verification?${params.toString()}`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load verification requirements.");
+      }
+
+      const data = await response.json();
+      const years: string[] = data.availableAcademicYears ?? [];
+      const selectedYear = data.selectedAcademicYear ?? "";
+      const selectedSem =
+        (data.selectedSemester as SemesterOption | undefined) ?? "1st Semester";
+
+      setAvailableAcademicYears(years);
+      setAcademicYear(selectedYear);
+      setSemester(selectedSem);
+      setVerificationStatus(data.requirementStatus ?? null);
+    } catch (error) {
+      setVerificationError(
+        "Unable to load requirements for the selected filter.",
+      );
+      setVerificationStatus(null);
+    } finally {
+      setIsLoadingVerification(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!selectedFaculty) {
+      setAvailableAcademicYears([]);
+      setAcademicYear("");
+      setSemester("1st Semester");
+      setVerificationStatus(null);
+      setVerificationError(null);
+      return;
+    }
+
+    fetchVerificationStatus(selectedFaculty.id);
+  }, [selectedFaculty]);
+
+  async function onOpenModal() {
+    if (!selectedFaculty || !academicYear) {
+      return;
+    }
+
+    await fetchVerificationStatus(selectedFaculty.id, academicYear, semester);
+    setIsModalOpen(true);
+  }
+
   return (
     <div>
       <h2 className="text-lg font-semibold">
@@ -594,82 +654,200 @@ function RequirementsPanel({
         </p>
       ) : null}
 
-      {facultyAccounts.length > 0 && !selectedFaculty ? (
-        <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
-          Select a faculty account from the list to see and verify requirements.
+      {facultyAccounts.length > 0 ? (
+        <div className="mt-4 space-y-3">
+          {selectedFaculty ? (
+            <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm">
+              <p>
+                <span className="text-slate-400">Selected Faculty:</span>{" "}
+                {selectedFaculty.fullName}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
+              Select a faculty account, then choose S.Y. and semester to view
+              only that term's requirements.
+            </div>
+          )}
+
+          <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <div>
+                <label
+                  className="text-sm text-slate-300"
+                  htmlFor="facultyFilter"
+                >
+                  Faculty
+                </label>
+                <select
+                  id="facultyFilter"
+                  className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                  value={selectedFaculty?.id ?? ""}
+                  onChange={(event) => onSelectFaculty(event.target.value)}
+                >
+                  <option value="">Select faculty</option>
+                  {facultyAccounts.map((faculty) => (
+                    <option key={faculty.id} value={faculty.id}>
+                      {faculty.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                  className="text-sm text-slate-300"
+                  htmlFor="academicYearFilter"
+                >
+                  School Year
+                </label>
+                <select
+                  id="academicYearFilter"
+                  className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                  value={academicYear}
+                  onChange={(event) => setAcademicYear(event.target.value)}
+                >
+                  {availableAcademicYears.length === 0 ? (
+                    <option value="">No school year found</option>
+                  ) : null}
+
+                  {availableAcademicYears.map((year) => (
+                    <option key={year} value={year}>
+                      S.Y. {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                  className="text-sm text-slate-300"
+                  htmlFor="semesterFilter"
+                >
+                  Semester
+                </label>
+                <select
+                  id="semesterFilter"
+                  className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                  value={semester}
+                  onChange={(event) =>
+                    setSemester(event.target.value as SemesterOption)
+                  }
+                >
+                  {SEMESTER_OPTIONS.map((term) => (
+                    <option key={term} value={term}>
+                      {term}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {verificationError ? (
+              <p className="mt-3 rounded-md border border-red-700 bg-red-950/20 px-3 py-2 text-sm text-red-300">
+                {verificationError}
+              </p>
+            ) : null}
+
+            <div className="mt-4 flex justify-end">
+              <Button
+                type="button"
+                disabled={
+                  !selectedFaculty || !academicYear || isLoadingVerification
+                }
+                onClick={onOpenModal}
+              >
+                {isLoadingVerification
+                  ? "Loading requirements..."
+                  : "Open Verification Modal"}
+              </Button>
+            </div>
+          </div>
         </div>
       ) : null}
 
-      {selectedFaculty ? (
-        <div className="mt-4 space-y-3">
-          <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm">
-            <p>
-              <span className="text-slate-400">Selected Faculty:</span>{" "}
-              {selectedFaculty.fullName}
-            </p>
-          </div>
+      {isModalOpen && selectedFaculty ? (
+        <RequirementsVerificationModal
+          facultyName={selectedFaculty.fullName}
+          academicYear={academicYear}
+          semester={semester}
+          requirementStatus={verificationStatus}
+          onClose={() => setIsModalOpen(false)}
+        />
+      ) : null}
+    </div>
+  );
+}
 
-          {DEFAULT_REQUIREMENTS.map((requirementCode) => {
-            const status = selectedFaculty.requirementStatus[requirementCode];
+function RequirementsVerificationModal({
+  facultyName,
+  academicYear,
+  semester,
+  requirementStatus,
+  onClose,
+}: {
+  facultyName: string;
+  academicYear: string;
+  semester: SemesterOption;
+  requirementStatus: Record<RequirementCode, RequirementStatus> | null;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Requirements Verification</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-200"
+            aria-label="Close modal"
+          >
+            X
+          </button>
+        </div>
+
+        <p className="text-sm text-slate-300">
+          <span className="text-slate-400">Faculty:</span> {facultyName}
+        </p>
+        <p className="text-sm text-slate-300">
+          <span className="text-slate-400">Filter:</span> S.Y. {academicYear} -{" "}
+          {semester}
+        </p>
+
+        <div className="mt-4 space-y-2">
+          {DEFAULT_REQUIREMENTS.map((code) => {
+            const status = requirementStatus?.[code] ?? "not_submitted";
             return (
-              <article
-                key={requirementCode}
-                className="rounded-xl border border-slate-700 bg-slate-950 p-4"
+              <div
+                key={code}
+                className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
               >
-                <p className="font-medium">
-                  {REQUIREMENT_LABEL[requirementCode]}
+                <p className="text-sm text-slate-300">
+                  {REQUIREMENT_LABEL[code]}
                 </p>
-                <p className="mt-1 text-sm text-slate-400">
-                  Status: {statusLabel(status)}
-                </p>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={status !== "not_submitted"}
-                    onClick={() =>
-                      onUpdateStatus(
-                        selectedFaculty.id,
-                        requirementCode,
-                        "uploaded",
-                      )
-                    }
-                  >
-                    Mark Uploaded
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={status !== "uploaded"}
-                    onClick={() =>
-                      onUpdateStatus(
-                        selectedFaculty.id,
-                        requirementCode,
-                        "validated",
-                      )
-                    }
-                  >
-                    Validate as Admin
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      onUpdateStatus(
-                        selectedFaculty.id,
-                        requirementCode,
-                        "not_submitted",
-                      )
-                    }
-                  >
-                    Reset
-                  </Button>
-                </div>
-              </article>
+                <span
+                  className={`rounded px-2 py-1 text-xs ${
+                    status === "validated"
+                      ? "bg-green-900/30 text-green-400"
+                      : status === "uploaded"
+                        ? "bg-yellow-900/30 text-yellow-400"
+                        : "bg-red-900/30 text-red-400"
+                  }`}
+                >
+                  {statusLabel(status)}
+                </span>
+              </div>
             );
           })}
         </div>
-      ) : null}
+
+        <div className="mt-6 flex justify-end">
+          <Button onClick={onClose} variant="secondary">
+            Close
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
