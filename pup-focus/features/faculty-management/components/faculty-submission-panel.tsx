@@ -9,10 +9,21 @@ import {
 } from "@/config/compliance";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
-const PANEL_VIEWS = ["submit", "history", "guide"] as const;
+const PANEL_VIEWS = ["submit", "history", "status", "guide"] as const;
 
 type PanelView = (typeof PANEL_VIEWS)[number];
-type SubmissionStatus = "Pending Review" | "Submitted" | "Validated";
+type SubmissionStatus =
+  | "Pending Review"
+  | "Submitted"
+  | "Validated"
+  | "Rejected";
+
+type RequirementStatus = {
+  code: RequirementCode;
+  status: "Validated" | "Rejected" | "Pending";
+  reviewedAt?: string;
+  feedback?: string;
+};
 
 type PastSubmission = {
   id: string;
@@ -93,12 +104,44 @@ function buildPastSubmissions(): PastSubmission[] {
   ];
 }
 
-function statusStyles(status: SubmissionStatus): string {
+function buildRequirementStatuses(): RequirementStatus[] {
+  return [
+    {
+      code: "grade_sheet",
+      status: "Validated",
+      reviewedAt: "2026-03-20",
+      feedback: "Grade sheets are complete and accurate.",
+    },
+    {
+      code: "enhanced_syllabus",
+      status: "Pending",
+      feedback: "Under review",
+    },
+    {
+      code: "midterm_package",
+      status: "Rejected",
+      reviewedAt: "2026-04-05",
+      feedback: "Missing some required documents. Please resubmit.",
+    },
+    {
+      code: "final_package",
+      status: "Validated",
+      reviewedAt: "2026-05-15",
+    },
+    {
+      code: "class_orientation",
+      status: "Pending",
+    },
+  ];
+}
+
+function requirementStatusStyles(
+  status: "Validated" | "Rejected" | "Pending",
+): string {
   if (status === "Validated")
     return "bg-green-900/30 text-green-400 border-green-800";
-  if (status === "Submitted")
-    return "bg-yellow-900/30 text-yellow-400 border-yellow-800";
-  return "bg-sky-900/30 text-sky-300 border-sky-800";
+  if (status === "Rejected") return "bg-red-900/30 text-red-400 border-red-800";
+  return "bg-yellow-900/30 text-yellow-400 border-yellow-800";
 }
 
 export function FacultySubmissionPanel({
@@ -183,6 +226,7 @@ export function FacultySubmissionPanel({
           {[
             ["submit", "Submit Requirement", "Upload a new requirement"],
             ["history", "Past Submissions", "Filter by S.Y. and semester"],
+            ["status", "Requirement Status", "View validation status"],
             ["guide", "Submission Guide", "Quick steps for uploading"],
           ].map(([key, label, description]) => {
             const isActive = activeView === key;
@@ -341,6 +385,58 @@ export function FacultySubmissionPanel({
                 {submissionMessage}
               </p>
             ) : null}
+          </article>
+        )}
+
+        {activeView === "status" && (
+          <article className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
+            <div>
+              <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
+                Requirement Status
+              </p>
+              <h3 className="mt-2 text-2xl font-semibold text-slate-100">
+                Validation Status
+              </h3>
+              <p className="mt-2 text-sm text-slate-400">
+                Track the status of all your requirement submissions.
+              </p>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {buildRequirementStatuses().map((req) => (
+                <article
+                  key={req.code}
+                  className="rounded-xl border border-slate-700 bg-slate-950 p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-100">
+                        {REQUIREMENT_LABEL[req.code]}
+                      </p>
+                      {req.feedback && (
+                        <p className="mt-2 text-sm text-slate-300">
+                          {req.feedback}
+                        </p>
+                      )}
+                      {req.reviewedAt && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          Reviewed on {req.reviewedAt}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(req.status)}`}
+                    >
+                      {req.status === "Validated"
+                        ? "✓ Validated"
+                        : req.status === "Rejected"
+                          ? "✗ Rejected"
+                          : "⏳ Pending"}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
           </article>
         )}
 
