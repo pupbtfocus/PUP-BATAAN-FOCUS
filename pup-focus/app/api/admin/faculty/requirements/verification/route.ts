@@ -158,43 +158,41 @@ export async function GET(request: NextRequest) {
 
     const requirementStatus = buildInitialRequirementStatus();
 
-    if (filteredAssignmentIds.length > 0) {
-      const { data: submissionRows, error: submissionsError } = await supabase
-        .from("submissions")
-        .select("requirement_code, status")
-        .eq("faculty_profile_id", facultyProfileId)
-        .in("faculty_assignment_id", filteredAssignmentIds)
-        .limit(1000);
+    // Query submissions for this faculty (with or without faculty_assignment_id)
+    const { data: submissionRows, error: submissionsError } = await supabase
+      .from("submissions")
+      .select("requirement_code, status, submitted_at")
+      .eq("faculty_profile_id", facultyProfileId)
+      .limit(1000);
 
-      if (submissionsError) {
-        return NextResponse.json(
-          {
-            error: "Failed to load faculty requirements",
-            details: submissionsError.message,
-          },
-          { status: 500 },
-        );
+    if (submissionsError) {
+      return NextResponse.json(
+        {
+          error: "Failed to load faculty requirements",
+          details: submissionsError.message,
+        },
+        { status: 500 },
+      );
+    }
+
+    const rank: Record<RequirementStatus, number> = {
+      not_submitted: 0,
+      uploaded: 1,
+      validated: 2,
+    };
+
+    for (const row of submissionRows ?? []) {
+      const code =
+        row.requirement_code as (typeof DEFAULT_REQUIREMENTS)[number];
+
+      if (!DEFAULT_REQUIREMENTS.includes(code)) {
+        continue;
       }
 
-      const rank: Record<RequirementStatus, number> = {
-        not_submitted: 0,
-        uploaded: 1,
-        validated: 2,
-      };
+      const mappedStatus = toRequirementStatus(row.status);
 
-      for (const row of submissionRows ?? []) {
-        const code =
-          row.requirement_code as (typeof DEFAULT_REQUIREMENTS)[number];
-
-        if (!DEFAULT_REQUIREMENTS.includes(code)) {
-          continue;
-        }
-
-        const mappedStatus = toRequirementStatus(row.status);
-
-        if (rank[mappedStatus] > rank[requirementStatus[code]]) {
-          requirementStatus[code] = mappedStatus;
-        }
+      if (rank[mappedStatus] > rank[requirementStatus[code]]) {
+        requirementStatus[code] = mappedStatus;
       }
     }
 

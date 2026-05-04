@@ -84,19 +84,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get curriculum ID (for now, use a default or return error if not found)
-    const { data: curriculum, error: curriculumError } = await supabase
-      .from("curricula")
-      .select("id")
+    // Get faculty's assigned curriculum, or use first available curriculum
+    let curriculumId: string | null = null;
+
+    const { data: assignment } = await supabase
+      .from("faculty_program_assignments")
+      .select("curriculum_id")
+      .eq("faculty_profile_id", appUser.profile_id)
+      .order("created_at", { ascending: false })
       .limit(1)
       .single();
 
-    if (curriculumError || !curriculum) {
-      logger.error("no_curriculum_found", {
-        error: curriculumError?.message,
+    if (assignment?.curriculum_id) {
+      curriculumId = assignment.curriculum_id;
+    } else {
+      // Fallback: use first available curriculum
+      const { data: curriculum, error: curriculumError } = await supabase
+        .from("curricula")
+        .select("id")
+        .limit(1)
+        .single();
+
+      if (!curriculum) {
+        logger.error("no_curriculum_available", {
+          facultyId: appUser.profile_id,
+        });
+        return NextResponse.json(
+          {
+            error:
+              "No curriculum found in the system. Please contact an administrator.",
+          },
+          { status: 400 },
+        );
+      }
+
+      curriculumId = curriculum.id;
+      logger.warn("faculty_using_fallback_curriculum", {
+        facultyId: appUser.profile_id,
+        curriculumId,
       });
-      // For now, create a submission without curriculum_id or use a default approach
-      // This depends on your business logic
     }
 
     // Create submission record
@@ -106,7 +132,7 @@ export async function POST(request: NextRequest) {
       .insert({
         id: submissionId,
         faculty_profile_id: appUser.profile_id,
-        curriculum_id: curriculum?.id || null,
+        curriculum_id: curriculumId,
         requirement_code: payload.requirementCode,
         status: "uploaded",
         submitted_at: new Date().toISOString(),

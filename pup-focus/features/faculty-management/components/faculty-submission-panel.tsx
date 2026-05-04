@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DEFAULT_REQUIREMENTS,
@@ -20,7 +20,7 @@ type SubmissionStatus =
 
 type RequirementStatus = {
   code: RequirementCode;
-  status: "Validated" | "Rejected" | "Pending";
+  status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
   reviewedAt?: string;
   feedback?: string;
 };
@@ -136,11 +136,13 @@ function buildRequirementStatuses(): RequirementStatus[] {
 }
 
 function requirementStatusStyles(
-  status: "Validated" | "Rejected" | "Pending",
+  status: "Validated" | "Rejected" | "Pending" | "Not Submitted",
 ): string {
   if (status === "Validated")
     return "bg-green-900/30 text-green-400 border-green-800";
   if (status === "Rejected") return "bg-red-900/30 text-red-400 border-red-800";
+  if (status === "Not Submitted")
+    return "bg-slate-900/30 text-slate-400 border-slate-700";
   return "bg-yellow-900/30 text-yellow-400 border-yellow-800";
 }
 
@@ -170,6 +172,42 @@ export function FacultySubmissionPanel({
   const [historySemester, setHistorySemester] = useState<
     (typeof SEMESTER_OPTIONS)[number] | "All"
   >("All");
+  const [requirementStatuses, setRequirementStatuses] = useState<
+    RequirementStatus[]
+  >([]);
+  const [statusCounts, setStatusCounts] = useState<{
+    total: number;
+    validated: number;
+    rejected: number;
+    pending: number;
+    notSubmitted: number;
+  } | null>(null);
+  const [isLoadingStatuses, setIsLoadingStatuses] = useState(true);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
+  // Fetch real requirement statuses on mount
+  useEffect(() => {
+    async function fetchStatuses() {
+      try {
+        setIsLoadingStatuses(true);
+        setStatusError(null);
+        const response = await fetch("/api/faculty/submissions/status");
+        if (response.ok) {
+          const data = await response.json();
+          setRequirementStatuses(data.requirementStatuses || []);
+          setStatusCounts(data.counts || null);
+        } else {
+          setStatusError("Failed to load requirement statuses");
+        }
+      } catch (error) {
+        setStatusError("Error loading requirement statuses");
+      } finally {
+        setIsLoadingStatuses(false);
+      }
+    }
+
+    fetchStatuses();
+  }, []);
 
   const filteredPastSubmissions = useMemo(() => {
     return pastSubmissions.filter((submission) => {
@@ -446,40 +484,91 @@ export function FacultySubmissionPanel({
               </p>
             </div>
 
+            {statusCounts && !isLoadingStatuses && (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
+                  <p className="text-xs text-slate-400">Submitted</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-100">
+                    {statusCounts.validated + statusCounts.pending}/
+                    {statusCounts.total}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-green-700 bg-green-900/20 px-3 py-2">
+                  <p className="text-xs text-green-400">Validated</p>
+                  <p className="mt-1 text-lg font-semibold text-green-300">
+                    {statusCounts.validated}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-yellow-700 bg-yellow-900/20 px-3 py-2">
+                  <p className="text-xs text-yellow-400">Pending</p>
+                  <p className="mt-1 text-lg font-semibold text-yellow-300">
+                    {statusCounts.pending}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-red-700 bg-red-900/20 px-3 py-2">
+                  <p className="text-xs text-red-400">Rejected</p>
+                  <p className="mt-1 text-lg font-semibold text-red-300">
+                    {statusCounts.rejected}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-600 bg-slate-800/30 px-3 py-2">
+                  <p className="text-xs text-slate-400">Not Submitted</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-300">
+                    {statusCounts.notSubmitted}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 space-y-3">
-              {buildRequirementStatuses().map((req) => (
-                <article
-                  key={req.code}
-                  className="rounded-xl border border-slate-700 bg-slate-950 p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <p className="font-medium text-slate-100">
-                        {REQUIREMENT_LABEL[req.code]}
-                      </p>
-                      {req.feedback && (
-                        <p className="mt-2 text-sm text-slate-300">
-                          {req.feedback}
+              {isLoadingStatuses ? (
+                <p className="text-sm text-slate-400">
+                  Loading requirement statuses...
+                </p>
+              ) : statusError ? (
+                <p className="text-sm text-red-400">{statusError}</p>
+              ) : requirementStatuses.length === 0 ? (
+                <p className="text-sm text-slate-400">
+                  No submissions yet. Submit requirements to see their
+                  validation status.
+                </p>
+              ) : (
+                requirementStatuses.map((req) => (
+                  <article
+                    key={req.code}
+                    className="rounded-xl border border-slate-700 bg-slate-950 p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-100">
+                          {REQUIREMENT_LABEL[req.code]}
                         </p>
-                      )}
-                      {req.reviewedAt && (
-                        <p className="mt-1 text-xs text-slate-500">
-                          Reviewed on {req.reviewedAt}
-                        </p>
-                      )}
+                        {req.feedback && (
+                          <p className="mt-2 text-sm text-slate-300">
+                            {req.feedback}
+                          </p>
+                        )}
+                        {req.reviewedAt && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            Reviewed on {req.reviewedAt}
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(req.status)}`}
+                      >
+                        {req.status === "Validated"
+                          ? "✓ Validated"
+                          : req.status === "Rejected"
+                            ? "✗ Rejected"
+                            : req.status === "Not Submitted"
+                              ? "○ Not Submitted"
+                              : "⏳ Pending"}
+                      </span>
                     </div>
-                    <span
-                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(req.status)}`}
-                    >
-                      {req.status === "Validated"
-                        ? "✓ Validated"
-                        : req.status === "Rejected"
-                          ? "✗ Rejected"
-                          : "⏳ Pending"}
-                    </span>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                ))
+              )}
             </div>
           </article>
         )}

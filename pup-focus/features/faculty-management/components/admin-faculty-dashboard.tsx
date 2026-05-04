@@ -769,6 +769,7 @@ function RequirementsPanel({
       {isModalOpen && selectedFaculty ? (
         <RequirementsVerificationModal
           facultyName={selectedFaculty.fullName}
+          facultyId={selectedFaculty.id}
           academicYear={academicYear}
           semester={semester}
           requirementStatus={verificationStatus}
@@ -784,14 +785,130 @@ function RequirementsVerificationModal({
   academicYear,
   semester,
   requirementStatus,
+  facultyId,
   onClose,
 }: {
   facultyName: string;
   academicYear: string;
   semester: SemesterOption;
   requirementStatus: Record<RequirementCode, RequirementStatus> | null;
+  facultyId: string;
   onClose: () => void;
 }) {
+  const [viewingRequirement, setViewingRequirement] =
+    useState<RequirementCode | null>(null);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
+
+  async function handleViewRequirement(code: RequirementCode) {
+    setIsLoadingSubmissions(true);
+    try {
+      const response = await fetch(
+        `/api/admin/faculty/submissions?facultyId=${facultyId}`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const filtered = (data.submissions || []).filter(
+          (sub: any) => sub.requirement_code === code,
+        );
+        setSubmissions(filtered);
+        setViewingRequirement(code);
+      }
+    } catch (error) {
+      console.error("Failed to load submissions:", error);
+    } finally {
+      setIsLoadingSubmissions(false);
+    }
+  }
+
+  if (viewingRequirement) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">
+              {REQUIREMENT_LABEL[viewingRequirement]}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setViewingRequirement(null)}
+              className="text-slate-400 hover:text-slate-200"
+              aria-label="Back"
+            >
+              ←
+            </button>
+          </div>
+
+          <p className="text-sm text-slate-300 mb-4">
+            <span className="text-slate-400">Faculty:</span> {facultyName}
+          </p>
+
+          {isLoadingSubmissions ? (
+            <p className="text-sm text-slate-400">Loading submissions...</p>
+          ) : submissions.length === 0 ? (
+            <p className="text-sm text-slate-400">
+              No submissions found for this requirement.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {submissions.map((submission: any) => (
+                <div
+                  key={submission.id}
+                  className="rounded-lg border border-slate-700 bg-slate-900 p-4"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className={`rounded px-2 py-1 text-xs ${
+                        submission.status === "validated"
+                          ? "bg-green-900/30 text-green-400"
+                          : submission.status === "rejected"
+                            ? "bg-red-900/30 text-red-400"
+                            : "bg-yellow-900/30 text-yellow-400"
+                      }`}
+                    >
+                      {submission.status.charAt(0).toUpperCase() +
+                        submission.status.slice(1)}
+                    </span>
+                    <p className="text-xs text-slate-500">
+                      {new Date(submission.submitted_at).toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  {submission.document_versions &&
+                    submission.document_versions.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {submission.document_versions.map((doc: any) => (
+                          <a
+                            key={doc.id}
+                            href={`/api/storage/download?path=${encodeURIComponent(doc.storage_path)}`}
+                            className="inline-flex items-center gap-2 rounded-md bg-slate-800 px-3 py-2 text-xs text-blue-400 hover:bg-slate-700"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            📄 {doc.storage_path.split("/").pop()} (
+                            {(doc.size_bytes / 1024).toFixed(1)} KB)
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-6 flex justify-between">
+            <Button
+              onClick={() => setViewingRequirement(null)}
+              variant="secondary"
+            >
+              Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-6">
@@ -826,17 +943,28 @@ function RequirementsVerificationModal({
                 <p className="text-sm text-slate-300">
                   {REQUIREMENT_LABEL[code]}
                 </p>
-                <span
-                  className={`rounded px-2 py-1 text-xs ${
-                    status === "validated"
-                      ? "bg-green-900/30 text-green-400"
-                      : status === "uploaded"
-                        ? "bg-yellow-900/30 text-yellow-400"
-                        : "bg-red-900/30 text-red-400"
-                  }`}
-                >
-                  {statusLabel(status)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded px-2 py-1 text-xs ${
+                      status === "validated"
+                        ? "bg-green-900/30 text-green-400"
+                        : status === "uploaded"
+                          ? "bg-yellow-900/30 text-yellow-400"
+                          : "bg-red-900/30 text-red-400"
+                    }`}
+                  >
+                    {statusLabel(status)}
+                  </span>
+                  {status === "uploaded" && (
+                    <button
+                      type="button"
+                      onClick={() => handleViewRequirement(code)}
+                      className="rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+                    >
+                      View
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
