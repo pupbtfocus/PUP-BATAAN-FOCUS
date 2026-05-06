@@ -267,7 +267,7 @@ export function AdminFacultyDashboard() {
       </aside>
 
       <div>
-        <section className="h-full rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg">
+        <section className="h-full rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg flex flex-col items-center justify-center">
           {activeSection === "add" ? (
             <AddFacultyPanel
               form={form}
@@ -364,14 +364,14 @@ function AddFacultyPanel({
   createSuccess: string | null;
 }) {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-col max-w-sm mx-auto">
       <h2 className="text-lg font-semibold">Add Faculty Account</h2>
       <p className="mt-1 text-sm text-slate-400">
         Create a new faculty account with email and password.
       </p>
 
       <form
-        className="mt-4 flex flex-1 flex-col gap-3"
+        className="mt-4 flex flex-1 flex-col gap-3 w-full"
         onSubmit={form.handleSubmit(onAddFaculty)}
       >
         <div>
