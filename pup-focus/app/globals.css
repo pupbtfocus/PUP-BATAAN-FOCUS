@@ -100,3 +100,36 @@ a {
 [class*="form"] {
   background-color: rgba(95, 0, 0, 0.4) !important;
 }
+
+/* Prevent browser autofill from forcing a white background (stronger rules)
+   - covers focused/hover states and forces text-fill and long transition to avoid flash */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+  box-shadow: 0 0 0px 1000px transparent inset !important;
+  background-color: transparent !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+/* Firefox autofill */
+input:-moz-autofill,
+textarea:-moz-autofill,
+select:-moz-autofill {
+  box-shadow: 0 0 0px 1000px transparent inset !important;
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* Ensure the input's first-line text matches color when autofilled (WebKit) */
+input:-webkit-autofill::first-line {
+  color: inherit !important;
+}
