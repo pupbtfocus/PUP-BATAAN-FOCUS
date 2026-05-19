@@ -43,34 +43,41 @@ body::after {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  transition: opacity 1.2s ease-in-out;
+  will-change: opacity;
+  transform: translateZ(0);
   z-index: -2;
-  animation: backgroundSlideshow 20s infinite ease-in-out;
 }
 
 body::before {
   background-image: url("/images/attachments/IMG_9399.jpeg");
   opacity: 1;
+  animation: backgroundFadeA 16s infinite linear;
 }
 
 body::after {
   background-image: url("/images/attachments/IMG_9402.jpeg");
   opacity: 0;
-  animation-delay: 10s;
+  animation: backgroundFadeB 16s infinite linear;
 }
 
-@keyframes backgroundSlideshow {
+@keyframes backgroundFadeA {
   0%,
-  44% {
+  100% {
     opacity: 1;
   }
 
-  50%,
-  94% {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes backgroundFadeB {
+  0%,
+  100% {
     opacity: 0;
   }
 
-  100% {
+  50% {
     opacity: 1;
   }
 }
