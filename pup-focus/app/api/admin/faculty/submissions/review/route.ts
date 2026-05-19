@@ -1,10 +1,29 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { NextRequest, NextResponse } from "next/server";
+import { ROLE } from "@/config/roles";
+import { logger } from "@/lib/observability/logger";
 
 export async function POST(request: NextRequest) {
   try {
+    const sessionClient = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await sessionClient.auth.getUser();
+
+    const requesterRole =
+      (user?.user_metadata?.role as string | undefined) ??
+      (user?.app_metadata?.role as string | undefined);
+
+    if (
+      !user ||
+      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
-    const { submissionId, decision, remarks, reviewerProfileId } = body;
+    const { submissionId, decision, remarks } = body;
 
     // Validate input
     if (!submissionId || !decision) {
@@ -23,11 +42,25 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
+    const { data: adminAppUser } = await supabase
+      .from("app_users")
+      .select("profile_id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+
+    if (!adminAppUser?.profile_id) {
+      logger.error("admin_profile_not_found", { authUserId: user.id });
+      return NextResponse.json(
+        { error: "Admin profile not found" },
+        { status: 400 },
+      );
+    }
+
     console.log("Processing review:", {
       submissionId,
       decision,
       remarks,
-      reviewerProfileId,
+      reviewerProfileId: adminAppUser.profile_id,
     });
 
     // Update the submission status
@@ -44,21 +77,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create a review decision record if reviewerProfileId is provided
-    if (reviewerProfileId) {
-      const { error: reviewError } = await supabase
-        .from("review_decisions")
-        .insert({
-          submission_id: submissionId,
-          reviewer_profile_id: reviewerProfileId,
-          decision: decision,
-          remarks: remarks || null,
-        });
+    const { error: reviewError } = await supabase
+      .from("review_decisions")
+      .insert({
+        submission_id: submissionId,
+        reviewer_profile_id: adminAppUser.profile_id,
+        decision: decision,
+        remarks: remarks || null,
+      });
 
-      if (reviewError) {
-        console.error("Failed to create review decision:", reviewError);
-        // Don't return error since submission was already updated
-      }
+    if (reviewError) {
+      console.error("Failed to create review decision:", reviewError);
+      // Don't return error since submission was already updated
     }
 
     console.log("Review processed successfully");
