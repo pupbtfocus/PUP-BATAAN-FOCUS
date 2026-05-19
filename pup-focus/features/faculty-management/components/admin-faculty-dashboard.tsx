@@ -278,8 +278,8 @@ export function AdminFacultyDashboard() {
   }
 
   return (
-    <div className="flex items-stretch gap-6 relative h-full">
-      <aside className="fixed left-0 top-16 w-72 h-[calc(100vh-4rem)] rounded-r-2xl border border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg overflow-y-auto">
+    <div className="relative flex min-h-full w-full items-stretch gap-0">
+      <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg">
         <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
           Admin Workspace
         </p>
@@ -290,6 +290,13 @@ export function AdminFacultyDashboard() {
           Manage accounts, assignments, and requirement validation from one
           panel.
         </p>
+
+        <div className="my-6 rounded-xl bg-slate-950 p-3">
+          <p className="text-sm text-slate-400">Admin Control</p>
+          <p className="mt-1 font-semibold text-slate-100">
+            Faculty Management
+          </p>
+        </div>
 
         <nav className="mt-6 space-y-2">
           <SidebarButton
@@ -313,57 +320,92 @@ export function AdminFacultyDashboard() {
         </nav>
       </aside>
 
-      <div className="ml-72 w-full h-full">
-        <section className="h-full rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg flex flex-col items-center justify-center">
-          {activeSection === "add" ? (
-            <AddFacultyPanel
-              form={form}
-              onAddFaculty={onAddFaculty}
-              isCreating={isCreating}
-              createError={createError}
-              createSuccess={createSuccess}
-            />
-          ) : null}
+      <div className="ml-72 flex min-h-full w-[calc(100%-18rem)] flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
+          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            {activeSection === "add" ? (
+              <article className="p-8">
+                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
+                  Admin Workspace
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
+                  Add Faculty Account
+                </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  Create a new faculty account with email and password.
+                </p>
+                <AddFacultyPanel
+                  form={form}
+                  onAddFaculty={onAddFaculty}
+                  isCreating={isCreating}
+                  createError={createError}
+                  createSuccess={createSuccess}
+                />
+              </article>
+            ) : null}
 
-          {activeSection === "faculty" ? (
-            <FacultyListPanel
-              facultyAccounts={facultyAccounts}
-              isLoading={isLoading}
-              onSelectFaculty={setSelectedFacultyId}
-              onDeleteFaculty={onDeleteFaculty}
-              onViewDetails={(facultyId) => {
-                setDetailsFacultyId(facultyId);
-                setDetailsModalOpen(true);
-              }}
-              onActivate={onActivateFaculty}
-              onDeactivate={onDeactivateFaculty}
-              loadingFacultyIds={loadingFacultyIds}
-              deleteError={deleteError}
-              deleteSuccess={deleteSuccess}
-              onClearDeleteMessages={() => {
-                setDeleteError(null);
-                setDeleteSuccess(null);
-              }}
-            />
-          ) : null}
+            {activeSection === "faculty" ? (
+              <article className="p-6">
+                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
+                  Admin Workspace
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
+                  Faculty List
+                </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  View all faculty accounts and manage them.
+                </p>
+                <FacultyListPanel
+                  facultyAccounts={facultyAccounts}
+                  isLoading={isLoading}
+                  onSelectFaculty={setSelectedFacultyId}
+                  onDeleteFaculty={onDeleteFaculty}
+                  onViewDetails={(facultyId) => {
+                    setDetailsFacultyId(facultyId);
+                    setDetailsModalOpen(true);
+                  }}
+                  onActivate={onActivateFaculty}
+                  onDeactivate={onDeactivateFaculty}
+                  loadingFacultyIds={loadingFacultyIds}
+                  deleteError={deleteError}
+                  deleteSuccess={deleteSuccess}
+                  onClearDeleteMessages={() => {
+                    setDeleteError(null);
+                    setDeleteSuccess(null);
+                  }}
+                />
+              </article>
+            ) : null}
 
-          {activeSection === "requirements" ? (
-            <RequirementsPanel
-              facultyAccounts={facultyAccounts}
-              selectedFaculty={selectedFaculty}
-              onSelectFaculty={setSelectedFacultyId}
-            />
-          ) : null}
-        </section>
-
-        {detailsModalOpen && detailsFacultyId && (
-          <FacultyDetailsModal
-            facultyId={detailsFacultyId}
-            facultyAccounts={facultyAccounts}
-            onClose={() => setDetailsModalOpen(false)}
-          />
-        )}
+            {activeSection === "requirements" ? (
+              <article className="p-8">
+                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
+                  Admin Workspace
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
+                  Requirements Verification
+                </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  Validate curriculum-based uploads from faculty.
+                </p>
+                <RequirementsPanel
+                  facultyAccounts={facultyAccounts}
+                  selectedFaculty={selectedFaculty}
+                  onSelectFaculty={setSelectedFacultyId}
+                />
+              </article>
+            ) : null}
+          </div>
+        </div>
       </div>
+
+      {detailsModalOpen && detailsFacultyId && (
+        <FacultyDetailsModal
+          facultyId={detailsFacultyId}
+          facultyAccounts={facultyAccounts}
+          onClose={() => setDetailsModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -418,11 +460,6 @@ function AddFacultyPanel({
 }) {
   return (
     <div className="flex flex-col max-w-sm mx-auto">
-      <h2 className="text-lg font-semibold">Add Faculty Account</h2>
-      <p className="mt-1 text-sm text-slate-400">
-        Create a new faculty account with email and password.
-      </p>
-
       <form
         className="mt-4 flex flex-1 flex-col gap-3 w-full"
         onSubmit={form.handleSubmit(onAddFaculty)}
@@ -515,11 +552,6 @@ function FacultyListPanel({
 }) {
   return (
     <div>
-      <h2 className="text-lg font-semibold">Faculty List</h2>
-      <p className="mt-1 text-sm text-slate-400">
-        View all faculty accounts and select one to inspect requirements.
-      </p>
-
       <div className="mt-4 space-y-3">
         {deleteError ? (
           <div className="rounded-md border border-red-700 bg-red-950/20 px-3 py-2 text-sm text-red-300 flex justify-between items-center">
@@ -760,13 +792,6 @@ function RequirementsPanel({
 
   return (
     <div>
-      <h2 className="text-lg font-semibold">
-        Faculty Requirements Verification
-      </h2>
-      <p className="mt-1 text-sm text-slate-400">
-        Choose a faculty account and verify curriculum-based uploads here.
-      </p>
-
       {facultyAccounts.length === 0 ? (
         <p className="mt-4 rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
           Add faculty accounts first, then verify their required uploads.

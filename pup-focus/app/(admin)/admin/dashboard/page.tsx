@@ -10,6 +10,7 @@ export default function AdminDashboardPage() {
         { href: "/admin/users", label: "Users" },
         { href: "/admin/curriculum", label: "Curriculum" },
       ]}
+      fullBleed
     >
       <AdminFacultyDashboard />
     </AppShell>
