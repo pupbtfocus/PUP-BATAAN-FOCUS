@@ -31,51 +31,9 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
   position: relative;
-}
-
-/* Fast crossfading background using two attached images */
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-size: cover;
-  background-attachment: fixed;
-  background-position: center;
-  background-repeat: no-repeat;
-  will-change: opacity;
-}
-
-body::before {
-  background-image: url("/images/attachments/IMG_9399.jpeg");
-  opacity: 1;
-  animation: bg-fade 12s linear infinite;
-}
-
-body::after {
-  background-image: url("/images/attachments/IMG_9402.jpeg");
-  opacity: 0;
-  animation: bg-fade 12s linear infinite;
-  animation-delay: 6s;
-}
-
-@keyframes bg-fade {
-  0% {
-    opacity: 1;
-  }
-  40% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-  90% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+  background:
+    radial-gradient(circle at top, rgba(255, 215, 0, 0.08), transparent 42%),
+    linear-gradient(180deg, #5f0000 0%, #460000 100%);
 }
 
 /* Ensure Tailwind/bg utilities don't unexpectedly replace the crossfade */

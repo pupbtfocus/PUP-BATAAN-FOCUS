@@ -12,9 +12,20 @@ type AppShellProps = {
   subtitle?: string;
   nav: NavigationItem[];
   children: React.ReactNode;
+  fullBleed?: boolean;
 };
 
-export function AppShell({ title, subtitle, nav, children }: AppShellProps) {
+export function AppShell({
+  title,
+  subtitle,
+  nav,
+  children,
+  fullBleed = false,
+}: AppShellProps) {
+  const mainClassName = fullBleed
+    ? "mx-auto flex h-screen w-full max-w-none overflow-hidden px-0 pt-16"
+    : "mx-auto w-full max-w-7xl px-6 py-8 pt-28 h-[calc(100vh-7rem)] overflow-hidden";
+
   return (
     <div className="min-h-screen text-[var(--foreground)]">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-[rgba(255,215,0,0.18)] bg-[#4d0000]/85 backdrop-blur">
@@ -48,9 +59,7 @@ export function AppShell({ title, subtitle, nav, children }: AppShellProps) {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-7xl px-6 py-8 pt-28 h-[calc(100vh-7rem)] overflow-hidden">
-        {children}
-      </main>
+      <main className={mainClassName}>{children}</main>
     </div>
   );
 }

@@ -13,6 +13,7 @@ export default async function FacultyDashboardPage() {
         { href: "/faculty/compliance", label: "Compliance" },
         { href: "/faculty/history", label: "History" },
       ]}
+      fullBleed
     >
       <FacultySubmissionPanel facultyName={user?.fullName ?? null} />
     </AppShell>
