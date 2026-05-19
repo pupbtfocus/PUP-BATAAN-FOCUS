@@ -478,21 +478,21 @@ export function FacultySubmissionPanel({
                         {statusCounts.total}
                       </p>
                     </div>
-                    <div className="rounded-lg border border-green-700 bg-green-900/20 px-3 py-2">
-                      <p className="text-xs text-green-400">Validated</p>
-                      <p className="mt-1 text-lg font-semibold text-green-300">
+                    <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
+                      <p className="text-xs text-slate-400">Validated</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-100">
                         {statusCounts.validated}
                       </p>
                     </div>
-                    <div className="rounded-lg border border-yellow-700 bg-yellow-900/20 px-3 py-2">
-                      <p className="text-xs text-yellow-400">Pending</p>
-                      <p className="mt-1 text-lg font-semibold text-yellow-300">
+                    <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
+                      <p className="text-xs text-slate-400">Pending</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-100">
                         {statusCounts.pending}
                       </p>
                     </div>
-                    <div className="rounded-lg border border-red-700 bg-red-900/20 px-3 py-2">
-                      <p className="text-xs text-red-400">Rejected</p>
-                      <p className="mt-1 text-lg font-semibold text-red-300">
+                    <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
+                      <p className="text-xs text-slate-400">Rejected</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-100">
                         {statusCounts.rejected}
                       </p>
                     </div>
