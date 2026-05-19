@@ -461,7 +461,7 @@ function AddFacultyPanel({
   return (
     <div className="flex flex-col max-w-sm mx-auto">
       <form
-        className="mt-4 flex flex-1 flex-col gap-3 w-full"
+        className="mt-6 flex flex-1 flex-col gap-3 w-full rounded-xl border border-slate-700 bg-slate-950/50 p-6 shadow-lg"
         onSubmit={form.handleSubmit(onAddFaculty)}
       >
         <div>
