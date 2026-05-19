@@ -252,8 +252,8 @@ export function AdminFacultyDashboard() {
   }
 
   return (
-    <div className="grid items-stretch gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="h-full rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg">
+    <div className="flex items-stretch gap-6 relative h-full">
+      <aside className="fixed left-0 top-16 w-72 h-[calc(100vh-4rem)] rounded-r-2xl border border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg overflow-y-auto">
         <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
           Admin Workspace
         </p>
@@ -287,7 +287,7 @@ export function AdminFacultyDashboard() {
         </nav>
       </aside>
 
-      <div>
+      <div className="ml-72 w-full h-full">
         <section className="h-full rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg flex flex-col items-center justify-center">
           {activeSection === "add" ? (
             <AddFacultyPanel
