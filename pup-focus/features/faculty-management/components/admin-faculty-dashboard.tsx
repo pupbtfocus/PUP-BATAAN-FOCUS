@@ -125,8 +125,14 @@ export function AdminFacultyDashboard() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        setCreateError(errorData.error || "Failed to create faculty account");
+        try {
+          const errorData = await response.json();
+          setCreateError(errorData.error || "Failed to create faculty account");
+        } catch (parseError) {
+          setCreateError(
+            `Failed to create faculty account (HTTP ${response.status})`,
+          );
+        }
         setIsCreating(false);
         return;
       }
@@ -157,7 +163,27 @@ export function AdminFacultyDashboard() {
         body: JSON.stringify({ facultyProfileId: facultyId }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        if (response.ok) {
+          // Success response that's not JSON - treat as success
+          setFacultyAccounts((prev) =>
+            prev.filter((faculty) => faculty.id !== facultyId),
+          );
+          if (selectedFacultyId === facultyId) {
+            setSelectedFacultyId(null);
+          }
+          setDeleteSuccess("Faculty account deleted successfully");
+          await loadFacultyFromDatabase();
+        } else {
+          setDeleteError(
+            `Failed to delete faculty account (HTTP ${response.status})`,
+          );
+        }
+        return;
+      }
 
       if (response.ok) {
         setFacultyAccounts((prev) =>
@@ -926,7 +952,19 @@ function RequirementsVerificationModal({
     try {
       // Get current user's profile for reviewer_profile_id
       const authResponse = await fetch("/api/auth/me");
-      const authData = await authResponse.json();
+      if (!authResponse.ok) {
+        alert("Failed to get reviewer profile. Please try again.");
+        return;
+      }
+
+      let authData;
+      try {
+        authData = await authResponse.json();
+      } catch (parseError) {
+        alert("Failed to parse authentication data.");
+        return;
+      }
+
       const reviewerProfileId = authData.profile_id;
 
       const response = await fetch("/api/admin/faculty/submissions/review", {
@@ -950,8 +988,12 @@ function RequirementsVerificationModal({
         setReviewRemarks("");
         alert(`Submission ${decision} successfully!`);
       } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
+        try {
+          const error = await response.json();
+          alert(`Error: ${error.error}`);
+        } catch (parseError) {
+          alert(`Error: Failed to process review (HTTP ${response.status})`);
+        }
       }
     } catch (error) {
       console.error("Failed to review submission:", error);
