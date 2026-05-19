@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const { data: appUser, error: fetchError } = await supabase
       .from("app_users")
       .select("id, auth_user_id, profile_id, metadata")
-      .eq("id", facultyProfileId)
+      .eq("profile_id", facultyProfileId)
       .maybeSingle();
 
     if (fetchError) {
@@ -26,6 +26,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Failed to fetch faculty account" },
         { status: 500 },
+      );
+    }
+
+    if (!appUser) {
+      return NextResponse.json(
+        { error: "Faculty account not found" },
+        { status: 404 },
       );
     }
 
@@ -38,7 +45,7 @@ export async function POST(request: NextRequest) {
         metadata: updatedMetadata,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", facultyProfileId);
+      .eq("profile_id", facultyProfileId);
 
     if (updateError) {
       console.error("Error updating app_users metadata:", updateError);

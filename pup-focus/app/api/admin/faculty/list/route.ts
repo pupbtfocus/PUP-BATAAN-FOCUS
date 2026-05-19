@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
             : item.profiles;
 
           return {
-            id: item.id,
+            id: item.profile_id,
             user_id: item.auth_user_id,
             fullName: profile?.full_name || item.full_name || "Unknown",
             email: profile?.email || item.email || "Unknown",

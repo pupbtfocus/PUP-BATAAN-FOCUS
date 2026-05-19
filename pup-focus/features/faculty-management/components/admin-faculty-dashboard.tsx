@@ -70,6 +70,8 @@ export function AdminFacultyDashboard() {
   );
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [detailsFacultyId, setDetailsFacultyId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     loadFacultyFromDatabase();
@@ -144,12 +146,18 @@ export function AdminFacultyDashboard() {
   }
 
   async function onDeleteFaculty(facultyId: string) {
+    setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
+    setDeleteError(null);
+    setDeleteSuccess(null);
+
     try {
       const response = await fetch("/api/admin/faculty/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ facultyProfileId: facultyId }),
       });
+
+      const data = await response.json();
 
       if (response.ok) {
         setFacultyAccounts((prev) =>
@@ -158,11 +166,24 @@ export function AdminFacultyDashboard() {
         if (selectedFacultyId === facultyId) {
           setSelectedFacultyId(null);
         }
+        setDeleteSuccess("Faculty account deleted successfully");
         // Refresh from database
         await loadFacultyFromDatabase();
+      } else {
+        setDeleteError(data.error || "Failed to delete faculty account");
       }
     } catch (error) {
-      // Error handled by UI state
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while deleting the faculty account",
+      );
+    } finally {
+      setLoadingFacultyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(facultyId);
+        return next;
+      });
     }
   }
 
@@ -291,6 +312,12 @@ export function AdminFacultyDashboard() {
               onActivate={onActivateFaculty}
               onDeactivate={onDeactivateFaculty}
               loadingFacultyIds={loadingFacultyIds}
+              deleteError={deleteError}
+              deleteSuccess={deleteSuccess}
+              onClearDeleteMessages={() => {
+                setDeleteError(null);
+                setDeleteSuccess(null);
+              }}
             />
           ) : null}
 
@@ -444,6 +471,9 @@ function FacultyListPanel({
   onActivate,
   onDeactivate,
   loadingFacultyIds,
+  deleteError,
+  deleteSuccess,
+  onClearDeleteMessages,
 }: {
   facultyAccounts: FacultyAccount[];
   isLoading: boolean;
@@ -453,6 +483,9 @@ function FacultyListPanel({
   onActivate: (facultyId: string) => void;
   onDeactivate: (facultyId: string) => void;
   loadingFacultyIds: Set<string>;
+  deleteError: string | null;
+  deleteSuccess: string | null;
+  onClearDeleteMessages: () => void;
 }) {
   return (
     <div>
@@ -462,6 +495,30 @@ function FacultyListPanel({
       </p>
 
       <div className="mt-4 space-y-3">
+        {deleteError ? (
+          <div className="rounded-md border border-red-700 bg-red-950/20 px-3 py-2 text-sm text-red-300 flex justify-between items-center">
+            <span>{deleteError}</span>
+            <button
+              onClick={onClearDeleteMessages}
+              className="text-red-400 hover:text-red-200"
+            >
+              ✕
+            </button>
+          </div>
+        ) : null}
+
+        {deleteSuccess ? (
+          <div className="rounded-md border border-emerald-700 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-300 flex justify-between items-center">
+            <span>{deleteSuccess}</span>
+            <button
+              onClick={onClearDeleteMessages}
+              className="text-emerald-400 hover:text-emerald-200"
+            >
+              ✕
+            </button>
+          </div>
+        ) : null}
+
         {isLoading ? (
           <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
             Loading faculty accounts...

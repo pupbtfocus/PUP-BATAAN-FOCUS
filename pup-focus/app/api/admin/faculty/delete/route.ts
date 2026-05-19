@@ -14,33 +14,155 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Delete from faculty_program_assignments (cascades from there)
-    const { error: deleteError } = await supabase
-      .from("faculty_program_assignments")
-      .delete()
-      .eq("faculty_profile_id", facultyProfileId);
+    // Step 1: Check if there's an app_users record (even if profile doesn't exist)
+    const { data: appUser } = await supabase
+      .from("app_users")
+      .select("id, auth_user_id, profile_id")
+      .eq("profile_id", facultyProfileId)
+      .maybeSingle();
 
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 400 });
-    }
-
-    // Delete profile and related data
-    const { error: profileError } = await supabase
+    // Step 2: Get user_id from profile before deletion (needed for auth cleanup)
+    const { data: profile, error: profileFetchError } = await supabase
       .from("profiles")
-      .delete()
-      .eq("id", facultyProfileId);
+      .select("user_id")
+      .eq("id", facultyProfileId)
+      .maybeSingle();
 
-    if (profileError) {
+    if (profileFetchError) {
       return NextResponse.json(
-        { error: profileError.message },
+        { error: `Error fetching profile: ${profileFetchError.message}` },
         { status: 400 },
       );
     }
 
+    // If profile doesn't exist but app_users record does, clean it up and consider it success
+    if (!profile && appUser) {
+      console.warn(
+        `Profile not found but app_users record exists for profile ID: ${facultyProfileId}. Cleaning up orphaned record.`,
+      );
+
+      const { error: cleanupError } = await supabase
+        .from("app_users")
+        .delete()
+        .eq("profile_id", facultyProfileId);
+
+      if (cleanupError) {
+        console.error(
+          "Error cleaning up orphaned app_users record:",
+          cleanupError,
+        );
+      }
+
+      // Try to delete auth user if we have the ID
+      if (appUser.auth_user_id) {
+        try {
+          await supabase.auth.admin.deleteUser(appUser.auth_user_id);
+        } catch (authError) {
+          console.error("Warning: Could not delete auth user:", authError);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Cleaned up orphaned user record",
+      });
+    }
+
+    if (!profile) {
+      console.error(
+        `Profile and app_users record not found for ID: ${facultyProfileId}`,
+      );
+      return NextResponse.json(
+        { error: `User not found with ID: ${facultyProfileId}` },
+        { status: 404 },
+      );
+    }
+
+    // Step 2: Clean up app_users records first (no cascades on this)
+    const { error: appUsersError } = await supabase
+      .from("app_users")
+      .delete()
+      .or(
+        `profile_id.eq.${facultyProfileId},auth_user_id.eq.${profile.user_id}`,
+      );
+
+    if (appUsersError) {
+      console.error(
+        "Warning: Could not delete app_users records:",
+        appUsersError,
+      );
+      // Continue anyway - this shouldn't prevent profile deletion
+    }
+
+    // Step 3: Delete faculty_program_assignments (should cascade but delete explicitly for safety)
+    const { error: assignmentsError } = await supabase
+      .from("faculty_program_assignments")
+      .delete()
+      .eq("faculty_profile_id", facultyProfileId);
+
+    if (assignmentsError) {
+      return NextResponse.json(
+        {
+          error: `Failed to delete faculty assignments: ${assignmentsError.message}`,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Step 4: Delete user_roles (should cascade but delete explicitly for safety)
+    const { error: rolesError } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("profile_id", facultyProfileId);
+
+    if (rolesError) {
+      return NextResponse.json(
+        { error: `Failed to delete user roles: ${rolesError.message}` },
+        { status: 400 },
+      );
+    }
+
+    // Step 5: Delete from faculty table (should cascade but delete explicitly for safety)
+    const { error: facultyError } = await supabase
+      .from("faculty")
+      .delete()
+      .eq("profile_id", facultyProfileId);
+
+    if (facultyError) {
+      console.error("Warning: Could not delete faculty record:", facultyError);
+      // Continue anyway - faculty record might not exist
+    }
+
+    // Step 6: Finally delete the profile (this will cascade delete due to profile_user_id_fkey)
+    const { error: profileDeleteError } = await supabase
+      .from("profiles")
+      .delete()
+      .eq("id", facultyProfileId);
+
+    if (profileDeleteError) {
+      return NextResponse.json(
+        { error: `Failed to delete profile: ${profileDeleteError.message}` },
+        { status: 400 },
+      );
+    }
+
+    // Step 7: Delete from Supabase Auth (if profile had an associated auth user)
+    if (profile.user_id) {
+      try {
+        await supabase.auth.admin.deleteUser(profile.user_id);
+      } catch (authError) {
+        console.error("Warning: Could not delete auth user:", authError);
+        // Continue - profile is already deleted
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error("Unexpected error during faculty deletion:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: `Database error deleting user: ${error instanceof Error ? error.message : "Unknown error"}`,
+      },
       { status: 500 },
     );
   }
