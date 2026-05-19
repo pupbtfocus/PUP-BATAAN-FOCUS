@@ -276,7 +276,7 @@ export function FacultySubmissionPanel({
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
             {activeView === "submit" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-lg">
+              <article className="min-h-[calc(100vh-4rem-3rem)] p-8">
                 <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
                   Faculty Workspace
                 </p>
@@ -428,7 +428,7 @@ export function FacultySubmissionPanel({
             )}
 
             {activeView === "status" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
+              <article className="min-h-[calc(100vh-4rem-3rem)] p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
@@ -559,7 +559,7 @@ export function FacultySubmissionPanel({
             )}
 
             {activeView === "guide" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-lg">
+              <article className="min-h-[calc(100vh-4rem-3rem)] p-8">
                 <h3 className="text-lg font-semibold text-slate-100">
                   Submission Guide
                 </h3>
@@ -596,7 +596,7 @@ export function FacultySubmissionPanel({
             )}
 
             {activeView === "history" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-lg">
+              <article className="min-h-[calc(100vh-4rem-3rem)] p-8">
                 <div className="flex flex-wrap items-end justify-between gap-4">
                   <div>
                     <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
