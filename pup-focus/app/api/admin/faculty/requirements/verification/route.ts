@@ -101,10 +101,11 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
+    // Try to locate app_user row by either app_users.id or profile_id (front-end may pass profile id)
     const { data: appUserRow, error: appUserError } = await supabase
       .from("app_users")
       .select("id, profile_id")
-      .eq("id", facultyId)
+      .or(`id.eq.${facultyId},profile_id.eq.${facultyId}`)
       .maybeSingle();
 
     if (appUserError || !appUserRow?.profile_id) {

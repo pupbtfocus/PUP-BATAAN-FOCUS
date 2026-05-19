@@ -681,6 +681,7 @@ function RequirementsPanel({
   const [verificationError, setVerificationError] = useState<string | null>(
     null,
   );
+  const [initialLoadInfo, setInitialLoadInfo] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   async function fetchVerificationStatus(
@@ -712,10 +713,25 @@ function RequirementsPanel({
 
       const response = await fetch(
         `/api/admin/faculty/requirements/verification?${params.toString()}`,
+        { credentials: "include" },
       );
 
       if (!response.ok) {
-        throw new Error("Failed to load verification requirements.");
+        let details = "";
+        try {
+          const err = await response.json();
+          details = JSON.stringify(err);
+        } catch (e) {
+          try {
+            details = await response.text();
+          } catch (e2) {
+            details = "(no body)";
+          }
+        }
+
+        throw new Error(
+          `Failed to load verification requirements (HTTP ${response.status}): ${details}`,
+        );
       }
 
       const data = await response.json();
@@ -740,7 +756,9 @@ function RequirementsPanel({
     } catch (error) {
       console.error("Verification fetch error:", error);
       setVerificationError(
-        "Unable to load requirements for the selected filter.",
+        error instanceof Error
+          ? error.message
+          : "Unable to load requirements for the selected filter.",
       );
       setVerificationStatus(null);
     } finally {
@@ -764,19 +782,44 @@ function RequirementsPanel({
       try {
         const response = await fetch(
           `/api/admin/faculty/requirements/verification?facultyId=${selectedFaculty.id}`,
+          { credentials: "include" },
         );
+
         if (response.ok) {
           const data = await response.json();
           const years: string[] = data.availableAcademicYears ?? [];
           const selectedYear = data.selectedAcademicYear ?? "";
           setAvailableAcademicYears(years);
-          setAcademicYear(selectedYear);
+          setAcademicYear(selectedYear || years[0] || "");
           setSemester("1st Semester");
           // Don't set verification status here - wait for modal to open
           setVerificationStatus(null);
+          setInitialLoadInfo(
+            `API returned ${years.length} academic year(s). selected: ${
+              selectedYear || years[0] || "(none)"
+            }`,
+          );
+        } else {
+          // Try to parse body for error details
+          let details = "";
+          try {
+            const err = await response.json();
+            details = JSON.stringify(err);
+          } catch (e) {
+            try {
+              details = await response.text();
+            } catch (e2) {
+              details = "(no body)";
+            }
+          }
+
+          setInitialLoadInfo(
+            `API returned HTTP ${response.status} - ${details}`,
+          );
         }
       } catch (error) {
-        console.error("Failed to load academic years");
+        console.error("Failed to load academic years", error);
+        setInitialLoadInfo(`Failed to load academic years: ${String(error)}`);
       }
     })();
   }, [selectedFaculty]);
@@ -861,6 +904,11 @@ function RequirementsPanel({
                     </option>
                   ))}
                 </select>
+                {initialLoadInfo ? (
+                  <p className="mt-2 text-xs text-slate-400">
+                    {initialLoadInfo}
+                  </p>
+                ) : null}
               </div>
 
               <div>
@@ -906,6 +954,20 @@ function RequirementsPanel({
                   : "Open Verification Modal"}
               </Button>
             </div>
+            {verificationError ? (
+              <p className="mt-2 text-sm text-red-300">{verificationError}</p>
+            ) : null}
+
+            {verificationStatus ? (
+              <div className="mt-2 rounded-md border border-slate-700 bg-slate-950 p-3 text-xs text-slate-300">
+                <div className="font-semibold text-slate-100">
+                  Verification status (debug):
+                </div>
+                <pre className="whitespace-pre-wrap mt-1">
+                  {JSON.stringify(verificationStatus, null, 2)}
+                </pre>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -953,6 +1015,7 @@ function RequirementsVerificationModal({
     try {
       const response = await fetch(
         `/api/admin/faculty/submissions?facultyId=${facultyId}`,
+        { credentials: "include" },
       );
       if (response.ok) {
         const data = await response.json();

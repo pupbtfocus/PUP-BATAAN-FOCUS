@@ -34,11 +34,11 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Get faculty profile ID
+    // Get faculty profile ID. Accept either app_users.id or profile_id (frontend may pass profile id)
     const { data: appUserRow, error: appUserError } = await supabase
       .from("app_users")
       .select("profile_id")
-      .eq("id", facultyId)
+      .or(`id.eq.${facultyId},profile_id.eq.${facultyId}`)
       .maybeSingle();
 
     if (appUserError || !appUserRow?.profile_id) {
