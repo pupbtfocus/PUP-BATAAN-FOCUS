@@ -1038,31 +1038,14 @@ function RequirementsVerificationModal({
   ) {
     setReviewingSubmissionId(submissionId);
     try {
-      // Get current user's profile for reviewer_profile_id
-      const authResponse = await fetch("/api/auth/me");
-      if (!authResponse.ok) {
-        alert("Failed to get reviewer profile. Please try again.");
-        return;
-      }
-
-      let authData;
-      try {
-        authData = await authResponse.json();
-      } catch (parseError) {
-        alert("Failed to parse authentication data.");
-        return;
-      }
-
-      const reviewerProfileId = authData.profile_id;
-
       const response = await fetch("/api/admin/faculty/submissions/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           submissionId,
           decision,
           remarks: reviewRemarks,
-          reviewerProfileId,
         }),
       });
 
