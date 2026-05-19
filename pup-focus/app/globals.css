@@ -31,14 +31,48 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
   position: relative;
-  background:
-    radial-gradient(circle at top, rgba(255, 215, 0, 0.08), transparent 42%),
-    linear-gradient(180deg, #5f0000 0%, #460000 100%);
+  background-color: #5f0000;
+  overflow-x: hidden;
 }
 
-/* Ensure Tailwind/bg utilities don't unexpectedly replace the crossfade */
-body[class*="bg-"] {
-  background-image: none !important;
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  transition: opacity 1.2s ease-in-out;
+  z-index: -2;
+  animation: backgroundSlideshow 20s infinite ease-in-out;
+}
+
+body::before {
+  background-image: url("/images/attachments/IMG_9399.jpeg");
+  opacity: 1;
+}
+
+body::after {
+  background-image: url("/images/attachments/IMG_9402.jpeg");
+  opacity: 0;
+  animation-delay: 10s;
+}
+
+@keyframes backgroundSlideshow {
+  0%,
+  44% {
+    opacity: 1;
+  }
+
+  50%,
+  94% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 a {
