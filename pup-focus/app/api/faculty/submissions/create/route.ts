@@ -73,10 +73,11 @@ export async function POST(request: NextRequest) {
       .eq("auth_user_id", user.id)
       .single();
 
-    if (appUserError || !appUser) {
+    if (appUserError || !appUser || !appUser.profile_id) {
       logger.error("faculty_not_found", {
         authUserId: user.id,
         error: appUserError?.message,
+        profileId: appUser?.profile_id ?? null,
       });
       return NextResponse.json(
         { error: "Faculty profile not found" },
