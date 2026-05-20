@@ -1207,19 +1207,61 @@ function RequirementsVerificationModal({
 
                   {submission.document_versions &&
                     submission.document_versions.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        {submission.document_versions.map((doc: any) => (
-                          <a
-                            key={doc.id}
-                            href={`/api/storage/download?path=${encodeURIComponent(doc.storage_path)}`}
-                            className="inline-flex items-center gap-2 rounded-md bg-slate-800 px-3 py-2 text-xs text-blue-400 hover:bg-slate-700"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            📄 {doc.storage_path.split("/").pop()} (
-                            {(doc.size_bytes / 1024).toFixed(1)} KB)
-                          </a>
-                        ))}
+                      <div className="mt-3 space-y-3">
+                        {submission.document_versions.map((doc: any) => {
+                          const fileName = doc.storage_path.split("/").pop();
+                          const url = `/api/storage/download?path=${encodeURIComponent(
+                            doc.storage_path,
+                          )}`;
+                          const isImage = /\.(jpe?g|png|gif|bmp)$/i.test(
+                            fileName,
+                          );
+                          const isPdf = /\.pdf$/i.test(fileName);
+
+                          return (
+                            <div
+                              key={doc.id}
+                              className="rounded-md border border-slate-800 p-3 bg-slate-900"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="text-xs text-slate-400">
+                                  📄 {fileName} ·{" "}
+                                  {(doc.size_bytes / 1024).toFixed(1)} KB
+                                </div>
+                                <div className="flex gap-2">
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 rounded-md bg-slate-800 px-3 py-1 text-xs text-blue-400 hover:bg-slate-700"
+                                  >
+                                    Open full view
+                                  </a>
+                                </div>
+                              </div>
+
+                              <div className="mt-3">
+                                {isImage ? (
+                                  <img
+                                    src={url}
+                                    alt={fileName}
+                                    className="max-h-64 w-auto rounded-md border border-slate-700"
+                                  />
+                                ) : isPdf ? (
+                                  <iframe
+                                    src={url}
+                                    className="w-full h-64 rounded-md border border-slate-700"
+                                    title={fileName}
+                                  />
+                                ) : (
+                                  <div className="text-sm text-slate-300">
+                                    Preview not available for this file type.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
