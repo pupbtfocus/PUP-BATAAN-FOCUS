@@ -789,14 +789,57 @@ function RequirementsPanel({
           const data = await response.json();
           const years: string[] = data.availableAcademicYears ?? [];
           const selectedYear = data.selectedAcademicYear ?? "";
+          // Compute a sensible default semester based on latest submission date
+          let computedYear = selectedYear || years[0] || "";
+          let computedSem: SemesterOption = "1st Semester";
+
+          try {
+            const subsResp = await fetch(
+              `/api/admin/faculty/submissions?facultyId=${selectedFaculty.id}`,
+              { credentials: "include" },
+            );
+
+            if (subsResp.ok) {
+              const subsData = await subsResp.json();
+              const subs = subsData.submissions || [];
+              if (subs.length > 0) {
+                const latest = subs.reduce((a: any, b: any) => {
+                  const aTime = new Date(
+                    a.submitted_at || a.created_at,
+                  ).getTime();
+                  const bTime = new Date(
+                    b.submitted_at || b.created_at,
+                  ).getTime();
+                  return aTime > bTime ? a : b;
+                });
+
+                const dateStr = latest.submitted_at || latest.created_at;
+                if (dateStr) {
+                  const d = new Date(dateStr);
+                  const month = d.getMonth() + 1;
+                  const year = d.getFullYear();
+                  const startsSchoolYear = month >= 6;
+                  computedSem = startsSchoolYear
+                    ? "1st Semester"
+                    : "2nd Semester";
+                  computedYear = startsSchoolYear
+                    ? `${year}-${year + 1}`
+                    : `${year - 1}-${year}`;
+                }
+              }
+            }
+          } catch (e) {
+            // ignore and fall back to defaults
+          }
+
           setAvailableAcademicYears(years);
-          setAcademicYear(selectedYear || years[0] || "");
-          setSemester("1st Semester");
+          setAcademicYear(computedYear || "");
+          setSemester(computedSem);
           // Don't set verification status here - wait for modal to open
           setVerificationStatus(null);
           setInitialLoadInfo(
             `API returned ${years.length} academic year(s). selected: ${
-              selectedYear || years[0] || "(none)"
+              computedYear || "(none)"
             }`,
           );
         } else {
@@ -825,11 +868,46 @@ function RequirementsPanel({
   }, [selectedFaculty]);
 
   async function onOpenModal() {
-    if (!selectedFaculty || !academicYear) {
-      return;
+    if (!selectedFaculty) return;
+
+    // Recompute semester/year from latest submission to guarantee correct filter
+    let useYear = academicYear;
+    let useSem = semester;
+
+    try {
+      const subsResp = await fetch(
+        `/api/admin/faculty/submissions?facultyId=${selectedFaculty.id}`,
+        { credentials: "include" },
+      );
+
+      if (subsResp.ok) {
+        const subsData = await subsResp.json();
+        const subs = subsData.submissions || [];
+        if (subs.length > 0) {
+          const latest = subs.reduce((a: any, b: any) => {
+            const aTime = new Date(a.submitted_at || a.created_at).getTime();
+            const bTime = new Date(b.submitted_at || b.created_at).getTime();
+            return aTime > bTime ? a : b;
+          });
+
+          const dateStr = latest.submitted_at || latest.created_at;
+          if (dateStr) {
+            const d = new Date(dateStr);
+            const month = d.getMonth() + 1;
+            const year = d.getFullYear();
+            const startsSchoolYear = month >= 6;
+            useSem = startsSchoolYear ? "1st Semester" : "2nd Semester";
+            useYear = startsSchoolYear
+              ? `${year}-${year + 1}`
+              : `${year - 1}-${year}`;
+          }
+        }
+      }
+    } catch (e) {
+      // ignore and use current selection
     }
 
-    await fetchVerificationStatus(selectedFaculty.id, academicYear, semester);
+    await fetchVerificationStatus(selectedFaculty.id, useYear, useSem);
     setIsModalOpen(true);
   }
 
