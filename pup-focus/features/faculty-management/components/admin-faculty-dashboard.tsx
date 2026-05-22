@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import {
   REQUIREMENT_LABEL,
@@ -18,6 +20,7 @@ type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 type SemesterOption = "1st Semester" | "2nd Semester";
 
 type AdminSection =
+  | "dashboard"
   | "add"
   | "faculty"
   | "requirements"
@@ -34,6 +37,10 @@ type FacultyAccount = {
 };
 
 const SEMESTER_OPTIONS: SemesterOption[] = ["1st Semester", "2nd Semester"];
+const LOGIN_PAGE_IMAGES = [
+  "/images/attachments/IMG_9399.jpeg",
+  "/images/attachments/IMG_9402.jpeg",
+];
 
 function toTimeInputValue(timeLabel: string): string | null {
   const match = timeLabel
@@ -105,7 +112,7 @@ export function AdminFacultyDashboard() {
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     null,
   );
-  const [activeSection, setActiveSection] = useState<AdminSection>("add");
+  const [activeSection, setActiveSection] = useState<AdminSection>("dashboard");
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
@@ -345,6 +352,12 @@ export function AdminFacultyDashboard() {
 
         <nav className="mt-6 space-y-2">
           <SidebarButton
+            active={activeSection === "dashboard"}
+            title="Dashboard"
+            description="Logo, highlights, and login page images"
+            onClick={() => setActiveSection("dashboard")}
+          />
+          <SidebarButton
             active={activeSection === "add"}
             title="Add Faculty"
             description="Create faculty account and assign program"
@@ -374,6 +387,43 @@ export function AdminFacultyDashboard() {
       <div className="ml-72 flex min-h-full w-[calc(100%-18rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            {activeSection === "dashboard" ? (
+              <article className="relative -m-6 h-[calc(100vh-4rem)] w-[calc(100%+3rem)] overflow-hidden p-0">
+                <div className="relative h-full overflow-hidden bg-[#4d0000]/80">
+                  <Image
+                    src={LOGIN_PAGE_IMAGES[0]}
+                    alt="PUP Bataan login background"
+                    fill
+                    sizes="100vw"
+                    className="object-cover"
+                    style={{ animation: "backgroundFadeA 16s infinite linear" }}
+                  />
+                  <Image
+                    src={LOGIN_PAGE_IMAGES[1]}
+                    alt="PUP Bataan login background"
+                    fill
+                    sizes="100vw"
+                    className="object-cover"
+                    style={{ animation: "backgroundFadeB 16s infinite linear" }}
+                  />
+                  <div className="absolute inset-0 bg-[#4d0000]/70" />
+
+                  <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
+                    <BrandMark
+                      size={90}
+                      className="rounded-full shadow-lg shadow-black/20"
+                    />
+                    <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+                      Polytechnic University of the Philippines - Bataan Campus
+                    </p>
+                    <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#fff8e7]">
+                      PUP FOCUS
+                    </h3>
+                  </div>
+                </div>
+              </article>
+            ) : null}
+
             {activeSection === "add" ? (
               <article className="p-8">
                 <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
