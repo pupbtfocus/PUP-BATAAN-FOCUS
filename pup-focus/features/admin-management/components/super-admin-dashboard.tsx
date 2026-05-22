@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
-import { ROLE_LABEL, type AppRole } from "@/config/roles";
+import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { createClient } from "@/lib/supabase/client";
 
 type CreateAdminResult = {
@@ -28,11 +28,13 @@ type SuperAdminAccountResult = {
 
 type SuperAdminSection = "dashboard" | "accounts" | "settings" | "create";
 type SettingsOption = "profile" | "password";
+type AccountViewRole = "all" | AppRole;
 
 type AdminAccount = {
   id: string;
   profile_id: string;
   auth_user_id: string | null;
+  role: AppRole;
   full_name: string;
   email: string;
   department: string | null;
@@ -71,6 +73,8 @@ export function SuperAdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
+  const [accountViewRole, setAccountViewRole] =
+    useState<AccountViewRole>("all");
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
   const [accountsError, setAccountsError] = useState<string | null>(null);
   const [accountActionError, setAccountActionError] = useState<string | null>(
@@ -157,6 +161,53 @@ export function SuperAdminDashboard() {
     () => adminAccounts.filter((admin) => admin.is_active),
     [adminAccounts],
   );
+
+  const adminRoleAccounts = useMemo(
+    () => adminAccounts.filter((admin) => admin.role === ROLE.ADMIN),
+    [adminAccounts],
+  );
+
+  const superAdminAccounts = useMemo(
+    () => adminAccounts.filter((admin) => admin.role === ROLE.SUPER_ADMIN),
+    [adminAccounts],
+  );
+
+  const visibleAccountGroups = useMemo(() => {
+    if (accountViewRole === "all") {
+      return [
+        {
+          key: ROLE.ADMIN,
+          title: "Admin Accounts",
+          accounts: adminRoleAccounts,
+          emptyMessage: "No admin accounts found.",
+        },
+        {
+          key: ROLE.SUPER_ADMIN,
+          title: "Super Admin Accounts",
+          accounts: superAdminAccounts,
+          emptyMessage: "No super admin accounts found.",
+        },
+      ];
+    }
+
+    return [
+      {
+        key: accountViewRole,
+        title:
+          accountViewRole === ROLE.ADMIN
+            ? "Admin Accounts"
+            : "Super Admin Accounts",
+        accounts:
+          accountViewRole === ROLE.ADMIN
+            ? adminRoleAccounts
+            : superAdminAccounts,
+        emptyMessage:
+          accountViewRole === ROLE.ADMIN
+            ? "No admin accounts found."
+            : "No super admin accounts found.",
+      },
+    ];
+  }, [accountViewRole, adminRoleAccounts, superAdminAccounts]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -446,6 +497,88 @@ export function SuperAdminDashboard() {
     }
   }
 
+  function renderAccountCards(accounts: AdminAccount[]) {
+    if (!accounts.length) {
+      return null;
+    }
+
+    return accounts.map((admin) => (
+      <div
+        key={admin.id}
+        className="rounded-xl border border-slate-700 bg-slate-950/80 p-4"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-semibold text-slate-100">{admin.full_name}</p>
+            <p className="text-sm text-slate-400">{admin.email}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-300">
+              {ROLE_LABEL[admin.role]}
+            </span>
+            <span
+              className={`rounded-full border px-3 py-1 text-xs ${
+                admin.is_active
+                  ? "border-emerald-700 bg-emerald-950/40 text-emerald-300"
+                  : "border-slate-700 bg-slate-900 text-slate-400"
+              }`}
+            >
+              {admin.is_active ? "Active" : "Inactive"}
+            </span>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
+          <span>Department: {admin.department ?? "Not set"}</span>
+          <span>Permissions: {admin.permissions?.length ?? 0}</span>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {admin.is_active ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onDeactivateAdmin(admin.profile_id)}
+              disabled={loadingAdminIds.has(admin.profile_id)}
+              className="text-amber-300 hover:text-amber-200"
+            >
+              {loadingAdminIds.has(admin.profile_id)
+                ? "Deactivating..."
+                : "Deactivate"}
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onActivateAdmin(admin.profile_id)}
+              disabled={loadingAdminIds.has(admin.profile_id)}
+              className="text-emerald-300 hover:text-emerald-200"
+            >
+              {loadingAdminIds.has(admin.profile_id)
+                ? "Activating..."
+                : "Activate"}
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onViewAdminDetails(admin.profile_id)}
+            className="text-blue-300 hover:text-blue-200"
+          >
+            View Details
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onDeleteAdmin(admin.profile_id)}
+            disabled={loadingAdminIds.has(admin.profile_id)}
+            className="text-red-300 hover:text-red-200"
+          >
+            Delete
+          </Button>
+        </div>
+      </div>
+    ));
+  }
+
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
       <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg">
@@ -539,32 +672,67 @@ export function SuperAdminDashboard() {
                   View existing admin accounts and create new ones.
                 </p>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <InfoCard
-                    label="Total Admins"
+                    label="Total Accounts"
                     value={String(adminAccounts.length)}
                   />
                   <InfoCard
-                    label="Active Admins"
+                    label="Active Accounts"
                     value={String(activeAccounts.length)}
                   />
                   <InfoCard
-                    label="Role"
-                    value={ROLE_LABEL["super_admin" as AppRole]}
+                    label="Admin Accounts"
+                    value={String(adminRoleAccounts.length)}
+                  />
+                  <InfoCard
+                    label="Super Admin Accounts"
+                    value={String(superAdminAccounts.length)}
                   />
                 </div>
 
                 <div className="mt-6 rounded-2xl border border-slate-700 bg-slate-950/50 p-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <h3 className="text-lg font-semibold text-slate-100">
-                      Admin Directory
-                    </h3>
-                    <Button
-                      type="button"
-                      onClick={() => setActiveSection("create")}
-                    >
-                      Create Admin
-                    </Button>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-100">
+                        Account Directory
+                      </h3>
+                      <p className="mt-1 text-sm text-slate-400">
+                        Separate admin and super admin accounts with a role
+                        filter.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label
+                        className="text-sm font-medium text-slate-300"
+                        htmlFor="accountRoleFilter"
+                      >
+                        Show
+                      </label>
+                      <select
+                        id="accountRoleFilter"
+                        value={accountViewRole}
+                        onChange={(event) =>
+                          setAccountViewRole(
+                            event.target.value as AccountViewRole,
+                          )
+                        }
+                        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400"
+                      >
+                        <option value="all">All Accounts</option>
+                        <option value={ROLE.ADMIN}>Admin Accounts</option>
+                        <option value={ROLE.SUPER_ADMIN}>
+                          Super Admin Accounts
+                        </option>
+                      </select>
+                      <Button
+                        type="button"
+                        onClick={() => setActiveSection("create")}
+                      >
+                        Create Admin
+                      </Button>
+                    </div>
                   </div>
 
                   {accountsError ? (
@@ -581,100 +749,38 @@ export function SuperAdminDashboard() {
                     </p>
                   ) : null}
 
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-4 space-y-6">
                     {isLoadingAccounts ? (
                       <p className="text-sm text-slate-400">
-                        Loading admin accounts...
+                        Loading account directory...
                       </p>
-                    ) : adminAccounts.length ? (
-                      adminAccounts.map((admin) => (
-                        <div
-                          key={admin.id}
-                          className="rounded-xl border border-slate-700 bg-slate-950/80 p-4"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                              <p className="font-semibold text-slate-100">
-                                {admin.full_name}
-                              </p>
-                              <p className="text-sm text-slate-400">
-                                {admin.email}
-                              </p>
-                            </div>
-                            <span
-                              className={`rounded-full border px-3 py-1 text-xs ${
-                                admin.is_active
-                                  ? "border-emerald-700 bg-emerald-950/40 text-emerald-300"
-                                  : "border-slate-700 bg-slate-900 text-slate-400"
-                              }`}
-                            >
-                              {admin.is_active ? "Active" : "Inactive"}
-                            </span>
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
-                            <span>
-                              Department: {admin.department ?? "Not set"}
-                            </span>
-                            <span>
-                              Permissions: {admin.permissions?.length ?? 0}
-                            </span>
-                          </div>
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {admin.is_active ? (
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() =>
-                                  onDeactivateAdmin(admin.profile_id)
-                                }
-                                disabled={loadingAdminIds.has(admin.profile_id)}
-                                className="text-amber-300 hover:text-amber-200"
-                              >
-                                {loadingAdminIds.has(admin.profile_id)
-                                  ? "Deactivating..."
-                                  : "Deactivate"}
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() =>
-                                  onActivateAdmin(admin.profile_id)
-                                }
-                                disabled={loadingAdminIds.has(admin.profile_id)}
-                                className="text-emerald-300 hover:text-emerald-200"
-                              >
-                                {loadingAdminIds.has(admin.profile_id)
-                                  ? "Activating..."
-                                  : "Activate"}
-                              </Button>
-                            )}
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() =>
-                                onViewAdminDetails(admin.profile_id)
-                              }
-                              className="text-blue-300 hover:text-blue-200"
-                            >
-                              View Details
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => onDeleteAdmin(admin.profile_id)}
-                              disabled={loadingAdminIds.has(admin.profile_id)}
-                              className="text-red-300 hover:text-red-200"
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      ))
                     ) : (
-                      <p className="text-sm text-slate-400">
-                        No admin accounts found.
-                      </p>
+                      visibleAccountGroups.map((group) => (
+                        <section
+                          key={group.key}
+                          className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <h4 className="text-base font-semibold text-slate-100">
+                              {group.title}
+                            </h4>
+                            <span className="text-xs text-slate-400">
+                              {group.accounts.length} account
+                              {group.accounts.length === 1 ? "" : "s"}
+                            </span>
+                          </div>
+
+                          <div className="mt-3 space-y-3">
+                            {group.accounts.length ? (
+                              renderAccountCards(group.accounts)
+                            ) : (
+                              <p className="text-sm text-slate-400">
+                                {group.emptyMessage}
+                              </p>
+                            )}
+                          </div>
+                        </section>
+                      ))
                     )}
                   </div>
                 </div>

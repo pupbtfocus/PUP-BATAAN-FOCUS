@@ -35,7 +35,12 @@ export async function POST(request: NextRequest) {
       .eq("profile_id", profileId)
       .maybeSingle();
 
-    if (!appUser || appUser.role !== ROLE.ADMIN) {
+    if (
+      !appUser ||
+      ![ROLE.ADMIN, ROLE.SUPER_ADMIN].includes(
+        appUser.role as (typeof ROLE)[keyof typeof ROLE],
+      )
+    ) {
       return NextResponse.json(
         { error: "Admin account not found" },
         { status: 404 },
