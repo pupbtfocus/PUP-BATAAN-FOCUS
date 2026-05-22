@@ -490,6 +490,24 @@ type SubmissionWindowResponse = {
   currentTimeLabel: string;
 };
 
+type ApiBody = {
+  error?: string;
+  details?: string;
+};
+
+async function readApiBody(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
 function SubmissionWindowPanel() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -511,21 +529,27 @@ function SubmissionWindowPanel() {
       const response = await fetch("/api/admin/submission-window", {
         credentials: "include",
       });
+      const body = await readApiBody(response);
 
       if (!response.ok) {
-        let details = "";
-        try {
-          const body = await response.json();
-          details = body.error || response.statusText;
-        } catch {
-          details = `HTTP ${response.status}`;
-        }
+        const details =
+          typeof body === "object" && body !== null
+            ? (((body as ApiBody).error || (body as ApiBody).details) ??
+              `HTTP ${response.status}`)
+            : `HTTP ${response.status}`;
 
         setError(`Failed to load submission window: ${details}`);
         return;
       }
 
-      const data = (await response.json()) as SubmissionWindowResponse;
+      if (typeof body !== "object" || body === null) {
+        setError(
+          `Failed to load submission window: Invalid response (HTTP ${response.status})`,
+        );
+        return;
+      }
+
+      const data = body as SubmissionWindowResponse;
       setWindowStatus(data);
       setStartDate(data.startDate ?? "");
       setEndDate(data.endDate ?? "");
@@ -588,11 +612,29 @@ function SubmissionWindowPanel() {
           endTime: endTimeLabel,
         }),
       });
-
-      const body = await response.json();
+      const body = await readApiBody(response);
 
       if (!response.ok) {
-        setError(body.error || "Failed to save submission window");
+        if (typeof body !== "object" || body === null) {
+          setError(
+            `Failed to save submission window (HTTP ${response.status}).`,
+          );
+          return;
+        }
+
+        const apiBody = body as ApiBody;
+        setError(
+          apiBody.details
+            ? `${apiBody.error || "Failed to save submission window"}: ${apiBody.details}`
+            : (apiBody.error ?? "Failed to save submission window"),
+        );
+        return;
+      }
+
+      if (typeof body !== "object" || body === null) {
+        setError(
+          `Failed to save submission window: Invalid response (HTTP ${response.status}).`,
+        );
         return;
       }
 
@@ -627,11 +669,21 @@ function SubmissionWindowPanel() {
         method: "DELETE",
         credentials: "include",
       });
-
-      const body = await response.json();
+      const body = await readApiBody(response);
 
       if (!response.ok) {
-        setError(body.error || "Failed to close submissions");
+        if (typeof body === "object" && body !== null) {
+          setError((body as ApiBody).error || "Failed to close submissions");
+        } else {
+          setError(`Failed to close submissions (HTTP ${response.status}).`);
+        }
+        return;
+      }
+
+      if (typeof body !== "object" || body === null) {
+        setError(
+          `Failed to close submissions: Invalid response (HTTP ${response.status}).`,
+        );
         return;
       }
 
