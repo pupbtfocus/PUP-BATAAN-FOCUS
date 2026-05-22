@@ -50,57 +50,83 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    let appUsersQuery = supabase
-      .from("app_users")
-      .select(
-        `
-        id,
-        auth_user_id,
-        profile_id,
-        metadata,
-        created_at,
-        profiles(id, full_name, email)
-      `,
-      )
-      .eq("role", "faculty")
-      .eq("metadata->>created_via", "admin_faculty_panel")
-      .limit(200);
+    const { data: facultyRole, error: roleError } = await supabase
+      .from("roles")
+      .select("id")
+      .eq("code", "faculty")
+      .maybeSingle();
 
-    if (!allowDebugUnauth && requesterRole === ROLE.ADMIN) {
-      appUsersQuery = appUsersQuery.eq(
-        "metadata->>created_by_admin_id",
-        user.id,
+    if (roleError) {
+      return NextResponse.json(
+        { error: "Failed to fetch faculty role", details: roleError.message },
+        { status: 500 },
       );
     }
 
-    const { data: appUsers, error: queryError } = await appUsersQuery;
+    if (!facultyRole?.id) {
+      return NextResponse.json({ faculty: [] });
+    }
+
+    const { data: userRoles, error: userRolesError } = await supabase
+      .from("user_roles")
+      .select("profile_id")
+      .eq("role_id", facultyRole.id)
+      .limit(500);
+
+    if (userRolesError) {
+      return NextResponse.json(
+        {
+          error: "Failed to fetch faculty accounts",
+          details: userRolesError.message,
+        },
+        { status: 500 },
+      );
+    }
+
+    const profileIds = Array.from(
+      new Set(
+        (userRoles ?? [])
+          .map((entry) => entry.profile_id)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+
+    if (profileIds.length === 0) {
+      if (debugMode) {
+        return NextResponse.json({
+          debug: true,
+          facultyCount: 0,
+          profileIdsSample: [],
+          appUsersSample: [],
+          queryError: null,
+        });
+      }
+
+      return NextResponse.json({ faculty: [] });
+    }
+
+    const [profilesResult, appUsersResult] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, user_id, full_name, email, created_at")
+        .in("id", profileIds),
+      supabase
+        .from("app_users")
+        .select("profile_id, auth_user_id, metadata, created_at, role")
+        .in("profile_id", profileIds),
+    ]);
+
+    const profiles = profilesResult.data;
+    const profilesError = profilesResult.error;
+    const appUsers = appUsersResult.data;
+    const queryError = profilesError ?? appUsersResult.error;
 
     if (debugMode) {
-      const { count: appUsersCount } = await supabase
-        .from("app_users")
-        .select("id", { count: "estimated", head: false })
-        .eq("role", "faculty");
-
-      const { data: roles } = await supabase
-        .from("roles")
-        .select("id,code")
-        .eq("code", "faculty")
-        .limit(1);
-      const roleId = roles?.[0]?.id ?? null;
-
-      const { data: userRoles } = roleId
-        ? await supabase
-            .from("user_roles")
-            .select("profile_id")
-            .eq("role_id", roleId)
-            .limit(50)
-        : { data: [] };
-
       return NextResponse.json({
         debug: true,
-        appUsersCount: appUsersCount ?? null,
+        facultyCount: profiles?.length ?? 0,
+        profileIdsSample: profileIds.slice(0, 50),
         appUsersSample: appUsers ?? [],
-        userRolesSample: userRoles ?? [],
         queryError: queryError ? queryError.message : null,
       });
     }
@@ -112,28 +138,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const faculty =
-      appUsers
-        ?.map((item: any) => {
-          const profile = Array.isArray(item.profiles)
-            ? item.profiles[0]
-            : item.profiles;
+    const appUserByProfileId = new Map(
+      (appUsers ?? []).map((item: any) => [item.profile_id, item]),
+    );
 
-          return {
-            id: item.profile_id,
-            user_id: item.auth_user_id,
-            fullName: profile?.full_name || item.full_name || "Unknown",
-            email: profile?.email || item.email || "Unknown",
-            is_active: item.metadata?.is_active ?? true,
-            created_at: item.created_at || new Date().toISOString(),
-            requirementStatus: buildInitialRequirementStatus(),
-          };
-        })
-        .filter(
-          (value: any, index: number, self: any[]) =>
-            self.findIndex((v) => v.id === value.id) === index,
-        )
-        .sort((a: any, b: any) => a.fullName.localeCompare(b.fullName)) || [];
+    const faculty = (profiles ?? [])
+      .map((profile: any) => {
+        const appUser = appUserByProfileId.get(profile.id);
+
+        return {
+          id: profile.id,
+          user_id: appUser?.auth_user_id ?? profile.user_id ?? null,
+          fullName: profile.full_name || "Unknown",
+          email: profile.email || "Unknown",
+          is_active: appUser?.metadata?.is_active ?? true,
+          created_at:
+            appUser?.created_at ||
+            profile.created_at ||
+            new Date().toISOString(),
+          requirementStatus: buildInitialRequirementStatus(),
+        };
+      })
+      .sort((a: any, b: any) => a.fullName.localeCompare(b.fullName));
 
     return NextResponse.json({ faculty });
   } catch (error) {

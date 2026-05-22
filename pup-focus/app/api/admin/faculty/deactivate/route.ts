@@ -32,10 +32,83 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
+    const { data: facultyRole, error: facultyRoleError } = await supabase
+      .from("roles")
+      .select("id")
+      .eq("code", "faculty")
+      .maybeSingle();
+
+    if (facultyRoleError) {
+      console.error(
+        "Error fetching faculty role before deactivation:",
+        facultyRoleError,
+      );
+      return NextResponse.json(
+        { error: "Failed to fetch faculty account" },
+        { status: 500 },
+      );
+    }
+
+    if (!facultyRole?.id) {
+      return NextResponse.json(
+        { error: "Faculty account not found" },
+        { status: 404 },
+      );
+    }
+
+    const { data: roleAssignment, error: roleAssignmentError } = await supabase
+      .from("user_roles")
+      .select("profile_id")
+      .eq("profile_id", facultyProfileId)
+      .eq("role_id", facultyRole.id)
+      .maybeSingle();
+
+    if (roleAssignmentError) {
+      console.error(
+        "Error fetching faculty role assignment before deactivation:",
+        roleAssignmentError,
+      );
+      return NextResponse.json(
+        { error: "Failed to fetch faculty account" },
+        { status: 500 },
+      );
+    }
+
+    if (!roleAssignment) {
+      return NextResponse.json(
+        { error: "Faculty account not found" },
+        { status: 404 },
+      );
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, user_id, full_name, email")
+      .eq("id", facultyProfileId)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error(
+        "Error fetching profile before deactivation:",
+        profileError,
+      );
+      return NextResponse.json(
+        { error: "Failed to fetch faculty account" },
+        { status: 500 },
+      );
+    }
+
+    if (!profile) {
+      return NextResponse.json(
+        { error: "Faculty account not found" },
+        { status: 404 },
+      );
+    }
+
     // Fetch the app_users row to obtain existing metadata
     const { data: appUser, error: fetchError } = await supabase
       .from("app_users")
-      .select("id, auth_user_id, profile_id, metadata")
+      .select("id, auth_user_id, profile_id, metadata, created_at")
       .eq("profile_id", facultyProfileId)
       .eq("role", "faculty")
       .maybeSingle();
@@ -49,20 +122,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!appUser) {
-      return NextResponse.json(
-        { error: "Faculty account not found" },
-        { status: 404 },
-      );
-    }
-
-    if (appUser.metadata?.created_via !== "admin_faculty_panel") {
-      return NextResponse.json(
-        { error: "Only faculty created from the admin panel can be modified" },
-        { status: 403 },
-      );
+      // Legacy accounts may not have an app_users row yet; create one on first toggle.
     }
 
     if (
+      appUser?.metadata?.created_via === "admin_faculty_panel" &&
       requesterRole === ROLE.ADMIN &&
       appUser.metadata?.created_by_admin_id !== user.id
     ) {
@@ -75,13 +139,24 @@ export async function POST(request: NextRequest) {
     const existingMetadata = appUser?.metadata ?? {};
     const updatedMetadata = { ...existingMetadata, is_active: false };
 
-    const { error: updateError } = await supabase
-      .from("app_users")
-      .update({
-        metadata: updatedMetadata,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("profile_id", facultyProfileId);
+    const payload = {
+      auth_user_id: appUser?.auth_user_id ?? profile.user_id,
+      profile_id: facultyProfileId,
+      full_name: profile.full_name,
+      email: profile.email,
+      role: "faculty",
+      metadata: updatedMetadata,
+      updated_at: new Date().toISOString(),
+    };
+
+    const updateResult = appUser
+      ? await supabase.from("app_users").update(payload).eq("id", appUser.id)
+      : await supabase.from("app_users").insert({
+          ...payload,
+          created_at: new Date().toISOString(),
+        });
+
+    const updateError = updateResult.error;
 
     if (updateError) {
       console.error("Error updating app_users metadata:", updateError);
