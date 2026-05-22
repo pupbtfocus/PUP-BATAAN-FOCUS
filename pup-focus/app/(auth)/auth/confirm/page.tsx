@@ -16,6 +16,20 @@ function readHashParams() {
   return new URLSearchParams(hash);
 }
 
+function formatInviteError(message: string) {
+  const normalized = message.trim().toLowerCase();
+
+  if (normalized.includes("access_denied")) {
+    return "This invite was already used. Please ask an administrator to send a new invite.";
+  }
+
+  if (normalized.includes("expired")) {
+    return "This invitation link has expired. Please ask an administrator to send a new invite.";
+  }
+
+  return message;
+}
+
 function AuthConfirmContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,7 +52,7 @@ function AuthConfirmContent() {
       const error = hashParams.get("error") ?? searchParams.get("error");
 
       if (error) {
-        setMessage(decodeURIComponent(error));
+        setMessage(formatInviteError(decodeURIComponent(error)));
         return;
       }
 
@@ -60,7 +74,7 @@ function AuthConfirmContent() {
         }
 
         if (sessionError) {
-          setMessage(sessionError.message);
+          setMessage(formatInviteError(sessionError.message));
           return;
         }
       }
@@ -74,7 +88,7 @@ function AuthConfirmContent() {
         }
 
         if (exchangeError) {
-          setMessage(exchangeError.message);
+          setMessage(formatInviteError(exchangeError.message));
           return;
         }
       } else if (tokenHash) {
@@ -88,7 +102,7 @@ function AuthConfirmContent() {
         }
 
         if (verifyError) {
-          setMessage(verifyError.message);
+          setMessage(formatInviteError(verifyError.message));
           return;
         }
       } else if (token) {
@@ -105,7 +119,7 @@ function AuthConfirmContent() {
         }
 
         if (verifyError) {
-          setMessage(verifyError.message);
+          setMessage(formatInviteError(verifyError.message));
           return;
         }
       } else if (!accessToken || !refreshToken) {
