@@ -63,6 +63,8 @@ export function SuperAdminDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteModalMessage, setInviteModalMessage] = useState("");
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
   const [accountViewRole, setAccountViewRole] =
     useState<AccountViewRole>("all");
@@ -231,15 +233,12 @@ export function SuperAdminDashboard() {
         return;
       }
 
-      window.alert(
-        `Invitation email sent to ${data.user?.email ?? normalizedEmail}. Please ask them to verify their email and check their inbox.`,
-      );
-      setSuccess(
-        `Invitation email sent to ${data.user?.email ?? normalizedEmail}. Please ask them to verify their email.`,
-      );
+      const inviteMessage = `Invitation email sent to ${data.user?.email ?? normalizedEmail}. Please ask them to verify their email and check their inbox.`;
+      setInviteModalMessage(inviteMessage);
+      setInviteModalOpen(true);
+      setSuccess(inviteMessage);
       setFullName("");
       setEmail("");
-      setActiveSection("accounts");
       void (async () => {
         try {
           await loadAdminAccounts();
@@ -1138,6 +1137,26 @@ export function SuperAdminDashboard() {
           onSaved={() => void loadAdminAccounts()}
           editable={adminDetailsEditable}
         />
+      ) : null}
+
+      {inviteModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur">
+            <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+              Invitation Sent
+            </p>
+            <h3 className="mt-3 text-xl font-semibold text-[#fff8e7]">
+              Email sent successfully
+            </h3>
+            <p className="mt-3 text-sm text-[#f3d9b3]">{inviteModalMessage}</p>
+
+            <div className="mt-6 flex justify-end">
+              <Button type="button" onClick={() => setInviteModalOpen(false)}>
+                OK
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );
