@@ -34,7 +34,7 @@ function AuthConfirmContent() {
       const tokenHash =
         hashParams.get("token_hash") ?? searchParams.get("token_hash");
       const token = hashParams.get("token") ?? searchParams.get("token");
-      const next = searchParams.get("next") ?? "/super-admin/admin";
+      const next = searchParams.get("next") ?? "/super-admin/dashboard";
       const error = hashParams.get("error") ?? searchParams.get("error");
 
       if (error) {
@@ -131,7 +131,11 @@ function AuthConfirmContent() {
         return;
       }
 
-      router.replace(next);
+      // Server will send the temporary password by email after verification.
+      setMessage(
+        "Email verified. A temporary password has been emailed to you — check your inbox.",
+      );
+      // Don't redirect immediately; offer the user the chance to go to sign in.
     }
 
     void confirmInvite();
@@ -149,6 +153,14 @@ function AuthConfirmContent() {
         </p>
         <h1 className="mt-3 text-2xl font-bold">Confirming invitation</h1>
         <p className="mt-3 text-sm text-[#f3d9b3]">{message}</p>
+        <div className="mt-4 flex justify-end">
+          <a
+            href="/auth/sign-in"
+            className="rounded-md bg-amber-400 px-4 py-2 text-sm font-medium text-slate-900"
+          >
+            Go to sign in
+          </a>
+        </div>
       </section>
     </main>
   );
