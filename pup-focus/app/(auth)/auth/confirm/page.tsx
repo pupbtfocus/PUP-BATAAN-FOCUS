@@ -72,10 +72,13 @@ export default function AuthConfirmPage() {
           return;
         }
       } else if (token) {
-        const { error: verifyError } = await supabase.auth.verifyOtp({
+        const verifyParams = {
           token,
-          type: verificationType as any,
-        });
+          type: verificationType,
+        } as Parameters<typeof supabase.auth.verifyOtp>[0];
+
+        const { error: verifyError } =
+          await supabase.auth.verifyOtp(verifyParams);
 
         if (cancelled) {
           return;
