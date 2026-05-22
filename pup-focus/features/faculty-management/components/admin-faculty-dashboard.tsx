@@ -562,7 +562,7 @@ function SubmissionWindowPanel() {
               }
             >
               {!windowStatus.isConfigured
-                ? "Not configured (submissions are open)"
+                ? "Not configured (submissions are closed)"
                 : windowStatus.isOpen
                   ? "Open"
                   : "Closed"}

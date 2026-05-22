@@ -51,13 +51,22 @@ export function validateSubmissionWindow(startDate: string, endDate: string) {
 export async function getSubmissionWindow(
   supabase: SupabaseClient,
 ): Promise<SubmissionWindowConfig | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("submission_windows")
     .select("start_date, end_date")
     .eq("id", 1)
     .maybeSingle<SubmissionWindowRow>();
 
+  // Fail-open: when table/query is unavailable, do not block submissions.
+  if (error) {
+    return null;
+  }
+
   if (!data) {
+    return null;
+  }
+
+  if (!isValidDateInput(data.start_date) || !isValidDateInput(data.end_date)) {
     return null;
   }
 
@@ -74,7 +83,7 @@ export function evaluateSubmissionWindow(
   if (!config) {
     return {
       isConfigured: false,
-      isOpen: true,
+      isOpen: false,
       today,
       startDate: null,
       endDate: null,
