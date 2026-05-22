@@ -1,4 +1,4 @@
-`@echo off
+@echo off
 setlocal
 
 REM Resolve paths relative to this script location.
