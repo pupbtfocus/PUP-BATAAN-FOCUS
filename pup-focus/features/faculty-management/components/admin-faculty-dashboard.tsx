@@ -35,6 +35,46 @@ type FacultyAccount = {
 
 const SEMESTER_OPTIONS: SemesterOption[] = ["1st Semester", "2nd Semester"];
 
+function toTimeInputValue(timeLabel: string): string | null {
+  const match = timeLabel
+    .trim()
+    .match(/^(0?[1-9]|1[0-2]):([0-5][0-9])\s?(AM|PM)$/i);
+
+  if (!match) {
+    return null;
+  }
+
+  const hour12 = Number.parseInt(match[1], 10);
+  const minute = match[2];
+  const period = match[3].toUpperCase();
+
+  const hour24 =
+    period === "AM"
+      ? hour12 === 12
+        ? 0
+        : hour12
+      : hour12 === 12
+        ? 12
+        : hour12 + 12;
+
+  return `${hour24.toString().padStart(2, "0")}:${minute}`;
+}
+
+function toTimeLabel(timeInput: string): string | null {
+  const match = timeInput.trim().match(/^([01][0-9]|2[0-3]):([0-5][0-9])$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const hour24 = Number.parseInt(match[1], 10);
+  const minute = match[2];
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+
+  return `${hour12}:${minute} ${period}`;
+}
+
 function buildInitialRequirementStatus(): Record<
   RequirementCode,
   RequirementStatus
@@ -440,13 +480,21 @@ type SubmissionWindowResponse = {
   isConfigured: boolean;
   isOpen: boolean;
   today: string;
+  currentTime: string;
   startDate: string | null;
   endDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  startTimeLabel: string | null;
+  endTimeLabel: string | null;
+  currentTimeLabel: string;
 };
 
 function SubmissionWindowPanel() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [windowStatus, setWindowStatus] =
     useState<SubmissionWindowResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -481,6 +529,14 @@ function SubmissionWindowPanel() {
       setWindowStatus(data);
       setStartDate(data.startDate ?? "");
       setEndDate(data.endDate ?? "");
+      setStartTime(
+        data.startTimeLabel
+          ? (toTimeInputValue(data.startTimeLabel) ?? "")
+          : "",
+      );
+      setEndTime(
+        data.endTimeLabel ? (toTimeInputValue(data.endTimeLabel) ?? "") : "",
+      );
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -501,8 +557,16 @@ function SubmissionWindowPanel() {
     setError(null);
     setSuccess(null);
 
-    if (!startDate || !endDate) {
-      setError("Start date and end date are required.");
+    if (!startDate || !endDate || !startTime || !endTime) {
+      setError("Start/end date and time are required.");
+      return;
+    }
+
+    const startTimeLabel = toTimeLabel(startTime);
+    const endTimeLabel = toTimeLabel(endTime);
+
+    if (!startTimeLabel || !endTimeLabel) {
+      setError("Please select valid start and end times.");
       return;
     }
 
@@ -517,7 +581,12 @@ function SubmissionWindowPanel() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ startDate, endDate }),
+        body: JSON.stringify({
+          startDate,
+          endDate,
+          startTime: startTimeLabel,
+          endTime: endTimeLabel,
+        }),
       });
 
       const body = await response.json();
@@ -540,6 +609,49 @@ function SubmissionWindowPanel() {
     }
   }
 
+  async function handleCloseSubmission() {
+    const shouldClose = window.confirm(
+      "Close submissions now and clear the current date/time schedule?",
+    );
+
+    if (!shouldClose) {
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch("/api/admin/submission-window", {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      const body = await response.json();
+
+      if (!response.ok) {
+        setError(body.error || "Failed to close submissions");
+        return;
+      }
+
+      setWindowStatus(body as SubmissionWindowResponse);
+      setStartDate("");
+      setEndDate("");
+      setStartTime("");
+      setEndTime("");
+      setSuccess("Submissions closed and schedule cleared.");
+    } catch (closeError) {
+      setError(
+        closeError instanceof Error
+          ? closeError.message
+          : "Failed to close submissions",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   return (
     <form
       className="mt-6 rounded-xl border border-slate-700 bg-slate-950/50 p-6"
@@ -550,6 +662,17 @@ function SubmissionWindowPanel() {
           <p>
             <span className="text-slate-400">Today:</span> {windowStatus.today}
           </p>
+          <p className="mt-1">
+            <span className="text-slate-400">Current time:</span>{" "}
+            {windowStatus.currentTimeLabel}
+          </p>
+          {windowStatus.isConfigured ? (
+            <p className="mt-1">
+              <span className="text-slate-400">Schedule:</span>{" "}
+              {windowStatus.startDate} {windowStatus.startTimeLabel} to{" "}
+              {windowStatus.endDate} {windowStatus.endTimeLabel}
+            </p>
+          ) : null}
           <p className="mt-1">
             <span className="text-slate-400">Current status:</span>{" "}
             <span
@@ -599,6 +722,36 @@ function SubmissionWindowPanel() {
             disabled={isLoading || isSaving}
           />
         </div>
+
+        <div>
+          <label className="text-sm text-slate-300" htmlFor="windowStartTime">
+            Start Time
+          </label>
+          <input
+            id="windowStartTime"
+            type="time"
+            step={60}
+            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+            value={startTime}
+            onChange={(event) => setStartTime(event.target.value)}
+            disabled={isLoading || isSaving}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm text-slate-300" htmlFor="windowEndTime">
+            End Time
+          </label>
+          <input
+            id="windowEndTime"
+            type="time"
+            step={60}
+            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+            value={endTime}
+            onChange={(event) => setEndTime(event.target.value)}
+            disabled={isLoading || isSaving}
+          />
+        </div>
       </div>
 
       {error ? (
@@ -614,6 +767,15 @@ function SubmissionWindowPanel() {
       ) : null}
 
       <div className="mt-4 flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          className="bg-red-700 text-white hover:bg-red-600"
+          onClick={handleCloseSubmission}
+          disabled={isLoading || isSaving}
+        >
+          Close Submission
+        </Button>
         <Button type="button" variant="secondary" onClick={loadWindow}>
           Refresh
         </Button>

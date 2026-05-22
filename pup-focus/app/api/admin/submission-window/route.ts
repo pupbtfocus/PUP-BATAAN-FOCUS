@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ROLE } from "@/config/roles";
 import {
+  convert12HourTo24Hour,
+  format24HourTo12Hour,
   evaluateSubmissionWindow,
   getSubmissionWindow,
   validateSubmissionWindow,
@@ -31,7 +33,16 @@ export async function GET() {
     const config = await getSubmissionWindow(supabase);
     const status = evaluateSubmissionWindow(config);
 
-    return NextResponse.json(status);
+    return NextResponse.json({
+      ...status,
+      startTimeLabel: status.startTime
+        ? format24HourTo12Hour(status.startTime)
+        : null,
+      endTimeLabel: status.endTime
+        ? format24HourTo12Hour(status.endTime)
+        : null,
+      currentTimeLabel: format24HourTo12Hour(status.currentTime),
+    });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to load submission window", details: String(error) },
@@ -43,6 +54,8 @@ export async function GET() {
 type UpdatePayload = {
   startDate?: string;
   endDate?: string;
+  startTime?: string;
+  endTime?: string;
 };
 
 export async function PUT(request: NextRequest) {
@@ -63,18 +76,28 @@ export async function PUT(request: NextRequest) {
     const payload = (await request.json()) as UpdatePayload;
     const startDate = payload.startDate?.trim() ?? "";
     const endDate = payload.endDate?.trim() ?? "";
+    const startTime = payload.startTime?.trim() ?? "";
+    const endTime = payload.endTime?.trim() ?? "";
 
-    if (!startDate || !endDate) {
+    if (!startDate || !endDate || !startTime || !endTime) {
       return NextResponse.json(
-        { error: "Start date and end date are required." },
+        { error: "Start/end date and time are required." },
         { status: 400 },
       );
     }
 
-    const validation = validateSubmissionWindow(startDate, endDate);
+    const validation = validateSubmissionWindow(
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+    );
     if (!validation.isValid) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
+
+    const startTime24 = convert12HourTo24Hour(startTime);
+    const endTime24 = convert12HourTo24Hour(endTime);
 
     const supabase = getServiceRoleClient();
     const { error } = await supabase.from("submission_windows").upsert(
@@ -82,6 +105,8 @@ export async function PUT(request: NextRequest) {
         id: 1,
         start_date: startDate,
         end_date: endDate,
+        start_time: startTime24,
+        end_time: endTime24,
         updated_by: user.id,
         updated_at: new Date().toISOString(),
       },
@@ -98,11 +123,71 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const status = evaluateSubmissionWindow({ startDate, endDate });
-    return NextResponse.json(status);
+    const status = evaluateSubmissionWindow({
+      startDate,
+      endDate,
+      startTime: startTime24,
+      endTime: endTime24,
+    });
+    return NextResponse.json({
+      ...status,
+      startTimeLabel: status.startTime
+        ? format24HourTo12Hour(status.startTime)
+        : null,
+      endTimeLabel: status.endTime
+        ? format24HourTo12Hour(status.endTime)
+        : null,
+      currentTimeLabel: format24HourTo12Hour(status.currentTime),
+    });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to update submission window", details: String(error) },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE() {
+  try {
+    const sessionClient = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await sessionClient.auth.getUser();
+
+    const requesterRole =
+      (user?.user_metadata?.role as string | undefined) ??
+      (user?.app_metadata?.role as string | undefined);
+
+    if (!user || !isAdminRole(requesterRole)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const supabase = getServiceRoleClient();
+    const { error } = await supabase
+      .from("submission_windows")
+      .delete()
+      .eq("id", 1);
+
+    if (error) {
+      return NextResponse.json(
+        {
+          error: "Failed to close submission window",
+          details: error.message,
+        },
+        { status: 500 },
+      );
+    }
+
+    const status = evaluateSubmissionWindow(null);
+    return NextResponse.json({
+      ...status,
+      startTimeLabel: null,
+      endTimeLabel: null,
+      currentTimeLabel: format24HourTo12Hour(status.currentTime),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to close submission window", details: String(error) },
       { status: 500 },
     );
   }

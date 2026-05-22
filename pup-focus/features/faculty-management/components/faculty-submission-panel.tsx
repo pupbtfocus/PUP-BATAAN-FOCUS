@@ -43,8 +43,14 @@ type SubmissionWindowState = {
   isConfigured: boolean;
   isOpen: boolean;
   today: string;
+  currentTime: string;
   startDate: string | null;
   endDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  startTimeLabel?: string | null;
+  endTimeLabel?: string | null;
+  currentTimeLabel?: string | null;
 };
 
 function buildAcademicYears(count = 5): string[] {
@@ -203,7 +209,7 @@ export function FacultySubmissionPanel({
       ) {
         setSubmissionMessage(
           submissionWindow?.isConfigured
-            ? `Error: Submission is currently closed. Allowed dates are ${submissionWindow.startDate} to ${submissionWindow.endDate}.`
+            ? `Error: Submission is currently closed. Allowed schedule is ${submissionWindow.startDate} ${submissionWindow.startTimeLabel ?? submissionWindow.startTime ?? ""} to ${submissionWindow.endDate} ${submissionWindow.endTimeLabel ?? submissionWindow.endTime ?? ""}.`
             : "Error: Cannot submit requirements because admin has not set submission dates yet.",
         );
         return;
@@ -500,11 +506,15 @@ export function FacultySubmissionPanel({
                         </p>
                       ) : submissionWindow?.isConfigured ? (
                         <p className="mt-3 text-sm text-slate-300">
-                          The submission window is closed. Allowed dates are
+                          The submission window is closed. Allowed schedule is
                           <span className="font-semibold text-amber-300">
                             {" "}
-                            {submissionWindow.startDate} to{" "}
-                            {submissionWindow.endDate}
+                            {submissionWindow.startDate}{" "}
+                            {submissionWindow.startTimeLabel ??
+                              submissionWindow.startTime}{" "}
+                            to {submissionWindow.endDate}{" "}
+                            {submissionWindow.endTimeLabel ??
+                              submissionWindow.endTime}
                           </span>
                           .
                         </p>
@@ -517,7 +527,9 @@ export function FacultySubmissionPanel({
 
                       {submissionWindow?.today ? (
                         <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500">
-                          Today: {submissionWindow.today}
+                          Now: {submissionWindow.today}{" "}
+                          {submissionWindow.currentTimeLabel ??
+                            submissionWindow.currentTime}
                         </p>
                       ) : null}
                     </div>
