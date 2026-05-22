@@ -17,7 +17,12 @@ import {
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 type SemesterOption = "1st Semester" | "2nd Semester";
 
-type AdminSection = "add" | "faculty" | "requirements" | "details";
+type AdminSection =
+  | "add"
+  | "faculty"
+  | "requirements"
+  | "submissionWindow"
+  | "details";
 
 type FacultyAccount = {
   id: string;
@@ -317,6 +322,12 @@ export function AdminFacultyDashboard() {
             description="Validate curriculum-based uploads"
             onClick={() => setActiveSection("requirements")}
           />
+          <SidebarButton
+            active={activeSection === "submissionWindow"}
+            title="Submission Window"
+            description="Set opening and closing dates for uploads"
+            onClick={() => setActiveSection("submissionWindow")}
+          />
         </nav>
       </aside>
 
@@ -395,6 +406,21 @@ export function AdminFacultyDashboard() {
                 />
               </article>
             ) : null}
+
+            {activeSection === "submissionWindow" ? (
+              <article className="p-8">
+                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
+                  Admin Workspace
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
+                  Submission Window
+                </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  Control when faculty can submit requirement documents.
+                </p>
+                <SubmissionWindowPanel />
+              </article>
+            ) : null}
           </div>
         </div>
       </div>
@@ -407,6 +433,195 @@ export function AdminFacultyDashboard() {
         />
       )}
     </div>
+  );
+}
+
+type SubmissionWindowResponse = {
+  isConfigured: boolean;
+  isOpen: boolean;
+  today: string;
+  startDate: string | null;
+  endDate: string | null;
+};
+
+function SubmissionWindowPanel() {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [windowStatus, setWindowStatus] =
+    useState<SubmissionWindowResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  async function loadWindow() {
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch("/api/admin/submission-window", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        let details = "";
+        try {
+          const body = await response.json();
+          details = body.error || response.statusText;
+        } catch {
+          details = `HTTP ${response.status}`;
+        }
+
+        setError(`Failed to load submission window: ${details}`);
+        return;
+      }
+
+      const data = (await response.json()) as SubmissionWindowResponse;
+      setWindowStatus(data);
+      setStartDate(data.startDate ?? "");
+      setEndDate(data.endDate ?? "");
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Failed to load submission window",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadWindow();
+  }, []);
+
+  async function handleSave(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!startDate || !endDate) {
+      setError("Start date and end date are required.");
+      return;
+    }
+
+    if (startDate > endDate) {
+      setError("Start date cannot be later than end date.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/admin/submission-window", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ startDate, endDate }),
+      });
+
+      const body = await response.json();
+
+      if (!response.ok) {
+        setError(body.error || "Failed to save submission window");
+        return;
+      }
+
+      setWindowStatus(body as SubmissionWindowResponse);
+      setSuccess("Submission window updated successfully.");
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to save submission window",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <form
+      className="mt-6 rounded-xl border border-slate-700 bg-slate-950/50 p-6"
+      onSubmit={handleSave}
+    >
+      {windowStatus ? (
+        <div className="mb-4 rounded-md border border-slate-700 bg-slate-950 p-3 text-sm text-slate-300">
+          <p>
+            <span className="text-slate-400">Today:</span> {windowStatus.today}
+          </p>
+          <p className="mt-1">
+            <span className="text-slate-400">Current status:</span>{" "}
+            <span
+              className={
+                windowStatus.isConfigured
+                  ? windowStatus.isOpen
+                    ? "text-emerald-300"
+                    : "text-amber-300"
+                  : "text-slate-300"
+              }
+            >
+              {!windowStatus.isConfigured
+                ? "Not configured (submissions are open)"
+                : windowStatus.isOpen
+                  ? "Open"
+                  : "Closed"}
+            </span>
+          </p>
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="text-sm text-slate-300" htmlFor="windowStartDate">
+            Start Date
+          </label>
+          <input
+            id="windowStartDate"
+            type="date"
+            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
+            disabled={isLoading || isSaving}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm text-slate-300" htmlFor="windowEndDate">
+            End Date
+          </label>
+          <input
+            id="windowEndDate"
+            type="date"
+            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
+            disabled={isLoading || isSaving}
+          />
+        </div>
+      </div>
+
+      {error ? (
+        <p className="mt-4 rounded-md border border-red-700 bg-red-950/20 px-3 py-2 text-sm text-red-300">
+          {error}
+        </p>
+      ) : null}
+
+      {success ? (
+        <p className="mt-4 rounded-md border border-emerald-700 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-300">
+          {success}
+        </p>
+      ) : null}
+
+      <div className="mt-4 flex justify-end gap-2">
+        <Button type="button" variant="secondary" onClick={loadWindow}>
+          Refresh
+        </Button>
+        <Button type="submit" disabled={isLoading || isSaving}>
+          {isSaving ? "Saving..." : "Save Submission Window"}
+        </Button>
+      </div>
+    </form>
   );
 }
 
