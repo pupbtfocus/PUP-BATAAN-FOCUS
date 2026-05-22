@@ -6,6 +6,7 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { createClient } from "@/lib/supabase/client";
+import { isValidEmailAddress } from "@/lib/validation/email";
 
 type CreateAdminResult = {
   success?: boolean;
@@ -206,24 +207,34 @@ export function SuperAdminDashboard() {
     setSuccess(null);
     setIsSubmitting(true);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!isValidEmailAddress(normalizedEmail)) {
+      setError("Please provide a real email address.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/super-admin/admin/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ fullName, email, password }),
+        body: JSON.stringify({ fullName, email: normalizedEmail, password }),
       });
 
       const data = (await response.json()) as CreateAdminResult;
 
       if (!response.ok) {
-        setError(data.error ?? "Failed to create admin account");
+        setError(data.error ?? "Failed to send admin invite");
         setIsSubmitting(false);
         return;
       }
 
-      setSuccess(`Admin account created for ${data.user?.email ?? email}.`);
+      setSuccess(
+        `Invite sent to ${data.user?.email ?? normalizedEmail}. The admin account will be added after the email link is accepted.`,
+      );
       setFullName("");
       setEmail("");
       setPassword("");

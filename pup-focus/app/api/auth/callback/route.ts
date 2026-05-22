@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { bootstrapInvitedAdminAccount } from "@/lib/auth/bootstrap-invited-admin";
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.clone();
@@ -50,6 +51,24 @@ export async function GET(request: NextRequest) {
           request.url,
         ),
       );
+    }
+
+    if (!appUser) {
+      try {
+        await bootstrapInvitedAdminAccount(user);
+      } catch (bootstrapError) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(
+          new URL(
+            `/sign-in?error=${encodeURIComponent(
+              bootstrapError instanceof Error
+                ? bootstrapError.message
+                : "Failed to complete invited admin setup",
+            )}`,
+            request.url,
+          ),
+        );
+      }
     }
   }
 
