@@ -62,6 +62,18 @@ export default function Home() {
         return;
       }
 
+      const mustChange =
+        (user.user_metadata as any)?.force_password_change === true;
+      if (mustChange) {
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}`,
+        );
+        window.location.assign("/auth/change-password");
+        return;
+      }
+
       const signedInRole =
         (user.user_metadata?.role as AppRole | undefined) ??
         (user.app_metadata?.role as AppRole | undefined) ??
@@ -135,6 +147,15 @@ export default function Home() {
     }
 
     const { data: userData } = await supabase.auth.getUser();
+    // If the user's metadata requires a forced password change, redirect
+    // them to the change-password page instead of the dashboard.
+    const mustChange =
+      (userData.user?.user_metadata as any)?.force_password_change === true;
+    if (mustChange) {
+      setIsSubmitting(false);
+      window.location.assign("/auth/change-password");
+      return;
+    }
     try {
       const resp = await fetch("/api/auth/validate");
       if (resp.ok) {

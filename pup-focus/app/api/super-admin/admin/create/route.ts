@@ -93,7 +93,8 @@ export async function POST(request: NextRequest) {
     const publicAppOrigin =
       process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
     const callbackUrl = new URL("/auth/confirm", publicAppOrigin);
-    callbackUrl.searchParams.set("next", "/super-admin/admin");
+    // Redirect to the super-admin dashboard after invite is accepted
+    callbackUrl.searchParams.set("next", "/super-admin/dashboard");
 
     // Use generateLink to get an invite URL that can be sent via a custom
     // email provider or returned to the caller as a fallback when provider

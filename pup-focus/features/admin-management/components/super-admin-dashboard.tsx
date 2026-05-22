@@ -62,7 +62,6 @@ export function SuperAdminDashboard() {
     useState<SuperAdminSection>("dashboard");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -225,7 +224,7 @@ export function SuperAdminDashboard() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ fullName, email: normalizedEmail, password }),
+        body: JSON.stringify({ fullName, email: normalizedEmail }),
       });
 
       const data = (await response.json()) as CreateAdminResult;
@@ -254,7 +253,6 @@ export function SuperAdminDashboard() {
       }
       setFullName("");
       setEmail("");
-      setPassword("");
       setActiveSection("accounts");
       void (async () => {
         try {
@@ -1076,7 +1074,9 @@ export function SuperAdminDashboard() {
                     Create Admin Account
                   </h2>
                   <p className="mt-2 text-sm text-slate-400">
-                    Provision a new admin user with a temporary password.
+                    Provision a new admin user via invite link. The user will
+                    receive an email with a temporary password after verifying
+                    their email.
                   </p>
 
                   <form className="mt-6 space-y-4" onSubmit={onSubmit}>
@@ -1116,24 +1116,7 @@ export function SuperAdminDashboard() {
                       />
                     </div>
 
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-[#fff8e7]"
-                        htmlFor="password"
-                      >
-                        Temporary Password
-                      </label>
-                      <input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        required
-                        minLength={8}
-                        placeholder="Minimum 8 characters"
-                        className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
-                      />
-                    </div>
+                    {/* Temporary password removed from create UI — invite-only flow */}
 
                     {error ? (
                       <p className="text-sm text-red-300">{error}</p>
