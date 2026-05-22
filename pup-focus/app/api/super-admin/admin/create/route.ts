@@ -90,7 +90,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const callbackUrl = new URL("/auth/confirm", request.url);
+    const publicAppOrigin =
+      process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
+    const callbackUrl = new URL("/auth/confirm", publicAppOrigin);
     callbackUrl.searchParams.set("next", "/super-admin/admin");
 
     // Use generateLink to get an invite URL that can be sent via a custom
