@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { APP_CONFIG } from "@/config/app";
@@ -12,12 +13,76 @@ import { isValidEmailAddress } from "@/lib/validation/email";
 const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
 
 export default function Home() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const hash = window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+    const hashParams = new URLSearchParams(hash);
+    const hasAuthCallback =
+      hashParams.has("access_token") ||
+      hashParams.has("token") ||
+      hashParams.has("token_type") ||
+      hashParams.has("type") ||
+      hashParams.has("error");
+
+    if (!hasAuthCallback) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function handleAuthCallback() {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+
+      if (cancelled) {
+        return;
+      }
+
+      const user = data.user;
+
+      if (!user) {
+        const errorDescription =
+          hashParams.get("error_description") ??
+          hashParams.get("error") ??
+          "Unable to complete sign in.";
+        setError(decodeURIComponent(errorDescription));
+        return;
+      }
+
+      const signedInRole =
+        (user.user_metadata?.role as AppRole | undefined) ??
+        (user.app_metadata?.role as AppRole | undefined) ??
+        ROLE.FACULTY;
+      const nextTarget = ROUTE_BY_ROLE[signedInRole];
+
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}`,
+      );
+
+      router.replace(nextTarget);
+    }
+
+    void handleAuthCallback();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
