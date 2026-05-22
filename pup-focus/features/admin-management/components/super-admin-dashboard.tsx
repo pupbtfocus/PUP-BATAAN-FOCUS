@@ -1096,6 +1096,7 @@ export function SuperAdminDashboard() {
           details={adminDetails}
           isLoading={isLoadingAdminDetails}
           onClose={() => setAdminDetailsOpen(false)}
+          onSaved={() => void loadAdminAccounts()}
         />
       ) : null}
     </div>
@@ -1274,17 +1275,100 @@ function AdminDetailsModal({
   details,
   isLoading,
   onClose,
+  onSaved,
 }: {
   details: AdminDetails | null;
   isLoading: boolean;
   onClose: () => void;
+  onSaved: () => Promise<void> | void;
 }) {
+  const [fullName, setFullName] = useState(details?.full_name ?? "");
+  const [email, setEmail] = useState(details?.email ?? "");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const canEdit = details?.role !== ROLE.SUPER_ADMIN;
+
+  useEffect(() => {
+    setFullName(details?.full_name ?? "");
+    setEmail(details?.email ?? "");
+    setPassword("");
+    setError(null);
+    setSuccess(null);
+    setShowPassword(false);
+  }, [details]);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!details?.profile_id) {
+      setError("Admin details are not available.");
+      return;
+    }
+
+    if (!canEdit) {
+      setError("Super admin accounts are view-only.");
+      return;
+    }
+
+    if (!fullName.trim() || !email.trim()) {
+      setError("Full name and email are required.");
+      return;
+    }
+
+    if (password && password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const response = await fetch("/api/super-admin/admin/details", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          profileId: details.profile_id,
+          fullName,
+          email,
+          ...(password ? { password } : {}),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error ?? "Failed to update admin details");
+        setIsSaving(false);
+        return;
+      }
+
+      setSuccess("Admin account updated successfully.");
+      setPassword("");
+      if (data.details) {
+        setFullName(data.details.full_name ?? fullName);
+        setEmail(data.details.email ?? email);
+      }
+      await onSaved();
+      setIsSaving(false);
+    } catch {
+      setError("Unexpected error while updating admin details.");
+      setIsSaving(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl">
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-slate-100">
-            Admin Details
+            Edit Admin Account
           </h3>
           <button
             type="button"
@@ -1298,50 +1382,116 @@ function AdminDetailsModal({
         {isLoading ? (
           <p className="mt-4 text-sm text-slate-400">Loading details...</p>
         ) : details ? (
-          <div className="mt-4 space-y-2 text-sm text-slate-300">
-            <p>
-              <span className="text-slate-500">Full Name:</span>{" "}
-              {details.full_name}
-            </p>
-            <p>
-              <span className="text-slate-500">Email:</span> {details.email}
-            </p>
-            <p>
-              <span className="text-slate-500">Role:</span>{" "}
-              {details.role ?? "admin"}
-            </p>
-            <p>
-              <span className="text-slate-500">Status:</span>{" "}
-              {details.is_active ? "Active" : "Inactive"}
-            </p>
-            <p>
-              <span className="text-slate-500">Department:</span>{" "}
-              {details.department ?? "Not set"}
-            </p>
-            <p>
-              <span className="text-slate-500">Permissions:</span>{" "}
-              {details.permissions?.length ?? 0}
-            </p>
-            <p>
-              <span className="text-slate-500">Created At:</span>{" "}
-              {new Date(details.created_at).toLocaleString()}
-            </p>
-            {details.updated_at ? (
+          <form className="mt-4 space-y-4" onSubmit={onSubmit}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label
+                  className="block text-sm font-medium text-slate-200"
+                  htmlFor="adminFullName"
+                >
+                  Full Name
+                </label>
+                <input
+                  id="adminFullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                  readOnly={!canEdit}
+                  disabled={!canEdit}
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                />
+              </div>
+
+              <div>
+                <label
+                  className="block text-sm font-medium text-slate-200"
+                  htmlFor="adminEmail"
+                >
+                  Email Address
+                </label>
+                <input
+                  id="adminEmail"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  readOnly={!canEdit}
+                  disabled={!canEdit}
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                className="block text-sm font-medium text-slate-200"
+                htmlFor="adminPassword"
+              >
+                New Password
+              </label>
+              <div className="relative mt-2">
+                <input
+                  id="adminPassword"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  disabled={!canEdit}
+                  minLength={8}
+                  placeholder="Leave blank to keep current password"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                />
+                <PasswordToggleButton
+                  shown={showPassword}
+                  onClick={() => setShowPassword((value) => !value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2 text-sm text-slate-400 md:grid-cols-2">
               <p>
-                <span className="text-slate-500">Updated At:</span>{" "}
-                {new Date(details.updated_at).toLocaleString()}
+                <span className="text-slate-500">Role:</span>{" "}
+                {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
               </p>
+              <p>
+                <span className="text-slate-500">Status:</span>{" "}
+                {details.is_active ? "Active" : "Inactive"}
+              </p>
+              <p>
+                <span className="text-slate-500">Department:</span>{" "}
+                {details.department ?? "Not set"}
+              </p>
+              <p>
+                <span className="text-slate-500">Permissions:</span>{" "}
+                {details.permissions?.length ?? 0}
+              </p>
+            </div>
+
+            {error ? <p className="text-sm text-red-300">{error}</p> : null}
+            {success ? (
+              <p className="text-sm text-emerald-300">{success}</p>
             ) : null}
-          </div>
+
+            <div className="flex flex-wrap justify-between gap-3 pt-2">
+              <div className="text-xs text-slate-500">
+                Created {new Date(details.created_at).toLocaleString()}
+                {details.updated_at
+                  ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
+                  : ""}
+              </div>
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={onClose}>
+                  Close
+                </Button>
+                {canEdit ? (
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          </form>
         ) : (
           <p className="mt-4 text-sm text-slate-400">No details available.</p>
         )}
-
-        <div className="mt-6 flex justify-end">
-          <Button type="button" onClick={onClose}>
-            Close
-          </Button>
-        </div>
       </div>
     </div>
   );
