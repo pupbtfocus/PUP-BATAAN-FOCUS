@@ -16,6 +16,7 @@ export default async function SuperAdminDashboardPage() {
       title="Super Admin Dashboard"
       subtitle="Create and manage Admin accounts"
       nav={[{ href: "/super-admin/dashboard", label: "Admin Provisioning" }]}
+      fullBleed
     >
       <SuperAdminDashboard />
     </AppShell>
