@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { sendInviteEmail } from "@/lib/email/send-invite";
 import { isValidEmailAddress } from "@/lib/validation/email";
 
 export async function POST(request: NextRequest) {
@@ -22,18 +23,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { fullName, email, password } = await request.json();
+    const { fullName, email, password: _password } = await request.json();
 
-    if (!fullName || !email || !password) {
+    if (!fullName || !email) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 },
-      );
-    }
-
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
         { status: 400 },
       );
     }
@@ -62,119 +56,96 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: authData, error: authError } =
-      await supabase.auth.admin.createUser({
+    const { data: existingAdmin } = await supabase
+      .from("admins")
+      .select("id")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (existingAdmin) {
+      return NextResponse.json(
+        { error: `Account with email ${normalizedEmail} already exists` },
+        { status: 400 },
+      );
+    }
+
+    const { data: authUsers, error: authUsersError } =
+      await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+
+    if (authUsersError) {
+      return NextResponse.json(
+        { error: authUsersError.message },
+        { status: 400 },
+      );
+    }
+
+    const existingAuthUser = authUsers.users.find(
+      (item) => item.email?.trim().toLowerCase() === normalizedEmail,
+    );
+
+    if (existingAuthUser) {
+      return NextResponse.json(
+        { error: `Account with email ${normalizedEmail} already exists` },
+        { status: 400 },
+      );
+    }
+
+    const callbackUrl = new URL("/auth/confirm", request.url);
+    callbackUrl.searchParams.set("next", "/super-admin/admin");
+
+    // Use generateLink to get an invite URL that can be sent via a custom
+    // email provider or returned to the caller as a fallback when provider
+    // email sending is rate-limited.
+    const { data: genData, error: genError } =
+      await supabase.auth.admin.generateLink({
+        type: "invite",
         email: normalizedEmail,
-        password,
-        email_confirm: true,
-        user_metadata: {
+        data: {
           full_name: fullName,
           role: ROLE.ADMIN,
-        },
-      });
-
-    if (authError || !authData.user) {
-      return NextResponse.json(
-        { error: authError?.message ?? "Failed to create auth user" },
-        { status: 400 },
-      );
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .insert({
-        user_id: authData.user.id,
-        full_name: fullName,
-        email: normalizedEmail,
-      })
-      .select("id")
-      .single();
-
-    if (profileError || !profile) {
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      return NextResponse.json(
-        { error: profileError?.message ?? "Failed to create profile" },
-        { status: 400 },
-      );
-    }
-
-    const { data: adminRole, error: adminRoleError } = await supabase
-      .from("roles")
-      .select("id")
-      .eq("code", ROLE.ADMIN)
-      .single();
-
-    if (adminRoleError || !adminRole) {
-      await supabase.from("profiles").delete().eq("id", profile.id);
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      return NextResponse.json(
-        { error: "Admin role not found. Seed roles first." },
-        { status: 400 },
-      );
-    }
-
-    const { error: userRoleError } = await supabase.from("user_roles").insert({
-      profile_id: profile.id,
-      role_id: adminRole.id,
-    });
-
-    if (userRoleError) {
-      await supabase.from("profiles").delete().eq("id", profile.id);
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      return NextResponse.json(
-        { error: userRoleError.message },
-        { status: 400 },
-      );
-    }
-
-    const { error: appUsersError } = await supabase.from("app_users").upsert(
-      {
-        auth_user_id: authData.user.id,
-        profile_id: profile.id,
-        email: normalizedEmail,
-        full_name: fullName,
-        role: ROLE.ADMIN,
-        metadata: {
-          is_active: true,
           created_via: "super_admin_admin_panel",
           created_by_super_admin_id: user.id,
         },
-      },
-      { onConflict: "email" },
-    );
+        options: {
+          redirectTo: callbackUrl.toString(),
+        },
+      });
 
-    if (appUsersError) {
-      await supabase.from("profiles").delete().eq("id", profile.id);
-      await supabase.auth.admin.deleteUser(authData.user.id);
+    if (genError) {
       return NextResponse.json(
-        { error: appUsersError.message },
+        { error: genError?.message ?? "Failed to generate admin invite link" },
         { status: 400 },
       );
     }
 
-    const { error: adminTableError } = await supabase.from("admins").upsert(
-      {
-        profile_id: profile.id,
-        full_name: fullName,
-        email: normalizedEmail,
-        is_active: true,
-      },
-      { onConflict: "email" },
-    );
+    // `generateLink` returns properties including `action_link` (the URL)
+    const actionLink = genData?.properties?.action_link ?? null;
 
-    if (adminTableError) {
-      await supabase.from("profiles").delete().eq("id", profile.id);
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      return NextResponse.json(
-        { error: adminTableError.message },
-        { status: 400 },
-      );
+    let sent = false;
+    let sendError: string | null = null;
+
+    if (actionLink) {
+      try {
+        // Attempt to send via configured SMTP. If SMTP env vars are missing
+        // or the send fails, we return the link so the caller can copy it.
+        await sendInviteEmail({
+          to: normalizedEmail,
+          link: actionLink,
+          fullName,
+        });
+        sent = true;
+      } catch (e) {
+        sendError = String(e ?? "unknown error");
+      }
     }
 
     return NextResponse.json({
       success: true,
+      invited: true,
+      sent,
+      sendError,
+      link: actionLink,
       user: {
-        id: authData.user.id,
         email: normalizedEmail,
         fullName,
       },
