@@ -7,7 +7,7 @@ import { SuperAdminDashboard } from "@/features/admin-management/components/supe
 export default async function SuperAdminDashboardPage() {
   const user = await getCurrentUser();
 
-  if (!user || user.role !== ROLE.SUPER_ADMIN) {
+  if (!user || (user.role !== ROLE.SUPER_ADMIN && user.role !== ROLE.ADMIN)) {
     redirect("/");
   }
 
