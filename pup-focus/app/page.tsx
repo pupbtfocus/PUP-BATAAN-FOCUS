@@ -96,6 +96,44 @@ export default function Home() {
     };
   }, [router]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function redirectIfAlreadySignedIn() {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+
+      if (cancelled) {
+        return;
+      }
+
+      const user = data.user;
+      if (!user) {
+        return;
+      }
+
+      const mustChange =
+        (user.user_metadata as any)?.force_password_change === true;
+      if (mustChange) {
+        window.location.assign("/auth/change-password");
+        return;
+      }
+
+      const signedInRole =
+        (user.user_metadata?.role as AppRole | undefined) ??
+        (user.app_metadata?.role as AppRole | undefined) ??
+        ROLE.FACULTY;
+
+      router.replace(ROUTE_BY_ROLE[signedInRole]);
+    }
+
+    void redirectIfAlreadySignedIn();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);

@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 
 export default function ChangePasswordPage() {
-  const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,23 +35,8 @@ export default function ChangePasswordPage() {
       return;
     }
 
-    // After successful password change, redirect to dashboard based on role
-    const { data } = await supabase.auth.getUser();
-    const signedInRole =
-      data.user?.user_metadata?.role ??
-      data.user?.app_metadata?.role ??
-      "faculty";
-
-    // Map route by role (simple mapping used elsewhere)
-    const ROUTE_BY_ROLE: Record<string, string> = {
-      super_admin: "/super-admin/dashboard",
-      admin: "/super-admin/dashboard",
-      faculty: "/faculty/dashboard",
-      "program-head": "/program-head/dashboard",
-    };
-
-    const next = ROUTE_BY_ROLE[signedInRole as string] ?? "/";
-    window.location.assign(next);
+    // After successful password change, go straight to the super-admin workspace.
+    window.location.assign("/super-admin/dashboard");
   }
 
   return (
