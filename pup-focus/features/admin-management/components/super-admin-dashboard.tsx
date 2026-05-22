@@ -17,47 +17,6 @@ type CreateAdminResult = {
   };
 };
 
-type SuperAdminAccountResult = {
-  success?: boolean;
-  error?: string;
-  account?: {
-    fullName: string;
-    email: string;
-  };
-};
-
-type SuperAdminSection = "dashboard" | "accounts" | "settings" | "create";
-type SettingsOption = "profile" | "password";
-type AccountViewRole = "all" | AppRole;
-
-type AdminAccount = {
-  id: string;
-  profile_id: string;
-  auth_user_id: string | null;
-  role: AppRole;
-  full_name: string;
-  email: string;
-  department: string | null;
-  is_active: boolean;
-  created_at: string;
-  permissions: string[] | null;
-};
-
-type AdminDetails = {
-  id: string;
-  profile_id: string;
-  auth_user_id: string | null;
-  full_name: string;
-  email: string;
-  department: string | null;
-  permissions: string[] | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at?: string;
-  role?: string;
-  metadata?: Record<string, unknown>;
-};
-
 const DASHBOARD_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
   "/images/attachments/IMG_9402.jpeg",
@@ -89,6 +48,7 @@ export function SuperAdminDashboard() {
   const [adminDetails, setAdminDetails] = useState<AdminDetails | null>(null);
   const [isLoadingAdminDetails, setIsLoadingAdminDetails] = useState(false);
   const [adminDetailsOpen, setAdminDetailsOpen] = useState(false);
+  const [adminDetailsEditable, setAdminDetailsEditable] = useState(false);
   const [settingsFullName, setSettingsFullName] = useState("");
   const [settingsEmail, setSettingsEmail] = useState("");
   const [activeSettingsOption, setActiveSettingsOption] =
@@ -171,7 +131,6 @@ export function SuperAdminDashboard() {
     () => adminAccounts.filter((admin) => admin.role === ROLE.SUPER_ADMIN),
     [adminAccounts],
   );
-
   const visibleAccountGroups = useMemo(() => {
     if (accountViewRole === "all") {
       return [
@@ -472,6 +431,8 @@ export function SuperAdminDashboard() {
   }
 
   async function onViewAdminDetails(profileId: string) {
+    // open details in read-only mode
+    setAdminDetailsEditable(false);
     setIsLoadingAdminDetails(true);
     setAdminDetailsOpen(true);
     setAdminDetails(null);
@@ -496,6 +457,37 @@ export function SuperAdminDashboard() {
       setIsLoadingAdminDetails(false);
     }
   }
+
+  async function onEditAdmin(profileId: string) {
+    setAdminDetailsEditable(true);
+    setIsLoadingAdminDetails(true);
+    setAdminDetailsOpen(true);
+    setAdminDetails(null);
+
+    try {
+      const response = await fetch(
+        `/api/super-admin/admin/details?profileId=${encodeURIComponent(
+          profileId,
+        )}`,
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        setAccountActionError(data.error ?? "Failed to load admin details");
+        setAdminDetailsOpen(false);
+        return;
+      }
+
+      setAdminDetails(data.details ?? null);
+    } catch {
+      setAccountActionError("Unexpected error while loading admin details.");
+      setAdminDetailsOpen(false);
+    } finally {
+      setIsLoadingAdminDetails(false);
+    }
+  }
+
+  // removed: edit flow — details are view-only
 
   function renderAccountCards(accounts: AdminAccount[]) {
     if (!accounts.length) {
@@ -528,35 +520,51 @@ export function SuperAdminDashboard() {
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
-          <span>Department: {admin.department ?? "Not set"}</span>
-          <span>Permissions: {admin.permissions?.length ?? 0}</span>
+          {admin.department ? (
+            <span>Department: {admin.department}</span>
+          ) : null}
+          {admin.permissions && admin.permissions.length > 0 ? (
+            <span>Permissions: {admin.permissions.length}</span>
+          ) : null}
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          {admin.is_active ? (
+          {admin.role !== ROLE.SUPER_ADMIN ? (
+            admin.is_active ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onDeactivateAdmin(admin.profile_id)}
+                disabled={loadingAdminIds.has(admin.profile_id)}
+                className="text-amber-300 hover:text-amber-200"
+              >
+                {loadingAdminIds.has(admin.profile_id)
+                  ? "Deactivating..."
+                  : "Deactivate"}
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onActivateAdmin(admin.profile_id)}
+                disabled={loadingAdminIds.has(admin.profile_id)}
+                className="text-emerald-300 hover:text-emerald-200"
+              >
+                {loadingAdminIds.has(admin.profile_id)
+                  ? "Activating..."
+                  : "Activate"}
+              </Button>
+            )
+          ) : null}
+          {admin.role === ROLE.ADMIN ? (
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => onDeactivateAdmin(admin.profile_id)}
-              disabled={loadingAdminIds.has(admin.profile_id)}
-              className="text-amber-300 hover:text-amber-200"
+              onClick={() => onEditAdmin(admin.profile_id)}
+              className="text-blue-300 hover:text-blue-200"
             >
-              {loadingAdminIds.has(admin.profile_id)
-                ? "Deactivating..."
-                : "Deactivate"}
+              Edit
             </Button>
-          ) : (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => onActivateAdmin(admin.profile_id)}
-              disabled={loadingAdminIds.has(admin.profile_id)}
-              className="text-emerald-300 hover:text-emerald-200"
-            >
-              {loadingAdminIds.has(admin.profile_id)
-                ? "Activating..."
-                : "Activate"}
-            </Button>
-          )}
+          ) : null}
           <Button
             variant="secondary"
             size="sm"
@@ -565,15 +573,17 @@ export function SuperAdminDashboard() {
           >
             View Details
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => onDeleteAdmin(admin.profile_id)}
-            disabled={loadingAdminIds.has(admin.profile_id)}
-            className="text-red-300 hover:text-red-200"
-          >
-            Delete
-          </Button>
+          {admin.role !== ROLE.SUPER_ADMIN ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onDeleteAdmin(admin.profile_id)}
+              disabled={loadingAdminIds.has(admin.profile_id)}
+              className="text-red-300 hover:text-red-200"
+            >
+              Delete
+            </Button>
+          ) : null}
         </div>
       </div>
     ));
@@ -1097,6 +1107,7 @@ export function SuperAdminDashboard() {
           isLoading={isLoadingAdminDetails}
           onClose={() => setAdminDetailsOpen(false)}
           onSaved={() => void loadAdminAccounts()}
+          editable={adminDetailsEditable}
         />
       ) : null}
     </div>
@@ -1276,11 +1287,13 @@ function AdminDetailsModal({
   isLoading,
   onClose,
   onSaved,
+  editable,
 }: {
   details: AdminDetails | null;
   isLoading: boolean;
   onClose: () => void;
   onSaved: () => Promise<void> | void;
+  editable?: boolean;
 }) {
   const [fullName, setFullName] = useState(details?.full_name ?? "");
   const [email, setEmail] = useState(details?.email ?? "");
@@ -1289,7 +1302,7 @@ function AdminDetailsModal({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const canEdit = details?.role !== ROLE.SUPER_ADMIN;
+  const canEdit = Boolean(editable) && details?.role !== ROLE.SUPER_ADMIN;
 
   useEffect(() => {
     setFullName(details?.full_name ?? "");
@@ -1368,7 +1381,7 @@ function AdminDetailsModal({
       <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-slate-100">
-            Edit Admin Account
+            {canEdit ? "Edit Admin Account" : "View Admin Account"}
           </h3>
           <button
             type="button"
@@ -1382,113 +1395,189 @@ function AdminDetailsModal({
         {isLoading ? (
           <p className="mt-4 text-sm text-slate-400">Loading details...</p>
         ) : details ? (
-          <form className="mt-4 space-y-4" onSubmit={onSubmit}>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label
-                  className="block text-sm font-medium text-slate-200"
-                  htmlFor="adminFullName"
-                >
-                  Full Name
-                </label>
-                <input
-                  id="adminFullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                  readOnly={!canEdit}
-                  disabled={!canEdit}
-                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
-                />
+          canEdit ? (
+            <form className="mt-4 space-y-4" onSubmit={onSubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label
+                    className="block text-sm font-medium text-slate-200"
+                    htmlFor="adminFullName"
+                  >
+                    Full Name
+                  </label>
+                  <input
+                    id="adminFullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(event) => setFullName(event.target.value)}
+                    readOnly={!canEdit}
+                    disabled={!canEdit}
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className="block text-sm font-medium text-slate-200"
+                    htmlFor="adminEmail"
+                  >
+                    Email Address
+                  </label>
+                  <input
+                    id="adminEmail"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    readOnly={!canEdit}
+                    disabled={!canEdit}
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                  />
+                </div>
               </div>
 
               <div>
                 <label
                   className="block text-sm font-medium text-slate-200"
-                  htmlFor="adminEmail"
+                  htmlFor="adminPassword"
                 >
-                  Email Address
+                  New Password
                 </label>
-                <input
-                  id="adminEmail"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  readOnly={!canEdit}
-                  disabled={!canEdit}
-                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
-                />
+                <div className="relative mt-2">
+                  <input
+                    id="adminPassword"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    disabled={!canEdit}
+                    minLength={8}
+                    placeholder="Leave blank to keep current password"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                  />
+                  <PasswordToggleButton
+                    shown={showPassword}
+                    onClick={() => setShowPassword((value) => !value)}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label
-                className="block text-sm font-medium text-slate-200"
-                htmlFor="adminPassword"
-              >
-                New Password
-              </label>
-              <div className="relative mt-2">
-                <input
-                  id="adminPassword"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  disabled={!canEdit}
-                  minLength={8}
-                  placeholder="Leave blank to keep current password"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
-                />
-                <PasswordToggleButton
-                  shown={showPassword}
-                  onClick={() => setShowPassword((value) => !value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2 text-sm text-slate-400 md:grid-cols-2">
-              <p>
-                <span className="text-slate-500">Role:</span>{" "}
-                {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
-              </p>
-              <p>
-                <span className="text-slate-500">Status:</span>{" "}
-                {details.is_active ? "Active" : "Inactive"}
-              </p>
-              <p>
-                <span className="text-slate-500">Department:</span>{" "}
-                {details.department ?? "Not set"}
-              </p>
-              <p>
-                <span className="text-slate-500">Permissions:</span>{" "}
-                {details.permissions?.length ?? 0}
-              </p>
-            </div>
-
-            {error ? <p className="text-sm text-red-300">{error}</p> : null}
-            {success ? (
-              <p className="text-sm text-emerald-300">{success}</p>
-            ) : null}
-
-            <div className="flex flex-wrap justify-between gap-3 pt-2">
-              <div className="text-xs text-slate-500">
-                Created {new Date(details.created_at).toLocaleString()}
-                {details.updated_at
-                  ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
-                  : ""}
-              </div>
-              <div className="flex gap-3">
-                <Button type="button" variant="secondary" onClick={onClose}>
-                  Close
-                </Button>
-                {canEdit ? (
-                  <Button type="submit" disabled={isSaving}>
-                    {isSaving ? "Saving..." : "Save Changes"}
-                  </Button>
+              <div className="grid gap-2 text-sm text-slate-400 md:grid-cols-2">
+                <p>
+                  <span className="text-slate-500">Role:</span>{" "}
+                  {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
+                </p>
+                <p>
+                  <span className="text-slate-500">Status:</span>{" "}
+                  {details.is_active ? "Active" : "Inactive"}
+                </p>
+                {details.department ? (
+                  <p>
+                    <span className="text-slate-500">Department:</span>{" "}
+                    {details.department}
+                  </p>
+                ) : null}
+                {details.permissions && details.permissions.length > 0 ? (
+                  <p>
+                    <span className="text-slate-500">Permissions:</span>{" "}
+                    {details.permissions.length}
+                  </p>
                 ) : null}
               </div>
+
+              {error ? <p className="text-sm text-red-300">{error}</p> : null}
+              {success ? (
+                <p className="text-sm text-emerald-300">{success}</p>
+              ) : null}
+
+              <div className="flex flex-wrap justify-between gap-3 pt-2">
+                <div className="text-xs text-slate-500">
+                  Created {new Date(details.created_at).toLocaleString()}
+                  {details.updated_at
+                    ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
+                    : ""}
+                </div>
+                <div className="flex gap-3">
+                  <Button type="button" variant="secondary" onClick={onClose}>
+                    Close
+                  </Button>
+                  {canEdit ? (
+                    <Button type="submit" disabled={isSaving}>
+                      {isSaving ? "Saving..." : "Save Changes"}
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            </form>
+          ) : (
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-sm font-medium text-slate-200">
+                    Full Name
+                  </p>
+                  <p className="mt-2 text-sm text-slate-100">
+                    {details.full_name}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-200">
+                    Email Address
+                  </p>
+                  <p className="mt-2 text-sm text-slate-100">{details.email}</p>
+                </div>
+              </div>
+
+              <div className="grid gap-2 text-sm text-slate-400 md:grid-cols-2">
+                <p>
+                  <span className="text-slate-500">Role:</span>{" "}
+                  {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
+                </p>
+                <p>
+                  <span className="text-slate-500">Status:</span>{" "}
+                  {details.is_active ? "Active" : "Inactive"}
+                </p>
+                {details.department ? (
+                  <p>
+                    <span className="text-slate-500">Department:</span>{" "}
+                    {details.department}
+                  </p>
+                ) : null}
+                {details.permissions && details.permissions.length > 0 ? (
+                  <p>
+                    <span className="text-slate-500">Permissions:</span>{" "}
+                    {details.permissions.length}
+                  </p>
+                ) : null}
+              </div>
+
+              {details.metadata &&
+              !(
+                typeof details.metadata === "object" &&
+                Object.keys(details.metadata).length === 1 &&
+                (details.metadata as any).is_active === true
+              ) ? (
+                <div>
+                  <p className="text-sm font-medium text-slate-200">Metadata</p>
+                  <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-slate-900 p-3 text-xs text-slate-200">
+                    {JSON.stringify(details.metadata, null, 2)}
+                  </pre>
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap justify-between gap-3 pt-2">
+                <div className="text-xs text-slate-500">
+                  Created {new Date(details.created_at).toLocaleString()}
+                  {details.updated_at
+                    ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
+                    : ""}
+                </div>
+                <div className="flex gap-3">
+                  <Button type="button" variant="secondary" onClick={onClose}>
+                    Close
+                  </Button>
+                </div>
+              </div>
             </div>
-          </form>
+          )
         ) : (
           <p className="mt-4 text-sm text-slate-400">No details available.</p>
         )}
