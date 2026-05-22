@@ -1,8 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { ROLE } from "@/config/roles";
 
 export async function POST(request: NextRequest) {
   try {
+    const sessionClient = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await sessionClient.auth.getUser();
+
+    const requesterRole =
+      (user?.user_metadata?.role as string | undefined) ??
+      (user?.app_metadata?.role as string | undefined);
+
+    if (
+      !user ||
+      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { facultyProfileId } = await request.json();
 
     if (!facultyProfileId) {
@@ -17,9 +35,30 @@ export async function POST(request: NextRequest) {
     // Step 1: Check if there's an app_users record (even if profile doesn't exist)
     const { data: appUser } = await supabase
       .from("app_users")
-      .select("id, auth_user_id, profile_id")
+      .select("id, auth_user_id, profile_id, role, metadata")
       .eq("profile_id", facultyProfileId)
       .maybeSingle();
+
+    if (
+      !appUser ||
+      appUser.role !== "faculty" ||
+      appUser.metadata?.created_via !== "admin_faculty_panel"
+    ) {
+      return NextResponse.json(
+        { error: "Faculty account not found" },
+        { status: 404 },
+      );
+    }
+
+    if (
+      requesterRole === ROLE.ADMIN &&
+      appUser.metadata?.created_by_admin_id !== user.id
+    ) {
+      return NextResponse.json(
+        { error: "You can only delete faculty accounts you created" },
+        { status: 403 },
+      );
+    }
 
     // Step 2: Get user_id from profile before deletion (needed for auth cleanup)
     const { data: profile, error: profileFetchError } = await supabase

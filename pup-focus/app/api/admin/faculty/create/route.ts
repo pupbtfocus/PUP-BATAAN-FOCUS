@@ -1,8 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { ROLE } from "@/config/roles";
 
 export async function POST(request: NextRequest) {
   try {
+    const sessionClient = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await sessionClient.auth.getUser();
+
+    const requesterRole =
+      (user?.user_metadata?.role as string | undefined) ??
+      (user?.app_metadata?.role as string | undefined);
+
+    if (
+      !user ||
+      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { fullName, email, password } = await request.json();
 
     if (!fullName || !email || !password) {
@@ -112,7 +130,11 @@ export async function POST(request: NextRequest) {
       email,
       full_name: fullName,
       role: "faculty",
-      metadata: { is_active: true },
+      metadata: {
+        is_active: true,
+        created_via: "admin_faculty_panel",
+        created_by_admin_id: user.id,
+      },
       created_at: new Date().toISOString(),
     });
 

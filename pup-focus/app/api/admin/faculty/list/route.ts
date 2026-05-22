@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    const { data: appUsers, error: queryError } = await supabase
+    let appUsersQuery = supabase
       .from("app_users")
       .select(
         `
@@ -63,7 +63,17 @@ export async function GET(request: NextRequest) {
       `,
       )
       .eq("role", "faculty")
-      .limit(100);
+      .eq("metadata->>created_via", "admin_faculty_panel")
+      .limit(200);
+
+    if (!allowDebugUnauth && requesterRole === ROLE.ADMIN) {
+      appUsersQuery = appUsersQuery.eq(
+        "metadata->>created_by_admin_id",
+        user.id,
+      );
+    }
+
+    const { data: appUsers, error: queryError } = await appUsersQuery;
 
     if (debugMode) {
       const { count: appUsersCount } = await supabase
@@ -124,52 +134,6 @@ export async function GET(request: NextRequest) {
             self.findIndex((v) => v.id === value.id) === index,
         )
         .sort((a: any, b: any) => a.fullName.localeCompare(b.fullName)) || [];
-
-    // If no app_users rows found, try to locate faculty via user_roles -> profiles
-    if ((!faculty || faculty.length === 0) && !queryError) {
-      const { data: roleRow } = await supabase
-        .from("roles")
-        .select("id")
-        .eq("code", "faculty")
-        .single();
-
-      if (roleRow?.id) {
-        const { data: userRoleRows } = await supabase
-          .from("user_roles")
-          .select("profile_id")
-          .eq("role_id", roleRow.id)
-          .limit(200);
-
-        const profileIds = (userRoleRows || []).map((r: any) => r.profile_id);
-
-        if (profileIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id, user_id, full_name, email")
-            .in("id", profileIds)
-            .limit(200);
-
-          const appUserMap: Record<string, any> = {};
-          (appUsers || []).forEach((au: any) => {
-            if (au.auth_user_id) appUserMap[au.auth_user_id] = au;
-          });
-
-          const alt = (profiles || []).map((p: any) => ({
-            id: p.id,
-            user_id: p.user_id,
-            fullName: p.full_name || "Unknown",
-            email: p.email || "Unknown",
-            is_active: appUserMap[p.user_id]?.is_active ?? true,
-            created_at:
-              appUserMap[p.user_id]?.created_at || new Date().toISOString(),
-            requirementStatus: buildInitialRequirementStatus(),
-          }));
-
-          // merge
-          faculty.push(...alt);
-        }
-      }
-    }
 
     return NextResponse.json({ faculty });
   } catch (error) {
