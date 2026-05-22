@@ -13,7 +13,10 @@ export async function GET() {
     (user?.user_metadata?.role as string | undefined) ??
     (user?.app_metadata?.role as string | undefined);
 
-  if (!user || requesterRole !== ROLE.SUPER_ADMIN) {
+  if (
+    !user ||
+    (requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== ROLE.ADMIN)
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
