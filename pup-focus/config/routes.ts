@@ -7,7 +7,14 @@ export const ROUTE_BY_ROLE: Record<AppRole, string> = {
   [ROLE.ADMIN]: "/admin/dashboard",
 };
 
-export const AUTH_ROUTES = ["/sign-in", "/forgot-password", "/auth/confirm"];
+export const AUTH_ROUTES = [
+  "/sign-in",
+  "/auth/sign-in",
+  "/change-password",
+  "/auth/change-password",
+  "/forgot-password",
+  "/auth/confirm",
+];
 export const PUBLIC_ROUTES = [
   "/",
   "/about",
