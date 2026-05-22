@@ -5,6 +5,7 @@ import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { ROLE_LABEL, type AppRole } from "@/config/roles";
+import { createClient } from "@/lib/supabase/client";
 
 type CreateAdminResult = {
   success?: boolean;
@@ -16,7 +17,17 @@ type CreateAdminResult = {
   };
 };
 
+type SuperAdminAccountResult = {
+  success?: boolean;
+  error?: string;
+  account?: {
+    fullName: string;
+    email: string;
+  };
+};
+
 type SuperAdminSection = "dashboard" | "accounts" | "settings" | "create";
+type SettingsOption = "profile" | "password";
 
 type AdminAccount = {
   id: string;
@@ -45,6 +56,23 @@ export function SuperAdminDashboard() {
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
   const [accountsError, setAccountsError] = useState<string | null>(null);
+  const [settingsFullName, setSettingsFullName] = useState("");
+  const [settingsEmail, setSettingsEmail] = useState("");
+  const [activeSettingsOption, setActiveSettingsOption] =
+    useState<SettingsOption>("profile");
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
+  const [settingsPassword, setSettingsPassword] = useState("");
+  const [settingsConfirmPassword, setSettingsConfirmPassword] = useState("");
+  const [settingsOldPassword, setSettingsOldPassword] = useState("");
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadAdmins() {
@@ -68,6 +96,32 @@ export function SuperAdminDashboard() {
     }
 
     loadAdmins();
+  }, []);
+
+  useEffect(() => {
+    async function loadAccountSettings() {
+      try {
+        setIsLoadingSettings(true);
+        setSettingsError(null);
+
+        const response = await fetch("/api/super-admin/account");
+        const data = (await response.json()) as SuperAdminAccountResult;
+
+        if (!response.ok || !data.account) {
+          setSettingsError(data.error ?? "Failed to load account settings");
+          return;
+        }
+
+        setSettingsFullName(data.account.fullName ?? "");
+        setSettingsEmail(data.account.email ?? "");
+      } catch {
+        setSettingsError("Error loading account settings");
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    }
+
+    loadAccountSettings();
   }, []);
 
   const activeAccounts = useMemo(
@@ -118,6 +172,121 @@ export function SuperAdminDashboard() {
     } catch {
       setError("Unexpected error while creating admin account");
       setIsSubmitting(false);
+    }
+  }
+
+  async function onSettingsSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSettingsError(null);
+    setSettingsSuccess(null);
+    setIsSavingSettings(true);
+
+    try {
+      const response = await fetch("/api/super-admin/account", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName: settingsFullName,
+          email: settingsEmail,
+        }),
+      });
+
+      const data = (await response.json()) as SuperAdminAccountResult;
+
+      if (!response.ok) {
+        setSettingsError(data.error ?? "Failed to update account settings");
+        setIsSavingSettings(false);
+        return;
+      }
+
+      setSettingsSuccess("Super Admin account updated successfully.");
+      if (data.account) {
+        setSettingsFullName(data.account.fullName);
+        setSettingsEmail(data.account.email);
+      }
+      setIsSavingSettings(false);
+    } catch {
+      setSettingsError("Unexpected error while updating account settings");
+      setIsSavingSettings(false);
+    }
+  }
+
+  async function onPasswordSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (!settingsOldPassword.trim()) {
+      setPasswordError("Old password is required.");
+      return;
+    }
+
+    if (settingsPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (settingsPassword !== settingsConfirmPassword) {
+      setPasswordError("Password confirmation does not match.");
+      return;
+    }
+
+    setIsSavingPassword(true);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const currentEmail = user?.email ?? "";
+      if (!currentEmail) {
+        setPasswordError("Unable to resolve current account email.");
+        setIsSavingPassword(false);
+        return;
+      }
+
+      const { error: oldPasswordError } =
+        await supabase.auth.signInWithPassword({
+          email: currentEmail,
+          password: settingsOldPassword,
+        });
+
+      if (oldPasswordError) {
+        setPasswordError("Old password is incorrect.");
+        setIsSavingPassword(false);
+        return;
+      }
+
+      const response = await fetch("/api/super-admin/account", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          oldPassword: settingsOldPassword,
+          password: settingsPassword,
+        }),
+      });
+
+      const data = (await response.json()) as SuperAdminAccountResult;
+
+      if (!response.ok) {
+        setPasswordError(data.error ?? "Failed to update password");
+        setIsSavingPassword(false);
+        return;
+      }
+
+      setPasswordSuccess("Password updated successfully.");
+      setSettingsOldPassword("");
+      setSettingsPassword("");
+      setSettingsConfirmPassword("");
+      setIsSavingPassword(false);
+    } catch {
+      setPasswordError("Unexpected error while updating password");
+      setIsSavingPassword(false);
     }
   }
 
@@ -305,27 +474,203 @@ export function SuperAdminDashboard() {
                   Settings
                 </h2>
                 <p className="mt-2 text-sm text-slate-400">
-                  System-level controls for admin access and account management.
+                  Update your Super Admin account details.
                 </p>
 
-                <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                  <SettingCard
-                    title="Account Provisioning"
-                    description="Super Admin can create and monitor admin accounts."
-                  />
-                  <SettingCard
-                    title="Access Policy"
-                    description="Review active admins and keep permissions aligned with campus operations."
-                  />
-                  <SettingCard
-                    title="Branding"
-                    description="Dashboard and login visuals share the same PUP FOCUS styling."
-                  />
-                  <SettingCard
-                    title="System Status"
-                    description="Use this space for future system-wide toggles and maintenance controls."
-                  />
-                </div>
+                <section className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]">
+                  <div className="space-y-2 rounded-2xl border border-slate-700 bg-slate-950/50 p-3">
+                    <SettingsOptionButton
+                      active={activeSettingsOption === "profile"}
+                      title="Account Profile"
+                      description="Update username and email"
+                      onClick={() => setActiveSettingsOption("profile")}
+                    />
+                    <SettingsOptionButton
+                      active={activeSettingsOption === "password"}
+                      title="Password"
+                      description="Change super admin password"
+                      onClick={() => setActiveSettingsOption("password")}
+                    />
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-700 bg-slate-950/50 p-6">
+                    {activeSettingsOption === "profile" ? (
+                      isLoadingSettings ? (
+                        <p className="text-sm text-slate-400">
+                          Loading account settings...
+                        </p>
+                      ) : (
+                        <form className="space-y-4" onSubmit={onSettingsSubmit}>
+                          <div>
+                            <label
+                              className="block text-sm font-medium text-slate-200"
+                              htmlFor="settingsFullName"
+                            >
+                              Username / Full Name
+                            </label>
+                            <input
+                              id="settingsFullName"
+                              type="text"
+                              value={settingsFullName}
+                              onChange={(event) =>
+                                setSettingsFullName(event.target.value)
+                              }
+                              required
+                              placeholder="Enter full name"
+                              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                            />
+                          </div>
+
+                          <div>
+                            <label
+                              className="block text-sm font-medium text-slate-200"
+                              htmlFor="settingsEmail"
+                            >
+                              Email Address
+                            </label>
+                            <input
+                              id="settingsEmail"
+                              type="email"
+                              value={settingsEmail}
+                              onChange={(event) =>
+                                setSettingsEmail(event.target.value)
+                              }
+                              required
+                              placeholder="Enter email address"
+                              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                            />
+                          </div>
+
+                          {settingsError ? (
+                            <p className="text-sm text-red-300">
+                              {settingsError}
+                            </p>
+                          ) : null}
+                          {settingsSuccess ? (
+                            <p className="text-sm text-emerald-300">
+                              {settingsSuccess}
+                            </p>
+                          ) : null}
+
+                          <div className="flex justify-center pt-1">
+                            <Button
+                              className="px-5 py-2"
+                              type="submit"
+                              disabled={isSavingSettings}
+                            >
+                              {isSavingSettings
+                                ? "Saving..."
+                                : "Update Account"}
+                            </Button>
+                          </div>
+                        </form>
+                      )
+                    ) : (
+                      <form className="space-y-4" onSubmit={onPasswordSubmit}>
+                        <div>
+                          <label
+                            className="block text-sm font-medium text-slate-200"
+                            htmlFor="settingsOldPassword"
+                          >
+                            Old Password
+                          </label>
+                          <div className="relative mt-2">
+                            <input
+                              id="settingsOldPassword"
+                              type={showOldPassword ? "text" : "password"}
+                              value={settingsOldPassword}
+                              onChange={(event) =>
+                                setSettingsOldPassword(event.target.value)
+                              }
+                              required
+                              placeholder="Enter current password"
+                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                            />
+                            <PasswordToggleButton
+                              shown={showOldPassword}
+                              onClick={() => setShowOldPassword((s) => !s)}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label
+                            className="block text-sm font-medium text-slate-200"
+                            htmlFor="settingsPassword"
+                          >
+                            New Password
+                          </label>
+                          <div className="relative mt-2">
+                            <input
+                              id="settingsPassword"
+                              type={showNewPassword ? "text" : "password"}
+                              value={settingsPassword}
+                              onChange={(event) =>
+                                setSettingsPassword(event.target.value)
+                              }
+                              required
+                              minLength={8}
+                              placeholder="Minimum 8 characters"
+                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                            />
+                            <PasswordToggleButton
+                              shown={showNewPassword}
+                              onClick={() => setShowNewPassword((s) => !s)}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label
+                            className="block text-sm font-medium text-slate-200"
+                            htmlFor="settingsConfirmPassword"
+                          >
+                            Confirm New Password
+                          </label>
+                          <div className="relative mt-2">
+                            <input
+                              id="settingsConfirmPassword"
+                              type={showConfirmPassword ? "text" : "password"}
+                              value={settingsConfirmPassword}
+                              onChange={(event) =>
+                                setSettingsConfirmPassword(event.target.value)
+                              }
+                              required
+                              minLength={8}
+                              placeholder="Retype new password"
+                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                            />
+                            <PasswordToggleButton
+                              shown={showConfirmPassword}
+                              onClick={() => setShowConfirmPassword((s) => !s)}
+                            />
+                          </div>
+                        </div>
+
+                        {passwordError ? (
+                          <p className="text-sm text-red-300">
+                            {passwordError}
+                          </p>
+                        ) : null}
+                        {passwordSuccess ? (
+                          <p className="text-sm text-emerald-300">
+                            {passwordSuccess}
+                          </p>
+                        ) : null}
+
+                        <div className="flex justify-center pt-1">
+                          <Button
+                            className="px-5 py-2"
+                            type="submit"
+                            disabled={isSavingPassword}
+                          >
+                            {isSavingPassword ? "Saving..." : "Update Password"}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                </section>
               </article>
             ) : null}
 
@@ -463,17 +808,134 @@ function InfoCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SettingCard({
+function SettingsOptionButton({
+  active,
   title,
   description,
+  onClick,
 }: {
+  active: boolean;
   title: string;
   description: string;
+  onClick: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-5">
-      <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
-      <p className="mt-2 text-sm text-slate-400">{description}</p>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+        active
+          ? "border-amber-400 bg-amber-400/10"
+          : "border-slate-700 bg-slate-900/60 hover:border-slate-500"
+      }`}
+    >
+      <p className="font-semibold text-slate-100">{title}</p>
+      <p className="mt-1 text-sm text-slate-400">{description}</p>
+    </button>
+  );
+}
+
+function PasswordToggleButton({
+  shown,
+  onClick,
+}: {
+  shown: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={shown ? "Hide password" : "Show password"}
+      onClick={onClick}
+      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-[rgba(255,255,255,0.18)] bg-[rgba(255,255,255,0.06)] p-1.5 text-white"
+    >
+      {shown ? (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="#fff"
+          aria-hidden
+        >
+          <g clipPath="url(#clip0_4418_8295)">
+            <path
+              d="M21.25 9.14969C18.94 5.51969 15.56 3.42969 12 3.42969C10.22 3.42969 8.49 3.94969 6.91 4.91969C5.33 5.89969 3.91 7.32969 2.75 9.14969C1.75 10.7197 1.75 13.2697 2.75 14.8397C5.06 18.4797 8.44 20.5597 12 20.5597C13.78 20.5597 15.51 20.0397 17.09 19.0697C18.67 18.0897 20.09 16.6597 21.25 14.8397C22.25 13.2797 22.25 10.7197 21.25 9.14969ZM12 16.0397C9.76 16.0397 7.96 14.2297 7.96 11.9997C7.96 9.76969 9.76 7.95969 12 7.95969C14.24 7.95969 16.04 9.76969 16.04 11.9997C16.04 14.2297 14.24 16.0397 12 16.0397Z"
+              fill="white"
+              style={{ fill: "var(--fillg)" }}
+            />
+            <path
+              d="M11.9999 9.14062C10.4299 9.14062 9.1499 10.4206 9.1499 12.0006C9.1499 13.5706 10.4299 14.8506 11.9999 14.8506C13.5699 14.8506 14.8599 13.5706 14.8599 12.0006C14.8599 10.4306 13.5699 9.14062 11.9999 9.14062Z"
+              fill="white"
+              style={{ fill: "var(--fillg)" }}
+            />
+          </g>
+          <defs>
+            <clipPath id="clip0_4418_8295">
+              <rect width="24" height="24" fill="white" />
+            </clipPath>
+          </defs>
+        </svg>
+      ) : (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden
+        >
+          <g clipPath="url(#clip0_4418_9538)">
+            <path
+              d="M14.53 9.46992L9.47004 14.5299C8.82004 13.8799 8.42004 12.9899 8.42004 11.9999C8.42004 10.0199 10.02 8.41992 12 8.41992C12.99 8.41992 13.88 8.81992 14.53 9.46992Z"
+              stroke="#fff"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M17.82 5.77047C16.07 4.45047 14.07 3.73047 12 3.73047C8.46997 3.73047 5.17997 5.81047 2.88997 9.41047C1.98997 10.8205 1.98997 13.1905 2.88997 14.6005C3.67997 15.8405 4.59997 16.9105 5.59997 17.7705"
+              stroke="#fff"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M8.42004 19.5297C9.56004 20.0097 10.77 20.2697 12 20.2697C15.53 20.2697 18.82 18.1897 21.11 14.5897C22.01 13.1797 22.01 10.8097 21.11 9.39969C20.78 8.87969 20.42 8.38969 20.05 7.92969"
+              stroke="#fff"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M15.5099 12.6992C15.2499 14.1092 14.0999 15.2592 12.6899 15.5192"
+              stroke="#fff"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M9.47 14.5293L2 21.9993"
+              stroke="#fff"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M22 2L14.53 9.47"
+              stroke="#fff"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </g>
+          <defs>
+            <clipPath id="clip0_4418_9538">
+              <rect width="24" height="24" fill="white" />
+            </clipPath>
+          </defs>
+        </svg>
+      )}
+    </button>
   );
 }
