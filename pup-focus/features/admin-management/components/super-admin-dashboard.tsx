@@ -142,6 +142,12 @@ export function SuperAdminDashboard() {
             onClick={() => setActiveSection("dashboard")}
           />
           <SidebarButton
+            active={activeSection === "create"}
+            title="Create Admin"
+            description="Provision a new admin account"
+            onClick={() => setActiveSection("create")}
+          />
+          <SidebarButton
             active={activeSection === "accounts"}
             title="Admin Accounts"
             description="View and create admin users"
@@ -152,12 +158,6 @@ export function SuperAdminDashboard() {
             title="Settings"
             description="System and access configuration"
             onClick={() => setActiveSection("settings")}
-          />
-          <SidebarButton
-            active={activeSection === "create"}
-            title="Create Admin"
-            description="Provision a new admin account"
-            onClick={() => setActiveSection("create")}
           />
         </nav>
       </aside>
@@ -330,18 +330,19 @@ export function SuperAdminDashboard() {
             ) : null}
 
             {activeSection === "create" ? (
-              <article className="p-8">
-                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                  Super Admin Workspace
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
-                  Create Admin Account
-                </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  Provision a new admin user with a temporary password.
-                </p>
-                <section className="mt-6 rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/75 p-6 shadow-lg shadow-black/20 backdrop-blur">
-                  <form className="space-y-4" onSubmit={onSubmit}>
+              <article className="p-6">
+                <section className="mx-auto w-full max-w-2xl rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/75 p-6 shadow-lg shadow-black/20 backdrop-blur">
+                  <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
+                    Super Admin Workspace
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-100">
+                    Create Admin Account
+                  </h2>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Provision a new admin user with a temporary password.
+                  </p>
+
+                  <form className="mt-6 space-y-4" onSubmit={onSubmit}>
                     <div>
                       <label
                         className="block text-sm font-medium text-[#fff8e7]"
@@ -404,15 +405,17 @@ export function SuperAdminDashboard() {
                       <p className="text-sm text-[#ffd700]">{success}</p>
                     ) : null}
 
-                    <Button
-                      className="w-full"
-                      type="submit"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting
-                        ? "Creating Admin..."
-                        : "Create Admin Account"}
-                    </Button>
+                    <div className="flex justify-center pt-1">
+                      <Button
+                        className="px-5 py-2"
+                        type="submit"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting
+                          ? "Creating Admin..."
+                          : "Create Admin Account"}
+                      </Button>
+                    </div>
                   </form>
                 </section>
               </article>
