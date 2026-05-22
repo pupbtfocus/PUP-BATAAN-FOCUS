@@ -6,6 +6,7 @@ import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
 import type { RequirementCode } from "@/config/compliance";
 import {
   evaluateSubmissionWindow,
+  format24HourTo12Hour,
   getSubmissionWindow,
 } from "@/features/submissions/services/submission-window.service";
 import crypto from "crypto";
@@ -38,10 +39,17 @@ export async function POST(request: NextRequest) {
     const submissionWindow = await getSubmissionWindow(supabase);
     const windowState = evaluateSubmissionWindow(submissionWindow);
     if (!windowState.isOpen) {
+      const startTimeLabel = windowState.startTime
+        ? format24HourTo12Hour(windowState.startTime)
+        : "";
+      const endTimeLabel = windowState.endTime
+        ? format24HourTo12Hour(windowState.endTime)
+        : "";
+
       return NextResponse.json(
         {
           error: windowState.isConfigured
-            ? `Submission period is closed. Allowed dates: ${windowState.startDate} to ${windowState.endDate}.`
+            ? `Submission period is closed. Allowed schedule: ${windowState.startDate} ${startTimeLabel} to ${windowState.endDate} ${endTimeLabel}.`
             : "Submission period is not set by admin yet. Please wait for admin to set start and end dates.",
           window: windowState,
         },
