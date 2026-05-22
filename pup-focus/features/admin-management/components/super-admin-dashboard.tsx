@@ -1126,6 +1126,12 @@ export function SuperAdminDashboard() {
                     ) : null}
 
                     {inviteSendError ? (
+                      <p className="text-sm text-red-300">
+                        SMTP error: {inviteSendError}
+                      </p>
+                    ) : null}
+
+                    {inviteSendError ? (
                       <div className="mt-2">
                         <p className="text-sm text-red-300">
                           {inviteSendError}

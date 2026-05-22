@@ -138,7 +138,13 @@ export async function POST(request: NextRequest) {
         });
         sent = true;
       } catch (e) {
-        sendError = String(e ?? "unknown error");
+        sendError =
+          e instanceof Error ? e.message : String(e ?? "unknown error");
+        console.error("Failed to send admin invite email", {
+          email: normalizedEmail,
+          fullName,
+          sendError,
+        });
       }
     }
 
