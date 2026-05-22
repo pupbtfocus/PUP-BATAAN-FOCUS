@@ -3,11 +3,20 @@
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { ROLE, type AppRole } from "@/config/roles";
+
+const ROUTE_BY_ROLE: Record<AppRole, string> = {
+  [ROLE.SUPER_ADMIN]: "/super-admin/dashboard",
+  [ROLE.ADMIN]: "/admin/dashboard",
+  [ROLE.FACULTY]: "/faculty/dashboard",
+  [ROLE.PROGRAM_HEAD]: "/program-head/dashboard",
+};
 
 export default function ChangePasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -35,8 +44,19 @@ export default function ChangePasswordPage() {
       return;
     }
 
-    // After successful password change, go straight to the super-admin workspace.
-    window.location.assign("/super-admin/dashboard");
+    const { data } = await supabase.auth.getUser();
+    const signedInRole =
+      (data.user?.user_metadata?.role as AppRole | undefined) ??
+      (data.user?.app_metadata?.role as AppRole | undefined) ??
+      ROLE.ADMIN;
+
+    // After successful password change, go to the role-appropriate dashboard.
+    const nextRoute = ROUTE_BY_ROLE[signedInRole];
+    setSuccess("Password updated successfully. Redirecting now...");
+    setIsSaving(false);
+    window.setTimeout(() => {
+      window.location.assign(nextRoute);
+    }, 2000);
   }
 
   return (
@@ -80,6 +100,9 @@ export default function ChangePasswordPage() {
           </div>
 
           {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          {success ? (
+            <p className="text-sm text-emerald-300">{success}</p>
+          ) : null}
 
           <Button type="submit" className="w-full" disabled={isSaving}>
             {isSaving ? "Saving..." : "Set new password"}
