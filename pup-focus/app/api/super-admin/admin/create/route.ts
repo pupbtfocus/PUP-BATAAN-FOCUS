@@ -102,13 +102,13 @@ export async function POST(request: NextRequest) {
       await supabase.auth.admin.generateLink({
         type: "invite",
         email: normalizedEmail,
-        data: {
-          full_name: fullName,
-          role: ROLE.ADMIN,
-          created_via: "super_admin_admin_panel",
-          created_by_super_admin_id: user.id,
-        },
         options: {
+          data: {
+            full_name: fullName,
+            role: ROLE.ADMIN,
+            created_via: "super_admin_admin_panel",
+            created_by_super_admin_id: user.id,
+          },
           redirectTo: callbackUrl.toString(),
         },
       });
