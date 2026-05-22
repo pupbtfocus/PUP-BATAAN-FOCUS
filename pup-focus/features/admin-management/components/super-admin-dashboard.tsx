@@ -31,12 +31,29 @@ type SettingsOption = "profile" | "password";
 
 type AdminAccount = {
   id: string;
+  profile_id: string;
+  auth_user_id: string | null;
   full_name: string;
   email: string;
   department: string | null;
   is_active: boolean;
   created_at: string;
   permissions: string[] | null;
+};
+
+type AdminDetails = {
+  id: string;
+  profile_id: string;
+  auth_user_id: string | null;
+  full_name: string;
+  email: string;
+  department: string | null;
+  permissions: string[] | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+  role?: string;
+  metadata?: Record<string, unknown>;
 };
 
 const DASHBOARD_IMAGES = [
@@ -56,6 +73,18 @@ export function SuperAdminDashboard() {
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
   const [accountsError, setAccountsError] = useState<string | null>(null);
+  const [accountActionError, setAccountActionError] = useState<string | null>(
+    null,
+  );
+  const [accountActionSuccess, setAccountActionSuccess] = useState<
+    string | null
+  >(null);
+  const [loadingAdminIds, setLoadingAdminIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [adminDetails, setAdminDetails] = useState<AdminDetails | null>(null);
+  const [isLoadingAdminDetails, setIsLoadingAdminDetails] = useState(false);
+  const [adminDetailsOpen, setAdminDetailsOpen] = useState(false);
   const [settingsFullName, setSettingsFullName] = useState("");
   const [settingsEmail, setSettingsEmail] = useState("");
   const [activeSettingsOption, setActiveSettingsOption] =
@@ -74,28 +103,28 @@ export function SuperAdminDashboard() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadAdmins() {
-      try {
-        setIsLoadingAccounts(true);
-        setAccountsError(null);
+  async function loadAdminAccounts() {
+    try {
+      setIsLoadingAccounts(true);
+      setAccountsError(null);
 
-        const response = await fetch("/api/super-admin/admin/list");
-        if (!response.ok) {
-          setAccountsError("Failed to load admin accounts");
-          return;
-        }
-
-        const data = await response.json();
-        setAdminAccounts(data.admins || []);
-      } catch {
-        setAccountsError("Error loading admin accounts");
-      } finally {
-        setIsLoadingAccounts(false);
+      const response = await fetch("/api/super-admin/admin/list");
+      if (!response.ok) {
+        setAccountsError("Failed to load admin accounts");
+        return;
       }
-    }
 
-    loadAdmins();
+      const data = await response.json();
+      setAdminAccounts(data.admins || []);
+    } catch {
+      setAccountsError("Error loading admin accounts");
+    } finally {
+      setIsLoadingAccounts(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadAdminAccounts();
   }, []);
 
   useEffect(() => {
@@ -159,11 +188,7 @@ export function SuperAdminDashboard() {
       setActiveSection("accounts");
       void (async () => {
         try {
-          const refreshed = await fetch("/api/super-admin/admin/list");
-          if (refreshed.ok) {
-            const body = await refreshed.json();
-            setAdminAccounts(body.admins || []);
-          }
+          await loadAdminAccounts();
         } catch {
           // ignore refresh failure and keep the success state
         }
@@ -287,6 +312,137 @@ export function SuperAdminDashboard() {
     } catch {
       setPasswordError("Unexpected error while updating password");
       setIsSavingPassword(false);
+    }
+  }
+
+  async function onDeactivateAdmin(profileId: string) {
+    setLoadingAdminIds((prev) => new Set(prev).add(profileId));
+    setAccountActionError(null);
+    setAccountActionSuccess(null);
+
+    try {
+      const response = await fetch("/api/super-admin/admin/deactivate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setAccountActionError(
+          data.error ?? "Failed to deactivate admin account",
+        );
+        return;
+      }
+
+      setAccountActionSuccess("Admin account deactivated successfully.");
+      await loadAdminAccounts();
+    } catch {
+      setAccountActionError(
+        "Unexpected error while deactivating admin account.",
+      );
+    } finally {
+      setLoadingAdminIds((prev) => {
+        const next = new Set(prev);
+        next.delete(profileId);
+        return next;
+      });
+    }
+  }
+
+  async function onActivateAdmin(profileId: string) {
+    setLoadingAdminIds((prev) => new Set(prev).add(profileId));
+    setAccountActionError(null);
+    setAccountActionSuccess(null);
+
+    try {
+      const response = await fetch("/api/super-admin/admin/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setAccountActionError(data.error ?? "Failed to activate admin account");
+        return;
+      }
+
+      setAccountActionSuccess("Admin account activated successfully.");
+      await loadAdminAccounts();
+    } catch {
+      setAccountActionError("Unexpected error while activating admin account.");
+    } finally {
+      setLoadingAdminIds((prev) => {
+        const next = new Set(prev);
+        next.delete(profileId);
+        return next;
+      });
+    }
+  }
+
+  async function onDeleteAdmin(profileId: string) {
+    const shouldDelete = window.confirm(
+      "Are you sure you want to delete this admin account?",
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    setLoadingAdminIds((prev) => new Set(prev).add(profileId));
+    setAccountActionError(null);
+    setAccountActionSuccess(null);
+
+    try {
+      const response = await fetch("/api/super-admin/admin/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setAccountActionError(data.error ?? "Failed to delete admin account");
+        return;
+      }
+
+      setAccountActionSuccess("Admin account deleted successfully.");
+      await loadAdminAccounts();
+    } catch {
+      setAccountActionError("Unexpected error while deleting admin account.");
+    } finally {
+      setLoadingAdminIds((prev) => {
+        const next = new Set(prev);
+        next.delete(profileId);
+        return next;
+      });
+    }
+  }
+
+  async function onViewAdminDetails(profileId: string) {
+    setIsLoadingAdminDetails(true);
+    setAdminDetailsOpen(true);
+    setAdminDetails(null);
+
+    try {
+      const response = await fetch(
+        `/api/super-admin/admin/details?profileId=${encodeURIComponent(profileId)}`,
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        setAccountActionError(data.error ?? "Failed to load admin details");
+        setAdminDetailsOpen(false);
+        return;
+      }
+
+      setAdminDetails(data.details ?? null);
+    } catch {
+      setAccountActionError("Unexpected error while loading admin details.");
+      setAdminDetailsOpen(false);
+    } finally {
+      setIsLoadingAdminDetails(false);
     }
   }
 
@@ -414,6 +570,16 @@ export function SuperAdminDashboard() {
                   {accountsError ? (
                     <p className="mt-4 text-sm text-red-300">{accountsError}</p>
                   ) : null}
+                  {accountActionError ? (
+                    <p className="mt-4 text-sm text-red-300">
+                      {accountActionError}
+                    </p>
+                  ) : null}
+                  {accountActionSuccess ? (
+                    <p className="mt-4 text-sm text-emerald-300">
+                      {accountActionSuccess}
+                    </p>
+                  ) : null}
 
                   <div className="mt-4 space-y-3">
                     {isLoadingAccounts ? (
@@ -452,6 +618,56 @@ export function SuperAdminDashboard() {
                             <span>
                               Permissions: {admin.permissions?.length ?? 0}
                             </span>
+                          </div>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {admin.is_active ? (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  onDeactivateAdmin(admin.profile_id)
+                                }
+                                disabled={loadingAdminIds.has(admin.profile_id)}
+                                className="text-amber-300 hover:text-amber-200"
+                              >
+                                {loadingAdminIds.has(admin.profile_id)
+                                  ? "Deactivating..."
+                                  : "Deactivate"}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  onActivateAdmin(admin.profile_id)
+                                }
+                                disabled={loadingAdminIds.has(admin.profile_id)}
+                                className="text-emerald-300 hover:text-emerald-200"
+                              >
+                                {loadingAdminIds.has(admin.profile_id)
+                                  ? "Activating..."
+                                  : "Activate"}
+                              </Button>
+                            )}
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() =>
+                                onViewAdminDetails(admin.profile_id)
+                              }
+                              className="text-blue-300 hover:text-blue-200"
+                            >
+                              View Details
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => onDeleteAdmin(admin.profile_id)}
+                              disabled={loadingAdminIds.has(admin.profile_id)}
+                              className="text-red-300 hover:text-red-200"
+                            >
+                              Delete
+                            </Button>
                           </div>
                         </div>
                       ))
@@ -768,6 +984,14 @@ export function SuperAdminDashboard() {
           </div>
         </div>
       </div>
+
+      {adminDetailsOpen ? (
+        <AdminDetailsModal
+          details={adminDetails}
+          isLoading={isLoadingAdminDetails}
+          onClose={() => setAdminDetailsOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -937,5 +1161,82 @@ function PasswordToggleButton({
         </svg>
       )}
     </button>
+  );
+}
+
+function AdminDetailsModal({
+  details,
+  isLoading,
+  onClose,
+}: {
+  details: AdminDetails | null;
+  isLoading: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-100">
+            Admin Details
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md px-2 py-1 text-slate-300 hover:bg-slate-800"
+          >
+            X
+          </button>
+        </div>
+
+        {isLoading ? (
+          <p className="mt-4 text-sm text-slate-400">Loading details...</p>
+        ) : details ? (
+          <div className="mt-4 space-y-2 text-sm text-slate-300">
+            <p>
+              <span className="text-slate-500">Full Name:</span>{" "}
+              {details.full_name}
+            </p>
+            <p>
+              <span className="text-slate-500">Email:</span> {details.email}
+            </p>
+            <p>
+              <span className="text-slate-500">Role:</span>{" "}
+              {details.role ?? "admin"}
+            </p>
+            <p>
+              <span className="text-slate-500">Status:</span>{" "}
+              {details.is_active ? "Active" : "Inactive"}
+            </p>
+            <p>
+              <span className="text-slate-500">Department:</span>{" "}
+              {details.department ?? "Not set"}
+            </p>
+            <p>
+              <span className="text-slate-500">Permissions:</span>{" "}
+              {details.permissions?.length ?? 0}
+            </p>
+            <p>
+              <span className="text-slate-500">Created At:</span>{" "}
+              {new Date(details.created_at).toLocaleString()}
+            </p>
+            {details.updated_at ? (
+              <p>
+                <span className="text-slate-500">Updated At:</span>{" "}
+                {new Date(details.updated_at).toLocaleString()}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-slate-400">No details available.</p>
+        )}
+
+        <div className="mt-6 flex justify-end">
+          <Button type="button" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

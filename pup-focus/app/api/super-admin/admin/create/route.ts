@@ -121,6 +121,11 @@ export async function POST(request: NextRequest) {
         email,
         full_name: fullName,
         role: ROLE.ADMIN,
+        metadata: {
+          is_active: true,
+          created_via: "super_admin_admin_panel",
+          created_by_super_admin_id: user.id,
+        },
       },
       { onConflict: "email" },
     );

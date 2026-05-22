@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { ROLE } from "@/config/roles";
 
 export async function POST(request: NextRequest) {
   try {
+    const sessionClient = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await sessionClient.auth.getUser();
+
+    const requesterRole =
+      (user?.user_metadata?.role as string | undefined) ??
+      (user?.app_metadata?.role as string | undefined);
+
+    if (
+      !user ||
+      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { facultyProfileId } = await request.json();
 
     if (!facultyProfileId) {
@@ -19,6 +37,7 @@ export async function POST(request: NextRequest) {
       .from("app_users")
       .select("id, auth_user_id, profile_id, metadata")
       .eq("profile_id", facultyProfileId)
+      .eq("role", "faculty")
       .maybeSingle();
 
     if (fetchError) {
@@ -33,6 +52,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Faculty account not found" },
         { status: 404 },
+      );
+    }
+
+    if (appUser.metadata?.created_via !== "admin_faculty_panel") {
+      return NextResponse.json(
+        { error: "Only faculty created from the admin panel can be modified" },
+        { status: 403 },
+      );
+    }
+
+    if (
+      requesterRole === ROLE.ADMIN &&
+      appUser.metadata?.created_by_admin_id !== user.id
+    ) {
+      return NextResponse.json(
+        { error: "You can only modify faculty accounts you created" },
+        { status: 403 },
       );
     }
 
