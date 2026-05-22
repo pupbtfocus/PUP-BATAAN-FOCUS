@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         "auth_user_id, profile_id, role, metadata, created_at, updated_at",
       )
       .eq("profile_id", profileId)
-      .eq("role", ROLE.ADMIN)
+      .in("role", [ROLE.ADMIN, ROLE.SUPER_ADMIN])
       .maybeSingle();
 
     if (appUserError || !appUser) {

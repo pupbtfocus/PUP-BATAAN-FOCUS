@@ -19,11 +19,35 @@ export async function GET() {
 
   try {
     const supabase = getServiceRoleClient();
+    const { data: admins, error: adminsError } = await supabase
+      .from("admins")
+      .select(
+        "id, profile_id, full_name, email, department, permissions, is_active, created_at",
+      )
+      .order("created_at", { ascending: false });
+
+    if (adminsError) {
+      return NextResponse.json(
+        {
+          error: "Failed to load admin accounts",
+          details: adminsError.message,
+        },
+        { status: 500 },
+      );
+    }
+
+    const profileIds = (admins ?? [])
+      .map((item) => item.profile_id)
+      .filter((value): value is string => Boolean(value));
+
+    if (profileIds.length === 0) {
+      return NextResponse.json({ admins: [] });
+    }
+
     const { data: appUsers, error: appUsersError } = await supabase
       .from("app_users")
-      .select("profile_id, auth_user_id, metadata, created_at")
-      .eq("role", ROLE.ADMIN)
-      .order("created_at", { ascending: false });
+      .select("profile_id, auth_user_id, role, metadata, created_at")
+      .in("profile_id", profileIds);
 
     if (appUsersError) {
       return NextResponse.json(
@@ -35,54 +59,21 @@ export async function GET() {
       );
     }
 
-    const panelCreatedAppUsers = (appUsers ?? []).filter((item) => {
-      const metadata =
-        item.metadata && typeof item.metadata === "object"
-          ? (item.metadata as Record<string, unknown>)
-          : null;
-
-      return (
-        metadata?.created_via === "super_admin_admin_panel" ||
-        typeof metadata?.created_by_super_admin_id === "string"
-      );
-    });
-
-    const filteredAppUsers =
-      panelCreatedAppUsers.length > 0 ? panelCreatedAppUsers : (appUsers ?? []);
-
-    const profileIds = filteredAppUsers
-      .map((item) => item.profile_id)
-      .filter((value): value is string => Boolean(value));
-
-    if (profileIds.length === 0) {
-      return NextResponse.json({ admins: [] });
-    }
-
-    const { data, error } = await supabase
-      .from("admins")
-      .select(
-        "id, profile_id, full_name, email, department, permissions, is_active, created_at",
-      )
-      .in("profile_id", profileIds)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      return NextResponse.json(
-        { error: "Failed to load admin accounts", details: error.message },
-        { status: 500 },
-      );
-    }
-
     const authUserByProfileId = new Map(
-      filteredAppUsers.map((item) => [item.profile_id, item.auth_user_id]),
+      (appUsers ?? []).map((item) => [item.profile_id, item.auth_user_id]),
     );
 
-    const admins = (data ?? []).map((admin) => ({
+    const roleByProfileId = new Map(
+      (appUsers ?? []).map((item) => [item.profile_id, item.role]),
+    );
+
+    const enrichedAdmins = (admins ?? []).map((admin) => ({
       ...admin,
       auth_user_id: authUserByProfileId.get(admin.profile_id) ?? null,
+      role: roleByProfileId.get(admin.profile_id) ?? ROLE.ADMIN,
     }));
 
-    return NextResponse.json({ admins });
+    return NextResponse.json({ admins: enrichedAdmins });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to load admin accounts", details: String(error) },

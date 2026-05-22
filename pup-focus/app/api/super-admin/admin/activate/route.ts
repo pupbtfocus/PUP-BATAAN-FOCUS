@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       .from("app_users")
       .select("id, metadata")
       .eq("profile_id", profileId)
-      .eq("role", ROLE.ADMIN)
+      .in("role", [ROLE.ADMIN, ROLE.SUPER_ADMIN])
       .maybeSingle();
 
     if (!appUser) {
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       .from("app_users")
       .update({ metadata: nextMetadata, updated_at: new Date().toISOString() })
       .eq("profile_id", profileId)
-      .eq("role", ROLE.ADMIN);
+      .in("role", [ROLE.ADMIN, ROLE.SUPER_ADMIN]);
 
     return NextResponse.json({ success: true });
   } catch (error) {
