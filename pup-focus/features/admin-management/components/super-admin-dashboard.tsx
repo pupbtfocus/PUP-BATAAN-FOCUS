@@ -17,6 +17,38 @@ type CreateAdminResult = {
   };
 };
 
+type SuperAdminSection = "dashboard" | "create" | "accounts" | "settings";
+
+type AccountViewRole = "all" | typeof ROLE.ADMIN | typeof ROLE.SUPER_ADMIN;
+
+type SettingsOption = "profile" | "password";
+
+type AdminAccount = {
+  id: string;
+  profile_id: string;
+  full_name: string;
+  email: string;
+  role: AppRole;
+  is_active: boolean;
+  department?: string | null;
+  permissions?: string[] | null;
+};
+
+type AdminDetails = AdminAccount & {
+  user_id?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+  updated_at?: string | null;
+};
+
+type SuperAdminAccountResult = {
+  account?: {
+    fullName: string;
+    email: string;
+  };
+  error?: string;
+};
+
 const DASHBOARD_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
   "/images/attachments/IMG_9402.jpeg",
