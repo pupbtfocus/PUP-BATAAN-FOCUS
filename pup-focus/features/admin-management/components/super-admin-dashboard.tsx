@@ -11,8 +11,6 @@ import { isValidEmailAddress } from "@/lib/validation/email";
 type CreateAdminResult = {
   success?: boolean;
   error?: string;
-  sendError?: string | null;
-  link?: string | null;
   user?: {
     id: string;
     email: string;
@@ -65,8 +63,6 @@ export function SuperAdminDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [inviteSendError, setInviteSendError] = useState<string | null>(null);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
   const [accountViewRole, setAccountViewRole] =
     useState<AccountViewRole>("all");
@@ -235,22 +231,12 @@ export function SuperAdminDashboard() {
         return;
       }
 
-      // Clear any previous invite-specific errors/links
-      setInviteSendError(null);
-      setInviteLink(null);
-
-      // If sending failed server-side, surface the send error and provide the fallback link
-      if (data.sendError || data.link) {
-        if (data.sendError) setInviteSendError(data.sendError ?? null);
-        if (data.link) setInviteLink(data.link ?? null);
-        setSuccess(
-          `Invite created for ${data.user?.email ?? normalizedEmail}. Email sending failed; copy the link below to share manually.`,
-        );
-      } else {
-        setSuccess(
-          `Invite sent to ${data.user?.email ?? normalizedEmail}. The admin account will be added after the email link is accepted.`,
-        );
-      }
+      window.alert(
+        `Invitation email sent to ${data.user?.email ?? normalizedEmail}. Please ask them to verify their email and check their inbox.`,
+      );
+      setSuccess(
+        `Invitation email sent to ${data.user?.email ?? normalizedEmail}. Please ask them to verify their email.`,
+      );
       setFullName("");
       setEmail("");
       setActiveSection("accounts");
@@ -1123,37 +1109,6 @@ export function SuperAdminDashboard() {
                     ) : null}
                     {success ? (
                       <p className="text-sm text-[#ffd700]">{success}</p>
-                    ) : null}
-
-                    {inviteSendError ? (
-                      <p className="text-sm text-red-300">
-                        SMTP error: {inviteSendError}
-                      </p>
-                    ) : null}
-
-                    {inviteSendError ? (
-                      <div className="mt-2">
-                        <p className="text-sm text-red-300">
-                          {inviteSendError}
-                        </p>
-                        {inviteLink ? (
-                          <div className="mt-2 flex items-center gap-2">
-                            <input
-                              readOnly
-                              value={inviteLink}
-                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200"
-                            />
-                            <Button
-                              type="button"
-                              onClick={() =>
-                                void navigator.clipboard.writeText(inviteLink)
-                              }
-                            >
-                              Copy
-                            </Button>
-                          </div>
-                        ) : null}
-                      </div>
                     ) : null}
 
                     <div className="flex justify-center pt-1">
