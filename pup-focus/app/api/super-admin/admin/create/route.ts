@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { isValidEmailAddress } from "@/lib/validation/email";
 
 export async function POST(request: NextRequest) {
   const sessionClient = await createServerSupabaseClient();
@@ -37,24 +38,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!isValidEmailAddress(normalizedEmail)) {
+      return NextResponse.json(
+        { error: "Please provide a real email address" },
+        { status: 400 },
+      );
+    }
+
     const supabase = getServiceRoleClient();
 
     const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("email", email)
+      .eq("email", normalizedEmail)
       .maybeSingle();
 
     if (existingProfile) {
       return NextResponse.json(
-        { error: `Account with email ${email} already exists` },
+        { error: `Account with email ${normalizedEmail} already exists` },
         { status: 400 },
       );
     }
 
     const { data: authData, error: authError } =
       await supabase.auth.admin.createUser({
-        email,
+        email: normalizedEmail,
         password,
         email_confirm: true,
         user_metadata: {
@@ -75,7 +85,7 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: authData.user.id,
         full_name: fullName,
-        email,
+        email: normalizedEmail,
       })
       .select("id")
       .single();
@@ -121,7 +131,7 @@ export async function POST(request: NextRequest) {
       {
         auth_user_id: authData.user.id,
         profile_id: profile.id,
-        email,
+        email: normalizedEmail,
         full_name: fullName,
         role: ROLE.ADMIN,
         metadata: {
@@ -146,7 +156,7 @@ export async function POST(request: NextRequest) {
       {
         profile_id: profile.id,
         full_name: fullName,
-        email,
+        email: normalizedEmail,
         is_active: true,
       },
       { onConflict: "email" },
@@ -165,7 +175,7 @@ export async function POST(request: NextRequest) {
       success: true,
       user: {
         id: authData.user.id,
-        email,
+        email: normalizedEmail,
         fullName,
       },
     });

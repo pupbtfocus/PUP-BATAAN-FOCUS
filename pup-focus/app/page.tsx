@@ -3,9 +3,13 @@
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
+import { APP_CONFIG } from "@/config/app";
 import { createClient } from "@/lib/supabase/client";
 import { ROUTE_BY_ROLE } from "@/config/routes";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
+import { isValidEmailAddress } from "@/lib/validation/email";
+
+const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -21,11 +25,43 @@ export default function Home() {
     setSuccess(null);
     setIsSubmitting(true);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!isValidEmailAddress(normalizedEmail)) {
+      setError("Please provide a real email address.");
+      setIsSubmitting(false);
+      return;
+    }
+
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const signIn = () =>
+      supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+
+    let { error: signInError } = await signIn();
+
+    if (signInError && normalizedEmail === SUPER_ADMIN_EMAIL) {
+      const bootstrapResponse = await fetch("/api/bootstrap/super-admin", {
+        method: "POST",
+      });
+
+      if (!bootstrapResponse.ok) {
+        try {
+          const body = (await bootstrapResponse.json()) as { error?: string };
+          setError(
+            body.error ?? "Unable to initialize the super admin account.",
+          );
+        } catch {
+          setError("Unable to initialize the super admin account.");
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      ({ error: signInError } = await signIn());
+    }
 
     if (signInError) {
       setError(signInError.message);

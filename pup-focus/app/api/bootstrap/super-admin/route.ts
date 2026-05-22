@@ -1,13 +1,26 @@
 import { NextResponse } from "next/server";
+import { APP_CONFIG } from "@/config/app";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
+import { isValidEmailAddress } from "@/lib/validation/email";
 
-const SUPER_ADMIN_EMAIL = "superadmin@pup-focus.local";
-const SUPER_ADMIN_PASSWORD = "SuperAdmin123!";
+const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
+const SUPER_ADMIN_PASSWORD =
+  process.env.SUPER_ADMIN_PASSWORD?.trim() || "SuperAdmin123!";
 const SUPER_ADMIN_FULL_NAME = "PUP FOCUS Super Admin";
 
 export async function POST() {
   try {
+    if (!isValidEmailAddress(SUPER_ADMIN_EMAIL)) {
+      return NextResponse.json(
+        {
+          error:
+            "Set SUPER_ADMIN_EMAIL to a real email address before bootstrapping.",
+        },
+        { status: 400 },
+      );
+    }
+
     const supabase = getServiceRoleClient();
 
     const { data: rolesData, error: roleError } = await supabase
@@ -41,9 +54,18 @@ export async function POST() {
       return NextResponse.json({ error: listError.message }, { status: 400 });
     }
 
-    const existingUser = usersData.users.find(
-      (item) => item.email === SUPER_ADMIN_EMAIL,
-    );
+    const existingUser =
+      usersData.users.find((item) => item.email === SUPER_ADMIN_EMAIL) ??
+      usersData.users.find((item) => {
+        const userRole =
+          (item.user_metadata?.role as string | undefined) ??
+          (item.app_metadata?.role as string | undefined);
+
+        return (
+          userRole === ROLE.SUPER_ADMIN ||
+          item.user_metadata?.full_name === SUPER_ADMIN_FULL_NAME
+        );
+      });
 
     let authUserId = existingUser?.id;
 
@@ -101,7 +123,7 @@ export async function POST() {
     const { data: existingProfile, error: profileLookupError } = await supabase
       .from("profiles")
       .select("id")
-      .eq("email", SUPER_ADMIN_EMAIL)
+      .eq("user_id", authUserId)
       .maybeSingle();
 
     if (profileLookupError) {
@@ -181,16 +203,26 @@ export async function POST() {
       );
     }
 
-    const { error: appUsersError } = await supabase.from("app_users").upsert(
-      {
-        auth_user_id: authUserId,
-        profile_id: profileId,
-        email: SUPER_ADMIN_EMAIL,
-        full_name: SUPER_ADMIN_FULL_NAME,
-        role: ROLE.SUPER_ADMIN,
-      },
-      { onConflict: "email" },
-    );
+    const { data: existingAppUser } = await supabase
+      .from("app_users")
+      .select("id")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle();
+
+    const appUsersPayload = {
+      auth_user_id: authUserId,
+      profile_id: profileId,
+      email: SUPER_ADMIN_EMAIL,
+      full_name: SUPER_ADMIN_FULL_NAME,
+      role: ROLE.SUPER_ADMIN,
+    };
+
+    const { error: appUsersError } = existingAppUser
+      ? await supabase
+          .from("app_users")
+          .update(appUsersPayload)
+          .eq("id", existingAppUser.id)
+      : await supabase.from("app_users").insert(appUsersPayload);
 
     if (appUsersError) {
       return NextResponse.json(
@@ -199,15 +231,25 @@ export async function POST() {
       );
     }
 
-    const { error: adminTableError } = await supabase.from("admins").upsert(
-      {
-        profile_id: profileId,
-        full_name: SUPER_ADMIN_FULL_NAME,
-        email: SUPER_ADMIN_EMAIL,
-        is_active: true,
-      },
-      { onConflict: "email" },
-    );
+    const { data: existingAdmin } = await supabase
+      .from("admins")
+      .select("id")
+      .eq("profile_id", profileId)
+      .maybeSingle();
+
+    const adminPayload = {
+      profile_id: profileId,
+      full_name: SUPER_ADMIN_FULL_NAME,
+      email: SUPER_ADMIN_EMAIL,
+      is_active: true,
+    };
+
+    const { error: adminTableError } = existingAdmin
+      ? await supabase
+          .from("admins")
+          .update(adminPayload)
+          .eq("id", existingAdmin.id)
+      : await supabase.from("admins").insert(adminPayload);
 
     if (adminTableError) {
       return NextResponse.json(

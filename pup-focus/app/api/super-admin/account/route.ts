@@ -2,10 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ROLE } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
+import { isValidEmailAddress } from "@/lib/validation/email";
 
 export async function GET() {
   const sessionClient = await createServerSupabaseClient();
@@ -150,9 +147,9 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (!isValidEmail(email)) {
+    if (!isValidEmailAddress(email)) {
       return NextResponse.json(
-        { error: "Please provide a valid email address" },
+        { error: "Please provide a real email address" },
         { status: 400 },
       );
     }
