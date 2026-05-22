@@ -7,6 +7,11 @@ type SubmissionWindowRow = {
   end_time: string;
 };
 
+type SubmissionWindowLegacyRow = {
+  start_date: string;
+  end_date: string;
+};
+
 export type SubmissionWindowConfig = {
   startDate: string;
   endDate: string;
@@ -27,7 +32,9 @@ export type SubmissionWindowState = {
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_24H_PATTERN = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
-const TIME_12H_PATTERN = /^(0?[1-9]|1[0-2]):[0-5]\d\s?(AM|PM)$/i;
+const TIME_12H_PATTERN = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i;
+const DEFAULT_START_TIME = "09:00:00";
+const DEFAULT_END_TIME = "17:00:00";
 
 export function isValidDateInput(value: string): boolean {
   return DATE_PATTERN.test(value);
@@ -39,6 +46,33 @@ export function isValid24HourTimeInput(value: string): boolean {
 
 export function isValid12HourTimeInput(value: string): boolean {
   return TIME_12H_PATTERN.test(value.trim());
+}
+
+export function isMissingTimeColumnsError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const possibleCode = (error as { code?: unknown }).code;
+  const possibleMessage = (error as { message?: unknown }).message;
+  const possibleDetails = (error as { details?: unknown }).details;
+  const possibleHint = (error as { hint?: unknown }).hint;
+  const code = typeof possibleCode === "string" ? possibleCode : "";
+  const message =
+    typeof possibleMessage === "string" ? possibleMessage.toLowerCase() : "";
+  const details =
+    typeof possibleDetails === "string" ? possibleDetails.toLowerCase() : "";
+  const hint =
+    typeof possibleHint === "string" ? possibleHint.toLowerCase() : "";
+  const combinedText = `${message} ${details} ${hint}`;
+
+  return (
+    code === "42703" ||
+    code === "PGRST204" ||
+    combinedText.includes("start_time") ||
+    combinedText.includes("end_time") ||
+    combinedText.includes("schema cache")
+  );
 }
 
 export function convert12HourTo24Hour(value: string): string {
@@ -160,9 +194,34 @@ export async function getSubmissionWindow(
     .eq("id", 1)
     .maybeSingle<SubmissionWindowRow>();
 
-  // When table/query is unavailable, treat as not configured.
   if (error) {
-    return null;
+    if (!isMissingTimeColumnsError(error)) {
+      return null;
+    }
+
+    const { data: legacyData, error: legacyError } = await supabase
+      .from("submission_windows")
+      .select("start_date, end_date")
+      .eq("id", 1)
+      .maybeSingle<SubmissionWindowLegacyRow>();
+
+    if (legacyError || !legacyData) {
+      return null;
+    }
+
+    if (
+      !isValidDateInput(legacyData.start_date) ||
+      !isValidDateInput(legacyData.end_date)
+    ) {
+      return null;
+    }
+
+    return {
+      startDate: legacyData.start_date,
+      endDate: legacyData.end_date,
+      startTime: DEFAULT_START_TIME,
+      endTime: DEFAULT_END_TIME,
+    };
   }
 
   if (!data) {

@@ -5,6 +5,7 @@ import {
   format24HourTo12Hour,
   evaluateSubmissionWindow,
   getSubmissionWindow,
+  isMissingTimeColumnsError,
   validateSubmissionWindow,
 } from "@/features/submissions/services/submission-window.service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -114,10 +115,53 @@ export async function PUT(request: NextRequest) {
     );
 
     if (error) {
+      if (isMissingTimeColumnsError(error)) {
+        const { error: fallbackError } = await supabase
+          .from("submission_windows")
+          .upsert(
+            {
+              id: 1,
+              start_date: startDate,
+              end_date: endDate,
+              updated_by: user.id,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "id" },
+          );
+
+        if (fallbackError) {
+          return NextResponse.json(
+            {
+              error: "Failed to save submission window",
+              details: fallbackError.message,
+            },
+            { status: 500 },
+          );
+        }
+
+        const fallbackStatus = evaluateSubmissionWindow({
+          startDate,
+          endDate,
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+        });
+
+        return NextResponse.json({
+          ...fallbackStatus,
+          warning:
+            "Database time columns are missing. Saved dates only with default time 9:00 AM to 5:00 PM. Run migration 0011_submission_window_time.sql.",
+          startTimeLabel: format24HourTo12Hour(fallbackStatus.startTime ?? ""),
+          endTimeLabel: format24HourTo12Hour(fallbackStatus.endTime ?? ""),
+          currentTimeLabel: format24HourTo12Hour(fallbackStatus.currentTime),
+        });
+      }
+
       return NextResponse.json(
         {
           error: "Failed to save submission window",
           details: error.message,
+          code: error.code,
+          hint: error.hint,
         },
         { status: 500 },
       );
