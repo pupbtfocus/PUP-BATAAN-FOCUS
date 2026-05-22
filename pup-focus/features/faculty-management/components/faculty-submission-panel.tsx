@@ -39,6 +39,14 @@ type SubmissionFormState = {
   remarks: string;
 };
 
+type SubmissionWindowState = {
+  isConfigured: boolean;
+  isOpen: boolean;
+  today: string;
+  startDate: string | null;
+  endDate: string | null;
+};
+
 function buildAcademicYears(count = 5): string[] {
   const now = new Date();
   const startYear =
@@ -99,6 +107,8 @@ export function FacultySubmissionPanel({
   } | null>(null);
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(true);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [submissionWindow, setSubmissionWindow] =
+    useState<SubmissionWindowState | null>(null);
 
   useEffect(() => {
     async function fetchStatuses() {
@@ -139,8 +149,21 @@ export function FacultySubmissionPanel({
       }
     }
 
+    async function fetchSubmissionWindow() {
+      try {
+        const response = await fetch("/api/faculty/submissions/window");
+        if (response.ok) {
+          const data = (await response.json()) as SubmissionWindowState;
+          setSubmissionWindow(data);
+        }
+      } catch {
+        // Keep UI usable even if window info fails to load.
+      }
+    }
+
     fetchStatuses();
     fetchHistory();
+    fetchSubmissionWindow();
 
     const statusInterval = setInterval(fetchStatuses, 10000);
     return () => clearInterval(statusInterval);
@@ -168,6 +191,13 @@ export function FacultySubmissionPanel({
     setSubmissionMessage(null);
 
     try {
+      if (submissionWindow?.isConfigured && !submissionWindow.isOpen) {
+        setSubmissionMessage(
+          `Error: Submission is currently closed. Allowed dates are ${submissionWindow.startDate} to ${submissionWindow.endDate}.`,
+        );
+        return;
+      }
+
       const fileInput = fileInputRef.current;
       const file = fileInput?.files?.[0];
 
@@ -287,6 +317,23 @@ export function FacultySubmissionPanel({
                   Choose the school year, semester, and document you want to
                   submit.
                 </p>
+
+                {submissionWindow?.isConfigured ? (
+                  <p
+                    className={`mt-4 rounded-md border px-3 py-2 text-sm ${
+                      submissionWindow.isOpen
+                        ? "border-emerald-700 bg-emerald-950/20 text-emerald-300"
+                        : "border-amber-700 bg-amber-950/20 text-amber-300"
+                    }`}
+                  >
+                    Submission window: {submissionWindow.startDate} to{" "}
+                    {submissionWindow.endDate}. Today is{" "}
+                    {submissionWindow.today}.
+                    {submissionWindow.isOpen
+                      ? " Submissions are open."
+                      : " Submissions are closed."}
+                  </p>
+                ) : null}
 
                 <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                   <div className="grid gap-4 md:grid-cols-2">
@@ -412,9 +459,19 @@ export function FacultySubmissionPanel({
                     </span>
                     <Button
                       type="submit"
-                      disabled={isSubmitting || !form.fileName}
+                      disabled={
+                        isSubmitting ||
+                        !form.fileName ||
+                        (submissionWindow?.isConfigured &&
+                          !submissionWindow.isOpen)
+                      }
                     >
-                      {isSubmitting ? "Submitting..." : "Submit Requirement"}
+                      {isSubmitting
+                        ? "Submitting..."
+                        : submissionWindow?.isConfigured &&
+                            !submissionWindow.isOpen
+                          ? "Submission Closed"
+                          : "Submit Requirement"}
                     </Button>
                   </div>
                 </form>

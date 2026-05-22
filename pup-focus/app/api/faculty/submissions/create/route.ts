@@ -4,6 +4,10 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logger } from "@/lib/observability/logger";
 import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
 import type { RequirementCode } from "@/config/compliance";
+import {
+  evaluateSubmissionWindow,
+  getSubmissionWindow,
+} from "@/features/submissions/services/submission-window.service";
 import crypto from "crypto";
 
 type SubmissionPayload = {
@@ -25,6 +29,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Unauthorized - not authenticated" },
         { status: 401 },
+      );
+    }
+
+    const supabase = getServiceRoleClient();
+
+    // Validate if submissions are currently open.
+    const submissionWindow = await getSubmissionWindow(supabase);
+    const windowState = evaluateSubmissionWindow(submissionWindow);
+    if (windowState.isConfigured && !windowState.isOpen) {
+      return NextResponse.json(
+        {
+          error: `Submission period is closed. Allowed dates: ${windowState.startDate} to ${windowState.endDate}.`,
+          window: windowState,
+        },
+        { status: 403 },
       );
     }
 
@@ -66,7 +85,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Get faculty profile ID
-    const supabase = getServiceRoleClient();
     const { data: appUser, error: appUserError } = await supabase
       .from("app_users")
       .select("profile_id")
