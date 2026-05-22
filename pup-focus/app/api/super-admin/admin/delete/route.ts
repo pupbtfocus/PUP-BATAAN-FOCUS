@@ -69,7 +69,13 @@ export async function POST(request: NextRequest) {
 
     const authUserId = appUser.auth_user_id ?? profile?.user_id;
     if (authUserId) {
-      await supabase.auth.admin.deleteUser(authUserId);
+      try {
+        await supabase.auth.admin.deleteUser(authUserId);
+      } catch (e) {
+        // If the auth user is already deleted or not found, ignore and continue
+        // as we've already cleaned up DB rows. Log the error for debugging.
+        console.warn("Warning: could not delete auth user:", String(e));
+      }
     }
 
     return NextResponse.json({ success: true });
