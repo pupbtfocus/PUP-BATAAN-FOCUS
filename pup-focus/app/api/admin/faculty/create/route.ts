@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
+import { isValidEmailAddress } from "@/lib/validation/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,18 +31,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!isValidEmailAddress(normalizedEmail)) {
+      return NextResponse.json(
+        { error: "Please provide a real email address" },
+        { status: 400 },
+      );
+    }
+
     const supabase = getServiceRoleClient();
 
     // Check if email already exists in profiles
     const { data: existingProfile, error: checkError } = await supabase
       .from("profiles")
       .select("id, email")
-      .eq("email", email)
+      .eq("email", normalizedEmail)
       .single();
 
     if (existingProfile) {
       return NextResponse.json(
-        { error: `Faculty account with email ${email} already exists` },
+        {
+          error: `Faculty account with email ${normalizedEmail} already exists`,
+        },
         { status: 400 },
       );
     }
@@ -49,7 +61,7 @@ export async function POST(request: NextRequest) {
     // Create auth user
     const { data: authData, error: authError } =
       await supabase.auth.admin.createUser({
-        email,
+        email: normalizedEmail,
         password,
         email_confirm: true,
         user_metadata: {
@@ -69,7 +81,7 @@ export async function POST(request: NextRequest) {
     const { error: profileError } = await supabase.from("profiles").insert({
       user_id: authData.user.id,
       full_name: fullName,
-      email,
+      email: normalizedEmail,
     });
 
     if (profileError) {
@@ -127,7 +139,7 @@ export async function POST(request: NextRequest) {
     const { error: appUsersError } = await supabase.from("app_users").insert({
       auth_user_id: authData.user.id,
       profile_id: profileId,
-      email,
+      email: normalizedEmail,
       full_name: fullName,
       role: "faculty",
       metadata: {
