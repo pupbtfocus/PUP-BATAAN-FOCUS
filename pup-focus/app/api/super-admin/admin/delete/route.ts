@@ -40,9 +40,7 @@ export async function POST(request: NextRequest) {
 
     if (
       !appUser ||
-      ![ROLE.ADMIN, ROLE.SUPER_ADMIN].includes(
-        appUser.role as (typeof ROLE)[keyof typeof ROLE],
-      )
+      (appUser.role !== ROLE.ADMIN && appUser.role !== ROLE.SUPER_ADMIN)
     ) {
       return NextResponse.json(
         { error: "Admin account not found" },
