@@ -109,6 +109,8 @@ export function FacultySubmissionPanel({
   const [statusError, setStatusError] = useState<string | null>(null);
   const [submissionWindow, setSubmissionWindow] =
     useState<SubmissionWindowState | null>(null);
+  const [isLoadingSubmissionWindow, setIsLoadingSubmissionWindow] =
+    useState(true);
 
   useEffect(() => {
     async function fetchStatuses() {
@@ -150,6 +152,7 @@ export function FacultySubmissionPanel({
     }
 
     async function fetchSubmissionWindow() {
+      setIsLoadingSubmissionWindow(true);
       try {
         const response = await fetch("/api/faculty/submissions/window");
         if (response.ok) {
@@ -158,6 +161,8 @@ export function FacultySubmissionPanel({
         }
       } catch {
         // Keep UI usable even if window info fails to load.
+      } finally {
+        setIsLoadingSubmissionWindow(false);
       }
     }
 
@@ -191,9 +196,15 @@ export function FacultySubmissionPanel({
     setSubmissionMessage(null);
 
     try {
-      if (submissionWindow?.isConfigured && !submissionWindow.isOpen) {
+      if (
+        isLoadingSubmissionWindow ||
+        !submissionWindow ||
+        !submissionWindow.isOpen
+      ) {
         setSubmissionMessage(
-          `Error: Submission is currently closed. Allowed dates are ${submissionWindow.startDate} to ${submissionWindow.endDate}.`,
+          submissionWindow?.isConfigured
+            ? `Error: Submission is currently closed. Allowed dates are ${submissionWindow.startDate} to ${submissionWindow.endDate}.`
+            : "Error: Cannot submit requirements because admin has not set submission dates yet.",
         );
         return;
       }
@@ -254,6 +265,9 @@ export function FacultySubmissionPanel({
       setIsSubmitting(false);
     }
   }
+
+  const isSubmissionAvailable =
+    !isLoadingSubmissionWindow && Boolean(submissionWindow?.isOpen);
 
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
@@ -318,163 +332,197 @@ export function FacultySubmissionPanel({
                   submit.
                 </p>
 
-                {submissionWindow?.isConfigured ? (
-                  <p
-                    className={`mt-4 rounded-md border px-3 py-2 text-sm ${
-                      submissionWindow.isOpen
-                        ? "border-emerald-700 bg-emerald-950/20 text-emerald-300"
-                        : "border-amber-700 bg-amber-950/20 text-amber-300"
-                    }`}
-                  >
-                    Submission window: {submissionWindow.startDate} to{" "}
-                    {submissionWindow.endDate}. Today is{" "}
-                    {submissionWindow.today}.
-                    {submissionWindow.isOpen
-                      ? " Submissions are open."
-                      : " Submissions are closed."}
-                  </p>
-                ) : null}
+                {isSubmissionAvailable ? (
+                  <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label
+                          className="text-sm text-slate-300"
+                          htmlFor="academicYear"
+                        >
+                          School Year
+                        </label>
+                        <select
+                          id="academicYear"
+                          className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                          value={form.academicYear}
+                          onChange={(event) =>
+                            updateField("academicYear", event.target.value)
+                          }
+                        >
+                          {academicYears.map((year) => (
+                            <option key={year} value={year}>
+                              S.Y. {year}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label
-                        className="text-sm text-slate-300"
-                        htmlFor="academicYear"
-                      >
-                        School Year
-                      </label>
-                      <select
-                        id="academicYear"
-                        className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-                        value={form.academicYear}
-                        onChange={(event) =>
-                          updateField("academicYear", event.target.value)
-                        }
-                      >
-                        {academicYears.map((year) => (
-                          <option key={year} value={year}>
-                            S.Y. {year}
-                          </option>
-                        ))}
-                      </select>
+                      <div>
+                        <label
+                          className="text-sm text-slate-300"
+                          htmlFor="semester"
+                        >
+                          Semester
+                        </label>
+                        <select
+                          id="semester"
+                          className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                          value={form.semester}
+                          onChange={(event) =>
+                            updateField(
+                              "semester",
+                              event.target
+                                .value as SubmissionFormState["semester"],
+                            )
+                          }
+                        >
+                          {SEMESTER_OPTIONS.map((semester) => (
+                            <option key={semester} value={semester}>
+                              {semester}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     <div>
                       <label
                         className="text-sm text-slate-300"
-                        htmlFor="semester"
+                        htmlFor="requirementCode"
                       >
-                        Semester
+                        Requirement Type
                       </label>
                       <select
-                        id="semester"
+                        id="requirementCode"
                         className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-                        value={form.semester}
+                        value={form.requirementCode}
                         onChange={(event) =>
                           updateField(
-                            "semester",
-                            event.target
-                              .value as SubmissionFormState["semester"],
+                            "requirementCode",
+                            event.target.value as RequirementCode,
                           )
                         }
                       >
-                        {SEMESTER_OPTIONS.map((semester) => (
-                          <option key={semester} value={semester}>
-                            {semester}
+                        {DEFAULT_REQUIREMENTS.map((code) => (
+                          <option key={code} value={code}>
+                            {REQUIREMENT_LABEL[code]}
                           </option>
                         ))}
                       </select>
                     </div>
-                  </div>
 
-                  <div>
-                    <label
-                      className="text-sm text-slate-300"
-                      htmlFor="requirementCode"
-                    >
-                      Requirement Type
-                    </label>
-                    <select
-                      id="requirementCode"
-                      className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-                      value={form.requirementCode}
-                      onChange={(event) =>
-                        updateField(
-                          "requirementCode",
-                          event.target.value as RequirementCode,
-                        )
-                      }
-                    >
-                      {DEFAULT_REQUIREMENTS.map((code) => (
-                        <option key={code} value={code}>
-                          {REQUIREMENT_LABEL[code]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div>
+                      <label
+                        className="text-sm text-slate-300"
+                        htmlFor="fileName"
+                      >
+                        File to Submit
+                      </label>
+                      <input
+                        ref={fileInputRef}
+                        id="fileName"
+                        type="file"
+                        className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950 hover:file:bg-amber-400"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          updateField("fileName", file?.name ?? "");
+                        }}
+                      />
+                      <p className="mt-1 text-xs text-slate-500">
+                        Accepted files: PDF, Word documents, and images.
+                      </p>
+                    </div>
 
-                  <div>
-                    <label
-                      className="text-sm text-slate-300"
-                      htmlFor="fileName"
-                    >
-                      File to Submit
-                    </label>
-                    <input
-                      ref={fileInputRef}
-                      id="fileName"
-                      type="file"
-                      className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950 hover:file:bg-amber-400"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        updateField("fileName", file?.name ?? "");
-                      }}
-                    />
-                    <p className="mt-1 text-xs text-slate-500">
-                      Accepted files: PDF, Word documents, and images.
-                    </p>
-                  </div>
+                    <div>
+                      <label
+                        className="text-sm text-slate-300"
+                        htmlFor="remarks"
+                      >
+                        Remarks
+                      </label>
+                      <textarea
+                        id="remarks"
+                        rows={4}
+                        className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                        placeholder="Add short notes for the reviewer"
+                        value={form.remarks}
+                        onChange={(event) =>
+                          updateField("remarks", event.target.value)
+                        }
+                      />
+                    </div>
 
-                  <div>
-                    <label className="text-sm text-slate-300" htmlFor="remarks">
-                      Remarks
-                    </label>
-                    <textarea
-                      id="remarks"
-                      rows={4}
-                      className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-                      placeholder="Add short notes for the reviewer"
-                      value={form.remarks}
-                      onChange={(event) =>
-                        updateField("remarks", event.target.value)
-                      }
-                    />
-                  </div>
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-400">
+                      <span>
+                        Submission will be queued for review after upload.
+                      </span>
+                      <Button
+                        type="submit"
+                        disabled={
+                          isSubmitting ||
+                          !form.fileName ||
+                          (submissionWindow ? !submissionWindow.isOpen : false)
+                        }
+                      >
+                        {isSubmitting ? "Submitting..." : "Submit Requirement"}
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="mt-6 flex min-h-[60vh] items-center justify-center rounded-2xl border border-amber-700/60 bg-gradient-to-br from-amber-950/25 via-slate-950 to-slate-900 p-8">
+                    <div className="w-full max-w-2xl rounded-2xl border border-amber-500/30 bg-slate-950/80 p-8 text-center shadow-2xl">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/15 text-amber-300">
+                        <svg
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                          className="h-8 w-8"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 9v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 3c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"
+                          />
+                        </svg>
+                      </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-400">
-                    <span>
-                      Submission will be queued for review after upload.
-                    </span>
-                    <Button
-                      type="submit"
-                      disabled={
-                        isSubmitting ||
-                        !form.fileName ||
-                        (submissionWindow?.isConfigured &&
-                          !submissionWindow.isOpen)
-                      }
-                    >
-                      {isSubmitting
-                        ? "Submitting..."
-                        : submissionWindow?.isConfigured &&
-                            !submissionWindow.isOpen
-                          ? "Submission Closed"
-                          : "Submit Requirement"}
-                    </Button>
+                      <h3 className="mt-5 text-2xl font-semibold text-slate-100">
+                        Submission Is Currently Unavailable
+                      </h3>
+
+                      {isLoadingSubmissionWindow ? (
+                        <p className="mt-3 text-sm text-slate-300">
+                          Checking submission availability...
+                        </p>
+                      ) : submissionWindow?.isConfigured ? (
+                        <p className="mt-3 text-sm text-slate-300">
+                          The submission window is closed. Allowed dates are
+                          <span className="font-semibold text-amber-300">
+                            {" "}
+                            {submissionWindow.startDate} to{" "}
+                            {submissionWindow.endDate}
+                          </span>
+                          .
+                        </p>
+                      ) : (
+                        <p className="mt-3 text-sm text-slate-300">
+                          Admin has not set the submission start and end dates
+                          yet. Please wait until the schedule is available.
+                        </p>
+                      )}
+
+                      {submissionWindow?.today ? (
+                        <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500">
+                          Today: {submissionWindow.today}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
-                </form>
+                )}
 
                 {submissionMessage ? (
                   <p className="mt-4 rounded-md border border-emerald-700 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-300">

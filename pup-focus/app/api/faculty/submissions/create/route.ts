@@ -37,10 +37,12 @@ export async function POST(request: NextRequest) {
     // Validate if submissions are currently open.
     const submissionWindow = await getSubmissionWindow(supabase);
     const windowState = evaluateSubmissionWindow(submissionWindow);
-    if (windowState.isConfigured && !windowState.isOpen) {
+    if (!windowState.isOpen) {
       return NextResponse.json(
         {
-          error: `Submission period is closed. Allowed dates: ${windowState.startDate} to ${windowState.endDate}.`,
+          error: windowState.isConfigured
+            ? `Submission period is closed. Allowed dates: ${windowState.startDate} to ${windowState.endDate}.`
+            : "Submission period is not set by admin yet. Please wait for admin to set start and end dates.",
           window: windowState,
         },
         { status: 403 },
