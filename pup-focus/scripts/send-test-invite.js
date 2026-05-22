@@ -46,6 +46,8 @@ async function main() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   console.log("Generating invite link for", to);
+  const publicApp = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const redirectTo = `${publicApp.replace(/\/$/, "")}/auth/confirm?next=/super-admin/admin`;
   const { data, error } = await supabase.auth.admin.generateLink({
     type: "invite",
     email: to,
@@ -56,7 +58,7 @@ async function main() {
       created_by_super_admin_id: "script",
     },
     options: {
-      redirectTo: "http://localhost:3000/auth/confirm?next=/super-admin/admin",
+      redirectTo,
     },
   });
 
