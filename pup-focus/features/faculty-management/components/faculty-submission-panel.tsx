@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { BrandMark } from "@/components/shared/brand-mark";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -9,7 +11,17 @@ import {
 } from "@/config/compliance";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
-const PANEL_VIEWS = ["submit", "history", "status", "guide"] as const;
+const PANEL_VIEWS = [
+  "dashboard",
+  "submit",
+  "history",
+  "status",
+  "guide",
+] as const;
+const LOGIN_PAGE_IMAGES = [
+  "/images/attachments/IMG_9399.jpeg",
+  "/images/attachments/IMG_9402.jpeg",
+];
 
 type PanelView = (typeof PANEL_VIEWS)[number];
 type HistorySubmissionStatus = "Pending" | "Validated" | "Rejected";
@@ -80,7 +92,7 @@ export function FacultySubmissionPanel({
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const academicYears = useMemo(() => buildAcademicYears(), []);
-  const [activeView, setActiveView] = useState<PanelView>("submit");
+  const [activeView, setActiveView] = useState<PanelView>("dashboard");
   const [form, setForm] = useState<SubmissionFormState>({
     academicYear: academicYears[0] ?? "",
     semester: "1st Semester",
@@ -297,6 +309,7 @@ export function FacultySubmissionPanel({
 
         <nav className="mt-6 space-y-2">
           {[
+            ["dashboard", "Dashboard", "School branding preview"],
             ["submit", "Submit Requirement", "Upload a new requirement"],
             ["history", "Past Submissions", "Filter by S.Y. and semester"],
             ["status", "Requirement Status", "View validation status"],
@@ -325,6 +338,43 @@ export function FacultySubmissionPanel({
       <div className="ml-72 flex min-h-full w-[calc(100%-18rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            {activeView === "dashboard" && (
+              <article className="relative -m-6 h-[calc(100vh-4rem)] w-[calc(100%+3rem)] overflow-hidden p-0">
+                <div className="relative h-full overflow-hidden bg-[#4d0000]/80">
+                  <Image
+                    src={LOGIN_PAGE_IMAGES[0]}
+                    alt="PUP Bataan login background"
+                    fill
+                    sizes="100vw"
+                    className="object-cover"
+                    style={{ animation: "backgroundFadeA 16s infinite linear" }}
+                  />
+                  <Image
+                    src={LOGIN_PAGE_IMAGES[1]}
+                    alt="PUP Bataan login background"
+                    fill
+                    sizes="100vw"
+                    className="object-cover"
+                    style={{ animation: "backgroundFadeB 16s infinite linear" }}
+                  />
+                  <div className="absolute inset-0 bg-[#4d0000]/70" />
+
+                  <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
+                    <BrandMark
+                      size={90}
+                      className="rounded-full shadow-lg shadow-black/20"
+                    />
+                    <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+                      Polytechnic University of the Philippines - Bataan Campus
+                    </p>
+                    <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#fff8e7]">
+                      PUP FOCUS
+                    </h3>
+                  </div>
+                </div>
+              </article>
+            )}
+
             {activeView === "submit" && (
               <article className="min-h-[calc(100vh-4rem-3rem)] p-8">
                 <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
