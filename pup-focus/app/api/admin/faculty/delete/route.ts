@@ -32,6 +32,55 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
+    const { data: facultyRole, error: facultyRoleError } = await supabase
+      .from("roles")
+      .select("id")
+      .eq("code", "faculty")
+      .maybeSingle();
+
+    if (facultyRoleError) {
+      console.error(
+        "Error fetching faculty role before deletion:",
+        facultyRoleError,
+      );
+      return NextResponse.json(
+        { error: "Failed to fetch faculty account" },
+        { status: 500 },
+      );
+    }
+
+    if (!facultyRole?.id) {
+      return NextResponse.json(
+        { error: "Faculty account not found" },
+        { status: 404 },
+      );
+    }
+
+    const { data: roleAssignment, error: roleAssignmentError } = await supabase
+      .from("user_roles")
+      .select("profile_id")
+      .eq("profile_id", facultyProfileId)
+      .eq("role_id", facultyRole.id)
+      .maybeSingle();
+
+    if (roleAssignmentError) {
+      console.error(
+        "Error fetching faculty role assignment before deletion:",
+        roleAssignmentError,
+      );
+      return NextResponse.json(
+        { error: "Failed to fetch faculty account" },
+        { status: 500 },
+      );
+    }
+
+    if (!roleAssignment) {
+      return NextResponse.json(
+        { error: "Faculty account not found" },
+        { status: 404 },
+      );
+    }
+
     // Step 1: Check if there's an app_users record (even if profile doesn't exist)
     const { data: appUser } = await supabase
       .from("app_users")
@@ -39,11 +88,7 @@ export async function POST(request: NextRequest) {
       .eq("profile_id", facultyProfileId)
       .maybeSingle();
 
-    if (
-      !appUser ||
-      appUser.role !== "faculty" ||
-      appUser.metadata?.created_via !== "admin_faculty_panel"
-    ) {
+    if (appUser?.role !== "faculty" && !appUser) {
       return NextResponse.json(
         { error: "Faculty account not found" },
         { status: 404 },
@@ -51,6 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (
+      appUser?.metadata?.created_via === "admin_faculty_panel" &&
       requesterRole === ROLE.ADMIN &&
       appUser.metadata?.created_by_admin_id !== user.id
     ) {

@@ -124,6 +124,9 @@ export function AdminFacultyDashboard() {
   const [detailsFacultyId, setDetailsFacultyId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [facultyActionError, setFacultyActionError] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     loadFacultyFromDatabase();
@@ -267,6 +270,7 @@ export function AdminFacultyDashboard() {
 
   async function onDeactivateFaculty(facultyId: string) {
     setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
+    setFacultyActionError(null);
 
     try {
       const response = await fetch("/api/admin/faculty/deactivate", {
@@ -275,19 +279,30 @@ export function AdminFacultyDashboard() {
         body: JSON.stringify({ facultyProfileId: facultyId }),
       });
 
-      if (response.ok) {
-        setFacultyAccounts((prev) =>
-          prev.map((faculty) =>
-            faculty.id === facultyId
-              ? { ...faculty, is_active: false }
-              : faculty,
-          ),
-        );
-        // Refresh from database
-        await loadFacultyFromDatabase();
+      if (!response.ok) {
+        let message = `Failed to deactivate faculty account (HTTP ${response.status})`;
+        try {
+          const errorData = await response.json();
+          message = errorData.error || message;
+        } catch {
+          // Keep default message.
+        }
+        setFacultyActionError(message);
+        return;
       }
+
+      setFacultyAccounts((prev) =>
+        prev.map((faculty) =>
+          faculty.id === facultyId ? { ...faculty, is_active: false } : faculty,
+        ),
+      );
+      await loadFacultyFromDatabase();
     } catch (error) {
-      console.error("Error deactivating faculty:", error);
+      setFacultyActionError(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while deactivating the faculty account",
+      );
     } finally {
       setLoadingFacultyIds((prev) => {
         const next = new Set(prev);
@@ -299,6 +314,7 @@ export function AdminFacultyDashboard() {
 
   async function onActivateFaculty(facultyId: string) {
     setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
+    setFacultyActionError(null);
 
     try {
       const response = await fetch("/api/admin/faculty/activate", {
@@ -307,19 +323,30 @@ export function AdminFacultyDashboard() {
         body: JSON.stringify({ facultyProfileId: facultyId }),
       });
 
-      if (response.ok) {
-        setFacultyAccounts((prev) =>
-          prev.map((faculty) =>
-            faculty.id === facultyId
-              ? { ...faculty, is_active: true }
-              : faculty,
-          ),
-        );
-        // Refresh from database
-        await loadFacultyFromDatabase();
+      if (!response.ok) {
+        let message = `Failed to activate faculty account (HTTP ${response.status})`;
+        try {
+          const errorData = await response.json();
+          message = errorData.error || message;
+        } catch {
+          // Keep default message.
+        }
+        setFacultyActionError(message);
+        return;
       }
+
+      setFacultyAccounts((prev) =>
+        prev.map((faculty) =>
+          faculty.id === facultyId ? { ...faculty, is_active: true } : faculty,
+        ),
+      );
+      await loadFacultyFromDatabase();
     } catch (error) {
-      console.error("Error activating faculty:", error);
+      setFacultyActionError(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while activating the faculty account",
+      );
     } finally {
       setLoadingFacultyIds((prev) => {
         const next = new Set(prev);
@@ -470,9 +497,11 @@ export function AdminFacultyDashboard() {
                   loadingFacultyIds={loadingFacultyIds}
                   deleteError={deleteError}
                   deleteSuccess={deleteSuccess}
+                  facultyActionError={facultyActionError}
                   onClearDeleteMessages={() => {
                     setDeleteError(null);
                     setDeleteSuccess(null);
+                    setFacultyActionError(null);
                   }}
                 />
               </article>
@@ -1015,6 +1044,7 @@ function FacultyListPanel({
   loadingFacultyIds,
   deleteError,
   deleteSuccess,
+  facultyActionError,
   onClearDeleteMessages,
 }: {
   facultyAccounts: FacultyAccount[];
@@ -1027,6 +1057,7 @@ function FacultyListPanel({
   loadingFacultyIds: Set<string>;
   deleteError: string | null;
   deleteSuccess: string | null;
+  facultyActionError: string | null;
   onClearDeleteMessages: () => void;
 }) {
   return (
@@ -1050,6 +1081,18 @@ function FacultyListPanel({
             <button
               onClick={onClearDeleteMessages}
               className="text-emerald-400 hover:text-emerald-200"
+            >
+              ✕
+            </button>
+          </div>
+        ) : null}
+
+        {facultyActionError ? (
+          <div className="rounded-md border border-red-700 bg-red-950/20 px-3 py-2 text-sm text-red-300 flex justify-between items-center">
+            <span>{facultyActionError}</span>
+            <button
+              onClick={onClearDeleteMessages}
+              className="text-red-400 hover:text-red-200"
             >
               ✕
             </button>
