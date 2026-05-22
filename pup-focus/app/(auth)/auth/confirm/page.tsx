@@ -27,6 +27,10 @@ function AuthConfirmContent() {
     async function confirmInvite() {
       const hashParams = readHashParams();
       const code = searchParams.get("code");
+      const accessToken =
+        hashParams.get("access_token") ?? searchParams.get("access_token");
+      const refreshToken =
+        hashParams.get("refresh_token") ?? searchParams.get("refresh_token");
       const tokenHash =
         hashParams.get("token_hash") ?? searchParams.get("token_hash");
       const token = hashParams.get("token") ?? searchParams.get("token");
@@ -44,6 +48,22 @@ function AuthConfirmContent() {
         (searchParams.get("type") as string | null) ||
         (hashParams.get("type") as string | null) ||
         "invite";
+
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        if (sessionError) {
+          setMessage(sessionError.message);
+          return;
+        }
+      }
 
       if (code) {
         const { error: exchangeError } =
@@ -88,7 +108,7 @@ function AuthConfirmContent() {
           setMessage(verifyError.message);
           return;
         }
-      } else {
+      } else if (!accessToken || !refreshToken) {
         setMessage("Missing invitation token.");
         return;
       }
