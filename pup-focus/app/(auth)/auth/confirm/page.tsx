@@ -135,21 +135,31 @@ function AuthConfirmContent() {
         method: "POST",
       });
 
+      const completeBody = (await completeResponse.json()) as {
+        success?: boolean;
+        bootstrapped?: boolean;
+        tempPasswordIssued?: boolean;
+        tempPasswordEmailSent?: boolean;
+        tempPasswordError?: string;
+        error?: string;
+      };
+
       if (!completeResponse.ok) {
-        try {
-          const body = (await completeResponse.json()) as { error?: string };
-          setMessage(body.error ?? "Failed to complete invite.");
-        } catch {
-          setMessage("Failed to complete invite.");
-        }
+        setMessage(
+          completeBody.error ??
+            completeBody.tempPasswordError ??
+            "Failed to complete invite.",
+        );
         return;
       }
 
       await supabase.auth.signOut();
+
       setMessage(
-        "Email verified. A temporary password has been emailed to you - sign in with your email and the temporary password.",
+        completeBody.tempPasswordEmailSent
+          ? "Email verified. A temporary password has been emailed to you. Sign in with your email and the temporary password, then change it on first login."
+          : `Email verified, but the temporary password could not be emailed automatically.${completeBody.tempPasswordError ? ` ${completeBody.tempPasswordError}` : ""} Please ask an administrator to resend it.`,
       );
-      // Don't redirect immediately; offer the user the chance to go to sign in.
     }
 
     void confirmInvite();
