@@ -419,6 +419,19 @@ export function FacultySubmissionPanel({
       <div className="ml-72 flex min-h-full w-[calc(100%-18rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            {activeView !== "dashboard" ? (
+              <div className="mb-6">
+                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                  <h3 className="text-lg font-semibold text-amber-300">
+                    {activeView === "submit"
+                      ? "Submit a Requirement"
+                      : activeView === "history"
+                        ? "Past Submissions"
+                        : "Validation Status"}
+                  </h3>
+                </div>
+              </div>
+            ) : null}
             {activeView === "dashboard" && (
               <article className="relative -m-6 h-[calc(100vh-4rem)] w-[calc(100%+3rem)] overflow-hidden p-0">
                 <div className="relative h-full overflow-hidden bg-[#4d0000]/80">
@@ -457,24 +470,20 @@ export function FacultySubmissionPanel({
             )}
 
             {activeView === "submit" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] p-8">
-                <h2 className="mt-2 text-2xl font-semibold text-amber-300">
-                  Submit a Requirement
-                </h2>
-
+              <article className="min-h-[calc(100vh-4rem-3rem)] p-8 pt-0">
                 {isSubmissionAvailable ? (
                   <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
                         <label
-                          className="text-sm text-slate-300"
+                          className="text-xs uppercase tracking-[0.18em] text-amber-300"
                           htmlFor="academicYear"
                         >
                           School Year
                         </label>
                         <select
                           id="academicYear"
-                          className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                          className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
                           value={form.academicYear}
                           onChange={(event) =>
                             updateField("academicYear", event.target.value)
@@ -490,14 +499,14 @@ export function FacultySubmissionPanel({
 
                       <div>
                         <label
-                          className="text-sm text-slate-300"
+                          className="text-xs uppercase tracking-[0.18em] text-amber-300"
                           htmlFor="semester"
                         >
                           Semester
                         </label>
                         <select
                           id="semester"
-                          className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                          className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
                           value={form.semester}
                           onChange={(event) =>
                             updateField(
@@ -518,14 +527,14 @@ export function FacultySubmissionPanel({
 
                     <div>
                       <label
-                        className="text-sm text-slate-300"
+                        className="text-xs uppercase tracking-[0.18em] text-amber-300"
                         htmlFor="requirementCode"
                       >
                         Requirement Type
                       </label>
                       <select
                         id="requirementCode"
-                        className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                        className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
                         value={form.requirementCode}
                         onChange={(event) =>
                           updateField(
@@ -544,7 +553,7 @@ export function FacultySubmissionPanel({
 
                     <div>
                       <label
-                        className="text-sm text-slate-300"
+                        className="text-xs uppercase tracking-[0.18em] text-amber-300"
                         htmlFor="fileName"
                       >
                         File to Submit
@@ -553,21 +562,21 @@ export function FacultySubmissionPanel({
                         ref={fileInputRef}
                         id="fileName"
                         type="file"
-                        className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950 hover:file:bg-amber-400"
+                        className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950 hover:file:bg-amber-400"
                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                         onChange={(event) => {
                           const file = event.target.files?.[0];
                           updateField("fileName", file?.name ?? "");
                         }}
                       />
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-400">
                         Accepted files: PDF, Word documents, and images.
                       </p>
                     </div>
 
                     <div>
                       <label
-                        className="text-sm text-slate-300"
+                        className="text-xs uppercase tracking-[0.18em] text-amber-300"
                         htmlFor="remarks"
                       >
                         Remarks
@@ -575,7 +584,7 @@ export function FacultySubmissionPanel({
                       <textarea
                         id="remarks"
                         rows={4}
-                        className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                        className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
                         placeholder="Add short notes for the reviewer"
                         value={form.remarks}
                         onChange={(event) =>
@@ -825,12 +834,10 @@ export function FacultySubmissionPanel({
             )}
 
             {activeView === "status" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] p-6">
+              <article className="min-h-[calc(100vh-4rem-3rem)] p-6 pt-0">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="mt-2 text-2xl font-semibold text-amber-300">
-                      Validation Status
-                    </h3>
+                    {/* Heading moved to main header card */}
                   </div>
                   <button
                     type="button"
@@ -950,13 +957,9 @@ export function FacultySubmissionPanel({
             )}
 
             {activeView === "history" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] p-8">
+              <article className="min-h-[calc(100vh-4rem-3rem)] p-8 pt-0">
                 <div className="flex flex-wrap items-end justify-between gap-4">
-                  <div>
-                    <h3 className="mt-2 text-2xl font-semibold text-amber-300">
-                      Past Submissions
-                    </h3>
-                  </div>
+                  <div>{/* Heading moved to main header card */}</div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
