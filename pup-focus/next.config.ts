@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   // Provide an explicit (empty) turbopack config so Next.js
   // doesn't error when a custom `webpack` function is present.
   turbopack: {},
+  outputFileTracingRoot: __dirname,
   webpack: (config, { dev }) => {
     if (dev) {
       // Disable webpack filesystem cache to avoid noisy serialization warnings.
