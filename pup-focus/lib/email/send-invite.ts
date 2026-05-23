@@ -1,6 +1,14 @@
 import nodemailer from "nodemailer";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 
+function normalizeSmtpValue(value: string | undefined) {
+  return value?.trim() || "";
+}
+
+function normalizeSmtpPassword(value: string | undefined) {
+  return normalizeSmtpValue(value).replace(/\s+/g, "");
+}
+
 type SendInviteOpts = {
   to: string;
   link: string;
@@ -16,10 +24,10 @@ export async function sendInviteEmail({
   from,
   invitedRole = ROLE.ADMIN,
 }: SendInviteOpts) {
-  const host = process.env.EMAIL_SMTP_HOST;
-  const port = process.env.EMAIL_SMTP_PORT;
-  const user = process.env.EMAIL_SMTP_USER;
-  const pass = process.env.EMAIL_SMTP_PASS;
+  const host = normalizeSmtpValue(process.env.EMAIL_SMTP_HOST);
+  const port = normalizeSmtpValue(process.env.EMAIL_SMTP_PORT);
+  const user = normalizeSmtpValue(process.env.EMAIL_SMTP_USER);
+  const pass = normalizeSmtpPassword(process.env.EMAIL_SMTP_PASS);
 
   if (!host || !port || !user || !pass) {
     throw new Error(
@@ -74,10 +82,10 @@ export async function sendTempPasswordEmail({
   fullName,
   from,
 }: SendTempPasswordOpts) {
-  const host = process.env.EMAIL_SMTP_HOST;
-  const port = process.env.EMAIL_SMTP_PORT;
-  const user = process.env.EMAIL_SMTP_USER;
-  const pass = process.env.EMAIL_SMTP_PASS;
+  const host = normalizeSmtpValue(process.env.EMAIL_SMTP_HOST);
+  const port = normalizeSmtpValue(process.env.EMAIL_SMTP_PORT);
+  const user = normalizeSmtpValue(process.env.EMAIL_SMTP_USER);
+  const pass = normalizeSmtpPassword(process.env.EMAIL_SMTP_PASS);
 
   if (!host || !port || !user || !pass) {
     throw new Error(
