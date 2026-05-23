@@ -46,6 +46,20 @@ function ensureFileFromSource(sourcePath, targetPath) {
   console.log(`[build] Mirrored ${targetPath} from ${sourcePath}.`);
 }
 
+function syncDirectory(sourceDir, targetDir) {
+  if (!existsSync(sourceDir)) {
+    return;
+  }
+
+  mkdirSync(targetDir, { recursive: true });
+  cpSync(sourceDir, targetDir, {
+    recursive: true,
+    force: false,
+    errorOnExist: false,
+  });
+  console.log(`[build] Synced ${targetDir} from ${sourceDir}.`);
+}
+
 if (!existsSync(routesManifest)) {
   console.warn(
     "[build] routes-manifest.json was not found, could not create deterministic routes manifest.",
@@ -97,3 +111,8 @@ ensureFileFromSource(
   join(nextDir, "server", "pages-manifest.json"),
   join(repoRootNextDir, "server", "pages-manifest.json"),
 );
+
+// Sync the full app build output into the repo root .next directory so any
+// Vercel post-build lookup against /vercel/path0/.next can resolve the same
+// manifests and server artifacts.
+syncDirectory(nextDir, repoRootNextDir);
