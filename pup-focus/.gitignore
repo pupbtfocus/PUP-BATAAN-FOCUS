@@ -25,6 +25,14 @@
 *.pem
 Thumbs.db
 
+# hosting / cache
+.vercel/
+.vercel_build_output/
+.turbo/
+.parcel-cache/
+.cache/
+.vite/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
