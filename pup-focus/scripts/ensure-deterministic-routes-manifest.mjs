@@ -146,7 +146,7 @@ if (existsSync(appNextPkg)) {
 // Some packages (e.g. styled-jsx) are required by Next at runtime via
 // root-level node_modules lookups. Mirror those packages into the repo-root
 // node_modules so Vercel's lstat('/vercel/path0/node_modules/...') calls succeed.
-const packagesToMirror = ["styled-jsx"];
+const packagesToMirror = ["styled-jsx", "client-only"];
 for (const pkg of packagesToMirror) {
   const appPkgDir = join(appRoot, "node_modules", pkg);
   const repoPkgDir = join(repoRoot, "node_modules", pkg);
