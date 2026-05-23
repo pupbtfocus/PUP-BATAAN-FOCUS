@@ -817,21 +817,30 @@ function SubmissionWindowPanel() {
       {windowStatus ? (
         <div className="mb-4 rounded-md border border-slate-700 bg-slate-950 p-3 text-sm text-slate-300">
           <p>
-            <span className="text-slate-400">Today:</span> {windowStatus.today}
+            <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
+              Today:
+            </span>{" "}
+            {windowStatus.today}
           </p>
           <p className="mt-1">
-            <span className="text-slate-400">Current time:</span>{" "}
+            <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
+              Current time:
+            </span>{" "}
             {windowStatus.currentTimeLabel}
           </p>
           {windowStatus.isConfigured ? (
             <p className="mt-1">
-              <span className="text-slate-400">Schedule:</span>{" "}
+              <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                Schedule:
+              </span>{" "}
               {windowStatus.startDate} {windowStatus.startTimeLabel} to{" "}
               {windowStatus.endDate} {windowStatus.endTimeLabel}
             </p>
           ) : null}
           <p className="mt-1">
-            <span className="text-slate-400">Current status:</span>{" "}
+            <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
+              Current status:
+            </span>{" "}
             <span
               className={
                 windowStatus.isConfigured
@@ -853,7 +862,10 @@ function SubmissionWindowPanel() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label className="text-sm text-slate-300" htmlFor="windowStartDate">
+          <label
+            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+            htmlFor="windowStartDate"
+          >
             Start Date
           </label>
           <input
@@ -867,7 +879,10 @@ function SubmissionWindowPanel() {
         </div>
 
         <div>
-          <label className="text-sm text-slate-300" htmlFor="windowEndDate">
+          <label
+            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+            htmlFor="windowEndDate"
+          >
             End Date
           </label>
           <input
@@ -881,7 +896,10 @@ function SubmissionWindowPanel() {
         </div>
 
         <div>
-          <label className="text-sm text-slate-300" htmlFor="windowStartTime">
+          <label
+            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+            htmlFor="windowStartTime"
+          >
             Start Time
           </label>
           <input
@@ -896,7 +914,10 @@ function SubmissionWindowPanel() {
         </div>
 
         <div>
-          <label className="text-sm text-slate-300" htmlFor="windowEndTime">
+          <label
+            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+            htmlFor="windowEndTime"
+          >
             End Time
           </label>
           <input
@@ -1465,25 +1486,11 @@ function RequirementsPanel({
 
       {facultyAccounts.length > 0 ? (
         <div className="mt-4 space-y-3">
-          {selectedFaculty ? (
-            <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm">
-              <p>
-                <span className="text-slate-400">Selected Faculty:</span>{" "}
-                {selectedFaculty.fullName}
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
-              Select a faculty account, then choose S.Y. and semester to view
-              only that term&apos;s requirements.
-            </div>
-          )}
-
           <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
             <div className="grid gap-3 md:grid-cols-3">
               <div>
                 <label
-                  className="text-sm text-slate-300"
+                  className="text-xs uppercase tracking-[0.18em] text-amber-300"
                   htmlFor="facultyFilter"
                 >
                   Faculty
@@ -1505,7 +1512,7 @@ function RequirementsPanel({
 
               <div>
                 <label
-                  className="text-sm text-slate-300"
+                  className="text-xs uppercase tracking-[0.18em] text-amber-300"
                   htmlFor="academicYearFilter"
                 >
                   School Year
@@ -1535,7 +1542,7 @@ function RequirementsPanel({
 
               <div>
                 <label
-                  className="text-sm text-slate-300"
+                  className="text-xs uppercase tracking-[0.18em] text-amber-300"
                   htmlFor="semesterFilter"
                 >
                   Semester
