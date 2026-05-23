@@ -48,7 +48,3 @@ if (
 ) {
   cpSync(rootRoutesManifest, rootDeterministicRoutesManifest);
 }
-
-if (!existsSync(rootDeterministicRoutesManifest)) {
-  writeFileSync(rootDeterministicRoutesManifest, "{}\n");
-}
