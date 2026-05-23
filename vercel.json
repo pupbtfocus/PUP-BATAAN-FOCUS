@@ -1,4 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "installCommand": "if [ -f pup-focus/package.json ]; then cd pup-focus && npm install; else npm install; fi",
+  "buildCommand": "if [ -f pup-focus/package.json ]; then cd pup-focus && npm run build; else npm run build; fi"
 }
