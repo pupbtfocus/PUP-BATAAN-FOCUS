@@ -795,17 +795,17 @@ export function FacultySubmissionPanel({
                 <div className="flex flex-wrap items-end justify-between gap-4">
                   <div>{/* Heading moved to main header card */}</div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
+                  <div className="grid gap-3 sm:grid-cols-2 mx-auto">
+                    <div className="flex flex-col items-center">
                       <label
-                        className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                        className="text-xs uppercase tracking-[0.18em] text-amber-300 text-center"
                         htmlFor="historyAcademicYear"
                       >
                         School Year
                       </label>
                       <select
                         id="historyAcademicYear"
-                        className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                        className="mt-0 w-48 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-center outline-none focus:ring focus:ring-amber-300/30"
                         value={historyAcademicYear}
                         onChange={(event) =>
                           setHistoryAcademicYear(event.target.value)
@@ -819,16 +819,16 @@ export function FacultySubmissionPanel({
                       </select>
                     </div>
 
-                    <div>
+                    <div className="flex flex-col items-center">
                       <label
-                        className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                        className="text-xs uppercase tracking-[0.18em] text-amber-300 text-center"
                         htmlFor="historySemester"
                       >
                         Semester
                       </label>
                       <select
                         id="historySemester"
-                        className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                        className="mt-0 w-48 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-center outline-none focus:ring focus:ring-amber-300/30"
                         value={historySemester}
                         onChange={(event) =>
                           setHistorySemester(
