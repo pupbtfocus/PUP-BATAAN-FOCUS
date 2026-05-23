@@ -131,6 +131,7 @@ export function AdminFacultyDashboard() {
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteModalMessage, setInviteModalMessage] = useState("");
+  const [inviteWasSent, setInviteWasSent] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingFacultyIds, setLoadingFacultyIds] = useState<Set<string>>(
     new Set(),
@@ -201,6 +202,7 @@ export function AdminFacultyDashboard() {
       }
 
       const invitedEmail = data.user?.email ?? input.email;
+      setInviteWasSent(Boolean(data.sent));
       const inviteMessage = data.sent
         ? `Invitation email sent to ${invitedEmail}. Please ask them to verify their email and check their inbox.`
         : data.link
@@ -571,10 +573,12 @@ export function AdminFacultyDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
           <div className="w-full max-w-md rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur">
             <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-              Invitation Sent
+              {inviteWasSent ? "Invitation Sent" : "Invite Link Generated"}
             </p>
             <h3 className="mt-3 text-xl font-semibold text-[#fff8e7]">
-              Faculty invite created
+              {inviteWasSent
+                ? "Email sent successfully"
+                : "Email delivery failed"}
             </h3>
             <p className="mt-3 whitespace-pre-wrap text-sm text-[#f3d9b3]">
               {inviteModalMessage}
