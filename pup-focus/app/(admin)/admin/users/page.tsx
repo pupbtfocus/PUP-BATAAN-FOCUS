@@ -1,14 +1,17 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { FacultySubmissionPanel } from "@/features/faculty-management/components/faculty-submission-panel";
+import { getCurrentUser } from "@/lib/auth/session";
 
-export default function AdminUsersPage() {
+export default async function AdminUsersPage() {
+  const user = await getCurrentUser();
+
   return (
     <AppShell
       title="User Management"
       nav={[{ href: "/admin/dashboard", label: "Dashboard" }]}
+      fullBleed
     >
-      <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 text-sm text-slate-300">
-        Manage faculty, program heads, and admin accounts with RBAC assignments.
-      </div>
+      <FacultySubmissionPanel facultyName={user?.fullName ?? null} />
     </AppShell>
   );
 }
