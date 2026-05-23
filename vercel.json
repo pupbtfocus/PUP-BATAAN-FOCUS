@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else cd pup-focus && npm ci --no-audit --no-fund; fi",
-  "buildCommand": "if [ -f package-lock.json ]; then npm run build && cp .next/routes-manifest.json .next/routes-manifest-deterministic.json; else cd pup-focus && npm run build && rm -rf ../.next && mkdir -p ../.next && cp -R .next/. ../.next/ && cp .next/routes-manifest.json ../.next/routes-manifest-deterministic.json; fi"
+  "installCommand": "cd pup-focus && npm ci --no-audit --no-fund",
+  "buildCommand": "npm --prefix pup-focus run build && rm -rf .next && mkdir -p .next && cp -R pup-focus/.next/. .next/ && cp pup-focus/.next/routes-manifest.json .next/routes-manifest-deterministic.json"
 }
