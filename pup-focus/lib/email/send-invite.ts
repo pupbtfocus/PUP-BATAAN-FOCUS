@@ -98,7 +98,7 @@ export async function sendTempPasswordEmail({
   const fromAddress =
     from || process.env.EMAIL_FROM || "pupbataanfocus.superadmin@gmail.com";
 
-  const subject = "PUP FOCUS — Your temporary admin password";
+  const subject = "PUP FOCUS — Your temporary password";
   const text = `Hello ${fullName},\n\nYour email has been verified. You can sign in to PUP FOCUS with the following temporary password:\n\n${tempPassword}\n\nPlease sign in and change your password immediately. If you did not request this, contact your administrator.`;
 
   const html = `<p>Hello ${fullName},</p>
