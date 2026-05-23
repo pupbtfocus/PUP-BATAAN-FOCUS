@@ -116,3 +116,19 @@ ensureFileFromSource(
 // Vercel post-build lookup against /vercel/path0/.next can resolve the same
 // manifests and server artifacts.
 syncDirectory(nextDir, repoRootNextDir);
+
+// Some Vercel post-build checks attempt to read Next internals from
+// /vercel/path0/node_modules/next/dist. If the Next package is installed
+// under the app folder, mirror its `dist` to the repo-root node_modules so
+// root-level lstat calls succeed.
+const appNextDist = join(appRoot, "node_modules", "next", "dist");
+const repoRootNextDist = join(repoRoot, "node_modules", "next", "dist");
+
+if (existsSync(appNextDist)) {
+  mkdirSync(join(repoRoot, "node_modules", "next"), { recursive: true });
+  // Use force copy to overwrite any partial artifacts from previous builds.
+  cpSync(appNextDist, repoRootNextDist, { recursive: true, force: true });
+  console.log(
+    `[build] Mirrored Next dist from ${appNextDist} to ${repoRootNextDist} for Vercel root lookup.`,
+  );
+}
