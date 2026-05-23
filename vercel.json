@@ -1,7 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "installCommand": "cd pup-focus && npm install",
-  "buildCommand": "cd pup-focus && npm run build",
-  "outputDirectory": "pup-focus/.next"
-}
