@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,10 +10,24 @@ const deterministicManifest = join(
   "routes-manifest-deterministic.json",
 );
 const routesManifest = join(nextDir, "routes-manifest.json");
+const repoRoot = join(appRoot, "..");
+const repoRootNextDir = join(repoRoot, ".next");
+const repoRootDeterministicManifest = join(
+  repoRootNextDir,
+  "routes-manifest-deterministic.json",
+);
 
-if (existsSync(deterministicManifest)) {
-  console.log("[build] routes-manifest-deterministic.json already exists.");
-  process.exit(0);
+function ensureManifest(targetPath) {
+  const targetDir = dirname(targetPath);
+
+  if (existsSync(targetPath)) {
+    console.log(`[build] ${targetPath} already exists.`);
+    return;
+  }
+
+  mkdirSync(targetDir, { recursive: true });
+  copyFileSync(routesManifest, targetPath);
+  console.log(`[build] Created ${targetPath} from routes-manifest.json.`);
 }
 
 if (!existsSync(routesManifest)) {
@@ -23,7 +37,10 @@ if (!existsSync(routesManifest)) {
   process.exit(0);
 }
 
-copyFileSync(routesManifest, deterministicManifest);
-console.log(
-  "[build] Created routes-manifest-deterministic.json from routes-manifest.json.",
-);
+ensureManifest(deterministicManifest);
+
+// Vercel can resolve post-build files from monorepo root (`/vercel/path0`).
+// Mirror the deterministic manifest there as a safety fallback.
+if (repoRootDeterministicManifest !== deterministicManifest) {
+  ensureManifest(repoRootDeterministicManifest);
+}
