@@ -7,26 +7,76 @@ const deterministicManifestPath = path.join(
   nextDir,
   "routes-manifest-deterministic.json",
 );
+const parentNextDir = path.resolve(process.cwd(), "..", ".next");
+const parentDeterministicManifestPath = path.join(
+  parentNextDir,
+  "routes-manifest-deterministic.json",
+);
+const parentSourceManifestPath = path.join(
+  parentNextDir,
+  "routes-manifest.json",
+);
 
-function run() {
+function ensureLocalManifest() {
   if (!fs.existsSync(sourceManifestPath)) {
     console.warn(
       "[postbuild] .next/routes-manifest.json not found; skipping deterministic manifest step.",
     );
-    return;
+    return false;
   }
 
   if (fs.existsSync(deterministicManifestPath)) {
     console.log(
       "[postbuild] routes-manifest-deterministic.json already exists.",
     );
-    return;
+    return true;
   }
 
   fs.copyFileSync(sourceManifestPath, deterministicManifestPath);
   console.log(
     "[postbuild] Created .next/routes-manifest-deterministic.json from routes-manifest.json.",
   );
+
+  return true;
+}
+
+function ensureParentFallbackManifest() {
+  const isVercel = process.env.VERCEL === "1";
+  if (!isVercel) {
+    return;
+  }
+
+  const sourceForParent = fs.existsSync(deterministicManifestPath)
+    ? deterministicManifestPath
+    : sourceManifestPath;
+
+  if (!fs.existsSync(sourceForParent)) {
+    return;
+  }
+
+  fs.mkdirSync(parentNextDir, { recursive: true });
+
+  if (!fs.existsSync(parentDeterministicManifestPath)) {
+    fs.copyFileSync(sourceForParent, parentDeterministicManifestPath);
+    console.log(
+      "[postbuild] Created parent .next/routes-manifest-deterministic.json fallback for Vercel packaging.",
+    );
+  }
+
+  if (
+    !fs.existsSync(parentSourceManifestPath) &&
+    fs.existsSync(sourceManifestPath)
+  ) {
+    fs.copyFileSync(sourceManifestPath, parentSourceManifestPath);
+    console.log(
+      "[postbuild] Created parent .next/routes-manifest.json fallback for Vercel packaging.",
+    );
+  }
+}
+
+function run() {
+  ensureLocalManifest();
+  ensureParentFallbackManifest();
 }
 
 run();
