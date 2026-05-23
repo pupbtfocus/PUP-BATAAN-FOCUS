@@ -7,6 +7,7 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
+  REQUIREMENT_CODE,
   type RequirementCode,
 } from "@/config/compliance";
 
@@ -90,7 +91,7 @@ export function FacultySubmissionPanel({
   const [form, setForm] = useState<SubmissionFormState>({
     academicYear: academicYears[0] ?? "",
     semester: "1st Semester",
-    requirementCode: DEFAULT_REQUIREMENTS[0],
+    requirementCode: REQUIREMENT_CODE.MIDTERM_PACKAGE as RequirementCode,
     fileName: "",
     remarks: "",
   });
@@ -99,12 +100,10 @@ export function FacultySubmissionPanel({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [historyAcademicYear, setHistoryAcademicYear] = useState(
-    academicYears[0] ?? "",
-  );
+  const [historyAcademicYear, setHistoryAcademicYear] = useState("2025-2026");
   const [historySemester, setHistorySemester] = useState<
     (typeof SEMESTER_OPTIONS)[number] | "All"
-  >("All");
+  >("1st Semester");
   const [pastSubmissions, setPastSubmissions] = useState<PastSubmission[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -182,9 +181,6 @@ export function FacultySubmissionPanel({
     fetchStatuses();
     fetchHistory();
     fetchSubmissionWindow();
-
-    const statusInterval = setInterval(fetchStatuses, 10000);
-    return () => clearInterval(statusInterval);
   }, []);
 
   const filteredPastSubmissions = useMemo(() => {
@@ -705,32 +701,32 @@ export function FacultySubmissionPanel({
                 {statusCounts && !isLoadingStatuses && (
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-                      <p className="text-xs text-slate-400">Submitted</p>
+                      <p className="text-xs text-amber-300">Submitted</p>
                       <p className="mt-1 text-lg font-semibold text-slate-100">
                         {statusCounts.validated + statusCounts.pending}/
                         {statusCounts.total}
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-                      <p className="text-xs text-slate-400">Validated</p>
+                      <p className="text-xs text-amber-300">Validated</p>
                       <p className="mt-1 text-lg font-semibold text-slate-100">
                         {statusCounts.validated}
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-                      <p className="text-xs text-slate-400">Pending</p>
+                      <p className="text-xs text-amber-300">Pending</p>
                       <p className="mt-1 text-lg font-semibold text-slate-100">
                         {statusCounts.pending}
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-                      <p className="text-xs text-slate-400">Rejected</p>
+                      <p className="text-xs text-amber-300">Rejected</p>
                       <p className="mt-1 text-lg font-semibold text-slate-100">
                         {statusCounts.rejected}
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-600 bg-slate-800/30 px-3 py-2">
-                      <p className="text-xs text-slate-400">Not Submitted</p>
+                      <p className="text-xs text-amber-300">Not Submitted</p>
                       <p className="mt-1 text-lg font-semibold text-slate-300">
                         {statusCounts.notSubmitted}
                       </p>
@@ -799,7 +795,7 @@ export function FacultySubmissionPanel({
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <label
-                        className="text-sm text-slate-300"
+                        className="text-xs uppercase tracking-[0.18em] text-amber-300"
                         htmlFor="historyAcademicYear"
                       >
                         School Year
@@ -822,7 +818,7 @@ export function FacultySubmissionPanel({
 
                     <div>
                       <label
-                        className="text-sm text-slate-300"
+                        className="text-xs uppercase tracking-[0.18em] text-amber-300"
                         htmlFor="historySemester"
                       >
                         Semester
