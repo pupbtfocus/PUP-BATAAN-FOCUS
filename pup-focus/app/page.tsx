@@ -20,8 +20,14 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authModal, setAuthModal] = useState<{
+    title: string;
+    message: string;
+    actionLabel: string;
+    variant: "success" | "error";
+    redirectTo?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -136,10 +142,28 @@ export default function Home() {
     };
   }, [router]);
 
+  useEffect(() => {
+    if (
+      !authModal ||
+      authModal.variant !== "success" ||
+      !authModal.redirectTo
+    ) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      window.location.assign(authModal.redirectTo as string);
+    }, 1200);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [authModal]);
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setSuccess(null);
+    setAuthModal(null);
     setIsSubmitting(true);
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -181,7 +205,19 @@ export default function Home() {
     }
 
     if (signInError) {
-      setError(signInError.message);
+      const isInvalidCredentials =
+        signInError.message === "Invalid login credentials";
+
+      setAuthModal({
+        title: isInvalidCredentials
+          ? "Invalid login credentials"
+          : "Sign in failed",
+        message: isInvalidCredentials
+          ? "The email or password you entered is incorrect. Please try again."
+          : signInError.message,
+        actionLabel: "Try again",
+        variant: "error",
+      });
       setIsSubmitting(false);
       return;
     }
@@ -219,9 +255,14 @@ export default function Home() {
       ROLE.FACULTY;
     const nextTarget = ROUTE_BY_ROLE[signedInRole];
 
-    setSuccess(`Signed in successfully as ${ROLE_LABEL[signedInRole]}.`);
     setIsSubmitting(false);
-    window.location.assign(nextTarget);
+    setAuthModal({
+      title: "Signed in successfully",
+      message: `Signed in successfully as ${ROLE_LABEL[signedInRole]}.`,
+      actionLabel: "Continue",
+      variant: "success",
+      redirectTo: nextTarget,
+    });
   }
 
   return (
@@ -390,9 +431,6 @@ export default function Home() {
             </div>
 
             {error ? <p className="text-sm text-red-300">{error}</p> : null}
-            {success ? (
-              <p className="text-sm text-[#ffd700]">{success}</p>
-            ) : null}
 
             <Button className="w-full" type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Signing in..." : "Continue"}
@@ -400,6 +438,38 @@ export default function Home() {
           </form>
         </section>
       </div>
+      {authModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
+          <div className="w-full max-w-md rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 text-[#fff8e7] shadow-2xl shadow-black/30 backdrop-blur">
+            <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+              {authModal.variant === "success"
+                ? "Sign In Success"
+                : "Sign In Error"}
+            </p>
+            <h3 className="mt-3 text-xl font-semibold">{authModal.title}</h3>
+            <p className="mt-3 whitespace-pre-wrap text-sm text-[#f3d9b3]">
+              {authModal.message}
+            </p>
+
+            {authModal.variant === "error" ? (
+              <div className="mt-6 flex justify-end">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setAuthModal(null);
+                  }}
+                >
+                  {authModal.actionLabel}
+                </Button>
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-[#ffd700]">
+                Redirecting you now...
+              </p>
+            )}
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
