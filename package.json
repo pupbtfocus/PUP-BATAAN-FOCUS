@@ -1,0 +1,7 @@
+{
+  "name": "pup-focus-deploy-root",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-vercel.mjs"
+  }
+}
