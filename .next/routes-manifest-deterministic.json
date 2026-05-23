@@ -1,0 +1,363 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/about",
+      "regex": "^/about(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/about(?:/)?$"
+    },
+    {
+      "page": "/admin/curriculum",
+      "regex": "^/admin/curriculum(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/curriculum(?:/)?$"
+    },
+    {
+      "page": "/admin/dashboard",
+      "regex": "^/admin/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/dashboard(?:/)?$"
+    },
+    {
+      "page": "/admin/users",
+      "regex": "^/admin/users(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/users(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/activate",
+      "regex": "^/api/admin/faculty/activate(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/activate(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/create",
+      "regex": "^/api/admin/faculty/create(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/create(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/deactivate",
+      "regex": "^/api/admin/faculty/deactivate(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/deactivate(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/delete",
+      "regex": "^/api/admin/faculty/delete(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/delete(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/list",
+      "regex": "^/api/admin/faculty/list(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/list(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/requirements/debug",
+      "regex": "^/api/admin/faculty/requirements/debug(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/requirements/debug(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/requirements/verification",
+      "regex": "^/api/admin/faculty/requirements/verification(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/requirements/verification(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/submissions",
+      "regex": "^/api/admin/faculty/submissions(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/submissions(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/submissions/backfill-null-profile",
+      "regex": "^/api/admin/faculty/submissions/backfill\\-null\\-profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/submissions/backfill\\-null\\-profile(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/submissions/review",
+      "regex": "^/api/admin/faculty/submissions/review(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/submissions/review(?:/)?$"
+    },
+    {
+      "page": "/api/admin/faculty/submissions/validate",
+      "regex": "^/api/admin/faculty/submissions/validate(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/faculty/submissions/validate(?:/)?$"
+    },
+    {
+      "page": "/api/admin/submission-window",
+      "regex": "^/api/admin/submission\\-window(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/submission\\-window(?:/)?$"
+    },
+    {
+      "page": "/api/auth/callback",
+      "regex": "^/api/auth/callback(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/callback(?:/)?$"
+    },
+    {
+      "page": "/api/auth/invite/complete",
+      "regex": "^/api/auth/invite/complete(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/invite/complete(?:/)?$"
+    },
+    {
+      "page": "/api/auth/me",
+      "regex": "^/api/auth/me(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/me(?:/)?$"
+    },
+    {
+      "page": "/api/auth/validate",
+      "regex": "^/api/auth/validate(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/validate(?:/)?$"
+    },
+    {
+      "page": "/api/bootstrap/super-admin",
+      "regex": "^/api/bootstrap/super\\-admin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/bootstrap/super\\-admin(?:/)?$"
+    },
+    {
+      "page": "/api/faculty/submissions/create",
+      "regex": "^/api/faculty/submissions/create(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/faculty/submissions/create(?:/)?$"
+    },
+    {
+      "page": "/api/faculty/submissions/debug",
+      "regex": "^/api/faculty/submissions/debug(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/faculty/submissions/debug(?:/)?$"
+    },
+    {
+      "page": "/api/faculty/submissions/history",
+      "regex": "^/api/faculty/submissions/history(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/faculty/submissions/history(?:/)?$"
+    },
+    {
+      "page": "/api/faculty/submissions/status",
+      "regex": "^/api/faculty/submissions/status(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/faculty/submissions/status(?:/)?$"
+    },
+    {
+      "page": "/api/faculty/submissions/window",
+      "regex": "^/api/faculty/submissions/window(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/faculty/submissions/window(?:/)?$"
+    },
+    {
+      "page": "/api/health",
+      "regex": "^/api/health(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/health(?:/)?$"
+    },
+    {
+      "page": "/api/reports/export",
+      "regex": "^/api/reports/export(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/reports/export(?:/)?$"
+    },
+    {
+      "page": "/api/storage/download",
+      "regex": "^/api/storage/download(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/storage/download(?:/)?$"
+    },
+    {
+      "page": "/api/super-admin/account",
+      "regex": "^/api/super\\-admin/account(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/super\\-admin/account(?:/)?$"
+    },
+    {
+      "page": "/api/super-admin/admin/activate",
+      "regex": "^/api/super\\-admin/admin/activate(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/super\\-admin/admin/activate(?:/)?$"
+    },
+    {
+      "page": "/api/super-admin/admin/create",
+      "regex": "^/api/super\\-admin/admin/create(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/super\\-admin/admin/create(?:/)?$"
+    },
+    {
+      "page": "/api/super-admin/admin/deactivate",
+      "regex": "^/api/super\\-admin/admin/deactivate(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/super\\-admin/admin/deactivate(?:/)?$"
+    },
+    {
+      "page": "/api/super-admin/admin/delete",
+      "regex": "^/api/super\\-admin/admin/delete(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/super\\-admin/admin/delete(?:/)?$"
+    },
+    {
+      "page": "/api/super-admin/admin/details",
+      "regex": "^/api/super\\-admin/admin/details(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/super\\-admin/admin/details(?:/)?$"
+    },
+    {
+      "page": "/api/super-admin/admin/list",
+      "regex": "^/api/super\\-admin/admin/list(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/super\\-admin/admin/list(?:/)?$"
+    },
+    {
+      "page": "/auth/change-password",
+      "regex": "^/auth/change\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/change\\-password(?:/)?$"
+    },
+    {
+      "page": "/auth/confirm",
+      "regex": "^/auth/confirm(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/confirm(?:/)?$"
+    },
+    {
+      "page": "/auth/sign-in",
+      "regex": "^/auth/sign\\-in(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/sign\\-in(?:/)?$"
+    },
+    {
+      "page": "/change-password",
+      "regex": "^/change\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/change\\-password(?:/)?$"
+    },
+    {
+      "page": "/contact",
+      "regex": "^/contact(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/contact(?:/)?$"
+    },
+    {
+      "page": "/faculty/compliance",
+      "regex": "^/faculty/compliance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/faculty/compliance(?:/)?$"
+    },
+    {
+      "page": "/faculty/dashboard",
+      "regex": "^/faculty/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/faculty/dashboard(?:/)?$"
+    },
+    {
+      "page": "/faculty/history",
+      "regex": "^/faculty/history(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/faculty/history(?:/)?$"
+    },
+    {
+      "page": "/forgot-password",
+      "regex": "^/forgot\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/forgot\\-password(?:/)?$"
+    },
+    {
+      "page": "/program-head/dashboard",
+      "regex": "^/program\\-head/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/program\\-head/dashboard(?:/)?$"
+    },
+    {
+      "page": "/program-head/faculty-compliance",
+      "regex": "^/program\\-head/faculty\\-compliance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/program\\-head/faculty\\-compliance(?:/)?$"
+    },
+    {
+      "page": "/program-head/reviews",
+      "regex": "^/program\\-head/reviews(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/program\\-head/reviews(?:/)?$"
+    },
+    {
+      "page": "/sign-in",
+      "regex": "^/sign\\-in(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sign\\-in(?:/)?$"
+    },
+    {
+      "page": "/super-admin/dashboard",
+      "regex": "^/super\\-admin/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/super\\-admin/dashboard(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
