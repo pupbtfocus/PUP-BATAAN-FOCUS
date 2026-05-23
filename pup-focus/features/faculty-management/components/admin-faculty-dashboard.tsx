@@ -203,7 +203,9 @@ export function AdminFacultyDashboard() {
       const invitedEmail = data.user?.email ?? input.email;
       const inviteMessage = data.sent
         ? `Invitation email sent to ${invitedEmail}. Please ask them to verify their email and check their inbox.`
-        : `Invite link generated for ${invitedEmail}. Configure SMTP to send automatically.`;
+        : data.link
+          ? `Invite link generated for ${invitedEmail}. Email delivery failed: ${data.sendError ?? "SMTP is not available"}\n\n${data.link}`
+          : `Invite could not be sent for ${invitedEmail}.`;
 
       setCreateSuccess(inviteMessage);
       setInviteModalMessage(inviteMessage);
@@ -574,7 +576,9 @@ export function AdminFacultyDashboard() {
             <h3 className="mt-3 text-xl font-semibold text-[#fff8e7]">
               Faculty invite created
             </h3>
-            <p className="mt-3 text-sm text-[#f3d9b3]">{inviteModalMessage}</p>
+            <p className="mt-3 whitespace-pre-wrap text-sm text-[#f3d9b3]">
+              {inviteModalMessage}
+            </p>
 
             <div className="mt-6 flex justify-end">
               <Button type="button" onClick={() => setInviteModalOpen(false)}>
@@ -685,7 +689,11 @@ function SubmissionWindowPanel() {
   }
 
   useEffect(() => {
-    loadWindow();
+    const timeoutId = window.setTimeout(() => {
+      void loadWindow();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
@@ -1309,11 +1317,15 @@ function RequirementsPanel({
 
   useEffect(() => {
     if (!selectedFaculty) {
-      setAvailableAcademicYears([]);
-      setAcademicYear("");
-      setSemester("1st Semester");
-      setVerificationStatus(null);
-      setVerificationError(null);
+      const timeoutId = window.setTimeout(() => {
+        setAvailableAcademicYears([]);
+        setAcademicYear("");
+        setSemester("1st Semester");
+        setVerificationStatus(null);
+        setVerificationError(null);
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
       return;
     }
 
@@ -1472,7 +1484,7 @@ function RequirementsPanel({
           ) : (
             <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
               Select a faculty account, then choose S.Y. and semester to view
-              only that term's requirements.
+              only that term&apos;s requirements.
             </div>
           )}
 
@@ -1783,9 +1795,12 @@ function RequirementsVerificationModal({
 
                               <div className="mt-3">
                                 {isImage ? (
-                                  <img
+                                  <Image
                                     src={url}
                                     alt={fileName}
+                                    width={640}
+                                    height={360}
+                                    unoptimized
                                     className="max-h-64 w-auto rounded-md border border-slate-700"
                                   />
                                 ) : isPdf ? (
@@ -1899,7 +1914,7 @@ function RequirementsVerificationModal({
             </li>
             <li>
               • <span className="text-red-400">Not Submitted</span> - Faculty
-              hasn't submitted yet
+              hasn&apos;t submitted yet
             </li>
           </ul>
         </div>

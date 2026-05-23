@@ -11,6 +11,10 @@ import { isValidEmailAddress } from "@/lib/validation/email";
 type CreateAdminResult = {
   success?: boolean;
   error?: string;
+  invited?: boolean;
+  sent?: boolean;
+  sendError?: string | null;
+  link?: string | null;
   user?: {
     id: string;
     email: string;
@@ -233,7 +237,13 @@ export function SuperAdminDashboard() {
         return;
       }
 
-      const inviteMessage = `Invitation email sent to ${data.user?.email ?? normalizedEmail}. Please ask them to verify their email and check their inbox.`;
+      const invitedEmail = data.user?.email ?? normalizedEmail;
+      const inviteMessage = data.sent
+        ? `Invitation email sent to ${invitedEmail}. Please ask them to verify their email and check their inbox.`
+        : data.link
+          ? `Invite link generated for ${invitedEmail}. Email delivery failed: ${data.sendError ?? "SMTP is not available"}\n\n${data.link}`
+          : `Invite could not be sent for ${invitedEmail}.`;
+
       setInviteModalMessage(inviteMessage);
       setInviteModalOpen(true);
       setSuccess(inviteMessage);
@@ -1148,7 +1158,9 @@ export function SuperAdminDashboard() {
             <h3 className="mt-3 text-xl font-semibold text-[#fff8e7]">
               Email sent successfully
             </h3>
-            <p className="mt-3 text-sm text-[#f3d9b3]">{inviteModalMessage}</p>
+            <p className="mt-3 whitespace-pre-wrap text-sm text-[#f3d9b3]">
+              {inviteModalMessage}
+            </p>
 
             <div className="mt-6 flex justify-end">
               <Button type="button" onClick={() => setInviteModalOpen(false)}>
