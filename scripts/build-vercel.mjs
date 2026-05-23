@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, rmSync, existsSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, existsSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { execSync } from "node:child_process";
 
@@ -25,10 +25,6 @@ execSync("node ./node_modules/next/dist/bin/next build --webpack", {
   cwd: appRoot,
   stdio: "inherit",
 });
-
-if (existsSync(rootNextDir)) {
-  rmSync(rootNextDir, { recursive: true, force: true });
-}
 
 cpSync(appNextDir, rootNextDir, { recursive: true });
 
