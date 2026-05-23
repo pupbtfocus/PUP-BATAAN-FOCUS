@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { APP_CONFIG } from "@/config/app";
+import { getPublicEnvSafe } from "@/config/env";
 import { createClient } from "@/lib/supabase/client";
 import { ROUTE_BY_ROLE } from "@/config/routes";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 
 const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
+const PUBLIC_ENV = getPublicEnvSafe();
 
 export default function Home() {
   const router = useRouter();
@@ -245,6 +247,13 @@ export default function Home() {
           <p className="mt-1 text-sm text-[#f3d9b3]">
             Enter your institutional email and password to sign in.
           </p>
+
+          {!PUBLIC_ENV ? (
+            <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+              Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and
+              NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local before using sign in.
+            </div>
+          ) : null}
 
           <form className="mt-5 space-y-3" onSubmit={onSubmit}>
             <div>
