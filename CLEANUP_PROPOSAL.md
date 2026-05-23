@@ -47,10 +47,11 @@ pup-focus\utils\cn.ts
 
 Suggested next steps:
 
-- Review the list and reply with files you approve for removal. I will move approved files to `archive/` on a branch so deletion is reversible.  
-- Or reply `remove all` to move all candidates to `archive/` and make a PR (I will not rewrite history).  
+- Review the list and reply with files you approve for removal. I will move approved files to `archive/` on a branch so deletion is reversible.
+- Or reply `remove all` to move all candidates to `archive/` and make a PR (I will not rewrite history).
 - Or request a deeper analysis (I can run a dependency tracer or try a build to check runtime references).
 
 Notes:
+
 - The scanner is conservative but not perfect — it only resolves static relative imports. Dynamic references, tooling-only usage, and files imported via computed paths can be missed.
 - Do not merge removal PR without testing the app in staging.
