@@ -1,5 +1,7 @@
 # Node modules
-/node_modules/
+node_modules/
+# ignore nested node_modules folders anywhere
+**/node_modules/
 
 # Logs
 npm-debug.log*
@@ -15,6 +17,8 @@ pnpm-debug.log*
 # Next.js build output
 /.next/
 /out/
+# ignore nested .next build outputs anywhere
+**/.next/
 
 # Production
 /build/
