@@ -1,4 +1,10 @@
-import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync } from "node:fs";
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -140,7 +146,9 @@ const repoRootNextPkg = join(repoRoot, "node_modules", "next");
 if (existsSync(appNextPkg)) {
   mkdirSync(join(repoRoot, "node_modules"), { recursive: true });
   cpSync(appNextPkg, repoRootNextPkg, { recursive: true, force: true });
-  console.log(`[build] Mirrored full Next package from ${appNextPkg} to ${repoRootNextPkg}.`);
+  console.log(
+    `[build] Mirrored full Next package from ${appNextPkg} to ${repoRootNextPkg}.`,
+  );
 }
 
 // Mirror all top-level packages from the app's node_modules into the repo-root
@@ -164,7 +172,9 @@ if (existsSync(appNodeModules)) {
     }
   }
   // Also copy scoped packages (@scope/*)
-  for (const entry of entries.filter((e) => e.isDirectory() && e.name.startsWith("@"))) {
+  for (const entry of entries.filter(
+    (e) => e.isDirectory() && e.name.startsWith("@"),
+  )) {
     const scopeSrc = join(appNodeModules, entry.name);
     const scopeDst = join(repoRootNodeModules, entry.name);
     mkdirSync(scopeDst, { recursive: true });
@@ -179,7 +189,9 @@ if (existsSync(appNodeModules)) {
       }
     }
   }
-  console.log("[build] Mirrored top-level app node_modules to repo-root node_modules.");
+  console.log(
+    "[build] Mirrored top-level app node_modules to repo-root node_modules.",
+  );
 }
 
 // Some packages (e.g. styled-jsx) are required by Next at runtime via
