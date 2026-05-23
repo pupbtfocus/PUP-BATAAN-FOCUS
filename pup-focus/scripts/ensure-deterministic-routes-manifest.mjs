@@ -133,6 +133,16 @@ if (existsSync(appNextDist)) {
   );
 }
 
+// Also mirror the entire installed Next package (including package.json)
+// so root-level lookups like /vercel/path0/node_modules/next/package.json succeed.
+const appNextPkg = join(appRoot, "node_modules", "next");
+const repoRootNextPkg = join(repoRoot, "node_modules", "next");
+if (existsSync(appNextPkg)) {
+  mkdirSync(join(repoRoot, "node_modules"), { recursive: true });
+  cpSync(appNextPkg, repoRootNextPkg, { recursive: true, force: true });
+  console.log(`[build] Mirrored full Next package from ${appNextPkg} to ${repoRootNextPkg}.`);
+}
+
 // Some packages (e.g. styled-jsx) are required by Next at runtime via
 // root-level node_modules lookups. Mirror those packages into the repo-root
 // node_modules so Vercel's lstat('/vercel/path0/node_modules/...') calls succeed.
