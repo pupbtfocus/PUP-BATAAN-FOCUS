@@ -3,12 +3,13 @@ import { updateSupabaseSession } from "@/lib/supabase/middleware";
 import { PUBLIC_ROUTES } from "@/config/routes";
 
 export async function proxy(request: NextRequest) {
-  const response = await updateSupabaseSession(request);
   const pathname = request.nextUrl.pathname;
 
   if (PUBLIC_ROUTES.some((route) => pathname === route)) {
-    return response;
+    return NextResponse.next();
   }
+
+  const response = await updateSupabaseSession(request);
 
   const hasSession = request.cookies
     .getAll()
