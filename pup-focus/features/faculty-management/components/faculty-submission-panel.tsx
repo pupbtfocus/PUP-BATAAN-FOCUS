@@ -610,7 +610,7 @@ export function FacultySubmissionPanel({
                           variant="secondary"
                           onClick={() => setIsCalendarOpen(true)}
                         >
-                          Show all dates
+                          University Calendar
                         </Button>
                         <Button
                           type="submit"
@@ -785,9 +785,6 @@ export function FacultySubmissionPanel({
                           >
                             PUP University Calendar
                           </h3>
-                          <p className="mt-2 text-sm text-slate-400">
-                            Use this schedule before submitting requirements.
-                          </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <a
