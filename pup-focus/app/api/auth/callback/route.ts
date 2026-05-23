@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { bootstrapInvitedAdminAccount } from "@/lib/auth/bootstrap-invited-admin";
+import { bootstrapInvitedFacultyAccount } from "@/lib/auth/bootstrap-invited-faculty";
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.clone();
@@ -56,6 +57,7 @@ export async function GET(request: NextRequest) {
     if (!appUser) {
       try {
         await bootstrapInvitedAdminAccount(user);
+        await bootstrapInvitedFacultyAccount(user);
       } catch (bootstrapError) {
         await supabase.auth.signOut();
         return NextResponse.redirect(

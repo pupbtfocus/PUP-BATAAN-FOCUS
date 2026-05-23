@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { bootstrapInvitedAdminAccount } from "@/lib/auth/bootstrap-invited-admin";
+import { bootstrapInvitedFacultyAccount } from "@/lib/auth/bootstrap-invited-faculty";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { sendTempPasswordEmail } from "@/lib/email/send-invite";
+import { ROLE } from "@/config/roles";
 
 function generateTempPassword(len = 12) {
   const chars =
@@ -25,7 +27,18 @@ export async function POST() {
 
   try {
     await bootstrapInvitedAdminAccount(user);
-    // Optionally set a temporary password for the invited user so they can
+    await bootstrapInvitedFacultyAccount(user);
+
+    const metadata = user.user_metadata ?? {};
+    const isInvitedAdmin =
+      metadata.role === ROLE.ADMIN &&
+      metadata.created_via === "super_admin_admin_panel";
+
+    if (!isInvitedAdmin) {
+      return NextResponse.json({ success: true });
+    }
+
+    // Optionally set a temporary password for the invited admin so they can
     // sign-in with email/password immediately after accepting the invite.
     // This uses the service role client and returns the temp password only
     // to the currently authenticated invitee session.

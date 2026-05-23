@@ -36,6 +36,19 @@ type FacultyAccount = {
   requirementStatus: Record<RequirementCode, RequirementStatus>;
 };
 
+type CreateFacultyResult = {
+  success?: boolean;
+  error?: string;
+  invited?: boolean;
+  sent?: boolean;
+  sendError?: string | null;
+  link?: string | null;
+  user?: {
+    email: string;
+    fullName: string;
+  };
+};
+
 const SEMESTER_OPTIONS: SemesterOption[] = ["1st Semester", "2nd Semester"];
 const LOGIN_PAGE_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
@@ -116,6 +129,8 @@ export function AdminFacultyDashboard() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteModalMessage, setInviteModalMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadingFacultyIds, setLoadingFacultyIds] = useState<Set<string>>(
     new Set(),
@@ -152,7 +167,6 @@ export function AdminFacultyDashboard() {
     defaultValues: {
       fullName: "",
       email: "",
-      password: "",
     },
   });
 
@@ -175,27 +189,26 @@ export function AdminFacultyDashboard() {
         body: JSON.stringify({
           fullName: input.fullName,
           email: input.email,
-          password: input.password,
         }),
       });
 
+      const data = (await response.json()) as CreateFacultyResult;
+
       if (!response.ok) {
-        try {
-          const errorData = await response.json();
-          setCreateError(errorData.error || "Failed to create faculty account");
-        } catch (parseError) {
-          setCreateError(
-            `Failed to create faculty account (HTTP ${response.status})`,
-          );
-        }
+        setCreateError(data.error ?? "Failed to send faculty invite");
         setIsCreating(false);
         return;
       }
 
-      setCreateSuccess(
-        `Faculty account created successfully for ${input.email}`,
-      );
-      form.reset({ fullName: "", email: "", password: "" });
+      const invitedEmail = data.user?.email ?? input.email;
+      const inviteMessage = data.sent
+        ? `Invitation email sent to ${invitedEmail}. Please ask them to verify their email and check their inbox.`
+        : `Invite link generated for ${invitedEmail}. Configure SMTP to send automatically.`;
+
+      setCreateSuccess(inviteMessage);
+      setInviteModalMessage(inviteMessage);
+      setInviteModalOpen(true);
+      form.reset({ fullName: "", email: "" });
 
       // Refresh faculty list from database
       await loadFacultyFromDatabase();
@@ -460,7 +473,7 @@ export function AdminFacultyDashboard() {
                   Add Faculty Account
                 </h2>
                 <p className="mt-2 text-sm text-slate-400">
-                  Create a new faculty account with email and password.
+                  Provision a new faculty account via invite link.
                 </p>
                 <AddFacultyPanel
                   form={form}
@@ -551,6 +564,26 @@ export function AdminFacultyDashboard() {
           onClose={() => setDetailsModalOpen(false)}
         />
       )}
+
+      {inviteModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur">
+            <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+              Invitation Sent
+            </p>
+            <h3 className="mt-3 text-xl font-semibold text-[#fff8e7]">
+              Faculty invite created
+            </h3>
+            <p className="mt-3 text-sm text-[#f3d9b3]">{inviteModalMessage}</p>
+
+            <div className="mt-6 flex justify-end">
+              <Button type="button" onClick={() => setInviteModalOpen(false)}>
+                OK
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -999,20 +1032,6 @@ function AddFacultyPanel({
           <FieldError message={form.formState.errors.email?.message} />
         </div>
 
-        <div>
-          <label className="text-sm text-slate-300" htmlFor="password">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-            placeholder="Min. 8 characters"
-            {...form.register("password")}
-          />
-          <FieldError message={form.formState.errors.password?.message} />
-        </div>
-
         {createError ? (
           <p className="rounded-md border border-red-700 bg-red-950/20 px-3 py-2 text-sm text-red-300">
             {createError}
@@ -1026,7 +1045,7 @@ function AddFacultyPanel({
         ) : null}
 
         <Button className="mt-auto w-full" type="submit" disabled={isCreating}>
-          {isCreating ? "Creating account..." : "Add Faculty Account"}
+          {isCreating ? "Sending invite..." : "Create Faculty Account"}
         </Button>
       </form>
     </div>

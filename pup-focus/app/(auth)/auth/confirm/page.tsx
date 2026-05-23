@@ -145,10 +145,21 @@ function AuthConfirmContent() {
         return;
       }
 
-      // Server will send the temporary password by email after verification.
-      setMessage(
-        "Email verified. A temporary password has been emailed to you — check your inbox.",
-      );
+      const { data: completedUserData } = await supabase.auth.getUser();
+      const completedRole =
+        completedUserData.user?.user_metadata?.role ??
+        completedUserData.user?.app_metadata?.role;
+
+      if (completedRole === "admin") {
+        // Server sends a temporary password for invited admins.
+        setMessage(
+          "Email verified. A temporary password has been emailed to you - check your inbox.",
+        );
+      } else {
+        setMessage(
+          "Email verified. Your account is now ready - you can sign in.",
+        );
+      }
       // Don't redirect immediately; offer the user the chance to go to sign in.
     }
 
