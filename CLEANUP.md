@@ -25,5 +25,6 @@ Notes and recommendations:
 - If you want, I can run a static analysis to propose specific source-file removals (unused files or exports). Reply "run analysis" to proceed.
 
 Environment variables
+
 - Copy `pup-focus/.env.local.example` to `pup-focus/.env.local` and fill in your Supabase values for local development.
 - Do NOT commit `.env.local`. Production secrets (like `SUPABASE_SERVICE_ROLE_KEY`) should be set in your hosting provider's environment settings (Vercel, etc.).
