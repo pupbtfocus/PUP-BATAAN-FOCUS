@@ -199,6 +199,10 @@ export function FacultySubmissionPanel({
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  function getRequirementStatus(code: RequirementCode) {
+    return requirementStatuses.find((r) => r.code === code)?.status;
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
@@ -257,6 +261,17 @@ export function FacultySubmissionPanel({
       setSubmissionMessage(
         `✓ Successfully submitted ${REQUIREMENT_LABEL[form.requirementCode]} for S.Y. ${form.academicYear} ${form.semester}. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
       );
+
+      // Optimistically mark this requirement as pending so the UI disables re-submission
+      setRequirementStatuses((prev) => {
+        const found = prev.find((p) => p.code === form.requirementCode);
+        if (found) {
+          return prev.map((p) =>
+            p.code === form.requirementCode ? { ...p, status: "Pending" } : p,
+          );
+        }
+        return [...prev, { code: form.requirementCode, status: "Pending" }];
+      });
 
       setForm((prev) => ({
         ...prev,
@@ -380,7 +395,7 @@ export function FacultySubmissionPanel({
             )}
 
             {activeView === "submit" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] p-8 pt-0">
+              <article className="p-8 pt-0">
                 {isSubmissionAvailable ? (
                   <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                     <div className="grid gap-4 md:grid-cols-2">
@@ -453,11 +468,18 @@ export function FacultySubmissionPanel({
                           )
                         }
                       >
-                        {DEFAULT_REQUIREMENTS.map((code) => (
-                          <option key={code} value={code}>
-                            {REQUIREMENT_LABEL[code]}
-                          </option>
-                        ))}
+                        {DEFAULT_REQUIREMENTS.map((code) => {
+                          const status = getRequirementStatus(code);
+                          const disabled =
+                            status &&
+                            status !== "Not Submitted" &&
+                            status !== "Rejected";
+                          return (
+                            <option key={code} value={code} disabled={disabled}>
+                              {REQUIREMENT_LABEL[code]}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
 
@@ -472,12 +494,16 @@ export function FacultySubmissionPanel({
                         ref={fileInputRef}
                         id="fileName"
                         type="file"
-                        className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950 hover:file:bg-amber-400"
+                        className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950 hover:file:bg-amber-400 disabled:opacity-50"
                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                         onChange={(event) => {
                           const file = event.target.files?.[0];
                           updateField("fileName", file?.name ?? "");
                         }}
+                        disabled={(() => {
+                          const s = getRequirementStatus(form.requirementCode);
+                          return s === "Pending" || s === "Validated";
+                        })()}
                       />
                       <p className="mt-1 text-xs text-slate-400">
                         Accepted files: PDF, Word documents, and images.
@@ -522,7 +548,13 @@ export function FacultySubmissionPanel({
                             !form.fileName ||
                             (submissionWindow
                               ? !submissionWindow.isOpen
-                              : false)
+                              : false) ||
+                            (() => {
+                              const s = getRequirementStatus(
+                                form.requirementCode,
+                              );
+                              return s === "Pending" || s === "Validated";
+                            })()
                           }
                         >
                           {isSubmitting
