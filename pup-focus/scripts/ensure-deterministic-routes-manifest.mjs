@@ -132,3 +132,20 @@ if (existsSync(appNextDist)) {
     `[build] Mirrored Next dist from ${appNextDist} to ${repoRootNextDist} for Vercel root lookup.`,
   );
 }
+
+// Some packages (e.g. styled-jsx) are required by Next at runtime via
+// root-level node_modules lookups. Mirror those packages into the repo-root
+// node_modules so Vercel's lstat('/vercel/path0/node_modules/...') calls succeed.
+const packagesToMirror = ["styled-jsx"];
+for (const pkg of packagesToMirror) {
+  const appPkgDir = join(appRoot, "node_modules", pkg);
+  const repoPkgDir = join(repoRoot, "node_modules", pkg);
+
+  if (!existsSync(appPkgDir)) {
+    continue;
+  }
+
+  mkdirSync(join(repoRoot, "node_modules", pkg), { recursive: true });
+  cpSync(appPkgDir, repoPkgDir, { recursive: true, force: true });
+  console.log(`[build] Mirrored package ${pkg} to repo-root node_modules.`);
+}
