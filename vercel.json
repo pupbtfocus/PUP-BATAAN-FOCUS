@@ -1,4 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "installCommand": "npm --prefix pup-focus install",
+  "buildCommand": "npm --prefix pup-focus run build && rm -rf .next && mkdir -p .next && cp -R pup-focus/.next/. .next/ && cp pup-focus/.next/routes-manifest.json .next/routes-manifest-deterministic.json"
 }
