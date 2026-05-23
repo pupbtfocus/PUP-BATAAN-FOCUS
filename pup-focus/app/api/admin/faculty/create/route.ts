@@ -3,6 +3,7 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
+import { sendInviteEmail } from "@/lib/email/send-invite";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,9 +23,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { fullName, email, password } = await request.json();
+    const { fullName, email, password: _password } = await request.json();
 
-    if (!fullName || !email || !password) {
+    if (!fullName || !email) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -42,12 +43,11 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Check if email already exists in profiles
-    const { data: existingProfile, error: checkError } = await supabase
+    const { data: existingProfile } = await supabase
       .from("profiles")
-      .select("id, email")
+      .select("id")
       .eq("email", normalizedEmail)
-      .single();
+      .maybeSingle();
 
     if (existingProfile) {
       return NextResponse.json(
@@ -58,110 +58,106 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create auth user
-    const { data: authData, error: authError } =
-      await supabase.auth.admin.createUser({
+    const { data: existingAppUser } = await supabase
+      .from("app_users")
+      .select("id")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (existingAppUser) {
+      return NextResponse.json(
+        {
+          error: `Faculty account with email ${normalizedEmail} already exists`,
+        },
+        { status: 400 },
+      );
+    }
+
+    const { data: authUsers, error: authUsersError } =
+      await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+
+    if (authUsersError) {
+      return NextResponse.json(
+        { error: authUsersError.message },
+        { status: 400 },
+      );
+    }
+
+    const existingAuthUser = authUsers.users.find(
+      (item) => item.email?.trim().toLowerCase() === normalizedEmail,
+    );
+
+    if (existingAuthUser) {
+      return NextResponse.json(
+        {
+          error: `Faculty account with email ${normalizedEmail} already exists`,
+        },
+        { status: 400 },
+      );
+    }
+
+    const publicAppOrigin =
+      process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
+    const callbackUrl = new URL("/auth/confirm", publicAppOrigin);
+    callbackUrl.searchParams.set("next", "/faculty/dashboard");
+
+    const { data: genData, error: genError } =
+      await supabase.auth.admin.generateLink({
+        type: "invite",
         email: normalizedEmail,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: fullName,
-          role: "faculty",
+        options: {
+          data: {
+            full_name: fullName,
+            role: ROLE.FACULTY,
+            created_via: "admin_faculty_panel",
+            created_by_admin_id: user.id,
+          },
+          redirectTo: callbackUrl.toString(),
         },
       });
 
-    if (authError || !authData.user) {
+    if (genError) {
       return NextResponse.json(
-        { error: authError?.message || "Failed to create auth user" },
+        {
+          error: genError?.message ?? "Failed to generate faculty invite link",
+        },
         { status: 400 },
       );
     }
 
-    // Create profile
-    const { error: profileError } = await supabase.from("profiles").insert({
-      user_id: authData.user.id,
-      full_name: fullName,
-      email: normalizedEmail,
-    });
+    const actionLink = genData?.properties?.action_link ?? null;
 
-    if (profileError) {
-      return NextResponse.json(
-        { error: profileError.message },
-        { status: 400 },
-      );
-    }
+    let sent = false;
+    let sendError: string | null = null;
 
-    // Get profile
-    const { data: profile, error: profileSelectError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", authData.user.id)
-      .single();
-
-    if (profileSelectError || !profile) {
-      return NextResponse.json(
-        { error: "Failed to retrieve created profile" },
-        { status: 400 },
-      );
-    }
-
-    const profileId = profile.id;
-
-    // Assign faculty role
-    const { data: roles, error: rolesError } = await supabase
-      .from("roles")
-      .select("id")
-      .eq("code", "faculty")
-      .single();
-
-    if (rolesError || !roles) {
-      return NextResponse.json(
-        { error: "Failed to find faculty role" },
-        { status: 400 },
-      );
-    }
-
-    const { error: roleAssignError } = await supabase
-      .from("user_roles")
-      .insert({
-        profile_id: profileId,
-        role_id: roles.id,
-      });
-
-    if (roleAssignError) {
-      return NextResponse.json(
-        { error: roleAssignError.message },
-        { status: 400 },
-      );
-    }
-
-    // Add to app_users table for visibility (use auth_user_id and profile_id)
-    const { error: appUsersError } = await supabase.from("app_users").insert({
-      auth_user_id: authData.user.id,
-      profile_id: profileId,
-      email: normalizedEmail,
-      full_name: fullName,
-      role: "faculty",
-      metadata: {
-        is_active: true,
-        created_via: "admin_faculty_panel",
-        created_by_admin_id: user.id,
-      },
-      created_at: new Date().toISOString(),
-    });
-
-    if (appUsersError) {
-      return NextResponse.json(
-        { error: appUsersError.message },
-        { status: 400 },
-      );
+    if (actionLink) {
+      try {
+        await sendInviteEmail({
+          to: normalizedEmail,
+          link: actionLink,
+          fullName,
+          invitedRole: ROLE.FACULTY,
+        });
+        sent = true;
+      } catch (e) {
+        sendError =
+          e instanceof Error ? e.message : String(e ?? "unknown error");
+        console.error("Failed to send faculty invite email", {
+          email: normalizedEmail,
+          fullName,
+          sendError,
+        });
+      }
     }
 
     return NextResponse.json({
       success: true,
+      invited: true,
+      sent,
+      sendError,
+      link: actionLink,
       user: {
-        id: authData.user.id,
-        email: authData.user.email,
+        email: normalizedEmail,
         fullName,
       },
     });

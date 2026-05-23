@@ -1,10 +1,12 @@
 import nodemailer from "nodemailer";
+import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 
 type SendInviteOpts = {
   to: string;
   link: string;
   fullName: string;
   from?: string;
+  invitedRole?: AppRole;
 };
 
 export async function sendInviteEmail({
@@ -12,6 +14,7 @@ export async function sendInviteEmail({
   link,
   fullName,
   from,
+  invitedRole = ROLE.ADMIN,
 }: SendInviteOpts) {
   const host = process.env.EMAIL_SMTP_HOST;
   const port = process.env.EMAIL_SMTP_PORT;
@@ -37,11 +40,13 @@ export async function sendInviteEmail({
   const fromAddress =
     from || process.env.EMAIL_FROM || "pupbataanfocus.superadmin@gmail.com";
 
-  const subject = "PUP FOCUS — Admin invitation";
-  const text = `Hello ${fullName},\n\nYou have been invited to be an admin for PUP FOCUS. Click the link to accept the invitation:\n\n${link}\n\nIf you did not expect this, ignore this message.`;
+  const roleLabel = ROLE_LABEL[invitedRole];
+  const roleLower = roleLabel.toLowerCase();
+  const subject = `PUP FOCUS - ${roleLabel} invitation`;
+  const text = `Hello ${fullName},\n\nYou have been invited to be a ${roleLower} for PUP FOCUS. Click the link to accept the invitation:\n\n${link}\n\nIf you did not expect this, ignore this message.`;
 
   const html = `<p>Hello ${fullName},</p>
-  <p>You have been invited to be an <strong>admin</strong> for PUP FOCUS.</p>
+  <p>You have been invited to be a <strong>${roleLower}</strong> for PUP FOCUS.</p>
   <p><a href="${link}">Click here to accept the invitation</a></p>
   <p>If you did not expect this, ignore this message.</p>`;
 
