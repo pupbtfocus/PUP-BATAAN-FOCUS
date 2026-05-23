@@ -1,15 +1,17 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { FacultySubmissionPanel } from "@/features/faculty-management/components/faculty-submission-panel";
+import { getCurrentUser } from "@/lib/auth/session";
 
-export default function AdminCurriculumPage() {
+export default async function AdminCurriculumPage() {
+  const user = await getCurrentUser();
+
   return (
     <AppShell
       title="Curriculum Management"
       nav={[{ href: "/admin/dashboard", label: "Dashboard" }]}
+      fullBleed
     >
-      <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 text-sm text-slate-300">
-        Configure programs, curricula, subject mappings, and compliance template
-        rules per course.
-      </div>
+      <FacultySubmissionPanel facultyName={user?.fullName ?? null} />
     </AppShell>
   );
 }

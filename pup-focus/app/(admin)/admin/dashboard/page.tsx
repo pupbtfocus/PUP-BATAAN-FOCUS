@@ -1,18 +1,13 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { AdminFacultyDashboard } from "@/features/faculty-management/components/admin-faculty-dashboard";
+import { getCurrentUser } from "@/lib/auth/session";
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const user = await getCurrentUser();
+
   return (
-    <AppShell
-      title="Admin Dashboard"
-      subtitle="Manage faculty accounts, program assignments, and curriculum-based requirement validation"
-      nav={[
-        { href: "/admin/users", label: "Users" },
-        { href: "/admin/curriculum", label: "Curriculum" },
-      ]}
-      fullBleed
-    >
-      <AdminFacultyDashboard />
+    <AppShell title="PUP Bataan FOCUS" nav={[]} fullBleed>
+      <AdminFacultyDashboard adminName={user?.fullName ?? null} />
     </AppShell>
   );
 }

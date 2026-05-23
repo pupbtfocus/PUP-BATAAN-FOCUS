@@ -120,7 +120,11 @@ function statusLabel(status: RequirementStatus): string {
   return "Validated by Admin";
 }
 
-export function AdminFacultyDashboard() {
+export function AdminFacultyDashboard({
+  adminName,
+}: {
+  adminName?: string | null;
+}) {
   const [facultyAccounts, setFacultyAccounts] = useState<FacultyAccount[]>([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     null,
@@ -376,21 +380,15 @@ export function AdminFacultyDashboard() {
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
       <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg">
-        <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-          Admin Workspace
-        </p>
-        <h2 className="mt-2 text-xl font-semibold text-slate-100">
-          Faculty Control Panel
-        </h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Manage accounts, assignments, and requirement validation from one
-          panel.
-        </p>
+        <div className="my-6 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
+          <p className="mt-2 font-semibold text-white text-center">
+            {adminName ?? "Admin"}
+          </p>
 
-        <div className="my-6 rounded-xl bg-slate-950 p-3">
-          <p className="text-sm text-slate-400">Admin Control</p>
-          <p className="mt-1 font-semibold text-slate-100">
-            Faculty Management
+          <div className="my-2 h-px w-full bg-slate-700" />
+
+          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--accent)] text-center">
+            Admin
           </p>
         </div>
 
@@ -398,31 +396,26 @@ export function AdminFacultyDashboard() {
           <SidebarButton
             active={activeSection === "dashboard"}
             title="Dashboard"
-            description="Logo, highlights, and login page images"
             onClick={() => setActiveSection("dashboard")}
           />
           <SidebarButton
             active={activeSection === "add"}
             title="Add Faculty"
-            description="Create faculty account and assign program"
             onClick={() => setActiveSection("add")}
           />
           <SidebarButton
             active={activeSection === "faculty"}
             title="Faculty List"
-            description="View and delete faculty accounts"
             onClick={() => setActiveSection("faculty")}
           />
           <SidebarButton
             active={activeSection === "requirements"}
             title="Requirements Verification"
-            description="Validate curriculum-based uploads"
             onClick={() => setActiveSection("requirements")}
           />
           <SidebarButton
             active={activeSection === "submissionWindow"}
             title="Submission Window"
-            description="Set opening and closing dates for uploads"
             onClick={() => setActiveSection("submissionWindow")}
           />
         </nav>
@@ -470,15 +463,12 @@ export function AdminFacultyDashboard() {
 
             {activeSection === "add" ? (
               <article className="p-8">
-                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                  Admin Workspace
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
-                  Add Faculty Account
-                </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  Provision a new faculty account via invite link.
-                </p>
+                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                  <h3 className="text-lg font-semibold text-amber-300">
+                    Add Faculty Account
+                  </h3>
+                </div>
+
                 <AddFacultyPanel
                   form={form}
                   onAddFaculty={onAddFaculty}
@@ -491,15 +481,12 @@ export function AdminFacultyDashboard() {
 
             {activeSection === "faculty" ? (
               <article className="p-6">
-                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                  Admin Workspace
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
-                  Faculty List
-                </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  View all faculty accounts and manage them.
-                </p>
+                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                  <h3 className="text-lg font-semibold text-amber-300">
+                    Faculty List
+                  </h3>
+                </div>
+
                 <FacultyListPanel
                   facultyAccounts={facultyAccounts}
                   isLoading={isLoading}
@@ -526,15 +513,12 @@ export function AdminFacultyDashboard() {
 
             {activeSection === "requirements" ? (
               <article className="p-8">
-                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                  Admin Workspace
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
-                  Requirements Verification
-                </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  Validate curriculum-based uploads from faculty.
-                </p>
+                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                  <h3 className="text-lg font-semibold text-amber-300">
+                    Requirements Verification
+                  </h3>
+                </div>
+
                 <RequirementsPanel
                   facultyAccounts={facultyAccounts}
                   selectedFaculty={selectedFaculty}
@@ -545,15 +529,12 @@ export function AdminFacultyDashboard() {
 
             {activeSection === "submissionWindow" ? (
               <article className="p-8">
-                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                  Admin Workspace
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
-                  Submission Window
-                </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  Control when faculty can submit requirement documents.
-                </p>
+                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                  <h3 className="text-lg font-semibold text-amber-300">
+                    Submission Window
+                  </h3>
+                </div>
+
                 <SubmissionWindowPanel />
               </article>
             ) : null}
@@ -979,7 +960,7 @@ function SidebarButton({
 }: {
   active: boolean;
   title: string;
-  description: string;
+  description?: string;
   onClick: () => void;
 }) {
   return (
@@ -992,8 +973,14 @@ function SidebarButton({
           : "border-slate-700 bg-slate-950/60 hover:border-slate-500"
       }`}
     >
-      <p className="font-semibold text-slate-100">{title}</p>
-      <p className="mt-1 text-sm text-slate-400">{description}</p>
+      <p
+        className={`font-semibold ${active ? "text-amber-300" : "text-slate-100"}`}
+      >
+        {title}
+      </p>
+      {description ? (
+        <p className="mt-1 text-sm text-slate-400">{description}</p>
+      ) : null}
     </button>
   );
 }

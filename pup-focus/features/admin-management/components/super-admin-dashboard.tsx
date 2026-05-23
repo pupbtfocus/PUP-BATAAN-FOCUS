@@ -1186,7 +1186,7 @@ function SidebarButton({
 }: {
   active: boolean;
   title: string;
-  description: string;
+  description?: string;
   onClick: () => void;
 }) {
   return (
@@ -1199,8 +1199,14 @@ function SidebarButton({
           : "border-slate-700 bg-slate-950/60 hover:border-slate-500"
       }`}
     >
-      <p className="font-semibold text-slate-100">{title}</p>
-      <p className="mt-1 text-sm text-slate-400">{description}</p>
+      <p
+        className={`font-semibold ${active ? "text-amber-300" : "text-slate-100"}`}
+      >
+        {title}
+      </p>
+      {description ? (
+        <p className="mt-1 text-sm text-slate-400">{description}</p>
+      ) : null}
     </button>
   );
 }
