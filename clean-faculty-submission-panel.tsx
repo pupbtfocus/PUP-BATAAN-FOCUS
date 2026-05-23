@@ -16,94 +16,6 @@ const LOGIN_PAGE_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
   "/images/attachments/IMG_9402.jpeg",
 ];
-const CALENDAR_HIGHLIGHTS = [
-  {
-    term: "First Semester, A.Y. 2025-2026",
-    date: "September 1",
-    event: "First Semester classes start",
-  },
-  {
-    term: "First Semester, A.Y. 2025-2026",
-    date: "September 30",
-    event: "Deadline for ACE forms",
-  },
-  {
-    term: "First Semester, A.Y. 2025-2026",
-    date: "January 26",
-    event: "Submission of grade sheets to the Dean or Director",
-  },
-  {
-    term: "First Semester, A.Y. 2025-2026",
-    date: "January 28",
-    event: "Submission of grade sheets to the University Registrar",
-  },
-  {
-    term: "Second Semester, A.Y. 2025-2026",
-    date: "February 9",
-    event: "Second Semester classes start",
-  },
-  {
-    term: "Second Semester, A.Y. 2025-2026",
-    date: "June 25-26",
-    event: "Submission of grade sheets to the Dean/Director and Registrar",
-  },
-  {
-    term: "Second Semester, A.Y. 2025-2026",
-    date: "February 6-7",
-    event: "All Year Level Online Registration",
-  },
-  {
-    term: "Second Semester, A.Y. 2025-2026",
-    date: "February 9",
-    event: "Second Semester classes start",
-  },
-  {
-    term: "Second Semester, A.Y. 2025-2026",
-    date: "February 9-March 6",
-    event: "Adjustment period",
-  },
-  {
-    term: "Second Semester, A.Y. 2025-2026",
-    date: "March 2-31",
-    event:
-      "Online filing of Application for Year-End Graduation and proof of payment upload",
-  },
-  {
-    term: "Second Semester, A.Y. 2025-2026",
-    date: "April 2-5",
-    event: "Maundy Thursday, Good Friday, Black Saturday",
-  },
-  {
-    term: "Second Semester, A.Y. 2025-2026",
-    date: "April 6-11",
-    event: "Mid-Term and Departmental Examinations",
-  },
-  {
-    term: "Second Semester, A.Y. 2025-2026",
-    date: "May 25-30",
-    event: "Final and Departmental Examinations of Graduating Students",
-  },
-  {
-    term: "Summer Term, A.Y. 2025-2026",
-    date: "June 25-27",
-    event: "First to Fifth Year Online Registration",
-  },
-  {
-    term: "Summer Term, A.Y. 2025-2026",
-    date: "June 29",
-    event: "Summer Classes start",
-  },
-  {
-    term: "Summer Term, A.Y. 2025-2026",
-    date: "August 6-8",
-    event: "Final Examinations",
-  },
-  {
-    term: "Summer Term, A.Y. 2025-2026",
-    date: "August 20",
-    event: "Submission of Summer Term grade sheets to the University Registrar",
-  },
-] as const;
 
 type PanelView = (typeof PANEL_VIEWS)[number];
 type HistorySubmissionStatus = "Pending" | "Validated" | "Rejected";
@@ -187,7 +99,6 @@ export function FacultySubmissionPanel({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [historyAcademicYear, setHistoryAcademicYear] = useState(
     academicYears[0] ?? "",
   );
@@ -606,13 +517,6 @@ export function FacultySubmissionPanel({
                           Submission Guide
                         </Button>
                         <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => setIsCalendarOpen(true)}
-                        >
-                          Show all dates
-                        </Button>
-                        <Button
                           type="submit"
                           disabled={
                             isSubmitting ||
@@ -756,78 +660,6 @@ export function FacultySubmissionPanel({
                             Upload a PDF, Word file, or image, then submit it
                             for review.
                           </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {isCalendarOpen ? (
-                  <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="calendar-popup-title"
-                    onClick={() => setIsCalendarOpen(false)}
-                  >
-                    <div
-                      className="w-full max-w-4xl rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <div className="flex items-start justify-between gap-4 border-b border-slate-700 px-6 py-5">
-                        <div>
-                          <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                            Submission Calendar
-                          </p>
-                          <h3
-                            id="calendar-popup-title"
-                            className="mt-2 text-2xl font-semibold text-slate-100"
-                          >
-                            PUP University Calendar
-                          </h3>
-                          <p className="mt-2 text-sm text-slate-400">
-                            Use this schedule before submitting requirements.
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <a
-                            href="https://www.pup.edu.ph/about/calendar"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-md border border-slate-600 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400 hover:text-amber-300"
-                          >
-                            Open in browser
-                          </a>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsCalendarOpen(false)}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400 hover:text-amber-300"
-                          >
-                            Close
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="max-h-[75vh] overflow-y-auto bg-slate-950 p-4">
-                        <div className="grid gap-3 md:grid-cols-2">
-                          {CALENDAR_HIGHLIGHTS.map((item, index) => (
-                            <article
-                              key={`${item.term}-${item.date}-${index}`}
-                              className="rounded-xl border border-slate-700 bg-slate-900 p-4"
-                            >
-                              <p className="text-xs uppercase tracking-[0.2em] text-amber-300">
-                                {item.term}
-                              </p>
-                              <p className="mt-2 text-lg font-semibold text-slate-100">
-                                {item.date}
-                              </p>
-                              <p className="mt-1 text-sm text-slate-400">
-                                {item.event}
-                              </p>
-                            </article>
-                          ))}
                         </div>
                       </div>
                     </div>
