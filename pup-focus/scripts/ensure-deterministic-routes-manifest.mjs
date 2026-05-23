@@ -1,4 +1,4 @@
-import { copyFileSync, cpSync, existsSync, mkdirSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -141,6 +141,45 @@ if (existsSync(appNextPkg)) {
   mkdirSync(join(repoRoot, "node_modules"), { recursive: true });
   cpSync(appNextPkg, repoRootNextPkg, { recursive: true, force: true });
   console.log(`[build] Mirrored full Next package from ${appNextPkg} to ${repoRootNextPkg}.`);
+}
+
+// Mirror all top-level packages from the app's node_modules into the repo-root
+// node_modules. This ensures Vercel post-build lstat checks like
+// /vercel/path0/node_modules/react/package.json succeed even when the
+// installer places packages under the app subfolder.
+const appNodeModules = join(appRoot, "node_modules");
+const repoRootNodeModules = join(repoRoot, "node_modules");
+if (existsSync(appNodeModules)) {
+  mkdirSync(repoRootNodeModules, { recursive: true });
+  const entries = readdirSync(appNodeModules, { withFileTypes: true });
+  for (const entry of entries) {
+    // Skip scoped directories handled below
+    if (entry.name.startsWith("@")) continue;
+    const src = join(appNodeModules, entry.name);
+    const dst = join(repoRootNodeModules, entry.name);
+    try {
+      cpSync(src, dst, { recursive: true, force: true });
+    } catch (e) {
+      // non-fatal; continue mirroring others
+    }
+  }
+  // Also copy scoped packages (@scope/*)
+  for (const entry of entries.filter((e) => e.isDirectory() && e.name.startsWith("@"))) {
+    const scopeSrc = join(appNodeModules, entry.name);
+    const scopeDst = join(repoRootNodeModules, entry.name);
+    mkdirSync(scopeDst, { recursive: true });
+    const scoped = readdirSync(scopeSrc, { withFileTypes: true });
+    for (const s of scoped) {
+      const src = join(scopeSrc, s.name);
+      const dst = join(scopeDst, s.name);
+      try {
+        cpSync(src, dst, { recursive: true, force: true });
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+  console.log("[build] Mirrored top-level app node_modules to repo-root node_modules.");
 }
 
 // Some packages (e.g. styled-jsx) are required by Next at runtime via
