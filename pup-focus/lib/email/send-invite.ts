@@ -9,6 +9,10 @@ function normalizeSmtpPassword(value: string | undefined) {
   return normalizeSmtpValue(value).replace(/\s+/g, "");
 }
 
+function normalizeEmailAddress(value: string) {
+  return value.trim();
+}
+
 type SendInviteOpts = {
   to: string;
   link: string;
@@ -45,8 +49,9 @@ export async function sendInviteEmail({
     },
   });
 
-  const fromAddress =
-    from || process.env.EMAIL_FROM || "pupbataanfocus.superadmin@gmail.com";
+  const fromAddress = normalizeEmailAddress(
+    from || process.env.EMAIL_FROM || "pupbataanfocus.superadmin@gmail.com",
+  );
 
   const roleLabel = ROLE_LABEL[invitedRole];
   const roleLower = roleLabel.toLowerCase();
@@ -60,7 +65,7 @@ export async function sendInviteEmail({
 
   const info = await transporter.sendMail({
     from: fromAddress,
-    to,
+    to: normalizeEmailAddress(to),
     subject,
     text,
     html,
@@ -103,8 +108,9 @@ export async function sendTempPasswordEmail({
     },
   });
 
-  const fromAddress =
-    from || process.env.EMAIL_FROM || "pupbataanfocus.superadmin@gmail.com";
+  const fromAddress = normalizeEmailAddress(
+    from || process.env.EMAIL_FROM || "pupbataanfocus.superadmin@gmail.com",
+  );
 
   const subject = "PUP FOCUS — Your temporary password";
   const text = `Hello ${fullName},\n\nYour email has been verified. You can sign in to PUP FOCUS with the following temporary password:\n\n${tempPassword}\n\nPlease sign in and change your password immediately. If you did not request this, contact your administrator.`;
@@ -116,7 +122,7 @@ export async function sendTempPasswordEmail({
 
   const info = await transporter.sendMail({
     from: fromAddress,
-    to,
+    to: normalizeEmailAddress(to),
     subject,
     text,
     html,

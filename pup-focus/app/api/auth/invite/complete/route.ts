@@ -10,8 +10,9 @@ function generateTempPassword(len = 12) {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+";
   let out = "";
-  for (let i = 0; i < len; i++)
+  for (let i = 0; i < len; i++) {
     out += chars[Math.floor(Math.random() * chars.length)];
+  }
   return out;
 }
 
@@ -38,14 +39,29 @@ export async function POST() {
       metadata.created_via === "admin_faculty_panel";
 
     if (!isInvitedAdmin && !isInvitedFaculty) {
-      return NextResponse.json({ success: true });
+      return NextResponse.json({
+        success: true,
+        bootstrapped: true,
+        needsPasswordSetup: false,
+      });
     }
 
-    // Set a temporary password so invited users can sign in with email/password
-    // after accepting the invite.
     try {
       const service = getServiceRoleClient();
       const tempPassword = generateTempPassword(12);
+      const recipientEmail = user.email?.trim().toLowerCase();
+
+      if (!recipientEmail) {
+        return NextResponse.json(
+          {
+            error: "Missing email address for invited account",
+            tempPasswordIssued: false,
+            tempPasswordEmailSent: false,
+          },
+          { status: 400 },
+        );
+      }
+
       const { error: pwError } = await service.auth.admin.updateUserById(
         user.id,
         {
@@ -58,28 +74,62 @@ export async function POST() {
         },
       );
 
-      // If setting the password succeeds, attempt to email the temp password
-      if (!pwError) {
-        try {
-          const fullName =
-            (user.user_metadata && (user.user_metadata as any).full_name) ||
-            user.email ||
-            "Admin User";
-          await sendTempPasswordEmail({
-            to: user.email ?? "",
-            tempPassword,
-            fullName,
-          });
-        } catch (emailErr) {
-          // If emailing fails, still return success so the account can be
-          // recovered through support or a resend.
-        }
+      if (pwError) {
+        return NextResponse.json(
+          {
+            success: true,
+            tempPasswordIssued: false,
+            tempPasswordEmailSent: false,
+            tempPasswordError: pwError.message,
+          },
+          { status: 400 },
+        );
       }
 
-      return NextResponse.json({ success: true, tempPasswordIssued: true });
+      const fullName =
+        (user.user_metadata && (user.user_metadata as any).full_name) ||
+        recipientEmail ||
+        "Admin User";
+
+      try {
+        await sendTempPasswordEmail({
+          to: recipientEmail,
+          tempPassword,
+          fullName,
+        });
+
+        return NextResponse.json({
+          success: true,
+          tempPasswordIssued: true,
+          tempPasswordEmailSent: true,
+        });
+      } catch (emailErr) {
+        const emailError =
+          emailErr instanceof Error ? emailErr.message : String(emailErr);
+
+        return NextResponse.json(
+          {
+            success: true,
+            tempPasswordIssued: true,
+            tempPasswordEmailSent: false,
+            tempPasswordError: emailError,
+          },
+          { status: 202 },
+        );
+      }
     } catch (e) {
-      return NextResponse.json({ success: true, tempPasswordIssued: false });
+      return NextResponse.json({
+        success: true,
+        tempPasswordIssued: false,
+        tempPasswordEmailSent: false,
+      });
     }
+
+    return NextResponse.json({
+      success: true,
+      bootstrapped: true,
+      needsPasswordSetup: true,
+    });
   } catch (error) {
     return NextResponse.json(
       {
