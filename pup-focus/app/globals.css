@@ -128,6 +128,11 @@ select:-moz-autofill {
   color: #ffffff !important;
 }
 
+/* Font variant for faculty headings */
+.faculty-font {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
 /* Ensure the input's first-line text matches color when autofilled (WebKit) */
 input:-webkit-autofill::first-line {
   color: inherit !important;

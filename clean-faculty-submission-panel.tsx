@@ -285,15 +285,8 @@ export function FacultySubmissionPanel({
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
       <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg">
-        <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-          Faculty Workspace
-        </p>
-        <h2 className="mt-2 text-xl font-semibold text-slate-100">
-          Faculty Portal
-        </h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Track submissions, upload requirements, and monitor validation status.
-        </p>
+        {/* 'Faculty Workspace' label removed per request */}
+        {/* Removed 'Faculty Portal' heading and description per request */}
 
         <div className="my-6 rounded-xl bg-slate-950 p-3">
           <p className="text-sm text-slate-400">Your Account</p>
@@ -304,11 +297,11 @@ export function FacultySubmissionPanel({
 
         <nav className="mt-6 space-y-2">
           {[
-            ["dashboard", "Dashboard", "School branding preview"],
-            ["submit", "Submit Requirement", "Upload a new requirement"],
-            ["history", "Past Submissions", "Filter by S.Y. and semester"],
-            ["status", "Requirement Status", "View validation status"],
-          ].map(([key, label, description]) => {
+            ["dashboard", "Dashboard"],
+            ["submit", "Submit Requirement"],
+            ["history", "Past Submissions"],
+            ["status", "Requirement Status"],
+          ].map(([key, label]) => {
             const isActive = activeView === key;
             return (
               <button
@@ -321,8 +314,13 @@ export function FacultySubmissionPanel({
                     : "border-slate-700 bg-slate-950/60 hover:border-slate-500"
                 }`}
               >
-                <p className="font-semibold text-slate-100">{label}</p>
-                <p className="mt-1 text-sm text-slate-400">{description}</p>
+                <p
+                  className={`font-semibold ${
+                    isActive ? "text-amber-300" : "text-slate-100"
+                  }`}
+                >
+                  {label}
+                </p>
               </button>
             );
           })}
@@ -371,16 +369,9 @@ export function FacultySubmissionPanel({
 
             {activeView === "submit" && (
               <article className="min-h-[calc(100vh-4rem-3rem)] p-8">
-                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                  Faculty Workspace
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
+                <h2 className="mt-2 text-2xl font-semibold text-amber-300">
                   Submit a Requirement
                 </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  Choose the school year, semester, and document you want to
-                  submit.
-                </p>
 
                 {isSubmissionAvailable ? (
                   <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -672,15 +663,9 @@ export function FacultySubmissionPanel({
               <article className="min-h-[calc(100vh-4rem-3rem)] p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                      Requirement Status
-                    </p>
-                    <h3 className="mt-2 text-2xl font-semibold text-slate-100">
+                    <h3 className="mt-2 text-2xl font-semibold text-amber-300">
                       Validation Status
                     </h3>
-                    <p className="mt-2 text-sm text-slate-400">
-                      Track the status of all your requirement submissions.
-                    </p>
                   </div>
                   <button
                     type="button"
@@ -803,16 +788,9 @@ export function FacultySubmissionPanel({
               <article className="min-h-[calc(100vh-4rem-3rem)] p-8">
                 <div className="flex flex-wrap items-end justify-between gap-4">
                   <div>
-                    <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                      Submission History
-                    </p>
-                    <h3 className="mt-2 text-2xl font-semibold text-slate-100">
+                    <h3 className="mt-2 text-2xl font-semibold text-amber-300">
                       Past Submissions
                     </h3>
-                    <p className="mt-2 text-sm text-slate-400">
-                      Filter your submitted requirements by school year and
-                      semester.
-                    </p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
