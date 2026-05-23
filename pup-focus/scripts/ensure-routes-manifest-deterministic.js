@@ -17,25 +17,6 @@ const parentSourceManifestPath = path.join(
   "routes-manifest.json",
 );
 
-function copyFileIfMissing(sourcePath, targetPath, logMessage) {
-  if (!fs.existsSync(sourcePath) || fs.existsSync(targetPath)) {
-    return;
-  }
-
-  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-  fs.copyFileSync(sourcePath, targetPath);
-  console.log(logMessage);
-}
-
-function copyDirIfMissing(sourceDir, targetDir, logMessage) {
-  if (!fs.existsSync(sourceDir) || fs.existsSync(targetDir)) {
-    return;
-  }
-
-  fs.cpSync(sourceDir, targetDir, { recursive: true });
-  console.log(logMessage);
-}
-
 function ensureLocalManifest() {
   if (!fs.existsSync(sourceManifestPath)) {
     console.warn(
@@ -89,35 +70,6 @@ function ensureParentFallbackManifest() {
     fs.copyFileSync(sourceManifestPath, parentSourceManifestPath);
     console.log(
       "[postbuild] Created parent .next/routes-manifest.json fallback for Vercel packaging.",
-    );
-  }
-
-  const filesToMirror = [
-    "app-path-routes-manifest.json",
-    "build-manifest.json",
-    "prerender-manifest.json",
-    "react-loadable-manifest.json",
-    "required-server-files.json",
-    "routes-manifest.json",
-    "routes-manifest-deterministic.json",
-    path.join("server", "pages-manifest.json"),
-    path.join("server", "app-paths-manifest.json"),
-  ];
-
-  for (const relativePath of filesToMirror) {
-    copyFileIfMissing(
-      path.join(nextDir, relativePath),
-      path.join(parentNextDir, relativePath),
-      `[postbuild] Mirrored parent .next/${relativePath} for Vercel packaging.`,
-    );
-  }
-
-  const dirsToMirror = ["server", "static"];
-  for (const relativePath of dirsToMirror) {
-    copyDirIfMissing(
-      path.join(nextDir, relativePath),
-      path.join(parentNextDir, relativePath),
-      `[postbuild] Mirrored parent .next/${relativePath} directory for Vercel packaging.`,
     );
   }
 }
