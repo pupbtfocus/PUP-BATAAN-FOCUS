@@ -33,15 +33,16 @@ export async function POST() {
     const isInvitedAdmin =
       metadata.role === ROLE.ADMIN &&
       metadata.created_via === "super_admin_admin_panel";
+    const isInvitedFaculty =
+      metadata.role === ROLE.FACULTY &&
+      metadata.created_via === "admin_faculty_panel";
 
-    if (!isInvitedAdmin) {
+    if (!isInvitedAdmin && !isInvitedFaculty) {
       return NextResponse.json({ success: true });
     }
 
-    // Optionally set a temporary password for the invited admin so they can
-    // sign-in with email/password immediately after accepting the invite.
-    // This uses the service role client and returns the temp password only
-    // to the currently authenticated invitee session.
+    // Set a temporary password so invited users can sign in with email/password
+    // after accepting the invite.
     try {
       const service = getServiceRoleClient();
       const tempPassword = generateTempPassword(12);
@@ -70,13 +71,14 @@ export async function POST() {
             fullName,
           });
         } catch (emailErr) {
-          // If emailing fails, still return success — admin can copy link manually.
+          // If emailing fails, still return success so the account can be
+          // recovered through support or a resend.
         }
       }
 
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, tempPasswordIssued: true });
     } catch (e) {
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, tempPasswordIssued: false });
     }
   } catch (error) {
     return NextResponse.json(
