@@ -11,13 +11,7 @@ import {
 } from "@/config/compliance";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
-const PANEL_VIEWS = [
-  "dashboard",
-  "submit",
-  "history",
-  "status",
-  "guide",
-] as const;
+const PANEL_VIEWS = ["dashboard", "submit", "history", "status"] as const;
 const LOGIN_PAGE_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
   "/images/attachments/IMG_9402.jpeg",
@@ -104,6 +98,7 @@ export function FacultySubmissionPanel({
     null,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [historyAcademicYear, setHistoryAcademicYear] = useState(
     academicYears[0] ?? "",
   );
@@ -313,7 +308,6 @@ export function FacultySubmissionPanel({
             ["submit", "Submit Requirement", "Upload a new requirement"],
             ["history", "Past Submissions", "Filter by S.Y. and semester"],
             ["status", "Requirement Status", "View validation status"],
-            ["guide", "Submission Guide", "Quick steps for uploading"],
           ].map(([key, label, description]) => {
             const isActive = activeView === key;
             return (
@@ -514,16 +508,29 @@ export function FacultySubmissionPanel({
                       <span>
                         Submission will be queued for review after upload.
                       </span>
-                      <Button
-                        type="submit"
-                        disabled={
-                          isSubmitting ||
-                          !form.fileName ||
-                          (submissionWindow ? !submissionWindow.isOpen : false)
-                        }
-                      >
-                        {isSubmitting ? "Submitting..." : "Submit Requirement"}
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => setIsGuideOpen(true)}
+                        >
+                          Submission Guide
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={
+                            isSubmitting ||
+                            !form.fileName ||
+                            (submissionWindow
+                              ? !submissionWindow.isOpen
+                              : false)
+                          }
+                        >
+                          {isSubmitting
+                            ? "Submitting..."
+                            : "Submit Requirement"}
+                        </Button>
+                      </div>
                     </div>
                   </form>
                 ) : (
@@ -590,6 +597,73 @@ export function FacultySubmissionPanel({
                   <p className="mt-4 rounded-md border border-emerald-700 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-300">
                     {submissionMessage}
                   </p>
+                ) : null}
+
+                {isGuideOpen ? (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="submission-guide-title"
+                    onClick={() => setIsGuideOpen(false)}
+                  >
+                    <div
+                      className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
+                            Submission Guide
+                          </p>
+                          <h3
+                            id="submission-guide-title"
+                            className="mt-2 text-2xl font-semibold text-slate-100"
+                          >
+                            Quick Steps for Uploading
+                          </h3>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setIsGuideOpen(false)}
+                        >
+                          Close
+                        </Button>
+                      </div>
+
+                      <div className="mt-5 space-y-3 text-sm text-slate-300">
+                        <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+                          <p className="font-medium text-slate-100">
+                            1. Select the term
+                          </p>
+                          <p className="mt-1 text-slate-400">
+                            Match the school year and semester for the document
+                            you are uploading.
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+                          <p className="font-medium text-slate-100">
+                            2. Choose the requirement
+                          </p>
+                          <p className="mt-1 text-slate-400">
+                            Pick the requirement type so the reviewer can
+                            validate it correctly.
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+                          <p className="font-medium text-slate-100">
+                            3. Attach the file
+                          </p>
+                          <p className="mt-1 text-slate-400">
+                            Upload a PDF, Word file, or image, then submit it
+                            for review.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ) : null}
               </article>
             )}
@@ -721,43 +795,6 @@ export function FacultySubmissionPanel({
                       </article>
                     ))
                   )}
-                </div>
-              </article>
-            )}
-
-            {activeView === "guide" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] p-8">
-                <h3 className="text-lg font-semibold text-slate-100">
-                  Submission Guide
-                </h3>
-                <div className="mt-4 space-y-3 text-sm text-slate-300">
-                  <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                    <p className="font-medium text-slate-100">
-                      1. Select the term
-                    </p>
-                    <p className="mt-1 text-slate-400">
-                      Match the school year and semester for the document you
-                      are uploading.
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                    <p className="font-medium text-slate-100">
-                      2. Choose the requirement
-                    </p>
-                    <p className="mt-1 text-slate-400">
-                      Pick the requirement type so the reviewer can validate it
-                      correctly.
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                    <p className="font-medium text-slate-100">
-                      3. Attach the file
-                    </p>
-                    <p className="mt-1 text-slate-400">
-                      Upload a PDF, Word file, or image, then submit it for
-                      review.
-                    </p>
-                  </div>
                 </div>
               </article>
             )}
