@@ -6,15 +6,7 @@ export default async function FacultyDashboardPage() {
   const user = await getCurrentUser();
 
   return (
-    <AppShell
-      title="Faculty Dashboard"
-      subtitle="Track curriculum-based compliance requirements and deadlines"
-      nav={[
-        { href: "/faculty/compliance", label: "Compliance" },
-        { href: "/faculty/history", label: "History" },
-      ]}
-      fullBleed
-    >
+    <AppShell title="PUP Bataan FOCUS" nav={[]} fullBleed>
       <FacultySubmissionPanel facultyName={user?.fullName ?? null} />
     </AppShell>
   );

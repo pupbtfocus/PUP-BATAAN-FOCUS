@@ -29,7 +29,7 @@ export function AppShell({
   return (
     <div className="min-h-screen text-[var(--foreground)]">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-[rgba(255,215,0,0.18)] bg-[#4d0000]/85 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
+        <div className="flex w-full items-center justify-between pl-4 pr-6 py-4">
           <div className="flex items-center gap-3">
             <BrandMark
               size={42}

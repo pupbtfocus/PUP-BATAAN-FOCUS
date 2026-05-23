@@ -284,10 +284,15 @@ export function FacultySubmissionPanel({
         {/* 'Faculty Workspace' label removed per request */}
         {/* Removed 'Faculty Portal' heading and description per request */}
 
-        <div className="my-6 rounded-xl bg-slate-950 p-3">
-          <p className="text-sm text-slate-400">Your Account</p>
-          <p className="mt-1 font-semibold text-slate-100">
+        <div className="my-6 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
+          <p className="mt-2 font-semibold text-white text-center">
             {facultyName ?? "Faculty"}
+          </p>
+
+          <div className="my-2 h-px w-full bg-slate-700" />
+
+          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--accent)] text-center">
+            Faculty
           </p>
         </div>
 
@@ -368,9 +373,7 @@ export function FacultySubmissionPanel({
                     <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
                       Polytechnic University of the Philippines - Bataan Campus
                     </p>
-                    <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#fff8e7]">
-                      PUP FOCUS
-                    </h3>
+                    {/* Dashboard title removed */}
                   </div>
                 </div>
               </article>
