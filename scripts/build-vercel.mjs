@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, rmSync, existsSync, writeFileSync } from "node:fs";
+import { cpSync, rmSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { execSync } from "node:child_process";
 
@@ -7,15 +7,6 @@ const appRoot = resolve(workspaceRoot, "pup-focus");
 const appNextDir = resolve(appRoot, ".next");
 const rootNextDir = resolve(workspaceRoot, ".next");
 const appNodeModulesDir = resolve(appRoot, "node_modules");
-const rootDeterministicRoutesManifest = resolve(
-  rootNextDir,
-  "routes-manifest-deterministic.json",
-);
-
-mkdirSync(rootNextDir, { recursive: true });
-if (!existsSync(rootDeterministicRoutesManifest)) {
-  writeFileSync(rootDeterministicRoutesManifest, "{}\n");
-}
 
 if (!existsSync(appNodeModulesDir)) {
   execSync("npm ci", { cwd: appRoot, stdio: "inherit" });
@@ -38,6 +29,10 @@ const appDeterministicRoutesManifest = resolve(
   "routes-manifest-deterministic.json",
 );
 const rootRoutesManifest = resolve(rootNextDir, "routes-manifest.json");
+const rootDeterministicRoutesManifest = resolve(
+  rootNextDir,
+  "routes-manifest-deterministic.json",
+);
 
 if (
   existsSync(appRoutesManifest) &&
