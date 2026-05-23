@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -30,6 +30,22 @@ function ensureManifest(targetPath) {
   console.log(`[build] Created ${targetPath} from routes-manifest.json.`);
 }
 
+function ensureFileFromSource(sourcePath, targetPath) {
+  const targetDir = dirname(targetPath);
+
+  if (!existsSync(sourcePath)) {
+    return;
+  }
+
+  if (existsSync(targetPath)) {
+    return;
+  }
+
+  mkdirSync(targetDir, { recursive: true });
+  copyFileSync(sourcePath, targetPath);
+  console.log(`[build] Mirrored ${targetPath} from ${sourcePath}.`);
+}
+
 if (!existsSync(routesManifest)) {
   console.warn(
     "[build] routes-manifest.json was not found, could not create deterministic routes manifest.",
@@ -44,3 +60,40 @@ ensureManifest(deterministicManifest);
 if (repoRootDeterministicManifest !== deterministicManifest) {
   ensureManifest(repoRootDeterministicManifest);
 }
+
+// Mirror core manifests and server artifacts that Vercel may lstat from
+// monorepo root instead of the app root.
+const rootManifestFiles = [
+  "routes-manifest.json",
+  "routes-manifest-deterministic.json",
+  "build-manifest.json",
+  "prerender-manifest.json",
+  "app-path-routes-manifest.json",
+];
+
+for (const relativePath of rootManifestFiles) {
+  ensureFileFromSource(
+    join(nextDir, relativePath),
+    join(repoRootNextDir, relativePath),
+  );
+}
+
+const appServerDir = join(nextDir, "server");
+const repoRootServerDir = join(repoRootNextDir, "server");
+
+if (existsSync(appServerDir)) {
+  mkdirSync(repoRootNextDir, { recursive: true });
+  cpSync(appServerDir, repoRootServerDir, {
+    recursive: true,
+    force: false,
+    errorOnExist: false,
+  });
+  console.log(
+    `[build] Mirrored ${repoRootServerDir} from ${appServerDir} for Vercel root lookup.`,
+  );
+}
+
+ensureFileFromSource(
+  join(nextDir, "server", "pages-manifest.json"),
+  join(repoRootNextDir, "server", "pages-manifest.json"),
+);
