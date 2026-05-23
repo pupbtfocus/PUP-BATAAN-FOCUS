@@ -22,28 +22,3 @@ if (existsSync(rootNextDir)) {
 }
 
 cpSync(appNextDir, rootNextDir, { recursive: true });
-
-const appRoutesManifest = resolve(appNextDir, "routes-manifest.json");
-const appDeterministicRoutesManifest = resolve(
-  appNextDir,
-  "routes-manifest-deterministic.json",
-);
-const rootRoutesManifest = resolve(rootNextDir, "routes-manifest.json");
-const rootDeterministicRoutesManifest = resolve(
-  rootNextDir,
-  "routes-manifest-deterministic.json",
-);
-
-if (
-  existsSync(appRoutesManifest) &&
-  !existsSync(appDeterministicRoutesManifest)
-) {
-  cpSync(appRoutesManifest, appDeterministicRoutesManifest);
-}
-
-if (
-  existsSync(rootRoutesManifest) &&
-  !existsSync(rootDeterministicRoutesManifest)
-) {
-  cpSync(rootRoutesManifest, rootDeterministicRoutesManifest);
-}
