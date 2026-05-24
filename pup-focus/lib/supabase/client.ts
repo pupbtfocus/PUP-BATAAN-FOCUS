@@ -103,12 +103,10 @@ export function createClient() {
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
 
-  const auth = client.auth as typeof client.auth & {
-    getUser: typeof client.auth.getUser;
-  };
-  const originalGetUser = auth.getUser.bind(auth);
+  const auth = client.auth as typeof client.auth & { getUser: any };
+  const originalGetUser = auth.getUser.bind(client.auth);
 
-  auth.getUser = async (...args) => {
+  auth.getUser = async (...args: any[]) => {
     try {
       return await originalGetUser(...args);
     } catch (error) {
