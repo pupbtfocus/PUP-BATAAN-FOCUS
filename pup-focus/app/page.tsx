@@ -271,10 +271,7 @@ export default function Home() {
         <section className="rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/80 p-6 shadow-2xl shadow-black/20 backdrop-blur">
           <div className="mb-6 text-center">
             <div className="flex justify-center">
-              <BrandMark
-                size={80}
-                className="rounded-full shadow-lg shadow-black/20"
-              />
+              <BrandMark size={80} className="rounded-full" />
             </div>
             <p className="mt-3 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
               Polytechnic University of the Philippines - Bataan Campus

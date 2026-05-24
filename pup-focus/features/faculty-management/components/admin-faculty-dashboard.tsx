@@ -443,13 +443,10 @@ export function AdminFacultyDashboard({
                     className="object-cover"
                     style={{ animation: "backgroundFadeB 16s infinite linear" }}
                   />
-                  <div className="absolute inset-0 bg-[#4d0000]/70" />
+                  {/* removed red overlay */}
 
                   <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
-                    <BrandMark
-                      size={90}
-                      className="rounded-full shadow-lg shadow-black/20"
-                    />
+                    <BrandMark size={90} className="rounded-full" />
                     <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
                       Polytechnic University of the Philippines - Bataan Campus
                     </p>
