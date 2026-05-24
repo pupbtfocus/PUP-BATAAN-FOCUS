@@ -1,5 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { getPublicEnvSafe } from "@/config/env";
+import { isInvalidRefreshTokenError } from "@/lib/supabase/auth-errors";
 
 const SUPABASE_ENV_WARNING =
   "Missing NEXT_PUBLIC_SUPABASE_* env vars. Check .env.local before using auth flows.";
@@ -72,6 +73,20 @@ function createMissingSupabaseClient() {
   };
 }
 
+function clearBrowserSupabaseSession() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  for (const storage of [window.localStorage, window.sessionStorage]) {
+    for (const key of Object.keys(storage)) {
+      if (key.startsWith("sb-")) {
+        storage.removeItem(key);
+      }
+    }
+  }
+}
+
 export function createClient() {
   const env = getPublicEnvSafe();
 
@@ -83,8 +98,28 @@ export function createClient() {
     >;
   }
 
-  return createBrowserClient(
+  const client = createBrowserClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
+
+  const auth = client.auth as typeof client.auth & {
+    getUser: typeof client.auth.getUser;
+  };
+  const originalGetUser = auth.getUser.bind(auth);
+
+  auth.getUser = async (...args) => {
+    try {
+      return await originalGetUser(...args);
+    } catch (error) {
+      if (isInvalidRefreshTokenError(error)) {
+        clearBrowserSupabaseSession();
+        return { data: { user: null }, error: null };
+      }
+
+      throw error;
+    }
+  };
+
+  return client;
 }
