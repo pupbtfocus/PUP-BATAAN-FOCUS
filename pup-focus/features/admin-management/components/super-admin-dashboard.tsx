@@ -6,7 +6,7 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
-import { ROLE, ROLE_LABEL } from "@/config/roles";
+import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 
 const DASHBOARD_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
@@ -23,7 +23,7 @@ interface AdminAccount {
   profile_id: string;
   full_name: string;
   email: string;
-  role: string;
+  role: AppRole;
   is_active: boolean;
   department?: string | null;
   permissions?: string[];
@@ -33,9 +33,13 @@ interface AdminDetails {
   profile_id: string;
   full_name?: string | null;
   email?: string | null;
-  role?: string | null;
+  role?: AppRole | null;
   is_active?: boolean;
   department?: string | null;
+  permissions?: string[];
+  created_at?: string | null;
+  updated_at?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 type SuperAdminAccountResult = {
@@ -295,8 +299,8 @@ export function SuperAdminDashboard({
 
       setSettingsSuccess("Super Admin account updated successfully.");
       if (data.account) {
-        setSettingsFullName(data.account.fullName);
-        setSettingsEmail(data.account.email);
+        setSettingsFullName(data.account.fullName ?? "");
+        setSettingsEmail(data.account.email ?? "");
       }
       setIsSavingSettings(false);
     } catch {
@@ -1535,7 +1539,10 @@ function AdminDetailsModal({
 
               <div className="flex flex-wrap justify-between gap-3 pt-2">
                 <div className="text-xs text-slate-500">
-                  Created {new Date(details.created_at).toLocaleString()}
+                  Created{" "}
+                  {details.created_at
+                    ? new Date(details.created_at).toLocaleString()
+                    : "Unknown"}
                   {details.updated_at
                     ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
                     : ""}
@@ -1610,7 +1617,10 @@ function AdminDetailsModal({
 
               <div className="flex flex-wrap justify-between gap-3 pt-2">
                 <div className="text-xs text-slate-500">
-                  Created {new Date(details.created_at).toLocaleString()}
+                  Created{" "}
+                  {details.created_at
+                    ? new Date(details.created_at).toLocaleString()
+                    : "Unknown"}
                   {details.updated_at
                     ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
                     : ""}
