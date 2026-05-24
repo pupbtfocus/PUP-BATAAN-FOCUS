@@ -717,19 +717,9 @@ export function SuperAdminDashboard({
                       <h3 className="text-lg font-semibold text-slate-100">
                         Account Directory
                       </h3>
-                      <p className="mt-1 text-sm text-slate-400">
-                        Separate admin and super admin accounts with a role
-                        filter.
-                      </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                      <label
-                        className="text-sm font-medium text-slate-300"
-                        htmlFor="accountRoleFilter"
-                      >
-                        Show
-                      </label>
                       <select
                         id="accountRoleFilter"
                         value={accountViewRole}
@@ -1159,7 +1149,9 @@ function SidebarButton({
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-950/70 p-5">
-      <p className="text-sm text-slate-400">{label}</p>
+      <p className="mt-0 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+        {label}
+      </p>
       <p className="mt-2 text-2xl font-semibold text-slate-100">{value}</p>
     </div>
   );
