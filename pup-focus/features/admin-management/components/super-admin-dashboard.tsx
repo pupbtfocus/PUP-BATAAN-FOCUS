@@ -13,6 +13,46 @@ const DASHBOARD_IMAGES = [
   "/images/attachments/IMG_9402.jpeg",
 ];
 
+// Minimal local types to satisfy TypeScript in this component.
+type AccountViewRole = "all" | string;
+
+type SettingsOption = "profile" | "password";
+
+interface AdminAccount {
+  id?: string;
+  profile_id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  department?: string | null;
+  permissions?: string[];
+}
+
+interface AdminDetails {
+  profile_id: string;
+  full_name?: string | null;
+  email?: string | null;
+  role?: string | null;
+  is_active?: boolean;
+  department?: string | null;
+}
+
+type SuperAdminAccountResult = {
+  account?: { fullName?: string; email?: string } | null;
+  error?: string | null;
+  details?: AdminDetails | null;
+  admins?: AdminAccount[];
+};
+
+type CreateAdminResult = {
+  success?: boolean;
+  error?: string | null;
+  sent?: boolean;
+  link?: string | null;
+  user?: { email?: string; fullName?: string } | null;
+};
+
 export function SuperAdminDashboard({
   adminName,
 }: {
