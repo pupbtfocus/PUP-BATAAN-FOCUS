@@ -33,7 +33,7 @@ export function AppShell({
           <div className="flex items-center gap-3">
             <BrandMark
               size={42}
-              className="shrink-0 rounded-full ring-2 ring-[#ffd700]/40 shadow-lg shadow-black/20"
+              className="shrink-0 rounded-full ring-2 ring-[#ffd700]/40"
             />
             <div>
               <h1 className="text-xl font-semibold text-[#fff8e7]">{title}</h1>
