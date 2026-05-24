@@ -49,6 +49,7 @@ type CreateAdminResult = {
   success?: boolean;
   error?: string | null;
   sent?: boolean;
+  sendError?: string | null;
   link?: string | null;
   user?: { email?: string; fullName?: string } | null;
 };
