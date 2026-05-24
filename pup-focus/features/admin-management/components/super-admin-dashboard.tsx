@@ -1,75 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import React, { FormEvent, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
-import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
-
-type CreateAdminResult = {
-  success?: boolean;
-  error?: string;
-  invited?: boolean;
-  sent?: boolean;
-  sendError?: string | null;
-  link?: string | null;
-  user?: {
-    id: string;
-    email: string;
-    fullName: string;
-  };
-};
-
-type SuperAdminSection = "dashboard" | "create" | "accounts" | "settings";
-
-type AccountViewRole = "all" | typeof ROLE.ADMIN | typeof ROLE.SUPER_ADMIN;
-
-type SettingsOption = "profile" | "password";
-
-type AdminAccount = {
-  id: string;
-  profile_id: string;
-  full_name: string;
-  email: string;
-  role: AppRole;
-  is_active: boolean;
-  department?: string | null;
-  permissions?: string[] | null;
-};
-
-type AdminDetails = AdminAccount & {
-  user_id?: string | null;
-  metadata?: Record<string, unknown> | null;
-  created_at: string;
-  updated_at?: string | null;
-};
-
-type SuperAdminAccountResult = {
-  account?: {
-    fullName: string;
-    email: string;
-  };
-  error?: string;
-};
+import { ROLE, ROLE_LABEL } from "@/config/roles";
 
 const DASHBOARD_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
   "/images/attachments/IMG_9402.jpeg",
 ];
 
-export function SuperAdminDashboard() {
-  const [activeSection, setActiveSection] =
-    useState<SuperAdminSection>("dashboard");
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [inviteModalMessage, setInviteModalMessage] = useState("");
-  const [inviteWasSent, setInviteWasSent] = useState(false);
+export function SuperAdminDashboard({
+  adminName,
+}: {
+  adminName?: string | null;
+}) {
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
   const [accountViewRole, setAccountViewRole] =
     useState<AccountViewRole>("all");
@@ -105,6 +53,19 @@ export function SuperAdminDashboard() {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+
+  // UI & form state for the Super Admin create flow / navigation
+  const [activeSection, setActiveSection] = useState<
+    "dashboard" | "create" | "accounts" | "settings"
+  >("dashboard");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteModalMessage, setInviteModalMessage] = useState("");
+  const [inviteWasSent, setInviteWasSent] = useState(false);
 
   async function loadAdminAccounts() {
     try {
@@ -647,39 +608,37 @@ export function SuperAdminDashboard() {
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
       <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg">
-        <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-          Super Admin Workspace
-        </p>
-        <h2 className="mt-2 text-xl font-semibold text-slate-100">
-          Control Panel
-        </h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Manage admin accounts, access, and system settings from one place.
-        </p>
+        <div className="my-6 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
+          <p className="mt-2 font-semibold text-white text-center">
+            {adminName ?? "Super Admin"}
+          </p>
+
+          <div className="my-2 h-px w-full bg-slate-700" />
+
+          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--accent)] text-center">
+            Super Admin
+          </p>
+        </div>
 
         <nav className="mt-6 space-y-2">
           <SidebarButton
             active={activeSection === "dashboard"}
             title="Dashboard"
-            description="Branding and summary overview"
             onClick={() => setActiveSection("dashboard")}
           />
           <SidebarButton
             active={activeSection === "create"}
             title="Create Admin"
-            description="Provision a new admin account"
             onClick={() => setActiveSection("create")}
           />
           <SidebarButton
             active={activeSection === "accounts"}
             title="Admin Accounts"
-            description="View and create admin users"
             onClick={() => setActiveSection("accounts")}
           />
           <SidebarButton
             active={activeSection === "settings"}
             title="Settings"
-            description="System and access configuration"
             onClick={() => setActiveSection("settings")}
           />
         </nav>
@@ -727,15 +686,11 @@ export function SuperAdminDashboard() {
 
             {activeSection === "accounts" ? (
               <article className="p-8">
-                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                  Super Admin Workspace
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
-                  Admin Accounts
-                </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  View existing admin accounts and create new ones.
-                </p>
+                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                  <h3 className="text-lg font-semibold text-amber-300">
+                    Admin Accounts
+                  </h3>
+                </div>
 
                 <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <InfoCard
@@ -854,15 +809,11 @@ export function SuperAdminDashboard() {
 
             {activeSection === "settings" ? (
               <article className="p-8">
-                <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                  Super Admin Workspace
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-100">
-                  Settings
-                </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  Update your Super Admin account details.
-                </p>
+                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                  <h3 className="text-lg font-semibold text-amber-300">
+                    Settings
+                  </h3>
+                </div>
 
                 <section className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]">
                   <div className="space-y-2 rounded-2xl border border-slate-700 bg-slate-950/50 p-3">
@@ -1063,19 +1014,13 @@ export function SuperAdminDashboard() {
 
             {activeSection === "create" ? (
               <article className="p-6">
-                <section className="mx-auto w-full max-w-2xl rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/75 p-6 shadow-lg shadow-black/20 backdrop-blur">
-                  <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                    Super Admin Workspace
-                  </p>
-                  <h2 className="mt-2 text-2xl font-semibold text-slate-100">
+                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 mb-4">
+                  <h3 className="text-lg font-semibold text-amber-300">
                     Create Admin Account
-                  </h2>
-                  <p className="mt-2 text-sm text-slate-400">
-                    Provision a new admin user via invite link. The user will
-                    receive an email with a temporary password after verifying
-                    their email.
-                  </p>
+                  </h3>
+                </div>
 
+                <section className="mx-auto w-full max-w-2xl rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/75 p-6 shadow-lg shadow-black/20 backdrop-blur">
                   <form className="mt-6 space-y-4" onSubmit={onSubmit}>
                     <div>
                       <label

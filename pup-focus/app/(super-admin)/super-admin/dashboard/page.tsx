@@ -12,13 +12,8 @@ export default async function SuperAdminDashboardPage() {
   }
 
   return (
-    <AppShell
-      title="Super Admin Dashboard"
-      subtitle="Create and manage Admin accounts"
-      nav={[{ href: "/super-admin/dashboard", label: "Admin Provisioning" }]}
-      fullBleed
-    >
-      <SuperAdminDashboard />
+    <AppShell title="PUP Bataan FOCUS" nav={[]} fullBleed>
+      <SuperAdminDashboard adminName={user?.fullName ?? null} />
     </AppShell>
   );
 }
