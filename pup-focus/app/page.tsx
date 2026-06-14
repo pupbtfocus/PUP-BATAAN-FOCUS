@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Lottie from "lottie-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
@@ -10,6 +11,9 @@ import { createClient } from "@/lib/supabase/client";
 import { ROUTE_BY_ROLE } from "@/config/routes";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
+import successCheckAnimation from "@/assets/icons animations/lottieflow-checkbox-06-000000-easey.json";
+import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
+import errorAnimation from "@/assets/icons animations/lottieflow-dropdown-07-1-000000-easey.json";
 
 const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
 const PUBLIC_ENV = getPublicEnvSafe();
@@ -257,8 +261,8 @@ export default function Home() {
 
     setIsSubmitting(false);
     setAuthModal({
-      title: "Signed in successfully",
-      message: `Signed in successfully as ${ROLE_LABEL[signedInRole]}.`,
+      title: "Welcome back",
+      message: `You are signed in as ${ROLE_LABEL[signedInRole]}.`,
       actionLabel: "Continue",
       variant: "success",
       redirectTo: nextTarget,
@@ -430,21 +434,79 @@ export default function Home() {
             {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
             <Button className="w-full" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Signing in..." : "Continue"}
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Lottie
+                    animationData={loadingAnimation}
+                    loop={true}
+                    autoplay
+                    className="h-5 w-5"
+                  />
+                  Signing in...
+                </span>
+              ) : (
+                "Continue"
+              )}
             </Button>
           </form>
         </section>
       </div>
       {authModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
-          <div className="w-full max-w-md rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 text-[#fff8e7] shadow-2xl shadow-black/30 backdrop-blur">
-            <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-              {authModal.variant === "success"
-                ? "Sign In Success"
-                : "Sign In Error"}
-            </p>
-            <h3 className="mt-3 text-xl font-semibold">{authModal.title}</h3>
-            <p className="mt-3 whitespace-pre-wrap text-sm text-[#f3d9b3]">
+          <div className="w-full max-w-sm rounded-[26px] border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 text-[#fff8e7] shadow-2xl shadow-black/30 backdrop-blur">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div
+                className={`relative flex h-16 w-16 items-center justify-center rounded-full border ${
+                  authModal.variant === "success"
+                    ? "border-emerald-400/40 bg-emerald-400/10"
+                    : "border-rose-400/40 bg-rose-400/10"
+                } ${authModal.variant === "success" ? "animate-[pulse_1.4s_ease-in-out_infinite]" : ""}`}
+              >
+                {authModal.variant === "success" ? (
+                  <div className="absolute inset-0 rounded-full border border-emerald-300/30 animate-ping" />
+                ) : null}
+
+                {authModal.variant === "success" ? (
+                  <Lottie
+                    animationData={successCheckAnimation}
+                    loop={false}
+                    autoplay
+                    className="relative z-10 h-14 w-14"
+                  />
+                ) : authModal.variant === "error" ? (
+                  <Lottie
+                    animationData={errorAnimation}
+                    loop={true}
+                    autoplay
+                    className="relative z-10 h-14 w-14"
+                  />
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="h-7 w-7 text-rose-300"
+                    aria-hidden
+                  >
+                    <path
+                      d="M18 6L6 18M6 6L18 18"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                )}
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+                  {authModal.variant === "success" ? "Success" : "Failed"}
+                </p>
+                <h3 className="mt-1 text-2xl font-semibold">
+                  {authModal.title}
+                </h3>
+              </div>
+            </div>
+            <p className="mt-4 whitespace-pre-wrap text-center text-sm text-[#f3d9b3]">
               {authModal.message}
             </p>
 
@@ -461,7 +523,7 @@ export default function Home() {
               </div>
             ) : (
               <p className="mt-6 text-sm text-[#ffd700]">
-                Redirecting you now...
+                You’ll be redirected automatically.
               </p>
             )}
           </div>
