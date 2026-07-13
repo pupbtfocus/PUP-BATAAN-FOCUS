@@ -57,6 +57,7 @@ export async function POST() {
             error: "Missing email address for invited account",
             tempPasswordIssued: false,
             tempPasswordEmailSent: false,
+            tempPassword,
           },
           { status: 400 },
         );
@@ -81,6 +82,7 @@ export async function POST() {
             tempPasswordIssued: false,
             tempPasswordEmailSent: false,
             tempPasswordError: pwError.message,
+            tempPassword,
           },
           { status: 400 },
         );
@@ -102,6 +104,7 @@ export async function POST() {
           success: true,
           tempPasswordIssued: true,
           tempPasswordEmailSent: true,
+          tempPassword,
         });
       } catch (emailErr) {
         const emailError =
@@ -113,16 +116,30 @@ export async function POST() {
             tempPasswordIssued: true,
             tempPasswordEmailSent: false,
             tempPasswordError: emailError,
+            tempPassword,
           },
           { status: 202 },
         );
       }
     } catch (e) {
-      return NextResponse.json({
-        success: true,
-        tempPasswordIssued: false,
-        tempPasswordEmailSent: false,
+      const errorMessage = e instanceof Error ? e.message : String(e);
+
+      console.error("Failed to prepare invited account temporary password", {
+        userId: user.id,
+        email: user.email,
+        errorMessage,
       });
+
+      return NextResponse.json(
+        {
+          success: true,
+          tempPasswordIssued: false,
+          tempPasswordEmailSent: false,
+          tempPasswordError: errorMessage,
+          tempPassword,
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({

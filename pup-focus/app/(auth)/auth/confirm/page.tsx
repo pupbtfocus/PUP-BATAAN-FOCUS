@@ -34,6 +34,7 @@ function AuthConfirmContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [message, setMessage] = useState("Verifying invitation link...");
+  const [tempPassword, setTempPassword] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -141,6 +142,7 @@ function AuthConfirmContent() {
         tempPasswordIssued?: boolean;
         tempPasswordEmailSent?: boolean;
         tempPasswordError?: string;
+        tempPassword?: string;
         error?: string;
       };
 
@@ -155,10 +157,14 @@ function AuthConfirmContent() {
 
       await supabase.auth.signOut();
 
+      if (completeBody.tempPassword) {
+        setTempPassword(completeBody.tempPassword);
+      }
+
       setMessage(
         completeBody.tempPasswordEmailSent
-          ? "Email verified. A temporary password has been emailed to you. Sign in with your email and the temporary password, then change it on first login."
-          : `Email verified, but the temporary password could not be emailed automatically.${completeBody.tempPasswordError ? ` ${completeBody.tempPasswordError}` : ""} Please ask an administrator to resend it.`,
+          ? "Email verified. A temporary password has been generated. Use the password below if it does not appear in your inbox."
+          : `Email verified, but the temporary password could not be emailed automatically.${completeBody.tempPasswordError ? ` ${completeBody.tempPasswordError}` : ""} Use the password below or ask an administrator to resend it.`,
       );
     }
 
@@ -177,6 +183,16 @@ function AuthConfirmContent() {
         </p>
         <h1 className="mt-3 text-2xl font-bold">Confirming invitation</h1>
         <p className="mt-3 text-sm text-[#f3d9b3]">{message}</p>
+        {tempPassword ? (
+          <div className="mt-4 rounded-2xl border border-[rgba(255,215,0,0.22)] bg-black/20 p-4">
+            <p className="text-xs uppercase tracking-[0.22em] text-[#ffd700]">
+              Temporary password
+            </p>
+            <p className="mt-2 break-all font-mono text-sm text-[#fff8e7]">
+              {tempPassword}
+            </p>
+          </div>
+        ) : null}
         <div className="mt-4 flex justify-end">
           <a
             href="/sign-in"
