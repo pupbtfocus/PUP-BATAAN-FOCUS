@@ -84,6 +84,7 @@ export function FacultyRequirementsModule() {
   const [counts, setCounts] = useState<StatusResponse["counts"] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const initialFormState: RequirementFormState = {
@@ -121,24 +122,34 @@ export function FacultyRequirementsModule() {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsModalOpen(false);
+        setIsCalendarModalOpen(false);
       }
     }
 
-    if (isModalOpen) {
+    if (isModalOpen || isCalendarModalOpen) {
       window.addEventListener("keydown", onKeyDown);
     }
 
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isModalOpen]);
+  }, [isModalOpen, isCalendarModalOpen]);
 
   function openModal() {
     setMessage(null);
     setIsModalOpen(true);
   }
 
+  function openCalendarModal() {
+    setMessage(null);
+    setIsCalendarModalOpen(true);
+  }
+
   function closeModal() {
     if (isSubmitting) return;
     setIsModalOpen(false);
+  }
+
+  function closeCalendarModal() {
+    setIsCalendarModalOpen(false);
   }
 
   function getStatus(code: RequirementCode) {
@@ -264,7 +275,7 @@ export function FacultyRequirementsModule() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-slate-100">
-              Requirements Status
+              Requirements Management
             </h3>
             <p className="text-sm text-slate-400">
               Current validation status for each required document.
@@ -275,7 +286,15 @@ export function FacultyRequirementsModule() {
             className="w-full sm:w-auto"
             onClick={openModal}
           >
-            Submit Req
+            Submit Requirements
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:w-auto"
+            onClick={openCalendarModal}
+          >
+            University Calendar
           </Button>
         </div>
 
@@ -486,6 +505,45 @@ export function FacultyRequirementsModule() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {isCalendarModalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+          onClick={closeCalendarModal}
+        >
+          <div
+            className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-100">
+                  University Calendar
+                </h3>
+                <p className="text-sm text-slate-400">
+                  View the official PUP academic calendar.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCalendarModal}
+                className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                aria-label="Close calendar modal"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 bg-slate-950">
+              <iframe
+                title="University Calendar"
+                src="https://www.pup.edu.ph/about/calendar"
+                className="h-full w-full border-0"
+              />
+            </div>
           </div>
         </div>
       ) : null}
