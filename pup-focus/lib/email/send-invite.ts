@@ -71,14 +71,14 @@ export async function sendInviteEmail({
 
   const roleLabel = ROLE_LABEL[invitedRole];
   const roleLower = roleLabel.toLowerCase();
-  const subject = `PUP FOCUS - ${roleLabel} invitation`;
-  const text = `Hello ${fullName},\n\nYou have been invited to be a ${roleLower} for PUP FOCUS. Click the link to accept the invitation:\n\n${link}\n\nIf you did not expect this, ignore this message.`;
+  const subject = "PUP FOCUS - Account access";
+  const text = `Hello ${fullName},\n\nYour ${roleLower} account is ready. Use the link below to continue:\n\n${link}\n\nIf you did not expect this, ignore this message.`;
 
   const html = `
     <div>
       <p>Hello ${fullName},</p>
-      <p>You have been invited to be a <strong>${roleLower}</strong> for PUP FOCUS.</p>
-      <p><a href="${link}">Click here to accept the invitation</a></p>
+      <p>Your <strong>${roleLower}</strong> account is ready. Use the link below to continue:</p>
+      <p><a href="${link}">Open account access</a></p>
       <p>If you did not expect this, ignore this message.</p>
     </div>
   `;
@@ -90,11 +90,6 @@ export async function sendInviteEmail({
     subject,
     text,
     html,
-    headers: {
-      "X-Priority": "1",
-      "X-MSMail-Priority": "High",
-      Importance: "high",
-    },
   });
 
   return info;
