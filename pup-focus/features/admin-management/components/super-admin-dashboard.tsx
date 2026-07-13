@@ -99,18 +99,33 @@ export function SuperAdminDashboard({
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
-  // UI & form state for the Super Admin create flow / navigation
   const [activeSection, setActiveSection] = useState<
-    "dashboard" | "create" | "accounts" | "settings"
+    "dashboard" | "accounts" | "settings"
   >("dashboard");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [createAdminModalOpen, setCreateAdminModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteModalMessage, setInviteModalMessage] = useState("");
   const [inviteWasSent, setInviteWasSent] = useState(false);
+
+  function openCreateAdminModal() {
+    setError(null);
+    setSuccess(null);
+    setFullName("");
+    setEmail("");
+    setCreateAdminModalOpen(true);
+  }
+
+  function closeCreateAdminModal() {
+    setCreateAdminModalOpen(false);
+    setIsSubmitting(false);
+    setError(null);
+    setSuccess(null);
+  }
 
   async function loadAdminAccounts() {
     try {
@@ -255,6 +270,7 @@ export function SuperAdminDashboard({
       setInviteModalMessage(inviteMessage);
       setInviteModalOpen(true);
       setSuccess(inviteMessage);
+      setCreateAdminModalOpen(false);
       setFullName("");
       setEmail("");
       void (async () => {
@@ -672,11 +688,6 @@ export function SuperAdminDashboard({
             onClick={() => setActiveSection("dashboard")}
           />
           <SidebarButton
-            active={activeSection === "create"}
-            title="Create Admin"
-            onClick={() => setActiveSection("create")}
-          />
-          <SidebarButton
             active={activeSection === "accounts"}
             title="Admin Accounts"
             onClick={() => setActiveSection("accounts")}
@@ -778,10 +789,7 @@ export function SuperAdminDashboard({
                           Super Admin Accounts
                         </option>
                       </select>
-                      <Button
-                        type="button"
-                        onClick={() => setActiveSection("create")}
-                      >
+                      <Button type="button" onClick={openCreateAdminModal}>
                         Create Admin
                       </Button>
                     </div>
@@ -1043,80 +1051,88 @@ export function SuperAdminDashboard({
                 </section>
               </article>
             ) : null}
-
-            {activeSection === "create" ? (
-              <article className="p-6">
-                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 mb-4">
-                  <h3 className="text-lg font-semibold text-amber-300">
-                    Create Admin Account
-                  </h3>
-                </div>
-
-                <section className="mx-auto w-full max-w-2xl rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/75 p-6 shadow-lg shadow-black/20 backdrop-blur">
-                  <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-[#fff8e7]"
-                        htmlFor="fullName"
-                      >
-                        Full Name
-                      </label>
-                      <input
-                        id="fullName"
-                        type="text"
-                        value={fullName}
-                        onChange={(event) => setFullName(event.target.value)}
-                        required
-                        placeholder="Juan Dela Cruz"
-                        className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-[#fff8e7]"
-                        htmlFor="email"
-                      >
-                        Email Address
-                      </label>
-                      <input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        required
-                        placeholder="admin@pup-focus.local"
-                        className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
-                      />
-                    </div>
-
-                    {/* Temporary password removed from create UI — invite-only flow */}
-
-                    {error ? (
-                      <p className="text-sm text-red-300">{error}</p>
-                    ) : null}
-                    {success ? (
-                      <p className="text-sm text-[#ffd700]">{success}</p>
-                    ) : null}
-
-                    <div className="flex justify-center pt-1">
-                      <Button
-                        className="px-5 py-2"
-                        type="submit"
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting
-                          ? "Creating Admin..."
-                          : "Create Admin Account"}
-                      </Button>
-                    </div>
-                  </form>
-                </section>
-              </article>
-            ) : null}
           </div>
         </div>
       </div>
+
+      {createAdminModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+                  Super Admin
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-[#fff8e7]">
+                  Create Admin Account
+                </h3>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={closeCreateAdminModal}
+              >
+                Close
+              </Button>
+            </div>
+
+            <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+              <div>
+                <label
+                  className="block text-sm font-medium text-[#fff8e7]"
+                  htmlFor="fullName"
+                >
+                  Full Name
+                </label>
+                <input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                  required
+                  placeholder="Juan Dela Cruz"
+                  className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                />
+              </div>
+
+              <div>
+                <label
+                  className="block text-sm font-medium text-[#fff8e7]"
+                  htmlFor="email"
+                >
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  placeholder="admin@pup-focus.local"
+                  className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                />
+              </div>
+
+              {/* Temporary password removed from create UI — invite-only flow */}
+
+              {error ? <p className="text-sm text-red-300">{error}</p> : null}
+              {success ? (
+                <p className="text-sm text-[#ffd700]">{success}</p>
+              ) : null}
+
+              <div className="flex justify-center pt-1">
+                <Button
+                  className="px-5 py-2"
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating Admin..." : "Create Admin Account"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       {adminDetailsOpen ? (
         <AdminDetailsModal
