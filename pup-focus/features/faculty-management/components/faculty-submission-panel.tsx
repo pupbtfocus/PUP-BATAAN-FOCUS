@@ -353,8 +353,8 @@ export function FacultySubmissionPanel({
         <nav className="mt-6 space-y-2">
           {[
             ["dashboard", "Dashboard"],
-            ["history", "Past Submissions"],
             ["status", "Requirements Management"],
+            ["history", "Past Submissions"],
           ].map(([key, label]) => {
             const isActive = activeView === key;
             return (
