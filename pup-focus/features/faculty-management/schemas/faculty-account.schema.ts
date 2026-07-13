@@ -1,17 +1,15 @@
 import { z } from "zod";
 
-const requiredNameSchema = z.preprocess(
-  (value) => (typeof value === "string" ? value.trim() : ""),
-  z
-    .string()
-    .min(1, "This field is required")
-    .max(80, "Use 80 characters or less"),
-);
+const requiredNameSchema = z
+  .string()
+  .trim()
+  .min(1, "This field is required")
+  .max(80, "Use 80 characters or less");
 
-const optionalNameSchema = z.preprocess(
-  (value) => (typeof value === "string" ? value.trim() : ""),
-  z.string().max(80, "Use 80 characters or less"),
-);
+const optionalNameSchema = z
+  .string()
+  .trim()
+  .max(80, "Use 80 characters or less");
 
 export const facultyAccountSchema = z.object({
   firstName: requiredNameSchema,
