@@ -4,6 +4,50 @@ import { ROLE } from "@/config/roles";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { sendInviteEmail } from "@/lib/email/send-invite";
 import { isValidEmailAddress } from "@/lib/validation/email";
+import {
+  FACULTY_PROFILE_IMAGE_BUCKET,
+  buildFacultyFullName,
+} from "@/lib/faculty-profile";
+
+async function readRequestPayload(request: NextRequest) {
+  const contentType = request.headers.get("content-type") ?? "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData();
+
+    const readString = (field: string) => {
+      const value = formData.get(field);
+      return typeof value === "string" ? value : "";
+    };
+
+    return {
+      firstName: readString("firstName"),
+      middleName: readString("middleName"),
+      lastName: readString("lastName"),
+      email: readString("email"),
+      profileImage:
+        formData.get("profileImage") instanceof File
+          ? (formData.get("profileImage") as File)
+          : null,
+    };
+  }
+
+  const body = (await request.json()) as {
+    firstName?: string;
+    middleName?: string | null;
+    lastName?: string;
+    email?: string;
+    profileImage?: never;
+  };
+
+  return {
+    firstName: body.firstName ?? "",
+    middleName: body.middleName ?? "",
+    lastName: body.lastName ?? "",
+    email: body.email ?? "",
+    profileImage: null,
+  };
+}
 
 export async function POST(request: NextRequest) {
   const sessionClient = await createServerSupabaseClient();
@@ -23,16 +67,25 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { fullName, email, password: _password } = await request.json();
+    const { firstName, middleName, lastName, email, profileImage } =
+      await readRequestPayload(request);
 
-    if (!fullName || !email) {
+    const trimmedFirstName = firstName.trim();
+    const trimmedMiddleName = middleName.trim();
+    const trimmedLastName = lastName.trim();
+    const fullName = buildFacultyFullName({
+      firstName: trimmedFirstName,
+      middleName: trimmedMiddleName,
+      lastName: trimmedLastName,
+    });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!trimmedFirstName || !trimmedLastName || !fullName || !email) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
       );
     }
-
-    const normalizedEmail = email.trim().toLowerCase();
 
     if (!isValidEmailAddress(normalizedEmail)) {
       return NextResponse.json(
@@ -90,22 +143,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const profileImageMetadata: {
+      profile_image_bucket: string | null;
+      profile_image_path: string | null;
+    } = {
+      profile_image_bucket: null,
+      profile_image_path: null,
+    };
+
+    if (profileImage && profileImage.size > 0) {
+      const safeFileName = profileImage.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `admin-profile-images/${normalizedEmail}/${Date.now()}-${crypto.randomUUID()}-${safeFileName}`;
+      const arrayBuffer = await profileImage.arrayBuffer();
+
+      const { error: uploadError } = await supabase.storage
+        .from(FACULTY_PROFILE_IMAGE_BUCKET)
+        .upload(storagePath, arrayBuffer, {
+          contentType: profileImage.type || "application/octet-stream",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        return NextResponse.json(
+          { error: `Failed to upload profile image: ${uploadError.message}` },
+          { status: 400 },
+        );
+      }
+
+      profileImageMetadata.profile_image_bucket = FACULTY_PROFILE_IMAGE_BUCKET;
+      profileImageMetadata.profile_image_path = storagePath;
+    }
+
     const publicAppOrigin =
       process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
     const callbackUrl = new URL("/auth/confirm", publicAppOrigin);
-    // Redirect to the super-admin dashboard after invite is accepted
     callbackUrl.searchParams.set("next", "/super-admin/dashboard");
 
-    // Use generateLink to get an invite URL that can be sent via a custom
-    // email provider or returned to the caller as a fallback when provider
-    // email sending is rate-limited.
     const { data: genData, error: genError } =
       await supabase.auth.admin.generateLink({
         type: "invite",
         email: normalizedEmail,
         options: {
           data: {
+            first_name: trimmedFirstName,
+            middle_name: trimmedMiddleName || null,
+            last_name: trimmedLastName,
             full_name: fullName,
+            profile_image_bucket: profileImageMetadata.profile_image_bucket,
+            profile_image_path: profileImageMetadata.profile_image_path,
             role: ROLE.ADMIN,
             created_via: "super_admin_admin_panel",
             created_by_super_admin_id: user.id,
@@ -115,13 +200,19 @@ export async function POST(request: NextRequest) {
       });
 
     if (genError) {
+      if (profileImageMetadata.profile_image_path) {
+        await supabase.storage
+          .from(FACULTY_PROFILE_IMAGE_BUCKET)
+          .remove([profileImageMetadata.profile_image_path])
+          .catch(() => null);
+      }
+
       return NextResponse.json(
         { error: genError?.message ?? "Failed to generate admin invite link" },
         { status: 400 },
       );
     }
 
-    // `generateLink` returns properties including `action_link` (the URL)
     const actionLink = genData?.properties?.action_link ?? null;
 
     let sent = false;
@@ -129,8 +220,6 @@ export async function POST(request: NextRequest) {
 
     if (actionLink) {
       try {
-        // Attempt to send via configured SMTP. If SMTP env vars are missing
-        // or the send fails, we return the link so the caller can copy it.
         await sendInviteEmail({
           to: normalizedEmail,
           link: actionLink,
