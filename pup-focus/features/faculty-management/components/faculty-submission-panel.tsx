@@ -1205,7 +1205,8 @@ export function FacultySubmissionPanel({
                               onChange={(event) =>
                                 updateField(
                                   "semester",
-                                  event.target.value as SubmissionFormState["semester"],
+                                  event.target
+                                    .value as SubmissionFormState["semester"],
                                 )
                               }
                             >
@@ -1243,7 +1244,11 @@ export function FacultySubmissionPanel({
                                 status !== "Not Submitted" &&
                                 status !== "Rejected";
                               return (
-                                <option key={code} value={code} disabled={disabled}>
+                                <option
+                                  key={code}
+                                  value={code}
+                                  disabled={disabled}
+                                >
                                   {REQUIREMENT_LABEL[code]}
                                 </option>
                               );
@@ -1269,7 +1274,9 @@ export function FacultySubmissionPanel({
                               updateField("fileName", file?.name ?? "");
                             }}
                             disabled={(() => {
-                              const s = getRequirementStatus(form.requirementCode);
+                              const s = getRequirementStatus(
+                                form.requirementCode,
+                              );
                               return s === "Pending" || s === "Validated";
                             })()}
                           />
@@ -1307,7 +1314,9 @@ export function FacultySubmissionPanel({
                         </div>
 
                         {submissionMessage && (
-                          <p className="text-sm text-slate-300">{submissionMessage}</p>
+                          <p className="text-sm text-slate-300">
+                            {submissionMessage}
+                          </p>
                         )}
                       </form>
                     ) : (
