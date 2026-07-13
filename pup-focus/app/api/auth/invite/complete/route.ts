@@ -46,9 +46,10 @@ export async function POST() {
       });
     }
 
+    const tempPassword = generateTempPassword(12);
+
     try {
       const service = getServiceRoleClient();
-      const tempPassword = generateTempPassword(12);
       const recipientEmail = user.email?.trim().toLowerCase();
 
       if (!recipientEmail) {
