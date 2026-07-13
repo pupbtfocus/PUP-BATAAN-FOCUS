@@ -11,6 +11,7 @@ import {
   DEFAULT_REQUIREMENTS,
   type RequirementCode,
 } from "@/config/compliance";
+import { buildFacultyInitials } from "@/lib/faculty-profile";
 import {
   facultyAccountSchema,
   type FacultyAccountFormInput,
@@ -21,8 +22,7 @@ type SemesterOption = "1st Semester" | "2nd Semester";
 
 type AdminSection =
   | "dashboard"
-  | "add"
-  | "faculty"
+  | "facultyManagement"
   | "requirements"
   | "submissionWindow"
   | "details";
@@ -31,6 +31,7 @@ type FacultyAccount = {
   id: string;
   fullName: string;
   email: string;
+  profileImageUrl: string | null;
   is_active: boolean;
   created_at: string;
   requirementStatus: Record<RequirementCode, RequirementStatus>;
@@ -129,10 +130,14 @@ export function AdminFacultyDashboard({
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     null,
   );
-  const [activeSection, setActiveSection] = useState<AdminSection>("dashboard");
+  const [activeSection, setActiveSection] =
+    useState<AdminSection>("facultyManagement");
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+  const [addFacultyModalOpen, setAddFacultyModalOpen] = useState(false);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [profileImageInputKey, setProfileImageInputKey] = useState(0);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteModalMessage, setInviteModalMessage] = useState("");
   const [inviteWasSent, setInviteWasSent] = useState(false);
@@ -170,7 +175,9 @@ export function AdminFacultyDashboard({
   const form = useForm<FacultyAccountFormInput>({
     resolver: zodResolver(facultyAccountSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      middleName: "",
+      lastName: "",
       email: "",
     },
   });
@@ -188,13 +195,19 @@ export function AdminFacultyDashboard({
     setCreateSuccess(null);
 
     try {
+      const payload = new FormData();
+      payload.append("firstName", input.firstName);
+      payload.append("middleName", input.middleName);
+      payload.append("lastName", input.lastName);
+      payload.append("email", input.email);
+
+      if (profileImageFile) {
+        payload.append("profileImage", profileImageFile);
+      }
+
       const response = await fetch("/api/admin/faculty/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: input.fullName,
-          email: input.email,
-        }),
+        body: payload,
       });
 
       const data = (await response.json()) as CreateFacultyResult;
@@ -216,7 +229,10 @@ export function AdminFacultyDashboard({
       setCreateSuccess(inviteMessage);
       setInviteModalMessage(inviteMessage);
       setInviteModalOpen(true);
-      form.reset({ fullName: "", email: "" });
+      setAddFacultyModalOpen(false);
+      form.reset({ firstName: "", middleName: "", lastName: "", email: "" });
+      setProfileImageFile(null);
+      setProfileImageInputKey((value) => value + 1);
 
       // Refresh faculty list from database
       await loadFacultyFromDatabase();
@@ -399,14 +415,9 @@ export function AdminFacultyDashboard({
             onClick={() => setActiveSection("dashboard")}
           />
           <SidebarButton
-            active={activeSection === "add"}
-            title="Add Faculty"
-            onClick={() => setActiveSection("add")}
-          />
-          <SidebarButton
-            active={activeSection === "faculty"}
-            title="Faculty List"
-            onClick={() => setActiveSection("faculty")}
+            active={activeSection === "facultyManagement"}
+            title="Faculty Management"
+            onClick={() => setActiveSection("facultyManagement")}
           />
           <SidebarButton
             active={activeSection === "requirements"}
@@ -458,53 +469,74 @@ export function AdminFacultyDashboard({
               </article>
             ) : null}
 
-            {activeSection === "add" ? (
-              <article className="p-8">
+            {activeSection === "facultyManagement" ? (
+              <article className="space-y-6 p-6 md:p-8">
                 <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
                   <h3 className="text-lg font-semibold text-amber-300">
-                    Add Faculty Account
+                    Faculty Management
                   </h3>
                 </div>
 
-                <AddFacultyPanel
-                  form={form}
-                  onAddFaculty={onAddFaculty}
-                  isCreating={isCreating}
-                  createError={createError}
-                  createSuccess={createSuccess}
-                />
-              </article>
-            ) : null}
+                <section className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5 shadow-lg shadow-black/20">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <h4 className="text-base font-semibold text-[#fff8e7]">
+                        Add Faculty Account
+                      </h4>
+                      <p className="text-sm text-slate-400">
+                        Open the add faculty form in a modal, then review the
+                        directory below.
+                      </p>
+                    </div>
 
-            {activeSection === "faculty" ? (
-              <article className="p-6">
-                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                  <h3 className="text-lg font-semibold text-amber-300">
-                    Faculty List
-                  </h3>
-                </div>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setCreateError(null);
+                        setCreateSuccess(null);
+                        setAddFacultyModalOpen(true);
+                      }}
+                    >
+                      Add Faculty
+                    </Button>
+                  </div>
+                </section>
 
-                <FacultyListPanel
-                  facultyAccounts={facultyAccounts}
-                  isLoading={isLoading}
-                  onSelectFaculty={setSelectedFacultyId}
-                  onDeleteFaculty={onDeleteFaculty}
-                  onViewDetails={(facultyId) => {
-                    setDetailsFacultyId(facultyId);
-                    setDetailsModalOpen(true);
-                  }}
-                  onActivate={onActivateFaculty}
-                  onDeactivate={onDeactivateFaculty}
-                  loadingFacultyIds={loadingFacultyIds}
-                  deleteError={deleteError}
-                  deleteSuccess={deleteSuccess}
-                  facultyActionError={facultyActionError}
-                  onClearDeleteMessages={() => {
-                    setDeleteError(null);
-                    setDeleteSuccess(null);
-                    setFacultyActionError(null);
-                  }}
-                />
+                <section className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5 shadow-lg shadow-black/20">
+                  <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <h4 className="text-base font-semibold text-[#fff8e7]">
+                        Faculty List
+                      </h4>
+                      <p className="text-sm text-slate-400">
+                        Track active accounts, open details, or deactivate and
+                        remove faculty access.
+                      </p>
+                    </div>
+                  </div>
+
+                  <FacultyListPanel
+                    facultyAccounts={facultyAccounts}
+                    isLoading={isLoading}
+                    onSelectFaculty={setSelectedFacultyId}
+                    onDeleteFaculty={onDeleteFaculty}
+                    onViewDetails={(facultyId) => {
+                      setDetailsFacultyId(facultyId);
+                      setDetailsModalOpen(true);
+                    }}
+                    onActivate={onActivateFaculty}
+                    onDeactivate={onDeactivateFaculty}
+                    loadingFacultyIds={loadingFacultyIds}
+                    deleteError={deleteError}
+                    deleteSuccess={deleteSuccess}
+                    facultyActionError={facultyActionError}
+                    onClearDeleteMessages={() => {
+                      setDeleteError(null);
+                      setDeleteSuccess(null);
+                      setFacultyActionError(null);
+                    }}
+                  />
+                </section>
               </article>
             ) : null}
 
@@ -567,6 +599,48 @@ export function AdminFacultyDashboard({
                 OK
               </Button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {addFacultyModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+                  Faculty Management
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-[#fff8e7]">
+                  Add Faculty Account
+                </h3>
+              </div>
+
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setAddFacultyModalOpen(false);
+                  setCreateError(null);
+                  setCreateSuccess(null);
+                  setProfileImageFile(null);
+                  setProfileImageInputKey((value) => value + 1);
+                }}
+              >
+                Close
+              </Button>
+            </div>
+
+            <AddFacultyPanel
+              form={form}
+              onAddFaculty={onAddFaculty}
+              isCreating={isCreating}
+              createError={createError}
+              createSuccess={createSuccess}
+              profileImageFile={profileImageFile}
+              onProfileImageChange={setProfileImageFile}
+              profileImageInputKey={profileImageInputKey}
+            />
           </div>
         </div>
       ) : null}
@@ -1009,30 +1083,97 @@ function AddFacultyPanel({
   isCreating,
   createError,
   createSuccess,
+  profileImageFile,
+  onProfileImageChange,
+  profileImageInputKey,
+  wrapperClassName,
+  formClassName,
 }: {
   form: ReturnType<typeof useForm<FacultyAccountFormInput>>;
   onAddFaculty: (input: FacultyAccountFormInput) => void;
   isCreating: boolean;
   createError: string | null;
   createSuccess: string | null;
+  profileImageFile: File | null;
+  onProfileImageChange: (file: File | null) => void;
+  profileImageInputKey: number;
+  wrapperClassName?: string;
+  formClassName?: string;
 }) {
   return (
-    <div className="flex flex-col max-w-sm mx-auto">
+    <div className={wrapperClassName ?? "flex flex-col max-w-sm mx-auto"}>
       <form
-        className="mt-6 flex flex-1 flex-col gap-3 w-full rounded-xl border border-slate-700 bg-slate-950/50 p-6 shadow-lg"
+        className={`mt-6 flex flex-1 w-full flex-col gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-6 shadow-lg ${formClassName ?? ""}`}
         onSubmit={form.handleSubmit(onAddFaculty)}
       >
+        <div className="grid gap-3 md:grid-cols-3">
+          <div>
+            <label className="text-sm text-slate-300" htmlFor="firstName">
+              First Name
+            </label>
+            <input
+              id="firstName"
+              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+              {...form.register("firstName")}
+            />
+            <FieldError message={form.formState.errors.firstName?.message} />
+          </div>
+
+          <div>
+            <label className="text-sm text-slate-300" htmlFor="middleName">
+              Middle Name
+            </label>
+            <input
+              id="middleName"
+              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+              {...form.register("middleName")}
+            />
+            <FieldError message={form.formState.errors.middleName?.message} />
+          </div>
+
+          <div>
+            <label className="text-sm text-slate-300" htmlFor="lastName">
+              Last Name
+            </label>
+            <input
+              id="lastName"
+              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+              {...form.register("lastName")}
+            />
+            <FieldError message={form.formState.errors.lastName?.message} />
+          </div>
+        </div>
+
         <div>
-          <label className="text-sm text-slate-300" htmlFor="fullName">
-            Full Name
+          <label className="text-sm text-slate-300" htmlFor="profileImage">
+            Profile Image
           </label>
           <input
-            id="fullName"
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-            placeholder="Juan Dela Cruz"
-            {...form.register("fullName")}
+            key={profileImageInputKey}
+            id="profileImage"
+            type="file"
+            accept="image/*"
+            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-amber-400 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-950 focus:ring focus:ring-amber-300/30"
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              onProfileImageChange(file);
+            }}
           />
-          <FieldError message={form.formState.errors.fullName?.message} />
+          <p className="mt-1 text-xs text-slate-400">
+            Upload a square image for the faculty directory.
+          </p>
+          {profileImageFile ? (
+            <div className="mt-2 flex items-center justify-between rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300">
+              <span className="truncate">{profileImageFile.name}</span>
+              <button
+                type="button"
+                className="ml-3 text-amber-300 hover:text-amber-200"
+                onClick={() => onProfileImageChange(null)}
+              >
+                Remove
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <div>
@@ -1157,12 +1298,26 @@ function FacultyListPanel({
                   <button
                     type="button"
                     onClick={() => onSelectFaculty(faculty.id)}
-                    className="text-left flex-1 min-w-0"
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
                   >
-                    <p className="font-medium truncate">{faculty.fullName}</p>
-                    <p className="text-sm text-slate-400 truncate">
-                      {faculty.email}
-                    </p>
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-400/30 bg-amber-400/10 text-sm font-semibold text-amber-200">
+                      {faculty.profileImageUrl ? (
+                        <img
+                          src={faculty.profileImageUrl}
+                          alt={faculty.fullName}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span>{buildFacultyInitials(faculty.fullName)}</span>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{faculty.fullName}</p>
+                      <p className="truncate text-sm text-slate-400">
+                        {faculty.email}
+                      </p>
+                    </div>
                   </button>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -2007,44 +2162,56 @@ function FacultyDetailsModal({
 
         <div className="space-y-4">
           <article className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs font-semibold text-slate-500">
-                  Full Name
-                </p>
-                <p className="text-sm text-slate-200">
-                  {selectedFaculty.fullName}
-                </p>
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-400/30 bg-amber-400/10 text-lg font-semibold text-amber-200">
+                {selectedFaculty.profileImageUrl ? (
+                  <img
+                    src={selectedFaculty.profileImageUrl}
+                    alt={selectedFaculty.fullName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span>{buildFacultyInitials(selectedFaculty.fullName)}</span>
+                )}
               </div>
 
-              <div>
-                <p className="text-xs font-semibold text-slate-500">Email</p>
-                <p className="text-sm text-slate-200">
-                  {selectedFaculty.email}
-                </p>
-              </div>
+              <div className="space-y-1">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500">
+                    Full Name
+                  </p>
+                  <p className="text-sm text-slate-200">
+                    {selectedFaculty.fullName}
+                  </p>
+                </div>
 
-              <div>
-                <p className="text-xs font-semibold text-slate-500">
-                  Account Status
-                </p>
-                <p
-                  className={`text-sm ${
-                    selectedFaculty.is_active
-                      ? "text-green-400"
-                      : "text-red-400"
-                  }`}
-                >
-                  {selectedFaculty.is_active ? "Active" : "Inactive"}
-                </p>
+                <div>
+                  <p className="text-xs font-semibold text-slate-500">Email</p>
+                  <p className="text-sm text-slate-200">
+                    {selectedFaculty.email}
+                  </p>
+                </div>
               </div>
+            </div>
 
-              <div>
-                <p className="text-xs font-semibold text-slate-500">
-                  Created Date
-                </p>
-                <p className="text-sm text-slate-200">{formattedDate}</p>
-              </div>
+            <div className="mt-3">
+              <p className="text-xs font-semibold text-slate-500">
+                Account Status
+              </p>
+              <p
+                className={`text-sm ${
+                  selectedFaculty.is_active ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {selectedFaculty.is_active ? "Active" : "Inactive"}
+              </p>
+            </div>
+
+            <div className="mt-3">
+              <p className="text-xs font-semibold text-slate-500">
+                Created Date
+              </p>
+              <p className="text-sm text-slate-200">{formattedDate}</p>
             </div>
           </article>
 

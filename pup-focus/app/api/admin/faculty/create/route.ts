@@ -4,6 +4,60 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { sendInviteEmail } from "@/lib/email/send-invite";
+import {
+  FACULTY_PROFILE_IMAGE_BUCKET,
+  buildFacultyFullName,
+} from "@/lib/faculty-profile";
+
+async function readRequestPayload(request: NextRequest) {
+  const contentType = request.headers.get("content-type") ?? "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData();
+
+    const readString = (field: string) => {
+      const value = formData.get(field);
+      return typeof value === "string" ? value : "";
+    };
+
+    return {
+      firstName: readString("firstName"),
+      middleName: readString("middleName"),
+      lastName: readString("lastName"),
+      email: readString("email"),
+      profileImage:
+        formData.get("profileImage") instanceof File
+          ? (formData.get("profileImage") as File)
+          : null,
+    };
+  }
+
+  const body = (await request.json()) as {
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
+    email?: string;
+    fullName?: string;
+  };
+
+  const legacyNameParts =
+    body.fullName?.trim().split(/\s+/).filter(Boolean) ?? [];
+  const legacyFirstName = legacyNameParts[0] ?? "";
+  const legacyLastName =
+    legacyNameParts.length > 1
+      ? legacyNameParts[legacyNameParts.length - 1]
+      : "";
+  const legacyMiddleName =
+    legacyNameParts.length > 2 ? legacyNameParts.slice(1, -1).join(" ") : "";
+
+  return {
+    firstName: (body.firstName ?? legacyFirstName).trim(),
+    middleName: (body.middleName ?? legacyMiddleName).trim(),
+    lastName: (body.lastName ?? legacyLastName).trim(),
+    email: body.email ?? "",
+    profileImage: null,
+  };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,9 +77,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { fullName, email, password: _password } = await request.json();
+    const { firstName, middleName, lastName, email, profileImage } =
+      await readRequestPayload(request);
 
-    if (!fullName || !email) {
+    const fullName = buildFacultyFullName({
+      firstName,
+      middleName,
+      lastName,
+    });
+
+    if (!firstName || !lastName || !email) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -96,6 +157,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const profileImageMetadata: {
+      profile_image_bucket: string | null;
+      profile_image_path: string | null;
+    } = {
+      profile_image_bucket: null,
+      profile_image_path: null,
+    };
+
+    if (profileImage && profileImage.size > 0) {
+      const safeFileName = profileImage.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `faculty-profile-images/${normalizedEmail}/${Date.now()}-${crypto.randomUUID()}-${safeFileName}`;
+      const arrayBuffer = await profileImage.arrayBuffer();
+
+      const { error: uploadError } = await supabase.storage
+        .from(FACULTY_PROFILE_IMAGE_BUCKET)
+        .upload(storagePath, arrayBuffer, {
+          contentType: profileImage.type || "application/octet-stream",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        return NextResponse.json(
+          {
+            error: `Failed to upload profile image: ${uploadError.message}`,
+          },
+          { status: 400 },
+        );
+      }
+
+      profileImageMetadata.profile_image_bucket = FACULTY_PROFILE_IMAGE_BUCKET;
+      profileImageMetadata.profile_image_path = storagePath;
+    }
+
     const publicAppOrigin =
       process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
     const callbackUrl = new URL("/auth/confirm", publicAppOrigin);
@@ -107,7 +201,12 @@ export async function POST(request: NextRequest) {
         email: normalizedEmail,
         options: {
           data: {
+            first_name: firstName.trim(),
+            middle_name: middleName.trim(),
+            last_name: lastName.trim(),
             full_name: fullName,
+            profile_image_bucket: profileImageMetadata.profile_image_bucket,
+            profile_image_path: profileImageMetadata.profile_image_path,
             role: ROLE.FACULTY,
             created_via: "admin_faculty_panel",
             created_by_admin_id: user.id,
@@ -117,6 +216,13 @@ export async function POST(request: NextRequest) {
       });
 
     if (genError) {
+      if (profileImageMetadata.profile_image_path) {
+        await supabase.storage
+          .from(FACULTY_PROFILE_IMAGE_BUCKET)
+          .remove([profileImageMetadata.profile_image_path])
+          .catch(() => null);
+      }
+
       return NextResponse.json(
         {
           error: genError?.message ?? "Failed to generate faculty invite link",

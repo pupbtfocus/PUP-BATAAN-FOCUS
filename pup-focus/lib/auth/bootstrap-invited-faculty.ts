@@ -1,4 +1,8 @@
 import { ROLE } from "@/config/roles";
+import {
+  FACULTY_PROFILE_IMAGE_BUCKET,
+  buildFacultyFullName,
+} from "@/lib/faculty-profile";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 
 export async function bootstrapInvitedFacultyAccount(user: {
@@ -15,11 +19,33 @@ export async function bootstrapInvitedFacultyAccount(user: {
     return;
   }
 
+  const firstName =
+    typeof metadata.first_name === "string" ? metadata.first_name.trim() : "";
+  const middleName =
+    typeof metadata.middle_name === "string" ? metadata.middle_name.trim() : "";
+  const lastName =
+    typeof metadata.last_name === "string" ? metadata.last_name.trim() : "";
+  const fullNameFromParts = buildFacultyFullName({
+    firstName,
+    middleName,
+    lastName,
+  });
   const fullName =
-    typeof metadata.full_name === "string" && metadata.full_name.trim()
+    fullNameFromParts ||
+    (typeof metadata.full_name === "string" && metadata.full_name.trim()
       ? metadata.full_name.trim()
-      : (user.email ?? "Faculty User");
+      : (user.email ?? "Faculty User"));
   const email = user.email?.trim().toLowerCase();
+  const profileImageBucket =
+    typeof metadata.profile_image_bucket === "string" &&
+    metadata.profile_image_bucket.trim()
+      ? metadata.profile_image_bucket.trim()
+      : FACULTY_PROFILE_IMAGE_BUCKET;
+  const profileImagePath =
+    typeof metadata.profile_image_path === "string" &&
+    metadata.profile_image_path.trim()
+      ? metadata.profile_image_path.trim()
+      : null;
 
   if (!email) {
     throw new Error("Missing email for invited faculty account");
@@ -76,6 +102,12 @@ export async function bootstrapInvitedFacultyAccount(user: {
         ? metadata.created_by_admin_id
         : null,
     invite_accepted_at: new Date().toISOString(),
+    first_name: firstName || null,
+    middle_name: middleName || null,
+    last_name: lastName || null,
+    full_name: fullName,
+    profile_image_bucket: profileImageBucket,
+    profile_image_path: profileImagePath,
   };
 
   const { error: userRoleError } = await serviceRoleClient

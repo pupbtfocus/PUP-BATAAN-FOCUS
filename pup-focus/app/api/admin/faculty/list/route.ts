@@ -3,6 +3,10 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
 import { ROLE } from "@/config/roles";
+import {
+  FACULTY_PROFILE_IMAGE_BUCKET,
+  buildFacultyFullName,
+} from "@/lib/faculty-profile";
 
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 
@@ -142,15 +146,57 @@ export async function GET(request: NextRequest) {
       (appUsers ?? []).map((item: any) => [item.profile_id, item]),
     );
 
-    const faculty = (profiles ?? [])
-      .map((profile: any) => {
+    const faculty = await Promise.all(
+      (profiles ?? []).map(async (profile: any) => {
         const appUser = appUserByProfileId.get(profile.id);
+        const authUserMetadata = appUser?.auth_user_id
+          ? ((await supabase.auth.admin.getUserById(appUser.auth_user_id)).data
+              .user?.user_metadata ?? {})
+          : {};
+        const metadata = {
+          ...authUserMetadata,
+          ...(appUser?.metadata ?? {}),
+        };
+        const fullNameFromMetadata = buildFacultyFullName({
+          firstName:
+            typeof metadata.first_name === "string" ? metadata.first_name : "",
+          middleName:
+            typeof metadata.middle_name === "string"
+              ? metadata.middle_name
+              : "",
+          lastName:
+            typeof metadata.last_name === "string" ? metadata.last_name : "",
+        });
+        const profileImageBucket =
+          typeof metadata.profile_image_bucket === "string" &&
+          metadata.profile_image_bucket.trim()
+            ? metadata.profile_image_bucket.trim()
+            : FACULTY_PROFILE_IMAGE_BUCKET;
+        const profileImagePath =
+          typeof metadata.profile_image_path === "string" &&
+          metadata.profile_image_path.trim()
+            ? metadata.profile_image_path.trim()
+            : null;
+
+        let profileImageUrl: string | null = null;
+
+        if (profileImagePath) {
+          const { data: signedImage, error: signedImageError } =
+            await supabase.storage
+              .from(profileImageBucket)
+              .createSignedUrl(profileImagePath, 60 * 60 * 24);
+
+          if (!signedImageError) {
+            profileImageUrl = signedImage.signedUrl;
+          }
+        }
 
         return {
           id: profile.id,
           user_id: appUser?.auth_user_id ?? profile.user_id ?? null,
-          fullName: profile.full_name || "Unknown",
+          fullName: fullNameFromMetadata || profile.full_name || "Unknown",
           email: profile.email || "Unknown",
+          profileImageUrl,
           is_active: appUser?.metadata?.is_active ?? true,
           created_at:
             appUser?.created_at ||
@@ -158,8 +204,10 @@ export async function GET(request: NextRequest) {
             new Date().toISOString(),
           requirementStatus: buildInitialRequirementStatus(),
         };
-      })
-      .sort((a: any, b: any) => a.fullName.localeCompare(b.fullName));
+      }),
+    );
+
+    faculty.sort((a: any, b: any) => a.fullName.localeCompare(b.fullName));
 
     return NextResponse.json({ faculty });
   } catch (error) {
