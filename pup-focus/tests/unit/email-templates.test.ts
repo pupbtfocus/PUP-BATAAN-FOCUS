@@ -18,6 +18,7 @@ test("buildInviteEmailHtml renders branded invite content", () => {
   assert.match(html, /Jane Doe/i);
   assert.match(html, /https:\/\/pup-focus\.local\/accept/i);
   assert.match(html, /Faculty/i);
+  assert.match(html, /icons\/pup-seal\.png/i);
 });
 
 test("buildTempPasswordEmailHtml renders the temporary password details", () => {
@@ -31,4 +32,6 @@ test("buildTempPasswordEmailHtml renders the temporary password details", () => 
   assert.match(html, /Jane Doe/i);
   assert.match(html, /TempPass123!/i);
   assert.match(html, /change your password/i);
+  assert.match(html, /icons\/pup-seal\.png/i);
+  assert.match(html, /Sign in/i);
 });
