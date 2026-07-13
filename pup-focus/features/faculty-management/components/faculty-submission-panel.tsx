@@ -188,6 +188,7 @@ export function FacultySubmissionPanel({
     null,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [historyAcademicYear, setHistoryAcademicYear] = useState("2025-2026");
@@ -319,6 +320,16 @@ export function FacultySubmissionPanel({
     return requirementStatuses.find((r) => r.code === code)?.status;
   }
 
+  function openSubmitModal() {
+    setSubmissionMessage(null);
+    setIsSubmitModalOpen(true);
+  }
+
+  function closeSubmitModal() {
+    if (isSubmitting) return;
+    setIsSubmitModalOpen(false);
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
@@ -397,6 +408,7 @@ export function FacultySubmissionPanel({
       }));
 
       if (fileInput) fileInput.value = "";
+      setIsSubmitModalOpen(false);
     } catch (error) {
       setSubmissionMessage(
         `Error: ${error instanceof Error ? error.message : "An unexpected error occurred"}`,
@@ -430,7 +442,6 @@ export function FacultySubmissionPanel({
         <nav className="mt-6 space-y-2">
           {[
             ["dashboard", "Dashboard"],
-            ["submit", "Submit Requirement"],
             ["history", "Past Submissions"],
             ["status", "Requirement Status"],
           ].map(([key, label]) => {
@@ -890,36 +901,45 @@ export function FacultySubmissionPanel({
 
             {activeView === "status" && (
               <article className="min-h-[calc(100vh-4rem-3rem)] p-6 pt-0">
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex-1">
                     {/* Heading moved to main header card */}
                   </div>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsLoadingStatuses(true);
-                      try {
-                        const response = await fetch(
-                          "/api/faculty/submissions/status",
-                        );
-                        if (response.ok) {
-                          const data = await response.json();
-                          setRequirementStatuses(
-                            data.requirementStatuses || [],
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={openSubmitModal}
+                      className="whitespace-nowrap rounded-md border border-amber-400 bg-amber-400 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-300"
+                    >
+                      Submit Req
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsLoadingStatuses(true);
+                        try {
+                          const response = await fetch(
+                            "/api/faculty/submissions/status",
                           );
-                          setStatusCounts(data.counts || null);
+                          if (response.ok) {
+                            const data = await response.json();
+                            setRequirementStatuses(
+                              data.requirementStatuses || [],
+                            );
+                            setStatusCounts(data.counts || null);
+                          }
+                        } catch {
+                          setStatusError("Error loading requirement statuses");
+                        } finally {
+                          setIsLoadingStatuses(false);
                         }
-                      } catch {
-                        setStatusError("Error loading requirement statuses");
-                      } finally {
-                        setIsLoadingStatuses(false);
-                      }
-                    }}
-                    disabled={isLoadingStatuses}
-                    className="whitespace-nowrap rounded-md bg-amber-600 px-3 py-2 text-xs text-white hover:bg-amber-700 disabled:opacity-50"
-                  >
-                    {isLoadingStatuses ? "⟳ Refreshing..." : "⟳ Refresh"}
-                  </button>
+                      }}
+                      disabled={isLoadingStatuses}
+                      className="whitespace-nowrap rounded-md bg-slate-800 px-3 py-2 text-xs text-white hover:bg-slate-700 disabled:opacity-50"
+                    >
+                      {isLoadingStatuses ? "⟳ Refreshing..." : "⟳ Refresh"}
+                    </button>
+                  </div>
                 </div>
 
                 {statusCounts && !isLoadingStatuses && (
@@ -1121,6 +1141,187 @@ export function FacultySubmissionPanel({
                   )}
                 </div>
               </article>
+            )}
+
+            {isSubmitModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
+                <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+                  <div className="flex items-start justify-between border-b border-slate-700 px-6 py-5">
+                    <div>
+                      <h3 className="text-lg font-semibold text-amber-300">
+                        Submit Req
+                      </h3>
+                      <p className="text-sm text-slate-400">
+                        Upload and submit the selected requirement.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeSubmitModal}
+                      className="rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-100 hover:border-slate-500"
+                    >
+                      Close
+                    </button>
+                  </div>
+
+                  <div className="max-h-[75vh] overflow-y-auto p-6">
+                    {isSubmissionAvailable ? (
+                      <form className="space-y-4" onSubmit={handleSubmit}>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label
+                              className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                              htmlFor="modalAcademicYear"
+                            >
+                              School Year
+                            </label>
+                            <select
+                              id="modalAcademicYear"
+                              className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                              value={form.academicYear}
+                              onChange={(event) =>
+                                updateField("academicYear", event.target.value)
+                              }
+                            >
+                              {academicYears.map((year) => (
+                                <option key={year} value={year}>
+                                  S.Y. {year}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label
+                              className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                              htmlFor="modalSemester"
+                            >
+                              Semester
+                            </label>
+                            <select
+                              id="modalSemester"
+                              className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                              value={form.semester}
+                              onChange={(event) =>
+                                updateField(
+                                  "semester",
+                                  event.target.value as SubmissionFormState["semester"],
+                                )
+                              }
+                            >
+                              {SEMESTER_OPTIONS.map((semester) => (
+                                <option key={semester} value={semester}>
+                                  {semester}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label
+                            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                            htmlFor="modalRequirementCode"
+                          >
+                            Requirement Type
+                          </label>
+                          <select
+                            id="modalRequirementCode"
+                            className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                            value={form.requirementCode}
+                            onChange={(event) =>
+                              updateField(
+                                "requirementCode",
+                                event.target.value as RequirementCode,
+                              )
+                            }
+                          >
+                            {DEFAULT_REQUIREMENTS.map((code) => {
+                              const status = getRequirementStatus(code);
+                              const disabled =
+                                status &&
+                                status !== "Not Submitted" &&
+                                status !== "Rejected";
+                              return (
+                                <option key={code} value={code} disabled={disabled}>
+                                  {REQUIREMENT_LABEL[code]}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label
+                            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                            htmlFor="modalFileName"
+                          >
+                            File to Submit
+                          </label>
+                          <input
+                            ref={fileInputRef}
+                            id="modalFileName"
+                            type="file"
+                            className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950 hover:file:bg-amber-400 disabled:opacity-50"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              updateField("fileName", file?.name ?? "");
+                            }}
+                            disabled={(() => {
+                              const s = getRequirementStatus(form.requirementCode);
+                              return s === "Pending" || s === "Validated";
+                            })()}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                            htmlFor="modalRemarks"
+                          >
+                            Remarks
+                          </label>
+                          <textarea
+                            id="modalRemarks"
+                            className="mt-0 min-h-24 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                            placeholder="Enter remarks or notes (optional)"
+                            value={form.remarks}
+                            onChange={(event) =>
+                              updateField("remarks", event.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? "Submitting..." : "Submit Req"}
+                          </Button>
+                          <button
+                            type="button"
+                            onClick={closeSubmitModal}
+                            className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+
+                        {submissionMessage && (
+                          <p className="text-sm text-slate-300">{submissionMessage}</p>
+                        )}
+                      </form>
+                    ) : (
+                      <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
+                        {isLoadingSubmissionWindow
+                          ? "Checking submission window..."
+                          : submissionWindow?.isConfigured
+                            ? `Submission is closed. Available only from ${submissionWindow.startDate} ${submissionWindow.startTimeLabel ?? submissionWindow.startTime ?? ""} to ${submissionWindow.endDate} ${submissionWindow.endTimeLabel ?? submissionWindow.endTime ?? ""}.`
+                            : "Submission is not configured yet. Please wait for the admin to open the submission window."}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>

@@ -1,24 +1,14 @@
 import { AppShell } from "@/components/layout/app-shell";
-import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
+import { FacultyRequirementsModule } from "@/features/faculty-management/components/faculty-requirements-module";
 
 export default function FacultyCompliancePage() {
   return (
     <AppShell
-      title="Compliance Checklist"
-      subtitle="Requirement visibility is generated from curriculum and teaching load"
+      title="Requirements"
+      subtitle="Submit documents and track validation status in one place"
       nav={[{ href: "/faculty/dashboard", label: "Dashboard" }]}
     >
-      <div className="space-y-3">
-        {DEFAULT_REQUIREMENTS.map((item) => (
-          <article
-            key={item}
-            className="rounded-lg border border-slate-700 bg-slate-900 p-4"
-          >
-            <p className="font-medium">{item}</p>
-            <p className="text-sm text-slate-400">Status: not_started</p>
-          </article>
-        ))}
-      </div>
+      <FacultyRequirementsModule />
     </AppShell>
   );
 }
