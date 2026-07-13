@@ -74,22 +74,11 @@ export async function sendInviteEmail({
   const subject = "PUP FOCUS - Account access";
   const text = `Hello ${fullName},\n\nYour ${roleLower} account is ready. Use the link below to continue:\n\n${link}\n\nIf you did not expect this, ignore this message.`;
 
-  const html = `
-    <div>
-      <p>Hello ${fullName},</p>
-      <p>Your <strong>${roleLower}</strong> account is ready. Use the link below to continue:</p>
-      <p><a href="${link}">Open account access</a></p>
-      <p>If you did not expect this, ignore this message.</p>
-    </div>
-  `;
-
   const info = await transporter.sendMail({
     from: formatDisplayFromAddress(fromAddress),
-    replyTo: fromAddress,
     to: normalizeEmailAddress(to),
     subject,
     text,
-    html,
   });
 
   return info;
@@ -135,25 +124,12 @@ export async function sendTempPasswordEmail({
 
   const subject = "PUP FOCUS - Login details";
   const text = `Hello ${fullName},\n\nYour account is ready. Use the temporary password below to sign in to PUP FOCUS:\n\n${tempPassword}\n\nPlease sign in and change your password after logging in.`;
-  const escapedFullName = escapeHtml(fullName);
-  const escapedTempPassword = escapeHtml(tempPassword);
-
-  const html = `
-    <div>
-      <p>Hello ${escapedFullName},</p>
-      <p>Your account is ready. Use the temporary password below to sign in to <strong>PUP FOCUS</strong>:</p>
-      <p><code>${escapedTempPassword}</code></p>
-      <p>Please sign in and change your password after logging in.</p>
-    </div>
-  `;
 
   const info = await transporter.sendMail({
     from: formatDisplayFromAddress(fromAddress),
-    replyTo: fromAddress,
     to: normalizeEmailAddress(to),
     subject,
     text,
-    html,
   });
 
   return info;
