@@ -23,6 +23,13 @@ interface AdminAccount {
   profile_id: string;
   full_name: string;
   email: string;
+  profileImageUrl?: string | null;
+  profile?: {
+    firstName?: string | null;
+    middleName?: string | null;
+    lastName?: string | null;
+    fullName?: string | null;
+  } | null;
   role: AppRole;
   is_active: boolean;
   department?: string | null;
@@ -57,6 +64,17 @@ type CreateAdminResult = {
   link?: string | null;
   user?: { email?: string; fullName?: string } | null;
 };
+
+function buildAdminFullName(input: {
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+}) {
+  return [input.firstName, input.middleName, input.lastName]
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part))
+    .join(" ");
+}
 
 export function SuperAdminDashboard({
   adminName,
@@ -111,11 +129,22 @@ export function SuperAdminDashboard({
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteModalMessage, setInviteModalMessage] = useState("");
   const [inviteWasSent, setInviteWasSent] = useState(false);
+  const [createAdminFirstName, setCreateAdminFirstName] = useState("");
+  const [createAdminMiddleName, setCreateAdminMiddleName] = useState("");
+  const [createAdminLastName, setCreateAdminLastName] = useState("");
+  const [createAdminProfileImage, setCreateAdminProfileImage] =
+    useState<File | null>(null);
+  const [createAdminProfileImagePreview, setCreateAdminProfileImagePreview] =
+    useState<string | null>(null);
 
   function openCreateAdminModal() {
     setError(null);
     setSuccess(null);
-    setFullName("");
+    setCreateAdminFirstName("");
+    setCreateAdminMiddleName("");
+    setCreateAdminLastName("");
+    setCreateAdminProfileImage(null);
+    setCreateAdminProfileImagePreview(null);
     setEmail("");
     setCreateAdminModalOpen(true);
   }
@@ -125,6 +154,11 @@ export function SuperAdminDashboard({
     setIsSubmitting(false);
     setError(null);
     setSuccess(null);
+    if (createAdminProfileImagePreview) {
+      URL.revokeObjectURL(createAdminProfileImagePreview);
+    }
+    setCreateAdminProfileImage(null);
+    setCreateAdminProfileImagePreview(null);
   }
 
   async function loadAdminAccounts() {
@@ -234,7 +268,27 @@ export function SuperAdminDashboard({
     setSuccess(null);
     setIsSubmitting(true);
 
+    const firstName = createAdminFirstName.trim();
+    const middleName = createAdminMiddleName.trim();
+    const lastName = createAdminLastName.trim();
     const normalizedEmail = email.trim().toLowerCase();
+    const fullName = buildAdminFullName({
+      firstName,
+      middleName,
+      lastName,
+    });
+
+    if (!firstName || !lastName) {
+      setError("First name and last name are required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!fullName) {
+      setError("Please provide the admin name details.");
+      setIsSubmitting(false);
+      return;
+    }
 
     if (!isValidEmailAddress(normalizedEmail)) {
       setError("Please provide a real email address.");
@@ -243,12 +297,19 @@ export function SuperAdminDashboard({
     }
 
     try {
+      const body = new FormData();
+      body.append("firstName", firstName);
+      body.append("middleName", middleName);
+      body.append("lastName", lastName);
+      body.append("email", normalizedEmail);
+
+      if (createAdminProfileImage) {
+        body.append("profileImage", createAdminProfileImage);
+      }
+
       const response = await fetch("/api/super-admin/admin/create", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ fullName, email: normalizedEmail }),
+        body,
       });
 
       const data = (await response.json()) as CreateAdminResult;
@@ -271,7 +332,14 @@ export function SuperAdminDashboard({
       setInviteModalOpen(true);
       setSuccess(inviteMessage);
       setCreateAdminModalOpen(false);
-      setFullName("");
+      setCreateAdminFirstName("");
+      setCreateAdminMiddleName("");
+      setCreateAdminLastName("");
+      if (createAdminProfileImagePreview) {
+        URL.revokeObjectURL(createAdminProfileImagePreview);
+      }
+      setCreateAdminProfileImage(null);
+      setCreateAdminProfileImagePreview(null);
       setEmail("");
       void (async () => {
         try {
@@ -578,8 +646,31 @@ export function SuperAdminDashboard({
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-semibold text-slate-100">{admin.full_name}</p>
-            <p className="text-sm text-slate-400">{admin.email}</p>
+            <div className="flex items-center gap-3">
+              {admin.profileImageUrl ? (
+                <img
+                  src={admin.profileImageUrl}
+                  alt={admin.full_name}
+                  className="h-12 w-12 rounded-full border border-slate-700 object-cover"
+                />
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-xs font-semibold text-slate-300">
+                  {admin.full_name
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")
+                    .toUpperCase()}
+                </div>
+              )}
+              <div>
+                <p className="font-semibold text-slate-100">
+                  {admin.full_name}
+                </p>
+                <p className="text-sm text-slate-400">{admin.email}</p>
+              </div>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-300">
@@ -1076,23 +1167,131 @@ export function SuperAdminDashboard({
               </Button>
             </div>
 
+            <div className="mt-5 rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000]/70 p-4">
+              <p className="text-xs uppercase tracking-[0.24em] text-[#ffd700]">
+                Profile
+              </p>
+              <p className="mt-2 text-sm text-[#fff8e7]">
+                Super Admin account profile
+              </p>
+            </div>
+
             <form className="mt-6 space-y-4" onSubmit={onSubmit}>
               <div>
                 <label
                   className="block text-sm font-medium text-[#fff8e7]"
-                  htmlFor="fullName"
+                  htmlFor="profileImage"
                 >
-                  Full Name
+                  Profile Image
                 </label>
                 <input
-                  id="fullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                  required
-                  placeholder="Juan Dela Cruz"
-                  className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                  id="profileImage"
+                  type="file"
+                  accept="image/*"
+                  className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none file:mr-3 file:rounded-md file:border-0 file:bg-[#ffd700] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[#3b0000] focus:ring focus:ring-[#ffd700]/40"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    setCreateAdminProfileImage(file);
+                    if (createAdminProfileImagePreview) {
+                      URL.revokeObjectURL(createAdminProfileImagePreview);
+                    }
+                    setCreateAdminProfileImagePreview(
+                      file ? URL.createObjectURL(file) : null,
+                    );
+                  }}
                 />
+                <p className="mt-1 text-xs text-[#d8b882]">
+                  Upload a square image for the admin profile.
+                </p>
+                {createAdminProfileImagePreview ? (
+                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000]/80 p-3">
+                    <img
+                      src={createAdminProfileImagePreview}
+                      alt="Selected profile preview"
+                      className="h-16 w-16 rounded-full border border-[rgba(255,215,0,0.18)] object-cover"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm text-[#fff8e7]">Selected image</p>
+                      <p className="truncate text-xs text-[#d8b882]">
+                        {createAdminProfileImage?.name ?? "Preview available"}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label
+                    className="block text-sm font-medium text-[#fff8e7]"
+                    htmlFor="firstName"
+                  >
+                    First Name
+                  </label>
+                  <input
+                    id="firstName"
+                    type="text"
+                    value={createAdminFirstName}
+                    onChange={(event) =>
+                      setCreateAdminFirstName(event.target.value)
+                    }
+                    required
+                    placeholder="Juan"
+                    className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className="block text-sm font-medium text-[#fff8e7]"
+                    htmlFor="middleName"
+                  >
+                    Middle Name
+                  </label>
+                  <input
+                    id="middleName"
+                    type="text"
+                    value={createAdminMiddleName}
+                    onChange={(event) =>
+                      setCreateAdminMiddleName(event.target.value)
+                    }
+                    placeholder="Santos"
+                    className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className="block text-sm font-medium text-[#fff8e7]"
+                    htmlFor="lastName"
+                  >
+                    Last Name
+                  </label>
+                  <input
+                    id="lastName"
+                    type="text"
+                    value={createAdminLastName}
+                    onChange={(event) =>
+                      setCreateAdminLastName(event.target.value)
+                    }
+                    required
+                    placeholder="Dela Cruz"
+                    className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000]/70 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-[#ffd700]">
+                  Full Name Preview
+                </p>
+                <p className="mt-2 text-sm text-[#fff8e7]">
+                  {buildAdminFullName({
+                    firstName: createAdminFirstName,
+                    middleName: createAdminMiddleName,
+                    lastName: createAdminLastName,
+                  }) || "Enter the name parts above"}
+                </p>
               </div>
 
               <div>

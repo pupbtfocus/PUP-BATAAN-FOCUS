@@ -2,6 +2,46 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { FACULTY_PROFILE_IMAGE_BUCKET } from "@/lib/faculty-profile";
+
+function buildProfileName(
+  metadata: Record<string, unknown> | null | undefined,
+) {
+  const firstName =
+    typeof metadata?.first_name === "string" ? metadata.first_name.trim() : "";
+  const middleName =
+    typeof metadata?.middle_name === "string"
+      ? metadata.middle_name.trim()
+      : "";
+  const lastName =
+    typeof metadata?.last_name === "string" ? metadata.last_name.trim() : "";
+  const fullName =
+    typeof metadata?.full_name === "string" ? metadata.full_name.trim() : "";
+
+  return {
+    firstName: firstName || null,
+    middleName: middleName || null,
+    lastName: lastName || null,
+    fullName: fullName || null,
+  };
+}
+
+function buildProfileImageReference(
+  metadata: Record<string, unknown> | null | undefined,
+) {
+  const bucket =
+    typeof metadata?.profile_image_bucket === "string" &&
+    metadata.profile_image_bucket.trim()
+      ? metadata.profile_image_bucket.trim()
+      : FACULTY_PROFILE_IMAGE_BUCKET;
+  const path =
+    typeof metadata?.profile_image_path === "string" &&
+    metadata.profile_image_path.trim()
+      ? metadata.profile_image_path.trim()
+      : null;
+
+  return { bucket, path };
+}
 
 export async function GET() {
   const sessionClient = await createServerSupabaseClient();
@@ -62,6 +102,26 @@ export async function GET() {
       );
     }
 
+    const appUserByProfileId = new Map(
+      (appUsers ?? []).map((item) => [item.profile_id, item]),
+    );
+
+    const metadataByProfileId = new Map<string, Record<string, unknown>>();
+
+    await Promise.all(
+      (appUsers ?? []).map(async (item) => {
+        const authUserMetadata = item.auth_user_id
+          ? ((await supabase.auth.admin.getUserById(item.auth_user_id)).data
+              .user?.user_metadata ?? {})
+          : {};
+
+        metadataByProfileId.set(item.profile_id, {
+          ...authUserMetadata,
+          ...(item.metadata as Record<string, unknown> | null | undefined),
+        });
+      }),
+    );
+
     const authUserByProfileId = new Map(
       (appUsers ?? []).map((item) => [item.profile_id, item.auth_user_id]),
     );
@@ -70,10 +130,49 @@ export async function GET() {
       (appUsers ?? []).map((item) => [item.profile_id, item.role]),
     );
 
+    const profileNameByProfileId = new Map(
+      [...metadataByProfileId.entries()].map(([profileId, metadata]) => [
+        profileId,
+        buildProfileName(metadata),
+      ]),
+    );
+
+    const imageReferenceByProfileId = new Map(
+      [...metadataByProfileId.entries()].map(([profileId, metadata]) => [
+        profileId,
+        buildProfileImageReference(metadata),
+      ]),
+    );
+
+    const profileImageUrlByProfileId = new Map<string, string | null>();
+
+    await Promise.all(
+      (appUsers ?? []).map(async (item) => {
+        const imageReference = imageReferenceByProfileId.get(item.profile_id);
+
+        if (!imageReference?.path) {
+          profileImageUrlByProfileId.set(item.profile_id, null);
+          return;
+        }
+
+        const { data: signedImage, error: signedImageError } =
+          await supabase.storage
+            .from(imageReference.bucket)
+            .createSignedUrl(imageReference.path, 60 * 60 * 24);
+
+        profileImageUrlByProfileId.set(
+          item.profile_id,
+          signedImageError ? null : (signedImage?.signedUrl ?? null),
+        );
+      }),
+    );
+
     const enrichedAdmins = (admins ?? []).map((admin) => ({
       ...admin,
       auth_user_id: authUserByProfileId.get(admin.profile_id) ?? null,
       role: roleByProfileId.get(admin.profile_id) ?? ROLE.ADMIN,
+      profile: profileNameByProfileId.get(admin.profile_id) ?? null,
+      profileImageUrl: profileImageUrlByProfileId.get(admin.profile_id) ?? null,
     }));
 
     return NextResponse.json({ admins: enrichedAdmins });
