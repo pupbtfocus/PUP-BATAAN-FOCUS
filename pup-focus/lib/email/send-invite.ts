@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { ROLE, ROLE_LABEL, type AppRole } from "../../config/roles.ts";
+import { ROLE, ROLE_LABEL, type AppRole } from "../../config/roles";
 
 function normalizeSmtpValue(value: string | undefined) {
   return value?.trim() || "";
