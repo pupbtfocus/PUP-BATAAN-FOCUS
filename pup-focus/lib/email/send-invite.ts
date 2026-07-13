@@ -13,6 +13,13 @@ function normalizeEmailAddress(value: string) {
   return value.trim();
 }
 
+function formatDisplayFromAddress(address: string) {
+  return {
+    name: "PUP FOCUS",
+    address,
+  };
+}
+
 type SendInviteOpts = {
   to: string;
   link: string;
@@ -58,17 +65,28 @@ export async function sendInviteEmail({
   const subject = `PUP FOCUS - ${roleLabel} invitation`;
   const text = `Hello ${fullName},\n\nYou have been invited to be a ${roleLower} for PUP FOCUS. Click the link to accept the invitation:\n\n${link}\n\nIf you did not expect this, ignore this message.`;
 
-  const html = `<p>Hello ${fullName},</p>
-  <p>You have been invited to be a <strong>${roleLower}</strong> for PUP FOCUS.</p>
-  <p><a href="${link}">Click here to accept the invitation</a></p>
-  <p>If you did not expect this, ignore this message.</p>`;
+  const html = `
+    <div>
+      <p>Hello ${fullName},</p>
+      <p>You have been invited to be a <strong>${roleLower}</strong> for PUP FOCUS.</p>
+      <p><a href="${link}">Click here to accept the invitation</a></p>
+      <p>If you did not expect this, ignore this message.</p>
+    </div>
+  `;
 
   const info = await transporter.sendMail({
-    from: fromAddress,
+    from: formatDisplayFromAddress(fromAddress),
+    replyTo: fromAddress,
+    sender: user,
     to: normalizeEmailAddress(to),
     subject,
     text,
     html,
+    headers: {
+      "X-Priority": "1",
+      "X-MSMail-Priority": "High",
+      Importance: "high",
+    },
   });
 
   return info;
@@ -115,17 +133,28 @@ export async function sendTempPasswordEmail({
   const subject = "PUP FOCUS — Your temporary password";
   const text = `Hello ${fullName},\n\nYour email has been verified. You can sign in to PUP FOCUS with the following temporary password:\n\n${tempPassword}\n\nPlease sign in and change your password immediately. If you did not request this, contact your administrator.`;
 
-  const html = `<p>Hello ${fullName},</p>
-  <p>Your email has been verified. You can sign in to <strong>PUP FOCUS</strong> with the following temporary password:</p>
-  <pre style="background:#111;padding:8px;border-radius:6px;color:#fff;">${tempPassword}</pre>
-  <p>Please sign in and change your password immediately. If you did not request this, contact your administrator.</p>`;
+  const html = `
+    <div>
+      <p>Hello ${fullName},</p>
+      <p>Your email has been verified. You can sign in to <strong>PUP FOCUS</strong> with the following temporary password:</p>
+      <pre>${tempPassword}</pre>
+      <p>Please sign in and change your password immediately. If you did not request this, contact your administrator.</p>
+    </div>
+  `;
 
   const info = await transporter.sendMail({
-    from: fromAddress,
+    from: formatDisplayFromAddress(fromAddress),
+    replyTo: fromAddress,
+    sender: user,
     to: normalizeEmailAddress(to),
     subject,
     text,
     html,
+    headers: {
+      "X-Priority": "1",
+      "X-MSMail-Priority": "High",
+      Importance: "high",
+    },
   });
 
   return info;
