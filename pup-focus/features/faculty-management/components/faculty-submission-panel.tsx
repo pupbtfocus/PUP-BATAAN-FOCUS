@@ -443,7 +443,7 @@ export function FacultySubmissionPanel({
           {[
             ["dashboard", "Dashboard"],
             ["history", "Past Submissions"],
-            ["status", "Requirement Status"],
+            ["status", "Requirements Management"],
           ].map(([key, label]) => {
             const isActive = activeView === key;
             return (
@@ -478,10 +478,10 @@ export function FacultySubmissionPanel({
                 <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
                   <h3 className="text-lg font-semibold text-amber-300">
                     {activeView === "submit"
-                      ? "Submit a Requirement"
+                      ? "Submit Requirements"
                       : activeView === "history"
                         ? "Past Submissions"
-                        : "Validation Status"}
+                        : "Requirements Management"}
                   </h3>
                 </div>
               </div>
@@ -911,7 +911,7 @@ export function FacultySubmissionPanel({
                       onClick={openSubmitModal}
                       className="whitespace-nowrap rounded-md border border-amber-400 bg-amber-400 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-300"
                     >
-                      Submit Req
+                      Submit Requirements
                     </button>
                     <button
                       type="button"
@@ -1149,7 +1149,7 @@ export function FacultySubmissionPanel({
                   <div className="flex items-start justify-between border-b border-slate-700 px-6 py-5">
                     <div>
                       <h3 className="text-lg font-semibold text-amber-300">
-                        Submit Req
+                        Submit Requirements
                       </h3>
                       <p className="text-sm text-slate-400">
                         Upload and submit the selected requirement.
@@ -1302,7 +1302,22 @@ export function FacultySubmissionPanel({
 
                         <div className="flex items-center gap-3">
                           <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Submitting..." : "Submit Req"}
+                            {isSubmitting
+                              ? "Submitting..."
+                              : "Submit Requirements"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() =>
+                              window.open(
+                                "https://www.pup.edu.ph/about/calendar",
+                                "_blank",
+                                "noopener,noreferrer",
+                              )
+                            }
+                          >
+                            University Calendar
                           </Button>
                           <button
                             type="button"
