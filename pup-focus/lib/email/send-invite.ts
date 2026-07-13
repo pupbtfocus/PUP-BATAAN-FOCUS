@@ -29,6 +29,24 @@ function formatDisplayFromAddress(address: string) {
   };
 }
 
+function getAppBaseUrl() {
+  const configuredBase = [
+    process.env.APP_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.SITE_URL,
+    process.env.URL,
+  ]
+    .find(Boolean)
+    ?.trim();
+
+  return (configuredBase || "https://pup-focus.local").replace(/\/$/, "");
+}
+
+function buildAppUrl(path: string) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${getAppBaseUrl()}${normalizedPath}`;
+}
+
 function buildEmailLayout({
   title,
   intro,
@@ -36,6 +54,7 @@ function buildEmailLayout({
   actionLabel,
   actionHref,
   footerNote,
+  logoSrc,
 }: {
   title: string;
   intro: string;
@@ -43,10 +62,12 @@ function buildEmailLayout({
   actionLabel?: string;
   actionHref?: string;
   footerNote?: string;
+  logoSrc?: string;
 }) {
   const safeActionLabel = actionLabel ? escapeHtml(actionLabel) : "";
   const safeActionHref = actionHref ? escapeHtml(actionHref) : "";
   const safeFooterNote = footerNote ? escapeHtml(footerNote) : "";
+  const safeLogoSrc = logoSrc ? escapeHtml(logoSrc) : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -59,7 +80,10 @@ function buildEmailLayout({
     <table role="presentation" width="100%" style="max-width:620px;margin:0 auto;background:#ffffff;border-collapse:collapse;border-radius:16px;overflow:hidden;box-shadow:0 12px 30px rgba(77,0,0,0.12);">
       <tr>
         <td style="background:linear-gradient(135deg,#4d0000 0%,#7a0000 100%);padding:28px 32px;text-align:center;">
-          <div style="display:inline-block;padding:10px 14px;border:1px solid rgba(255,215,0,0.35);border-radius:999px;background:rgba(255,255,255,0.08);color:#fff8e7;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;">PUP FOCUS</div>
+          <div style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:10px 14px;border:1px solid rgba(255,215,0,0.35);border-radius:999px;background:rgba(255,255,255,0.08);color:#fff8e7;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;">
+            ${safeLogoSrc ? `<img src="${safeLogoSrc}" alt="PUP seal" width="28" height="28" style="display:block;" />` : ""}
+            <span>PUP FOCUS</span>
+          </div>
           <h1 style="margin:14px 0 6px;font-size:28px;line-height:1.2;color:#fff8e7;">${escapeHtml(title)}</h1>
           <p style="margin:0;font-size:15px;line-height:1.6;color:#f8e3bc;">${escapeHtml(intro)}</p>
         </td>
@@ -105,15 +129,18 @@ export function buildInviteEmailHtml({
     actionLabel: "Open invitation",
     actionHref: link,
     footerNote: `If you did not expect this invitation, you can ignore this email.`,
+    logoSrc: buildAppUrl("/icons/pup-seal.png"),
   });
 }
 
 export function buildTempPasswordEmailHtml({
   fullName,
   tempPassword,
+  signInHref,
 }: {
   fullName: string;
   tempPassword: string;
+  signInHref?: string;
 }) {
   const safeFullName = escapeHtml(fullName);
   const safeTempPassword = escapeHtml(tempPassword);
@@ -122,7 +149,10 @@ export function buildTempPasswordEmailHtml({
     title: "Temporary Password",
     intro: `Hello ${safeFullName}, your account is ready.`,
     body: `Use the temporary password below to sign in to PUP FOCUS. After you sign in, please change your password immediately for security.`,
+    actionLabel: "Sign in",
+    actionHref: signInHref || buildAppUrl("/auth/sign-in"),
     footerNote: `Temporary password: ${safeTempPassword}`,
+    logoSrc: buildAppUrl("/icons/pup-seal.png"),
   });
 }
 
@@ -229,6 +259,7 @@ export async function sendTempPasswordEmail({
   const html = buildTempPasswordEmailHtml({
     fullName,
     tempPassword,
+    signInHref: buildAppUrl("/auth/sign-in"),
   });
 
   const info = await transporter.sendMail({
