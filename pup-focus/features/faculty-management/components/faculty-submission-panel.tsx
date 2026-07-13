@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
+import { FacultySettingsPanel } from "@/features/faculty-management/components/faculty-settings-panel";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -13,7 +14,13 @@ import {
 } from "@/config/compliance";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
-const PANEL_VIEWS = ["dashboard", "submit", "history", "status"] as const;
+const PANEL_VIEWS = [
+  "dashboard",
+  "submit",
+  "history",
+  "status",
+  "settings",
+] as const;
 const LOGIN_PAGE_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
   "/images/attachments/IMG_9402.jpeg",
@@ -355,6 +362,7 @@ export function FacultySubmissionPanel({
             ["dashboard", "Dashboard"],
             ["status", "Requirements Management"],
             ["history", "Past Submissions"],
+            ["settings", "Settings"],
           ].map(([key, label]) => {
             const isActive = activeView === key;
             return (
@@ -392,7 +400,9 @@ export function FacultySubmissionPanel({
                       ? "Submit Requirements"
                       : activeView === "history"
                         ? "Past Submissions"
-                        : "Requirements Management"}
+                        : activeView === "settings"
+                          ? "Settings"
+                          : "Requirements Management"}
                   </h3>
                 </div>
               </div>
@@ -988,6 +998,12 @@ export function FacultySubmissionPanel({
                     </p>
                   )}
                 </div>
+              </article>
+            )}
+
+            {activeView === "settings" && (
+              <article className="min-h-[calc(100vh-4rem-3rem)] p-6 pt-0">
+                <FacultySettingsPanel />
               </article>
             )}
 
