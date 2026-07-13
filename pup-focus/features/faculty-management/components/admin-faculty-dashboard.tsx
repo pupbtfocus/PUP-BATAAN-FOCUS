@@ -37,6 +37,11 @@ type FacultyAccount = {
   requirementStatus: Record<RequirementCode, RequirementStatus>;
 };
 
+type PendingFacultyAction = {
+  kind: "delete" | "deactivate";
+  facultyId: string;
+};
+
 type CreateFacultyResult = {
   success?: boolean;
   error?: string;
@@ -145,6 +150,11 @@ export function AdminFacultyDashboard({
   const [loadingFacultyIds, setLoadingFacultyIds] = useState<Set<string>>(
     new Set(),
   );
+  const [deletingFacultyIds, setDeletingFacultyIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [pendingFacultyAction, setPendingFacultyAction] =
+    useState<PendingFacultyAction | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [detailsFacultyId, setDetailsFacultyId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -188,6 +198,32 @@ export function AdminFacultyDashboard({
       null,
     [facultyAccounts, selectedFacultyId],
   );
+
+  const pendingFaculty = useMemo(
+    () =>
+      pendingFacultyAction
+        ? (facultyAccounts.find(
+            (faculty) => faculty.id === pendingFacultyAction.facultyId,
+          ) ?? null)
+        : null,
+    [facultyAccounts, pendingFacultyAction],
+  );
+
+  async function confirmPendingFacultyAction() {
+    if (!pendingFacultyAction) {
+      return;
+    }
+
+    const { kind, facultyId } = pendingFacultyAction;
+    setPendingFacultyAction(null);
+
+    if (kind === "delete") {
+      await performDeleteFaculty(facultyId);
+      return;
+    }
+
+    await performDeactivateFaculty(facultyId);
+  }
 
   async function onAddFaculty(input: FacultyAccountFormInput) {
     setIsCreating(true);
@@ -243,8 +279,12 @@ export function AdminFacultyDashboard({
     }
   }
 
-  async function onDeleteFaculty(facultyId: string) {
-    setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
+  function onDeleteFaculty(facultyId: string) {
+    setPendingFacultyAction({ kind: "delete", facultyId });
+  }
+
+  async function performDeleteFaculty(facultyId: string) {
+    setDeletingFacultyIds((prev) => new Set(prev).add(facultyId));
     setDeleteError(null);
     setDeleteSuccess(null);
 
@@ -297,7 +337,7 @@ export function AdminFacultyDashboard({
           : "An error occurred while deleting the faculty account",
       );
     } finally {
-      setLoadingFacultyIds((prev) => {
+      setDeletingFacultyIds((prev) => {
         const next = new Set(prev);
         next.delete(facultyId);
         return next;
@@ -305,7 +345,11 @@ export function AdminFacultyDashboard({
     }
   }
 
-  async function onDeactivateFaculty(facultyId: string) {
+  function onDeactivateFaculty(facultyId: string) {
+    setPendingFacultyAction({ kind: "deactivate", facultyId });
+  }
+
+  async function performDeactivateFaculty(facultyId: string) {
     setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
     setFacultyActionError(null);
 
@@ -527,6 +571,7 @@ export function AdminFacultyDashboard({
                     onActivate={onActivateFaculty}
                     onDeactivate={onDeactivateFaculty}
                     loadingFacultyIds={loadingFacultyIds}
+                    deletingFacultyIds={deletingFacultyIds}
                     deleteError={deleteError}
                     deleteSuccess={deleteSuccess}
                     facultyActionError={facultyActionError}
@@ -578,6 +623,61 @@ export function AdminFacultyDashboard({
           onClose={() => setDetailsModalOpen(false)}
         />
       )}
+
+      {pendingFacultyAction ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-red-500/20 bg-[#230606]/95 p-6 shadow-2xl shadow-black/40">
+            <p className="text-xs uppercase tracking-[0.28em] text-red-300/80">
+              {pendingFacultyAction.kind === "delete"
+                ? "Confirm Delete"
+                : "Confirm Deactivate"}
+            </p>
+            <h3 className="mt-3 text-2xl font-semibold text-[#fff8e7]">
+              {pendingFacultyAction.kind === "delete"
+                ? "Delete this faculty account?"
+                : "Deactivate this faculty account?"}
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              {pendingFaculty ? (
+                <>
+                  <span className="font-medium text-[#fff8e7]">
+                    {pendingFaculty.fullName}
+                  </span>{" "}
+                  ({pendingFaculty.email}) will be affected.
+                </>
+              ) : null}
+            </p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              {pendingFacultyAction.kind === "delete"
+                ? "This permanently removes the account and its access. The action cannot be undone."
+                : "This temporarily removes access to the system until the account is reactivated."}
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setPendingFacultyAction(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={confirmPendingFacultyAction}
+                className={
+                  pendingFacultyAction.kind === "delete"
+                    ? "bg-red-600 text-white hover:bg-red-500"
+                    : "bg-amber-500 text-slate-950 hover:bg-amber-400"
+                }
+              >
+                {pendingFacultyAction.kind === "delete"
+                  ? "Delete Account"
+                  : "Deactivate Account"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {inviteModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
@@ -1219,6 +1319,7 @@ function FacultyListPanel({
   onActivate,
   onDeactivate,
   loadingFacultyIds,
+  deletingFacultyIds,
   deleteError,
   deleteSuccess,
   facultyActionError,
@@ -1232,6 +1333,7 @@ function FacultyListPanel({
   onActivate: (facultyId: string) => void;
   onDeactivate: (facultyId: string) => void;
   loadingFacultyIds: Set<string>;
+  deletingFacultyIds: Set<string>;
   deleteError: string | null;
   deleteSuccess: string | null;
   facultyActionError: string | null;
@@ -1321,6 +1423,14 @@ function FacultyListPanel({
                   </button>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onViewDetails(faculty.id)}
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      View Details
+                    </Button>
                     {faculty.is_active ? (
                       <Button
                         variant="secondary"
@@ -1349,18 +1459,13 @@ function FacultyListPanel({
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => onViewDetails(faculty.id)}
-                      className="text-blue-400 hover:text-blue-300"
-                    >
-                      View Details
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
                       onClick={() => onDeleteFaculty(faculty.id)}
+                      disabled={deletingFacultyIds.has(faculty.id)}
                       className="text-red-400 hover:text-red-300"
                     >
-                      Delete
+                      {deletingFacultyIds.has(faculty.id)
+                        ? "Deleting..."
+                        : "Delete"}
                     </Button>
                   </div>
                 </div>
