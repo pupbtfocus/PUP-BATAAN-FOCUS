@@ -237,7 +237,7 @@ export async function PATCH(request: NextRequest) {
     const previousProfileName = profile.full_name;
     const previousAppUserName = appUser.full_name ?? null;
 
-    const updatedMetadata = {
+    const updatedMetadata: Record<string, unknown> = {
       ...previousAppUserMetadata,
       first_name: firstName,
       middle_name: middleName || null,
