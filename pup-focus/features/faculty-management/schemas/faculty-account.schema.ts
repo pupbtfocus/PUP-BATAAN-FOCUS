@@ -1,7 +1,22 @@
 import { z } from "zod";
 
+const requiredNameSchema = z.preprocess(
+  (value) => (typeof value === "string" ? value.trim() : ""),
+  z
+    .string()
+    .min(1, "This field is required")
+    .max(80, "Use 80 characters or less"),
+);
+
+const optionalNameSchema = z.preprocess(
+  (value) => (typeof value === "string" ? value.trim() : ""),
+  z.string().max(80, "Use 80 characters or less"),
+);
+
 export const facultyAccountSchema = z.object({
-  fullName: z.string().trim().min(3, "Full name must be at least 3 characters"),
+  firstName: requiredNameSchema,
+  middleName: optionalNameSchema,
+  lastName: requiredNameSchema,
   email: z.email("Enter a valid email address"),
 });
 
