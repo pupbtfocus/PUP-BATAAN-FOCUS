@@ -121,16 +121,18 @@ export function FacultySettingsPanel() {
         body: formData,
       });
 
-      const payload = (await response.json()) as
-        | FacultyAccountResponse
-        | { error?: string };
+      const payload = (await response.json()) as unknown;
 
       if (!response.ok) {
-        throw new Error(
-          typeof payload.error === "string"
-            ? payload.error
-            : "Failed to update faculty account",
-        );
+        const errorMessage =
+          typeof payload === "object" &&
+          payload !== null &&
+          "error" in payload &&
+          typeof (payload as { error?: unknown }).error === "string"
+            ? (payload as { error: string }).error
+            : "Failed to update faculty account";
+
+        throw new Error(errorMessage);
       }
 
       const updatedAccount = payload as FacultyAccountResponse;
