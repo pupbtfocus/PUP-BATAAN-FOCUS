@@ -281,21 +281,23 @@ export function FacultyRequirementsModule() {
               Current validation status for each required document.
             </p>
           </div>
-          <Button
-            type="button"
-            className="w-full sm:w-auto"
-            onClick={openModal}
-          >
-            Submit Requirements
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full sm:w-auto"
-            onClick={openCalendarModal}
-          >
-            University Calendar
-          </Button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button
+              type="button"
+              className="w-full sm:w-auto"
+              onClick={openCalendarModal}
+              variant="secondary"
+            >
+              University Calendar
+            </Button>
+            <Button
+              type="button"
+              className="w-full sm:w-auto"
+              onClick={openModal}
+            >
+              Submit Requirements
+            </Button>
+          </div>
         </div>
 
         {message ? (
