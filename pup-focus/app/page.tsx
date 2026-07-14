@@ -521,11 +521,7 @@ export default function Home() {
                   {authModal.actionLabel}
                 </Button>
               </div>
-            ) : (
-              <p className="mt-6 text-sm text-[#ffd700]">
-                You’ll be redirected automatically.
-              </p>
-            )}
+            ) : null}
           </div>
         </div>
       ) : null}
