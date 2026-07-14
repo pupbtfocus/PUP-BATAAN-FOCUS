@@ -21,5 +21,7 @@ export const PUBLIC_ROUTES = [
   "/contact",
   "/api/auth/callback",
   "/api/bootstrap/super-admin",
+  "/email-preview",
+  "/api/email/preview",
   ...AUTH_ROUTES,
 ];

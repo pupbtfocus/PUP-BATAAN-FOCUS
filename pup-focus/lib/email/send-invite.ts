@@ -80,11 +80,10 @@ function buildEmailLayout({
     <table role="presentation" width="100%" style="max-width:620px;margin:0 auto;background:#ffffff;border-collapse:collapse;border-radius:16px;overflow:hidden;box-shadow:0 12px 30px rgba(77,0,0,0.12);">
       <tr>
         <td style="background:linear-gradient(135deg,#4d0000 0%,#7a0000 100%);padding:28px 32px;text-align:center;">
-          <div style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:10px 14px;border:1px solid rgba(255,215,0,0.35);border-radius:999px;background:rgba(255,255,255,0.08);color:#fff8e7;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;">
-            ${safeLogoSrc ? `<img src="${safeLogoSrc}" alt="PUP seal" width="28" height="28" style="display:block;" />` : ""}
-            <span>PUP FOCUS</span>
+          <div style="display:flex;align-items:center;justify-content:center;padding:14px;border-radius:999px;background:rgba(255,255,255,0.08);">
+            ${safeLogoSrc ? `<img src="${safeLogoSrc}" alt="PUP seal" width="48" height="48" style="display:block;" />` : ""}
           </div>
-          <h1 style="margin:14px 0 6px;font-size:28px;line-height:1.2;color:#fff8e7;">${escapeHtml(title)}</h1>
+          <h1 style="margin:18px 0 6px;font-size:28px;line-height:1.2;color:#fff8e7;">${escapeHtml(title)}</h1>
           <p style="margin:0;font-size:15px;line-height:1.6;color:#f8e3bc;">${escapeHtml(intro)}</p>
         </td>
       </tr>
@@ -97,11 +96,6 @@ function buildEmailLayout({
               : ""
           }
           <p style="margin:0;font-size:14px;line-height:1.7;color:#6b4b4b;">${safeFooterNote || "If you did not expect this message, you can safely ignore it."}</p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:20px 32px 30px;text-align:center;border-top:1px solid #f0e0d2;font-size:12px;color:#8d6d6d;">
-          This message was sent by PUP FOCUS. Please do not reply to this email.
         </td>
       </tr>
     </table>
