@@ -94,12 +94,39 @@ export function FacultySettingsPanel() {
       }
     }
 
-    loadAccount();
+    void loadAccount();
 
     return () => {
       isMounted = false;
     };
   }, []);
+
+  async function refreshAccount() {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch("/api/faculty/account");
+      if (!response.ok) {
+        throw new Error("Failed to load faculty account");
+      }
+
+      const data = (await response.json()) as FacultyAccountResponse;
+      setAccount(data);
+      setForm({
+        firstName: data.firstName,
+        middleName: data.middleName,
+        lastName: data.lastName,
+      });
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load faculty account",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   async function handleSaveName(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -167,6 +194,18 @@ export function FacultySettingsPanel() {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => void refreshAccount()}
+          disabled={isLoading}
+        >
+          {isLoading ? "Refreshing..." : "Refresh"}
+        </Button>
+      </div>
+
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <article className="rounded-2xl border border-slate-700 bg-slate-900/90 p-5 shadow-sm">
           <p className="text-xs uppercase tracking-[0.18em] text-amber-300">

@@ -181,34 +181,45 @@ export function SuperAdminDashboard({
     }
   }
 
+  async function loadAccountSettings() {
+    try {
+      setIsLoadingSettings(true);
+      setSettingsError(null);
+
+      const response = await fetch("/api/super-admin/account");
+      const data = (await response.json()) as SuperAdminAccountResult;
+
+      if (!response.ok || !data.account) {
+        setSettingsError(data.error ?? "Failed to load account settings");
+        return;
+      }
+
+      setSettingsFullName(data.account.fullName ?? "");
+      setSettingsEmail(data.account.email ?? "");
+    } catch {
+      setSettingsError("Error loading account settings");
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  }
+
+  async function refreshCurrentPanel() {
+    if (activeSection === "accounts") {
+      await loadAdminAccounts();
+      return;
+    }
+
+    if (activeSection === "settings") {
+      await loadAccountSettings();
+    }
+  }
+
   useEffect(() => {
     void loadAdminAccounts();
   }, []);
 
   useEffect(() => {
-    async function loadAccountSettings() {
-      try {
-        setIsLoadingSettings(true);
-        setSettingsError(null);
-
-        const response = await fetch("/api/super-admin/account");
-        const data = (await response.json()) as SuperAdminAccountResult;
-
-        if (!response.ok || !data.account) {
-          setSettingsError(data.error ?? "Failed to load account settings");
-          return;
-        }
-
-        setSettingsFullName(data.account.fullName ?? "");
-        setSettingsEmail(data.account.email ?? "");
-      } catch {
-        setSettingsError("Error loading account settings");
-      } finally {
-        setIsLoadingSettings(false);
-      }
-    }
-
-    loadAccountSettings();
+    void loadAccountSettings();
   }, []);
 
   const activeAccounts = useMemo(
@@ -830,10 +841,21 @@ export function SuperAdminDashboard({
 
             {activeSection === "accounts" ? (
               <article className="p-8">
-                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                  <h3 className="text-lg font-semibold text-amber-300">
-                    Admin Accounts
-                  </h3>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-amber-300">
+                      Admin Accounts
+                    </h3>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void refreshCurrentPanel()}
+                    disabled={isLoadingAccounts}
+                  >
+                    {isLoadingAccounts ? "Refreshing..." : "Refresh"}
+                  </Button>
                 </div>
 
                 <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -940,10 +962,21 @@ export function SuperAdminDashboard({
 
             {activeSection === "settings" ? (
               <article className="p-8">
-                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                  <h3 className="text-lg font-semibold text-amber-300">
-                    Settings
-                  </h3>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-amber-300">
+                      Settings
+                    </h3>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void refreshCurrentPanel()}
+                    disabled={isLoadingSettings}
+                  >
+                    {isLoadingSettings ? "Refreshing..." : "Refresh"}
+                  </Button>
                 </div>
 
                 <section className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]">
