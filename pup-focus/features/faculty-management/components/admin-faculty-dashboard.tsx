@@ -1376,6 +1376,20 @@ function FacultyListPanel({
   facultyActionError: string | null;
   onClearDeleteMessages: () => void;
 }) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredFacultyAccounts = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) {
+      return facultyAccounts;
+    }
+
+    return facultyAccounts.filter((faculty) => {
+      const haystack = `${faculty.fullName} ${faculty.email}`.toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [facultyAccounts, searchTerm]);
+
   return (
     <div>
       <div className="mt-4 space-y-3">
@@ -1415,6 +1429,16 @@ function FacultyListPanel({
           </div>
         ) : null}
 
+        <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search faculty by name or email"
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400"
+          />
+        </div>
+
         {isLoading ? (
           <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
             Loading faculty accounts...
@@ -1427,8 +1451,18 @@ function FacultyListPanel({
           </p>
         ) : null}
 
-        {!isLoading && facultyAccounts.length > 0
-          ? facultyAccounts.map((faculty) => (
+        {!isLoading &&
+        facultyAccounts.length > 0 &&
+        filteredFacultyAccounts.length === 0 ? (
+          <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
+            No faculty accounts match your search.
+          </p>
+        ) : null}
+
+        {!isLoading &&
+        facultyAccounts.length > 0 &&
+        filteredFacultyAccounts.length > 0
+          ? filteredFacultyAccounts.map((faculty) => (
               <div
                 key={faculty.id}
                 className="rounded-xl border border-slate-700 bg-slate-950 p-4"
