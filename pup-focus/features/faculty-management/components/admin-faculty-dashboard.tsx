@@ -164,7 +164,7 @@ export function AdminFacultyDashboard({
   );
 
   useEffect(() => {
-    loadFacultyFromDatabase();
+    void loadFacultyFromDatabase();
   }, []);
 
   async function loadFacultyFromDatabase() {
@@ -175,11 +175,15 @@ export function AdminFacultyDashboard({
         const data = await response.json();
         setFacultyAccounts(data.faculty || []);
       }
-    } catch (error) {
+    } catch {
       // Error handled by UI state
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function refreshCurrentPanel() {
+    await loadFacultyFromDatabase();
   }
 
   const form = useForm<FacultyAccountFormInput>({
@@ -515,10 +519,21 @@ export function AdminFacultyDashboard({
 
             {activeSection === "facultyManagement" ? (
               <article className="space-y-6 p-6 md:p-8">
-                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                  <h3 className="text-lg font-semibold text-amber-300">
-                    Faculty Management
-                  </h3>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-amber-300">
+                      Faculty Management
+                    </h3>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void refreshCurrentPanel()}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Refreshing..." : "Refresh"}
+                  </Button>
                 </div>
 
                 <section className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5 shadow-lg shadow-black/20">
@@ -587,10 +602,21 @@ export function AdminFacultyDashboard({
 
             {activeSection === "requirements" ? (
               <article className="p-8">
-                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                  <h3 className="text-lg font-semibold text-amber-300">
-                    Requirements Verification
-                  </h3>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-amber-300">
+                      Requirements Verification
+                    </h3>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void refreshCurrentPanel()}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Refreshing..." : "Refresh"}
+                  </Button>
                 </div>
 
                 <RequirementsPanel
@@ -603,10 +629,21 @@ export function AdminFacultyDashboard({
 
             {activeSection === "submissionWindow" ? (
               <article className="p-8">
-                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                  <h3 className="text-lg font-semibold text-amber-300">
-                    Submission Window
-                  </h3>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-amber-300">
+                      Submission Window
+                    </h3>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void refreshCurrentPanel()}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Refreshing..." : "Refresh"}
+                  </Button>
                 </div>
 
                 <SubmissionWindowPanel />

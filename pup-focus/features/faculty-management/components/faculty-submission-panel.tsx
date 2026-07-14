@@ -133,6 +133,25 @@ export function FacultySubmissionPanel({
   const [isLoadingSubmissionWindow, setIsLoadingSubmissionWindow] =
     useState(true);
 
+  async function fetchHistory() {
+    try {
+      setIsLoadingHistory(true);
+      setHistoryError(null);
+      const response = await fetch("/api/faculty/submissions/history");
+      if (!response.ok) {
+        setHistoryError("Failed to load submission history");
+        return;
+      }
+
+      const data = await response.json();
+      setPastSubmissions(data.submissions || []);
+    } catch {
+      setHistoryError("Error loading submission history");
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }
+
   useEffect(() => {
     async function fetchStatuses() {
       try {
@@ -153,25 +172,6 @@ export function FacultySubmissionPanel({
       }
     }
 
-    async function fetchHistory() {
-      try {
-        setIsLoadingHistory(true);
-        setHistoryError(null);
-        const response = await fetch("/api/faculty/submissions/history");
-        if (!response.ok) {
-          setHistoryError("Failed to load submission history");
-          return;
-        }
-
-        const data = await response.json();
-        setPastSubmissions(data.submissions || []);
-      } catch {
-        setHistoryError("Error loading submission history");
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    }
-
     async function fetchSubmissionWindow() {
       setIsLoadingSubmissionWindow(true);
       try {
@@ -188,7 +188,7 @@ export function FacultySubmissionPanel({
     }
 
     fetchStatuses();
-    fetchHistory();
+    void fetchHistory();
     fetchSubmissionWindow();
     // Read view from URL on mount
     try {
@@ -361,7 +361,7 @@ export function FacultySubmissionPanel({
           {[
             ["dashboard", "Dashboard"],
             ["status", "Requirements Management"],
-            ["history", "Past Submissions"],
+            ["history", "Submission History"],
             ["settings", "Settings"],
           ].map(([key, label]) => {
             const isActive = activeView === key;
@@ -393,18 +393,29 @@ export function FacultySubmissionPanel({
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
             {activeView !== "dashboard" ? (
-              <div className="mb-6">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
                   <h3 className="text-lg font-semibold text-amber-300">
                     {activeView === "submit"
                       ? "Submit Requirements"
                       : activeView === "history"
-                        ? "Past Submissions"
+                        ? "Submission History"
                         : activeView === "settings"
                           ? "Settings"
                           : "Requirements Management"}
                   </h3>
                 </div>
+                {activeView === "history" ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void fetchHistory()}
+                    disabled={isLoadingHistory}
+                  >
+                    {isLoadingHistory ? "Refreshing..." : "Refresh"}
+                  </Button>
+                ) : null}
               </div>
             ) : null}
             {activeView === "dashboard" && (
