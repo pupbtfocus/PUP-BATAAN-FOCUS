@@ -80,11 +80,13 @@ function buildEmailLayout({
     <table role="presentation" width="100%" style="max-width:620px;margin:0 auto;background:#ffffff;border-collapse:collapse;border-radius:16px;overflow:hidden;box-shadow:0 12px 30px rgba(77,0,0,0.12);">
       <tr>
         <td style="background:linear-gradient(135deg,#4d0000 0%,#7a0000 100%);padding:28px 32px;text-align:center;">
-          <div style="display:flex;align-items:center;justify-content:center;padding:14px;border-radius:999px;background:rgba(255,255,255,0.08);">
-            ${safeLogoSrc ? `<img src="${safeLogoSrc}" alt="PUP seal" width="48" height="48" style="display:block;" />` : ""}
+          <div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;">
+            ${safeLogoSrc ? `<img src="${safeLogoSrc}" alt="PUP seal" width="56" height="56" style="display:block;border-radius:999px;background:rgba(255,255,255,0.08);padding:6px;" />` : ""}
+            <div style="min-width:0;max-width:100%;text-align:center;">
+              <h1 style="margin:0;font-size:32px;line-height:1.1;color:#fff8e7;">${escapeHtml(title)}</h1>
+              <p style="margin:10px 0 0;font-size:15px;line-height:1.6;color:#f8e3bc;">${escapeHtml(intro)}</p>
+            </div>
           </div>
-          <h1 style="margin:18px 0 6px;font-size:28px;line-height:1.2;color:#fff8e7;">${escapeHtml(title)}</h1>
-          <p style="margin:0;font-size:15px;line-height:1.6;color:#f8e3bc;">${escapeHtml(intro)}</p>
         </td>
       </tr>
       <tr>
