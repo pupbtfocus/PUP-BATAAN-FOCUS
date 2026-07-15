@@ -342,7 +342,7 @@ export async function GET(request: NextRequest) {
     }
 
     const archive = await zip.generateAsync({
-      type: "nodebuffer",
+      type: "uint8array",
       compression: "DEFLATE",
     });
 
