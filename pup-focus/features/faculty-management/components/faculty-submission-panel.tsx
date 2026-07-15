@@ -59,6 +59,7 @@ type PastSubmission = {
   submittedAt: string;
   note?: string;
   remarks?: string;
+  reviewedAt?: string;
 };
 
 type SubmissionFormState = {
