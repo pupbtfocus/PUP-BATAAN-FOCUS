@@ -9,8 +9,25 @@ type RequirementStatus = {
   status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
   reviewedAt?: string;
   feedback?: string;
+  note?: string;
   submittedAt?: string;
+  latestSubmissionId?: string;
 };
+
+function hasDocumentVersion(submission: {
+  document_versions?: Array<{ id: string }> | null;
+}): boolean {
+  return Array.isArray(submission.document_versions)
+    ? submission.document_versions.length > 0
+    : false;
+}
+
+function isMissingRemarksColumnError(
+  error: { message?: string } | null,
+): boolean {
+  const message = (error?.message || "").toLowerCase();
+  return message.includes("remarks") && message.includes("submissions");
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -55,7 +72,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Get all submissions with review decisions
-    const { data: submissions, error: submissionsError } = await supabase
+    let { data: submissions, error: submissionsError } = await supabase
       .from("submissions")
       .select(
         `
@@ -63,6 +80,8 @@ export async function GET(request: NextRequest) {
         requirement_code,
         status,
         submitted_at,
+        remarks,
+        document_versions(id),
         review_decisions(
           decision,
           remarks,
@@ -72,6 +91,27 @@ export async function GET(request: NextRequest) {
       )
       .eq("faculty_profile_id", appUser.profile_id)
       .order("submitted_at", { ascending: false });
+
+    if (submissionsError && isMissingRemarksColumnError(submissionsError)) {
+      ({ data: submissions, error: submissionsError } = await supabase
+        .from("submissions")
+        .select(
+          `
+          id,
+          requirement_code,
+          status,
+          submitted_at,
+          document_versions(id),
+          review_decisions(
+            decision,
+            remarks,
+            created_at
+          )
+        `,
+        )
+        .eq("faculty_profile_id", appUser.profile_id)
+        .order("submitted_at", { ascending: false }));
+    }
 
     console.log("Submissions query result:", {
       count: submissions?.length,
@@ -110,6 +150,11 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      // Treat a submission as not submitted when it has no document version.
+      if (!hasDocumentVersion(submission)) {
+        continue;
+      }
+
       // Get the latest review decision if exists
       const latestReview = (submission.review_decisions || [])[0];
 
@@ -136,9 +181,12 @@ export async function GET(request: NextRequest) {
           ? new Date(latestReview.created_at).toISOString().split("T")[0]
           : undefined,
         feedback: latestReview?.remarks || undefined,
-        submittedAt: submission.submitted_at
-          ? new Date(submission.submitted_at).toISOString().split("T")[0]
-          : undefined,
+        note:
+          "remarks" in submission && typeof submission.remarks === "string"
+            ? submission.remarks
+            : undefined,
+        submittedAt: submission.submitted_at || undefined,
+        latestSubmissionId: submission.id,
       });
     }
 

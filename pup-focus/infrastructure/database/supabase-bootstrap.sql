@@ -85,6 +85,7 @@ create table if not exists public.submissions (
   curriculum_id uuid not null references public.curricula(id) on delete cascade,
   requirement_code text not null,
   status text not null default 'draft',
+  remarks text,
   due_at timestamptz,
   submitted_at timestamptz,
   created_at timestamptz not null default now(),
