@@ -26,6 +26,17 @@ type ReviewDecision = {
   created_at?: string | null;
 };
 
+type SubmissionRow = {
+  id: string;
+  requirement_code: string;
+  status: string | null;
+  submitted_at?: string | null;
+  created_at?: string | null;
+  remarks?: string | null;
+  document_versions?: Array<{ id: string }> | null;
+  review_decisions?: ReviewDecision[] | null;
+};
+
 function hasDocumentVersion(row: {
   document_versions?: Array<{ id: string }> | null;
 }): boolean {
@@ -114,7 +125,7 @@ export async function GET() {
       );
     }
 
-    let { data: submissions, error: submissionsError } = await supabase
+    const initialResult = await supabase
       .from("submissions")
       .select(
         `
@@ -135,8 +146,11 @@ export async function GET() {
       .eq("faculty_profile_id", appUser.profile_id)
       .order("submitted_at", { ascending: false });
 
+    let submissions = (initialResult.data as SubmissionRow[] | null) ?? null;
+    let submissionsError = initialResult.error;
+
     if (submissionsError && isMissingRemarksColumnError(submissionsError)) {
-      ({ data: submissions, error: submissionsError } = await supabase
+      const fallbackResult = await supabase
         .from("submissions")
         .select(
           `
@@ -154,7 +168,10 @@ export async function GET() {
         `,
         )
         .eq("faculty_profile_id", appUser.profile_id)
-        .order("submitted_at", { ascending: false }));
+        .order("submitted_at", { ascending: false });
+
+      submissions = (fallbackResult.data as SubmissionRow[] | null) ?? null;
+      submissionsError = fallbackResult.error;
     }
 
     if (submissionsError) {
@@ -174,9 +191,7 @@ export async function GET() {
       )
       .filter((row) => hasDocumentVersion(row))
       .map((row) => {
-        const reviews = (
-          (row.review_decisions as ReviewDecision[] | null) || []
-        )
+        const reviews = (row.review_decisions || [])
           .filter((review) => !!review.created_at)
           .sort((a, b) => {
             const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
