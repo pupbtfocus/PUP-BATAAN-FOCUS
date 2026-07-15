@@ -10,6 +10,14 @@ import {
 
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 
+type SubmissionRow = {
+  faculty_profile_id: string;
+  requirement_code: string;
+  status: string | null;
+  submitted_at: string | null;
+  document_versions?: Array<{ id: string }> | null;
+};
+
 function buildInitialRequirementStatus() {
   return DEFAULT_REQUIREMENTS.reduce(
     (acc, requirementCode) => {
@@ -18,6 +26,34 @@ function buildInitialRequirementStatus() {
     },
     {} as Record<(typeof DEFAULT_REQUIREMENTS)[number], RequirementStatus>,
   );
+}
+
+function toRequirementStatus(rawStatus: string | null): RequirementStatus {
+  const status = (rawStatus ?? "").toLowerCase();
+
+  if (status === "validated" || status === "approved") {
+    return "validated";
+  }
+
+  if (
+    status === "uploaded" ||
+    status === "submitted" ||
+    status === "under_review" ||
+    status === "pending_review" ||
+    status === "pending"
+  ) {
+    return "uploaded";
+  }
+
+  return "not_submitted";
+}
+
+function hasDocumentVersion(submission: {
+  document_versions?: Array<{ id: string }> | null;
+}): boolean {
+  return Array.isArray(submission.document_versions)
+    ? submission.document_versions.length > 0
+    : false;
 }
 
 export async function GET(request: NextRequest) {
@@ -125,6 +161,72 @@ export async function GET(request: NextRequest) {
     const appUsers = appUsersResult.data;
     const queryError = profilesError ?? appUsersResult.error;
 
+    const { data: submissionRows, error: submissionsError } = await supabase
+      .from("submissions")
+      .select(
+        "faculty_profile_id, requirement_code, status, submitted_at, document_versions(id)",
+      )
+      .in("faculty_profile_id", profileIds)
+      .order("submitted_at", { ascending: false })
+      .limit(5000);
+
+    if (submissionsError) {
+      return NextResponse.json(
+        {
+          error: "Failed to fetch faculty submissions",
+          details: submissionsError.message,
+        },
+        { status: 500 },
+      );
+    }
+
+    const statusRank: Record<RequirementStatus, number> = {
+      not_submitted: 0,
+      uploaded: 1,
+      validated: 2,
+    };
+
+    const requirementStatusByProfileId = new Map<
+      string,
+      Record<(typeof DEFAULT_REQUIREMENTS)[number], RequirementStatus>
+    >();
+
+    for (const profileId of profileIds) {
+      requirementStatusByProfileId.set(
+        profileId,
+        buildInitialRequirementStatus(),
+      );
+    }
+
+    for (const row of (submissionRows ?? []) as SubmissionRow[]) {
+      const profileId = row.faculty_profile_id;
+      const requirementCode = row.requirement_code as
+        | (typeof DEFAULT_REQUIREMENTS)[number]
+        | undefined;
+
+      if (
+        !profileId ||
+        !requirementCode ||
+        !DEFAULT_REQUIREMENTS.includes(requirementCode)
+      ) {
+        continue;
+      }
+
+      if (!hasDocumentVersion(row)) {
+        continue;
+      }
+
+      const mappedStatus = toRequirementStatus(row.status);
+      const currentStatus = requirementStatusByProfileId.get(profileId);
+
+      if (
+        currentStatus &&
+        statusRank[mappedStatus] > statusRank[currentStatus[requirementCode]]
+      ) {
+        currentStatus[requirementCode] = mappedStatus;
+      }
+    }
+
     if (debugMode) {
       return NextResponse.json({
         debug: true,
@@ -177,6 +279,9 @@ export async function GET(request: NextRequest) {
           metadata.profile_image_path.trim()
             ? metadata.profile_image_path.trim()
             : null;
+        const requirementStatus =
+          requirementStatusByProfileId.get(profile.id) ??
+          buildInitialRequirementStatus();
 
         let profileImageUrl: string | null = null;
 
@@ -202,7 +307,7 @@ export async function GET(request: NextRequest) {
             appUser?.created_at ||
             profile.created_at ||
             new Date().toISOString(),
-          requirementStatus: buildInitialRequirementStatus(),
+          requirementStatus,
         };
       }),
     );
