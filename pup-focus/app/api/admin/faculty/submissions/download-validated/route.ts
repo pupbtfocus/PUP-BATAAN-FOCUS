@@ -301,6 +301,7 @@ export async function GET(request: NextRequest) {
       }
 
       selectedFiles.set(code, {
+        submissionId: row.id,
         storagePath: latestDocument.storage_path,
         fileName: `${sanitizeFileName(REQUIREMENT_LABEL[code])}${getFileExtension(latestDocument.storage_path) || ""}`,
       });
