@@ -353,7 +353,7 @@ export async function GET(request: NextRequest) {
     const archiveBuffer = archive.buffer.slice(
       archive.byteOffset,
       archive.byteOffset + archive.byteLength,
-    );
+    ) as ArrayBuffer;
 
     return new NextResponse(archiveBuffer, {
       status: 200,
