@@ -350,7 +350,12 @@ export async function GET(request: NextRequest) {
       facultyProfileId,
     )}-${sanitizeFileName(academicYear)}-${sanitizeFileName(semester)}.zip`;
 
-    return new NextResponse(archive, {
+    const archiveBuffer = archive.buffer.slice(
+      archive.byteOffset,
+      archive.byteOffset + archive.byteLength,
+    );
+
+    return new NextResponse(archiveBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/zip",
