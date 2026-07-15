@@ -18,6 +18,7 @@ type HistorySubmission = {
   submittedAt: string;
   note?: string;
   remarks?: string;
+  reviewedAt?: string;
 };
 
 type ReviewDecision = {
@@ -214,6 +215,9 @@ export async function GET() {
             row.submitted_at || row.created_at || new Date().toISOString(),
           note: typeof row.remarks === "string" ? row.remarks : undefined,
           remarks: latestReview?.remarks || undefined,
+          reviewedAt: latestReview?.created_at
+            ? new Date(latestReview.created_at).toISOString().split("T")[0]
+            : undefined,
         };
       });
 
