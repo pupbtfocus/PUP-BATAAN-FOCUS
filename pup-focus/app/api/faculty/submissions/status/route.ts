@@ -14,6 +14,22 @@ type RequirementStatus = {
   latestSubmissionId?: string;
 };
 
+type ReviewDecision = {
+  decision: "validated" | "rejected";
+  remarks?: string | null;
+  created_at?: string | null;
+};
+
+type SubmissionRow = {
+  id: string;
+  requirement_code: string;
+  status: string | null;
+  submitted_at?: string | null;
+  remarks?: string | null;
+  document_versions?: Array<{ id: string }> | null;
+  review_decisions?: ReviewDecision[] | null;
+};
+
 function hasDocumentVersion(submission: {
   document_versions?: Array<{ id: string }> | null;
 }): boolean {
@@ -72,7 +88,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Get all submissions with review decisions
-    let { data: submissions, error: submissionsError } = await supabase
+    const initialResult = await supabase
       .from("submissions")
       .select(
         `
@@ -92,8 +108,11 @@ export async function GET(request: NextRequest) {
       .eq("faculty_profile_id", appUser.profile_id)
       .order("submitted_at", { ascending: false });
 
+    let submissions = (initialResult.data as SubmissionRow[] | null) ?? null;
+    let submissionsError = initialResult.error;
+
     if (submissionsError && isMissingRemarksColumnError(submissionsError)) {
-      ({ data: submissions, error: submissionsError } = await supabase
+      const fallbackResult = await supabase
         .from("submissions")
         .select(
           `
@@ -110,7 +129,10 @@ export async function GET(request: NextRequest) {
         `,
         )
         .eq("faculty_profile_id", appUser.profile_id)
-        .order("submitted_at", { ascending: false }));
+        .order("submitted_at", { ascending: false });
+
+      submissions = (fallbackResult.data as SubmissionRow[] | null) ?? null;
+      submissionsError = fallbackResult.error;
     }
 
     console.log("Submissions query result:", {
