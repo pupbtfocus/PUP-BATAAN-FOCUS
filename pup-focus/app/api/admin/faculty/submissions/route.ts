@@ -3,6 +3,36 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 
+type ReviewDecision = {
+  decision: "validated" | "rejected";
+  remarks?: string | null;
+  created_at?: string | null;
+};
+
+type SubmissionRow = {
+  id: string;
+  requirement_code: string;
+  status: string | null;
+  submitted_at?: string | null;
+  created_at?: string | null;
+  remarks?: string | null;
+  document_versions?: Array<{
+    id: string;
+    storage_path: string;
+    mime_type?: string | null;
+    size_bytes?: number | null;
+    created_at?: string | null;
+  }> | null;
+  review_decisions?: ReviewDecision[] | null;
+};
+
+function isMissingRemarksColumnError(
+  error: { message?: string } | null,
+): boolean {
+  const message = (error?.message || "").toLowerCase();
+  return message.includes("remarks") && message.includes("submissions");
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Verify admin role
@@ -53,8 +83,8 @@ export async function GET(request: NextRequest) {
 
     const facultyProfileId = appUserRow.profile_id;
 
-    // Get submissions with document versions
-    const { data: submissions, error: submissionsError } = await supabase
+    // Get submissions with document versions and review history
+    const initialResult = await supabase
       .from("submissions")
       .select(
         `
@@ -63,6 +93,7 @@ export async function GET(request: NextRequest) {
         status,
         submitted_at,
         created_at,
+        remarks,
         document_versions(
           id,
           version_number,
@@ -70,11 +101,51 @@ export async function GET(request: NextRequest) {
           mime_type,
           size_bytes,
           created_at
+        ),
+        review_decisions(
+          decision,
+          remarks,
+          created_at
         )
       `,
       )
       .eq("faculty_profile_id", facultyProfileId)
       .order("submitted_at", { ascending: false });
+
+    let submissions = (initialResult.data as SubmissionRow[] | null) ?? null;
+    let submissionsError = initialResult.error;
+
+    if (submissionsError && isMissingRemarksColumnError(submissionsError)) {
+      const fallbackResult = await supabase
+        .from("submissions")
+        .select(
+          `
+          id,
+          requirement_code,
+          status,
+          submitted_at,
+          created_at,
+          document_versions(
+            id,
+            version_number,
+            storage_path,
+            mime_type,
+            size_bytes,
+            created_at
+          ),
+          review_decisions(
+            decision,
+            remarks,
+            created_at
+          )
+        `,
+        )
+        .eq("faculty_profile_id", facultyProfileId)
+        .order("submitted_at", { ascending: false });
+
+      submissions = (fallbackResult.data as SubmissionRow[] | null) ?? null;
+      submissionsError = fallbackResult.error;
+    }
 
     if (submissionsError) {
       return NextResponse.json(
