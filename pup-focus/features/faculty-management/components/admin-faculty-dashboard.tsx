@@ -101,6 +101,31 @@ function toTimeLabel(timeInput: string): string | null {
   return `${hour12}:${minute} ${period}`;
 }
 
+function toAcademicYearAndSemester(dateInput: string | null | undefined): {
+  academicYear: string;
+  semester: SemesterOption;
+} {
+  const parsed = dateInput ? new Date(dateInput) : null;
+
+  if (!parsed || Number.isNaN(parsed.getTime())) {
+    return {
+      academicYear: "",
+      semester: "1st Semester",
+    };
+  }
+
+  const month = parsed.getMonth() + 1;
+  const year = parsed.getFullYear();
+  const startsSchoolYear = month >= 6;
+
+  return {
+    academicYear: startsSchoolYear
+      ? `${year}-${year + 1}`
+      : `${year - 1}-${year}`,
+    semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
+  };
+}
+
 function buildInitialRequirementStatus(): Record<
   RequirementCode,
   RequirementStatus
@@ -1976,10 +2001,27 @@ function RequirementsVerificationModal({
       );
       if (response.ok) {
         const data = await response.json();
-        const filtered = (data.submissions || []).filter(
-          (sub: any) => sub.requirement_code === code,
-        );
-        setSubmissions(filtered);
+        const filtered = (data.submissions || []).filter((sub: any) => {
+          if (sub.requirement_code !== code) {
+            return false;
+          }
+
+          const term = toAcademicYearAndSemester(
+            sub.submitted_at || sub.created_at,
+          );
+
+          if (academicYear && term.academicYear !== academicYear) {
+            return false;
+          }
+
+          if (semester && term.semester !== semester) {
+            return false;
+          }
+
+          return true;
+        });
+
+        setSubmissions(filtered.length > 0 ? [filtered[0]] : []);
         setViewingRequirement(code);
       }
     } catch (error) {
