@@ -12,6 +12,7 @@ import {
   REQUIREMENT_CODE,
   type RequirementCode,
 } from "@/config/compliance";
+import { X } from "lucide-react";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
 const PANEL_VIEWS = [
@@ -37,6 +38,15 @@ type RequirementStatus = {
   note?: string;
   submittedAt?: string;
   latestSubmissionId?: string;
+};
+
+type SubmissionPreview = {
+  code: RequirementCode;
+  title: string;
+  submittedAt?: string;
+  note?: string;
+  feedback?: string;
+  latestSubmissionId: string;
 };
 
 type PastSubmission = {
@@ -108,6 +118,10 @@ function formatSubmittedDateTime(value?: string): string | null {
   });
 }
 
+function getSubmissionPreviewUrl(submissionId: string) {
+  return `/api/faculty/submissions/view?submissionId=${encodeURIComponent(submissionId)}`;
+}
+
 export function FacultySubmissionPanel({
   facultyName,
 }: {
@@ -139,6 +153,8 @@ export function FacultySubmissionPanel({
   const [requirementStatuses, setRequirementStatuses] = useState<
     RequirementStatus[]
   >([]);
+  const [previewSubmission, setPreviewSubmission] =
+    useState<SubmissionPreview | null>(null);
   const [statusCounts, setStatusCounts] = useState<{
     total: number;
     validated: number;
@@ -256,6 +272,36 @@ export function FacultySubmissionPanel({
 
   function getRequirementStatus(code: RequirementCode) {
     return requirementStatuses.find((r) => r.code === code)?.status;
+  }
+
+  function openSubmissionPreview(item: RequirementStatus) {
+    if (!item.latestSubmissionId) {
+      return;
+    }
+
+    setPreviewSubmission({
+      code: item.code,
+      title: REQUIREMENT_LABEL[item.code],
+      submittedAt: item.submittedAt,
+      note: item.note,
+      feedback: item.feedback,
+      latestSubmissionId: item.latestSubmissionId,
+    });
+  }
+
+  function openHistorySubmissionPreview(submission: PastSubmission) {
+    setPreviewSubmission({
+      code: submission.requirementCode,
+      title: REQUIREMENT_LABEL[submission.requirementCode],
+      submittedAt: submission.submittedAt,
+      note: submission.note,
+      feedback: submission.remarks,
+      latestSubmissionId: submission.id,
+    });
+  }
+
+  function closeSubmissionPreview() {
+    setPreviewSubmission(null);
   }
 
   function openSubmitModal() {
@@ -874,14 +920,6 @@ export function FacultySubmissionPanel({
                             <p className="font-medium text-slate-100">
                               {REQUIREMENT_LABEL[req.code]}
                             </p>
-                            {req.note ? (
-                              <p className="mt-2 text-sm text-slate-300">
-                                <span className="font-medium text-slate-200">
-                                  Note:
-                                </span>{" "}
-                                {req.note}
-                              </p>
-                            ) : null}
                             {req.feedback && (
                               <p className="mt-2 text-sm text-slate-300">
                                 <span className="font-medium text-slate-200">
@@ -910,13 +948,7 @@ export function FacultySubmissionPanel({
                                 type="button"
                                 variant="secondary"
                                 size="sm"
-                                onClick={() =>
-                                  window.open(
-                                    `/api/faculty/submissions/view?submissionId=${encodeURIComponent(req.latestSubmissionId ?? "")}`,
-                                    "_blank",
-                                    "noopener,noreferrer",
-                                  )
-                                }
+                                onClick={() => openSubmissionPreview(req)}
                               >
                                 View Submitted File
                               </Button>
@@ -941,6 +973,100 @@ export function FacultySubmissionPanel({
                 </div>
               </article>
             )}
+
+            {previewSubmission ? (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                onClick={closeSubmissionPreview}
+              >
+                <div
+                  className="w-full max-w-4xl rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.22em] text-amber-300">
+                        File Preview
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold text-slate-100">
+                        {previewSubmission.title}
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeSubmissionPreview}
+                      className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                      aria-label="Close preview"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+                    <div className="min-h-[60vh] overflow-hidden rounded-2xl border border-slate-700 bg-slate-950">
+                      <iframe
+                        title={`${previewSubmission.title} preview`}
+                        src={getSubmissionPreviewUrl(
+                          previewSubmission.latestSubmissionId,
+                        )}
+                        className="h-full min-h-[60vh] w-full border-0"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                          Note
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-200">
+                          {previewSubmission.note || "No note was added."}
+                        </p>
+                      </div>
+
+                      {previewSubmission.feedback ? (
+                        <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4">
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Remarks
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-200">
+                            {previewSubmission.feedback}
+                          </p>
+                        </div>
+                      ) : null}
+
+                      {previewSubmission.submittedAt ? (
+                        <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Submitted On
+                          </p>
+                          <p className="mt-2 leading-6">
+                            {formatSubmittedDateTime(
+                              previewSubmission.submittedAt,
+                            ) ?? previewSubmission.submittedAt}
+                          </p>
+                        </div>
+                      ) : null}
+
+                      <Button
+                        type="button"
+                        className="w-full"
+                        onClick={() =>
+                          window.open(
+                            getSubmissionPreviewUrl(
+                              previewSubmission.latestSubmissionId,
+                            ),
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
+                      >
+                        View Submitted File
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             {activeView === "history" && (
               <article className="min-h-[calc(100vh-4rem-3rem)] p-8 pt-0">
@@ -1037,11 +1163,7 @@ export function FacultySubmissionPanel({
                               variant="secondary"
                               size="sm"
                               onClick={() =>
-                                window.open(
-                                  `/api/faculty/submissions/view?submissionId=${encodeURIComponent(submission.id)}`,
-                                  "_blank",
-                                  "noopener,noreferrer",
-                                )
+                                openHistorySubmissionPreview(submission)
                               }
                             >
                               View Submitted File
@@ -1058,24 +1180,6 @@ export function FacultySubmissionPanel({
                             </span>
                           </div>
                         </div>
-
-                        {submission.note ? (
-                          <p className="mt-3 text-sm text-slate-300">
-                            <span className="font-medium text-slate-200">
-                              Note:
-                            </span>{" "}
-                            {submission.note}
-                          </p>
-                        ) : null}
-
-                        {submission.remarks ? (
-                          <p className="mt-3 text-sm text-slate-300">
-                            <span className="font-medium text-slate-200">
-                              Remarks:
-                            </span>{" "}
-                            {submission.remarks}
-                          </p>
-                        ) : null}
                       </article>
                     ))
                   ) : (
