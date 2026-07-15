@@ -221,6 +221,10 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      if (requirementStatus[code] !== "not_submitted") {
+        continue;
+      }
+
       const mappedStatus = toRequirementStatus(row.status);
 
       if (rank[mappedStatus] > rank[requirementStatus[code]]) {

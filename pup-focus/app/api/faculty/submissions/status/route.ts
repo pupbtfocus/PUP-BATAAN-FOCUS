@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Update with actual submission data
+    // Update with the newest submission for each requirement only.
     for (const submission of submissions || []) {
       const code = submission.requirement_code;
 
@@ -181,6 +181,10 @@ export async function GET(request: NextRequest) {
 
       // Treat a submission as not submitted when it has no document version.
       if (!hasDocumentVersion(submission)) {
+        continue;
+      }
+
+      if (statusMap.get(code)?.status !== "Not Submitted") {
         continue;
       }
 
