@@ -7,6 +7,13 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 type SemesterOption = "1st Semester" | "2nd Semester";
 
+type SubmissionRow = {
+  requirement_code: string;
+  status: string | null;
+  submitted_at?: string | null;
+  document_versions?: Array<{ id: string }> | null;
+};
+
 const SEMESTER_OPTIONS: SemesterOption[] = ["1st Semester", "2nd Semester"];
 
 function buildFallbackAcademicYears(count = 5): string[] {
@@ -65,6 +72,14 @@ function buildInitialRequirementStatus(): Record<
     },
     {} as Record<(typeof DEFAULT_REQUIREMENTS)[number], RequirementStatus>,
   );
+}
+
+function hasDocumentVersion(submission: {
+  document_versions?: Array<{ id: string }> | null;
+}): boolean {
+  return Array.isArray(submission.document_versions)
+    ? submission.document_versions.length > 0
+    : false;
 }
 
 export async function GET(request: NextRequest) {
@@ -172,7 +187,7 @@ export async function GET(request: NextRequest) {
     // Query submissions for this faculty (with or without faculty_assignment_id)
     const { data: submissionRows, error: submissionsError } = await supabase
       .from("submissions")
-      .select("requirement_code, status, submitted_at")
+      .select("requirement_code, status, submitted_at, document_versions(id)")
       .eq("faculty_profile_id", facultyProfileId)
       .order("submitted_at", { ascending: false })
       .limit(1000);
@@ -199,6 +214,10 @@ export async function GET(request: NextRequest) {
         row.requirement_code as (typeof DEFAULT_REQUIREMENTS)[number];
 
       if (!DEFAULT_REQUIREMENTS.includes(code)) {
+        continue;
+      }
+
+      if (!hasDocumentVersion(row)) {
         continue;
       }
 
