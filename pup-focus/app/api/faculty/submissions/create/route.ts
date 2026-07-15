@@ -18,6 +18,13 @@ type SubmissionPayload = {
   remarks?: string;
 };
 
+function isMissingRemarksColumnError(
+  error: { message?: string } | null,
+): boolean {
+  const message = (error?.message || "").toLowerCase();
+  return message.includes("remarks") && message.includes("submissions");
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Authenticate faculty user
@@ -156,18 +163,37 @@ export async function POST(request: NextRequest) {
 
     // Create submission record
     const submissionId = crypto.randomUUID();
-    const { data: submission, error: submissionError } = await supabase
+    const trimmedRemarks = payload.remarks?.trim();
+    const submissionPayload = {
+      id: submissionId,
+      faculty_profile_id: appUser.profile_id,
+      curriculum_id: curriculumId,
+      requirement_code: payload.requirementCode,
+      status: "uploaded",
+      submitted_at: new Date().toISOString(),
+      ...(trimmedRemarks ? { remarks: trimmedRemarks } : {}),
+    };
+
+    let { data: submission, error: submissionError } = await supabase
       .from("submissions")
-      .insert({
-        id: submissionId,
-        faculty_profile_id: appUser.profile_id,
-        curriculum_id: curriculumId,
-        requirement_code: payload.requirementCode,
-        status: "uploaded",
-        submitted_at: new Date().toISOString(),
-      })
+      .insert(submissionPayload)
       .select()
       .single();
+
+    if (submissionError && isMissingRemarksColumnError(submissionError)) {
+      ({ data: submission, error: submissionError } = await supabase
+        .from("submissions")
+        .insert({
+          id: submissionId,
+          faculty_profile_id: appUser.profile_id,
+          curriculum_id: curriculumId,
+          requirement_code: payload.requirementCode,
+          status: "uploaded",
+          submitted_at: submissionPayload.submitted_at,
+        })
+        .select()
+        .single());
+    }
 
     if (submissionError) {
       logger.error("submission_creation_failed", {

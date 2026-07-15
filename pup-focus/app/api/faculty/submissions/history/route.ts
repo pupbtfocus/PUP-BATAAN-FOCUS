@@ -16,6 +16,7 @@ type HistorySubmission = {
   requirementCode: RequirementCode;
   status: HistoryStatus;
   submittedAt: string;
+  note?: string;
   remarks?: string;
 };
 
@@ -25,10 +26,24 @@ type ReviewDecision = {
   created_at?: string | null;
 };
 
+function hasDocumentVersion(row: {
+  document_versions?: Array<{ id: string }> | null;
+}): boolean {
+  return Array.isArray(row.document_versions)
+    ? row.document_versions.length > 0
+    : false;
+}
+
+function isMissingRemarksColumnError(
+  error: { message?: string } | null,
+): boolean {
+  const message = (error?.message || "").toLowerCase();
+  return message.includes("remarks") && message.includes("submissions");
+}
+
 function toAcademicYearAndSemester(dateInput: string | null | undefined): {
   academicYear: string;
   semester: "1st Semester" | "2nd Semester";
-  submittedAt: string;
 } {
   const sourceDate = dateInput ? new Date(dateInput) : new Date();
   const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
@@ -42,7 +57,6 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined): {
       ? `${year}-${year + 1}`
       : `${year - 1}-${year}`,
     semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
-    submittedAt: date.toISOString().split("T")[0],
   };
 }
 
@@ -100,7 +114,7 @@ export async function GET() {
       );
     }
 
-    const { data: submissions, error: submissionsError } = await supabase
+    let { data: submissions, error: submissionsError } = await supabase
       .from("submissions")
       .select(
         `
@@ -109,6 +123,8 @@ export async function GET() {
         status,
         submitted_at,
         created_at,
+        remarks,
+        document_versions(id),
         review_decisions(
           decision,
           remarks,
@@ -118,6 +134,28 @@ export async function GET() {
       )
       .eq("faculty_profile_id", appUser.profile_id)
       .order("submitted_at", { ascending: false });
+
+    if (submissionsError && isMissingRemarksColumnError(submissionsError)) {
+      ({ data: submissions, error: submissionsError } = await supabase
+        .from("submissions")
+        .select(
+          `
+          id,
+          requirement_code,
+          status,
+          submitted_at,
+          created_at,
+          document_versions(id),
+          review_decisions(
+            decision,
+            remarks,
+            created_at
+          )
+        `,
+        )
+        .eq("faculty_profile_id", appUser.profile_id)
+        .order("submitted_at", { ascending: false }));
+    }
 
     if (submissionsError) {
       logger.error("submission_history_fetch_failed", {
@@ -134,6 +172,7 @@ export async function GET() {
       .filter((row) =>
         DEFAULT_REQUIREMENTS.includes(row.requirement_code as RequirementCode),
       )
+      .filter((row) => hasDocumentVersion(row))
       .map((row) => {
         const reviews = (
           (row.review_decisions as ReviewDecision[] | null) || []
@@ -156,7 +195,9 @@ export async function GET() {
           semester: term.semester,
           requirementCode: row.requirement_code as RequirementCode,
           status: toHistoryStatus(row.status, latestReview),
-          submittedAt: term.submittedAt,
+          submittedAt:
+            row.submitted_at || row.created_at || new Date().toISOString(),
+          note: typeof row.remarks === "string" ? row.remarks : undefined,
           remarks: latestReview?.remarks || undefined,
         };
       });

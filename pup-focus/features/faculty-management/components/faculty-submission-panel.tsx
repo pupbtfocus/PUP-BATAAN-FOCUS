@@ -34,6 +34,9 @@ type RequirementStatus = {
   status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
   reviewedAt?: string;
   feedback?: string;
+  note?: string;
+  submittedAt?: string;
+  latestSubmissionId?: string;
 };
 
 type PastSubmission = {
@@ -43,6 +46,7 @@ type PastSubmission = {
   requirementCode: RequirementCode;
   status: HistorySubmissionStatus;
   submittedAt: string;
+  note?: string;
   remarks?: string;
 };
 
@@ -86,6 +90,22 @@ function requirementStatusStyles(status: RequirementStatus["status"]): string {
   if (status === "Not Submitted")
     return "bg-slate-900/30 text-slate-400 border-slate-700";
   return "bg-yellow-900/30 text-yellow-400 border-yellow-800";
+}
+
+function formatSubmittedDateTime(value?: string): string | null {
+  if (!value) return null;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return parsed.toLocaleString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 export function FacultySubmissionPanel({
@@ -152,26 +172,26 @@ export function FacultySubmissionPanel({
     }
   }
 
-  useEffect(() => {
-    async function fetchStatuses() {
-      try {
-        setIsLoadingStatuses(true);
-        setStatusError(null);
-        const response = await fetch("/api/faculty/submissions/status");
-        if (response.ok) {
-          const data = await response.json();
-          setRequirementStatuses(data.requirementStatuses || []);
-          setStatusCounts(data.counts || null);
-        } else {
-          setStatusError("Failed to load requirement statuses");
-        }
-      } catch {
-        setStatusError("Error loading requirement statuses");
-      } finally {
-        setIsLoadingStatuses(false);
+  async function fetchStatuses() {
+    try {
+      setIsLoadingStatuses(true);
+      setStatusError(null);
+      const response = await fetch("/api/faculty/submissions/status");
+      if (response.ok) {
+        const data = await response.json();
+        setRequirementStatuses(data.requirementStatuses || []);
+        setStatusCounts(data.counts || null);
+      } else {
+        setStatusError("Failed to load requirement statuses");
       }
+    } catch {
+      setStatusError("Error loading requirement statuses");
+    } finally {
+      setIsLoadingStatuses(false);
     }
+  }
 
+  useEffect(() => {
     async function fetchSubmissionWindow() {
       setIsLoadingSubmissionWindow(true);
       try {
@@ -187,9 +207,9 @@ export function FacultySubmissionPanel({
       }
     }
 
-    fetchStatuses();
+    void fetchStatuses();
     void fetchHistory();
-    fetchSubmissionWindow();
+    void fetchSubmissionWindow();
     // Read view from URL on mount
     try {
       const params = new URLSearchParams(window.location.search);
@@ -317,6 +337,8 @@ export function FacultySubmissionPanel({
         }
         return [...prev, { code: form.requirementCode, status: "Pending" }];
       });
+
+      await fetchStatuses();
 
       setForm((prev) => ({
         ...prev,
@@ -784,25 +806,7 @@ export function FacultySubmissionPanel({
                     </button>
                     <button
                       type="button"
-                      onClick={async () => {
-                        setIsLoadingStatuses(true);
-                        try {
-                          const response = await fetch(
-                            "/api/faculty/submissions/status",
-                          );
-                          if (response.ok) {
-                            const data = await response.json();
-                            setRequirementStatuses(
-                              data.requirementStatuses || [],
-                            );
-                            setStatusCounts(data.counts || null);
-                          }
-                        } catch {
-                          setStatusError("Error loading requirement statuses");
-                        } finally {
-                          setIsLoadingStatuses(false);
-                        }
-                      }}
+                      onClick={() => void fetchStatuses()}
                       disabled={isLoadingStatuses}
                       className="whitespace-nowrap rounded-md bg-slate-800 px-3 py-2 text-xs text-white hover:bg-slate-700 disabled:opacity-50"
                     >
@@ -870,8 +874,19 @@ export function FacultySubmissionPanel({
                             <p className="font-medium text-slate-100">
                               {REQUIREMENT_LABEL[req.code]}
                             </p>
+                            {req.note ? (
+                              <p className="mt-2 text-sm text-slate-300">
+                                <span className="font-medium text-slate-200">
+                                  Note:
+                                </span>{" "}
+                                {req.note}
+                              </p>
+                            ) : null}
                             {req.feedback && (
                               <p className="mt-2 text-sm text-slate-300">
+                                <span className="font-medium text-slate-200">
+                                  Remarks:
+                                </span>{" "}
                                 {req.feedback}
                               </p>
                             )}
@@ -880,18 +895,45 @@ export function FacultySubmissionPanel({
                                 Reviewed on {req.reviewedAt}
                               </p>
                             )}
+                            {req.submittedAt &&
+                            formatSubmittedDateTime(req.submittedAt) ? (
+                              <p className="mt-1 text-xs text-slate-500">
+                                Submitted on{" "}
+                                {formatSubmittedDateTime(req.submittedAt)}
+                              </p>
+                            ) : null}
                           </div>
-                          <span
-                            className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(req.status)}`}
-                          >
-                            {req.status === "Validated"
-                              ? "✓ Validated"
-                              : req.status === "Rejected"
-                                ? "✗ Rejected"
-                                : req.status === "Not Submitted"
-                                  ? "○ Not Submitted"
-                                  : "⏳ Pending"}
-                          </span>
+                          <div className="flex shrink-0 items-center gap-2">
+                            {req.status !== "Not Submitted" &&
+                            req.latestSubmissionId ? (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  window.open(
+                                    `/api/faculty/submissions/view?submissionId=${encodeURIComponent(req.latestSubmissionId)}`,
+                                    "_blank",
+                                    "noopener,noreferrer",
+                                  )
+                                }
+                              >
+                                View Submitted File
+                              </Button>
+                            ) : null}
+
+                            <span
+                              className={`rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(req.status)}`}
+                            >
+                              {req.status === "Validated"
+                                ? "✓ Validated"
+                                : req.status === "Rejected"
+                                  ? "✗ Rejected"
+                                  : req.status === "Not Submitted"
+                                    ? "○ Not Submitted"
+                                    : "⏳ Pending"}
+                            </span>
+                          </div>
                         </div>
                       </article>
                     ))
@@ -982,24 +1024,58 @@ export function FacultySubmissionPanel({
                               {submission.semester}
                             </p>
                             <p className="mt-1 text-xs text-slate-500">
-                              Submitted on {submission.submittedAt}
+                              Submitted on{" "}
+                              {formatSubmittedDateTime(
+                                submission.submittedAt,
+                              ) ?? submission.submittedAt}
                             </p>
                           </div>
 
-                          <span
-                            className={`rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(submission.status)}`}
-                          >
-                            {submission.status === "Validated"
-                              ? "✓ Validated"
-                              : submission.status === "Rejected"
-                                ? "✗ Rejected"
-                                : "⏳ Pending"}
-                          </span>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() =>
+                                window.open(
+                                  `/api/faculty/submissions/view?submissionId=${encodeURIComponent(submission.id)}`,
+                                  "_blank",
+                                  "noopener,noreferrer",
+                                )
+                              }
+                            >
+                              View Submitted File
+                            </Button>
+
+                            <span
+                              className={`rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(submission.status)}`}
+                            >
+                              {submission.status === "Validated"
+                                ? "✓ Validated"
+                                : submission.status === "Rejected"
+                                  ? "✗ Rejected"
+                                  : "⏳ Pending"}
+                            </span>
+                          </div>
                         </div>
 
-                        <p className="mt-3 text-sm text-slate-300">
-                          {submission.remarks || "No remarks provided."}
-                        </p>
+                        {submission.note ? (
+                          <p className="mt-3 text-sm text-slate-300">
+                            <span className="font-medium text-slate-200">
+                              Note:
+                            </span>{" "}
+                            {submission.note}
+                          </p>
+                        ) : null}
+
+                        {submission.remarks ? (
+                          <p className="mt-3 text-sm text-slate-300">
+                            <span className="font-medium text-slate-200">
+                              Remarks:
+                            </span>{" "}
+                            {submission.remarks}
+                          </p>
+                        ) : null}
                       </article>
                     ))
                   ) : (
