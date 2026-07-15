@@ -46,6 +46,7 @@ type SubmissionPreview = {
   submittedAt?: string;
   note?: string;
   feedback?: string;
+  reviewedAt?: string;
   latestSubmissionId: string;
 };
 
@@ -155,6 +156,9 @@ export function FacultySubmissionPanel({
   >([]);
   const [previewSubmission, setPreviewSubmission] =
     useState<SubmissionPreview | null>(null);
+  const [viewedSubmissionIds, setViewedSubmissionIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [statusCounts, setStatusCounts] = useState<{
     total: number;
     validated: number;
@@ -274,10 +278,24 @@ export function FacultySubmissionPanel({
     return requirementStatuses.find((r) => r.code === code)?.status;
   }
 
+  function markSubmissionViewed(submissionId: string) {
+    setViewedSubmissionIds((current) => {
+      if (current.has(submissionId)) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.add(submissionId);
+      return next;
+    });
+  }
+
   function openSubmissionPreview(item: RequirementStatus) {
     if (!item.latestSubmissionId) {
       return;
     }
+
+    markSubmissionViewed(item.latestSubmissionId);
 
     setPreviewSubmission({
       code: item.code,
@@ -285,17 +303,21 @@ export function FacultySubmissionPanel({
       submittedAt: item.submittedAt,
       note: item.note,
       feedback: item.feedback,
+      reviewedAt: item.reviewedAt,
       latestSubmissionId: item.latestSubmissionId,
     });
   }
 
   function openHistorySubmissionPreview(submission: PastSubmission) {
+    markSubmissionViewed(submission.id);
+
     setPreviewSubmission({
       code: submission.requirementCode,
       title: REQUIREMENT_LABEL[submission.requirementCode],
       submittedAt: submission.submittedAt,
       note: submission.note,
       feedback: submission.remarks,
+      reviewedAt: submission.reviewedAt,
       latestSubmissionId: submission.id,
     });
   }
@@ -920,14 +942,6 @@ export function FacultySubmissionPanel({
                             <p className="font-medium text-slate-100">
                               {REQUIREMENT_LABEL[req.code]}
                             </p>
-                            {req.feedback && (
-                              <p className="mt-2 text-sm text-slate-300">
-                                <span className="font-medium text-slate-200">
-                                  Remarks:
-                                </span>{" "}
-                                {req.feedback}
-                              </p>
-                            )}
                             {req.reviewedAt && (
                               <p className="mt-1 text-xs text-slate-500">
                                 Reviewed on {req.reviewedAt}
@@ -949,7 +963,17 @@ export function FacultySubmissionPanel({
                                 variant="secondary"
                                 size="sm"
                                 onClick={() => openSubmissionPreview(req)}
+                                className="inline-flex items-center gap-2"
                               >
+                                {req.feedback &&
+                                !viewedSubmissionIds.has(
+                                  req.latestSubmissionId,
+                                ) ? (
+                                  <span
+                                    className="h-2 w-2 rounded-full bg-red-500"
+                                    aria-hidden="true"
+                                  />
+                                ) : null}
                                 View Submitted File
                               </Button>
                             ) : null}
@@ -1016,21 +1040,33 @@ export function FacultySubmissionPanel({
                     <div className="space-y-4">
                       <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4">
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          Note
+                          My Note
                         </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-200">
+                        <p className="mt-2 text-sm leading-6 italic text-slate-200">
                           {previewSubmission.note || "No note was added."}
                         </p>
                       </div>
 
-                      {previewSubmission.feedback ? (
+                      {previewSubmission.reviewedAt ||
+                      previewSubmission.feedback ? (
                         <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4">
                           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                            Remarks
+                            Admin Remarks
                           </p>
-                          <p className="mt-2 text-sm leading-6 text-slate-200">
-                            {previewSubmission.feedback}
+                          <p className="mt-2 text-sm leading-6 italic text-slate-200">
+                            {previewSubmission.feedback ||
+                              "No admin remarks were added."}
                           </p>
+                          {previewSubmission.reviewedAt ? (
+                            <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
+                              Reviewed On
+                            </p>
+                          ) : null}
+                          {previewSubmission.reviewedAt ? (
+                            <p className="mt-1 text-sm leading-6 text-slate-300">
+                              {previewSubmission.reviewedAt}
+                            </p>
+                          ) : null}
                         </div>
                       ) : null}
 
@@ -1060,7 +1096,7 @@ export function FacultySubmissionPanel({
                           )
                         }
                       >
-                        View Submitted File
+                        Full View
                       </Button>
                     </div>
                   </div>
@@ -1165,7 +1201,15 @@ export function FacultySubmissionPanel({
                               onClick={() =>
                                 openHistorySubmissionPreview(submission)
                               }
+                              className="inline-flex items-center gap-2"
                             >
+                              {submission.remarks &&
+                              !viewedSubmissionIds.has(submission.id) ? (
+                                <span
+                                  className="h-2 w-2 rounded-full bg-red-500"
+                                  aria-hidden="true"
+                                />
+                              ) : null}
                               View Submitted File
                             </Button>
 
