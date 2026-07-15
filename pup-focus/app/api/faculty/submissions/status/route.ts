@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
+import {
+  DEFAULT_REQUIREMENTS,
+  type RequirementCode,
+} from "@/config/compliance";
 import { logger } from "@/lib/observability/logger";
 
 type RequirementStatus = {
@@ -29,6 +32,10 @@ type SubmissionRow = {
   document_versions?: Array<{ id: string }> | null;
   review_decisions?: ReviewDecision[] | null;
 };
+
+function isRequirementCode(value: string): value is RequirementCode {
+  return (DEFAULT_REQUIREMENTS as readonly string[]).includes(value);
+}
 
 function hasDocumentVersion(submission: {
   document_versions?: Array<{ id: string }> | null;
@@ -168,7 +175,7 @@ export async function GET(request: NextRequest) {
       const code = submission.requirement_code;
 
       // Skip if not a valid requirement code
-      if (!DEFAULT_REQUIREMENTS.includes(code)) {
+      if (!isRequirementCode(code)) {
         continue;
       }
 

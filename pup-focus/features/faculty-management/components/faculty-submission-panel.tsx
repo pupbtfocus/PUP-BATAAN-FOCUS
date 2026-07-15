@@ -912,7 +912,7 @@ export function FacultySubmissionPanel({
                                 size="sm"
                                 onClick={() =>
                                   window.open(
-                                    `/api/faculty/submissions/view?submissionId=${encodeURIComponent(req.latestSubmissionId)}`,
+                                    `/api/faculty/submissions/view?submissionId=${encodeURIComponent(req.latestSubmissionId ?? "")}`,
                                     "_blank",
                                     "noopener,noreferrer",
                                   )
