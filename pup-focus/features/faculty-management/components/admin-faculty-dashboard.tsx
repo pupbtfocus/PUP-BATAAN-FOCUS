@@ -1775,7 +1775,7 @@ function SubmissionWindowPanel({
             <div>
               <p className="text-slate-400">Status</p>
               <p className="mt-1 font-semibold text-white">
-                {getStatusIcon(windowStatus?.status)}{" "}
+                {getStatusIcon(windowStatus?.status ?? null)}{" "}
                 {windowStatus?.status ?? "Closed"}
               </p>
             </div>
