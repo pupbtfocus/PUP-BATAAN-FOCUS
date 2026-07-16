@@ -40,7 +40,7 @@ type FacultyAccount = {
 };
 
 type PendingFacultyAction = {
-  kind: "delete" | "deactivate";
+  kind: "delete" | "deactivate" | "activate";
   facultyId: string;
 };
 
@@ -650,6 +650,11 @@ export function AdminFacultyDashboard({
       return;
     }
 
+    if (kind === "activate") {
+      await performActivateFaculty(facultyId);
+      return;
+    }
+
     await performDeactivateFaculty(facultyId);
   }
 
@@ -821,7 +826,11 @@ export function AdminFacultyDashboard({
     }
   }
 
-  async function onActivateFaculty(facultyId: string) {
+  function onActivateFaculty(facultyId: string) {
+    setPendingFacultyAction({ kind: "activate", facultyId });
+  }
+
+  async function performActivateFaculty(facultyId: string) {
     setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
     setFacultyActionError(null);
 
@@ -1104,21 +1113,25 @@ export function AdminFacultyDashboard({
 
       {pendingFacultyAction ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-red-500/20 bg-[#230606]/95 p-6 shadow-2xl shadow-black/40">
-            <p className="text-xs uppercase tracking-[0.28em] text-red-300/80">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
+            <p className="text-xs uppercase tracking-[0.28em] text-slate-400">
               {pendingFacultyAction.kind === "delete"
                 ? "Confirm Delete"
-                : "Confirm Deactivate"}
+                : pendingFacultyAction.kind === "activate"
+                  ? "Confirm Activate"
+                  : "Confirm Deactivate"}
             </p>
-            <h3 className="mt-3 text-2xl font-semibold text-[#fff8e7]">
+            <h3 className="mt-3 text-2xl font-semibold text-white">
               {pendingFacultyAction.kind === "delete"
-                ? "Delete this faculty account?"
-                : "Deactivate this faculty account?"}
+                ? "Delete Faculty Account?"
+                : pendingFacultyAction.kind === "activate"
+                  ? "Activate Faculty Account?"
+                  : "Deactivate Faculty Account?"}
             </h3>
             <p className="mt-3 text-sm leading-6 text-slate-300">
               {pendingFaculty ? (
                 <>
-                  <span className="font-medium text-[#fff8e7]">
+                  <span className="font-medium text-white">
                     {pendingFaculty.fullName}
                   </span>{" "}
                   ({pendingFaculty.email}) will be affected.
@@ -1127,8 +1140,10 @@ export function AdminFacultyDashboard({
             </p>
             <p className="mt-3 text-sm leading-6 text-slate-400">
               {pendingFacultyAction.kind === "delete"
-                ? "This permanently removes the account and its access. The action cannot be undone."
-                : "This temporarily removes access to the system until the account is reactivated."}
+                ? "This action cannot be undone."
+                : pendingFacultyAction.kind === "activate"
+                  ? "The selected faculty member will be able to sign in again."
+                  : "The selected faculty member will no longer be able to sign in."}
             </p>
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -1145,12 +1160,16 @@ export function AdminFacultyDashboard({
                 className={
                   pendingFacultyAction.kind === "delete"
                     ? "bg-red-600 text-white hover:bg-red-500"
-                    : "bg-amber-500 text-slate-950 hover:bg-amber-400"
+                    : pendingFacultyAction.kind === "activate"
+                      ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+                      : "bg-amber-500 text-slate-950 hover:bg-amber-400"
                 }
               >
                 {pendingFacultyAction.kind === "delete"
-                  ? "Delete Account"
-                  : "Deactivate Account"}
+                  ? "Delete"
+                  : pendingFacultyAction.kind === "activate"
+                    ? "Activate"
+                    : "Deactivate"}
               </Button>
             </div>
           </div>
@@ -2178,7 +2197,9 @@ function FacultyListPanel({
 
         {!isLoading && facultyAccounts.length === 0 ? (
           <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
-            No faculty accounts yet. Add one from the sidebar.
+            No faculty members found.
+            <br />
+            Click "Add Faculty" to create the first faculty account.
           </p>
         ) : null}
 
@@ -2186,7 +2207,7 @@ function FacultyListPanel({
         facultyAccounts.length > 0 &&
         filteredFacultyAccounts.length === 0 ? (
           <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
-            No faculty accounts match your search.
+            No matching faculty members found.
           </p>
         ) : null}
 
@@ -2221,6 +2242,15 @@ function FacultyListPanel({
                       <p className="truncate text-sm text-slate-400">
                         {faculty.email}
                       </p>
+                      <span
+                        className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                          faculty.is_active
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
+                            : "border-rose-500/20 bg-rose-500/10 text-rose-200"
+                        }`}
+                      >
+                        {faculty.is_active ? "🟢 Active" : "🔴 Inactive"}
+                      </span>
                     </div>
                   </button>
 

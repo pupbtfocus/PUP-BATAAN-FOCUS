@@ -119,7 +119,48 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    // If profile exists, ensure there are no linked submissions or assignments.
+    if (profile) {
+      const [submissionsCountResult, assignmentsCountResult] =
+        await Promise.all([
+          supabase
+            .from("submissions")
+            .select("id", { head: true, count: "exact" })
+            .eq("faculty_profile_id", facultyProfileId),
+          supabase
+            .from("faculty_program_assignments")
+            .select("id", { head: true, count: "exact" })
+            .eq("faculty_profile_id", facultyProfileId),
+        ]);
 
+      if (submissionsCountResult.error || assignmentsCountResult.error) {
+        console.error(
+          "Error checking related faculty records before deletion:",
+          submissionsCountResult.error ?? assignmentsCountResult.error,
+        );
+        return NextResponse.json(
+          {
+            error:
+              "Failed to verify faculty account dependencies before deletion.",
+          },
+          { status: 500 },
+        );
+      }
+
+      const hasRelatedRecords =
+        (submissionsCountResult.count ?? 0) > 0 ||
+        (assignmentsCountResult.count ?? 0) > 0;
+
+      if (hasRelatedRecords) {
+        return NextResponse.json(
+          {
+            error:
+              "Unable to Delete. This faculty member has existing requirement submissions or verification records. Please deactivate the account instead.",
+          },
+          { status: 400 },
+        );
+      }
+    }
     // If profile doesn't exist but app_users record does, clean it up and consider it success
     if (!profile && appUser) {
       console.warn(
