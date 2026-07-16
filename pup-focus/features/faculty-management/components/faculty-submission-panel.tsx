@@ -253,6 +253,18 @@ export function FacultySubmissionPanel({
     }
   }, []);
 
+  useEffect(() => {
+    if (!submissionWindow) {
+      return;
+    }
+
+    if (!submissionWindow.isOpen) {
+      setRequirementStatuses([]);
+      setStatusCounts(null);
+      setHasSeenIncompleteRequirementsModal(false);
+    }
+  }, [submissionWindow]);
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

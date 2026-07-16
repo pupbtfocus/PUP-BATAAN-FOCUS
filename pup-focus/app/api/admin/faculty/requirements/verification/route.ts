@@ -184,13 +184,24 @@ export async function GET(request: NextRequest) {
 
     const requirementStatus = buildInitialRequirementStatus();
 
-    // Query submissions for this faculty (with or without faculty_assignment_id)
-    const { data: submissionRows, error: submissionsError } = await supabase
-      .from("submissions")
-      .select("requirement_code, status, submitted_at, document_versions(id)")
-      .eq("faculty_profile_id", facultyProfileId)
-      .order("submitted_at", { ascending: false })
-      .limit(1000);
+    let submissionRows: SubmissionRow[] | null = null;
+    let submissionsError: { message?: string } | null = null;
+
+    if (filteredAssignmentIds.length > 0) {
+      const submissionQuery = supabase
+        .from("submissions")
+        .select("requirement_code, status, submitted_at, document_versions(id)")
+        .eq("faculty_profile_id", facultyProfileId)
+        .in("faculty_assignment_id", filteredAssignmentIds)
+        .order("submitted_at", { ascending: false })
+        .limit(1000);
+
+      const submissionResult = await submissionQuery;
+      submissionRows = submissionResult.data as SubmissionRow[] | null;
+      submissionsError = submissionResult.error;
+    } else {
+      submissionRows = [];
+    }
 
     if (submissionsError) {
       return NextResponse.json(

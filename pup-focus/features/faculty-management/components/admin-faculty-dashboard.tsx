@@ -146,6 +146,26 @@ function formatSubmittedDateTime(value?: string | null): string | null {
   });
 }
 
+function getCurrentYearInManila(): number {
+  const yearText = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+  }).format(new Date());
+
+  return Number(yearText);
+}
+
+function buildAcademicYearOptions(): string[] {
+  const currentYear = getCurrentYearInManila();
+  const firstYear = 2026;
+  const lastYear = Math.max(currentYear, firstYear);
+
+  return Array.from({ length: lastYear - firstYear + 1 }, (_, index) => {
+    const startYear = firstYear + index;
+    return `${startYear}-${startYear + 1}`;
+  });
+}
+
 function buildInitialRequirementStatus(): Record<
   RequirementCode,
   RequirementStatus
@@ -219,6 +239,7 @@ export function AdminFacultyDashboard({
   const [facultyActionError, setFacultyActionError] = useState<string | null>(
     null,
   );
+  const [verificationResetTrigger, setVerificationResetTrigger] = useState(0);
 
   useEffect(() => {
     void loadFacultyFromDatabase();
@@ -680,6 +701,7 @@ export function AdminFacultyDashboard({
                   facultyAccounts={facultyAccounts}
                   selectedFaculty={selectedFaculty}
                   onSelectFaculty={setSelectedFacultyId}
+                  resetTrigger={verificationResetTrigger}
                 />
               </article>
             ) : null}
@@ -703,7 +725,11 @@ export function AdminFacultyDashboard({
                   </Button>
                 </div>
 
-                <SubmissionWindowPanel />
+                <SubmissionWindowPanel
+                  onWindowChange={() =>
+                    setVerificationResetTrigger((prev) => prev + 1)
+                  }
+                />
               </article>
             ) : null}
           </div>
@@ -842,6 +868,11 @@ export function AdminFacultyDashboard({
   );
 }
 
+type UsedTerm = {
+  academicYear: string;
+  semester: SemesterOption;
+};
+
 type SubmissionWindowResponse = {
   isConfigured: boolean;
   isOpen: boolean;
@@ -851,6 +882,9 @@ type SubmissionWindowResponse = {
   endDate: string | null;
   startTime: string | null;
   endTime: string | null;
+  academicYear?: string | null;
+  semester?: SemesterOption | null;
+  usedTerms?: UsedTerm[];
   startTimeLabel: string | null;
   endTimeLabel: string | null;
   currentTimeLabel: string;
@@ -874,11 +908,20 @@ async function readApiBody(response: Response): Promise<unknown> {
   }
 }
 
-function SubmissionWindowPanel() {
+function SubmissionWindowPanel({
+  onWindowChange,
+}: {
+  onWindowChange?: () => void;
+}) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [academicYear, setAcademicYear] = useState("");
+  const [semester, setSemester] = useState<SemesterOption>("1st Semester");
+  const [availableAcademicYears, setAvailableAcademicYears] = useState<
+    string[]
+  >(buildAcademicYearOptions());
   const [windowStatus, setWindowStatus] =
     useState<SubmissionWindowResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -916,9 +959,23 @@ function SubmissionWindowPanel() {
       }
 
       const data = body as SubmissionWindowResponse;
+      const currentAcademicYears = buildAcademicYearOptions();
+      const yearOptions = data.academicYear
+        ? currentAcademicYears.includes(data.academicYear)
+          ? currentAcademicYears
+          : [data.academicYear, ...currentAcademicYears]
+        : currentAcademicYears;
+
+      setAvailableAcademicYears(yearOptions);
       setWindowStatus(data);
       setStartDate(data.startDate ?? "");
       setEndDate(data.endDate ?? "");
+      setAcademicYear(
+        data.academicYear && yearOptions.includes(data.academicYear)
+          ? data.academicYear
+          : (yearOptions[0] ?? ""),
+      );
+      setSemester(data.semester ?? "1st Semester");
       setStartTime(
         data.startTimeLabel
           ? (toTimeInputValue(data.startTimeLabel) ?? "")
@@ -956,6 +1013,18 @@ function SubmissionWindowPanel() {
       return;
     }
 
+    if (!academicYear) {
+      setError("Academic year is required.");
+      return;
+    }
+
+    if (!availableAcademicYears.includes(academicYear)) {
+      setError(
+        "Selected academic year is not yet available. Please choose a supported year.",
+      );
+      return;
+    }
+
     const startTimeLabel = toTimeLabel(startTime);
     const endTimeLabel = toTimeLabel(endTime);
 
@@ -980,6 +1049,8 @@ function SubmissionWindowPanel() {
           endDate,
           startTime: startTimeLabel,
           endTime: endTimeLabel,
+          academicYear,
+          semester,
         }),
       });
       const body = await readApiBody(response);
@@ -1010,6 +1081,7 @@ function SubmissionWindowPanel() {
 
       setWindowStatus(body as SubmissionWindowResponse);
       setSuccess("Submission window updated successfully.");
+      onWindowChange?.();
     } catch (saveError) {
       setError(
         saveError instanceof Error
@@ -1060,9 +1132,12 @@ function SubmissionWindowPanel() {
       setWindowStatus(body as SubmissionWindowResponse);
       setStartDate("");
       setEndDate("");
+      setAcademicYear("");
+      setSemester("1st Semester");
       setStartTime("");
       setEndTime("");
       setSuccess("Submissions closed and schedule cleared.");
+      onWindowChange?.();
     } catch (closeError) {
       setError(
         closeError instanceof Error
@@ -1094,13 +1169,22 @@ function SubmissionWindowPanel() {
             {windowStatus.currentTimeLabel}
           </p>
           {windowStatus.isConfigured ? (
-            <p className="mt-1">
-              <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
-                Schedule:
-              </span>{" "}
-              {windowStatus.startDate} {windowStatus.startTimeLabel} to{" "}
-              {windowStatus.endDate} {windowStatus.endTimeLabel}
-            </p>
+            <>
+              <p className="mt-1">
+                <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                  Term:
+                </span>{" "}
+                {windowStatus.academicYear ?? "N/A"} •{" "}
+                {windowStatus.semester ?? "N/A"}
+              </p>
+              <p className="mt-1">
+                <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                  Schedule:
+                </span>{" "}
+                {windowStatus.startDate} {windowStatus.startTimeLabel} to{" "}
+                {windowStatus.endDate} {windowStatus.endTimeLabel}
+              </p>
+            </>
           ) : null}
           <p className="mt-1">
             <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
@@ -1194,6 +1278,88 @@ function SubmissionWindowPanel() {
             onChange={(event) => setEndTime(event.target.value)}
             disabled={isLoading || isSaving}
           />
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 mt-4">
+        <div>
+          <label
+            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+            htmlFor="windowAcademicYear"
+          >
+            Academic Year
+          </label>
+          <select
+            id="windowAcademicYear"
+            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+            value={academicYear}
+            onChange={(event) => setAcademicYear(event.target.value)}
+            disabled={isLoading || isSaving}
+          >
+            {availableAcademicYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label
+            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+            htmlFor="windowSemester"
+          >
+            Semester
+          </label>
+          <select
+            id="windowSemester"
+            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+            value={semester}
+            onChange={(event) =>
+              setSemester(event.target.value as SemesterOption)
+            }
+            disabled={isLoading || isSaving}
+          >
+            {SEMESTER_OPTIONS.map((option) => {
+              const usedTerms = windowStatus?.usedTerms ?? [];
+              const isCurrentWindowTerm =
+                windowStatus?.academicYear === academicYear &&
+                windowStatus?.semester === option;
+              const isAlreadyUsed = usedTerms.some(
+                (term) =>
+                  term.academicYear === academicYear &&
+                  term.semester === option,
+              );
+              const disabled = isAlreadyUsed && !isCurrentWindowTerm;
+
+              return (
+                <option key={option} value={option} disabled={disabled}>
+                  {option}
+                  {disabled ? " (already used)" : ""}
+                </option>
+              );
+            })}
+          </select>
+          {academicYear ? (
+            <p className="mt-1 text-xs text-slate-400">
+              {(() => {
+                const usedTerms = windowStatus?.usedTerms ?? [];
+                const usedSemesters = usedTerms
+                  .filter((term) => term.academicYear === academicYear)
+                  .map((term) => term.semester);
+
+                if (usedSemesters.length === 0) {
+                  return `Both semesters are available for ${academicYear}.`;
+                }
+
+                if (usedSemesters.length === 1) {
+                  return `${usedSemesters[0]} is already used for ${academicYear}.`;
+                }
+
+                return `${usedSemesters.join(" and ")} are already used for ${academicYear}.`;
+              })()}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -1609,10 +1775,12 @@ function RequirementsPanel({
   facultyAccounts,
   selectedFaculty,
   onSelectFaculty,
+  resetTrigger,
 }: {
   facultyAccounts: FacultyAccount[];
   selectedFaculty: FacultyAccount | null;
   onSelectFaculty: (facultyId: string) => void;
+  resetTrigger?: number;
 }) {
   const [academicYear, setAcademicYear] = useState("");
   const [semester, setSemester] = useState<SemesterOption>("1st Semester");
@@ -1627,6 +1795,15 @@ function RequirementsPanel({
   const [verificationError, setVerificationError] = useState<string | null>(
     null,
   );
+
+  useEffect(() => {
+    if (resetTrigger === undefined) {
+      return;
+    }
+
+    setVerificationStatus(null);
+    setVerificationError(null);
+  }, [resetTrigger]);
   const [initialLoadInfo, setInitialLoadInfo] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -1820,41 +1997,44 @@ function RequirementsPanel({
   async function onOpenModal() {
     if (!selectedFaculty) return;
 
-    // Recompute semester/year from latest submission to guarantee correct filter
+    // Use the current filter selection if the admin has already chosen a year/semester.
+    // Only infer from the latest submission when no academic year is selected.
     let useYear = academicYear;
     let useSem = semester;
 
-    try {
-      const subsResp = await fetch(
-        `/api/admin/faculty/submissions?facultyId=${selectedFaculty.id}`,
-        { credentials: "include" },
-      );
+    if (!useYear) {
+      try {
+        const subsResp = await fetch(
+          `/api/admin/faculty/submissions?facultyId=${selectedFaculty.id}`,
+          { credentials: "include" },
+        );
 
-      if (subsResp.ok) {
-        const subsData = await subsResp.json();
-        const subs = subsData.submissions || [];
-        if (subs.length > 0) {
-          const latest = subs.reduce((a: any, b: any) => {
-            const aTime = new Date(a.submitted_at || a.created_at).getTime();
-            const bTime = new Date(b.submitted_at || b.created_at).getTime();
-            return aTime > bTime ? a : b;
-          });
+        if (subsResp.ok) {
+          const subsData = await subsResp.json();
+          const subs = subsData.submissions || [];
+          if (subs.length > 0) {
+            const latest = subs.reduce((a: any, b: any) => {
+              const aTime = new Date(a.submitted_at || a.created_at).getTime();
+              const bTime = new Date(b.submitted_at || b.created_at).getTime();
+              return aTime > bTime ? a : b;
+            });
 
-          const dateStr = latest.submitted_at || latest.created_at;
-          if (dateStr) {
-            const d = new Date(dateStr);
-            const month = d.getMonth() + 1;
-            const year = d.getFullYear();
-            const startsSchoolYear = month >= 6;
-            useSem = startsSchoolYear ? "1st Semester" : "2nd Semester";
-            useYear = startsSchoolYear
-              ? `${year}-${year + 1}`
-              : `${year - 1}-${year}`;
+            const dateStr = latest.submitted_at || latest.created_at;
+            if (dateStr) {
+              const d = new Date(dateStr);
+              const month = d.getMonth() + 1;
+              const year = d.getFullYear();
+              const startsSchoolYear = month >= 6;
+              useSem = startsSchoolYear ? "1st Semester" : "2nd Semester";
+              useYear = startsSchoolYear
+                ? `${year}-${year + 1}`
+                : `${year - 1}-${year}`;
+            }
           }
         }
+      } catch (e) {
+        // ignore and use current selection
       }
-    } catch (e) {
-      // ignore and use current selection
     }
 
     await fetchVerificationStatus(selectedFaculty.id, useYear, useSem);

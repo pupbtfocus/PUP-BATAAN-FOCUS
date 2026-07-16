@@ -6,6 +6,11 @@ import {
   type RequirementCode,
 } from "@/config/compliance";
 import { logger } from "@/lib/observability/logger";
+import {
+  evaluateSubmissionWindow,
+  getSubmissionWindow,
+  normalizeTime24Hour,
+} from "@/features/submissions/services/submission-window.service";
 
 type RequirementStatus = {
   code: string;
@@ -69,6 +74,55 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
+    const submissionWindow = await getSubmissionWindow(supabase);
+    const windowState = evaluateSubmissionWindow(submissionWindow);
+    const localWindowStart = windowState.startDate
+      ? `${windowState.startDate}T${normalizeTime24Hour(windowState.startTime ?? "09:00:00")}`
+      : null;
+    const localWindowEnd = windowState.endDate
+      ? `${windowState.endDate}T${normalizeTime24Hour(windowState.endTime ?? "17:00:00")}`
+      : null;
+
+    function convertManilaDateTimeToUtcIso(
+      dateTime: string | null,
+    ): string | null {
+      if (!dateTime) {
+        return null;
+      }
+
+      const date = new Date(`${dateTime}+08:00`);
+      return Number.isNaN(date.getTime()) ? null : date.toISOString();
+    }
+
+    const currentWindowStart = convertManilaDateTimeToUtcIso(localWindowStart);
+    const currentWindowEnd = convertManilaDateTimeToUtcIso(localWindowEnd);
+
+    function toAcademicYearAndSemester(dateInput: string | null | undefined): {
+      academicYear: string;
+      semester: "1st Semester" | "2nd Semester";
+    } {
+      const sourceDate = dateInput ? new Date(dateInput) : new Date();
+      const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const startsSchoolYear = month >= 6;
+
+      return {
+        academicYear: startsSchoolYear
+          ? `${year}-${year + 1}`
+          : `${year - 1}-${year}`,
+        semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
+      };
+    }
+
+    const currentTerm =
+      submissionWindow?.academicYear && submissionWindow?.semester
+        ? {
+            academicYear: submissionWindow.academicYear,
+            semester: submissionWindow.semester,
+          }
+        : toAcademicYearAndSemester(windowState.today);
+
     // Always fetch fresh profile_id from database (don't use cached session)
     const { data: appUser, error: appUserError } = await supabase
       .from("app_users")
@@ -94,32 +148,63 @@ export async function GET(request: NextRequest) {
       user.id,
     );
 
-    // Get all submissions with review decisions
-    const initialResult = await supabase
-      .from("submissions")
-      .select(
-        `
-        id,
-        requirement_code,
-        status,
-        submitted_at,
-        remarks,
-        document_versions(id),
-        review_decisions(
-          decision,
-          remarks,
-          created_at
-        )
-      `,
-      )
-      .eq("faculty_profile_id", appUser.profile_id)
-      .order("submitted_at", { ascending: false });
+    let submissions: SubmissionRow[] | null = [];
+    let submissionsError: { message?: string } | null = null;
 
-    let submissions = (initialResult.data as SubmissionRow[] | null) ?? null;
-    let submissionsError = initialResult.error;
+    if (windowState.isConfigured) {
+      const { data: assignmentRows, error: assignmentError } = await supabase
+        .from("faculty_program_assignments")
+        .select("id")
+        .eq("faculty_profile_id", appUser.profile_id)
+        .eq("academic_year", currentTerm.academicYear)
+        .eq("term", currentTerm.semester);
+
+      if (assignmentError) {
+        logger.warn("current_assignment_fetch_failed", {
+          facultyId: appUser.profile_id,
+          error: assignmentError.message,
+        });
+      }
+
+      const currentAssignmentIds =
+        (assignmentRows as Array<{ id: string }> | null)?.map(
+          (row) => row.id,
+        ) ?? [];
+
+      const submissionQuery = supabase
+        .from("submissions")
+        .select(
+          `
+          id,
+          requirement_code,
+          status,
+          submitted_at,
+          remarks,
+          document_versions(id),
+          review_decisions(
+            decision,
+            remarks,
+            created_at
+          )
+        `,
+        )
+        .eq("faculty_profile_id", appUser.profile_id)
+        .order("submitted_at", { ascending: false });
+
+      if (currentAssignmentIds.length > 0) {
+        submissionQuery.in("faculty_assignment_id", currentAssignmentIds);
+      } else if (currentWindowStart && currentWindowEnd) {
+        submissionQuery.gte("submitted_at", currentWindowStart);
+        submissionQuery.lte("submitted_at", currentWindowEnd);
+      }
+
+      const initialResult = await submissionQuery;
+      submissions = (initialResult.data as SubmissionRow[] | null) ?? null;
+      submissionsError = initialResult.error;
+    }
 
     if (submissionsError && isMissingRemarksColumnError(submissionsError)) {
-      const fallbackResult = await supabase
+      const fallbackQuery = supabase
         .from("submissions")
         .select(
           `
@@ -138,6 +223,28 @@ export async function GET(request: NextRequest) {
         .eq("faculty_profile_id", appUser.profile_id)
         .order("submitted_at", { ascending: false });
 
+      if (windowState.isConfigured) {
+        const { data: assignmentRows } = await supabase
+          .from("faculty_program_assignments")
+          .select("id")
+          .eq("faculty_profile_id", appUser.profile_id)
+          .eq("academic_year", currentTerm.academicYear)
+          .eq("term", currentTerm.semester);
+
+        const fallbackAssignmentIds =
+          (assignmentRows as Array<{ id: string }> | null)?.map(
+            (row) => row.id,
+          ) ?? [];
+
+        if (fallbackAssignmentIds.length > 0) {
+          fallbackQuery.in("faculty_assignment_id", fallbackAssignmentIds);
+        } else if (currentWindowStart && currentWindowEnd) {
+          fallbackQuery.gte("submitted_at", currentWindowStart);
+          fallbackQuery.lte("submitted_at", currentWindowEnd);
+        }
+      }
+
+      const fallbackResult = await fallbackQuery;
       submissions = (fallbackResult.data as SubmissionRow[] | null) ?? null;
       submissionsError = fallbackResult.error;
     }
