@@ -96,6 +96,21 @@ function buildAcademicYears(count = 5): string[] {
   });
 }
 
+function toAcademicYearAndSemester(dateInput: string | null | undefined) {
+  const sourceDate = dateInput ? new Date(dateInput) : new Date();
+  const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const startsSchoolYear = month >= 6;
+
+  return {
+    academicYear: startsSchoolYear
+      ? `${year}-${year + 1}`
+      : `${year - 1}-${year}`,
+    semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
+  } as const;
+}
+
 function requirementStatusStyles(status: RequirementStatus["status"]): string {
   if (status === "Validated")
     return "bg-green-900/30 text-green-400 border-green-800";
@@ -263,6 +278,20 @@ export function FacultySubmissionPanel({
       setStatusCounts(null);
       setHasSeenIncompleteRequirementsModal(false);
     }
+
+    const currentTerm =
+      submissionWindow.academicYear && submissionWindow.semester
+        ? {
+            academicYear: submissionWindow.academicYear,
+            semester: submissionWindow.semester,
+          }
+        : toAcademicYearAndSemester(submissionWindow.today);
+
+    setForm((previous) => ({
+      ...previous,
+      academicYear: currentTerm.academicYear,
+      semester: currentTerm.semester,
+    }));
   }, [submissionWindow]);
 
   const router = useRouter();
@@ -569,53 +598,23 @@ export function FacultySubmissionPanel({
                   <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <label
-                          className="text-xs uppercase tracking-[0.18em] text-amber-300"
-                          htmlFor="academicYear"
-                        >
+                        <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
                           School Year
-                        </label>
-                        <select
-                          id="academicYear"
-                          className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-                          value={form.academicYear}
-                          onChange={(event) =>
-                            updateField("academicYear", event.target.value)
-                          }
-                        >
-                          {academicYears.map((year) => (
-                            <option key={year} value={year}>
-                              S.Y. {year}
-                            </option>
-                          ))}
-                        </select>
+                        </p>
+                        <p className="mt-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                          {form.academicYear
+                            ? `S.Y. ${form.academicYear}`
+                            : "Loading current term..."}
+                        </p>
                       </div>
 
                       <div>
-                        <label
-                          className="text-xs uppercase tracking-[0.18em] text-amber-300"
-                          htmlFor="semester"
-                        >
+                        <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
                           Semester
-                        </label>
-                        <select
-                          id="semester"
-                          className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-                          value={form.semester}
-                          onChange={(event) =>
-                            updateField(
-                              "semester",
-                              event.target
-                                .value as SubmissionFormState["semester"],
-                            )
-                          }
-                        >
-                          {SEMESTER_OPTIONS.map((semester) => (
-                            <option key={semester} value={semester}>
-                              {semester}
-                            </option>
-                          ))}
-                        </select>
+                        </p>
+                        <p className="mt-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                          {form.semester}
+                        </p>
                       </div>
                     </div>
 
@@ -1366,54 +1365,26 @@ export function FacultySubmissionPanel({
                     {isSubmissionAvailable ? (
                       <form className="space-y-4" onSubmit={handleSubmit}>
                         <div className="grid gap-4 md:grid-cols-2">
-                          <div>
-                            <label
-                              className="text-xs uppercase tracking-[0.18em] text-amber-300"
-                              htmlFor="modalAcademicYear"
-                            >
-                              School Year
-                            </label>
-                            <select
-                              id="modalAcademicYear"
-                              className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-                              value={form.academicYear}
-                              onChange={(event) =>
-                                updateField("academicYear", event.target.value)
-                              }
-                            >
-                              {academicYears.map((year) => (
-                                <option key={year} value={year}>
-                                  S.Y. {year}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div>
+                              <label className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                                School Year
+                              </label>
+                              <p className="mt-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                                {form.academicYear
+                                  ? `S.Y. ${form.academicYear}`
+                                  : "Loading current term..."}
+                              </p>
+                            </div>
 
-                          <div>
-                            <label
-                              className="text-xs uppercase tracking-[0.18em] text-amber-300"
-                              htmlFor="modalSemester"
-                            >
-                              Semester
-                            </label>
-                            <select
-                              id="modalSemester"
-                              className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-                              value={form.semester}
-                              onChange={(event) =>
-                                updateField(
-                                  "semester",
-                                  event.target
-                                    .value as SubmissionFormState["semester"],
-                                )
-                              }
-                            >
-                              {SEMESTER_OPTIONS.map((semester) => (
-                                <option key={semester} value={semester}>
-                                  {semester}
-                                </option>
-                              ))}
-                            </select>
+                            <div>
+                              <label className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                                Semester
+                              </label>
+                              <p className="mt-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                                {form.semester}
+                              </p>
+                            </div>
                           </div>
                         </div>
 

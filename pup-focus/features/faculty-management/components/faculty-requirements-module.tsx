@@ -45,6 +45,19 @@ type RequirementFormState = {
   remarks: string;
 };
 
+type SubmissionWindowState = {
+  isConfigured: boolean;
+  isOpen: boolean;
+  today: string;
+  currentTime: string;
+  startDate: string | null;
+  endDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  academicYear: string | null;
+  semester: SemesterOption | null;
+};
+
 function buildAcademicYears(count = 5): string[] {
   const now = new Date();
   const startYear =
@@ -54,6 +67,21 @@ function buildAcademicYears(count = 5): string[] {
     const yearStart = startYear - index;
     return `${yearStart}-${yearStart + 1}`;
   });
+}
+
+function toAcademicYearAndSemester(dateInput: string | null | undefined) {
+  const sourceDate = dateInput ? new Date(dateInput) : new Date();
+  const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const startsSchoolYear = month >= 6;
+
+  return {
+    academicYear: startsSchoolYear
+      ? `${year}-${year + 1}`
+      : `${year - 1}-${year}`,
+    semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
+  } as const;
 }
 
 function statusTone(status: RequirementStatus["status"]) {
@@ -87,6 +115,8 @@ export function FacultyRequirementsModule() {
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [submissionWindow, setSubmissionWindow] =
+    useState<SubmissionWindowState | null>(null);
   const initialFormState: RequirementFormState = {
     academicYear: academicYears[0] ?? "",
     semester: SEMESTER_OPTIONS[0],
@@ -117,6 +147,44 @@ export function FacultyRequirementsModule() {
 
     loadStatuses();
   }, []);
+
+  useEffect(() => {
+    async function loadSubmissionWindow() {
+      try {
+        const response = await fetch("/api/faculty/submissions/window");
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as SubmissionWindowState;
+        setSubmissionWindow(data);
+      } catch {
+        // ignore failures; fallback to default current-term calculation
+      }
+    }
+
+    void loadSubmissionWindow();
+  }, []);
+
+  useEffect(() => {
+    if (!submissionWindow) {
+      return;
+    }
+
+    const currentTerm =
+      submissionWindow.academicYear && submissionWindow.semester
+        ? {
+            academicYear: submissionWindow.academicYear,
+            semester: submissionWindow.semester,
+          }
+        : toAcademicYearAndSemester(submissionWindow.today);
+
+    setForm((current) => ({
+      ...current,
+      academicYear: currentTerm.academicYear,
+      semester: currentTerm.semester,
+    }));
+  }, [submissionWindow]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -390,46 +458,20 @@ export function FacultyRequirementsModule() {
                   <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
                     School Year
                   </span>
-                  <select
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-none focus:border-amber-400"
-                    value={form.academicYear}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        academicYear: event.target.value,
-                      }))
-                    }
-                  >
-                    {academicYears.map((year) => (
-                      <option key={year} value={year}>
-                        S.Y. {year}
-                      </option>
-                    ))}
-                  </select>
+                  <p className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                    {form.academicYear
+                      ? `S.Y. ${form.academicYear}`
+                      : "Loading current term..."}
+                  </p>
                 </label>
 
                 <label className="space-y-2 text-sm text-slate-300">
                   <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
                     Semester
                   </span>
-                  <select
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-none focus:border-amber-400"
-                    value={form.semester}
-                    onChange={(event) =>
-                      setForm(
-                        (current): RequirementFormState => ({
-                          ...current,
-                          semester: event.target.value as SemesterOption,
-                        }),
-                      )
-                    }
-                  >
-                    {SEMESTER_OPTIONS.map((semester) => (
-                      <option key={semester} value={semester}>
-                        {semester}
-                      </option>
-                    ))}
-                  </select>
+                  <p className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                    {form.semester}
+                  </p>
                 </label>
               </div>
 
