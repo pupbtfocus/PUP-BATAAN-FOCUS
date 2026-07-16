@@ -9,6 +9,7 @@ import {
   isMissingSubmissionWindowColumnsError,
   normalizeSemester,
   validateSubmissionWindow,
+  type SubmissionWindowSemester,
 } from "@/features/submissions/services/submission-window.service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -36,7 +37,7 @@ export async function GET() {
     const supabase = getServiceRoleClient();
     let config = await getSubmissionWindow(supabase);
     let fallbackAcademicYear: string | null = null;
-    let fallbackSemester: string | null = null;
+    let fallbackSemester: SubmissionWindowSemester | null = null;
 
     if (!config || !config.academicYear || !config.semester) {
       const { data: currentTerm, error: currentTermError } = await supabase
