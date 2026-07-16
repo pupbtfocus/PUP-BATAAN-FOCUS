@@ -29,6 +29,7 @@ export type SubmissionWindowConfig = {
 
 export type SubmissionWindowState = {
   isConfigured: boolean;
+  status: "Upcoming" | "Open" | "Closed";
   isOpen: boolean;
   today: string;
   currentTime: string;
@@ -381,6 +382,7 @@ export function evaluateSubmissionWindow(
   if (!config) {
     return {
       isConfigured: false,
+      status: "Closed",
       isOpen: false,
       today,
       currentTime,
@@ -397,9 +399,12 @@ export function evaluateSubmissionWindow(
   const startDateTime = `${config.startDate}T${normalizeTime24Hour(config.startTime)}`;
   const endDateTime = `${config.endDate}T${normalizeTime24Hour(config.endTime)}`;
   const isOpen = nowDateTime >= startDateTime && nowDateTime <= endDateTime;
+  const status =
+    nowDateTime < startDateTime ? "Upcoming" : isOpen ? "Open" : "Closed";
 
   return {
     isConfigured: true,
+    status,
     isOpen,
     today,
     currentTime,

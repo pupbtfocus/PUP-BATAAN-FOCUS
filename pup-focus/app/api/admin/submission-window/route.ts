@@ -35,8 +35,10 @@ export async function GET() {
 
     const supabase = getServiceRoleClient();
     let config = await getSubmissionWindow(supabase);
+    let fallbackAcademicYear: string | null = null;
+    let fallbackSemester: string | null = null;
 
-    if (config && (!config.academicYear || !config.semester)) {
+    if (!config || !config.academicYear || !config.semester) {
       const { data: currentTerm, error: currentTermError } = await supabase
         .from("academic_terms")
         .select("academic_year, semester")
@@ -49,15 +51,26 @@ export async function GET() {
         currentTerm?.academic_year &&
         currentTerm?.semester
       ) {
-        config = {
-          ...config,
-          academicYear: currentTerm.academic_year,
-          semester: normalizeSemester(currentTerm.semester),
-        };
+        const normalizedSemester = normalizeSemester(currentTerm.semester);
+
+        if (config) {
+          config = {
+            ...config,
+            academicYear: currentTerm.academic_year,
+            semester: normalizedSemester,
+          };
+        } else {
+          fallbackAcademicYear = currentTerm.academic_year;
+          fallbackSemester = normalizedSemester;
+        }
       }
     }
 
     const status = evaluateSubmissionWindow(config);
+    if (!config && fallbackAcademicYear && fallbackSemester) {
+      status.academicYear = fallbackAcademicYear;
+      status.semester = fallbackSemester;
+    }
 
     let usedTerms: Array<{ academicYear: string; semester: string }> = [];
     try {
@@ -287,6 +300,8 @@ export async function PUT(request: NextRequest) {
       endDate,
       startTime: startTime24,
       endTime: endTime24,
+      academicYear,
+      semester,
     });
 
     const facultyResult = await supabase
