@@ -178,6 +178,22 @@ function buildScheduleYearOptions(selectedYear?: number): number[] {
   return years.sort((a, b) => a - b);
 }
 
+function formatSubmittedDateTime(value?: string): string | null {
+  if (!value) return null;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return parsed.toLocaleString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 function parseScheduleTime(value: string | null | undefined): {
   hour: string;
   minute: string;
