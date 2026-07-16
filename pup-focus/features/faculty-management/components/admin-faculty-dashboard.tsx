@@ -128,24 +128,350 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined): {
   };
 }
 
-function formatSubmittedDateTime(value?: string | null): string | null {
+function padScheduleNumber(value: number): string {
+  return value.toString().padStart(2, "0");
+}
+
+function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+function parseScheduleDate(value: string | null | undefined): {
+  year: string;
+  month: string;
+  day: string;
+} {
   if (!value) {
-    return null;
+    return { year: "", month: "", day: "" };
   }
 
-  const parsed = new Date(value);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
+  const parts = value.split("-");
+  if (parts.length !== 3) {
+    return { year: "", month: "", day: "" };
   }
 
-  return parsed.toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return { year: parts[0], month: parts[1], day: parts[2] };
+}
+
+function formatScheduleDate(year: string, month: string, day: string): string {
+  if (!year || !month || !day) {
+    return "";
+  }
+
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+function buildScheduleYearOptions(selectedYear?: number): number[] {
+  const currentYear = getCurrentYearInManila();
+  const startYear = currentYear;
+  const endYear = currentYear + 10;
+
+  const years = Array.from(
+    { length: endYear - startYear + 1 },
+    (_, index) => startYear + index,
+  );
+
+  if (selectedYear !== undefined && !years.includes(selectedYear)) {
+    years.push(selectedYear);
+  }
+
+  return years.sort((a, b) => a - b);
+}
+
+function parseScheduleTime(value: string | null | undefined): {
+  hour: string;
+  minute: string;
+  period: "AM" | "PM" | "";
+} {
+  if (!value) {
+    return { hour: "", minute: "", period: "" };
+  }
+
+  const parts = value.split(":");
+  if (parts.length !== 2) {
+    return { hour: "", minute: "", period: "" };
+  }
+
+  const hour24 = Number.parseInt(parts[0], 10);
+  const minute = parts[1];
+
+  if (Number.isNaN(hour24) || hour24 < 0 || hour24 > 23) {
+    return { hour: "", minute: "", period: "" };
+  }
+
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+
+  return {
+    hour: hour12.toString(),
+    minute: minute.padStart(2, "0"),
+    period,
+  };
+}
+
+function formatScheduleTime(
+  hour: string,
+  minute: string,
+  period: "AM" | "PM" | "",
+): string {
+  if (!hour || !minute || !period) {
+    return "";
+  }
+
+  const hour12 = Number.parseInt(hour, 10);
+
+  if (Number.isNaN(hour12) || hour12 < 1 || hour12 > 12) {
+    return "";
+  }
+
+  const hour24 =
+    period === "AM"
+      ? hour12 === 12
+        ? 0
+        : hour12
+      : hour12 === 12
+        ? 12
+        : hour12 + 12;
+
+  return `${hour24.toString().padStart(2, "0")}:${minute.padStart(2, "0")}`;
+}
+
+function ScheduleDateInput({
+  id,
+  value,
+  onChange,
+  onPartialChange,
+  disabled,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  onPartialChange?: (parts: DatePartState) => void;
+  disabled: boolean;
+}) {
+  const parsedValue = parseScheduleDate(value);
+  const [selectedYear, setSelectedYear] = useState(parsedValue.year);
+  const [selectedMonth, setSelectedMonth] = useState(parsedValue.month);
+  const [selectedDay, setSelectedDay] = useState(parsedValue.day);
+
+  useEffect(() => {
+    setSelectedYear(parsedValue.year);
+    setSelectedMonth(parsedValue.month);
+    setSelectedDay(parsedValue.day);
+  }, [parsedValue.year, parsedValue.month, parsedValue.day]);
+
+  const yearOptions = buildScheduleYearOptions(
+    selectedYear ? Number.parseInt(selectedYear, 10) : undefined,
+  );
+  const dayLimit =
+    selectedYear && selectedMonth
+      ? getDaysInMonth(
+          Number.parseInt(selectedYear, 10),
+          Number.parseInt(selectedMonth, 10),
+        )
+      : 31;
+
+  function handlePartChange(part: "year" | "month" | "day", nextValue: string) {
+    const nextYear = part === "year" ? nextValue : selectedYear;
+    const nextMonth = part === "month" ? nextValue : selectedMonth;
+    const nextDay = part === "day" ? nextValue : selectedDay;
+
+    setSelectedYear(nextYear);
+    setSelectedMonth(nextMonth);
+    setSelectedDay(nextDay);
+
+    onPartialChange?.({
+      year: nextYear,
+      month: nextMonth,
+      day: nextDay,
+    });
+
+    if (nextYear && nextMonth && nextDay) {
+      onChange(formatScheduleDate(nextYear, nextMonth, nextDay));
+    }
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      <div className="min-w-[7.5rem] flex-1">
+        <label className="sr-only" htmlFor={`${id}-month`}>
+          Month
+        </label>
+        <select
+          id={`${id}-month`}
+          className="min-w-[6.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          value={selectedMonth}
+          onChange={(event) => handlePartChange("month", event.target.value)}
+          disabled={disabled}
+        >
+          <option value="">Month</option>
+          {Array.from({ length: 12 }, (_, index) => {
+            const monthNumber = index + 1;
+            return (
+              <option key={monthNumber} value={padScheduleNumber(monthNumber)}>
+                {new Date(0, index).toLocaleString("en-US", { month: "short" })}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+      <div className="min-w-[7.5rem] flex-1">
+        <label className="sr-only" htmlFor={`${id}-day`}>
+          Day
+        </label>
+        <select
+          id={`${id}-day`}
+          className="min-w-[6.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          value={selectedDay}
+          onChange={(event) => handlePartChange("day", event.target.value)}
+          disabled={disabled}
+        >
+          <option value="">Day</option>
+          {Array.from({ length: dayLimit }, (_, index) => {
+            const dayValue = index + 1;
+            return (
+              <option key={dayValue} value={padScheduleNumber(dayValue)}>
+                {dayValue}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+      <div className="min-w-[7.5rem] flex-1">
+        <label className="sr-only" htmlFor={`${id}-year`}>
+          Year
+        </label>
+        <select
+          id={`${id}-year`}
+          className="min-w-[6.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          value={selectedYear}
+          onChange={(event) => handlePartChange("year", event.target.value)}
+          disabled={disabled}
+        >
+          <option value="">Year</option>
+          {yearOptions.map((yearOption) => (
+            <option key={yearOption} value={yearOption}>
+              {yearOption}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function ScheduleTimeInput({
+  id,
+  value,
+  onChange,
+  onPartialChange,
+  disabled,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  onPartialChange?: (parts: TimePartState) => void;
+  disabled: boolean;
+}) {
+  const parsedValue = parseScheduleTime(value);
+  const [selectedHour, setSelectedHour] = useState(parsedValue.hour);
+  const [selectedMinute, setSelectedMinute] = useState(parsedValue.minute);
+  const [selectedPeriod, setSelectedPeriod] = useState(parsedValue.period);
+
+  useEffect(() => {
+    setSelectedHour(parsedValue.hour);
+    setSelectedMinute(parsedValue.minute);
+    setSelectedPeriod(parsedValue.period);
+  }, [parsedValue.hour, parsedValue.minute, parsedValue.period]);
+
+  function handlePartChange(
+    part: "hour" | "minute" | "period",
+    nextValue: string,
+  ) {
+    const nextHour = part === "hour" ? nextValue : selectedHour;
+    const nextMinute = part === "minute" ? nextValue : selectedMinute;
+    const nextPeriod =
+      part === "period" ? (nextValue as "AM" | "PM" | "") : selectedPeriod;
+
+    setSelectedHour(nextHour);
+    setSelectedMinute(nextMinute);
+    setSelectedPeriod(nextPeriod);
+
+    onPartialChange?.({
+      hour: nextHour,
+      minute: nextMinute,
+      period: nextPeriod,
+    });
+
+    if (nextHour && nextMinute && nextPeriod) {
+      onChange(formatScheduleTime(nextHour, nextMinute, nextPeriod));
+    }
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      <div className="min-w-[7.5rem] flex-1">
+        <label className="sr-only" htmlFor={`${id}-hour`}>
+          Hour
+        </label>
+        <select
+          id={`${id}-hour`}
+          className="min-w-[6.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          value={selectedHour}
+          onChange={(event) => handlePartChange("hour", event.target.value)}
+          disabled={disabled}
+        >
+          <option value="">Hour</option>
+          {Array.from({ length: 12 }, (_, index) => {
+            const hourValue = index + 1;
+            return (
+              <option key={hourValue} value={hourValue.toString()}>
+                {hourValue}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+      <div className="min-w-[7.5rem] flex-1">
+        <label className="sr-only" htmlFor={`${id}-minute`}>
+          Minute
+        </label>
+        <select
+          id={`${id}-minute`}
+          className="min-w-[6.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          value={selectedMinute}
+          onChange={(event) => handlePartChange("minute", event.target.value)}
+          disabled={disabled}
+        >
+          <option value="">Min</option>
+          {Array.from({ length: 60 }, (_, index) => {
+            const minuteValue = index.toString().padStart(2, "0");
+            return (
+              <option key={minuteValue} value={minuteValue}>
+                {minuteValue}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+      <div className="min-w-[7.5rem] flex-1">
+        <label className="sr-only" htmlFor={`${id}-period`}>
+          Period
+        </label>
+        <select
+          id={`${id}-period`}
+          className="min-w-[7.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          value={selectedPeriod}
+          onChange={(event) => handlePartChange("period", event.target.value)}
+          disabled={disabled}
+        >
+          <option value="">AM/PM</option>
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
+    </div>
+  );
 }
 
 function getCurrentYearInManila(): number {
@@ -887,8 +1213,21 @@ type UsedTerm = {
   semester: SemesterOption;
 };
 
+type DatePartState = {
+  year: string;
+  month: string;
+  day: string;
+};
+
+type TimePartState = {
+  hour: string;
+  minute: string;
+  period: "AM" | "PM" | "";
+};
+
 type SubmissionWindowResponse = {
   isConfigured: boolean;
+  status: "Upcoming" | "Open" | "Closed";
   isOpen: boolean;
   today: string;
   currentTime: string;
@@ -931,12 +1270,115 @@ function SubmissionWindowPanel({
   const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [startDateParts, setStartDateParts] = useState<DatePartState>({
+    year: "",
+    month: "",
+    day: "",
+  });
+  const [endDateParts, setEndDateParts] = useState<DatePartState>({
+    year: "",
+    month: "",
+    day: "",
+  });
+  const [startTimeParts, setStartTimeParts] = useState<TimePartState>({
+    hour: "",
+    minute: "",
+    period: "",
+  });
+  const [endTimeParts, setEndTimeParts] = useState<TimePartState>({
+    hour: "",
+    minute: "",
+    period: "",
+  });
   const [windowStatus, setWindowStatus] =
     useState<SubmissionWindowResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  function formatLongDate(value: string | null | undefined): string {
+    if (!value) {
+      return "";
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return value;
+    }
+
+    return parsed.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  function formatScheduleDateTime(
+    date: string | null,
+    timeLabel: string | null,
+  ): string | null {
+    if (!date || !timeLabel) {
+      return null;
+    }
+
+    const timeValue = toTimeInputValue(timeLabel);
+    if (!timeValue) {
+      return null;
+    }
+
+    const parsed = new Date(`${date}T${timeValue}`);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return parsed.toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function getStatusIcon(status: SubmissionWindowResponse["status"] | null) {
+    if (status === "Upcoming") {
+      return "🟡";
+    }
+
+    if (status === "Open") {
+      return "🟢";
+    }
+
+    return "🔴";
+  }
+
+  function preventManualInput(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key.length === 1) {
+      event.preventDefault();
+    }
+  }
+
+  function validateSchedule(): boolean {
+    if (!startDate || !endDate || !startTime || !endTime) {
+      setError("Start/end date and time are required.");
+      return false;
+    }
+
+    if (
+      startDate > endDate ||
+      (startDate === endDate && startTime >= endTime)
+    ) {
+      setError(
+        "The closing date and time must be later than the opening date and time.",
+      );
+      return false;
+    }
+
+    return true;
+  }
 
   async function loadWindow() {
     setIsLoading(true);
@@ -972,6 +1414,10 @@ function SubmissionWindowPanel({
       setWindowStatus(dataObj);
       setStartDate(dataObj.startDate ?? "");
       setEndDate(dataObj.endDate ?? "");
+      const loadedStartDateParts = parseScheduleDate(dataObj.startDate ?? "");
+      const loadedEndDateParts = parseScheduleDate(dataObj.endDate ?? "");
+      setStartDateParts(loadedStartDateParts);
+      setEndDateParts(loadedEndDateParts);
       setStartTime(
         dataObj.startTimeLabel
           ? (toTimeInputValue(dataObj.startTimeLabel) ?? "")
@@ -981,6 +1427,16 @@ function SubmissionWindowPanel({
         dataObj.endTimeLabel
           ? (toTimeInputValue(dataObj.endTimeLabel) ?? "")
           : "",
+      );
+      setStartTimeParts(
+        dataObj.startTimeLabel
+          ? parseScheduleTime(toTimeInputValue(dataObj.startTimeLabel) ?? "")
+          : { hour: "", minute: "", period: "" },
+      );
+      setEndTimeParts(
+        dataObj.endTimeLabel
+          ? parseScheduleTime(toTimeInputValue(dataObj.endTimeLabel) ?? "")
+          : { hour: "", minute: "", period: "" },
       );
     } catch (loadError) {
       setError(
@@ -1006,15 +1462,14 @@ function SubmissionWindowPanel({
     setError(null);
     setSuccess(null);
 
-    if (!startDate || !endDate || !startTime || !endTime) {
-      setError("Start/end date and time are required.");
-      return;
-    }
-
     if (!windowStatus?.academicYear || !windowStatus?.semester) {
       setError(
         "No active academic term is configured. Please set a current academic term first.",
       );
+      return;
+    }
+
+    if (!validateSchedule()) {
       return;
     }
 
@@ -1026,12 +1481,18 @@ function SubmissionWindowPanel({
       return;
     }
 
-    if (startDate > endDate) {
-      setError("Start date cannot be later than end date.");
-      return;
-    }
+    setShowSaveConfirmation(true);
+  }
 
+  async function submitSave() {
+    setShowSaveConfirmation(false);
     setIsSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    const startTimeLabel = toTimeLabel(startTime);
+    const endTimeLabel = toTimeLabel(endTime);
+
     try {
       const response = await fetch("/api/admin/submission-window", {
         method: "PUT",
@@ -1084,15 +1545,12 @@ function SubmissionWindowPanel({
     }
   }
 
-  async function handleCloseSubmission() {
-    const shouldClose = window.confirm(
-      "Close submissions now and clear the current date/time schedule?",
-    );
+  function handleCloseSubmission() {
+    setShowCloseConfirmation(true);
+  }
 
-    if (!shouldClose) {
-      return;
-    }
-
+  async function confirmCloseSubmission() {
+    setShowCloseConfirmation(false);
     setIsSaving(true);
     setError(null);
     setSuccess(null);
@@ -1138,177 +1596,189 @@ function SubmissionWindowPanel({
     }
   }
 
+  const currentTermLabel =
+    windowStatus?.academicYear && windowStatus?.semester
+      ? `${windowStatus.academicYear} • ${windowStatus.semester}`
+      : "No active academic term";
+
+  const currentScheduleLabel =
+    windowStatus?.startDate &&
+    windowStatus?.startTimeLabel &&
+    windowStatus?.endDate &&
+    windowStatus?.endTimeLabel
+      ? `${formatScheduleDateTime(windowStatus.startDate, windowStatus.startTimeLabel)} to ${formatScheduleDateTime(windowStatus.endDate, windowStatus.endTimeLabel)}`
+      : "Not configured";
+
+  const startPreview = formatScheduleDateTime(
+    startDate,
+    toTimeLabel(startTime),
+  );
+  const endPreview = formatScheduleDateTime(endDate, toTimeLabel(endTime));
+  const schedulePreviewLabel =
+    startPreview && endPreview
+      ? `${startPreview} to ${endPreview}`
+      : "Pick opening and closing schedule to preview.";
+  const schedulePreviewOpen = startPreview ?? "Opening not set yet.";
+  const schedulePreviewClose = endPreview ?? "Closing not set yet.";
+  const startPreviewMonth =
+    startDateParts.month && Number(startDateParts.month)
+      ? new Date(0, Number(startDateParts.month) - 1).toLocaleString("en-US", {
+          month: "short",
+        })
+      : "Not set";
+  const startPreviewDay = startDateParts.day || "Not set";
+  const startPreviewYear = startDateParts.year || "Not set";
+  const startPreviewTime =
+    startTimeParts.hour && startTimeParts.minute && startTimeParts.period
+      ? `${startTimeParts.hour}:${startTimeParts.minute} ${startTimeParts.period}`
+      : "Not set";
+  const endPreviewMonth =
+    endDateParts.month && Number(endDateParts.month)
+      ? new Date(0, Number(endDateParts.month) - 1).toLocaleString("en-US", {
+          month: "short",
+        })
+      : "Not set";
+  const endPreviewDay = endDateParts.day || "Not set";
+  const endPreviewYear = endDateParts.year || "Not set";
+  const endPreviewTime =
+    endTimeParts.hour && endTimeParts.minute && endTimeParts.period
+      ? `${endTimeParts.hour}:${endTimeParts.minute} ${endTimeParts.period}`
+      : "Not set";
+
+  const historyRows = (windowStatus?.usedTerms ?? []).map((term) => {
+    const isCurrent =
+      term.academicYear === windowStatus?.academicYear &&
+      term.semester === windowStatus?.semester;
+
+    return {
+      academicYear: term.academicYear,
+      semester: term.semester,
+      schedule: isCurrent ? currentScheduleLabel : "N/A",
+      status: isCurrent ? windowStatus?.status : "Closed",
+    };
+  });
+
   return (
     <form
       className="mt-6 rounded-xl border border-slate-700 bg-slate-950/50 p-6"
       onSubmit={handleSave}
     >
-      {windowStatus ? (
-        <div className="mb-4 rounded-md border border-slate-700 bg-slate-950 p-3 text-sm text-slate-300">
-          <p>
-            <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
-              Today:
-            </span>{" "}
-            {windowStatus.today}
-          </p>
-          <p className="mt-1">
-            <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
-              Current time:
-            </span>{" "}
-            {windowStatus.currentTimeLabel}
-          </p>
-          {windowStatus.isConfigured ? (
-            <>
-              <p className="mt-1">
-                <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
-                  Term:
-                </span>{" "}
-                {windowStatus.academicYear ?? "N/A"} •{" "}
-                {windowStatus.semester ?? "N/A"}
-              </p>
-              <p className="mt-1">
-                <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
-                  Schedule:
-                </span>{" "}
-                {windowStatus.startDate} {windowStatus.startTimeLabel} to{" "}
-                {windowStatus.endDate} {windowStatus.endTimeLabel}
-              </p>
-            </>
-          ) : null}
-          <p className="mt-1">
-            <span className="text-xs uppercase tracking-[0.18em] text-amber-300">
-              Current status:
-            </span>{" "}
-            <span
-              className={
-                windowStatus.isConfigured
-                  ? windowStatus.isOpen
-                    ? "text-emerald-300"
-                    : "text-amber-300"
-                  : "text-slate-300"
-              }
+      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-700 bg-slate-950/80 p-5">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-white">
+              Submission Window
+            </h2>
+            <p className="text-sm text-slate-400">
+              Manage the current submission schedule for the active academic
+              term.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={loadWindow}
+              disabled={isLoading || isSaving}
             >
-              {!windowStatus.isConfigured
-                ? "Not configured (submissions are closed)"
-                : windowStatus.isOpen
-                  ? "Open"
-                  : "Closed"}
-            </span>
-          </p>
-        </div>
-      ) : null}
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <label
-            className="text-xs uppercase tracking-[0.18em] text-amber-300"
-            htmlFor="windowStartDate"
-          >
-            Start Date
-          </label>
-          <input
-            id="windowStartDate"
-            type="date"
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-            disabled={isLoading || isSaving}
-          />
+              Refresh
+            </Button>
+          </div>
         </div>
 
-        <div>
-          <label
-            className="text-xs uppercase tracking-[0.18em] text-amber-300"
-            htmlFor="windowEndDate"
-          >
-            End Date
-          </label>
-          <input
-            id="windowEndDate"
-            type="date"
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-            value={endDate}
-            onChange={(event) => setEndDate(event.target.value)}
-            disabled={isLoading || isSaving}
-          />
-        </div>
-
-        <div>
-          <label
-            className="text-xs uppercase tracking-[0.18em] text-amber-300"
-            htmlFor="windowStartTime"
-          >
-            Start Time
-          </label>
-          <input
-            id="windowStartTime"
-            type="time"
-            step={60}
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-            value={startTime}
-            onChange={(event) => setStartTime(event.target.value)}
-            disabled={isLoading || isSaving}
-          />
-        </div>
-
-        <div>
-          <label
-            className="text-xs uppercase tracking-[0.18em] text-amber-300"
-            htmlFor="windowEndTime"
-          >
-            End Time
-          </label>
-          <input
-            id="windowEndTime"
-            type="time"
-            step={60}
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-            value={endTime}
-            onChange={(event) => setEndTime(event.target.value)}
-            disabled={isLoading || isSaving}
-          />
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-slate-700 bg-slate-950/90 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+              Today
+            </p>
+            <p className="mt-2 text-lg font-semibold text-white">
+              {formatLongDate(windowStatus?.today)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-700 bg-slate-950/90 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+              Current time
+            </p>
+            <p className="mt-2 text-lg font-semibold text-white">
+              {windowStatus?.currentTimeLabel}
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 mt-4">
-        <div className="md:col-span-2">
-          <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
-              Current Academic Term
-            </p>
-            {windowStatus?.academicYear && windowStatus?.semester ? (
-              <div className="mt-3 grid gap-3 md:grid-cols-3">
-                <div className="rounded-2xl border border-slate-700 bg-slate-900 p-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                    Academic Year
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-white">
-                    {windowStatus.academicYear}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-700 bg-slate-900 p-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                    Semester
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-white">
-                    {windowStatus.semester}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-700 bg-slate-900 p-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                    Status
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-white">
-                    Current
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <p className="mt-3 text-sm text-slate-400">
-                No current academic term is configured. Please set the current
-                academic term in the Academic Terms page.
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+            Submission Schedule
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-sm text-slate-400">Opens</p>
+              <ScheduleDateInput
+                id="windowStartDate"
+                value={startDate}
+                onChange={(value) => setStartDate(value)}
+                onPartialChange={setStartDateParts}
+                disabled={isLoading || isSaving}
+              />
+            </div>
+            <div>
+              <p className="text-sm text-slate-400">Time</p>
+              <ScheduleTimeInput
+                id="windowStartTime"
+                value={startTime}
+                onChange={(value) => setStartTime(value)}
+                onPartialChange={setStartTimeParts}
+                disabled={isLoading || isSaving}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <div className="mx-auto h-px w-full bg-slate-700" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-400">Closes</p>
+              <ScheduleDateInput
+                id="windowEndDate"
+                value={endDate}
+                onChange={(value) => setEndDate(value)}
+                onPartialChange={setEndDateParts}
+                disabled={isLoading || isSaving}
+              />
+            </div>
+            <div>
+              <p className="text-sm text-slate-400">Time</p>
+              <ScheduleTimeInput
+                id="windowEndTime"
+                value={endTime}
+                onChange={(value) => setEndTime(value)}
+                onPartialChange={setEndTimeParts}
+                disabled={isLoading || isSaving}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="self-start rounded-2xl border border-slate-700 bg-slate-950/80 p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+            Submission Summary
+          </p>
+          <div className="mt-4 space-y-3 text-sm text-slate-300">
+            <div>
+              <p className="text-slate-400">Term</p>
+              <p className="mt-1 font-semibold text-white">
+                {currentTermLabel}
               </p>
-            )}
+            </div>
+            <div>
+              <p className="text-slate-400">Schedule</p>
+              <p className="mt-1 text-white">{currentScheduleLabel}</p>
+            </div>
+            <div>
+              <p className="text-slate-400">Status</p>
+              <p className="mt-1 font-semibold text-white">
+                {getStatusIcon(windowStatus?.status)}{" "}
+                {windowStatus?.status ?? "Closed"}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -1325,7 +1795,7 @@ function SubmissionWindowPanel({
         </p>
       ) : null}
 
-      <div className="mt-4 flex justify-end gap-2">
+      <div className="mt-4 flex flex-col gap-3 md:flex-row md:justify-end">
         <Button
           type="button"
           variant="secondary"
@@ -1335,13 +1805,83 @@ function SubmissionWindowPanel({
         >
           Close Submission
         </Button>
-        <Button type="button" variant="secondary" onClick={loadWindow}>
-          Refresh
-        </Button>
         <Button type="submit" disabled={isLoading || isSaving}>
           {isSaving ? "Saving..." : "Save Submission Window"}
         </Button>
       </div>
+
+      {showSaveConfirmation ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-950 p-6 shadow-2xl shadow-black/40">
+            <h3 className="text-xl font-semibold text-white">
+              Confirm Submission Window
+            </h3>
+            <p className="mt-3 text-sm text-slate-400">
+              Academic Term: {currentTermLabel}
+            </p>
+            <div className="mt-4 space-y-3 text-sm text-slate-300">
+              <div>
+                <p className="text-slate-400">Opening</p>
+                <p className="mt-1 text-white">
+                  {formatScheduleDateTime(startDate, toTimeLabel(startTime))}
+                </p>
+              </div>
+              <div>
+                <p className="text-slate-400">Closing</p>
+                <p className="mt-1 text-white">
+                  {formatScheduleDateTime(endDate, toTimeLabel(endTime))}
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowSaveConfirmation(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="button" onClick={submitSave} disabled={isSaving}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showCloseConfirmation ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-950 p-6 shadow-2xl shadow-black/40">
+            <h3 className="text-xl font-semibold text-white">
+              Close Submission?
+            </h3>
+            <p className="mt-3 text-sm text-slate-400">
+              Are you sure you want to close submissions for:
+            </p>
+            <p className="mt-2 text-white font-semibold">{currentTermLabel}</p>
+            <p className="mt-4 text-sm text-slate-300">
+              Faculty members will no longer be able to submit requirements.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowCloseConfirmation(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="bg-red-700 text-white hover:bg-red-600"
+                onClick={confirmCloseSubmission}
+                disabled={isSaving}
+              >
+                Confirm Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </form>
   );
 }
