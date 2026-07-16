@@ -560,7 +560,6 @@ export function AdminFacultyDashboard({
           <SidebarButton
             active={activeSection === "academicTerms"}
             title="Academic Term Management"
-            description="Open academic term settings"
             onClick={() => setActiveSection("academicTerms")}
           />
         </nav>
@@ -623,17 +622,12 @@ export function AdminFacultyDashboard({
                 </div>
 
                 <section className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5 shadow-lg shadow-black/20">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                  <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                     <div>
                       <h4 className="text-base font-semibold text-[#fff8e7]">
-                        Add Faculty Account
+                        Faculty List
                       </h4>
-                      <p className="text-sm text-slate-400">
-                        Open the add faculty form in a modal, then review the
-                        directory below.
-                      </p>
                     </div>
-
                     <Button
                       type="button"
                       onClick={() => {
@@ -644,20 +638,6 @@ export function AdminFacultyDashboard({
                     >
                       Add Faculty
                     </Button>
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5 shadow-lg shadow-black/20">
-                  <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                    <div>
-                      <h4 className="text-base font-semibold text-[#fff8e7]">
-                        Faculty List
-                      </h4>
-                      <p className="text-sm text-slate-400">
-                        Track active accounts, open details, or deactivate and
-                        remove faculty access.
-                      </p>
-                    </div>
                   </div>
 
                   <FacultyListPanel
@@ -1753,6 +1733,14 @@ function RequirementsPanel({
 }) {
   const [academicYear, setAcademicYear] = useState("");
   const [semester, setSemester] = useState<SemesterOption>("1st Semester");
+  const [currentAcademicYear, setCurrentAcademicYear] = useState<string | null>(
+    null,
+  );
+  const [currentSemester, setCurrentSemester] = useState<SemesterOption | null>(
+    null,
+  );
+  const [currentTermConfigured, setCurrentTermConfigured] = useState(false);
+  const [isHistoryMode, setIsHistoryMode] = useState(false);
   const [availableAcademicYears, setAvailableAcademicYears] = useState<
     string[]
   >([]);
@@ -1776,7 +1764,6 @@ function RequirementsPanel({
     setVerificationStatus(null);
     setVerificationError(null);
   }, [resetTrigger]);
-  const [initialLoadInfo, setInitialLoadInfo] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   async function fetchVerificationStatus(
@@ -1871,15 +1858,17 @@ function RequirementsPanel({
       const timeoutId = window.setTimeout(() => {
         setAvailableAcademicYears([]);
         setAvailableSemesters([]);
+        setCurrentAcademicYear(null);
+        setCurrentSemester(null);
+        setCurrentTermConfigured(false);
         setVerificationError(null);
       }, 0);
 
       return () => window.clearTimeout(timeoutId);
-      return;
     }
 
-    // Load available academic years without setting requirement status yet
-    // Requirement status will be set when modal is opened
+    // Load available academic years and current term metadata without setting requirement status yet
+    // Requirement status will be set when modal is opened.
     (async () => {
       try {
         const response = await fetch(
@@ -1891,61 +1880,31 @@ function RequirementsPanel({
           const data = await response.json();
           const years: string[] = data.availableAcademicYears ?? [];
           const selectedYear = data.selectedAcademicYear ?? "";
-          // Compute a sensible default semester based on latest submission date
-          let computedYear = selectedYear || years[0] || "";
-          let computedSem: SemesterOption = "1st Semester";
+          const selectedSem =
+            (data.selectedSemester as SemesterOption | undefined) ??
+            "1st Semester";
+          const currentYear = data.currentAcademicYear ?? null;
+          const currentSem =
+            (data.currentSemester as SemesterOption | undefined) ?? null;
+          const termConfigured = Boolean(data.currentTermConfigured);
 
-          try {
-            const subsResp = await fetch(
-              `/api/admin/faculty/submissions?facultyId=${selectedFaculty.id}`,
-              { credentials: "include" },
-            );
-
-            if (subsResp.ok) {
-              const subsData = await subsResp.json();
-              const subs = subsData.submissions || [];
-              if (subs.length > 0) {
-                const latest = subs.reduce((a: any, b: any) => {
-                  const aTime = new Date(
-                    a.submitted_at || a.created_at,
-                  ).getTime();
-                  const bTime = new Date(
-                    b.submitted_at || b.created_at,
-                  ).getTime();
-                  return aTime > bTime ? a : b;
-                });
-
-                const dateStr = latest.submitted_at || latest.created_at;
-                if (dateStr) {
-                  const d = new Date(dateStr);
-                  const month = d.getMonth() + 1;
-                  const year = d.getFullYear();
-                  const startsSchoolYear = month >= 6;
-                  computedSem = startsSchoolYear
-                    ? "1st Semester"
-                    : "2nd Semester";
-                  computedYear = startsSchoolYear
-                    ? `${year}-${year + 1}`
-                    : `${year - 1}-${year}`;
-                }
-              }
-            }
-          } catch (e) {
-            // ignore and fall back to defaults
-          }
+          const computedYear =
+            termConfigured && currentYear
+              ? currentYear
+              : selectedYear || years[0] || "";
+          const computedSem =
+            termConfigured && currentSem ? currentSem : selectedSem;
 
           setAvailableAcademicYears(years);
+          setAvailableSemesters(data.availableSemesters ?? []);
+          setCurrentAcademicYear(currentYear);
+          setCurrentSemester(currentSem);
+          setCurrentTermConfigured(termConfigured);
           setAcademicYear(computedYear || "");
           setSemester(computedSem);
-          // Don't set verification status here - wait for modal to open
+          setIsHistoryMode(!termConfigured);
           setVerificationStatus(null);
-          setInitialLoadInfo(
-            `API returned ${years.length} academic year(s). selected: ${
-              computedYear || "(none)"
-            }`,
-          );
         } else {
-          // Try to parse body for error details
           let details = "";
           try {
             const err = await response.json();
@@ -1958,16 +1917,36 @@ function RequirementsPanel({
             }
           }
 
-          setInitialLoadInfo(
+          setVerificationError(
             `API returned HTTP ${response.status} - ${details}`,
           );
         }
       } catch (error) {
         console.error("Failed to load academic years", error);
-        setInitialLoadInfo(`Failed to load academic years: ${String(error)}`);
+        setVerificationError(`Failed to load academic years: ${String(error)}`);
       }
     })();
   }, [selectedFaculty]);
+
+  function handleToggleHistoryMode(enabled: boolean) {
+    setIsHistoryMode(enabled);
+
+    if (!enabled && currentAcademicYear && currentSemester) {
+      setAcademicYear(currentAcademicYear);
+      setSemester(currentSemester);
+    }
+
+    if (enabled) {
+      setAcademicYear(
+        (previous) => previous || availableAcademicYears[0] || "",
+      );
+      setSemester((previous) =>
+        previous && availableSemesters.includes(previous)
+          ? previous
+          : (availableSemesters[0] ?? "1st Semester"),
+      );
+    }
+  }
 
   useEffect(() => {
     if (!selectedFaculty || !academicYear) {
@@ -2020,44 +1999,18 @@ function RequirementsPanel({
   async function onOpenModal() {
     if (!selectedFaculty) return;
 
-    // Use the current filter selection if the admin has already chosen a year/semester.
-    // Only infer from the latest submission when no academic year is selected.
-    let useYear = academicYear;
-    let useSem = semester;
+    const useYear =
+      isHistoryMode && academicYear
+        ? academicYear
+        : (currentAcademicYear ?? academicYear);
+    const useSem =
+      isHistoryMode && semester ? semester : (currentSemester ?? semester);
 
-    if (!useYear) {
-      try {
-        const subsResp = await fetch(
-          `/api/admin/faculty/submissions?facultyId=${selectedFaculty.id}`,
-          { credentials: "include" },
-        );
-
-        if (subsResp.ok) {
-          const subsData = await subsResp.json();
-          const subs = subsData.submissions || [];
-          if (subs.length > 0) {
-            const latest = subs.reduce((a: any, b: any) => {
-              const aTime = new Date(a.submitted_at || a.created_at).getTime();
-              const bTime = new Date(b.submitted_at || b.created_at).getTime();
-              return aTime > bTime ? a : b;
-            });
-
-            const dateStr = latest.submitted_at || latest.created_at;
-            if (dateStr) {
-              const d = new Date(dateStr);
-              const month = d.getMonth() + 1;
-              const year = d.getFullYear();
-              const startsSchoolYear = month >= 6;
-              useSem = startsSchoolYear ? "1st Semester" : "2nd Semester";
-              useYear = startsSchoolYear
-                ? `${year}-${year + 1}`
-                : `${year - 1}-${year}`;
-            }
-          }
-        }
-      } catch (e) {
-        // ignore and use current selection
-      }
+    if (!useYear || !useSem) {
+      setVerificationError(
+        "A school year and semester are required. Configure the current academic term or select a previous term.",
+      );
+      return;
     }
 
     await fetchVerificationStatus(selectedFaculty.id, useYear, useSem);
@@ -2074,6 +2027,74 @@ function RequirementsPanel({
 
       {facultyAccounts.length > 0 ? (
         <div className="mt-4 space-y-3">
+          <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5 shadow-lg shadow-black/20">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                  Current Academic Term
+                </p>
+                <h4 className="mt-2 text-lg font-semibold text-white">
+                  {currentTermConfigured
+                    ? "Current Academic Term"
+                    : "Academic Term"}
+                </h4>
+              </div>
+              {currentTermConfigured ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="uppercase tracking-[0.18em]"
+                  onClick={() => handleToggleHistoryMode(!isHistoryMode)}
+                >
+                  {isHistoryMode
+                    ? "Return to current term"
+                    : "View previous terms"}
+                </Button>
+              ) : null}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  Academic Year
+                </p>
+                <p className="mt-2 text-sm font-medium text-white">
+                  {currentTermConfigured
+                    ? (currentAcademicYear ?? academicYear)
+                    : "Not configured"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  Semester
+                </p>
+                <p className="mt-2 text-sm font-medium text-white">
+                  {currentTermConfigured
+                    ? (currentSemester ?? semester)
+                    : "Not configured"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  Status
+                </p>
+                <p className="mt-2 text-sm font-medium text-white">
+                  {currentTermConfigured ? "Current 🟢" : "No active term"}
+                </p>
+              </div>
+            </div>
+
+            {!currentTermConfigured ? (
+              <p className="mt-4 text-sm text-slate-400">
+                The current academic term is not configured. Select a previous
+                term to review history.
+              </p>
+            ) : null}
+          </div>
+
           <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
             <div className="grid gap-3 md:grid-cols-3">
               <div>
@@ -2099,33 +2120,41 @@ function RequirementsPanel({
               </div>
 
               <div>
-                <label
-                  className="text-xs uppercase tracking-[0.18em] text-amber-300"
-                  htmlFor="academicYearFilter"
-                >
-                  School Year
-                </label>
-                <select
-                  id="academicYearFilter"
-                  className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-                  value={academicYear}
-                  onChange={(event) => setAcademicYear(event.target.value)}
-                >
-                  {availableAcademicYears.length === 0 ? (
-                    <option value="">No school year found</option>
-                  ) : null}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <label
+                      className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                      htmlFor="academicYearFilter"
+                    >
+                      Academic Year
+                    </label>
+                  </div>
 
-                  {availableAcademicYears.map((year) => (
-                    <option key={year} value={year}>
-                      S.Y. {year}
-                    </option>
-                  ))}
-                </select>
-                {initialLoadInfo ? (
-                  <p className="mt-2 text-xs text-slate-400">
-                    {initialLoadInfo}
-                  </p>
-                ) : null}
+                  {currentTermConfigured && !isHistoryMode ? (
+                    <div className="mt-1 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white">
+                      S.Y. {currentAcademicYear}
+                    </div>
+                  ) : (
+                    <select
+                      id="academicYearFilter"
+                      className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                      value={academicYear}
+                      onChange={(event) => setAcademicYear(event.target.value)}
+                      disabled={currentTermConfigured && !isHistoryMode}
+                    >
+                      {availableAcademicYears.length === 0 ? (
+                        <option value="">No school year found</option>
+                      ) : null}
+
+                      {availableAcademicYears.map((year) => (
+                        <option key={year} value={year}>
+                          S.Y. {year}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                {!currentTermConfigured || isHistoryMode ? null : null}
               </div>
 
               <div>
@@ -2135,42 +2164,64 @@ function RequirementsPanel({
                 >
                   Semester
                 </label>
-                <select
-                  id="semesterFilter"
-                  className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-                  value={semester}
-                  onChange={(event) =>
-                    setSemester(event.target.value as SemesterOption)
-                  }
-                  disabled={
-                    !selectedFaculty ||
-                    !academicYear ||
-                    availableSemesters.length === 0
-                  }
-                >
-                  {SEMESTER_OPTIONS.map((term) => {
-                    const disabled =
-                      availableSemesters.length > 0
-                        ? !availableSemesters.includes(term)
-                        : true;
+                {currentTermConfigured && !isHistoryMode ? (
+                  <div className="mt-1 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white">
+                    {currentSemester}
+                  </div>
+                ) : (
+                  <select
+                    id="semesterFilter"
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                    value={semester}
+                    onChange={(event) =>
+                      setSemester(event.target.value as SemesterOption)
+                    }
+                    disabled={
+                      currentTermConfigured && !isHistoryMode
+                        ? true
+                        : !selectedFaculty ||
+                          !academicYear ||
+                          availableSemesters.length === 0
+                    }
+                  >
+                    {SEMESTER_OPTIONS.map((term) => {
+                      const disabled =
+                        availableSemesters.length > 0
+                          ? !availableSemesters.includes(term)
+                          : true;
 
-                    return (
-                      <option key={term} value={term} disabled={disabled}>
-                        {term}
-                        {disabled ? " (no content yet)" : ""}
-                      </option>
-                    );
-                  })}
-                </select>
+                      return (
+                        <option key={term} value={term} disabled={disabled}>
+                          {term}
+                          {disabled ? " (no content yet)" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                )}
                 <p className="mt-2 text-xs text-slate-400">
                   {availableSemesters.length === 0
                     ? `No semester content is available for ${
-                        academicYear || "the selected school year"
+                        currentTermConfigured && !isHistoryMode
+                          ? currentAcademicYear
+                          : academicYear || "the selected school year"
                       }.`
                     : availableSemesters.length === 1
                       ? `${availableSemesters[0]} is available for ${academicYear}.`
                       : `Both semesters are available for ${academicYear}.`}
                 </p>
+                {currentTermConfigured ? (
+                  <p className="mt-2 text-xs text-slate-400">
+                    {isHistoryMode
+                      ? "Viewing previous term history."
+                      : "Using the active term for verification."}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-400">
+                    No active academic term is configured. Select a previous
+                    term to review history.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -2180,9 +2231,11 @@ function RequirementsPanel({
               </p>
             ) : null}
 
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex justify-center">
               <Button
                 type="button"
+                variant="default"
+                size="sm"
                 disabled={
                   !selectedFaculty ||
                   !academicYear ||
@@ -2193,22 +2246,11 @@ function RequirementsPanel({
               >
                 {isLoadingVerification
                   ? "Loading requirements..."
-                  : "Open Verification Modal"}
+                  : "Verify Requirements"}
               </Button>
             </div>
             {verificationError ? (
               <p className="mt-2 text-sm text-red-300">{verificationError}</p>
-            ) : null}
-
-            {verificationStatus ? (
-              <div className="mt-2 rounded-md border border-slate-700 bg-slate-950 p-3 text-xs text-slate-300">
-                <div className="font-semibold text-slate-100">
-                  Verification status (debug):
-                </div>
-                <pre className="whitespace-pre-wrap mt-1">
-                  {JSON.stringify(verificationStatus, null, 2)}
-                </pre>
-              </div>
             ) : null}
           </div>
         </div>
@@ -2860,33 +2902,9 @@ function FacultyDetailsModal({
               <p className="text-sm text-slate-200">{formattedDate}</p>
             </div>
           </article>
-
-          <article className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-            <h3 className="font-semibold mb-3">Compliance Requirements</h3>
-            <div className="space-y-2">
-              {Object.entries(selectedFaculty.requirementStatus).map(
-                ([code, status]) => (
-                  <div key={code} className="flex items-center justify-between">
-                    <p className="text-sm text-slate-400">{code}</p>
-                    <span
-                      className={`text-xs px-2 py-1 rounded ${
-                        status === "validated"
-                          ? "bg-green-900/30 text-green-400"
-                          : status === "uploaded"
-                            ? "bg-yellow-900/30 text-yellow-400"
-                            : "bg-red-900/30 text-red-400"
-                      }`}
-                    >
-                      {statusLabel(status)}
-                    </span>
-                  </div>
-                ),
-              )}
-            </div>
-          </article>
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-center">
           <Button
             onClick={onClose}
             variant="secondary"
