@@ -2882,6 +2882,12 @@ function FacultyDetailsModal({
     setSaveMessage(null);
     setSaveError(null);
 
+    if (!selectedFaculty) {
+      setSaveError("Faculty not selected.");
+      setIsSaving(false);
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("facultyProfileId", selectedFaculty.id);
