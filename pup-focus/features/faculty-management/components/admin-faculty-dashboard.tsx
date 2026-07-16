@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
+import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import {
   REQUIREMENT_LABEL,
   DEFAULT_REQUIREMENTS,
@@ -25,6 +26,7 @@ type AdminSection =
   | "facultyManagement"
   | "requirements"
   | "submissionWindow"
+  | "academicTerms"
   | "details";
 
 type FacultyAccount = {
@@ -555,6 +557,12 @@ export function AdminFacultyDashboard({
             title="Submission Window"
             onClick={() => setActiveSection("submissionWindow")}
           />
+          <SidebarButton
+            active={activeSection === "academicTerms"}
+            title="Academic Term Management"
+            description="Open academic term settings"
+            onClick={() => setActiveSection("academicTerms")}
+          />
         </nav>
       </aside>
 
@@ -730,6 +738,31 @@ export function AdminFacultyDashboard({
                     setVerificationResetTrigger((prev) => prev + 1)
                   }
                 />
+              </article>
+            ) : null}
+
+            {activeSection === "academicTerms" ? (
+              <article className="p-8">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-amber-300">
+                      Academic Term Management
+                    </h3>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void refreshCurrentPanel()}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Refreshing..." : "Refresh"}
+                  </Button>
+                </div>
+
+                <section className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5 shadow-lg shadow-black/20">
+                  <AdminAcademicTerms adminName={adminName ?? "Admin"} />
+                </section>
               </article>
             ) : null}
           </div>
@@ -917,11 +950,6 @@ function SubmissionWindowPanel({
   const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [academicYear, setAcademicYear] = useState("");
-  const [semester, setSemester] = useState<SemesterOption>("1st Semester");
-  const [availableAcademicYears, setAvailableAcademicYears] = useState<
-    string[]
-  >(buildAcademicYearOptions());
   const [windowStatus, setWindowStatus] =
     useState<SubmissionWindowResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -959,30 +987,19 @@ function SubmissionWindowPanel({
       }
 
       const data = body as SubmissionWindowResponse;
-      const currentAcademicYears = buildAcademicYearOptions();
-      const yearOptions = data.academicYear
-        ? currentAcademicYears.includes(data.academicYear)
-          ? currentAcademicYears
-          : [data.academicYear, ...currentAcademicYears]
-        : currentAcademicYears;
-
-      setAvailableAcademicYears(yearOptions);
-      setWindowStatus(data);
-      setStartDate(data.startDate ?? "");
-      setEndDate(data.endDate ?? "");
-      setAcademicYear(
-        data.academicYear && yearOptions.includes(data.academicYear)
-          ? data.academicYear
-          : (yearOptions[0] ?? ""),
-      );
-      setSemester(data.semester ?? "1st Semester");
+      const dataObj = data as SubmissionWindowResponse;
+      setWindowStatus(dataObj);
+      setStartDate(dataObj.startDate ?? "");
+      setEndDate(dataObj.endDate ?? "");
       setStartTime(
-        data.startTimeLabel
-          ? (toTimeInputValue(data.startTimeLabel) ?? "")
+        dataObj.startTimeLabel
+          ? (toTimeInputValue(dataObj.startTimeLabel) ?? "")
           : "",
       );
       setEndTime(
-        data.endTimeLabel ? (toTimeInputValue(data.endTimeLabel) ?? "") : "",
+        dataObj.endTimeLabel
+          ? (toTimeInputValue(dataObj.endTimeLabel) ?? "")
+          : "",
       );
     } catch (loadError) {
       setError(
@@ -1013,14 +1030,9 @@ function SubmissionWindowPanel({
       return;
     }
 
-    if (!academicYear) {
-      setError("Academic year is required.");
-      return;
-    }
-
-    if (!availableAcademicYears.includes(academicYear)) {
+    if (!windowStatus?.academicYear || !windowStatus?.semester) {
       setError(
-        "Selected academic year is not yet available. Please choose a supported year.",
+        "No active academic term is configured. Please set a current academic term first.",
       );
       return;
     }
@@ -1049,8 +1061,6 @@ function SubmissionWindowPanel({
           endDate,
           startTime: startTimeLabel,
           endTime: endTimeLabel,
-          academicYear,
-          semester,
         }),
       });
       const body = await readApiBody(response);
@@ -1132,8 +1142,6 @@ function SubmissionWindowPanel({
       setWindowStatus(body as SubmissionWindowResponse);
       setStartDate("");
       setEndDate("");
-      setAcademicYear("");
-      setSemester("1st Semester");
       setStartTime("");
       setEndTime("");
       setSuccess("Submissions closed and schedule cleared.");
@@ -1282,84 +1290,45 @@ function SubmissionWindowPanel({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 mt-4">
-        <div>
-          <label
-            className="text-xs uppercase tracking-[0.18em] text-amber-300"
-            htmlFor="windowAcademicYear"
-          >
-            Academic Year
-          </label>
-          <select
-            id="windowAcademicYear"
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-            value={academicYear}
-            onChange={(event) => setAcademicYear(event.target.value)}
-            disabled={isLoading || isSaving}
-          >
-            {availableAcademicYears.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label
-            className="text-xs uppercase tracking-[0.18em] text-amber-300"
-            htmlFor="windowSemester"
-          >
-            Semester
-          </label>
-          <select
-            id="windowSemester"
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
-            value={semester}
-            onChange={(event) =>
-              setSemester(event.target.value as SemesterOption)
-            }
-            disabled={isLoading || isSaving}
-          >
-            {SEMESTER_OPTIONS.map((option) => {
-              const usedTerms = windowStatus?.usedTerms ?? [];
-              const isCurrentWindowTerm =
-                windowStatus?.academicYear === academicYear &&
-                windowStatus?.semester === option;
-              const isAlreadyUsed = usedTerms.some(
-                (term) =>
-                  term.academicYear === academicYear &&
-                  term.semester === option,
-              );
-              const disabled = isAlreadyUsed && !isCurrentWindowTerm;
-
-              return (
-                <option key={option} value={option} disabled={disabled}>
-                  {option}
-                  {disabled ? " (already used)" : ""}
-                </option>
-              );
-            })}
-          </select>
-          {academicYear ? (
-            <p className="mt-1 text-xs text-slate-400">
-              {(() => {
-                const usedTerms = windowStatus?.usedTerms ?? [];
-                const usedSemesters = usedTerms
-                  .filter((term) => term.academicYear === academicYear)
-                  .map((term) => term.semester);
-
-                if (usedSemesters.length === 0) {
-                  return `Both semesters are available for ${academicYear}.`;
-                }
-
-                if (usedSemesters.length === 1) {
-                  return `${usedSemesters[0]} is already used for ${academicYear}.`;
-                }
-
-                return `${usedSemesters.join(" and ")} are already used for ${academicYear}.`;
-              })()}
+        <div className="md:col-span-2">
+          <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+              Current Academic Term
             </p>
-          ) : null}
+            {windowStatus?.academicYear && windowStatus?.semester ? (
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
+                <div className="rounded-2xl border border-slate-700 bg-slate-900 p-3">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    Academic Year
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-white">
+                    {windowStatus.academicYear}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-700 bg-slate-900 p-3">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    Semester
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-white">
+                    {windowStatus.semester}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-700 bg-slate-900 p-3">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    Status
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-white">
+                    Current
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-slate-400">
+                No current academic term is configured. Please set the current
+                academic term in the Academic Terms page.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

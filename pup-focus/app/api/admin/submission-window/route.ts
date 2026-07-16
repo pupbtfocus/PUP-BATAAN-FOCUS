@@ -7,6 +7,7 @@ import {
   getSubmissionWindow,
   isAllowedAcademicYear,
   isMissingSubmissionWindowColumnsError,
+  normalizeSemester,
   validateSubmissionWindow,
 } from "@/features/submissions/services/submission-window.service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -33,7 +34,29 @@ export async function GET() {
     }
 
     const supabase = getServiceRoleClient();
-    const config = await getSubmissionWindow(supabase);
+    let config = await getSubmissionWindow(supabase);
+
+    if (!config?.academicYear || !config?.semester) {
+      const { data: currentTerm, error: currentTermError } = await supabase
+        .from("academic_terms")
+        .select("academic_year, semester")
+        .eq("status", "Current")
+        .limit(1)
+        .maybeSingle();
+
+      if (
+        !currentTermError &&
+        currentTerm?.academic_year &&
+        currentTerm?.semester
+      ) {
+        config = {
+          ...config,
+          academicYear: currentTerm.academic_year,
+          semester: normalizeSemester(currentTerm.semester),
+        };
+      }
+    }
+
     const status = evaluateSubmissionWindow(config);
 
     let usedTerms: Array<{ academicYear: string; semester: string }> = [];
@@ -76,8 +99,6 @@ type UpdatePayload = {
   endDate?: string;
   startTime?: string;
   endTime?: string;
-  academicYear?: string;
-  semester?: string;
 };
 
 export async function PUT(request: NextRequest) {
@@ -100,15 +121,33 @@ export async function PUT(request: NextRequest) {
     const endDate = payload.endDate?.trim() ?? "";
     const startTime = payload.startTime?.trim() ?? "";
     const endTime = payload.endTime?.trim() ?? "";
-    const academicYear = payload.academicYear?.trim() ?? "";
-    const semester = payload.semester?.trim() ?? "";
-
     if (!startDate || !endDate || !startTime || !endTime) {
       return NextResponse.json(
         { error: "Start/end date and time are required." },
         { status: 400 },
       );
     }
+
+    const supabase = getServiceRoleClient();
+    const currentTermResult = await supabase
+      .from("academic_terms")
+      .select("academic_year, semester")
+      .eq("status", "Current")
+      .limit(1)
+      .maybeSingle();
+
+    if (currentTermResult.error || !currentTermResult.data) {
+      return NextResponse.json(
+        {
+          error:
+            "No active academic term is configured. Please create and set a current academic term before saving the submission window.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const academicYear = currentTermResult.data.academic_year?.trim() ?? "";
+    const semester = normalizeSemester(currentTermResult.data.semester);
 
     const validation = validateSubmissionWindow(
       startDate,
@@ -132,7 +171,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const supabase = getServiceRoleClient();
     const currentWindow = await getSubmissionWindow(supabase);
     const currentTerm =
       currentWindow?.academicYear && currentWindow?.semester
