@@ -80,6 +80,8 @@ type SubmissionWindowState = {
   endDate: string | null;
   startTime: string | null;
   endTime: string | null;
+  academicYear: string | null;
+  semester: (typeof SEMESTER_OPTIONS)[number] | null;
   startTimeLabel?: string | null;
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
