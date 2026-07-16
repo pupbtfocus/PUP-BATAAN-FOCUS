@@ -68,6 +68,26 @@ function getAvailableSemestersForAcademicYear(
   return SEMESTER_OPTIONS.filter((semester) => semesters.has(semester));
 }
 
+async function getCurrentAcademicTerm(
+  supabase: any,
+): Promise<{ academicYear: string; semester: SemesterOption } | null> {
+  const { data: currentTerm, error } = await supabase
+    .from("academic_terms")
+    .select("academic_year, semester")
+    .eq("status", "Current")
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !currentTerm?.academic_year || !currentTerm?.semester) {
+    return null;
+  }
+
+  return {
+    academicYear: currentTerm.academic_year,
+    semester: normalizeSemester(currentTerm.semester),
+  };
+}
+
 function toRequirementStatus(rawStatus: string | null): RequirementStatus {
   const status = (rawStatus ?? "").toLowerCase();
 
@@ -181,6 +201,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const currentAcademicTerm = await getCurrentAcademicTerm(supabase);
+
     const assignmentAcademicYears = Array.from(
       new Set(
         (assignmentRows ?? [])
@@ -188,6 +210,13 @@ export async function GET(request: NextRequest) {
           .filter(Boolean),
       ),
     ).sort((a, b) => b.localeCompare(a));
+
+    if (
+      currentAcademicTerm &&
+      !assignmentAcademicYears.includes(currentAcademicTerm.academicYear)
+    ) {
+      assignmentAcademicYears.unshift(currentAcademicTerm.academicYear);
+    }
 
     const fallbackAcademicYears = buildFallbackAcademicYears();
     const availableAcademicYears =
@@ -199,18 +228,28 @@ export async function GET(request: NextRequest) {
       requestedAcademicYear &&
       availableAcademicYears.includes(requestedAcademicYear)
         ? requestedAcademicYear
-        : (availableAcademicYears[0] ?? "");
+        : (currentAcademicTerm?.academicYear ??
+          availableAcademicYears[0] ??
+          "");
 
-    const availableSemesters = getAvailableSemestersForAcademicYear(
+    let availableSemesters = getAvailableSemestersForAcademicYear(
       assignmentRows ?? [],
       selectedAcademicYear,
     );
 
+    if (
+      availableSemesters.length === 0 &&
+      currentAcademicTerm?.academicYear === selectedAcademicYear
+    ) {
+      availableSemesters = [currentAcademicTerm.semester];
+    }
+
     const effectiveSelectedSemester =
-      availableSemesters.length > 0 &&
-      !availableSemesters.includes(selectedSemester)
-        ? availableSemesters[0]
-        : selectedSemester;
+      selectedSemester && availableSemesters.includes(selectedSemester)
+        ? selectedSemester
+        : (availableSemesters[0] ??
+          currentAcademicTerm?.semester ??
+          "1st Semester");
 
     const filteredAssignmentIds = (assignmentRows ?? [])
       .filter(
@@ -287,6 +326,9 @@ export async function GET(request: NextRequest) {
       availableSemesters,
       selectedAcademicYear,
       selectedSemester: effectiveSelectedSemester,
+      currentAcademicYear: currentAcademicTerm?.academicYear ?? null,
+      currentSemester: currentAcademicTerm?.semester ?? null,
+      currentTermConfigured: Boolean(currentAcademicTerm),
       requirementStatus,
     });
   } catch (error) {
