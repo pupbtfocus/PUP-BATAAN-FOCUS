@@ -36,7 +36,7 @@ export async function GET() {
     const supabase = getServiceRoleClient();
     let config = await getSubmissionWindow(supabase);
 
-    if (!config?.academicYear || !config?.semester) {
+    if (config && (!config.academicYear || !config.semester)) {
       const { data: currentTerm, error: currentTermError } = await supabase
         .from("academic_terms")
         .select("academic_year, semester")
