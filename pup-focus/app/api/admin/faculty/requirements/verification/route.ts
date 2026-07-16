@@ -13,6 +13,7 @@ type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 type SemesterOption = "1st Semester" | "2nd Semester";
 
 type SubmissionRow = {
+  id: string;
   requirement_code: string;
   status: string | null;
   submitted_at?: string | null;
