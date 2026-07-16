@@ -178,7 +178,9 @@ function buildScheduleYearOptions(selectedYear?: number): number[] {
   return years.sort((a, b) => a - b);
 }
 
-function formatSubmittedDateTime(value?: string): string | null {
+function formatSubmittedDateTime(
+  value: string | null | undefined,
+): string | null {
   if (!value) return null;
 
   const parsed = new Date(value);
