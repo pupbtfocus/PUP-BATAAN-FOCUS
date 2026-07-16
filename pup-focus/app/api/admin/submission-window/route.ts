@@ -253,12 +253,7 @@ export async function PUT(request: NextRequest) {
 
     const facultyResult = await supabase
       .from("app_users")
-      .select<{
-        id: string;
-        email: string;
-        full_name: string | null;
-        metadata: Record<string, unknown> | null;
-      }>("id, email, full_name, metadata")
+      .select("id, email, full_name, metadata")
       .eq("role", "faculty");
 
     if (!facultyResult.error && facultyResult.data) {
