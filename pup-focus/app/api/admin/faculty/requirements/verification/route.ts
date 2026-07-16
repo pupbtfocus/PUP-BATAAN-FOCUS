@@ -239,7 +239,8 @@ export async function GET(request: NextRequest) {
 
     if (
       availableSemesters.length === 0 &&
-      currentAcademicTerm?.academicYear === selectedAcademicYear
+      currentAcademicTerm &&
+      currentAcademicTerm.academicYear === selectedAcademicYear
     ) {
       availableSemesters = [currentAcademicTerm.semester];
     }
