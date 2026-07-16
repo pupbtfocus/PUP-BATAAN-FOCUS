@@ -206,6 +206,8 @@ export async function POST(request: NextRequest) {
 
       if (latestAssignment?.curriculum_id) {
         curriculumId = latestAssignment.curriculum_id;
+        // Do not bind submissions to an older assignment from a different term.
+        facultyAssignmentId = null;
       } else {
         if (latestAssignmentError) {
           logger.warn("latest_assignment_fetch_failed", {

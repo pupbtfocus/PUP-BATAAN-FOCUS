@@ -12,7 +12,10 @@ import {
   REQUIREMENT_CODE,
   type RequirementCode,
 } from "@/config/compliance";
-import { getTodayInManila } from "@/features/submissions/services/submission-window.service";
+import {
+  getTodayInManila,
+  buildAcademicYearOptions,
+} from "@/features/submissions/services/submission-window.service";
 import { X } from "lucide-react";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
@@ -148,7 +151,7 @@ export function FacultySubmissionPanel({
   facultyName?: string | null;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const academicYears = useMemo(() => buildAcademicYears(), []);
+  const academicYears = useMemo(() => buildAcademicYearOptions(), []);
   const [activeView, setActiveView] = useState<PanelView>("dashboard");
   const [form, setForm] = useState<SubmissionFormState>({
     academicYear: academicYears[0] ?? "",
@@ -163,10 +166,12 @@ export function FacultySubmissionPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [historyAcademicYear, setHistoryAcademicYear] = useState("2025-2026");
+  const [historyAcademicYear, setHistoryAcademicYear] = useState(
+    academicYears[0] ?? "",
+  );
   const [historySemester, setHistorySemester] = useState<
     (typeof SEMESTER_OPTIONS)[number] | "All"
-  >("1st Semester");
+  >("All");
   const [pastSubmissions, setPastSubmissions] = useState<PastSubmission[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -191,6 +196,34 @@ export function FacultySubmissionPanel({
     useState<SubmissionWindowState | null>(null);
   const [isLoadingSubmissionWindow, setIsLoadingSubmissionWindow] =
     useState(true);
+
+  const hasSubmissionWindowAcademicTerm = Boolean(
+    submissionWindow?.isConfigured &&
+    submissionWindow.academicYear &&
+    submissionWindow.semester,
+  );
+
+  const historyAcademicYears = useMemo(() => {
+    if (hasSubmissionWindowAcademicTerm && submissionWindow?.academicYear) {
+      return [submissionWindow.academicYear];
+    }
+
+    return academicYears;
+  }, [
+    academicYears,
+    hasSubmissionWindowAcademicTerm,
+    submissionWindow?.academicYear,
+  ]);
+
+  const historySemesterOptions = useMemo<
+    Array<(typeof SEMESTER_OPTIONS)[number] | "All">
+  >(() => {
+    if (hasSubmissionWindowAcademicTerm && submissionWindow?.semester) {
+      return [submissionWindow.semester];
+    }
+
+    return ["All", ...SEMESTER_OPTIONS];
+  }, [hasSubmissionWindowAcademicTerm, submissionWindow?.semester]);
   const [
     hasSeenIncompleteRequirementsModal,
     setHasSeenIncompleteRequirementsModal,
@@ -294,7 +327,20 @@ export function FacultySubmissionPanel({
       academicYear: currentTerm.academicYear,
       semester: currentTerm.semester,
     }));
+
+    setHistoryAcademicYear(currentTerm.academicYear);
+    setHistorySemester(currentTerm.semester);
   }, [submissionWindow]);
+
+  useEffect(() => {
+    if (!historyAcademicYears.includes(historyAcademicYear)) {
+      setHistoryAcademicYear(historyAcademicYears[0] ?? "");
+    }
+
+    if (!historySemesterOptions.includes(historySemester)) {
+      setHistorySemester(historySemesterOptions[0] ?? "All");
+    }
+  }, [historyAcademicYears, historySemesterOptions]);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -1225,7 +1271,7 @@ export function FacultySubmissionPanel({
                           setHistoryAcademicYear(event.target.value)
                         }
                       >
-                        {academicYears.map((year) => (
+                        {historyAcademicYears.map((year) => (
                           <option key={year} value={year}>
                             S.Y. {year}
                           </option>
@@ -1252,10 +1298,9 @@ export function FacultySubmissionPanel({
                           )
                         }
                       >
-                        <option value="All">All Semesters</option>
-                        {SEMESTER_OPTIONS.map((semester) => (
+                        {historySemesterOptions.map((semester) => (
                           <option key={semester} value={semester}>
-                            {semester}
+                            {semester === "All" ? "All Semesters" : semester}
                           </option>
                         ))}
                       </select>

@@ -3,6 +3,11 @@ import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
 import { ROLE } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import {
+  evaluateSubmissionWindow,
+  getSubmissionWindow,
+  normalizeTime24Hour,
+} from "@/features/submissions/services/submission-window.service";
 
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
 type SemesterOption = "1st Semester" | "2nd Semester";
@@ -86,6 +91,15 @@ async function getCurrentAcademicTerm(
     academicYear: currentTerm.academic_year,
     semester: normalizeSemester(currentTerm.semester),
   };
+}
+
+function convertManilaDateTimeToUtcIso(dateTime: string | null): string | null {
+  if (!dateTime) {
+    return null;
+  }
+
+  const date = new Date(`${dateTime}+08:00`);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function toRequirementStatus(rawStatus: string | null): RequirementStatus {
@@ -260,15 +274,51 @@ export async function GET(request: NextRequest) {
       )
       .map((row: any) => row.id);
 
+    const submissionWindow = await getSubmissionWindow(supabase);
+    const windowState = evaluateSubmissionWindow(submissionWindow);
+    const currentWindowStart = convertManilaDateTimeToUtcIso(
+      windowState.startDate && windowState.startTime
+        ? `${windowState.startDate}T${normalizeTime24Hour(windowState.startTime)}`
+        : null,
+    );
+    const currentWindowEnd = convertManilaDateTimeToUtcIso(
+      windowState.endDate && windowState.endTime
+        ? `${windowState.endDate}T${normalizeTime24Hour(windowState.endTime)}`
+        : null,
+    );
+    const selectedTermMatchesCurrentTerm =
+      currentAcademicTerm &&
+      selectedAcademicYear === currentAcademicTerm.academicYear &&
+      effectiveSelectedSemester === currentAcademicTerm.semester;
+    const shouldUseCurrentWindowFallback =
+      windowState.isConfigured &&
+      currentWindowStart &&
+      currentWindowEnd &&
+      selectedTermMatchesCurrentTerm;
+
     const requirementStatus = buildInitialRequirementStatus();
 
     let submissionRows: SubmissionRow[] | null = null;
     let submissionsError: { message?: string } | null = null;
 
+    const getWindowFallbackQuery = () =>
+      supabase
+        .from("submissions")
+        .select(
+          "id, requirement_code, status, submitted_at, document_versions(id)",
+        )
+        .eq("faculty_profile_id", facultyProfileId)
+        .gte("submitted_at", currentWindowStart!)
+        .lte("submitted_at", currentWindowEnd!)
+        .order("submitted_at", { ascending: false })
+        .limit(1000);
+
     if (filteredAssignmentIds.length > 0) {
       const submissionQuery = supabase
         .from("submissions")
-        .select("requirement_code, status, submitted_at, document_versions(id)")
+        .select(
+          "id, requirement_code, status, submitted_at, document_versions(id)",
+        )
         .eq("faculty_profile_id", facultyProfileId)
         .in("faculty_assignment_id", filteredAssignmentIds)
         .order("submitted_at", { ascending: false })
@@ -277,6 +327,22 @@ export async function GET(request: NextRequest) {
       const submissionResult = await submissionQuery;
       submissionRows = submissionResult.data as SubmissionRow[] | null;
       submissionsError = submissionResult.error;
+
+      if (!submissionsError && shouldUseCurrentWindowFallback) {
+        const fallbackResult = await getWindowFallbackQuery();
+        if (!fallbackResult.error && Array.isArray(fallbackResult.data)) {
+          const fallbackRows = fallbackResult.data as SubmissionRow[];
+          const existingIds = new Set(submissionRows?.map((row) => row.id));
+          submissionRows = [
+            ...(submissionRows ?? []),
+            ...fallbackRows.filter((row) => !existingIds.has(row.id)),
+          ];
+        }
+      }
+    } else if (shouldUseCurrentWindowFallback) {
+      const fallbackResult = await getWindowFallbackQuery();
+      submissionRows = fallbackResult.data as SubmissionRow[] | null;
+      submissionsError = fallbackResult.error;
     } else {
       submissionRows = [];
     }
