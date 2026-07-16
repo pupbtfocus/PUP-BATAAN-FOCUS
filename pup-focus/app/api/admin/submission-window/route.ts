@@ -5,7 +5,8 @@ import {
   format24HourTo12Hour,
   evaluateSubmissionWindow,
   getSubmissionWindow,
-  isMissingTimeColumnsError,
+  isAllowedAcademicYear,
+  isMissingSubmissionWindowColumnsError,
   validateSubmissionWindow,
 } from "@/features/submissions/services/submission-window.service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -35,8 +36,25 @@ export async function GET() {
     const config = await getSubmissionWindow(supabase);
     const status = evaluateSubmissionWindow(config);
 
+    let usedTerms: Array<{ academicYear: string; semester: string }> = [];
+    try {
+      const { data: usedTermsData, error: usedTermsError } = await supabase
+        .from("submission_window_terms")
+        .select("academic_year, semester");
+
+      if (!usedTermsError && Array.isArray(usedTermsData)) {
+        usedTerms = usedTermsData.map((term) => ({
+          academicYear: term.academic_year,
+          semester: term.semester,
+        }));
+      }
+    } catch {
+      usedTerms = [];
+    }
+
     return NextResponse.json({
       ...status,
+      usedTerms,
       startTimeLabel: status.startTime
         ? format24HourTo12Hour(status.startTime)
         : null,
@@ -58,6 +76,8 @@ type UpdatePayload = {
   endDate?: string;
   startTime?: string;
   endTime?: string;
+  academicYear?: string;
+  semester?: string;
 };
 
 export async function PUT(request: NextRequest) {
@@ -80,6 +100,8 @@ export async function PUT(request: NextRequest) {
     const endDate = payload.endDate?.trim() ?? "";
     const startTime = payload.startTime?.trim() ?? "";
     const endTime = payload.endTime?.trim() ?? "";
+    const academicYear = payload.academicYear?.trim() ?? "";
+    const semester = payload.semester?.trim() ?? "";
 
     if (!startDate || !endDate || !startTime || !endTime) {
       return NextResponse.json(
@@ -93,15 +115,67 @@ export async function PUT(request: NextRequest) {
       endDate,
       startTime,
       endTime,
+      academicYear,
+      semester,
     );
     if (!validation.isValid) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
+    if (!isAllowedAcademicYear(academicYear)) {
+      return NextResponse.json(
+        {
+          error:
+            "Academic year must start at 2026-2027 and may not advance beyond the current calendar year.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const supabase = getServiceRoleClient();
+    const currentWindow = await getSubmissionWindow(supabase);
+    const currentTerm =
+      currentWindow?.academicYear && currentWindow?.semester
+        ? {
+            academicYear: currentWindow.academicYear,
+            semester: currentWindow.semester,
+          }
+        : null;
+
+    let usedTerms: Array<{ academic_year: string; semester: string }> = [];
+    try {
+      const { data: usedTermsData } = await supabase
+        .from("submission_window_terms")
+        .select("academic_year, semester");
+      usedTerms = Array.isArray(usedTermsData) ? usedTermsData : [];
+    } catch {
+      usedTerms = [];
+    }
+
+    const termAlreadyUsed = usedTerms.some(
+      (term) =>
+        term.academic_year === academicYear && term.semester === semester,
+    );
+
+    if (termAlreadyUsed) {
+      const isSameCurrentTerm =
+        currentTerm?.academicYear === academicYear &&
+        currentTerm?.semester === semester;
+
+      if (!isSameCurrentTerm) {
+        return NextResponse.json(
+          {
+            error:
+              "The selected academic year and semester have already been used for a submission window.",
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     const startTime24 = convert12HourTo24Hour(startTime);
     const endTime24 = convert12HourTo24Hour(endTime);
 
-    const supabase = getServiceRoleClient();
     const { error } = await supabase.from("submission_windows").upsert(
       {
         id: 1,
@@ -109,6 +183,8 @@ export async function PUT(request: NextRequest) {
         end_date: endDate,
         start_time: startTime24,
         end_time: endTime24,
+        academic_year: academicYear,
+        semester,
         updated_by: user.id,
         updated_at: new Date().toISOString(),
       },
@@ -116,7 +192,7 @@ export async function PUT(request: NextRequest) {
     );
 
     if (error) {
-      if (isMissingTimeColumnsError(error)) {
+      if (isMissingSubmissionWindowColumnsError(error)) {
         const { error: fallbackError } = await supabase
           .from("submission_windows")
           .upsert(
@@ -186,6 +262,34 @@ export async function PUT(request: NextRequest) {
       .eq("role", "faculty");
 
     if (!facultyResult.error && facultyResult.data) {
+      const { error: recordTermError } = await supabase
+        .from("submission_window_terms")
+        .upsert(
+          {
+            academic_year: academicYear,
+            semester,
+            created_by: user.id,
+            created_at: new Date().toISOString(),
+          },
+          { onConflict: "academic_year,semester" },
+        );
+
+      if (!recordTermError) {
+        const alreadyRecorded = usedTerms.some(
+          (term) =>
+            term.academic_year === academicYear && term.semester === semester,
+        );
+
+        if (!alreadyRecorded) {
+          usedTerms.push({ academic_year: academicYear, semester });
+        }
+      } else {
+        console.error(
+          "Failed to record submission window term usage",
+          recordTermError,
+        );
+      }
+
       const appUrl = (
         process.env.APP_URL ||
         process.env.NEXT_PUBLIC_APP_URL ||

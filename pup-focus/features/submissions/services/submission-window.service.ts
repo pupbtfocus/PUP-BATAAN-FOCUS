@@ -1,10 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
+
 type SubmissionWindowRow = {
   start_date: string;
   end_date: string;
   start_time: string;
   end_time: string;
+  academic_year?: string | null;
+  semester?: string | null;
 };
 
 type SubmissionWindowLegacyRow = {
@@ -12,11 +16,15 @@ type SubmissionWindowLegacyRow = {
   end_date: string;
 };
 
+export type SubmissionWindowSemester = (typeof SEMESTER_OPTIONS)[number];
+
 export type SubmissionWindowConfig = {
   startDate: string;
   endDate: string;
   startTime: string;
   endTime: string;
+  academicYear?: string;
+  semester?: SubmissionWindowSemester;
 };
 
 export type SubmissionWindowState = {
@@ -28,6 +36,8 @@ export type SubmissionWindowState = {
   endDate: string | null;
   startTime: string | null;
   endTime: string | null;
+  academicYear: string | null;
+  semester: SubmissionWindowSemester | null;
 };
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -48,7 +58,7 @@ export function isValid12HourTimeInput(value: string): boolean {
   return TIME_12H_PATTERN.test(value.trim());
 }
 
-export function isMissingTimeColumnsError(error: unknown): boolean {
+export function isMissingSubmissionWindowColumnsError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;
   }
@@ -71,6 +81,8 @@ export function isMissingTimeColumnsError(error: unknown): boolean {
     code === "PGRST204" ||
     combinedText.includes("start_time") ||
     combinedText.includes("end_time") ||
+    combinedText.includes("academic_year") ||
+    combinedText.includes("semester") ||
     combinedText.includes("schema cache")
   );
 }
@@ -113,7 +125,7 @@ export function format24HourTo12Hour(value: string): string {
   return `${hour12}:${minuteText} ${period}`;
 }
 
-function normalizeTime24Hour(value: string): string {
+export function normalizeTime24Hour(value: string): string {
   if (!isValid24HourTimeInput(value)) {
     return "";
   }
@@ -140,11 +152,79 @@ export function getCurrentTimeInManila(): string {
   return formatter.format(new Date());
 }
 
+export function isValidAcademicYear(value: string): boolean {
+  const match = value.trim().match(/^([0-9]{4})-([0-9]{4})$/);
+  if (!match) {
+    return false;
+  }
+
+  const start = Number(match[1]);
+  const end = Number(match[2]);
+  return end === start + 1;
+}
+
+export function getCurrentYearInManila(): number {
+  const yearText = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+  }).format(new Date());
+  return Number(yearText);
+}
+
+export function buildAcademicYearOptions(): string[] {
+  const currentYear = getCurrentYearInManila();
+  const firstYear = 2026;
+  const lastYear = Math.max(currentYear, firstYear);
+  return Array.from({ length: lastYear - firstYear + 1 }, (_, index) => {
+    const startYear = firstYear + index;
+    return `${startYear}-${startYear + 1}`;
+  });
+}
+
+export function isAllowedAcademicYear(value: string): boolean {
+  if (!isValidAcademicYear(value)) {
+    return false;
+  }
+
+  const match = value.trim().match(/^([0-9]{4})-([0-9]{4})$/);
+  if (!match) {
+    return false;
+  }
+
+  const startYear = Number(match[1]);
+  const firstYear = 2026;
+  const currentYear = getCurrentYearInManila();
+  const lastYear = Math.max(currentYear, firstYear);
+
+  return startYear >= firstYear && startYear <= lastYear;
+}
+
+export function normalizeSemester(
+  value: string | null | undefined,
+): SubmissionWindowSemester {
+  if (!value) {
+    return "1st Semester";
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "2nd semester" || normalized === "second semester") {
+    return "2nd Semester";
+  }
+
+  return "1st Semester";
+}
+
+export function isValidSemester(value: string): boolean {
+  return SEMESTER_OPTIONS.includes(value as SubmissionWindowSemester);
+}
+
 export function validateSubmissionWindow(
   startDate: string,
   endDate: string,
   startTime12h: string,
   endTime12h: string,
+  academicYear?: string,
+  semester?: string,
 ) {
   if (!isValidDateInput(startDate) || !isValidDateInput(endDate)) {
     return {
@@ -160,6 +240,20 @@ export function validateSubmissionWindow(
     return {
       isValid: false,
       error: "Times must be in h:mm AM/PM format.",
+    };
+  }
+
+  if (!academicYear || !isValidAcademicYear(academicYear)) {
+    return {
+      isValid: false,
+      error: "Academic year must be in YYYY-YYYY format.",
+    };
+  }
+
+  if (!semester || !isValidSemester(semester)) {
+    return {
+      isValid: false,
+      error: "Semester must be either 1st Semester or 2nd Semester.",
     };
   }
 
@@ -190,13 +284,39 @@ export async function getSubmissionWindow(
 ): Promise<SubmissionWindowConfig | null> {
   const { data, error } = await supabase
     .from("submission_windows")
-    .select("start_date, end_date, start_time, end_time")
+    .select(
+      "start_date, end_date, start_time, end_time, academic_year, semester",
+    )
     .eq("id", 1)
     .maybeSingle<SubmissionWindowRow>();
 
   if (error) {
-    if (!isMissingTimeColumnsError(error)) {
+    if (!isMissingSubmissionWindowColumnsError(error)) {
       return null;
+    }
+
+    const { data: timeData, error: timeError } = await supabase
+      .from("submission_windows")
+      .select("start_date, end_date, start_time, end_time")
+      .eq("id", 1)
+      .maybeSingle<SubmissionWindowRow>();
+
+    if (!timeError && timeData) {
+      if (
+        !isValidDateInput(timeData.start_date) ||
+        !isValidDateInput(timeData.end_date) ||
+        !isValid24HourTimeInput(timeData.start_time) ||
+        !isValid24HourTimeInput(timeData.end_time)
+      ) {
+        return null;
+      }
+
+      return {
+        startDate: timeData.start_date,
+        endDate: timeData.end_date,
+        startTime: normalizeTime24Hour(timeData.start_time),
+        endTime: normalizeTime24Hour(timeData.end_time),
+      };
     }
 
     const { data: legacyData, error: legacyError } = await supabase
@@ -242,6 +362,14 @@ export async function getSubmissionWindow(
     endDate: data.end_date,
     startTime: normalizeTime24Hour(data.start_time),
     endTime: normalizeTime24Hour(data.end_time),
+    academicYear:
+      data.academic_year && isValidAcademicYear(data.academic_year)
+        ? data.academic_year
+        : undefined,
+    semester:
+      data.semester && isValidSemester(data.semester)
+        ? normalizeSemester(data.semester)
+        : undefined,
   };
 }
 
@@ -260,6 +388,8 @@ export function evaluateSubmissionWindow(
       endDate: null,
       startTime: null,
       endTime: null,
+      academicYear: null,
+      semester: null,
     };
   }
 
@@ -277,5 +407,7 @@ export function evaluateSubmissionWindow(
     endDate: config.endDate,
     startTime: config.startTime,
     endTime: config.endTime,
+    academicYear: config.academicYear ?? null,
+    semester: config.semester ?? null,
   };
 }

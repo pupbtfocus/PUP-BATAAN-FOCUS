@@ -8,6 +8,9 @@ import {
   evaluateSubmissionWindow,
   format24HourTo12Hour,
   getSubmissionWindow,
+  isValidAcademicYear,
+  isValidSemester,
+  normalizeSemester,
 } from "@/features/submissions/services/submission-window.service";
 import crypto from "crypto";
 
@@ -92,6 +95,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!isValidAcademicYear(payload.academicYear)) {
+      return NextResponse.json(
+        { error: "Academic year must be in YYYY-YYYY format." },
+        { status: 400 },
+      );
+    }
+
+    payload.semester = normalizeSemester(payload.semester);
+    if (!isValidSemester(payload.semester)) {
+      return NextResponse.json(
+        { error: "Semester must be either 1st Semester or 2nd Semester." },
+        { status: 400 },
+      );
+    }
+
+    if (
+      submissionWindow?.academicYear &&
+      submissionWindow?.semester &&
+      (payload.academicYear !== submissionWindow.academicYear ||
+        payload.semester !== submissionWindow.semester)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Submission must match the currently active academic year and semester.",
+        },
+        { status: 400 },
+      );
+    }
+
     if (
       !DEFAULT_REQUIREMENTS.includes(payload.requirementCode as RequirementCode)
     ) {
@@ -120,45 +153,92 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get faculty's assigned curriculum, or use first available curriculum
+    // Get faculty's assigned curriculum and assignment record for the selected term,
+    // or use the most recent assignment as a fallback.
     let curriculumId: string | null = null;
+    let facultyAssignmentId: string | null = null;
 
-    const { data: assignment } = await supabase
-      .from("faculty_program_assignments")
-      .select("curriculum_id")
-      .eq("faculty_profile_id", appUser.profile_id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
-
-    if (assignment?.curriculum_id) {
-      curriculumId = assignment.curriculum_id;
-    } else {
-      // Fallback: use first available curriculum
-      const { data: curriculum, error: curriculumError } = await supabase
-        .from("curricula")
-        .select("id")
-        .limit(1)
+    const { data: currentTermAssignment, error: currentTermAssignmentError } =
+      await supabase
+        .from("faculty_program_assignments")
+        .select("id, curriculum_id")
+        .eq("faculty_profile_id", appUser.profile_id)
+        .eq("academic_year", payload.academicYear)
+        .eq("term", payload.semester)
         .single();
 
-      if (!curriculum) {
-        logger.error("no_curriculum_available", {
+    if (currentTermAssignmentError) {
+      logger.warn("current_term_assignment_fetch_failed", {
+        facultyId: appUser.profile_id,
+        academicYear: payload.academicYear,
+        semester: payload.semester,
+        error: currentTermAssignmentError.message,
+      });
+    }
+
+    if (currentTermAssignment?.curriculum_id) {
+      curriculumId = currentTermAssignment.curriculum_id;
+      facultyAssignmentId = currentTermAssignment.id ?? null;
+    } else {
+      if (currentTermAssignmentError) {
+        logger.warn("current_term_assignment_fetch_failed", {
           facultyId: appUser.profile_id,
+          academicYear: payload.academicYear,
+          semester: payload.semester,
+          error: currentTermAssignmentError.message,
         });
-        return NextResponse.json(
-          {
-            error:
-              "No curriculum found in the system. Please contact an administrator.",
-          },
-          { status: 400 },
-        );
+      } else {
+        logger.warn("no_current_term_assignment_found", {
+          facultyId: appUser.profile_id,
+          academicYear: payload.academicYear,
+          semester: payload.semester,
+        });
       }
 
-      curriculumId = curriculum.id;
-      logger.warn("faculty_using_fallback_curriculum", {
-        facultyId: appUser.profile_id,
-        curriculumId,
-      });
+      const { data: latestAssignment, error: latestAssignmentError } =
+        await supabase
+          .from("faculty_program_assignments")
+          .select("curriculum_id")
+          .eq("faculty_profile_id", appUser.profile_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+      if (latestAssignment?.curriculum_id) {
+        curriculumId = latestAssignment.curriculum_id;
+      } else {
+        if (latestAssignmentError) {
+          logger.warn("latest_assignment_fetch_failed", {
+            facultyId: appUser.profile_id,
+            error: latestAssignmentError.message,
+          });
+        }
+
+        const { data: curriculum, error: curriculumError } = await supabase
+          .from("curricula")
+          .select("id")
+          .limit(1)
+          .single();
+
+        if (!curriculum) {
+          logger.error("no_curriculum_available", {
+            facultyId: appUser.profile_id,
+          });
+          return NextResponse.json(
+            {
+              error:
+                "No curriculum found in the system. Please contact an administrator.",
+            },
+            { status: 400 },
+          );
+        }
+
+        curriculumId = curriculum.id;
+        logger.warn("faculty_using_fallback_curriculum", {
+          facultyId: appUser.profile_id,
+          curriculumId,
+        });
+      }
     }
 
     // Create submission record
@@ -168,6 +248,7 @@ export async function POST(request: NextRequest) {
       id: submissionId,
       faculty_profile_id: appUser.profile_id,
       curriculum_id: curriculumId,
+      faculty_assignment_id: facultyAssignmentId ?? undefined,
       requirement_code: payload.requirementCode,
       status: "uploaded",
       submitted_at: new Date().toISOString(),
@@ -187,6 +268,7 @@ export async function POST(request: NextRequest) {
           id: submissionId,
           faculty_profile_id: appUser.profile_id,
           curriculum_id: curriculumId,
+          faculty_assignment_id: facultyAssignmentId ?? undefined,
           requirement_code: payload.requirementCode,
           status: "uploaded",
           submitted_at: submissionPayload.submitted_at,
