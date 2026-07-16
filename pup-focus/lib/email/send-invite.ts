@@ -212,6 +212,103 @@ export async function sendInviteEmail({
   return info;
 }
 
+export function buildSubmissionWindowNotificationEmailHtml({
+  fullName,
+  startDate,
+  endDate,
+  startTimeLabel,
+  endTimeLabel,
+  actionHref,
+}: {
+  fullName: string;
+  startDate: string;
+  endDate: string;
+  startTimeLabel: string;
+  endTimeLabel: string;
+  actionHref: string;
+}) {
+  const safeFullName = escapeHtml(fullName);
+
+  return buildEmailLayout({
+    title: "Submission Window Opened",
+    intro: `Hello ${safeFullName}, the faculty submission window has been scheduled.`,
+    body: `The submission window is now open from ${escapeHtml(startDate)} ${escapeHtml(startTimeLabel)} to ${escapeHtml(endDate)} ${escapeHtml(endTimeLabel)}. Please submit any pending requirements through your dashboard before the deadline.`,
+    actionLabel: "Open Faculty Dashboard",
+    actionHref,
+    footerNote:
+      "If you have already submitted all requirements, thank you. Otherwise, please complete your outstanding submissions on time.",
+    logoSrc: buildAppUrl("/icons/pup-seal.png"),
+  });
+}
+
+type SendSubmissionWindowNotificationEmailOpts = {
+  to: string;
+  fullName: string;
+  startDate: string;
+  endDate: string;
+  startTimeLabel: string;
+  endTimeLabel: string;
+  actionHref: string;
+  from?: string;
+};
+
+export async function sendSubmissionWindowNotificationEmail({
+  to,
+  fullName,
+  startDate,
+  endDate,
+  startTimeLabel,
+  endTimeLabel,
+  actionHref,
+  from,
+}: SendSubmissionWindowNotificationEmailOpts) {
+  const host = normalizeSmtpValue(process.env.EMAIL_SMTP_HOST);
+  const port = normalizeSmtpValue(process.env.EMAIL_SMTP_PORT);
+  const user = normalizeSmtpValue(process.env.EMAIL_SMTP_USER);
+  const pass = normalizeSmtpPassword(process.env.EMAIL_SMTP_PASS);
+
+  if (!host || !port || !user || !pass) {
+    throw new Error(
+      "SMTP configuration missing (EMAIL_SMTP_HOST/PORT/USER/PASS)",
+    );
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number(port),
+    secure: Number(port) === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const fromAddress = normalizeEmailAddress(
+    from || process.env.EMAIL_FROM || user,
+  );
+
+  const subject = "PUP FOCUS - Submission window opened";
+  const text = `Hello ${fullName},\n\nThe submission window is now open from ${startDate} ${startTimeLabel} to ${endDate} ${endTimeLabel}. Please submit your pending requirements through your dashboard before the deadline.\n\n${actionHref}`;
+  const html = buildSubmissionWindowNotificationEmailHtml({
+    fullName,
+    startDate,
+    endDate,
+    startTimeLabel,
+    endTimeLabel,
+    actionHref,
+  });
+
+  const info = await transporter.sendMail({
+    from: formatDisplayFromAddress(fromAddress),
+    to: normalizeEmailAddress(to),
+    subject,
+    text,
+    html,
+  });
+
+  return info;
+}
+
 type SendTempPasswordOpts = {
   to: string;
   tempPassword: string;
