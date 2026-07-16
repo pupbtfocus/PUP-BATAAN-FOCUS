@@ -16,10 +16,20 @@ type SubmissionRow = {
 
 const SEMESTER_OPTIONS: SemesterOption[] = ["1st Semester", "2nd Semester"];
 
+function getCurrentYearInManila(): number {
+  const yearText = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+  }).format(new Date());
+
+  return Number(yearText);
+}
+
 function buildFallbackAcademicYears(count = 5): string[] {
   const now = new Date();
   const month = now.getMonth() + 1;
-  const startYear = month >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+  const manilaYear = getCurrentYearInManila();
+  const startYear = month >= 6 ? manilaYear : manilaYear - 1;
 
   return Array.from({ length: count }, (_, index) => {
     const yearStart = startYear - index;
@@ -39,6 +49,23 @@ function normalizeSemester(input: string | null): SemesterOption {
   }
 
   return "1st Semester";
+}
+
+function getAvailableSemestersForAcademicYear(
+  rows: unknown[],
+  academicYear: string,
+): SemesterOption[] {
+  const semesters = new Set<SemesterOption>();
+
+  for (const row of rows as any[]) {
+    if (row.academic_year !== academicYear) {
+      continue;
+    }
+
+    semesters.add(normalizeSemester(row.term));
+  }
+
+  return SEMESTER_OPTIONS.filter((semester) => semesters.has(semester));
 }
 
 function toRequirementStatus(rawStatus: string | null): RequirementStatus {
@@ -174,11 +201,22 @@ export async function GET(request: NextRequest) {
         ? requestedAcademicYear
         : (availableAcademicYears[0] ?? "");
 
+    const availableSemesters = getAvailableSemestersForAcademicYear(
+      assignmentRows ?? [],
+      selectedAcademicYear,
+    );
+
+    const effectiveSelectedSemester =
+      availableSemesters.length > 0 &&
+      !availableSemesters.includes(selectedSemester)
+        ? availableSemesters[0]
+        : selectedSemester;
+
     const filteredAssignmentIds = (assignmentRows ?? [])
       .filter(
         (row: any) =>
           row.academic_year === selectedAcademicYear &&
-          normalizeSemester(row.term) === selectedSemester,
+          normalizeSemester(row.term) === effectiveSelectedSemester,
       )
       .map((row: any) => row.id);
 
@@ -246,8 +284,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       availableAcademicYears,
       semesters: SEMESTER_OPTIONS,
+      availableSemesters,
       selectedAcademicYear,
-      selectedSemester,
+      selectedSemester: effectiveSelectedSemester,
       requirementStatus,
     });
   } catch (error) {

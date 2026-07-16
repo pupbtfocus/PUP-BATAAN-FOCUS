@@ -1787,6 +1787,9 @@ function RequirementsPanel({
   const [availableAcademicYears, setAvailableAcademicYears] = useState<
     string[]
   >([]);
+  const [availableSemesters, setAvailableSemesters] = useState<
+    SemesterOption[]
+  >([]);
   const [verificationStatus, setVerificationStatus] = useState<Record<
     RequirementCode,
     RequirementStatus
@@ -1872,7 +1875,12 @@ function RequirementsPanel({
         selectedSem,
       });
 
+      const availableSemestersFromResponse =
+        (data.availableSemesters as SemesterOption[] | undefined) ??
+        SEMESTER_OPTIONS;
+
       setAvailableAcademicYears(years);
+      setAvailableSemesters(availableSemestersFromResponse);
       setAcademicYear(selectedYear);
       setSemester(selectedSem);
       setVerificationStatus(data.requirementStatus ?? null);
@@ -1893,9 +1901,7 @@ function RequirementsPanel({
     if (!selectedFaculty) {
       const timeoutId = window.setTimeout(() => {
         setAvailableAcademicYears([]);
-        setAcademicYear("");
-        setSemester("1st Semester");
-        setVerificationStatus(null);
+        setAvailableSemesters([]);
         setVerificationError(null);
       }, 0);
 
@@ -1993,6 +1999,54 @@ function RequirementsPanel({
       }
     })();
   }, [selectedFaculty]);
+
+  useEffect(() => {
+    if (!selectedFaculty || !academicYear) {
+      return;
+    }
+
+    let isMounted = true;
+
+    (async () => {
+      try {
+        const response = await fetch(
+          `/api/admin/faculty/requirements/verification?facultyId=${selectedFaculty.id}&academicYear=${encodeURIComponent(
+            academicYear,
+          )}`,
+          { credentials: "include" },
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        if (!isMounted) {
+          return;
+        }
+
+        const availableSemestersFromResponse =
+          (data.availableSemesters as SemesterOption[] | undefined) ??
+          SEMESTER_OPTIONS;
+
+        setAvailableSemesters(availableSemestersFromResponse);
+
+        const selectedSem =
+          (data.selectedSemester as SemesterOption | undefined) ??
+          "1st Semester";
+
+        if (!availableSemestersFromResponse.includes(semester)) {
+          setSemester(selectedSem);
+        }
+      } catch (error) {
+        console.error("Failed to refresh available semesters", error);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedFaculty?.id, academicYear, semester]);
 
   async function onOpenModal() {
     if (!selectedFaculty) return;
@@ -2119,13 +2173,35 @@ function RequirementsPanel({
                   onChange={(event) =>
                     setSemester(event.target.value as SemesterOption)
                   }
+                  disabled={
+                    !selectedFaculty ||
+                    !academicYear ||
+                    availableSemesters.length === 0
+                  }
                 >
-                  {SEMESTER_OPTIONS.map((term) => (
-                    <option key={term} value={term}>
-                      {term}
-                    </option>
-                  ))}
+                  {SEMESTER_OPTIONS.map((term) => {
+                    const disabled =
+                      availableSemesters.length > 0
+                        ? !availableSemesters.includes(term)
+                        : true;
+
+                    return (
+                      <option key={term} value={term} disabled={disabled}>
+                        {term}
+                        {disabled ? " (no content yet)" : ""}
+                      </option>
+                    );
+                  })}
                 </select>
+                <p className="mt-2 text-xs text-slate-400">
+                  {availableSemesters.length === 0
+                    ? `No semester content is available for ${
+                        academicYear || "the selected school year"
+                      }.`
+                    : availableSemesters.length === 1
+                      ? `${availableSemesters[0]} is available for ${academicYear}.`
+                      : `Both semesters are available for ${academicYear}.`}
+                </p>
               </div>
             </div>
 
@@ -2139,7 +2215,10 @@ function RequirementsPanel({
               <Button
                 type="button"
                 disabled={
-                  !selectedFaculty || !academicYear || isLoadingVerification
+                  !selectedFaculty ||
+                  !academicYear ||
+                  availableSemesters.length === 0 ||
+                  isLoadingVerification
                 }
                 onClick={onOpenModal}
               >
