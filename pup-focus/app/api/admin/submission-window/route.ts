@@ -10,6 +10,7 @@ import {
 } from "@/features/submissions/services/submission-window.service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { sendSubmissionWindowNotificationEmail } from "@/lib/email/send-invite";
 
 function isAdminRole(role: string | undefined) {
   return role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN;
@@ -173,6 +174,71 @@ export async function PUT(request: NextRequest) {
       startTime: startTime24,
       endTime: endTime24,
     });
+
+    const facultyResult = await supabase
+      .from("app_users")
+      .select<{
+        id: string;
+        email: string;
+        full_name: string | null;
+        metadata: Record<string, unknown> | null;
+      }>("id, email, full_name, metadata")
+      .eq("role", "faculty");
+
+    if (!facultyResult.error && facultyResult.data) {
+      const appUrl = (
+        process.env.APP_URL ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        process.env.SITE_URL ||
+        process.env.URL ||
+        "https://pup-focus.local"
+      ).replace(/\/$/, "");
+      const dashboardUrl = `${appUrl}/faculty/dashboard`;
+      const notificationTimestamp = new Date().toISOString();
+
+      await Promise.all(
+        facultyResult.data.map(async (faculty) => {
+          try {
+            const hasBeenNotified = Boolean(
+              faculty.metadata?.submission_window_notification_sent_at,
+            );
+            if (!faculty.email || hasBeenNotified) {
+              return;
+            }
+
+            await sendSubmissionWindowNotificationEmail({
+              to: faculty.email,
+              fullName: faculty.full_name ?? "Faculty Member",
+              startDate,
+              endDate,
+              startTimeLabel: startTime,
+              endTimeLabel: endTime,
+              actionHref: dashboardUrl,
+            });
+
+            const nextMetadata = {
+              ...(faculty.metadata ?? {}),
+              submission_window_notification_sent_at: notificationTimestamp,
+            };
+
+            await supabase
+              .from("app_users")
+              .update({
+                metadata: nextMetadata,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", faculty.id);
+          } catch (emailError) {
+            console.error(
+              "Failed to send submission window notification to faculty",
+              faculty.email,
+              emailError,
+            );
+          }
+        }),
+      );
+    }
+
     return NextResponse.json({
       ...status,
       startTimeLabel: status.startTime
