@@ -12,6 +12,7 @@ import {
   REQUIREMENT_CODE,
   type RequirementCode,
 } from "@/config/compliance";
+import { getTodayInManila } from "@/features/submissions/services/submission-window.service";
 import { X } from "lucide-react";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
@@ -173,6 +174,15 @@ export function FacultySubmissionPanel({
     useState<SubmissionWindowState | null>(null);
   const [isLoadingSubmissionWindow, setIsLoadingSubmissionWindow] =
     useState(true);
+  const [
+    hasSeenIncompleteRequirementsModal,
+    setHasSeenIncompleteRequirementsModal,
+  ] = useState(false);
+  const showIncompleteRequirementsModal =
+    activeView === "dashboard" &&
+    !hasSeenIncompleteRequirementsModal &&
+    statusCounts !== null &&
+    statusCounts.pending + statusCounts.notSubmitted > 0;
 
   async function fetchHistory() {
     try {
@@ -1099,6 +1109,82 @@ export function FacultySubmissionPanel({
                       >
                         Full View
                       </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {showIncompleteRequirementsModal ? (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="incomplete-requirements-title"
+              >
+                <div className="w-full max-w-2xl rounded-3xl border border-amber-400/30 bg-slate-900 p-6 shadow-2xl">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.18em] text-amber-300">
+                        Attention Required
+                      </p>
+                      <h3
+                        id="incomplete-requirements-title"
+                        className="mt-2 text-2xl font-semibold text-slate-100"
+                      >
+                        Some requirements still need your attention
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHasSeenIncompleteRequirementsModal(true);
+                      }}
+                      className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                      aria-label="Close alert"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="mt-5 space-y-4 text-slate-300">
+                    <p>
+                      You have pending or not submitted requirements for the
+                      current submission window. Please submit the missing
+                      documents before the due date.
+                    </p>
+                    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+                      <p>
+                        Remaining requirements:{" "}
+                        <strong>{statusCounts?.pending ?? 0}</strong> pending,{" "}
+                        <strong>{statusCounts?.notSubmitted ?? 0}</strong> not
+                        submitted.
+                      </p>
+                      {submissionWindow?.endDate ? (
+                        <p className="mt-2">
+                          Due date: <strong>{submissionWindow.endDate}</strong>
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setHasSeenIncompleteRequirementsModal(true);
+                          navigateToView("status");
+                        }}
+                      >
+                        Go to Requirements Management
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setHasSeenIncompleteRequirementsModal(true);
+                        }}
+                        className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-500"
+                      >
+                        Dismiss
+                      </button>
                     </div>
                   </div>
                 </div>
