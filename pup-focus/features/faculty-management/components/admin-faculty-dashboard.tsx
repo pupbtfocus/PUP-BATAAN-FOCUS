@@ -310,14 +310,14 @@ function ScheduleDateInput({
   }
 
   return (
-    <div className="mt-2 flex flex-wrap gap-2">
-      <div className="min-w-[7.5rem] flex-1">
+    <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-[minmax(4.5rem,1fr)_minmax(3rem,1fr)_minmax(4.5rem,1fr)] min-w-0">
+      <div className="min-w-0">
         <label className="sr-only" htmlFor={`${id}-month`}>
           Month
         </label>
         <select
           id={`${id}-month`}
-          className="min-w-[6.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[4.5rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedMonth}
           onChange={(event) => handlePartChange("month", event.target.value)}
           disabled={disabled}
@@ -333,13 +333,13 @@ function ScheduleDateInput({
           })}
         </select>
       </div>
-      <div className="min-w-[7.5rem] flex-1">
+      <div className="min-w-0">
         <label className="sr-only" htmlFor={`${id}-day`}>
           Day
         </label>
         <select
           id={`${id}-day`}
-          className="min-w-[6.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[3.5rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedDay}
           onChange={(event) => handlePartChange("day", event.target.value)}
           disabled={disabled}
@@ -355,13 +355,13 @@ function ScheduleDateInput({
           })}
         </select>
       </div>
-      <div className="min-w-[7.5rem] flex-1">
+      <div className="min-w-0">
         <label className="sr-only" htmlFor={`${id}-year`}>
           Year
         </label>
         <select
           id={`${id}-year`}
-          className="min-w-[6.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[4.25rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedYear}
           onChange={(event) => handlePartChange("year", event.target.value)}
           disabled={disabled}
@@ -427,14 +427,14 @@ function ScheduleTimeInput({
   }
 
   return (
-    <div className="mt-2 flex flex-wrap gap-2">
-      <div className="min-w-[7.5rem] flex-1">
+    <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-[minmax(4rem,1fr)_minmax(4rem,1fr)_minmax(5rem,1fr)] min-w-0">
+      <div className="min-w-0">
         <label className="sr-only" htmlFor={`${id}-hour`}>
           Hour
         </label>
         <select
           id={`${id}-hour`}
-          className="min-w-[6.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[4rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedHour}
           onChange={(event) => handlePartChange("hour", event.target.value)}
           disabled={disabled}
@@ -450,13 +450,13 @@ function ScheduleTimeInput({
           })}
         </select>
       </div>
-      <div className="min-w-[7.5rem] flex-1">
+      <div className="min-w-0">
         <label className="sr-only" htmlFor={`${id}-minute`}>
           Minute
         </label>
         <select
           id={`${id}-minute`}
-          className="min-w-[6.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[4.5rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedMinute}
           onChange={(event) => handlePartChange("minute", event.target.value)}
           disabled={disabled}
@@ -472,13 +472,13 @@ function ScheduleTimeInput({
           })}
         </select>
       </div>
-      <div className="min-w-[7.5rem] flex-1">
+      <div className="min-w-0">
         <label className="sr-only" htmlFor={`${id}-period`}>
           Period
         </label>
         <select
           id={`${id}-period`}
-          className="min-w-[7.5rem] w-auto rounded-md border border-slate-700 bg-slate-950 px-2 pr-10 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[4.75rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedPeriod}
           onChange={(event) => handlePartChange("period", event.target.value)}
           disabled={disabled}
@@ -1651,36 +1651,100 @@ function SubmissionWindowPanel({
     toTimeLabel(startTime),
   );
   const endPreview = formatScheduleDateTime(endDate, toTimeLabel(endTime));
+  const startPreviewMonth =
+    startDateParts.month && Number(startDateParts.month)
+      ? new Date(0, Number(startDateParts.month) - 1).toLocaleString("en-US", {
+          month: "long",
+        })
+      : "";
+  const startPreviewDay = startDateParts.day
+    ? String(Number(startDateParts.day))
+    : "";
+  const startPreviewYear = startDateParts.year || "";
+  const startPreviewTime =
+    startTimeParts.hour || startTimeParts.minute || startTimeParts.period
+      ? `${startTimeParts.hour || ""}${
+          startTimeParts.minute ? `:${startTimeParts.minute}` : ""
+        }${startTimeParts.period ? ` ${startTimeParts.period}` : ""}`.trim()
+      : "";
+  const endPreviewMonth =
+    endDateParts.month && Number(endDateParts.month)
+      ? new Date(0, Number(endDateParts.month) - 1).toLocaleString("en-US", {
+          month: "long",
+        })
+      : "";
+  const endPreviewDay = endDateParts.day
+    ? String(Number(endDateParts.day))
+    : "";
+  const endPreviewYear = endDateParts.year || "";
+  const endPreviewTime =
+    endTimeParts.hour || endTimeParts.minute || endTimeParts.period
+      ? `${endTimeParts.hour || ""}${
+          endTimeParts.minute ? `:${endTimeParts.minute}` : ""
+        }${endTimeParts.period ? ` ${endTimeParts.period}` : ""}`.trim()
+      : "";
+  const startPartialPreview =
+    startDateParts.year ||
+    startDateParts.month ||
+    startDateParts.day ||
+    startTimeParts.hour ||
+    startTimeParts.minute ||
+    startTimeParts.period
+      ? `Opening: ${[
+          [startPreviewMonth, startPreviewDay].filter(Boolean).join(" "),
+          startPreviewYear,
+        ]
+          .filter(Boolean)
+          .join(startPreviewMonth && startPreviewDay ? ", " : " ")}${
+          startPreviewTime ? ` ${startPreviewTime}` : ""
+        }`
+      : "";
+  const endPartialPreview =
+    endDateParts.year ||
+    endDateParts.month ||
+    endDateParts.day ||
+    endTimeParts.hour ||
+    endTimeParts.minute ||
+    endTimeParts.period
+      ? `Closing: ${[
+          [endPreviewMonth, endPreviewDay].filter(Boolean).join(" "),
+          endPreviewYear,
+        ]
+          .filter(Boolean)
+          .join(endPreviewMonth && endPreviewDay ? ", " : " ")}${
+          endPreviewTime ? ` ${endPreviewTime}` : ""
+        }`
+      : "";
   const schedulePreviewLabel =
     startPreview && endPreview
       ? `${startPreview} to ${endPreview}`
       : "Pick opening and closing schedule to preview.";
   const schedulePreviewOpen = startPreview ?? "Opening not set yet.";
   const schedulePreviewClose = endPreview ?? "Closing not set yet.";
-  const startPreviewMonth =
-    startDateParts.month && Number(startDateParts.month)
-      ? new Date(0, Number(startDateParts.month) - 1).toLocaleString("en-US", {
-          month: "short",
-        })
-      : "Not set";
-  const startPreviewDay = startDateParts.day || "Not set";
-  const startPreviewYear = startDateParts.year || "Not set";
-  const startPreviewTime =
-    startTimeParts.hour && startTimeParts.minute && startTimeParts.period
-      ? `${startTimeParts.hour}:${startTimeParts.minute} ${startTimeParts.period}`
-      : "Not set";
-  const endPreviewMonth =
-    endDateParts.month && Number(endDateParts.month)
-      ? new Date(0, Number(endDateParts.month) - 1).toLocaleString("en-US", {
-          month: "short",
-        })
-      : "Not set";
-  const endPreviewDay = endDateParts.day || "Not set";
-  const endPreviewYear = endDateParts.year || "Not set";
-  const endPreviewTime =
-    endTimeParts.hour && endTimeParts.minute && endTimeParts.period
-      ? `${endTimeParts.hour}:${endTimeParts.minute} ${endTimeParts.period}`
-      : "Not set";
+  const hasScheduleInput = Boolean(
+    startDate ||
+    endDate ||
+    startTime ||
+    endTime ||
+    startDateParts.year ||
+    startDateParts.month ||
+    startDateParts.day ||
+    startTimeParts.hour ||
+    startTimeParts.minute ||
+    startTimeParts.period ||
+    endDateParts.year ||
+    endDateParts.month ||
+    endDateParts.day ||
+    endTimeParts.hour ||
+    endTimeParts.minute ||
+    endTimeParts.period,
+  );
+  const scheduleLabel = hasScheduleInput
+    ? startPreview && endPreview
+      ? schedulePreviewLabel
+      : [startPartialPreview, endPartialPreview].filter(Boolean).join(" • ") ||
+        "Pick opening and closing schedule to preview."
+    : currentScheduleLabel;
 
   const historyRows = (windowStatus?.usedTerms ?? []).map((term) => {
     const isCurrent =
@@ -1744,53 +1808,69 @@ function SubmissionWindowPanel({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-4">
+        <div className="min-w-0 rounded-2xl border border-slate-700 bg-slate-950/80 p-4 overflow-hidden">
           <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
             Submission Schedule
           </p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-4 space-y-4">
             <div>
               <p className="text-sm text-slate-400">Opens</p>
-              <ScheduleDateInput
-                id="windowStartDate"
-                value={startDate}
-                onChange={(value) => setStartDate(value)}
-                onPartialChange={setStartDateParts}
-                disabled={isLoading || isSaving}
-              />
+              <div className="mt-2 grid gap-2 min-w-0">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    Date
+                  </p>
+                  <ScheduleDateInput
+                    id="windowStartDate"
+                    value={startDate}
+                    onChange={(value) => setStartDate(value)}
+                    onPartialChange={setStartDateParts}
+                    disabled={isLoading || isSaving}
+                  />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    Time
+                  </p>
+                  <ScheduleTimeInput
+                    id="windowStartTime"
+                    value={startTime}
+                    onChange={(value) => setStartTime(value)}
+                    onPartialChange={setStartTimeParts}
+                    disabled={isLoading || isSaving}
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-slate-400">Time</p>
-              <ScheduleTimeInput
-                id="windowStartTime"
-                value={startTime}
-                onChange={(value) => setStartTime(value)}
-                onPartialChange={setStartTimeParts}
-                disabled={isLoading || isSaving}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <div className="mx-auto h-px w-full bg-slate-700" />
-            </div>
+            <div className="h-px bg-slate-700" />
             <div>
               <p className="text-sm text-slate-400">Closes</p>
-              <ScheduleDateInput
-                id="windowEndDate"
-                value={endDate}
-                onChange={(value) => setEndDate(value)}
-                onPartialChange={setEndDateParts}
-                disabled={isLoading || isSaving}
-              />
-            </div>
-            <div>
-              <p className="text-sm text-slate-400">Time</p>
-              <ScheduleTimeInput
-                id="windowEndTime"
-                value={endTime}
-                onChange={(value) => setEndTime(value)}
-                onPartialChange={setEndTimeParts}
-                disabled={isLoading || isSaving}
-              />
+              <div className="mt-2 grid gap-2 min-w-0">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    Date
+                  </p>
+                  <ScheduleDateInput
+                    id="windowEndDate"
+                    value={endDate}
+                    onChange={(value) => setEndDate(value)}
+                    onPartialChange={setEndDateParts}
+                    disabled={isLoading || isSaving}
+                  />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    Time
+                  </p>
+                  <ScheduleTimeInput
+                    id="windowEndTime"
+                    value={endTime}
+                    onChange={(value) => setEndTime(value)}
+                    onPartialChange={setEndTimeParts}
+                    disabled={isLoading || isSaving}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1807,7 +1887,7 @@ function SubmissionWindowPanel({
             </div>
             <div>
               <p className="text-slate-400">Schedule</p>
-              <p className="mt-1 text-white">{currentScheduleLabel}</p>
+              <p className="mt-1 text-white">{scheduleLabel}</p>
             </div>
             <div>
               <p className="text-slate-400">Status</p>
