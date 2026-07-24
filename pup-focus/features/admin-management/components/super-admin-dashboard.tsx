@@ -653,7 +653,7 @@ export function SuperAdminDashboard({
     return accounts.map((admin) => (
       <div
         key={admin.id}
-        className="rounded-xl border border-slate-700 bg-slate-950/80 p-4"
+        className="rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -665,7 +665,7 @@ export function SuperAdminDashboard({
                   className="h-12 w-12 rounded-full border border-slate-700 object-cover"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-xs font-semibold text-slate-300">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300">
                   {admin.full_name
                     .split(" ")
                     .filter(Boolean)
@@ -676,29 +676,29 @@ export function SuperAdminDashboard({
                 </div>
               )}
               <div>
-                <p className="font-semibold text-slate-100">
+                <p className="font-semibold text-slate-800 dark:text-slate-100">
                   {admin.full_name}
                 </p>
-                <p className="text-sm text-slate-400">{admin.email}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{admin.email}</p>
               </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-300">
+            <span className="rounded-full border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-3 py-1 text-xs text-slate-700 dark:text-slate-300">
               {ROLE_LABEL[admin.role]}
             </span>
             <span
               className={`rounded-full border px-3 py-1 text-xs ${
                 admin.is_active
                   ? "border-emerald-700 bg-emerald-950/40 text-emerald-300"
-                  : "border-slate-700 bg-slate-900 text-slate-400"
+                  : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-slate-500 dark:text-slate-400"
               }`}
             >
               {admin.is_active ? "Active" : "Inactive"}
             </span>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
+        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
           {admin.department ? (
             <span>Department: {admin.department}</span>
           ) : null}
@@ -714,7 +714,7 @@ export function SuperAdminDashboard({
                 size="sm"
                 onClick={() => onDeactivateAdmin(admin.profile_id)}
                 disabled={loadingAdminIds.has(admin.profile_id)}
-                className="text-amber-300 hover:text-amber-200"
+                className="text-[#7a0000] dark:text-amber-300 hover:text-amber-200"
               >
                 {loadingAdminIds.has(admin.profile_id)
                   ? "Deactivating..."
@@ -770,7 +770,7 @@ export function SuperAdminDashboard({
 
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
-      <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg">
+      <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-5 shadow-lg">
         <div className="my-6 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
           <p className="mt-2 font-semibold text-white text-center">
             {adminName ?? "Super Admin"}
@@ -803,7 +803,7 @@ export function SuperAdminDashboard({
       </aside>
 
       <div className="ml-72 flex min-h-full w-[calc(100%-18rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
             {activeSection === "dashboard" ? (
               <article className="relative -m-6 h-[calc(100vh-4rem)] w-[calc(100%+3rem)] overflow-hidden p-0">
@@ -842,8 +842,8 @@ export function SuperAdminDashboard({
             {activeSection === "accounts" ? (
               <article className="p-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-amber-300">
+                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
                       Admin Accounts
                     </h3>
                   </div>
@@ -877,10 +877,10 @@ export function SuperAdminDashboard({
                   />
                 </div>
 
-                <div className="mt-6 rounded-2xl border border-slate-700 bg-slate-950/50 p-5">
+                <div className="mt-6 rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 p-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-100">
+                      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
                         Account Directory
                       </h3>
                     </div>
@@ -894,7 +894,7 @@ export function SuperAdminDashboard({
                             event.target.value as AccountViewRole,
                           )
                         }
-                        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400"
+                        className="rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none transition focus:border-amber-400"
                       >
                         <option value="all">All Accounts</option>
                         <option value={ROLE.ADMIN}>Admin Accounts</option>
@@ -924,7 +924,7 @@ export function SuperAdminDashboard({
 
                   <div className="mt-4 space-y-6">
                     {isLoadingAccounts ? (
-                      <p className="text-sm text-slate-400">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         Loading account directory...
                       </p>
                     ) : (
@@ -934,10 +934,10 @@ export function SuperAdminDashboard({
                           className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <h4 className="text-base font-semibold text-slate-100">
+                            <h4 className="text-base font-semibold text-slate-800 dark:text-slate-100">
                               {group.title}
                             </h4>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
                               {group.accounts.length} account
                               {group.accounts.length === 1 ? "" : "s"}
                             </span>
@@ -947,7 +947,7 @@ export function SuperAdminDashboard({
                             {group.accounts.length ? (
                               renderAccountCards(group.accounts)
                             ) : (
-                              <p className="text-sm text-slate-400">
+                              <p className="text-sm text-slate-500 dark:text-slate-400">
                                 {group.emptyMessage}
                               </p>
                             )}
@@ -963,8 +963,8 @@ export function SuperAdminDashboard({
             {activeSection === "settings" ? (
               <article className="p-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-amber-300">
+                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
                       Settings
                     </h3>
                   </div>
@@ -980,7 +980,7 @@ export function SuperAdminDashboard({
                 </div>
 
                 <section className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]">
-                  <div className="space-y-2 rounded-2xl border border-slate-700 bg-slate-950/50 p-3">
+                  <div className="space-y-2 rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 p-3">
                     <SettingsOptionButton
                       active={activeSettingsOption === "profile"}
                       title="Account Profile"
@@ -995,10 +995,10 @@ export function SuperAdminDashboard({
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-slate-700 bg-slate-950/50 p-6">
+                  <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 p-6">
                     {activeSettingsOption === "profile" ? (
                       isLoadingSettings ? (
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                           Loading account settings...
                         </p>
                       ) : (
@@ -1019,7 +1019,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter full name"
-                              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="mt-2 w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                             />
                           </div>
 
@@ -1039,7 +1039,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter email address"
-                              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="mt-2 w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                             />
                           </div>
 
@@ -1086,7 +1086,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter current password"
-                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                             />
                             <PasswordToggleButton
                               shown={showOldPassword}
@@ -1113,7 +1113,7 @@ export function SuperAdminDashboard({
                               required
                               minLength={8}
                               placeholder="Minimum 8 characters"
-                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                             />
                             <PasswordToggleButton
                               shown={showNewPassword}
@@ -1140,7 +1140,7 @@ export function SuperAdminDashboard({
                               required
                               minLength={8}
                               placeholder="Retype new password"
-                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                             />
                             <PasswordToggleButton
                               shown={showConfirmPassword}
@@ -1421,16 +1421,16 @@ function SidebarButton({
       className={`w-full rounded-xl border px-4 py-3 text-left transition ${
         active
           ? "border-amber-400 bg-amber-400/10"
-          : "border-slate-700 bg-slate-950/60 hover:border-slate-500"
+          : "border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 hover:border-slate-500"
       }`}
     >
       <p
-        className={`font-semibold ${active ? "text-amber-300" : "text-slate-100"}`}
+        className={`font-semibold ${active ? "text-[#7a0000] dark:text-amber-300" : "text-slate-800 dark:text-slate-100"}`}
       >
         {title}
       </p>
       {description ? (
-        <p className="mt-1 text-sm text-slate-400">{description}</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
       ) : null}
     </button>
   );
@@ -1438,11 +1438,11 @@ function SidebarButton({
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-slate-700 bg-slate-950/70 p-5">
+    <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/70 p-5">
       <p className="mt-0 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-semibold text-slate-100">{value}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-800 dark:text-slate-100">{value}</p>
     </div>
   );
 }
@@ -1465,11 +1465,11 @@ function SettingsOptionButton({
       className={`w-full rounded-xl border px-4 py-3 text-left transition ${
         active
           ? "border-amber-400 bg-amber-400/10"
-          : "border-slate-700 bg-slate-900/60 hover:border-slate-500"
+          : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/60 hover:border-slate-500"
       }`}
     >
-      <p className="font-semibold text-slate-100">{title}</p>
-      <p className="mt-1 text-sm text-slate-400">{description}</p>
+      <p className="font-semibold text-slate-800 dark:text-slate-100">{title}</p>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
     </button>
   );
 }
@@ -1675,22 +1675,22 @@ function AdminDetailsModal({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl">
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-6 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-100">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
             {canEdit ? "Edit Admin Account" : "View Admin Account"}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md px-2 py-1 text-slate-300 hover:bg-slate-800"
+            className="rounded-md px-2 py-1 text-slate-700 dark:text-slate-300 hover:bg-slate-800"
           >
             X
           </button>
         </div>
 
         {isLoading ? (
-          <p className="mt-4 text-sm text-slate-400">Loading details...</p>
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading details...</p>
         ) : details ? (
           canEdit ? (
             <form className="mt-4 space-y-4" onSubmit={onSubmit}>
@@ -1709,7 +1709,7 @@ function AdminDetailsModal({
                     onChange={(event) => setFullName(event.target.value)}
                     readOnly={!canEdit}
                     disabled={!canEdit}
-                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                   />
                 </div>
 
@@ -1727,7 +1727,7 @@ function AdminDetailsModal({
                     onChange={(event) => setEmail(event.target.value)}
                     readOnly={!canEdit}
                     disabled={!canEdit}
-                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                   />
                 </div>
               </div>
@@ -1748,7 +1748,7 @@ function AdminDetailsModal({
                     disabled={!canEdit}
                     minLength={8}
                     placeholder="Leave blank to keep current password"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                    className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                   />
                   <PasswordToggleButton
                     shown={showPassword}
@@ -1757,7 +1757,7 @@ function AdminDetailsModal({
                 </div>
               </div>
 
-              <div className="grid gap-2 text-sm text-slate-400 md:grid-cols-2">
+              <div className="grid gap-2 text-sm text-slate-500 dark:text-slate-400 md:grid-cols-2">
                 <p>
                   <span className="text-slate-500">Role:</span>{" "}
                   {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
@@ -1814,7 +1814,7 @@ function AdminDetailsModal({
                   <p className="text-sm font-medium text-slate-200">
                     Full Name
                   </p>
-                  <p className="mt-2 text-sm text-slate-100">
+                  <p className="mt-2 text-sm text-slate-800 dark:text-slate-100">
                     {details.full_name}
                   </p>
                 </div>
@@ -1822,11 +1822,11 @@ function AdminDetailsModal({
                   <p className="text-sm font-medium text-slate-200">
                     Email Address
                   </p>
-                  <p className="mt-2 text-sm text-slate-100">{details.email}</p>
+                  <p className="mt-2 text-sm text-slate-800 dark:text-slate-100">{details.email}</p>
                 </div>
               </div>
 
-              <div className="grid gap-2 text-sm text-slate-400 md:grid-cols-2">
+              <div className="grid gap-2 text-sm text-slate-500 dark:text-slate-400 md:grid-cols-2">
                 <p>
                   <span className="text-slate-500">Role:</span>{" "}
                   {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
@@ -1882,7 +1882,7 @@ function AdminDetailsModal({
             </div>
           )
         ) : (
-          <p className="mt-4 text-sm text-slate-400">No details available.</p>
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No details available.</p>
         )}
       </div>
     </div>

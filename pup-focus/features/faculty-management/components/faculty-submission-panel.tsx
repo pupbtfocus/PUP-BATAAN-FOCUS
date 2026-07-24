@@ -16,7 +16,7 @@ import {
   getTodayInManila,
   buildAcademicYearOptions,
 } from "@/features/submissions/services/submission-window.service";
-import { X } from "lucide-react";
+import { X, LayoutDashboard, ClipboardList, History, Settings } from "lucide-react";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
 const PANEL_VIEWS = [
@@ -549,30 +549,25 @@ export function FacultySubmissionPanel({
 
         <nav className="mt-6 space-y-2">
           {[
-            ["dashboard", "Dashboard"],
-            ["status", "Requirements Management"],
-            ["history", "Submission History"],
-            ["settings", "Settings"],
-          ].map(([key, label]) => {
+            { key: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
+            { key: "status", label: "Requirements Management", Icon: ClipboardList },
+            { key: "history", label: "Submission History", Icon: History },
+            { key: "settings", label: "Settings", Icon: Settings },
+          ].map(({ key, label, Icon }) => {
             const isActive = activeView === key;
             return (
               <button
                 key={key}
                 type="button"
                 onClick={() => navigateToView(key as PanelView)}
-                className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${
                   isActive
-                    ? "border-amber-400 bg-amber-400/10"
-                    : "border-slate-700 bg-slate-950/60 hover:border-slate-500"
+                    ? "border-amber-400 bg-amber-400/10 text-amber-300"
+                    : "border-slate-700 bg-slate-950/60 text-slate-100 hover:border-slate-500 hover:bg-slate-900"
                 }`}
               >
-                <p
-                  className={`font-semibold ${
-                    isActive ? "text-amber-300" : "text-slate-100"
-                  }`}
-                >
-                  {label}
-                </p>
+                <Icon size={18} className={isActive ? "text-amber-300" : "text-slate-400"} />
+                <span className="font-semibold">{label}</span>
               </button>
             );
           })}

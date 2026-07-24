@@ -317,7 +317,7 @@ function ScheduleDateInput({
         </label>
         <select
           id={`${id}-month`}
-          className="w-full min-w-[4.5rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[4.5rem] rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedMonth}
           onChange={(event) => handlePartChange("month", event.target.value)}
           disabled={disabled}
@@ -339,7 +339,7 @@ function ScheduleDateInput({
         </label>
         <select
           id={`${id}-day`}
-          className="w-full min-w-[3.5rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[3.5rem] rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedDay}
           onChange={(event) => handlePartChange("day", event.target.value)}
           disabled={disabled}
@@ -361,7 +361,7 @@ function ScheduleDateInput({
         </label>
         <select
           id={`${id}-year`}
-          className="w-full min-w-[4.25rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[4.25rem] rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedYear}
           onChange={(event) => handlePartChange("year", event.target.value)}
           disabled={disabled}
@@ -434,7 +434,7 @@ function ScheduleTimeInput({
         </label>
         <select
           id={`${id}-hour`}
-          className="w-full min-w-[4rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[4rem] rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedHour}
           onChange={(event) => handlePartChange("hour", event.target.value)}
           disabled={disabled}
@@ -456,7 +456,7 @@ function ScheduleTimeInput({
         </label>
         <select
           id={`${id}-minute`}
-          className="w-full min-w-[4.5rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[4.5rem] rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedMinute}
           onChange={(event) => handlePartChange("minute", event.target.value)}
           disabled={disabled}
@@ -478,7 +478,7 @@ function ScheduleTimeInput({
         </label>
         <select
           id={`${id}-period`}
-          className="w-full min-w-[4.75rem] rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
+          className="w-full min-w-[4.75rem] rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
           value={selectedPeriod}
           onChange={(event) => handlePartChange("period", event.target.value)}
           disabled={disabled}
@@ -876,7 +876,7 @@ export function AdminFacultyDashboard({
 
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
-      <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg">
+      <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-5 shadow-lg">
         <div className="my-6 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
           <p className="mt-2 font-semibold text-white text-center">
             {adminName ?? "Admin"}
@@ -919,7 +919,7 @@ export function AdminFacultyDashboard({
       </aside>
 
       <div className="ml-72 flex min-h-full w-[calc(100%-18rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
             {activeSection === "dashboard" ? (
               <article className="relative -m-6 h-[calc(100vh-4rem)] w-[calc(100%+3rem)] overflow-hidden p-0">
@@ -958,8 +958,8 @@ export function AdminFacultyDashboard({
             {activeSection === "facultyManagement" ? (
               <article className="space-y-6 p-6 md:p-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-amber-300">
+                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
                       Faculty Management
                     </h3>
                   </div>
@@ -974,7 +974,7 @@ export function AdminFacultyDashboard({
                   </Button>
                 </div>
 
-                <section className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5 shadow-lg shadow-black/20">
+                <section className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-5 shadow-lg shadow-black/20">
                   <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                     <div>
                       <h4 className="text-base font-semibold text-[#fff8e7]">
@@ -1022,8 +1022,8 @@ export function AdminFacultyDashboard({
             {activeSection === "requirements" ? (
               <article className="p-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-amber-300">
+                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
                       Requirements Verification
                     </h3>
                   </div>
@@ -1050,8 +1050,8 @@ export function AdminFacultyDashboard({
             {activeSection === "submissionWindow" ? (
               <article className="p-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-amber-300">
+                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
                       Submission Window
                     </h3>
                   </div>
@@ -1077,8 +1077,8 @@ export function AdminFacultyDashboard({
             {activeSection === "academicTerms" ? (
               <article className="p-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-amber-300">
+                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
                       Academic Term Management
                     </h3>
                   </div>
@@ -1093,7 +1093,7 @@ export function AdminFacultyDashboard({
                   </Button>
                 </div>
 
-                <section className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5 shadow-lg shadow-black/20">
+                <section className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-5 shadow-lg shadow-black/20">
                   <AdminAcademicTerms adminName={adminName ?? "Admin"} />
                 </section>
               </article>
@@ -1113,8 +1113,8 @@ export function AdminFacultyDashboard({
 
       {pendingFacultyAction ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
-            <p className="text-xs uppercase tracking-[0.28em] text-slate-400">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
+            <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
               {pendingFacultyAction.kind === "delete"
                 ? "Confirm Delete"
                 : pendingFacultyAction.kind === "activate"
@@ -1128,7 +1128,7 @@ export function AdminFacultyDashboard({
                   ? "Activate Faculty Account?"
                   : "Deactivate Faculty Account?"}
             </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-300">
+            <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
               {pendingFaculty ? (
                 <>
                   <span className="font-medium text-white">
@@ -1138,7 +1138,7 @@ export function AdminFacultyDashboard({
                 </>
               ) : null}
             </p>
-            <p className="mt-3 text-sm leading-6 text-slate-400">
+            <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
               {pendingFacultyAction.kind === "delete"
                 ? "This action cannot be undone."
                 : pendingFacultyAction.kind === "activate"
@@ -1761,16 +1761,16 @@ function SubmissionWindowPanel({
 
   return (
     <form
-      className="mt-6 rounded-xl border border-slate-700 bg-slate-950/50 p-6"
+      className="mt-6 rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 p-6"
       onSubmit={handleSave}
     >
-      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-700 bg-slate-950/80 p-5">
+      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-white">
               Submission Window
             </h2>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Manage the current submission schedule for the active academic
               term.
             </p>
@@ -1788,16 +1788,16 @@ function SubmissionWindowPanel({
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate-700 bg-slate-950/90 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+          <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/90 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300">
               Today
             </p>
             <p className="mt-2 text-lg font-semibold text-white">
               {formatLongDate(windowStatus?.today)}
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-700 bg-slate-950/90 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+          <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/90 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300">
               Current time
             </p>
             <p className="mt-2 text-lg font-semibold text-white">
@@ -1808,16 +1808,16 @@ function SubmissionWindowPanel({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="min-w-0 rounded-2xl border border-slate-700 bg-slate-950/80 p-4 overflow-hidden">
-          <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+        <div className="min-w-0 rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-4 overflow-hidden">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300">
             Submission Schedule
           </p>
           <div className="mt-4 space-y-4">
             <div>
-              <p className="text-sm text-slate-400">Opens</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Opens</p>
               <div className="mt-2 grid gap-2 min-w-0">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                     Date
                   </p>
                   <ScheduleDateInput
@@ -1829,7 +1829,7 @@ function SubmissionWindowPanel({
                   />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                     Time
                   </p>
                   <ScheduleTimeInput
@@ -1844,10 +1844,10 @@ function SubmissionWindowPanel({
             </div>
             <div className="h-px bg-slate-700" />
             <div>
-              <p className="text-sm text-slate-400">Closes</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Closes</p>
               <div className="mt-2 grid gap-2 min-w-0">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                     Date
                   </p>
                   <ScheduleDateInput
@@ -1859,7 +1859,7 @@ function SubmissionWindowPanel({
                   />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                     Time
                   </p>
                   <ScheduleTimeInput
@@ -1874,23 +1874,23 @@ function SubmissionWindowPanel({
             </div>
           </div>
         </div>
-        <div className="self-start rounded-2xl border border-slate-700 bg-slate-950/80 p-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+        <div className="self-start rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300">
             Submission Summary
           </p>
-          <div className="mt-4 space-y-3 text-sm text-slate-300">
+          <div className="mt-4 space-y-3 text-sm text-slate-700 dark:text-slate-300">
             <div>
-              <p className="text-slate-400">Term</p>
+              <p className="text-slate-500 dark:text-slate-400">Term</p>
               <p className="mt-1 font-semibold text-white">
                 {currentTermLabel}
               </p>
             </div>
             <div>
-              <p className="text-slate-400">Schedule</p>
+              <p className="text-slate-500 dark:text-slate-400">Schedule</p>
               <p className="mt-1 text-white">{scheduleLabel}</p>
             </div>
             <div>
-              <p className="text-slate-400">Status</p>
+              <p className="text-slate-500 dark:text-slate-400">Status</p>
               <p className="mt-1 font-semibold text-white">
                 {getStatusIcon(windowStatus?.status ?? null)}{" "}
                 {windowStatus?.status ?? "Closed"}
@@ -1929,22 +1929,22 @@ function SubmissionWindowPanel({
 
       {showSaveConfirmation ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-950 p-6 shadow-2xl shadow-black/40">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-6 shadow-2xl shadow-black/40">
             <h3 className="text-xl font-semibold text-white">
               Confirm Submission Window
             </h3>
-            <p className="mt-3 text-sm text-slate-400">
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
               Academic Term: {currentTermLabel}
             </p>
-            <div className="mt-4 space-y-3 text-sm text-slate-300">
+            <div className="mt-4 space-y-3 text-sm text-slate-700 dark:text-slate-300">
               <div>
-                <p className="text-slate-400">Opening</p>
+                <p className="text-slate-500 dark:text-slate-400">Opening</p>
                 <p className="mt-1 text-white">
                   {formatScheduleDateTime(startDate, toTimeLabel(startTime))}
                 </p>
               </div>
               <div>
-                <p className="text-slate-400">Closing</p>
+                <p className="text-slate-500 dark:text-slate-400">Closing</p>
                 <p className="mt-1 text-white">
                   {formatScheduleDateTime(endDate, toTimeLabel(endTime))}
                 </p>
@@ -1968,15 +1968,15 @@ function SubmissionWindowPanel({
 
       {showCloseConfirmation ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-950 p-6 shadow-2xl shadow-black/40">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-6 shadow-2xl shadow-black/40">
             <h3 className="text-xl font-semibold text-white">
               Close Submission?
             </h3>
-            <p className="mt-3 text-sm text-slate-400">
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
               Are you sure you want to close submissions for:
             </p>
             <p className="mt-2 text-white font-semibold">{currentTermLabel}</p>
-            <p className="mt-4 text-sm text-slate-300">
+            <p className="mt-4 text-sm text-slate-700 dark:text-slate-300">
               Faculty members will no longer be able to submit requirements.
             </p>
             <div className="mt-6 flex justify-end gap-3">
@@ -2029,16 +2029,16 @@ function SidebarButton({
       className={`w-full rounded-xl border px-4 py-3 text-left transition ${
         active
           ? "border-amber-400 bg-amber-400/10"
-          : "border-slate-700 bg-slate-950/60 hover:border-slate-500"
+          : "border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 hover:border-slate-500"
       }`}
     >
       <p
-        className={`font-semibold ${active ? "text-amber-300" : "text-slate-100"}`}
+        className={`font-semibold ${active ? "text-[#7a0000] dark:text-amber-300" : "text-slate-800 dark:text-slate-100"}`}
       >
         {title}
       </p>
       {description ? (
-        <p className="mt-1 text-sm text-slate-400">{description}</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
       ) : null}
     </button>
   );
@@ -2070,41 +2070,41 @@ function AddFacultyPanel({
   return (
     <div className={wrapperClassName ?? "flex flex-col max-w-sm mx-auto"}>
       <form
-        className={`mt-6 flex flex-1 w-full flex-col gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-6 shadow-lg ${formClassName ?? ""}`}
+        className={`mt-6 flex flex-1 w-full flex-col gap-3 rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 p-6 shadow-lg ${formClassName ?? ""}`}
         onSubmit={form.handleSubmit(onAddFaculty)}
       >
         <div className="grid gap-3 md:grid-cols-3">
           <div>
-            <label className="text-sm text-slate-300" htmlFor="firstName">
+            <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="firstName">
               First Name
             </label>
             <input
               id="firstName"
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
               {...form.register("firstName")}
             />
             <FieldError message={form.formState.errors.firstName?.message} />
           </div>
 
           <div>
-            <label className="text-sm text-slate-300" htmlFor="middleName">
+            <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="middleName">
               Middle Name
             </label>
             <input
               id="middleName"
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
               {...form.register("middleName")}
             />
             <FieldError message={form.formState.errors.middleName?.message} />
           </div>
 
           <div>
-            <label className="text-sm text-slate-300" htmlFor="lastName">
+            <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="lastName">
               Last Name
             </label>
             <input
               id="lastName"
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
               {...form.register("lastName")}
             />
             <FieldError message={form.formState.errors.lastName?.message} />
@@ -2112,7 +2112,7 @@ function AddFacultyPanel({
         </div>
 
         <div>
-          <label className="text-sm text-slate-300" htmlFor="profileImage">
+          <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="profileImage">
             Profile Image
           </label>
           <input
@@ -2120,21 +2120,21 @@ function AddFacultyPanel({
             id="profileImage"
             type="file"
             accept="image/*"
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-amber-400 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-950 focus:ring focus:ring-amber-300/30"
+            className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-amber-400 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-950 focus:ring focus:ring-amber-300/30"
             onChange={(event) => {
               const file = event.target.files?.[0] ?? null;
               onProfileImageChange(file);
             }}
           />
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Upload a square image for the faculty directory.
           </p>
           {profileImageFile ? (
-            <div className="mt-2 flex items-center justify-between rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300">
+            <div className="mt-2 flex items-center justify-between rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
               <span className="truncate">{profileImageFile.name}</span>
               <button
                 type="button"
-                className="ml-3 text-amber-300 hover:text-amber-200"
+                className="ml-3 text-[#7a0000] dark:text-amber-300 hover:text-amber-200"
                 onClick={() => onProfileImageChange(null)}
               >
                 Remove
@@ -2144,13 +2144,13 @@ function AddFacultyPanel({
         </div>
 
         <div>
-          <label className="text-sm text-slate-300" htmlFor="email">
+          <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="email">
             Email
           </label>
           <input
             id="email"
             type="email"
-            className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+            className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
             placeholder="faculty@pup.edu.ph"
             {...form.register("email")}
           />
@@ -2259,24 +2259,24 @@ function FacultyListPanel({
           </div>
         ) : null}
 
-        <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3">
+        <div className="rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/70 px-3 py-3">
           <input
             type="text"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Search faculty by name or email"
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400"
+            className="w-full rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none transition focus:border-amber-400"
           />
         </div>
 
         {isLoading ? (
-          <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
+          <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-500 dark:text-slate-400">
             Loading faculty accounts...
           </p>
         ) : null}
 
         {!isLoading && facultyAccounts.length === 0 ? (
-          <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
+          <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-500 dark:text-slate-400">
             No faculty members found.
             <br />
             Click "Add Faculty" to create the first faculty account.
@@ -2286,7 +2286,7 @@ function FacultyListPanel({
         {!isLoading &&
         facultyAccounts.length > 0 &&
         filteredFacultyAccounts.length === 0 ? (
-          <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
+          <p className="rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-500 dark:text-slate-400">
             No matching faculty members found.
           </p>
         ) : null}
@@ -2297,7 +2297,7 @@ function FacultyListPanel({
           ? filteredFacultyAccounts.map((faculty) => (
               <div
                 key={faculty.id}
-                className="rounded-xl border border-slate-700 bg-slate-950 p-4"
+                className="rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-4"
               >
                 <div className="flex items-center justify-between gap-4">
                   <button
@@ -2319,7 +2319,7 @@ function FacultyListPanel({
 
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{faculty.fullName}</p>
-                      <p className="truncate text-sm text-slate-400">
+                      <p className="truncate text-sm text-slate-500 dark:text-slate-400">
                         {faculty.email}
                       </p>
                       <span
@@ -2349,7 +2349,7 @@ function FacultyListPanel({
                         size="sm"
                         onClick={() => onDeactivate(faculty.id)}
                         disabled={loadingFacultyIds.has(faculty.id)}
-                        className="text-amber-300 hover:text-amber-200"
+                        className="text-[#7a0000] dark:text-amber-300 hover:text-amber-200"
                       >
                         {loadingFacultyIds.has(faculty.id)
                           ? "Deactivating..."
@@ -2689,17 +2689,17 @@ function RequirementsPanel({
   return (
     <div>
       {facultyAccounts.length === 0 ? (
-        <p className="mt-4 rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
+        <p className="mt-4 rounded-md border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-500 dark:text-slate-400">
           Add faculty accounts first, then verify their required uploads.
         </p>
       ) : null}
 
       {facultyAccounts.length > 0 ? (
         <div className="mt-4 space-y-3">
-          <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5 shadow-lg shadow-black/20">
+          <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-5 shadow-lg shadow-black/20">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300">
                   Current Academic Term
                 </p>
                 <h4 className="mt-2 text-lg font-semibold text-white">
@@ -2725,7 +2725,7 @@ function RequirementsPanel({
 
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                   Academic Year
                 </p>
                 <p className="mt-2 text-sm font-medium text-white">
@@ -2736,7 +2736,7 @@ function RequirementsPanel({
               </div>
 
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                   Semester
                 </p>
                 <p className="mt-2 text-sm font-medium text-white">
@@ -2747,7 +2747,7 @@ function RequirementsPanel({
               </div>
 
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                   Status
                 </p>
                 <p className="mt-2 text-sm font-medium text-white">
@@ -2757,25 +2757,25 @@ function RequirementsPanel({
             </div>
 
             {!currentTermConfigured ? (
-              <p className="mt-4 text-sm text-slate-400">
+              <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
                 The current academic term is not configured. Select a previous
                 term to review history.
               </p>
             ) : null}
           </div>
 
-          <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+          <div className="rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-4">
             <div className="grid gap-3 md:grid-cols-3">
               <div>
                 <label
-                  className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                  className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300"
                   htmlFor="facultyFilter"
                 >
                   Faculty
                 </label>
                 <select
                   id="facultyFilter"
-                  className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                  className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
                   value={selectedFaculty?.id ?? ""}
                   onChange={(event) => onSelectFaculty(event.target.value)}
                 >
@@ -2792,7 +2792,7 @@ function RequirementsPanel({
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-3">
                     <label
-                      className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                      className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300"
                       htmlFor="academicYearFilter"
                     >
                       Academic Year
@@ -2800,13 +2800,13 @@ function RequirementsPanel({
                   </div>
 
                   {currentTermConfigured && !isHistoryMode ? (
-                    <div className="mt-1 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white">
+                    <div className="mt-1 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-3 py-2 text-sm text-white">
                       S.Y. {currentAcademicYear}
                     </div>
                   ) : (
                     <select
                       id="academicYearFilter"
-                      className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                      className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
                       value={academicYear}
                       onChange={(event) => setAcademicYear(event.target.value)}
                       disabled={currentTermConfigured && !isHistoryMode}
@@ -2828,19 +2828,19 @@ function RequirementsPanel({
 
               <div>
                 <label
-                  className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                  className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300"
                   htmlFor="semesterFilter"
                 >
                   Semester
                 </label>
                 {currentTermConfigured && !isHistoryMode ? (
-                  <div className="mt-1 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white">
+                  <div className="mt-1 rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-3 py-2 text-sm text-white">
                     {currentSemester}
                   </div>
                 ) : (
                   <select
                     id="semesterFilter"
-                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                    className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
                     value={semester}
                     onChange={(event) =>
                       setSemester(event.target.value as SemesterOption)
@@ -2868,7 +2868,7 @@ function RequirementsPanel({
                     })}
                   </select>
                 )}
-                <p className="mt-2 text-xs text-slate-400">
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   {availableSemesters.length === 0
                     ? `No semester content is available for ${
                         currentTermConfigured && !isHistoryMode
@@ -2880,13 +2880,13 @@ function RequirementsPanel({
                       : `Both semesters are available for ${academicYear}.`}
                 </p>
                 {currentTermConfigured ? (
-                  <p className="mt-2 text-xs text-slate-400">
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                     {isHistoryMode
                       ? "Viewing previous term history."
                       : "Using the active term for verification."}
                   </p>
                 ) : (
-                  <p className="mt-2 text-xs text-slate-400">
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                     No active academic term is configured. Select a previous
                     term to review history.
                   </p>
@@ -3047,7 +3047,7 @@ function RequirementsVerificationModal({
       ? "border-green-500/30 bg-green-500/10 text-green-300"
       : reviewStatus === "rejected"
         ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
-        : "border-slate-700 bg-slate-950 text-slate-400";
+        : "border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 text-slate-500 dark:text-slate-400";
 
   async function handleViewRequirement(code: RequirementCode) {
     setIsLoadingSubmissions(true);
@@ -3137,15 +3137,15 @@ function RequirementsVerificationModal({
         onClick={() => setViewingRequirement(null)}
       >
         <div
-          className="flex h-[96vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+          className="flex h-[96vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
             <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-amber-300">
+              <p className="text-xs uppercase tracking-[0.22em] text-[#7a0000] dark:text-amber-300">
                 File Preview
               </p>
-              <h2 className="mt-2 text-xl font-semibold text-slate-100">
+              <h2 className="mt-2 text-xl font-semibold text-slate-800 dark:text-slate-100">
                 {previewLabel}
               </h2>
             </div>
@@ -3162,7 +3162,7 @@ function RequirementsVerificationModal({
               <button
                 type="button"
                 onClick={() => setViewingRequirement(null)}
-                className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                className="rounded-full border border-slate-700 p-2 text-slate-700 dark:text-slate-300 transition hover:bg-slate-800 hover:text-slate-800 dark:text-slate-100"
                 aria-label="Close preview"
               >
                 ✕
@@ -3172,16 +3172,16 @@ function RequirementsVerificationModal({
 
           <div className="grid flex-1 gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,0.8fr)] lg:px-6 lg:py-5">
             {isLoadingSubmissions ? (
-              <div className="lg:col-span-2 rounded-2xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-400">
+              <div className="lg:col-span-2 rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-4 text-sm text-slate-500 dark:text-slate-400">
                 Loading submissions...
               </div>
             ) : submissions.length === 0 ? (
-              <div className="lg:col-span-2 rounded-2xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-400">
+              <div className="lg:col-span-2 rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-4 text-sm text-slate-500 dark:text-slate-400">
                 No submissions found for this requirement.
               </div>
             ) : (
               <>
-                <div className="relative min-h-[60vh] overflow-hidden rounded-2xl border border-slate-700 bg-slate-950">
+                <div className="relative min-h-[60vh] overflow-hidden rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950">
                   {previewUrl ? (
                     <div className="absolute right-3 top-3 z-10">
                       <a
@@ -3212,12 +3212,12 @@ function RequirementsVerificationModal({
                         className="h-full min-h-[60vh] w-full border-0"
                       />
                     ) : (
-                      <div className="flex min-h-[60vh] items-center justify-center p-4 text-sm text-slate-300">
+                      <div className="flex min-h-[60vh] items-center justify-center p-4 text-sm text-slate-700 dark:text-slate-300">
                         Preview not available for this file type.
                       </div>
                     )
                   ) : (
-                    <div className="flex min-h-[60vh] items-center justify-center p-4 text-sm text-slate-300">
+                    <div className="flex min-h-[60vh] items-center justify-center p-4 text-sm text-slate-700 dark:text-slate-300">
                       Preview not available for this file.
                     </div>
                   )}
@@ -3233,8 +3233,8 @@ function RequirementsVerificationModal({
                     </div>
                   ) : null}
 
-                  <div className="rounded-2xl border border-slate-700 bg-slate-950 p-2.5">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-2.5">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                       Faculty Note
                     </p>
                     <p className="mt-2 text-sm leading-6 italic text-slate-200">
@@ -3242,7 +3242,7 @@ function RequirementsVerificationModal({
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-700 bg-slate-950 p-2.5">
+                  <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-2.5">
                     <div className="mt-3 space-y-2">
                       {submissionDocuments.length > 0 ? (
                         submissionDocuments.map((doc, index) => {
@@ -3256,7 +3256,7 @@ function RequirementsVerificationModal({
                           return (
                             <div
                               key={doc.id}
-                              className="rounded-xl border border-slate-700 bg-slate-900/70 p-3"
+                              className="rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/70 p-3"
                             >
                               <div className="flex flex-col items-center gap-3 text-center">
                                 <a
@@ -3280,8 +3280,8 @@ function RequirementsVerificationModal({
                   </div>
 
                   {latestReview?.created_at || latestReview?.remarks ? (
-                    <div className="rounded-2xl border border-slate-700 bg-slate-950 p-2.5">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-2.5">
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                         My Remarks
                       </p>
                       <p className="mt-2 text-sm leading-6 italic text-slate-200">
@@ -3292,15 +3292,15 @@ function RequirementsVerificationModal({
                           <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
                             Reviewed On
                           </p>
-                          <p className="mt-1 text-sm leading-6 text-slate-300">
+                          <p className="mt-1 text-sm leading-6 text-slate-700 dark:text-slate-300">
                             {reviewedOn}
                           </p>
                         </>
                       ) : null}
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-slate-700 bg-slate-950 p-2.5">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-2.5">
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                         My Remarks
                       </p>
                       <p className="mt-2 text-sm leading-6 italic text-slate-200">
@@ -3310,8 +3310,8 @@ function RequirementsVerificationModal({
                   )}
 
                   {submittedOn ? (
-                    <div className="rounded-2xl border border-slate-700 bg-slate-950 p-2.5 text-sm text-slate-300">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-2.5 text-sm text-slate-700 dark:text-slate-300">
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                         Submitted On
                       </p>
                       <p className="mt-2 leading-6">{submittedOn}</p>
@@ -3319,15 +3319,15 @@ function RequirementsVerificationModal({
                   ) : null}
 
                   {selectedSubmission?.status === "uploaded" ? (
-                    <div className="rounded-2xl border border-slate-700 bg-slate-950 p-2.5">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-2.5">
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                         Admin Action
                       </p>
                       <textarea
                         placeholder="Add remarks (optional)"
                         value={reviewRemarks}
                         onChange={(e) => setReviewRemarks(e.target.value)}
-                        className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-slate-300 placeholder-slate-500 outline-none focus:ring focus:ring-amber-300/30"
+                        className="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2.5 text-xs text-slate-700 dark:text-slate-300 placeholder-slate-500 outline-none focus:ring focus:ring-amber-300/30"
                         rows={2}
                       />
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -3381,13 +3381,13 @@ function RequirementsVerificationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-3 backdrop-blur-sm">
-      <div className="flex h-[96vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl">
+      <div className="flex h-[96vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-2xl">
         <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-amber-300">
+            <p className="text-xs uppercase tracking-[0.22em] text-[#7a0000] dark:text-amber-300">
               Requirements Verification
             </p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-100">
+            <h2 className="mt-2 text-xl font-semibold text-slate-800 dark:text-slate-100">
               Faculty Requirement Status
             </h2>
           </div>
@@ -3404,7 +3404,7 @@ function RequirementsVerificationModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+              className="rounded-full border border-slate-700 p-2 text-slate-700 dark:text-slate-300 transition hover:bg-slate-800 hover:text-slate-800 dark:text-slate-100"
               aria-label="Close modal"
             >
               ✕
@@ -3414,15 +3414,15 @@ function RequirementsVerificationModal({
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)]">
-            <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+            <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-4 text-sm text-slate-700 dark:text-slate-300">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 Faculty
               </p>
-              <p className="mt-2 text-slate-100">{facultyName}</p>
-              <p className="mt-4 text-xs uppercase tracking-[0.18em] text-slate-400">
+              <p className="mt-2 text-slate-800 dark:text-slate-100">{facultyName}</p>
+              <p className="mt-4 text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 Filter
               </p>
-              <p className="mt-2 text-slate-100">
+              <p className="mt-2 text-slate-800 dark:text-slate-100">
                 S.Y. {academicYear} - {semester}
               </p>
             </div>
@@ -3434,11 +3434,11 @@ function RequirementsVerificationModal({
                   return (
                     <article
                       key={code}
-                      className="rounded-2xl border border-slate-700 bg-slate-950 p-4"
+                      className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-4"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-medium text-slate-100">
+                          <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
                             {REQUIREMENT_LABEL[code]}
                           </p>
                           <p
@@ -3462,7 +3462,7 @@ function RequirementsVerificationModal({
                   );
                 })
               ) : (
-                <p className="rounded-2xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-400">
+                <p className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-4 text-sm text-slate-500 dark:text-slate-400">
                   No requirements data loaded. Please refresh the modal.
                 </p>
               )}
@@ -3597,13 +3597,13 @@ function FacultyDetailsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-6">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Faculty Details</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200"
+            className="text-slate-500 dark:text-slate-400 hover:text-slate-200"
             aria-label="Close modal"
           >
             ✕
@@ -3611,7 +3611,7 @@ function FacultyDetailsModal({
         </div>
 
         <div className="space-y-4">
-          <article className="rounded-xl border border-slate-700 bg-slate-900 p-4">
+          <article className="rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
             <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
@@ -3629,7 +3629,7 @@ function FacultyDetailsModal({
                     )}
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                       Profile Picture
                     </p>
                     <button
@@ -3639,12 +3639,12 @@ function FacultyDetailsModal({
                           .getElementById("facultyProfileImageInput")
                           ?.click()
                       }
-                      className="rounded-md bg-slate-800 px-3 py-2 text-sm text-slate-100 transition hover:bg-slate-700"
+                      className="rounded-md bg-slate-800 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 transition hover:bg-slate-700"
                     >
                       Change Photo
                     </button>
                     {profileImageFile ? (
-                      <p className="text-xs text-slate-400 truncate">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                         {profileImageFile.name}
                       </p>
                     ) : null}
@@ -3653,39 +3653,39 @@ function FacultyDetailsModal({
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                       First Name
                     </p>
                     <input
                       value={firstName}
                       onChange={(event) => setFirstName(event.target.value)}
-                      className="mt-2 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
+                      className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
                     />
                   </label>
                   <label className="block">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                       Middle Name
                     </p>
                     <input
                       value={middleName}
                       onChange={(event) => setMiddleName(event.target.value)}
-                      className="mt-2 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
+                      className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
                     />
                   </label>
                   <label className="block sm:col-span-2">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                       Last Name
                     </p>
                     <input
                       value={lastName}
                       onChange={(event) => setLastName(event.target.value)}
-                      className="mt-2 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
+                      className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
                     />
                   </label>
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                     Email
                   </p>
                   <p className="text-sm text-slate-200">
@@ -3695,7 +3695,7 @@ function FacultyDetailsModal({
 
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                       Account Status
                     </p>
                     <p
@@ -3709,7 +3709,7 @@ function FacultyDetailsModal({
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                       Created Date
                     </p>
                     <p className="text-sm text-slate-200">{formattedDate}</p>
@@ -3717,12 +3717,12 @@ function FacultyDetailsModal({
                 </div>
               </div>
 
-              <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+              <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 p-4">
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-100">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                     Edit faculty details
                   </p>
-                  <p className="text-sm leading-6 text-slate-400">
+                  <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">
                     Change the name and profile picture for this faculty
                     account.
                   </p>
@@ -3749,7 +3749,7 @@ function FacultyDetailsModal({
                     type="button"
                     variant="secondary"
                     onClick={onClose}
-                    className="text-slate-400 hover:text-slate-200"
+                    className="text-slate-500 dark:text-slate-400 hover:text-slate-200"
                   >
                     Close
                   </Button>
