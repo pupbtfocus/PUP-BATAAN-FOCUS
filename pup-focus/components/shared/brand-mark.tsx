@@ -8,12 +8,12 @@ type BrandMarkProps = {
 export function BrandMark({ size = 44, className }: BrandMarkProps) {
   return (
     <div
-      className={`overflow-hidden rounded-full bg-[#fff8e7]/5 ${className ?? ""}`}
+      className={`relative ${className ?? ""}`}
       style={{ width: size, height: size, position: "relative" }}
       aria-hidden="true"
     >
       <Image
-        src="/icons/pup-seal.png"
+        src="/icons/Untitled - July 24, 2026 at 22.05.24.png"
         alt="PUP FOCUS logo"
         fill
         sizes={`${size}px`}
