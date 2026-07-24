@@ -28,15 +28,15 @@ export async function createServerSupabaseClient() {
   const originalGetUser = auth.getUser.bind(client.auth);
 
   auth.getUser = async (...args: any[]) => {
-    try {
-      return await originalGetUser(...args);
-    } catch (error) {
+    const { data, error } = await originalGetUser(...args);
+
+    if (error) {
       if (isInvalidRefreshTokenError(error)) {
         return { data: { user: null }, error: null };
       }
-
-      throw error;
     }
+
+    return { data, error };
   };
 
   return client;
