@@ -60,15 +60,16 @@ export async function updateSupabaseSession(request: NextRequest) {
     },
   );
 
-  try {
-    await supabase.auth.getUser();
-  } catch (error) {
+  const { error } = await supabase.auth.getUser();
+
+  if (error) {
     if (isInvalidRefreshTokenError(error)) {
       clearSupabaseCookies(request, response);
       return response;
     }
 
-    throw error;
+    // Optionally handle other errors, or just log them.
+    console.error("Supabase auth error:", error.message);
   }
 
   return response;
