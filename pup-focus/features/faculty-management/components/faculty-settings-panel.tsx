@@ -7,6 +7,8 @@ import {
   buildFacultyFullName,
   buildFacultyInitials,
 } from "@/lib/faculty-profile";
+import { createClient } from "@/lib/supabase/client";
+import { Eye, EyeOff } from "lucide-react";
 
 type FacultyAccountResponse = {
   profileId: string;
@@ -43,6 +45,16 @@ export function FacultySettingsPanel() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!profileImageFile) {
@@ -100,6 +112,63 @@ export function FacultySettingsPanel() {
       isMounted = false;
     };
   }, []);
+
+  async function handleChangePasswordSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    setPasswordError(null);
+    setPasswordMessage(null);
+
+    if (!oldPassword.trim()) {
+      setPasswordError("Current password is required.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters long.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      const supabase = createClient();
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: account?.email ?? "",
+        password: oldPassword,
+      });
+
+      if (signInError) {
+        throw new Error("Incorrect current password.");
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+
+      setPasswordMessage("Password updated successfully.");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setPasswordError(
+        err instanceof Error ? err.message : "Failed to update password.",
+      );
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
 
   async function refreshAccount() {
     try {
@@ -216,11 +285,9 @@ export function FacultySettingsPanel() {
           ) : error ? (
             <p className="mt-4 text-sm text-red-400">{error}</p>
           ) : account ? (
-            <div className="mt-4 grid gap-4 sm:grid-cols-[auto_1fr] sm:items-center">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                  Profile Picture
-                </p>
+            <>
+              <div className="mt-4 grid gap-6 sm:grid-cols-[auto_1fr] sm:items-start">
+                <div className="space-y-2">
                 <button
                   type="button"
                   onClick={() => setIsProfileImageMenuOpen(true)}
@@ -256,76 +323,173 @@ export function FacultySettingsPanel() {
                   </p>
                 ) : null}
               </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-slate-100">
-                  {account.fullName}
-                </h3>
-                <p className="text-sm text-slate-400">{account.email}</p>
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                  Faculty account
-                </p>
+              <div className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                      First Name
+                    </label>
+                    <input
+                      className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-300 outline-none"
+                      value={account.firstName}
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                      Middle Name
+                    </label>
+                    <input
+                      className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-300 outline-none"
+                      value={account.middleName}
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                      Last Name
+                    </label>
+                    <input
+                      className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-300 outline-none"
+                      value={account.lastName}
+                      readOnly
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                      Email
+                    </label>
+                    <input
+                      className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-300 outline-none"
+                      value={account.email}
+                      readOnly
+                    />
+                  </div>
+                </div>
               </div>
             </div>
+
+            <div className="mt-8">
+              <form className="space-y-4" onSubmit={handleSaveName}>
+                {profileImageFile ? (
+                  <p className="text-center text-sm text-slate-300">
+                    You have a new profile picture selected. Click below to apply the changes.
+                  </p>
+                ) : null}
+
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button type="submit" disabled={isSaving || isLoading || !profileImageFile}>
+                    {isSaving ? "Saving..." : "Save Profile Changes"}
+                  </Button>
+                  {profileImageFile && !isSaving ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setProfileImageFile(null);
+                        if (profileImageInputRef.current) {
+                          profileImageInputRef.current.value = "";
+                        }
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  ) : null}
+                  {message ? (
+                    <p className="text-sm text-emerald-300">{message}</p>
+                  ) : null}
+                  {error && !isLoading ? (
+                    <p className="text-sm text-red-400">{error}</p>
+                  ) : null}
+                </div>
+              </form>
+            </div>
+            </>
           ) : null}
         </article>
 
-        <article className="rounded-2xl border border-slate-700 bg-slate-900/90 p-5 shadow-sm">
+        <article className="h-fit rounded-2xl border border-slate-700 bg-slate-900/90 p-5 shadow-sm">
           <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
             Change Password
           </p>
-          <div className="mt-4 space-y-3">
-            <h3 className="text-lg font-semibold text-slate-100">
-              Update your password separately
-            </h3>
-            <p className="text-sm leading-6 text-slate-400">
-              Open the dedicated password page to update your password securely.
-            </p>
-            <Button
-              type="button"
-              className="w-full sm:w-auto"
-              onClick={() => router.push("/auth/change-password")}
-            >
-              Change Password
-            </Button>
-          </div>
-        </article>
-      </section>
+          <form className="mt-4 space-y-4" onSubmit={handleChangePasswordSubmit}>
+            <div className="space-y-3">
+              <label className="block space-y-1.5 text-sm text-slate-300">
+                <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  Current Password
+                </span>
+                <div className="relative">
+                  <input
+                    type={showOldPassword ? "text" : "password"}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 py-3 pl-3 pr-10 text-sm text-slate-100 outline-none focus:border-amber-400"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPassword(!showOldPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-300"
+                  >
+                    {showOldPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
+              </label>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-2xl border border-slate-700 bg-slate-900/90 p-5 shadow-sm lg:col-span-2">
-          <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
-            Account Details
-          </p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div>
-              <label
-                className="text-xs uppercase tracking-[0.18em] text-slate-400"
-                htmlFor="facultyFullName"
-              >
-                Full Name
+              <label className="block space-y-1.5 text-sm text-slate-300">
+                <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  New Password
+                </span>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 py-3 pl-3 pr-10 text-sm text-slate-100 outline-none focus:border-amber-400"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-300"
+                  >
+                    {showNewPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
               </label>
-              <input
-                id="facultyFullName"
-                className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-300 outline-none"
-                value={account?.fullName ?? ""}
-                readOnly
-              />
-            </div>
-            <div>
-              <label
-                className="text-xs uppercase tracking-[0.18em] text-slate-400"
-                htmlFor="facultyEmail"
-              >
-                Email
+
+              <label className="block space-y-1.5 text-sm text-slate-300">
+                <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  Confirm New Password
+                </span>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 py-3 pl-3 pr-10 text-sm text-slate-100 outline-none focus:border-amber-400"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-300"
+                  >
+                    {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
               </label>
-              <input
-                id="facultyEmail"
-                className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-300 outline-none"
-                value={account?.email ?? ""}
-                readOnly
-              />
             </div>
-          </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button type="submit" disabled={isChangingPassword || isLoading}>
+                {isChangingPassword ? "Updating..." : "Update Password"}
+              </Button>
+              {passwordMessage ? (
+                <p className="text-sm text-emerald-300">{passwordMessage}</p>
+              ) : null}
+              {passwordError ? (
+                <p className="text-sm text-red-400">{passwordError}</p>
+              ) : null}
+            </div>
+          </form>
         </article>
       </section>
 
@@ -393,14 +557,6 @@ export function FacultySettingsPanel() {
                     >
                       Back
                     </Button>
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        profileImageInputRef.current?.click();
-                      }}
-                    >
-                      Change Image
-                    </Button>
                   </div>
                 </div>
               ) : (
@@ -449,80 +605,6 @@ export function FacultySettingsPanel() {
         </div>
       ) : null}
 
-      <section className="grid gap-4">
-        <article className="rounded-2xl border border-slate-700 bg-slate-900/90 p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
-            Edit Name
-          </p>
-          <form className="mt-4 space-y-4" onSubmit={handleSaveName}>
-            <div className="grid gap-4 md:grid-cols-3">
-              <label className="space-y-2 text-sm text-slate-300">
-                <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                  First Name
-                </span>
-                <input
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-none focus:border-amber-400"
-                  value={form.firstName}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      firstName: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-
-              <label className="space-y-2 text-sm text-slate-300">
-                <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                  Middle Name
-                </span>
-                <input
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-none focus:border-amber-400"
-                  value={form.middleName}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      middleName: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-
-              <label className="space-y-2 text-sm text-slate-300">
-                <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                  Last Name
-                </span>
-                <input
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-none focus:border-amber-400"
-                  value={form.lastName}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      lastName: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            </div>
-
-            <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-400">
-              Preview: <span className="text-slate-100">{fullNamePreview}</span>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <Button type="submit" disabled={isSaving || isLoading}>
-                {isSaving ? "Saving..." : "Save Profile Changes"}
-              </Button>
-              {message ? (
-                <p className="text-sm text-emerald-300">{message}</p>
-              ) : null}
-              {error && !isLoading ? (
-                <p className="text-sm text-red-400">{error}</p>
-              ) : null}
-            </div>
-          </form>
-        </article>
-      </section>
     </div>
   );
 }
