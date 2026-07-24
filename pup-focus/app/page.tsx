@@ -273,19 +273,23 @@ export default function Home() {
   return (
     <main className="relative min-h-screen flex items-center justify-center px-4 py-8 text-[#fff8e7] overflow-hidden">
       {/* Overlay with Blur on top of the global body background */}
-      <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-md" />
+      <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px]" />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
       
       <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto px-2 pt-24 pb-8 no-scrollbar">
         <section className="relative rounded-[2rem] border border-[rgba(255,215,0,0.2)] bg-gradient-to-b from-[#4d0000]/90 to-[#2a0000]/90 p-8 backdrop-blur-md">
-          <div className="absolute -top-20 left-1/2 flex -translate-x-1/2 items-center justify-center rounded-[2.5rem] border border-[rgba(255,215,0,0.25)] bg-gradient-to-b from-[#5a0000] to-[#3a0000] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-            <BrandMark size={140} className="drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]" />
+          {/* Logo container sits on top, with NO border */}
+          <div className="absolute -top-14 left-1/2 z-10 flex h-[118px] w-[118px] -translate-x-1/2 items-center justify-center overflow-hidden rounded-full bg-[#4d0000] p-0 shadow-lg">
+            <BrandMark size={126} className="shrink-0 translate-x-[2px] -translate-y-[3px] drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]" />
           </div>
 
           <div className="mt-20 mb-8 text-center">
-            <h2 className="text-xl font-bold tracking-tight text-white drop-shadow-sm">Sign In</h2>
-            <p className="mt-1.5 text-sm font-medium text-[#f3d9b3]/80">
-              Enter your institutional credentials to continue.
+            <h2 className="bg-gradient-to-r from-amber-200 via-white to-amber-200 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent drop-shadow-[0_2px_8px_rgba(255,215,0,0.15)] uppercase">
+              Sign In
+            </h2>
+            <div className="mx-auto mt-3 h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
+            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/65">
+              Enter your institutional credentials to continue
             </p>
           </div>
 
@@ -299,7 +303,7 @@ export default function Home() {
           <form className="mt-6 space-y-4" onSubmit={onSubmit}>
             <div className="space-y-1.5">
               <label
-                className="ml-1 block text-sm font-medium text-amber-100/90"
+                className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/65"
                 htmlFor="email"
               >
                 Email Address
@@ -311,13 +315,13 @@ export default function Home() {
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 placeholder="faculty@pup.edu.ph"
-                className="w-full rounded-2xl border border-[rgba(255,215,0,0.2)] bg-black/20 px-4 py-3.5 text-sm text-white shadow-inner outline-none ring-amber-400/50 backdrop-blur-sm transition-all duration-300 placeholder:text-amber-200/30 hover:border-[rgba(255,215,0,0.4)] focus:bg-black/40 focus:ring-2"
+                className="w-full rounded-2xl border border-[rgba(255,215,0,0.2)] bg-black/20 px-4 py-3.5 text-sm text-white shadow-inner outline-none ring-amber-400/50 backdrop-blur-sm transition-all duration-300 placeholder:text-amber-200/20 hover:border-[rgba(255,215,0,0.4)] focus:bg-black/40 focus:ring-2"
               />
             </div>
 
             <div className="space-y-1.5">
               <label
-                className="ml-1 block text-sm font-medium text-amber-100/90"
+                className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/65"
                 htmlFor="password"
               >
                 Password
@@ -330,7 +334,7 @@ export default function Home() {
                   onChange={(event) => setPassword(event.target.value)}
                   required
                   placeholder="Your password"
-                  className="w-full rounded-2xl border border-[rgba(255,215,0,0.2)] bg-black/20 px-4 py-3.5 pr-12 text-sm text-white shadow-inner outline-none ring-amber-400/50 backdrop-blur-sm transition-all duration-300 placeholder:text-amber-200/30 hover:border-[rgba(255,215,0,0.4)] focus:bg-black/40 focus:ring-2"
+                  className="w-full rounded-2xl border border-[rgba(255,215,0,0.2)] bg-black/20 px-4 py-3.5 pr-12 text-sm text-white shadow-inner outline-none ring-amber-400/50 backdrop-blur-sm transition-all duration-300 placeholder:text-amber-200/20 hover:border-[rgba(255,215,0,0.4)] focus:bg-black/40 focus:ring-2"
                 />
 
                 <button
@@ -433,7 +437,7 @@ export default function Home() {
             {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
             <Button 
-              className="mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 font-bold text-[#4d0000] shadow-[0_4px_14px_rgba(255,215,0,0.25)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(255,215,0,0.35)] active:scale-100" 
+              className="mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs shadow-[0_4px_14px_rgba(255,215,0,0.2)] transition-all duration-300 hover:scale-[1.02] hover:from-amber-300 hover:to-amber-400 hover:shadow-[0_6px_20px_rgba(255,215,0,0.3)] active:scale-100" 
               type="submit" 
               disabled={isSubmitting}
             >

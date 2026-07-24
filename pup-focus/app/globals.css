@@ -137,3 +137,12 @@ select:-moz-autofill {
 input:-webkit-autofill::first-line {
   color: inherit !important;
 }
+
+/* Hide scrollbars utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
