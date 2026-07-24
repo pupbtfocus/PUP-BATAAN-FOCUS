@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Lottie from "lottie-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { APP_CONFIG } from "@/config/app";
@@ -270,25 +271,23 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-8 text-[#fff8e7]">
-      <div className="w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto">
-        <section className="rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/80 p-6 shadow-2xl shadow-black/20 backdrop-blur">
-          <div className="mb-6 text-center">
-            <div className="flex justify-center">
-              <BrandMark size={80} className="rounded-full" />
-            </div>
-            <p className="mt-3 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-              Polytechnic University of the Philippines - Bataan Campus
-            </p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight">
-              PUP FOCUS
-            </h1>
+    <main className="relative min-h-screen flex items-center justify-center px-4 py-8 text-[#fff8e7] overflow-hidden">
+      {/* Overlay with Blur on top of the global body background */}
+      <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-md" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+      
+      <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto px-2 pt-24 pb-8 no-scrollbar">
+        <section className="relative rounded-[2rem] border border-[rgba(255,215,0,0.2)] bg-gradient-to-b from-[#4d0000]/90 to-[#2a0000]/90 p-8 backdrop-blur-md">
+          <div className="absolute -top-20 left-1/2 flex -translate-x-1/2 items-center justify-center rounded-[2.5rem] border border-[rgba(255,215,0,0.25)] bg-gradient-to-b from-[#5a0000] to-[#3a0000] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+            <BrandMark size={140} className="drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]" />
           </div>
 
-          <h2 className="text-xl font-semibold">Sign In</h2>
-          <p className="mt-1 text-sm text-[#f3d9b3]">
-            Enter your institutional email and password to sign in.
-          </p>
+          <div className="mt-20 mb-8 text-center">
+            <h2 className="text-xl font-bold tracking-tight text-white drop-shadow-sm">Sign In</h2>
+            <p className="mt-1.5 text-sm font-medium text-[#f3d9b3]/80">
+              Enter your institutional credentials to continue.
+            </p>
+          </div>
 
           {!PUBLIC_ENV ? (
             <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
@@ -297,10 +296,10 @@ export default function Home() {
             </div>
           ) : null}
 
-          <form className="mt-5 space-y-3" onSubmit={onSubmit}>
-            <div>
+          <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+            <div className="space-y-1.5">
               <label
-                className="block text-sm font-medium text-[#fff8e7]"
+                className="ml-1 block text-sm font-medium text-amber-100/90"
                 htmlFor="email"
               >
                 Email Address
@@ -312,18 +311,18 @@ export default function Home() {
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 placeholder="faculty@pup.edu.ph"
-                className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-transparent px-4 py-3 text-sm text-white outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                className="w-full rounded-2xl border border-[rgba(255,215,0,0.2)] bg-black/20 px-4 py-3.5 text-sm text-white shadow-inner outline-none ring-amber-400/50 backdrop-blur-sm transition-all duration-300 placeholder:text-amber-200/30 hover:border-[rgba(255,215,0,0.4)] focus:bg-black/40 focus:ring-2"
               />
             </div>
 
-            <div>
+            <div className="space-y-1.5">
               <label
-                className="block text-sm font-medium text-[#fff8e7]"
+                className="ml-1 block text-sm font-medium text-amber-100/90"
                 htmlFor="password"
               >
                 Password
               </label>
-              <div className="mt-2 relative">
+              <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -331,14 +330,14 @@ export default function Home() {
                   onChange={(event) => setPassword(event.target.value)}
                   required
                   placeholder="Your password"
-                  className="w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-transparent px-4 pr-12 py-3 text-sm text-white outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                  className="w-full rounded-2xl border border-[rgba(255,215,0,0.2)] bg-black/20 px-4 py-3.5 pr-12 text-sm text-white shadow-inner outline-none ring-amber-400/50 backdrop-blur-sm transition-all duration-300 placeholder:text-amber-200/30 hover:border-[rgba(255,215,0,0.4)] focus:bg-black/40 focus:ring-2"
                 />
 
                 <button
                   type="button"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-[rgba(255,255,255,0.18)] bg-[rgba(255,255,255,0.06)] p-1.5 text-white"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-white/5 p-2 text-amber-100/70 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white"
                 >
                   {showPassword ? (
                     <svg
@@ -433,7 +432,11 @@ export default function Home() {
 
             {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
-            <Button className="w-full" type="submit" disabled={isSubmitting}>
+            <Button 
+              className="mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 font-bold text-[#4d0000] shadow-[0_4px_14px_rgba(255,215,0,0.25)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(255,215,0,0.35)] active:scale-100" 
+              type="submit" 
+              disabled={isSubmitting}
+            >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Lottie
@@ -445,15 +448,15 @@ export default function Home() {
                   Signing in...
                 </span>
               ) : (
-                "Continue"
+                "Sign In"
               )}
             </Button>
           </form>
         </section>
       </div>
       {authModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
-          <div className="w-full max-w-sm rounded-[26px] border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 text-[#fff8e7] shadow-2xl shadow-black/30 backdrop-blur">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[2rem] border border-[rgba(255,215,0,0.2)] bg-gradient-to-b from-[#4d0000]/95 to-[#2a0000]/95 p-8 text-[#fff8e7] shadow-[0_16px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl">
             <div className="flex flex-col items-center text-center gap-3">
               <div
                 className={`relative flex h-16 w-16 items-center justify-center rounded-full border ${
@@ -511,9 +514,10 @@ export default function Home() {
             </p>
 
             {authModal.variant === "error" ? (
-              <div className="mt-6 flex justify-center">
+              <div className="mt-8 flex justify-center">
                 <Button
                   type="button"
+                  className="h-12 w-full rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 font-bold text-[#4d0000] shadow-[0_4px_14px_rgba(255,215,0,0.25)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(255,215,0,0.35)] active:scale-100"
                   onClick={() => {
                     setAuthModal(null);
                   }}
@@ -525,6 +529,31 @@ export default function Home() {
           </div>
         </div>
       ) : null}
+
+      <div className="fixed bottom-6 right-6 z-40">
+        <a
+          href="https://www.pup.edu.ph/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center rounded-full border border-[rgba(255,215,0,0.2)] bg-gradient-to-b from-[#4d0000]/90 to-[#2a0000]/90 p-1.5 shadow-lg backdrop-blur-md transition-all duration-500 hover:border-[rgba(255,215,0,0.4)] hover:shadow-[0_0_20px_rgba(255,215,0,0.4)] active:scale-95"
+          title="Visit PUP Official Website"
+        >
+          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-full border-2 border-transparent transition-colors duration-500 group-hover:border-[rgba(255,215,0,0.6)]">
+            <Image
+              src="/icons/pup-seal.png"
+              alt="PUP Seal"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+          <div className="overflow-hidden opacity-0 max-w-0 transition-all duration-500 group-hover:max-w-[160px] group-hover:pl-3 group-hover:pr-4 group-hover:opacity-100">
+            <span className="whitespace-nowrap text-sm font-semibold tracking-wide text-amber-100/90 transition-colors duration-500 group-hover:text-amber-400">
+              PUP Official Website
+            </span>
+          </div>
+        </a>
+      </div>
     </main>
   );
 }
