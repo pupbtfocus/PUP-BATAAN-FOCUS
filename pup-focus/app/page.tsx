@@ -275,12 +275,15 @@ export default function Home() {
       {/* Overlay with Blur on top of the global body background */}
       <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px]" />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-      
+
       <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto px-2 pt-24 pb-8 no-scrollbar">
-        <section className="relative rounded-[2rem] border border-[rgba(255,215,0,0.2)] bg-gradient-to-b from-[#4d0000]/90 to-[#2a0000]/90 p-8 backdrop-blur-md">
+        <section className="relative rounded-[2rem] border border-[rgba(255,215,0,0.2)] bg-[#4d0000]/95 p-8 backdrop-blur-md">
           {/* Logo container sits on top, with NO border */}
           <div className="absolute -top-14 left-1/2 z-10 flex h-[118px] w-[118px] -translate-x-1/2 items-center justify-center overflow-hidden rounded-full bg-[#4d0000] p-0 shadow-lg">
-            <BrandMark size={126} className="shrink-0 translate-x-[2px] -translate-y-[3px] drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]" />
+            <BrandMark
+              size={126}
+              className="shrink-0 translate-x-[2px] -translate-y-[3px] drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]"
+            />
           </div>
 
           <div className="mt-20 mb-8 text-center">
@@ -436,9 +439,9 @@ export default function Home() {
 
             {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
-            <Button 
-              className="mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs shadow-[0_4px_14px_rgba(255,215,0,0.2)] transition-all duration-300 hover:scale-[1.02] hover:from-amber-300 hover:to-amber-400 hover:shadow-[0_6px_20px_rgba(255,215,0,0.3)] active:scale-100" 
-              type="submit" 
+            <Button
+              className="mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs shadow-[0_4px_14px_rgba(255,215,0,0.2)] transition-all duration-300 hover:scale-[1.02] hover:from-amber-300 hover:to-amber-400 hover:shadow-[0_6px_20px_rgba(255,215,0,0.3)] active:scale-100"
+              type="submit"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
