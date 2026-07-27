@@ -43,6 +43,18 @@ CREATE TABLE public.app_users (
   CONSTRAINT app_users_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
 );
 
+CREATE TABLE public.audit_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  actor_id uuid,
+  action text NOT NULL,
+  entity_type text NOT NULL,
+  entity_id uuid,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT audit_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT audit_logs_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
 CREATE TABLE public.compliance_template_items (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   curriculum_id uuid NOT NULL,
@@ -91,6 +103,18 @@ CREATE TABLE public.faculty_program_assignments (
   CONSTRAINT faculty_program_assignments_program_id_fkey FOREIGN KEY (program_id) REFERENCES public.programs(id),
   CONSTRAINT faculty_program_assignments_curriculum_id_fkey FOREIGN KEY (curriculum_id) REFERENCES public.curricula(id),
   CONSTRAINT faculty_program_assignments_faculty_profile_id_fkey FOREIGN KEY (faculty_profile_id) REFERENCES public.profiles(id)
+);
+
+CREATE TABLE public.notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  title text NOT NULL,
+  message text NOT NULL,
+  type text,
+  is_read boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT notifications_pkey PRIMARY KEY (id),
+  CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE public.profiles (
