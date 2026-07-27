@@ -15,6 +15,17 @@ export const AUTH_ROUTES = [
   "/forgot-password",
   "/auth/confirm",
 ];
+/**
+ * Maps a URL path prefix to the role(s) permitted to access routes under it.
+ * Used by the middleware to enforce role-based route guards.
+ */
+export const ROLE_ROUTE_PREFIX: Record<string, AppRole[]> = {
+  "/admin": [ROLE.ADMIN, ROLE.SUPER_ADMIN],
+  "/faculty": [ROLE.FACULTY],
+  "/program-head": [ROLE.PROGRAM_HEAD],
+  "/super-admin": [ROLE.SUPER_ADMIN],
+};
+
 export const PUBLIC_ROUTES = [
   "/",
   "/about",
