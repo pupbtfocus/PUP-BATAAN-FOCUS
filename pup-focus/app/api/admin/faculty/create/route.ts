@@ -4,6 +4,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { sendInviteEmail } from "@/lib/email/send-invite";
+import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
+import { logger } from "@/lib/observability/logger";
 import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
@@ -254,6 +256,27 @@ export async function POST(request: NextRequest) {
           sendError,
         });
       }
+    }
+
+    // Audit log – fire-and-forget; never blocks the invite response
+    try {
+      await logAuditEvent({
+        actorId: user.id,
+        action: "faculty.create",
+        entityType: "faculty",
+        entityId: user.id,
+        metadata: {
+          target_email: normalizedEmail,
+          target_full_name: fullName,
+          invite_sent: sent,
+          send_error: sendError,
+        },
+      });
+    } catch (auditError) {
+      logger.error("audit_log_faculty_create_failed", {
+        email: normalizedEmail,
+        error: auditError instanceof Error ? auditError.message : String(auditError),
+      });
     }
 
     return NextResponse.json({

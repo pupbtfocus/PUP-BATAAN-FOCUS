@@ -14,6 +14,8 @@ import {
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { sendSubmissionWindowNotificationEmail } from "@/lib/email/send-invite";
+import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
+import { logger } from "@/lib/observability/logger";
 
 function isAdminRole(role: string | undefined) {
   return role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN;
@@ -392,6 +394,28 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Audit log – fire-and-forget; never blocks the response
+    try {
+      await logAuditEvent({
+        actorId: user.id,
+        action: "submission_window.update",
+        entityType: "submission_window",
+        entityId: user.id,
+        metadata: {
+          academic_year: academicYear,
+          semester,
+          start_date: startDate,
+          end_date: endDate,
+          start_time: startTime24,
+          end_time: endTime24,
+        },
+      });
+    } catch (auditError) {
+      logger.error("audit_log_submission_window_update_failed", {
+        error: auditError instanceof Error ? auditError.message : String(auditError),
+      });
+    }
+
     return NextResponse.json({
       ...status,
       startTimeLabel: status.startTime
@@ -442,6 +466,22 @@ export async function DELETE() {
     }
 
     const status = evaluateSubmissionWindow(null);
+
+    // Audit log – fire-and-forget; never blocks the response
+    try {
+      await logAuditEvent({
+        actorId: user.id,
+        action: "submission_window.close",
+        entityType: "submission_window",
+        entityId: user.id,
+        metadata: {},
+      });
+    } catch (auditError) {
+      logger.error("audit_log_submission_window_close_failed", {
+        error: auditError instanceof Error ? auditError.message : String(auditError),
+      });
+    }
+
     return NextResponse.json({
       ...status,
       startTimeLabel: null,

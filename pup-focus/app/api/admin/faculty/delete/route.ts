@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
+import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
+import { logger } from "@/lib/observability/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -188,6 +190,25 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Audit log for orphan cleanup
+      try {
+        await logAuditEvent({
+          actorId: user.id,
+          action: "user.delete",
+          entityType: "faculty",
+          entityId: facultyProfileId,
+          metadata: {
+            cleanup: "orphaned_record",
+            target_auth_user_id: appUser.auth_user_id ?? null,
+          },
+        });
+      } catch (auditError) {
+        logger.error("audit_log_faculty_delete_orphan_failed", {
+          facultyProfileId,
+          error: auditError instanceof Error ? auditError.message : String(auditError),
+        });
+      }
+
       return NextResponse.json({
         success: true,
         message: "Cleaned up orphaned user record",
@@ -280,6 +301,24 @@ export async function POST(request: NextRequest) {
         console.error("Warning: Could not delete auth user:", authError);
         // Continue - profile is already deleted
       }
+    }
+
+    // Audit log for full deletion
+    try {
+      await logAuditEvent({
+        actorId: user.id,
+        action: "user.delete",
+        entityType: "faculty",
+        entityId: facultyProfileId,
+        metadata: {
+          target_auth_user_id: profile.user_id,
+        },
+      });
+    } catch (auditError) {
+      logger.error("audit_log_faculty_delete_failed", {
+        facultyProfileId,
+        error: auditError instanceof Error ? auditError.message : String(auditError),
+      });
     }
 
     return NextResponse.json({ success: true });
