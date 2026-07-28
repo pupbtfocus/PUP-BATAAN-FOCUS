@@ -15,3 +15,26 @@ export interface SubmissionDocumentVersion {
   createdBy: string;
   createdAt: string;
 }
+
+export interface DocumentVersionDetail {
+  id: string;
+  versionNumber: number;
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  checksumSha256: string;
+  createdAt: string;
+  downloadUrl: string;
+}
+
+export interface VersionHistoryResponse {
+  versions: DocumentVersionDetail[];
+  submission: {
+    id: string;
+    requirementCode: string;
+    status: string;
+    feedback?: string;
+    reviewedAt?: string;
+  };
+}
