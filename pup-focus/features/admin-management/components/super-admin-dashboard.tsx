@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
+import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
 
 const DASHBOARD_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
@@ -118,7 +119,7 @@ export function SuperAdminDashboard({
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   const [activeSection, setActiveSection] = useState<
-    "dashboard" | "accounts" | "settings"
+    "dashboard" | "accounts" | "settings" | "auditLogs"
   >("dashboard");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -799,6 +800,11 @@ export function SuperAdminDashboard({
             title="Settings"
             onClick={() => setActiveSection("settings")}
           />
+          <SidebarButton
+            active={activeSection === "auditLogs"}
+            title="Audit Logs"
+            onClick={() => setActiveSection("auditLogs")}
+          />
         </nav>
       </aside>
 
@@ -957,6 +963,20 @@ export function SuperAdminDashboard({
                     )}
                   </div>
                 </div>
+              </article>
+            ) : null}
+
+            {activeSection === "auditLogs" ? (
+              <article className="p-8">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
+                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
+                      Audit Logs
+                    </h3>
+                  </div>
+                </div>
+
+                <AuditLogsPanel />
               </article>
             ) : null}
 
