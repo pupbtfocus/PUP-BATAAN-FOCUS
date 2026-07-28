@@ -8,6 +8,7 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import { FacultySettingsPanel } from "@/features/faculty-management/components/faculty-settings-panel";
 import { SubmissionWindowCountdown } from "@/features/submissions/components/submission-window-countdown";
 import { SubmissionLockBanner } from "@/features/submissions/components/submission-lock-banner";
+import { VersionHistoryModal } from "@/features/submissions/components/version-history-modal";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -18,7 +19,7 @@ import {
   getTodayInManila,
   buildAcademicYearOptions,
 } from "@/features/submissions/services/submission-window.service";
-import { X, LayoutDashboard, ClipboardList, History, Settings } from "lucide-react";
+import { X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle } from "lucide-react";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
 const PANEL_VIEWS = [
@@ -200,6 +201,10 @@ export function FacultySubmissionPanel({
     useState<SubmissionWindowState | null>(null);
   const [isLoadingSubmissionWindow, setIsLoadingSubmissionWindow] =
     useState(true);
+  const [versionHistorySubmissionId, setVersionHistorySubmissionId] =
+    useState<string | null>(null);
+  const [versionHistoryLabel, setVersionHistoryLabel] = useState("");
+  const [versionHistoryCode, setVersionHistoryCode] = useState("");
 
   const hasSubmissionWindowAcademicTerm = Boolean(
     submissionWindow?.isConfigured &&
@@ -429,6 +434,24 @@ export function FacultySubmissionPanel({
       reviewedAt: submission.reviewedAt,
       latestSubmissionId: submission.id,
     });
+  }
+
+  function openVersionHistory(item: RequirementStatus) {
+    if (!item.latestSubmissionId) return;
+    setVersionHistorySubmissionId(item.latestSubmissionId);
+    setVersionHistoryLabel(REQUIREMENT_LABEL[item.code]);
+    setVersionHistoryCode(item.code);
+  }
+
+  function closeVersionHistory() {
+    setVersionHistorySubmissionId(null);
+    setVersionHistoryLabel("");
+    setVersionHistoryCode("");
+  }
+
+  function startRevision(requirementCode: RequirementCode) {
+    updateField("requirementCode", requirementCode);
+    openSubmitModal();
   }
 
   function closeSubmissionPreview() {
@@ -1043,27 +1066,40 @@ export function FacultySubmissionPanel({
                               </p>
                             ) : null}
                           </div>
-                          <div className="flex shrink-0 items-center gap-2">
+                          <div className="flex shrink-0 flex-wrap items-center gap-2">
                             {req.status !== "Not Submitted" &&
                             req.latestSubmissionId ? (
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => openSubmissionPreview(req)}
-                                className="inline-flex items-center gap-2"
-                              >
-                                {req.feedback &&
-                                !viewedSubmissionIds.has(
-                                  req.latestSubmissionId,
-                                ) ? (
-                                  <span
-                                    className="h-2 w-2 rounded-full bg-red-500"
-                                    aria-hidden="true"
-                                  />
-                                ) : null}
-                                View Submitted File
-                              </Button>
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => openSubmissionPreview(req)}
+                                  className="inline-flex items-center gap-2"
+                                >
+                                  {req.feedback &&
+                                  !viewedSubmissionIds.has(
+                                    req.latestSubmissionId,
+                                  ) ? (
+                                    <span
+                                      className="h-2 w-2 rounded-full bg-red-500"
+                                      aria-hidden="true"
+                                    />
+                                  ) : null}
+                                  View Submitted File
+                                </Button>
+
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openVersionHistory(req)}
+                                  className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-100"
+                                >
+                                  <History className="h-3.5 w-3.5" />
+                                  Versions
+                                </Button>
+                              </>
                             ) : null}
 
                             <span
@@ -1079,6 +1115,36 @@ export function FacultySubmissionPanel({
                             </span>
                           </div>
                         </div>
+
+                        {/* Rejection / Revision alert */}
+                        {req.status === "Rejected" && (
+                          <div className="mt-3 rounded-lg border border-red-800/60 bg-red-950/30 p-3">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-xs font-medium uppercase tracking-wider text-red-400">
+                                  Revision Required
+                                </p>
+                                <p className="mt-1 text-sm text-red-200 leading-relaxed">
+                                  {req.feedback ?? "The reviewer has requested revisions for this requirement. Please resubmit an updated document."}
+                                </p>
+                              </div>
+                            </div>
+                            {isSubmissionAvailable && (
+                              <div className="mt-3 flex justify-end">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => startRevision(req.code)}
+                                  className="inline-flex items-center gap-1.5"
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                  Submit Revision
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </article>
                     ))
                   )}
@@ -1191,6 +1257,15 @@ export function FacultySubmissionPanel({
                 </div>
               </div>
             ) : null}
+
+            {versionHistorySubmissionId && (
+              <VersionHistoryModal
+                submissionId={versionHistorySubmissionId}
+                requirementLabel={versionHistoryLabel}
+                requirementCode={versionHistoryCode}
+                onClose={closeVersionHistory}
+              />
+            )}
 
             {showIncompleteRequirementsModal ? (
               <div
