@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { FacultySettingsPanel } from "@/features/faculty-management/components/faculty-settings-panel";
+import { SubmissionWindowCountdown } from "@/features/submissions/components/submission-window-countdown";
+import { SubmissionLockBanner } from "@/features/submissions/components/submission-lock-banner";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -76,6 +78,7 @@ type SubmissionFormState = {
 
 type SubmissionWindowState = {
   isConfigured: boolean;
+  status: "Upcoming" | "Open" | "Closed";
   isOpen: boolean;
   today: string;
   currentTime: string;
@@ -89,6 +92,7 @@ type SubmissionWindowState = {
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
 };
+
 
 function buildAcademicYears(count = 5): string[] {
   const now = new Date();
@@ -272,25 +276,30 @@ export function FacultySubmissionPanel({
     }
   }
 
-  useEffect(() => {
-    async function fetchSubmissionWindow() {
-      setIsLoadingSubmissionWindow(true);
-      try {
-        const response = await fetch("/api/faculty/submissions/window");
-        if (response.ok) {
-          const data = (await response.json()) as SubmissionWindowState;
-          setSubmissionWindow(data);
-        }
-      } catch {
-        // Keep UI usable even if window info fails to load.
-      } finally {
-        setIsLoadingSubmissionWindow(false);
+  const refetchSubmissionWindow = useCallback(async () => {
+    setIsLoadingSubmissionWindow(true);
+    try {
+      const response = await fetch("/api/faculty/submissions/window");
+      if (response.ok) {
+        const data = (await response.json()) as SubmissionWindowState;
+        setSubmissionWindow(data);
       }
+    } catch {
+      // Keep UI usable even if window info fails to load.
+    } finally {
+      setIsLoadingSubmissionWindow(false);
     }
+  }, []);
 
+  const handleWindowExpired = useCallback(() => {
+    void refetchSubmissionWindow();
+    void fetchStatuses();
+  }, [refetchSubmissionWindow]);
+
+  useEffect(() => {
     void fetchStatuses();
     void fetchHistory();
-    void fetchSubmissionWindow();
+    void refetchSubmissionWindow();
     // Read view from URL on mount
     try {
       const params = new URLSearchParams(window.location.search);
@@ -301,7 +310,7 @@ export function FacultySubmissionPanel({
     } catch {
       // ignore
     }
-  }, []);
+  }, [refetchSubmissionWindow]);
 
   useEffect(() => {
     if (!submissionWindow) {
@@ -547,7 +556,15 @@ export function FacultySubmissionPanel({
           </p>
         </div>
 
-        <nav className="mt-6 space-y-2">
+        <div className="my-4">
+          <SubmissionWindowCountdown
+            window={submissionWindow}
+            isLoading={isLoadingSubmissionWindow}
+            onExpired={handleWindowExpired}
+          />
+        </div>
+
+        <nav className="mt-4 space-y-2">
           {[
             { key: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
             { key: "status", label: "Requirements Management", Icon: ClipboardList },
@@ -577,6 +594,12 @@ export function FacultySubmissionPanel({
       <div className="ml-72 flex min-h-full w-[calc(100%-18rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            {activeView !== "dashboard" && (
+              <SubmissionLockBanner
+                isLocked={!isSubmissionAvailable}
+                isConfigured={submissionWindow?.isConfigured}
+              />
+            )}
             {activeView !== "dashboard" ? (
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
