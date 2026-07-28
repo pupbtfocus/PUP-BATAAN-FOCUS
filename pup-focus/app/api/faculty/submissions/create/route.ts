@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logger } from "@/lib/observability/logger";
+import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
 import type { RequirementCode } from "@/config/compliance";
 import {
@@ -354,6 +355,29 @@ export async function POST(request: NextRequest) {
       facultyId: appUser.profile_id,
       requirementCode: payload.requirementCode,
     });
+
+    // Audit log – fire-and-forget; failures are logged but never block the upload response
+    try {
+      await logAuditEvent({
+        actorId: user.id,
+        action: "submission.upload",
+        entityType: "submission",
+        entityId: submissionId,
+        metadata: {
+          requirement_code: payload.requirementCode,
+          file_name: fileName,
+          academic_year: payload.academicYear,
+          semester: payload.semester,
+          faculty_profile_id: appUser.profile_id,
+          document_version_id: documentVersion.id,
+        },
+      });
+    } catch (auditError) {
+      logger.error("audit_log_submission_upload_failed", {
+        submissionId,
+        error: auditError instanceof Error ? auditError.message : String(auditError),
+      });
+    }
 
     return NextResponse.json(
       {

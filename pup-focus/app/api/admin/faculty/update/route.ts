@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
+import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
+import { logger } from "@/lib/observability/logger";
 import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
@@ -274,6 +276,25 @@ export async function PATCH(request: NextRequest) {
         )
         .remove([trimOrEmpty(previousAppUserMetadata.profile_image_path)])
         .catch(() => null);
+    }
+
+    // Audit log – fire-and-forget; never blocks the update response
+    try {
+      await logAuditEvent({
+        actorId: user.id,
+        action: "faculty.update",
+        entityType: "faculty",
+        entityId: facultyProfileId,
+        metadata: {
+          updated_full_name: updatedFullName,
+          previous_full_name: previousProfileName,
+        },
+      });
+    } catch (auditError) {
+      logger.error("audit_log_faculty_update_failed", {
+        facultyProfileId,
+        error: auditError instanceof Error ? auditError.message : String(auditError),
+      });
     }
 
     return NextResponse.json({ success: true });

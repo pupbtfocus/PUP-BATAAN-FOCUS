@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
+import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
+import { logger } from "@/lib/observability/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -164,6 +166,25 @@ export async function POST(request: NextRequest) {
         { error: "Failed to deactivate faculty account" },
         { status: 500 },
       );
+    }
+
+    // Audit log – fire-and-forget; never blocks the deactivation response
+    try {
+      await logAuditEvent({
+        actorId: user.id,
+        action: "user.deactivate",
+        entityType: "faculty",
+        entityId: facultyProfileId,
+        metadata: {
+          target_email: profile.email,
+          target_full_name: profile.full_name,
+        },
+      });
+    } catch (auditError) {
+      logger.error("audit_log_faculty_deactivate_failed", {
+        facultyProfileId,
+        error: auditError instanceof Error ? auditError.message : String(auditError),
+      });
     }
 
     return NextResponse.json(

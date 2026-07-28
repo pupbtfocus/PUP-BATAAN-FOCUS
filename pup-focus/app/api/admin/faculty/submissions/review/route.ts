@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { logger } from "@/lib/observability/logger";
+import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -92,6 +93,27 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Review processed successfully");
+
+    // Audit log – fire-and-forget; never blocks the review response
+    try {
+      await logAuditEvent({
+        actorId: user.id,
+        action: decision === "validated" ? "submission.approve" : "submission.reject",
+        entityType: "submission",
+        entityId: submissionId,
+        metadata: {
+          review_decision: decision,
+          remarks: remarks || null,
+          reviewer_profile_id: adminAppUser.profile_id,
+        },
+      });
+    } catch (auditError) {
+      logger.error("audit_log_submission_review_failed", {
+        submissionId,
+        error: auditError instanceof Error ? auditError.message : String(auditError),
+      });
+    }
+
     return NextResponse.json({
       success: true,
       message: `Submission ${decision} successfully`,
