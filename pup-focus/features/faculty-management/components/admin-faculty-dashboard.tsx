@@ -131,6 +131,7 @@ export function AdminFacultyDashboard({
       middleName: "",
       lastName: "",
       email: "",
+      programId: "",
     },
   });
 
@@ -183,6 +184,7 @@ export function AdminFacultyDashboard({
       payload.append("middleName", input.middleName);
       payload.append("lastName", input.lastName);
       payload.append("email", input.email);
+      payload.append("programId", input.programId);
 
       if (profileImageFile) {
         payload.append("profileImage", profileImageFile);
@@ -213,7 +215,7 @@ export function AdminFacultyDashboard({
       setInviteModalMessage(inviteMessage);
       setInviteModalOpen(true);
       setAddFacultyModalOpen(false);
-      form.reset({ firstName: "", middleName: "", lastName: "", email: "" });
+      form.reset({ firstName: "", middleName: "", lastName: "", email: "", programId: "" });
       setProfileImageFile(null);
       setProfileImageInputKey((value) => value + 1);
 

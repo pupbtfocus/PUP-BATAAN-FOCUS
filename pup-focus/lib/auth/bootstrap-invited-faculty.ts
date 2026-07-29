@@ -46,6 +46,10 @@ export async function bootstrapInvitedFacultyAccount(user: {
     metadata.profile_image_path.trim()
       ? metadata.profile_image_path.trim()
       : null;
+  const programId =
+    typeof metadata.program_id === "string" && metadata.program_id.trim()
+      ? metadata.program_id.trim()
+      : null;
 
   if (!email) {
     throw new Error("Missing email for invited faculty account");
@@ -140,5 +144,33 @@ export async function bootstrapInvitedFacultyAccount(user: {
 
   if (appUsersError) {
     throw new Error(appUsersError.message);
+  }
+
+  // Ensure faculty program assignment is persisted
+  if (programId && profile?.id) {
+    const { data: existingAssignment } = await serviceRoleClient
+      .from("faculty_program_assignments")
+      .select("id")
+      .eq("faculty_profile_id", profile.id)
+      .eq("program_id", programId)
+      .maybeSingle();
+
+    if (!existingAssignment) {
+      const { data: activeTerm } = await serviceRoleClient
+        .from("academic_terms")
+        .select("academic_year, semester")
+        .eq("status", "Current")
+        .maybeSingle();
+
+      const academicYear = activeTerm?.academic_year || "2026-2027";
+      const term = activeTerm?.semester || "1st Semester";
+
+      await serviceRoleClient.from("faculty_program_assignments").insert({
+        faculty_profile_id: profile.id,
+        program_id: programId,
+        academic_year: academicYear,
+        term,
+      });
+    }
   }
 }
