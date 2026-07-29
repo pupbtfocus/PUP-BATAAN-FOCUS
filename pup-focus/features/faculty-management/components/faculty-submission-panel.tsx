@@ -1046,7 +1046,8 @@ export function FacultySubmissionPanel({
                     requirementStatuses.map((req) => (
                       <article
                         key={req.code}
-                        className="rounded-xl border border-slate-700 bg-slate-950 p-4"
+                        id={`requirement-${req.code}`}
+                        className="rounded-xl border border-slate-700 bg-slate-950 p-4 transition-all duration-300"
                       >
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="flex-1">

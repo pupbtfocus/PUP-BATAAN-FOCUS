@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { LogoutButton } from "@/components/shared/logout-button";
+import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 
 type NavigationItem = {
   href: string;
@@ -13,6 +14,7 @@ type AppShellProps = {
   nav: NavigationItem[];
   children: React.ReactNode;
   fullBleed?: boolean;
+  showNotifications?: boolean;
 };
 
 export function AppShell({
@@ -21,6 +23,7 @@ export function AppShell({
   nav,
   children,
   fullBleed = false,
+  showNotifications = true,
 }: AppShellProps) {
   const mainClassName = fullBleed
     ? "mx-auto flex h-screen w-full max-w-none overflow-hidden px-0 pt-16"
@@ -54,7 +57,7 @@ export function AppShell({
                 </Link>
               ))}
             </nav>
-            {/* account name removed */}
+            {showNotifications && <NotificationDrawer />}
             <LogoutButton />
           </div>
         </div>

@@ -4,6 +4,8 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { logger } from "@/lib/observability/logger";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
+import { createNotification } from "@/features/notifications/services/notification.service";
+import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     const { data: adminAppUser } = await supabase
       .from("app_users")
-      .select("profile_id")
+      .select("profile_id, full_name")
       .eq("auth_user_id", user.id)
       .maybeSingle();
 
@@ -63,6 +65,13 @@ export async function POST(request: NextRequest) {
       remarks,
       reviewerProfileId: adminAppUser.profile_id,
     });
+
+    // Fetch details of submission being reviewed to identify the target faculty member
+    const { data: submission } = await supabase
+      .from("submissions")
+      .select("id, faculty_profile_id, requirement_code, academic_year, semester")
+      .eq("id", submissionId)
+      .maybeSingle();
 
     // Update the submission status
     const { error: updateError } = await supabase
@@ -93,6 +102,97 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Review processed successfully");
+
+    // Notification – send notification to the faculty member who submitted
+    try {
+      let targetAuthUserId: string | null = null;
+
+      // 1. Check uploader from document_versions
+      const { data: docVersion } = await supabase
+        .from("document_versions")
+        .select("created_by")
+        .eq("submission_id", submissionId)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (docVersion?.created_by) {
+        targetAuthUserId = docVersion.created_by;
+      }
+
+      // 2. Check app_users by faculty_profile_id
+      if (!targetAuthUserId && submission?.faculty_profile_id) {
+        const { data: facultyAppUser } = await supabase
+          .from("app_users")
+          .select("auth_user_id")
+          .eq("profile_id", submission.faculty_profile_id)
+          .maybeSingle();
+
+        if (facultyAppUser?.auth_user_id) {
+          targetAuthUserId = facultyAppUser.auth_user_id;
+        }
+      }
+
+      // 3. Check profiles by faculty_profile_id
+      if (!targetAuthUserId && submission?.faculty_profile_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("id", submission.faculty_profile_id)
+          .maybeSingle();
+
+        if (profile?.user_id) {
+          targetAuthUserId = profile.user_id;
+        }
+      }
+
+      if (targetAuthUserId && targetAuthUserId !== user.id) {
+        const reqCode = (submission?.requirement_code ?? "REQUIREMENT") as RequirementCode;
+        const reqLabel = REQUIREMENT_LABEL[reqCode] || reqCode || "Requirement";
+        const isApproved = decision === "validated";
+        const isRevision = !isApproved && Boolean(remarks?.toLowerCase().includes("revision"));
+
+        const notificationType = isApproved
+          ? "submission_approved"
+          : isRevision
+            ? "revision_requested"
+            : "submission_rejected";
+
+        const title = isApproved
+          ? `Document Approved: ${reqLabel}`
+          : isRevision
+            ? `Revision Requested: ${reqLabel}`
+            : `Submission Rejected: ${reqLabel}`;
+
+        const message = isApproved
+          ? `Your submission for ${reqLabel} has been validated and approved.`
+          : remarks
+            ? `Reviewer feedback: "${remarks}"`
+            : `Your submission for ${reqLabel} requires review/resubmission.`;
+
+        await createNotification({
+          userId: targetAuthUserId,
+          type: notificationType,
+          title,
+          message,
+          metadata: {
+            submission_id: submissionId,
+            submissionId,
+            requirement_code: submission?.requirement_code,
+            requirementCode: submission?.requirement_code,
+            reviewed_by: adminAppUser.profile_id,
+            reviewerName: adminAppUser.full_name || "Reviewer",
+            decision,
+            remarks: remarks || null,
+          },
+        });
+      }
+    } catch (notifError) {
+      logger.error("notification_creation_failed_on_review", {
+        submissionId,
+        error: notifError instanceof Error ? notifError.message : String(notifError),
+      });
+    }
 
     // Audit log – fire-and-forget; never blocks the review response
     try {
