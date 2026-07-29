@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { BellRing, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
   ApiBody,
@@ -433,8 +434,10 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
   const [windowStatus, setWindowStatus] = useState<SubmissionWindowResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+  const [showBroadcastConfirmation, setShowBroadcastConfirmation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -709,6 +712,52 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     }
   }
 
+  async function handleBroadcastReminder() {
+    setShowBroadcastConfirmation(false);
+    setIsBroadcasting(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch(
+        "/api/admin/submission-window/broadcast-reminder",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        },
+      );
+      const body = await readApiBody(response);
+
+      if (!response.ok) {
+        const details =
+          typeof body === "object" && body !== null
+            ? (((body as ApiBody).error || (body as ApiBody).details) ??
+              `HTTP ${response.status}`)
+            : `HTTP ${response.status}`;
+        setError(`Failed to broadcast reminder: ${details}`);
+        return;
+      }
+
+      const message =
+        typeof body === "object" &&
+        body !== null &&
+        typeof (body as { message?: string }).message === "string"
+          ? (body as { message: string }).message
+          : "Successfully sent deadline reminders to faculty members.";
+
+      setSuccess(message);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to broadcast deadline reminder.",
+      );
+    } finally {
+      setIsBroadcasting(false);
+    }
+  }
+
   const currentTermLabel =
     windowStatus?.academicYear && windowStatus?.semester
       ? `${windowStatus.academicYear} • ${windowStatus.semester}`
@@ -836,15 +885,29 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
             <Button
               type="button"
               variant="secondary"
+              onClick={() => setShowBroadcastConfirmation(true)}
+              disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isConfigured}
+              className="border border-amber-500/40 text-amber-300 hover:bg-amber-500/10 hover:text-amber-200 dark:border-amber-500/40 dark:text-amber-300"
+            >
+              {isBroadcasting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <BellRing className="mr-2 h-4 w-4 text-amber-400" />
+              )}
+              Broadcast Deadline Reminder
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
               onClick={handleCloseSubmission}
-              disabled={isLoading || isSaving || !windowStatus?.isOpen}
+              disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isOpen}
               className="text-rose-400 hover:text-rose-300"
             >
               Close Submissions
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || isSaving}
+              disabled={isLoading || isSaving || isBroadcasting}
             >
               {isSaving ? "Saving..." : "Save Window Schedule"}
             </Button>
@@ -915,6 +978,42 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 onClick={() => void confirmCloseSubmission()}
               >
                 Close Window
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showBroadcastConfirmation ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
+            <p className="text-xs uppercase tracking-[0.28em] text-amber-400">
+              Confirm Deadline Broadcast
+            </p>
+            <h3 className="mt-3 text-2xl font-semibold text-white flex items-center gap-2">
+              <BellRing className="h-6 w-6 text-amber-400" />
+              Broadcast Deadline Reminder?
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
+              This will send an immediate <span className="font-semibold text-amber-300">Deadline Alert notification</span> to all active faculty members reminding them of the upcoming submission window closing date.
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowBroadcastConfirmation(false)}
+                disabled={isBroadcasting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="bg-amber-600 text-white hover:bg-amber-500"
+                onClick={() => void handleBroadcastReminder()}
+                disabled={isBroadcasting}
+              >
+                {isBroadcasting ? "Sending..." : "Confirm & Send"}
               </Button>
             </div>
           </div>
