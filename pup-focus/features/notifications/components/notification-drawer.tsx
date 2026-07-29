@@ -13,6 +13,8 @@ import {
   ExternalLink,
   X,
   Loader2,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
@@ -44,7 +46,7 @@ function formatRelativeTime(dateString: string): string {
 }
 
 function getNotificationTypeCategory(notification: AppNotification): {
-  category: "APPROVED" | "REVISION_REQUESTED" | "REJECTED" | "INFO";
+  category: "APPROVED" | "REVISION_REQUESTED" | "REJECTED" | "DEADLINE_ALERT" | "INFO";
   Icon: typeof CheckCircle2;
   colorClasses: string;
   badgeBg: string;
@@ -52,6 +54,20 @@ function getNotificationTypeCategory(notification: AppNotification): {
   const typeUpper = (notification.type ?? "").toUpperCase();
   const titleLower = (notification.title ?? "").toLowerCase();
   const messageLower = (notification.message ?? "").toLowerCase();
+
+  if (
+    typeUpper.includes("DEADLINE") ||
+    typeUpper === "DEADLINE_ALERT" ||
+    titleLower.includes("deadline") ||
+    messageLower.includes("deadline")
+  ) {
+    return {
+      category: "DEADLINE_ALERT",
+      Icon: Clock,
+      colorClasses: "text-amber-400 border-amber-800/60 bg-amber-950/40",
+      badgeBg: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    };
+  }
 
   if (
     typeUpper.includes("APPROV") ||
@@ -232,6 +248,19 @@ export function NotificationDrawer() {
       } else {
         router.push(`/faculty/dashboard?requirement=${requirementCode}#${targetElementId}`);
       }
+    } else if (
+      notification.type === "deadline_alert" ||
+      (notification.type ?? "").toLowerCase().includes("deadline") ||
+      (notification.title ?? "").toLowerCase().includes("deadline")
+    ) {
+      const targetElement =
+        document.getElementById("requirements-section") ||
+        document.getElementById("compliance-requirements");
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        router.push("/faculty/dashboard#requirements");
+      }
     }
   };
 
@@ -329,10 +358,14 @@ export function NotificationDrawer() {
                   </div>
                 ) : (
                   notifications.map((notification) => {
-                    const { Icon, colorClasses, badgeBg } =
+                    const { category, Icon, colorClasses, badgeBg } =
                       getNotificationTypeCategory(notification);
                     const reqCode = extractRequirementCode(notification);
                     const reqLabel = reqCode ? REQUIREMENT_LABEL[reqCode] : null;
+                    const isDeadlineAlert =
+                      category === "DEADLINE_ALERT" ||
+                      notification.type === "deadline_alert";
+
                     const reviewerName =
                       notification.metadata?.reviewerName ??
                       notification.metadata?.reviewer_name;
@@ -376,12 +409,20 @@ export function NotificationDrawer() {
                           )}
                         </div>
 
-                        {/* Requirement badge if present */}
-                        {reqLabel && (
+                        {/* Requirement or Deadline Alert badge */}
+                        {(reqLabel || isDeadlineAlert) && (
                           <div className="mt-2 flex items-center gap-2">
-                            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-medium ${badgeBg}`}>
-                              {reqLabel}
-                            </span>
+                            {isDeadlineAlert && (
+                              <span className="inline-flex items-center gap-1 rounded border border-amber-500/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                                <Clock className="h-3 w-3" />
+                                Deadline Alert
+                              </span>
+                            )}
+                            {reqLabel && (
+                              <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-medium ${badgeBg}`}>
+                                {reqLabel}
+                              </span>
+                            )}
                           </div>
                         )}
 
@@ -401,10 +442,11 @@ export function NotificationDrawer() {
                         )}
 
                         {/* Navigation Link Hint */}
-                        {reqCode && (
+                        {(reqCode || isDeadlineAlert) && (
                           <div className="mt-3 flex items-center justify-end">
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400 group-hover:underline">
-                              View requirement <ExternalLink className="h-3 w-3" />
+                              {reqCode ? "View requirement" : "View pending requirements"}{" "}
+                              <ExternalLink className="h-3 w-3" />
                             </span>
                           </div>
                         )}
