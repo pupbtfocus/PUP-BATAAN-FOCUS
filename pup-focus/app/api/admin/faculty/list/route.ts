@@ -244,6 +244,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const { data: programAssignments } = await supabase
+      .from("faculty_program_assignments")
+      .select("faculty_profile_id, program_id, programs(id, code, name)")
+      .in("faculty_profile_id", profileIds);
+
+    const programByProfileId = new Map<
+      string,
+      { id: string; code: string; name: string }
+    >();
+
+    for (const row of (programAssignments ?? []) as any[]) {
+      if (row.faculty_profile_id && row.programs) {
+        const prog = Array.isArray(row.programs) ? row.programs[0] : row.programs;
+        if (prog?.id && prog?.code && prog?.name) {
+          programByProfileId.set(row.faculty_profile_id, {
+            id: prog.id,
+            code: prog.code,
+            name: prog.name,
+          });
+        }
+      }
+    }
+
     const appUserByProfileId = new Map(
       (appUsers ?? []).map((item: any) => [item.profile_id, item]),
     );
@@ -302,6 +325,7 @@ export async function GET(request: NextRequest) {
           fullName: fullNameFromMetadata || profile.full_name || "Unknown",
           email: profile.email || "Unknown",
           profileImageUrl,
+          program: programByProfileId.get(profile.id) ?? null,
           is_active: appUser?.metadata?.is_active ?? true,
           created_at:
             appUser?.created_at ||

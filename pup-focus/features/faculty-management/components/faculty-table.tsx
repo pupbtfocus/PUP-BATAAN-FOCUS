@@ -161,15 +161,26 @@ export function FacultyTable({
                     <p className="truncate text-sm text-slate-500 dark:text-slate-400">
                       {faculty.email}
                     </p>
-                    <span
-                      className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                        faculty.is_active
-                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
-                          : "border-rose-500/20 bg-rose-500/10 text-rose-200"
-                      }`}
-                    >
-                      {faculty.is_active ? "🟢 Active" : "🔴 Inactive"}
-                    </span>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                          faculty.is_active
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
+                            : "border-rose-500/20 bg-rose-500/10 text-rose-200"
+                        }`}
+                      >
+                        {faculty.is_active ? "🟢 Active" : "🔴 Inactive"}
+                      </span>
+                      {faculty.program ? (
+                        <span className="inline-flex rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-300">
+                          {faculty.program.code}
+                        </span>
+                      ) : (
+                        <span className="inline-flex rounded-full border border-slate-700 bg-slate-800 px-2.5 py-0.5 text-xs text-slate-400">
+                          Unassigned
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </button>
 

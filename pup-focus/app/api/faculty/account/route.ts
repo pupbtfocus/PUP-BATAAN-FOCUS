@@ -16,6 +16,12 @@ function trimOrNull(value: unknown) {
   return trimmed || null;
 }
 
+type FacultyProgramInfo = {
+  id: string;
+  code: string;
+  name: string;
+};
+
 type FacultyAccountRecord = {
   profileId: string;
   firstName: string;
@@ -24,6 +30,7 @@ type FacultyAccountRecord = {
   fullName: string;
   email: string;
   profileImageUrl: string | null;
+  program: FacultyProgramInfo | null;
 };
 
 async function loadFacultyAccount(
@@ -57,6 +64,27 @@ async function loadFacultyAccount(
 
   if (profileError || !profile) {
     throw new Error("Faculty profile not found");
+  }
+
+  let program: FacultyProgramInfo | null = null;
+  const { data: assignmentRow } = await supabase
+    .from("faculty_program_assignments")
+    .select("program_id, programs(id, code, name)")
+    .eq("faculty_profile_id", profile.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (assignmentRow?.programs) {
+    const prog = Array.isArray(assignmentRow.programs)
+      ? (assignmentRow.programs as any)[0]
+      : (assignmentRow.programs as any);
+    if (prog?.id && prog?.code && prog?.name) {
+      program = {
+        id: prog.id,
+        code: prog.code,
+        name: prog.name,
+      };
+    }
   }
 
   const authUserMetadata = (authUserResult.user?.user_metadata ?? {}) as Record<
@@ -101,6 +129,7 @@ async function loadFacultyAccount(
     fullName,
     email,
     profileImageUrl,
+    program,
   };
 }
 

@@ -18,6 +18,11 @@ type FacultyAccountResponse = {
   fullName: string;
   email: string;
   profileImageUrl: string | null;
+  program?: {
+    id: string;
+    code: string;
+    name: string;
+  } | null;
 };
 
 type NameFormState = {
@@ -364,6 +369,23 @@ export function FacultySettingsPanel() {
                       value={account.email}
                       readOnly
                     />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                      Department / Program
+                    </label>
+                    <div className="mt-1 flex items-center rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-3 text-sm text-slate-700 dark:text-slate-300">
+                      {account.program ? (
+                        <span className="font-semibold text-amber-600 dark:text-amber-300">
+                          {account.program.code} — {account.program.name}
+                        </span>
+                      ) : (
+                        <span className="inline-flex rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
+                          Unassigned
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
