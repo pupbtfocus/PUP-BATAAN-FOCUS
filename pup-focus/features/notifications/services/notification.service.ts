@@ -16,6 +16,7 @@ export type NotificationPayload = {
   title: string;
   message: string;
   type?: string;
+  metadata?: Record<string, any>;
 };
 
 export type AppNotification = {
@@ -26,6 +27,7 @@ export type AppNotification = {
   type?: string;
   isRead: boolean;
   createdAt: string;
+  metadata?: Record<string, any>;
 };
 
 /**
@@ -42,14 +44,28 @@ export async function createNotification(
   try {
     const supabase = getServiceRoleClient();
 
-    const { error } = await supabase.from("notifications").insert({
+    const insertData: Record<string, any> = {
       id: notificationId,
       user_id: safeUserId,
       title: payload.title,
       message: payload.message,
+      type: payload.type ?? null,
       is_read: false,
       created_at: createdAt,
-    });
+    };
+
+    if (payload.metadata) {
+      insertData.metadata = payload.metadata;
+    }
+
+    let { error } = await supabase.from("notifications").insert(insertData);
+
+    // If error occurs due to metadata column not existing in DB schema, retry without metadata
+    if (error && payload.metadata && error.message.includes("metadata")) {
+      delete insertData.metadata;
+      const retry = await supabase.from("notifications").insert(insertData);
+      error = retry.error;
+    }
 
     if (error) {
       logger.error("notification_insert_failed", {
@@ -67,6 +83,7 @@ export async function createNotification(
       type: payload.type,
       isRead: false,
       createdAt,
+      metadata: payload.metadata,
     };
   } catch (err) {
     logger.error("notification_insert_exception", {
@@ -124,6 +141,7 @@ export async function getUserNotifications(
       type: row.type ?? undefined,
       isRead: Boolean(row.is_read),
       createdAt: row.created_at,
+      metadata: row.metadata ?? undefined,
     }));
   } catch (err) {
     logger.error("get_user_notifications_exception", {

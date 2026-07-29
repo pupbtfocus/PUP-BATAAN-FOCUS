@@ -3,8 +3,9 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logger } from "@/lib/observability/logger";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
-import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
+import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
 import type { RequirementCode } from "@/config/compliance";
+import { createNotification } from "@/features/notifications/services/notification.service";
 import {
   evaluateSubmissionWindow,
   format24HourTo12Hour,
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
     // Get faculty profile ID
     const { data: appUser, error: appUserError } = await supabase
       .from("app_users")
-      .select("profile_id")
+      .select("profile_id, full_name")
       .eq("auth_user_id", user.id)
       .single();
 
@@ -355,6 +356,69 @@ export async function POST(request: NextRequest) {
       facultyId: appUser.profile_id,
       requirementCode: payload.requirementCode,
     });
+
+    // Trigger notifications for Program Heads & Admins – fire-and-forget; never blocks upload
+    try {
+      const { data: facultyProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", appUser.profile_id)
+        .maybeSingle();
+
+      const facultyName = facultyProfile?.full_name || appUser.full_name || "Faculty Member";
+      const reqCode = payload.requirementCode as RequirementCode;
+      const reqLabel = REQUIREMENT_LABEL[reqCode] || payload.requirementCode;
+
+      const reviewerSet = new Set<string>();
+
+      const { data: reviewerAppUsers } = await supabase
+        .from("app_users")
+        .select("auth_user_id")
+        .in("role", ["program_head", "admin", "super_admin"]);
+
+      if (reviewerAppUsers) {
+        for (const r of reviewerAppUsers) {
+          if (r.auth_user_id) reviewerSet.add(r.auth_user_id);
+        }
+      }
+
+      const { data: reviewerProfiles } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .in("role", ["program_head", "admin", "super_admin"]);
+
+      if (reviewerProfiles) {
+        for (const p of reviewerProfiles) {
+          if (p.user_id) reviewerSet.add(p.user_id);
+        }
+      }
+
+      const uniqueAuthUserIds = Array.from(reviewerSet);
+
+      for (const reviewerAuthUserId of uniqueAuthUserIds) {
+        if (reviewerAuthUserId === user.id) continue;
+
+        await createNotification({
+          userId: reviewerAuthUserId,
+          type: "submission_uploaded",
+          title: `New Submission from ${facultyName}`,
+          message: `Uploaded ${reqLabel} for ${payload.academicYear} ${payload.semester}.`,
+          metadata: {
+            submission_id: submissionId,
+            submissionId,
+            faculty_profile_id: appUser.profile_id,
+            facultyName,
+            requirement_code: payload.requirementCode,
+            requirementCode: payload.requirementCode,
+          },
+        });
+      }
+    } catch (notifErr) {
+      logger.error("notification_creation_failed_on_upload", {
+        submissionId,
+        error: notifErr instanceof Error ? notifErr.message : String(notifErr),
+      });
+    }
 
     // Audit log – fire-and-forget; failures are logged but never block the upload response
     try {
