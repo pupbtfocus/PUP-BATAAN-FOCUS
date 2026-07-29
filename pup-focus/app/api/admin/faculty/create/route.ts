@@ -27,6 +27,7 @@ async function readRequestPayload(request: NextRequest) {
       middleName: readString("middleName"),
       lastName: readString("lastName"),
       email: readString("email"),
+      programId: readString("programId") || readString("program_id"),
       profileImage:
         formData.get("profileImage") instanceof File
           ? (formData.get("profileImage") as File)
@@ -39,6 +40,8 @@ async function readRequestPayload(request: NextRequest) {
     middleName?: string;
     lastName?: string;
     email?: string;
+    programId?: string;
+    program_id?: string;
     fullName?: string;
   };
 
@@ -57,6 +60,7 @@ async function readRequestPayload(request: NextRequest) {
     middleName: (body.middleName ?? legacyMiddleName).trim(),
     lastName: (body.lastName ?? legacyLastName).trim(),
     email: body.email ?? "",
+    programId: (body.programId ?? body.program_id ?? "").trim(),
     profileImage: null,
   };
 }
@@ -79,7 +83,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { firstName, middleName, lastName, email, profileImage } =
+    const { firstName, middleName, lastName, email, programId, profileImage } =
       await readRequestPayload(request);
 
     const fullName = buildFacultyFullName({
@@ -88,9 +92,9 @@ export async function POST(request: NextRequest) {
       lastName,
     });
 
-    if (!firstName || !lastName || !email) {
+    if (!firstName || !lastName || !email || !programId) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields (First name, Last name, Email, and Department/Program selection are required)." },
         { status: 400 },
       );
     }
@@ -105,6 +109,20 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getServiceRoleClient();
+
+    // Verify program exists
+    const { data: programRecord, error: programError } = await supabase
+      .from("programs")
+      .select("id, code, name")
+      .eq("id", programId)
+      .maybeSingle();
+
+    if (programError || !programRecord) {
+      return NextResponse.json(
+        { error: "Selected academic program or department is invalid." },
+        { status: 400 },
+      );
+    }
 
     const { data: existingProfile } = await supabase
       .from("profiles")
@@ -207,6 +225,7 @@ export async function POST(request: NextRequest) {
             middle_name: middleName.trim(),
             last_name: lastName.trim(),
             full_name: fullName,
+            program_id: programId,
             profile_image_bucket: profileImageMetadata.profile_image_bucket,
             profile_image_path: profileImageMetadata.profile_image_path,
             role: ROLE.FACULTY,
@@ -231,6 +250,47 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 },
       );
+    }
+
+    // Pre-create profile and program assignment record in DB
+    const createdAuthUser = genData?.user;
+    if (createdAuthUser) {
+      try {
+        const { data: newProfile, error: profileErr } = await supabase
+          .from("profiles")
+          .upsert(
+            {
+              user_id: createdAuthUser.id,
+              full_name: fullName,
+              email: normalizedEmail,
+            },
+            { onConflict: "user_id" },
+          )
+          .select("id")
+          .single();
+
+        if (newProfile?.id) {
+          const { data: activeTerm } = await supabase
+            .from("academic_terms")
+            .select("academic_year, semester")
+            .eq("status", "Current")
+            .maybeSingle();
+
+          const academicYear = activeTerm?.academic_year || "2026-2027";
+          const term = activeTerm?.semester || "1st Semester";
+
+          await supabase.from("faculty_program_assignments").insert({
+            faculty_profile_id: newProfile.id,
+            program_id: programId,
+            academic_year: academicYear,
+            term: term,
+          });
+        }
+      } catch (assignError) {
+        logger.error("faculty_program_assignment_preinsert_failed", {
+          error: assignError instanceof Error ? assignError.message : String(assignError),
+        });
+      }
     }
 
     const actionLink = genData?.properties?.action_link ?? null;
@@ -268,6 +328,9 @@ export async function POST(request: NextRequest) {
         metadata: {
           target_email: normalizedEmail,
           target_full_name: fullName,
+          program_id: programId,
+          program_code: programRecord.code,
+          program_name: programRecord.name,
           invite_sent: sent,
           send_error: sendError,
         },
@@ -288,6 +351,11 @@ export async function POST(request: NextRequest) {
       user: {
         email: normalizedEmail,
         fullName,
+        program: {
+          id: programRecord.id,
+          code: programRecord.code,
+          name: programRecord.name,
+        },
       },
     });
   } catch (error) {

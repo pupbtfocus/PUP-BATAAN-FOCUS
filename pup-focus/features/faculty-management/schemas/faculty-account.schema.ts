@@ -16,6 +16,7 @@ export const facultyAccountSchema = z.object({
   middleName: optionalNameSchema,
   lastName: requiredNameSchema,
   email: z.email("Enter a valid email address"),
+  programId: z.string().trim().min(1, "Please select a department or program"),
 });
 
 export type FacultyAccountFormInput = z.infer<typeof facultyAccountSchema>;

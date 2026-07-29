@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import type { FacultyAccountFormInput } from "@/features/faculty-management/schemas/faculty-account.schema";
@@ -11,6 +12,12 @@ function FieldError({ message }: { message?: string }) {
 
   return <p className="mt-1 text-xs text-red-400">{message}</p>;
 }
+
+export type ProgramOption = {
+  id: string;
+  code: string;
+  name: string;
+};
 
 export interface AddFacultyPanelProps {
   form: UseFormReturn<FacultyAccountFormInput>;
@@ -37,6 +44,36 @@ export function AddFacultyPanel({
   wrapperClassName,
   formClassName,
 }: AddFacultyPanelProps) {
+  const [programs, setPrograms] = useState<ProgramOption[]>([]);
+  const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadPrograms() {
+      try {
+        setIsLoadingPrograms(true);
+        const res = await fetch("/api/programs");
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && Array.isArray(data.programs)) {
+            setPrograms(data.programs);
+          }
+        }
+      } catch {
+        // Fallback UI handles empty array
+      } finally {
+        if (isMounted) {
+          setIsLoadingPrograms(false);
+        }
+      }
+    }
+
+    void loadPrograms();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <div className={wrapperClassName ?? "flex flex-col max-w-sm mx-auto"}>
       <form
@@ -79,6 +116,28 @@ export function AddFacultyPanel({
             />
             <FieldError message={form.formState.errors.lastName?.message} />
           </div>
+        </div>
+
+        <div>
+          <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="programId">
+            Department / Program <span className="text-red-400">*</span>
+          </label>
+          <select
+            id="programId"
+            className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30 disabled:opacity-50"
+            disabled={isLoadingPrograms || isCreating}
+            {...form.register("programId")}
+          >
+            <option value="">
+              {isLoadingPrograms ? "Loading programs..." : "-- Select Program / Department --"}
+            </option>
+            {programs.map((program) => (
+              <option key={program.id} value={program.id}>
+                {program.code} — {program.name}
+              </option>
+            ))}
+          </select>
+          <FieldError message={form.formState.errors.programId?.message} />
         </div>
 
         <div>
@@ -139,7 +198,11 @@ export function AddFacultyPanel({
           </p>
         ) : null}
 
-        <Button className="mt-auto w-full" type="submit" disabled={isCreating}>
+        <Button
+          className="mt-auto w-full"
+          type="submit"
+          disabled={isCreating || isLoadingPrograms}
+        >
           {isCreating ? "Sending invite..." : "Create Faculty Account"}
         </Button>
       </form>
