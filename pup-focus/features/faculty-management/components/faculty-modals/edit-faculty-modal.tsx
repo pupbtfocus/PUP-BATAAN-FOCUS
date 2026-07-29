@@ -241,6 +241,20 @@ export function EditFacultyModal({
                     </p>
                     <p className="text-sm text-slate-200">{formattedDate}</p>
                   </div>
+                  <div className="sm:col-span-2 mt-1">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                      Department / Program
+                    </p>
+                    {selectedFaculty.program ? (
+                      <span className="mt-1 inline-flex items-center rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-300">
+                        {selectedFaculty.program.code} — {selectedFaculty.program.name}
+                      </span>
+                    ) : (
+                      <span className="mt-1 inline-flex items-center rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-400">
+                        Unassigned
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 

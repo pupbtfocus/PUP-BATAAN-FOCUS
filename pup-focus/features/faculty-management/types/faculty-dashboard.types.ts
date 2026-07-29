@@ -11,6 +11,12 @@ export type AdminSection =
   | "academicTerms"
   | "details";
 
+export type FacultyProgramInfo = {
+  id: string;
+  code: string;
+  name: string;
+};
+
 export type FacultyAccount = {
   id: string;
   fullName: string;
@@ -18,6 +24,7 @@ export type FacultyAccount = {
   profileImageUrl: string | null;
   is_active: boolean;
   created_at: string;
+  program?: FacultyProgramInfo | null;
   requirementStatus: Record<RequirementCode, RequirementStatus>;
 };
 
