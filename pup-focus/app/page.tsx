@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { LoginForm } from "@/components/auth/login-form";
@@ -19,15 +19,28 @@ import { isValidEmailAddress } from "@/lib/validation/email";
 
 const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
 const PUBLIC_ENV = getPublicEnvSafe();
+const PREFETCH_ROUTES = [
+  "/faculty/dashboard",
+  "/admin/dashboard",
+  "/super-admin/dashboard",
+  "/program-head/dashboard",
+] as const;
 
 export default function Home() {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authModal, setAuthModal] = useState<AuthModalState | null>(null);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+
+  useEffect(() => {
+    PREFETCH_ROUTES.forEach((route) => {
+      router.prefetch(route);
+    });
+  }, [router]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -94,7 +107,9 @@ export default function Home() {
         `${window.location.pathname}${window.location.search}`,
       );
 
-      router.replace(nextTarget);
+      startTransition(() => {
+        router.replace(nextTarget);
+      });
     }
 
     void handleAuthCallback();
@@ -132,7 +147,9 @@ export default function Home() {
         (user.app_metadata?.role as AppRole | undefined) ??
         ROLE.FACULTY;
 
-      router.replace(ROUTE_BY_ROLE[signedInRole]);
+      startTransition(() => {
+        router.replace(ROUTE_BY_ROLE[signedInRole]);
+      });
     }
 
     void redirectIfAlreadySignedIn();
@@ -151,20 +168,24 @@ export default function Home() {
       return;
     }
 
+    const targetRoute = authModal.redirectTo as string;
+
     const timeoutId = window.setTimeout(() => {
-      window.location.assign(authModal.redirectTo as string);
+      startTransition(() => {
+        router.push(targetRoute);
+      });
     }, 1200);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [authModal]);
+  }, [authModal, router]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setIsSubmitting(true);
     setError(null);
     setAuthModal(null);
-    setIsSubmitting(true);
 
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -181,7 +202,7 @@ export default function Home() {
         password,
       });
 
-    let { error: signInError } = await signIn();
+    let { data: signInData, error: signInError } = await signIn();
 
     if (signInError && normalizedEmail === SUPER_ADMIN_EMAIL) {
       const bootstrapResponse = await fetch("/api/bootstrap/super-admin", {
@@ -201,12 +222,13 @@ export default function Home() {
         return;
       }
 
-      ({ error: signInError } = await signIn());
+      ({ data: signInData, error: signInError } = await signIn());
     }
 
-    if (signInError) {
+    if (signInError || !signInData?.user) {
+      const errorMessage = signInError?.message ?? "Sign in failed";
       const isInvalidCredentials =
-        signInError.message === "Invalid login credentials";
+        errorMessage === "Invalid login credentials";
 
       setAuthModal({
         title: isInvalidCredentials
@@ -214,7 +236,7 @@ export default function Home() {
           : "Sign in failed",
         message: isInvalidCredentials
           ? "The email or password you entered is incorrect. Please try again."
-          : signInError.message,
+          : errorMessage,
         actionLabel: "Try again",
         variant: "error",
       });
@@ -222,34 +244,48 @@ export default function Home() {
       return;
     }
 
-    const { data: userData } = await supabase.auth.getUser();
+    const user = signInData.user;
     const mustChange =
-      (userData.user?.user_metadata as any)?.force_password_change === true;
+      (user.user_metadata as any)?.force_password_change === true;
     if (mustChange) {
       setIsSubmitting(false);
       window.location.assign("/auth/change-password");
       return;
     }
-    try {
-      const resp = await fetch("/api/auth/validate");
-      if (resp.ok) {
-        const body = await resp.json();
-        if (body.is_active === false) {
-          await supabase.auth.signOut();
-          setError(
-            "Your account has been deactivated. Contact an administrator.",
-          );
-          setIsSubmitting(false);
-          return;
+
+    const metadataIsActive =
+      (user.user_metadata as any)?.is_active ??
+      (user.app_metadata as any)?.is_active;
+
+    let isActive: boolean | null = null;
+    if (typeof metadataIsActive === "boolean") {
+      isActive = metadataIsActive;
+    } else {
+      try {
+        const resp = await fetch("/api/auth/validate");
+        if (resp.ok) {
+          const body = (await resp.json()) as { is_active?: boolean };
+          if (typeof body.is_active === "boolean") {
+            isActive = body.is_active;
+          }
         }
+      } catch {
+        // ignore validation errors and proceed
       }
-    } catch {
-      // ignore validation errors and proceed
+    }
+
+    if (isActive === false) {
+      await supabase.auth.signOut();
+      setError(
+        "Your account has been deactivated. Contact an administrator.",
+      );
+      setIsSubmitting(false);
+      return;
     }
 
     const signedInRole =
-      (userData.user?.user_metadata?.role as AppRole | undefined) ??
-      (userData.user?.app_metadata?.role as AppRole | undefined) ??
+      (user.user_metadata?.role as AppRole | undefined) ??
+      (user.app_metadata?.role as AppRole | undefined) ??
       ROLE.FACULTY;
     const nextTarget = ROUTE_BY_ROLE[signedInRole];
 
@@ -297,6 +333,7 @@ export default function Home() {
             onSubmit={onSubmit}
             onOpenForgotPassword={() => setIsForgotModalOpen(true)}
             isSubmitting={isSubmitting}
+            isPending={isPending}
             error={error}
             publicEnvConfigured={Boolean(PUBLIC_ENV)}
           />

@@ -13,6 +13,7 @@ interface LoginFormProps {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onOpenForgotPassword: () => void;
   isSubmitting: boolean;
+  isPending?: boolean;
   error: string | null;
   publicEnvConfigured: boolean;
 }
@@ -25,11 +26,14 @@ export function LoginForm({
   onSubmit,
   onOpenForgotPassword,
   isSubmitting,
+  isPending,
   error,
   publicEnvConfigured,
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
+
+  const isLoading = isSubmitting || Boolean(isPending);
 
   return (
     <>
@@ -209,9 +213,9 @@ export function LoginForm({
         <Button
           className="mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs shadow-[0_4px_14px_rgba(255,215,0,0.2)] transition-all duration-300 hover:scale-[1.02] hover:from-amber-300 hover:to-amber-400 hover:shadow-[0_6px_20px_rgba(255,215,0,0.3)] active:scale-100"
           type="submit"
-          disabled={isSubmitting}
+          disabled={isLoading}
         >
-          {isSubmitting ? (
+          {isLoading ? (
             <span className="flex items-center justify-center gap-2">
               <Lottie
                 animationData={loadingAnimation}
