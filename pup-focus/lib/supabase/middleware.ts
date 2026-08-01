@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getPublicEnvSafe } from "@/config/env";
-import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 export type MiddlewareResult = {
   response: NextResponse;
   user: User | null;
+  supabase: SupabaseClient | null;
 };
 
 function isInvalidRefreshTokenError(error: unknown) {
@@ -47,7 +48,7 @@ export async function updateSupabaseSession(
 
   // Allow local boot even before env variables are configured.
   if (!env) {
-    return { response, user: null };
+    return { response, user: null, supabase: null };
   }
 
   const supabase = createServerClient(
@@ -76,13 +77,14 @@ export async function updateSupabaseSession(
   if (error) {
     if (isInvalidRefreshTokenError(error)) {
       clearSupabaseCookies(request, response);
-      return { response, user: null };
+      return { response, user: null, supabase };
     }
 
     // Optionally handle other errors, or just log them.
     console.error("Supabase auth error:", error.message);
   }
 
-  return { response, user: user ?? null };
+  return { response, user: user ?? null, supabase };
 }
+
 
