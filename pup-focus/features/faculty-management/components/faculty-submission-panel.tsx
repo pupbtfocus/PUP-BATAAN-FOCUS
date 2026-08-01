@@ -129,14 +129,25 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined) {
   } as const;
 }
 
-function requirementStatusStyles(status: RequirementStatus["status"]): string {
+function getStatusTextColorClass(
+  status: RequirementStatus["status"] | HistorySubmissionStatus,
+): string {
   if (status === "Validated")
-    return "bg-emerald-950/40 text-emerald-300 border-emerald-500/50";
+    return "text-emerald-400 font-medium text-xs tracking-wider uppercase";
   if (status === "Rejected")
-    return "bg-red-950/40 text-red-300 border-red-500/50";
+    return "text-rose-400 font-medium text-xs tracking-wider uppercase";
   if (status === "Not Submitted")
-    return "bg-slate-900/40 text-slate-400 border-slate-700";
-  return "bg-amber-950/40 text-amber-300 border-amber-400/50";
+    return "text-slate-400 font-medium text-xs tracking-wider uppercase";
+  return "text-amber-400 font-medium text-xs tracking-wider uppercase";
+}
+
+function getStatusText(
+  status: RequirementStatus["status"] | HistorySubmissionStatus,
+): string {
+  if (status === "Validated") return "Validated";
+  if (status === "Rejected") return "Needs Revision";
+  if (status === "Not Submitted") return "Not Submitted";
+  return "Pending Review";
 }
 
 function formatSubmittedDateTime(value?: string): string | null {
@@ -926,15 +937,11 @@ function FacultySubmissionPanelContent({
                 isConfigured={submissionWindow?.isConfigured}
               />
             )}
-            {activeView !== "dashboard" ? (
+            {activeView !== "dashboard" && activeView !== "status" ? (
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
                   <h3 className="text-lg font-semibold text-amber-300">
-                    {activeView === "submit"
-                      ? "Submit Requirements"
-                      : activeView === "settings"
-                        ? "Settings"
-                        : "Requirements Management"}
+                    {activeView === "submit" ? "Submit Requirements" : "Settings"}
                   </h3>
                 </div>
               </div>
@@ -1248,6 +1255,10 @@ function FacultySubmissionPanelContent({
                     <h2 className="text-xl font-semibold text-slate-100">
                       Requirements Management
                     </h2>
+                    <p className="mt-1 text-sm font-medium text-slate-400 tracking-wide">
+                      A.Y. {submissionWindow?.academicYear || selectedAcademicYear || form.academicYear || "2025-2026"} •{" "}
+                      {submissionWindow?.semester || selectedSemester || form.semester || "1st Semester"}
+                    </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     <Button
@@ -1281,17 +1292,6 @@ function FacultySubmissionPanelContent({
                     >
                       {isLoadingStatuses ? "⟳ Refreshing..." : "⟳ Refresh"}
                     </button>
-                  </div>
-                </div>
-
-                {/* Static Active Term Badge */}
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-400/30 bg-slate-950 p-4 shadow-md">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-amber-300">
-                    <span className="text-base">📍</span>
-                    <span>
-                      Current Term: A.Y. {submissionWindow?.academicYear || "2025-2026"} •{" "}
-                      {submissionWindow?.semester || "1st Semester"}
-                    </span>
                   </div>
                 </div>
 
@@ -1344,24 +1344,11 @@ function FacultySubmissionPanelContent({
                       id={`requirement-${req.code}`}
                       className="rounded-xl border border-slate-700 bg-slate-950 p-5 transition-all duration-300 hover:border-slate-600"
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex flex-wrap items-center gap-3">
-                            <p className="font-semibold text-base text-slate-100">
-                              {REQUIREMENT_LABEL[req.code]}
-                            </p>
-                            <span
-                              className={`rounded-full border px-3 py-1 text-xs font-semibold ${requirementStatusStyles(req.status)}`}
-                            >
-                              {req.status === "Validated"
-                                ? "✅ Validated"
-                                : req.status === "Rejected"
-                                  ? "🔴 Needs Revision"
-                                  : req.status === "Pending"
-                                    ? "⏳ Pending Review"
-                                    : "○ Not Submitted"}
-                            </span>
-                          </div>
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-base text-slate-100">
+                            {REQUIREMENT_LABEL[req.code]}
+                          </p>
                           {req.reviewedAt && (
                             <p className="mt-1.5 text-xs text-slate-500">
                               Reviewed on {req.reviewedAt}
@@ -1376,7 +1363,12 @@ function FacultySubmissionPanelContent({
                           ) : null}
                         </div>
 
-                        <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        <div className="flex shrink-0 flex-wrap items-center gap-4">
+                          {/* Pure text-only status indicator aligned on the action row */}
+                          <span className={getStatusTextColorClass(req.status)}>
+                            {getStatusText(req.status)}
+                          </span>
+
                           {/* For Not Submitted: Primary Submit button */}
                           {req.status === "Not Submitted" && (
                             <Button
@@ -1813,13 +1805,9 @@ function FacultySubmissionPanelContent({
                               </Button>
 
                               <span
-                                className={`rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(submission.status)}`}
+                                className={getStatusTextColorClass(submission.status)}
                               >
-                                {submission.status === "Validated"
-                                  ? "✅ Validated"
-                                  : submission.status === "Rejected"
-                                    ? "🔴 Needs Revision"
-                                    : "⏳ Pending Review"}
+                                {getStatusText(submission.status)}
                               </span>
                             </div>
                           </div>
