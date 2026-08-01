@@ -1147,17 +1147,12 @@ function FacultySubmissionPanelContent({
                       onClick={(event) => event.stopPropagation()}
                     >
                       <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm uppercase tracking-[0.22em] text-amber-300">
-                            Submission Guide
-                          </p>
-                          <h3
-                            id="submission-guide-title"
-                            className="mt-2 text-2xl font-semibold text-slate-100"
-                          >
-                            Quick Steps for Uploading
-                          </h3>
-                        </div>
+                        <h3
+                          id="submission-guide-title"
+                          className="text-2xl font-semibold text-slate-100"
+                        >
+                          Submission Guide
+                        </h3>
                         <Button
                           type="button"
                           variant="secondary"
@@ -1210,9 +1205,6 @@ function FacultySubmissionPanelContent({
                     <h2 className="text-xl font-semibold text-slate-100">
                       Requirements Management
                     </h2>
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      Track and upload your required academic submissions per term.
-                    </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     <Button
@@ -1223,7 +1215,7 @@ function FacultySubmissionPanelContent({
                       className="inline-flex items-center gap-1.5"
                     >
                       <History className="h-3.5 w-3.5" />
-                      Submission History
+                      History
                     </Button>
                     <button
                       type="button"
@@ -1257,9 +1249,6 @@ function FacultySubmissionPanelContent({
                       Current Term: A.Y. {submissionWindow?.academicYear || "2025-2026"} •{" "}
                       {submissionWindow?.semester || "1st Semester"}
                     </span>
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    Submissions active for the current academic period
                   </div>
                 </div>
 
@@ -1322,7 +1311,7 @@ function FacultySubmissionPanelContent({
                               className={`rounded-full border px-3 py-1 text-xs font-semibold ${requirementStatusStyles(req.status)}`}
                             >
                               {req.status === "Validated"
-                                ? "✅ Validated / Approved"
+                                ? "✅ Validated"
                                 : req.status === "Rejected"
                                   ? "🔴 Needs Revision"
                                   : req.status === "Pending"
@@ -1330,9 +1319,6 @@ function FacultySubmissionPanelContent({
                                     : "○ Not Submitted"}
                             </span>
                           </div>
-                          <p className="mt-1 text-xs text-slate-400">
-                            {REQUIREMENT_DESCRIPTIONS[req.code]}
-                          </p>
                           {req.reviewedAt && (
                             <p className="mt-1.5 text-xs text-slate-500">
                               Reviewed on {req.reviewedAt}
@@ -1348,7 +1334,7 @@ function FacultySubmissionPanelContent({
                         </div>
 
                         <div className="flex shrink-0 flex-wrap items-center gap-2">
-                          {/* For Not Submitted: Primary Submit Requirement button */}
+                          {/* For Not Submitted: Primary Submit button */}
                           {req.status === "Not Submitted" && (
                             <Button
                               type="button"
@@ -1358,11 +1344,11 @@ function FacultySubmissionPanelContent({
                               className="inline-flex items-center gap-1.5"
                             >
                               <Upload className="h-3.5 w-3.5" />
-                              Submit Requirement
+                              Submit
                             </Button>
                           )}
 
-                          {/* For Needs Revision (Rejected): Primary Resubmit Requirement button */}
+                          {/* For Needs Revision (Rejected): Primary Resubmit button */}
                           {req.status === "Rejected" && (
                             <Button
                               type="button"
@@ -1372,11 +1358,11 @@ function FacultySubmissionPanelContent({
                               className="inline-flex items-center gap-1.5 bg-red-600 text-white hover:bg-red-500"
                             >
                               <Upload className="h-3.5 w-3.5" />
-                              Resubmit Requirement
+                              Resubmit
                             </Button>
                           )}
 
-                          {/* For Pending, Validated, or Rejected: View File / View Submitted File button */}
+                          {/* For Pending, Validated, or Rejected: View File button */}
                           {req.status !== "Not Submitted" &&
                           req.latestSubmissionId ? (
                             <>
@@ -1396,9 +1382,7 @@ function FacultySubmissionPanelContent({
                                     aria-hidden="true"
                                   />
                                 ) : null}
-                                {req.status === "Pending"
-                                  ? "View Submitted File"
-                                  : "View File"}
+                                View File
                               </Button>
 
                               <Button
@@ -1409,9 +1393,7 @@ function FacultySubmissionPanelContent({
                                 className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-100"
                               >
                                 <History className="h-3.5 w-3.5" />
-                                {req.status === "Validated"
-                                  ? "Version History"
-                                  : "Versions"}
+                                History
                               </Button>
                             </>
                           ) : null}
@@ -1453,21 +1435,13 @@ function FacultySubmissionPanelContent({
                   className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.22em] text-amber-300 font-semibold">
-                        Direct Requirement Upload
-                      </p>
-                      <h3
-                        id="upload-modal-title"
-                        className="mt-1 text-xl font-semibold text-slate-100"
-                      >
-                        {REQUIREMENT_LABEL[selectedRequirementForUpload]}
-                      </h3>
-                      <p className="mt-1 text-xs text-amber-400">
-                        📍 Target: A.Y. {submissionWindow?.academicYear || "2025-2026"} • {submissionWindow?.semester || "1st Semester"}
-                      </p>
-                    </div>
+                  <div className="flex items-center justify-between border-b border-slate-800 px-6 py-5">
+                    <h3
+                      id="upload-modal-title"
+                      className="text-xl font-semibold text-slate-100"
+                    >
+                      Upload {REQUIREMENT_LABEL[selectedRequirementForUpload]}
+                    </h3>
                     <button
                       type="button"
                       onClick={closeDirectUploadModal}
@@ -1630,16 +1604,8 @@ function FacultySubmissionPanelContent({
                     id="success-modal-title"
                     className="text-xl font-bold text-slate-100"
                   >
-                    Requirement Uploaded Successfully!
+                    Upload Successful
                   </h3>
-
-                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
-                    Your document for{" "}
-                    <span className="font-semibold text-amber-300">
-                      {successModalData.requirementTitle}
-                    </span>{" "}
-                    has been submitted and is now pending review.
-                  </p>
 
                   <div className="mt-6 flex justify-center">
                     <Button
@@ -1672,21 +1638,13 @@ function FacultySubmissionPanelContent({
                   className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.22em] text-amber-300">
-                        Audit Trail
-                      </p>
-                      <h3
-                        id="submission-history-title"
-                        className="mt-1 text-xl font-semibold text-slate-100"
-                      >
-                        Submission History & Audit Trail
-                      </h3>
-                      <p className="mt-1 text-xs text-slate-400">
-                        View past requirement submissions, inspect prior versions, and review admin feedback.
-                      </p>
-                    </div>
+                  <div className="flex items-center justify-between border-b border-slate-800 px-6 py-5">
+                    <h3
+                      id="submission-history-title"
+                      className="text-xl font-semibold text-slate-100"
+                    >
+                      Submission History
+                    </h3>
                     <button
                       type="button"
                       onClick={closeHistoryModal}
@@ -1808,17 +1766,17 @@ function FacultySubmissionPanelContent({
                                     aria-hidden="true"
                                   />
                                 ) : null}
-                                View Submitted File
+                                View File
                               </Button>
 
                               <span
                                 className={`rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(submission.status)}`}
                               >
                                 {submission.status === "Validated"
-                                  ? "✓ Validated"
+                                  ? "✅ Validated"
                                   : submission.status === "Rejected"
-                                    ? "✗ Rejected"
-                                    : "⏳ Pending"}
+                                    ? "🔴 Needs Revision"
+                                    : "⏳ Pending Review"}
                               </span>
                             </div>
                           </div>
@@ -1855,14 +1813,9 @@ function FacultySubmissionPanelContent({
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.22em] text-amber-300">
-                        File Preview
-                      </p>
-                      <h3 className="mt-2 text-xl font-semibold text-slate-100">
-                        {previewSubmission.title}
-                      </h3>
-                    </div>
+                    <h3 className="text-xl font-semibold text-slate-100">
+                      {previewSubmission.title}
+                    </h3>
                     <button
                       type="button"
                       onClick={closeSubmissionPreview}
@@ -2048,14 +2001,9 @@ function FacultySubmissionPanelContent({
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
                 <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
                   <div className="flex items-start justify-between border-b border-slate-700 px-6 py-5">
-                    <div>
-                      <h3 className="text-lg font-semibold text-amber-300">
-                        Submit Requirements
-                      </h3>
-                      <p className="text-sm text-slate-400">
-                        Upload and submit the selected requirement.
-                      </p>
-                    </div>
+                    <h3 className="text-lg font-semibold text-amber-300">
+                      Submit Requirement
+                    </h3>
                     <button
                       type="button"
                       onClick={closeSubmitModal}
