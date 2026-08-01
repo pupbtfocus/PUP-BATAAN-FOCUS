@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { updateSupabaseSession } from "@/lib/supabase/middleware";
 import {
   AUTH_ROUTES,
-  PUBLIC_ROUTES,
   ROLE_ROUTE_PREFIX,
   ROUTE_BY_ROLE,
 } from "@/config/routes";
@@ -27,57 +27,138 @@ function matchProtectedPrefix(pathname: string): string | null {
   return null;
 }
 
-export async function proxy(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+/**
+ * Safely resolves the user's role from user_metadata, app_metadata,
+ * or database profile (`app_users` table), falling back to `ROLE.FACULTY`.
+ */
+async function getUserRole(
+  user: User,
+  supabase: SupabaseClient | null,
+): Promise<AppRole> {
+  const validRoles = Object.values(ROLE) as AppRole[];
 
-  // ── 1. Public routes: pass through without touching the session. ──
-  if (PUBLIC_ROUTES.some((route) => pathname === route)) {
-    return NextResponse.next();
+  const userMetaRole = user.user_metadata?.role as AppRole | undefined;
+  if (userMetaRole && validRoles.includes(userMetaRole)) {
+    return userMetaRole;
   }
 
-  // ── 2. Refresh the Supabase session & resolve the user. ──
-  const { response, user } = await updateSupabaseSession(request);
-  const role: AppRole =
-    (user?.user_metadata?.role as AppRole | undefined) ?? ROLE.FACULTY;
-  const roleDashboard = ROUTE_BY_ROLE[role];
-
-  // ── 3. Authenticated user visiting an auth page → redirect to dashboard. ──
-  if (user && AUTH_ROUTES.some((route) => pathname === route)) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = roleDashboard;
-    return NextResponse.redirect(redirectUrl);
+  const appMetaRole = user.app_metadata?.role as AppRole | undefined;
+  if (appMetaRole && validRoles.includes(appMetaRole)) {
+    return appMetaRole;
   }
 
-  // ── 4. Unauthenticated user on a protected route → redirect to sign-in. ──
-  if (!user) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/sign-in";
-    redirectUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirectUrl);
-  }
+  if (supabase) {
+    try {
+      const { data: appUser } = await supabase
+        .from("app_users")
+        .select("role")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
 
-  // ── 5. Role-based route guard. ──
-  const matchedPrefix = matchProtectedPrefix(pathname);
-
-  if (matchedPrefix) {
-    const allowedRoles = ROLE_ROUTE_PREFIX[matchedPrefix];
-
-    if (!allowedRoles.includes(role)) {
-      // User is authenticated but accessing a route outside their role.
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = roleDashboard;
-      redirectUrl.searchParams.set("unauthorized", "1");
-      return NextResponse.redirect(redirectUrl);
+      if (appUser?.role && validRoles.includes(appUser.role as AppRole)) {
+        return appUser.role as AppRole;
+      }
+    } catch {
+      // Ignore database lookup errors and fall back to default
     }
   }
 
-  // ── 6. All checks passed – forward the (cookie-refreshed) response. ──
+  return ROLE.FACULTY;
+}
+
+/**
+ * Creates a redirect response, forwarding any updated session cookies from
+ * the original Supabase middleware response.
+ */
+function createRedirectResponse(
+  request: NextRequest,
+  targetPath: string,
+  searchParams?: Record<string, string>,
+  baseResponse?: NextResponse,
+): NextResponse {
+  const redirectUrl = request.nextUrl.clone();
+  redirectUrl.pathname = targetPath;
+
+  if (searchParams) {
+    redirectUrl.search = "";
+    Object.entries(searchParams).forEach(([key, value]) => {
+      redirectUrl.searchParams.set(key, value);
+    });
+  }
+
+  const redirectResponse = NextResponse.redirect(redirectUrl);
+
+  if (baseResponse) {
+    baseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+  }
+
+  return redirectResponse;
+}
+
+export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const search = request.nextUrl.search;
+
+  // 1. Refresh Supabase auth session & retrieve user + client
+  const { response, user, supabase } = await updateSupabaseSession(request);
+
+  // 2. Retrieve user's role if authenticated
+  let userRole: AppRole | null = null;
+  if (user) {
+    userRole = await getUserRole(user, supabase);
+  }
+
+  const roleDashboard = userRole ? ROUTE_BY_ROLE[userRole] : "/";
+
+  // 3. Public Route Handling: If authenticated user visits `/` or `/sign-in` (or auth sign-in pages),
+  // automatically redirect them to their designated role dashboard.
+  const isAuthOrLandingPage =
+    pathname === "/" ||
+    pathname === "/sign-in" ||
+    AUTH_ROUTES.some((route) => pathname === route);
+
+  if (user && isAuthOrLandingPage) {
+    return createRedirectResponse(request, roleDashboard, undefined, response);
+  }
+
+  // 4. Session & Auth Guard / Role Verification for protected routes
+  const matchedPrefix = matchProtectedPrefix(pathname);
+
+  if (matchedPrefix) {
+    // 4a. If no valid Supabase auth session exists, redirect immediately to `/` with `redirectedFrom` param.
+    if (!user) {
+      const fullPath = `${pathname}${search}`;
+      return createRedirectResponse(
+        request,
+        "/",
+        { redirectedFrom: fullPath },
+        response,
+      );
+    }
+
+    // 4b. Prevent unauthorized role access
+    const allowedRoles = ROLE_ROUTE_PREFIX[matchedPrefix];
+    if (userRole && !allowedRoles.includes(userRole)) {
+      return createRedirectResponse(
+        request,
+        roleDashboard,
+        { unauthorized: "1" },
+        response,
+      );
+    }
+  }
+
+  // 5. Unrestricted access for public routes or authorized role access
   return response;
 }
 
+export const middleware = proxy;
+export default proxy;
+
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)",
   ],
 };
-
