@@ -123,16 +123,16 @@ export async function GET(
       if (fallbackByProfile) {
         rawSubmission = fallbackByProfile;
       } else {
-        const { data: fallbackByFacultyId } = await supabase
+        const { data: fallbackByUserId } = await supabase
           .from("submissions")
           .select("*")
-          .eq("faculty_id", appUser.profile_id)
+          .eq("user_id", appUser.profile_id)
           .or(`requirement_type.eq.${submissionId},requirement_code.eq.${submissionId}`)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        rawSubmission = fallbackByFacultyId ?? null;
+        rawSubmission = fallbackByUserId ?? null;
       }
     }
 
