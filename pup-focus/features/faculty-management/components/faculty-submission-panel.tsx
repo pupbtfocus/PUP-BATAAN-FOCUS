@@ -19,9 +19,17 @@ import {
   getTodayInManila,
   buildAcademicYearOptions,
 } from "@/features/submissions/services/submission-window.service";
-import { X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle } from "lucide-react";
+import { X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload } from "lucide-react";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
+const REQUIREMENT_DESCRIPTIONS: Record<RequirementCode, string> = {
+  grade_sheet: "Official signed grade sheets for assigned course sections.",
+  enhanced_syllabus: "Course syllabus adhering to outcome-based education standards.",
+  class_orientation: "Photos and narrative report documenting initial class orientation.",
+  midterm_package: "Copy of Midterm Examinations with TOS and Answer Key.",
+  final_package: "Copy of Final Examinations with TOS and Answer Key.",
+  class_records: "Class Records including midterm and final grade computations.",
+};
 const PANEL_VIEWS = [
   "dashboard",
   "submit",
@@ -205,6 +213,23 @@ function FacultySubmissionPanelContent({
     useState<string | null>(null);
   const [versionHistoryLabel, setVersionHistoryLabel] = useState("");
   const [versionHistoryCode, setVersionHistoryCode] = useState("");
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+  const [selectedAcademicYear, setSelectedAcademicYear] =
+    useState<string>(academicYears[0] ?? "");
+  const [selectedSemester, setSelectedSemester] = useState<
+    (typeof SEMESTER_OPTIONS)[number]
+  >("1st Semester");
+
+  const [selectedRequirementForUpload, setSelectedRequirementForUpload] =
+    useState<RequirementCode | null>(null);
+  const [directUploadFile, setDirectUploadFile] = useState<File | null>(null);
+  const [directUploadRemarks, setDirectUploadRemarks] = useState("");
+  const [isUploadingDirect, setIsUploadingDirect] = useState(false);
+  const [directUploadMessage, setDirectUploadMessage] = useState<string | null>(
+    null,
+  );
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
 
   const hasSubmissionWindowAcademicTerm = Boolean(
     submissionWindow?.isConfigured &&
@@ -304,19 +329,28 @@ function FacultySubmissionPanelContent({
 
   useEffect(() => {
     void fetchStatuses();
-    void fetchHistory();
     void refetchSubmissionWindow();
-    // Read view from URL on mount
+    // Read view and history from URL on mount
     try {
       const params = new URLSearchParams(window.location.search);
       const view = params.get("view");
-      if (view && (PANEL_VIEWS as readonly string[]).includes(view)) {
+      const historyParam = params.get("history");
+      if (view === "history" || (view === "status" && historyParam === "true")) {
+        setActiveView("status");
+        setIsHistoryModalOpen(true);
+      } else if (view && (PANEL_VIEWS as readonly string[]).includes(view)) {
         setActiveView(view as PanelView);
       }
     } catch {
       // ignore
     }
   }, [refetchSubmissionWindow]);
+
+  useEffect(() => {
+    if (isHistoryModalOpen) {
+      void fetchHistory();
+    }
+  }, [isHistoryModalOpen, historyAcademicYear, historySemester]);
 
   useEffect(() => {
     if (!submissionWindow) {
@@ -345,6 +379,8 @@ function FacultySubmissionPanelContent({
 
     setHistoryAcademicYear(currentTerm.academicYear);
     setHistorySemester(currentTerm.semester);
+    setSelectedAcademicYear(currentTerm.academicYear);
+    setSelectedSemester(currentTerm.semester);
   }, [submissionWindow]);
 
   useEffect(() => {
@@ -361,11 +397,51 @@ function FacultySubmissionPanelContent({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  function navigateToView(view: PanelView) {
-    setActiveView(view);
+  function openHistoryModal() {
+    setIsHistoryModalOpen(true);
+    void fetchHistory();
     try {
       const params = new URLSearchParams(searchParams?.toString() ?? "");
-      params.set("view", view);
+      params.set("view", "status");
+      params.set("history", "true");
+      router.replace(`${pathname}?${params.toString()}`);
+    } catch {
+      // fallback
+    }
+  }
+
+  function closeHistoryModal() {
+    setIsHistoryModalOpen(false);
+    try {
+      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      params.set("view", "status");
+      params.delete("history");
+      router.replace(`${pathname}?${params.toString()}`);
+    } catch {
+      // fallback
+    }
+  }
+
+  function navigateToView(view: PanelView) {
+    let targetView = view;
+    let openHistory = false;
+
+    if (view === "history") {
+      targetView = "status";
+      openHistory = true;
+    }
+
+    setActiveView(targetView);
+    setIsHistoryModalOpen(openHistory);
+
+    try {
+      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      params.set("view", targetView);
+      if (targetView === "status" && openHistory) {
+        params.set("history", "true");
+      } else {
+        params.delete("history");
+      }
       router.replace(`${pathname}?${params.toString()}`);
     } catch {
       // fallback
@@ -381,6 +457,150 @@ function FacultySubmissionPanelContent({
       return matchesYear && matchesSemester;
     });
   }, [historyAcademicYear, historySemester, pastSubmissions]);
+
+  const displayedRequirementStatuses = useMemo<RequirementStatus[]>(() => {
+    const isCurrentTerm =
+      selectedAcademicYear === form.academicYear &&
+      selectedSemester === form.semester;
+
+    return DEFAULT_REQUIREMENTS.map((code) => {
+      const match = pastSubmissions.find(
+        (s) =>
+          s.requirementCode === code &&
+          s.academicYear === selectedAcademicYear &&
+          s.semester === selectedSemester,
+      );
+
+      if (match) {
+        return {
+          code,
+          status:
+            match.status === "Validated"
+              ? "Validated"
+              : match.status === "Rejected"
+                ? "Rejected"
+                : "Pending",
+          submittedAt: match.submittedAt,
+          reviewedAt: match.reviewedAt,
+          feedback: match.remarks,
+          note: match.note,
+          latestSubmissionId: match.id,
+        };
+      }
+
+      if (isCurrentTerm) {
+        const live = requirementStatuses.find((r) => r.code === code);
+        if (live) return live;
+      }
+
+      return {
+        code,
+        status: "Not Submitted" as const,
+      };
+    });
+  }, [
+    selectedAcademicYear,
+    selectedSemester,
+    form.academicYear,
+    form.semester,
+    pastSubmissions,
+    requirementStatuses,
+  ]);
+
+  const displayedStatusCounts = useMemo(() => {
+    const total = DEFAULT_REQUIREMENTS.length;
+    const validated = displayedRequirementStatuses.filter(
+      (r) => r.status === "Validated",
+    ).length;
+    const rejected = displayedRequirementStatuses.filter(
+      (r) => r.status === "Rejected",
+    ).length;
+    const pending = displayedRequirementStatuses.filter(
+      (r) => r.status === "Pending",
+    ).length;
+    const notSubmitted = displayedRequirementStatuses.filter(
+      (r) => r.status === "Not Submitted",
+    ).length;
+    return { total, validated, rejected, pending, notSubmitted };
+  }, [displayedRequirementStatuses]);
+
+  function openDirectUploadModal(code: RequirementCode) {
+    setSelectedRequirementForUpload(code);
+    setDirectUploadFile(null);
+    setDirectUploadRemarks("");
+    setDirectUploadMessage(null);
+  }
+
+  function closeDirectUploadModal() {
+    if (isUploadingDirect) return;
+    setSelectedRequirementForUpload(null);
+    setDirectUploadFile(null);
+    setDirectUploadRemarks("");
+    setDirectUploadMessage(null);
+  }
+
+  async function handleDirectUploadSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    if (!selectedRequirementForUpload || !directUploadFile) {
+      setDirectUploadMessage("Please select a file to submit.");
+      return;
+    }
+
+    if (directUploadFile.size > 10 * 1024 * 1024) {
+      setDirectUploadMessage("File size exceeds 10MB limit.");
+      return;
+    }
+
+    setIsUploadingDirect(true);
+    setDirectUploadMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", directUploadFile);
+      formData.append("academicYear", selectedAcademicYear);
+      formData.append("semester", selectedSemester);
+      formData.append("requirementCode", selectedRequirementForUpload);
+      formData.append("remarks", directUploadRemarks);
+
+      const response = await fetch("/api/faculty/submissions/create", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        try {
+          const errorData = await response.json();
+          setDirectUploadMessage(
+            `Error: ${errorData.error || "Failed to submit requirement"}`,
+          );
+        } catch {
+          setDirectUploadMessage(
+            `Error: Failed to submit requirement (HTTP ${response.status})`,
+          );
+        }
+        return;
+      }
+
+      const result = await response.json();
+
+      setSubmissionMessage(
+        `✓ Successfully submitted ${REQUIREMENT_LABEL[selectedRequirementForUpload]} for S.Y. ${selectedAcademicYear} ${selectedSemester}. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
+      );
+
+      await fetchStatuses();
+      await fetchHistory();
+
+      closeDirectUploadModal();
+    } catch (error) {
+      setDirectUploadMessage(
+        `Error: ${error instanceof Error ? error.message : "An unexpected error occurred"}`,
+      );
+    } finally {
+      setIsUploadingDirect(false);
+    }
+  }
 
   function updateField<K extends keyof SubmissionFormState>(
     key: K,
@@ -592,7 +812,6 @@ function FacultySubmissionPanelContent({
           {[
             { key: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
             { key: "status", label: "Requirements Management", Icon: ClipboardList },
-            { key: "history", label: "Submission History", Icon: History },
             { key: "settings", label: "Settings", Icon: Settings },
           ].map(({ key, label, Icon }) => {
             const isActive = activeView === key;
@@ -630,24 +849,11 @@ function FacultySubmissionPanelContent({
                   <h3 className="text-lg font-semibold text-amber-300">
                     {activeView === "submit"
                       ? "Submit Requirements"
-                      : activeView === "history"
-                        ? "Submission History"
-                        : activeView === "settings"
-                          ? "Settings"
-                          : "Requirements Management"}
+                      : activeView === "settings"
+                        ? "Settings"
+                        : "Requirements Management"}
                   </h3>
                 </div>
-                {activeView === "history" ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => void fetchHistory()}
-                    disabled={isLoadingHistory}
-                  >
-                    {isLoadingHistory ? "Refreshing..." : "Refresh"}
-                  </Button>
-                ) : null}
               </div>
             ) : null}
             {activeView === "dashboard" && (
@@ -959,11 +1165,26 @@ function FacultySubmissionPanelContent({
 
             {activeView === "status" && (
               <article className="min-h-[calc(100vh-4rem-3rem)] p-6 pt-0">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex-1">
-                    {/* Heading moved to main header card */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-100">
+                      Requirements Management
+                    </h2>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      Track and upload your required academic submissions per term.
+                    </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={openHistoryModal}
+                      className="inline-flex items-center gap-1.5"
+                    >
+                      <History className="h-3.5 w-3.5" />
+                      Submission History
+                    </Button>
                     <button
                       type="button"
                       onClick={() =>
@@ -979,13 +1200,6 @@ function FacultySubmissionPanelContent({
                     </button>
                     <button
                       type="button"
-                      onClick={openSubmitModal}
-                      className="whitespace-nowrap rounded-md border border-amber-400 bg-amber-400 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-300"
-                    >
-                      Submit Requirements
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => void fetchStatuses()}
                       disabled={isLoadingStatuses}
                       className="whitespace-nowrap rounded-md bg-slate-800 px-3 py-2 text-xs text-white hover:bg-slate-700 disabled:opacity-50"
@@ -995,115 +1209,75 @@ function FacultySubmissionPanelContent({
                   </div>
                 </div>
 
-                {statusCounts && !isLoadingStatuses && (
+                {/* Static Active Term Badge */}
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-400/30 bg-slate-950 p-4 shadow-md">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-amber-300">
+                    <span className="text-base">📍</span>
+                    <span>
+                      Current Term: A.Y. {submissionWindow?.academicYear || "2025-2026"} •{" "}
+                      {submissionWindow?.semester || "1st Semester"}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    Submissions active for the current academic period
+                  </div>
+                </div>
+
+                {displayedStatusCounts && !isLoadingStatuses && (
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
                       <p className="text-xs text-amber-300">Submitted</p>
                       <p className="mt-1 text-lg font-semibold text-slate-100">
-                        {statusCounts.validated + statusCounts.pending}/
-                        {statusCounts.total}
+                        {displayedStatusCounts.validated + displayedStatusCounts.pending}/
+                        {displayedStatusCounts.total}
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
                       <p className="text-xs text-amber-300">Validated</p>
                       <p className="mt-1 text-lg font-semibold text-slate-100">
-                        {statusCounts.validated}
+                        {displayedStatusCounts.validated}
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
                       <p className="text-xs text-amber-300">Pending</p>
                       <p className="mt-1 text-lg font-semibold text-slate-100">
-                        {statusCounts.pending}
+                        {displayedStatusCounts.pending}
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
                       <p className="text-xs text-amber-300">Rejected</p>
                       <p className="mt-1 text-lg font-semibold text-slate-100">
-                        {statusCounts.rejected}
+                        {displayedStatusCounts.rejected}
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-600 bg-slate-800/30 px-3 py-2">
                       <p className="text-xs text-amber-300">Not Submitted</p>
                       <p className="mt-1 text-lg font-semibold text-slate-300">
-                        {statusCounts.notSubmitted}
+                        {displayedStatusCounts.notSubmitted}
                       </p>
                     </div>
                   </div>
                 )}
 
-                <div className="mt-6 space-y-3">
+                <div className="mt-6 space-y-4">
                   {isLoadingStatuses ? (
                     <p className="text-sm text-slate-400">
                       Loading requirement statuses...
                     </p>
                   ) : statusError ? (
                     <p className="text-sm text-red-400">{statusError}</p>
-                  ) : requirementStatuses.length === 0 ? (
-                    <p className="text-sm text-slate-400">
-                      No submissions yet. Submit requirements to see their
-                      validation status.
-                    </p>
-                  ) : (
-                    requirementStatuses.map((req) => (
-                      <article
-                        key={req.code}
-                        id={`requirement-${req.code}`}
-                        className="rounded-xl border border-slate-700 bg-slate-950 p-4 transition-all duration-300"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <p className="font-medium text-slate-100">
+                  ) : displayedRequirementStatuses.map((req) => (
+                    <article
+                      key={req.code}
+                      id={`requirement-${req.code}`}
+                      className="rounded-xl border border-slate-700 bg-slate-950 p-5 transition-all duration-300 hover:border-slate-600"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <p className="font-semibold text-base text-slate-100">
                               {REQUIREMENT_LABEL[req.code]}
                             </p>
-                            {req.reviewedAt && (
-                              <p className="mt-1 text-xs text-slate-500">
-                                Reviewed on {req.reviewedAt}
-                              </p>
-                            )}
-                            {req.submittedAt &&
-                            formatSubmittedDateTime(req.submittedAt) ? (
-                              <p className="mt-1 text-xs text-slate-500">
-                                Submitted on{" "}
-                                {formatSubmittedDateTime(req.submittedAt)}
-                              </p>
-                            ) : null}
-                          </div>
-                          <div className="flex shrink-0 flex-wrap items-center gap-2">
-                            {req.status !== "Not Submitted" &&
-                            req.latestSubmissionId ? (
-                              <>
-                                <Button
-                                  type="button"
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => openSubmissionPreview(req)}
-                                  className="inline-flex items-center gap-2"
-                                >
-                                  {req.feedback &&
-                                  !viewedSubmissionIds.has(
-                                    req.latestSubmissionId,
-                                  ) ? (
-                                    <span
-                                      className="h-2 w-2 rounded-full bg-red-500"
-                                      aria-hidden="true"
-                                    />
-                                  ) : null}
-                                  View Submitted File
-                                </Button>
-
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openVersionHistory(req)}
-                                  className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-100"
-                                >
-                                  <History className="h-3.5 w-3.5" />
-                                  Versions
-                                </Button>
-                              </>
-                            ) : null}
-
                             <span
                               className={`rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(req.status)}`}
                             >
@@ -1116,47 +1290,451 @@ function FacultySubmissionPanelContent({
                                     : "⏳ Pending"}
                             </span>
                           </div>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {REQUIREMENT_DESCRIPTIONS[req.code]}
+                          </p>
+                          {req.reviewedAt && (
+                            <p className="mt-1.5 text-xs text-slate-500">
+                              Reviewed on {req.reviewedAt}
+                            </p>
+                          )}
+                          {req.submittedAt &&
+                          formatSubmittedDateTime(req.submittedAt) ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                              Submitted on{" "}
+                              {formatSubmittedDateTime(req.submittedAt)}
+                            </p>
+                          ) : null}
                         </div>
 
-                        {/* Rejection / Revision alert */}
-                        {req.status === "Rejected" && (
-                          <div className="mt-3 rounded-lg border border-red-800/60 bg-red-950/30 p-3">
-                            <div className="flex items-start gap-2">
-                              <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
-                              <div className="flex-1">
-                                <p className="text-xs font-medium uppercase tracking-wider text-red-400">
-                                  Revision Required
-                                </p>
-                                <p className="mt-1 text-sm text-red-200 leading-relaxed">
-                                  {req.feedback ?? "The reviewer has requested revisions for this requirement. Please resubmit an updated document."}
-                                </p>
-                              </div>
+                        <div className="flex shrink-0 flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => openDirectUploadModal(req.code)}
+                            disabled={
+                              !isSubmissionAvailable ||
+                              req.status === "Validated" ||
+                              req.status === "Pending"
+                            }
+                            className="inline-flex items-center gap-1.5"
+                          >
+                            <Upload className="h-3.5 w-3.5" />
+                            {req.status === "Rejected"
+                              ? "Submit Revision"
+                              : req.status === "Validated"
+                                ? "Validated"
+                                : req.status === "Pending"
+                                  ? "Under Review"
+                                  : "Submit Requirement"}
+                          </Button>
+
+                          {req.status !== "Not Submitted" &&
+                          req.latestSubmissionId ? (
+                            <>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => openSubmissionPreview(req)}
+                                className="inline-flex items-center gap-2"
+                              >
+                                {req.feedback &&
+                                !viewedSubmissionIds.has(
+                                  req.latestSubmissionId,
+                                ) ? (
+                                  <span
+                                    className="h-2 w-2 rounded-full bg-red-500"
+                                    aria-hidden="true"
+                                  />
+                                ) : null}
+                                View File
+                              </Button>
+
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openVersionHistory(req)}
+                                className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-100"
+                              >
+                                <History className="h-3.5 w-3.5" />
+                                Versions
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {/* Rejection / Revision alert */}
+                      {req.status === "Rejected" && (
+                        <div className="mt-3 rounded-lg border border-red-800/60 bg-red-950/30 p-3">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-xs font-medium uppercase tracking-wider text-red-400">
+                                Revision Required
+                              </p>
+                              <p className="mt-1 text-sm text-red-200 leading-relaxed">
+                                {req.feedback ??
+                                  "The reviewer has requested revisions for this requirement. Please resubmit an updated document."}
+                              </p>
                             </div>
-                            {isSubmissionAvailable && (
-                              <div className="mt-3 flex justify-end">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onClick={() => startRevision(req.code)}
-                                  className="inline-flex items-center gap-1.5"
-                                >
-                                  <FileText className="h-3.5 w-3.5" />
-                                  Submit Revision
-                                </Button>
-                              </div>
-                            )}
                           </div>
-                        )}
-                      </article>
-                    ))
-                  )}
+                        </div>
+                      )}
+                    </article>
+                  ))}
                 </div>
               </article>
             )}
 
-            {previewSubmission ? (
+            {selectedRequirementForUpload && (
               <div
                 className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="upload-modal-title"
+                onClick={closeDirectUploadModal}
+              >
+                <div
+                  className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.22em] text-amber-300 font-semibold">
+                        Direct Requirement Upload
+                      </p>
+                      <h3
+                        id="upload-modal-title"
+                        className="mt-1 text-xl font-semibold text-slate-100"
+                      >
+                        {REQUIREMENT_LABEL[selectedRequirementForUpload]}
+                      </h3>
+                      <p className="mt-1 text-xs text-amber-400">
+                        📍 Target: A.Y. {submissionWindow?.academicYear || "2025-2026"} • {submissionWindow?.semester || "1st Semester"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeDirectUploadModal}
+                      disabled={isUploadingDirect}
+                      className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100 disabled:opacity-50"
+                      aria-label="Close upload modal"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleDirectUploadSubmit} className="p-6 space-y-5">
+                    <div>
+                      <label className="block text-xs uppercase tracking-[0.18em] font-semibold text-amber-300 mb-2">
+                        Upload Document File
+                      </label>
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDraggingFile(true);
+                        }}
+                        onDragLeave={() => setIsDraggingFile(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsDraggingFile(false);
+                          const droppedFile = e.dataTransfer.files?.[0];
+                          if (droppedFile) setDirectUploadFile(droppedFile);
+                        }}
+                        className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition cursor-pointer ${
+                          isDraggingFile
+                            ? "border-amber-400 bg-amber-400/10 text-amber-200"
+                            : directUploadFile
+                              ? "border-emerald-500/60 bg-emerald-950/20 text-emerald-300"
+                              : "border-slate-700 bg-slate-950 hover:border-slate-500 text-slate-300"
+                        }`}
+                        onClick={() => {
+                          const input = document.getElementById("directFileInput");
+                          if (input) input.click();
+                        }}
+                      >
+                        <input
+                          id="directFileInput"
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.docx,.xlsx,.doc,.jpg,.jpeg,.png"
+                          onChange={(e) => {
+                            const selected = e.target.files?.[0];
+                            if (selected) setDirectUploadFile(selected);
+                          }}
+                        />
+
+                        <Upload className={`h-8 w-8 mb-2 ${directUploadFile ? "text-emerald-400" : "text-amber-400"}`} />
+
+                        {directUploadFile ? (
+                          <div>
+                            <p className="font-semibold text-slate-100 text-sm">
+                              {directUploadFile.name}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              {(directUploadFile.size / (1024 * 1024)).toFixed(2)} MB · Click or drag to replace
+                            </p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-sm font-medium text-slate-200">
+                              Drag and drop your file here, or <span className="text-amber-300 underline">browse</span>
+                            </p>
+                            <p className="mt-1 text-xs text-slate-400">
+                              Supported formats: PDF, DOCX, XLSX (Max 10MB)
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="directUploadRemarks"
+                        className="block text-xs uppercase tracking-[0.18em] font-semibold text-amber-300 mb-2"
+                      >
+                        Notes / Remarks for Reviewer (Optional)
+                      </label>
+                      <textarea
+                        id="directUploadRemarks"
+                        rows={3}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
+                        placeholder="Add optional notes or remarks for the reviewer..."
+                        value={directUploadRemarks}
+                        onChange={(e) => setDirectUploadRemarks(e.target.value)}
+                      />
+                    </div>
+
+                    {directUploadMessage && (
+                      <p className={`text-sm rounded-lg p-3 border ${
+                        directUploadMessage.startsWith("Error")
+                          ? "border-red-800 bg-red-950/40 text-red-300"
+                          : "border-emerald-800 bg-emerald-950/40 text-emerald-300"
+                      }`}>
+                        {directUploadMessage}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                      <button
+                        type="button"
+                        onClick={closeDirectUploadModal}
+                        disabled={isUploadingDirect}
+                        className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-500 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <Button
+                        type="submit"
+                        disabled={isUploadingDirect || !directUploadFile}
+                        className="inline-flex items-center gap-2"
+                      >
+                        {isUploadingDirect ? (
+                          <>
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" />
+                            <span>Uploading...</span>
+                          </>
+                        ) : (
+                          <span>Submit File</span>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {isHistoryModalOpen && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="submission-history-title"
+                onClick={closeHistoryModal}
+              >
+                <div
+                  className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.22em] text-amber-300">
+                        Audit Trail
+                      </p>
+                      <h3
+                        id="submission-history-title"
+                        className="mt-1 text-xl font-semibold text-slate-100"
+                      >
+                        Submission History & Audit Trail
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-400">
+                        View past requirement submissions, inspect prior versions, and review admin feedback.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeHistoryModal}
+                      className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                      aria-label="Close history modal"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/60 px-6 py-3">
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor="modalHistoryAcademicYear"
+                          className="text-xs uppercase tracking-wider text-slate-400"
+                        >
+                          School Year:
+                        </label>
+                        <select
+                          id="modalHistoryAcademicYear"
+                          className="rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 outline-none focus:ring focus:ring-amber-300/30"
+                          value={historyAcademicYear}
+                          onChange={(event) =>
+                            setHistoryAcademicYear(event.target.value)
+                          }
+                        >
+                          {historyAcademicYears.map((year) => (
+                            <option key={year} value={year}>
+                              S.Y. {year}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor="modalHistorySemester"
+                          className="text-xs uppercase tracking-wider text-slate-400"
+                        >
+                          Semester:
+                        </label>
+                        <select
+                          id="modalHistorySemester"
+                          className="rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 outline-none focus:ring focus:ring-amber-300/30"
+                          value={historySemester}
+                          onChange={(event) =>
+                            setHistorySemester(
+                              event.target.value as
+                                | (typeof SEMESTER_OPTIONS)[number]
+                                | "All",
+                            )
+                          }
+                        >
+                          {historySemesterOptions.map((semester) => (
+                            <option key={semester} value={semester}>
+                              {semester === "All" ? "All Semesters" : semester}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void fetchHistory()}
+                      disabled={isLoadingHistory}
+                    >
+                      {isLoadingHistory ? "Refreshing..." : "Refresh"}
+                    </Button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-6 space-y-3">
+                    {isLoadingHistory ? (
+                      <p className="text-sm text-slate-400">
+                        Loading submission history...
+                      </p>
+                    ) : historyError ? (
+                      <p className="text-sm text-red-400">{historyError}</p>
+                    ) : filteredPastSubmissions.length > 0 ? (
+                      filteredPastSubmissions.map((submission) => (
+                        <article
+                          key={submission.id}
+                          className="rounded-xl border border-slate-800 bg-slate-950 p-4 transition hover:border-slate-700"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="font-medium text-slate-100">
+                                {REQUIREMENT_LABEL[submission.requirementCode]}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-400">
+                                S.Y. {submission.academicYear} ·{" "}
+                                {submission.semester}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                Submitted on{" "}
+                                {formatSubmittedDateTime(
+                                  submission.submittedAt,
+                                ) ?? submission.submittedAt}
+                              </p>
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  openHistorySubmissionPreview(submission)
+                                }
+                                className="inline-flex items-center gap-2"
+                              >
+                                {submission.remarks &&
+                                !viewedSubmissionIds.has(submission.id) ? (
+                                  <span
+                                    className="h-2 w-2 rounded-full bg-red-500"
+                                    aria-hidden="true"
+                                  />
+                                ) : null}
+                                View Submitted File
+                              </Button>
+
+                              <span
+                                className={`rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(submission.status)}`}
+                              >
+                                {submission.status === "Validated"
+                                  ? "✓ Validated"
+                                  : submission.status === "Rejected"
+                                    ? "✗ Rejected"
+                                    : "⏳ Pending"}
+                              </span>
+                            </div>
+                          </div>
+                        </article>
+                      ))
+                    ) : (
+                      <p className="rounded-xl border border-dashed border-slate-800 bg-slate-950/50 px-4 py-8 text-center text-sm text-slate-400">
+                        No past submissions found for the selected school year
+                        and semester.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end border-t border-slate-800 px-6 py-4">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={closeHistoryModal}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {previewSubmission ? (
+              <div
+                className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
                 onClick={closeSubmissionPreview}
               >
                 <div
@@ -1345,136 +1923,7 @@ function FacultySubmissionPanelContent({
               </div>
             ) : null}
 
-            {activeView === "history" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] p-8 pt-0">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                  <div>{/* Heading moved to main header card */}</div>
 
-                  <div className="grid gap-3 sm:grid-cols-2 mx-auto">
-                    <div className="flex flex-col items-center">
-                      <label
-                        className="text-xs uppercase tracking-[0.18em] text-amber-300 text-center"
-                        htmlFor="historyAcademicYear"
-                      >
-                        School Year
-                      </label>
-                      <select
-                        id="historyAcademicYear"
-                        className="mt-0 w-48 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-center outline-none focus:ring focus:ring-amber-300/30"
-                        value={historyAcademicYear}
-                        onChange={(event) =>
-                          setHistoryAcademicYear(event.target.value)
-                        }
-                      >
-                        {historyAcademicYears.map((year) => (
-                          <option key={year} value={year}>
-                            S.Y. {year}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex flex-col items-center">
-                      <label
-                        className="text-xs uppercase tracking-[0.18em] text-amber-300 text-center"
-                        htmlFor="historySemester"
-                      >
-                        Semester
-                      </label>
-                      <select
-                        id="historySemester"
-                        className="mt-0 w-48 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-center outline-none focus:ring focus:ring-amber-300/30"
-                        value={historySemester}
-                        onChange={(event) =>
-                          setHistorySemester(
-                            event.target.value as
-                              | (typeof SEMESTER_OPTIONS)[number]
-                              | "All",
-                          )
-                        }
-                      >
-                        {historySemesterOptions.map((semester) => (
-                          <option key={semester} value={semester}>
-                            {semester === "All" ? "All Semesters" : semester}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-5 space-y-3">
-                  {isLoadingHistory ? (
-                    <p className="text-sm text-slate-400">
-                      Loading submission history...
-                    </p>
-                  ) : historyError ? (
-                    <p className="text-sm text-red-400">{historyError}</p>
-                  ) : filteredPastSubmissions.length > 0 ? (
-                    filteredPastSubmissions.map((submission) => (
-                      <article
-                        key={submission.id}
-                        className="rounded-xl border border-slate-700 bg-slate-950 p-4"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <p className="font-medium text-slate-100">
-                              {REQUIREMENT_LABEL[submission.requirementCode]}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-400">
-                              S.Y. {submission.academicYear} ·{" "}
-                              {submission.semester}
-                            </p>
-                            <p className="mt-1 text-xs text-slate-500">
-                              Submitted on{" "}
-                              {formatSubmittedDateTime(
-                                submission.submittedAt,
-                              ) ?? submission.submittedAt}
-                            </p>
-                          </div>
-
-                          <div className="flex shrink-0 items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              size="sm"
-                              onClick={() =>
-                                openHistorySubmissionPreview(submission)
-                              }
-                              className="inline-flex items-center gap-2"
-                            >
-                              {submission.remarks &&
-                              !viewedSubmissionIds.has(submission.id) ? (
-                                <span
-                                  className="h-2 w-2 rounded-full bg-red-500"
-                                  aria-hidden="true"
-                                />
-                              ) : null}
-                              View Submitted File
-                            </Button>
-
-                            <span
-                              className={`rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(submission.status)}`}
-                            >
-                              {submission.status === "Validated"
-                                ? "✓ Validated"
-                                : submission.status === "Rejected"
-                                  ? "✗ Rejected"
-                                  : "⏳ Pending"}
-                            </span>
-                          </div>
-                        </div>
-                      </article>
-                    ))
-                  ) : (
-                    <p className="rounded-xl border border-dashed border-slate-700 bg-slate-950 px-4 py-6 text-sm text-slate-400">
-                      No past submissions found for the selected school year and
-                      semester.
-                    </p>
-                  )}
-                </div>
-              </article>
-            )}
 
             {activeView === "settings" && (
               <article className="min-h-[calc(100vh-4rem-3rem)] p-6 pt-0">
