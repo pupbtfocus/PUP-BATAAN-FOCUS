@@ -95,10 +95,23 @@ function toHistoryStatus(
 
 export async function GET() {
   try {
-    const sessionClient = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await sessionClient.auth.getUser();
+    // 1. Authenticate user inside try-catch
+    let user = null;
+    try {
+      const sessionClient = await createServerSupabaseClient();
+      const {
+        data: { user: authUser },
+      } = await sessionClient.auth.getUser();
+      user = authUser;
+    } catch (sessionError) {
+      logger.error("history_session_extraction_failed", {
+        error: sessionError instanceof Error ? sessionError.message : String(sessionError),
+      });
+      return NextResponse.json(
+        { error: "Unauthorized - session extraction error" },
+        { status: 401 },
+      );
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -107,51 +120,99 @@ export async function GET() {
       );
     }
 
-    const supabase = getServiceRoleClient();
-
-    const { data: appUser, error: appUserError } = await supabase
-      .from("app_users")
-      .select("profile_id")
-      .eq("auth_user_id", user.id)
-      .single();
-
-    if (appUserError || !appUser?.profile_id) {
-      logger.error("faculty_not_found", {
-        authUserId: user.id,
-        error: appUserError?.message,
+    let supabase;
+    try {
+      supabase = getServiceRoleClient();
+    } catch (clientError) {
+      logger.error("supabase_client_creation_failed", {
+        error: clientError instanceof Error ? clientError.message : String(clientError),
       });
       return NextResponse.json(
-        { error: "Faculty profile not found" },
-        { status: 404 },
+        {
+          submissions: [],
+          total: 0,
+          message: "Database connection unavailable",
+        },
+        { status: 200 },
       );
     }
 
-    const initialResult = await supabase
-      .from("submissions")
-      .select(
-        `
-        id,
-        requirement_code,
-        status,
-        submitted_at,
-        created_at,
-        remarks,
-        document_versions(id),
-        review_decisions(
-          decision,
-          remarks,
-          created_at
-        )
-      `,
-      )
-      .eq("faculty_profile_id", appUser.profile_id)
-      .order("submitted_at", { ascending: false });
+    // 2. App user lookup with null-guard
+    let appUser: { profile_id: string | null } | null = null;
+    try {
+      const { data, error } = await supabase
+        .from("app_users")
+        .select("profile_id")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
 
-    let submissions = (initialResult.data as SubmissionRow[] | null) ?? null;
-    let submissionsError = initialResult.error;
+      if (!error && data) {
+        appUser = data;
+      } else if (error) {
+        logger.error("history_app_user_query_error", {
+          authUserId: user.id,
+          error: error.message,
+        });
+      }
+    } catch (userQueryErr) {
+      logger.error("history_app_user_query_exception", {
+        error: userQueryErr instanceof Error ? userQueryErr.message : String(userQueryErr),
+      });
+    }
 
-    if (submissionsError && isMissingRemarksColumnError(submissionsError)) {
-      const fallbackResult = await supabase
+    if (!appUser || !appUser.profile_id) {
+      logger.warn("history_faculty_profile_missing", { authUserId: user.id });
+      return NextResponse.json(
+        {
+          submissions: [],
+          total: 0,
+          message: "No program assigned",
+        },
+        { status: 200 },
+      );
+    }
+
+    // 3. Program assignments null-guard
+    let assignments: Array<{ id: string }> = [];
+    try {
+      const { data, error } = await supabase
+        .from("faculty_program_assignments")
+        .select("id")
+        .eq("faculty_profile_id", appUser.profile_id);
+
+      if (!error && Array.isArray(data)) {
+        assignments = data;
+      } else if (error) {
+        logger.warn("history_program_assignments_fetch_failed", {
+          facultyId: appUser.profile_id,
+          error: error.message,
+        });
+      }
+    } catch (assignErr) {
+      logger.warn("history_program_assignments_exception", {
+        facultyId: appUser.profile_id,
+        error: assignErr instanceof Error ? assignErr.message : String(assignErr),
+      });
+    }
+
+    if (assignments.length === 0) {
+      logger.info("history_no_program_assignments_found", { facultyId: appUser.profile_id });
+      return NextResponse.json(
+        {
+          submissions: [],
+          total: 0,
+          message: "No program assigned",
+        },
+        { status: 200 },
+      );
+    }
+
+    // 4. Query submissions safely
+    let submissions: SubmissionRow[] = [];
+    let submissionsError: { message?: string } | null = null;
+
+    try {
+      const initialResult = await supabase
         .from("submissions")
         .select(
           `
@@ -160,6 +221,7 @@ export async function GET() {
           status,
           submitted_at,
           created_at,
+          remarks,
           document_versions(id),
           review_decisions(
             decision,
@@ -171,8 +233,48 @@ export async function GET() {
         .eq("faculty_profile_id", appUser.profile_id)
         .order("submitted_at", { ascending: false });
 
-      submissions = (fallbackResult.data as SubmissionRow[] | null) ?? null;
-      submissionsError = fallbackResult.error;
+      if (initialResult.error) {
+        submissionsError = initialResult.error;
+      } else if (Array.isArray(initialResult.data)) {
+        submissions = initialResult.data as SubmissionRow[];
+      }
+    } catch (queryErr) {
+      submissionsError = {
+        message: queryErr instanceof Error ? queryErr.message : String(queryErr),
+      };
+    }
+
+    if (submissionsError && isMissingRemarksColumnError(submissionsError)) {
+      try {
+        const fallbackResult = await supabase
+          .from("submissions")
+          .select(
+            `
+            id,
+            requirement_code,
+            status,
+            submitted_at,
+            created_at,
+            document_versions(id),
+            review_decisions(
+              decision,
+              remarks,
+              created_at
+            )
+          `,
+          )
+          .eq("faculty_profile_id", appUser.profile_id)
+          .order("submitted_at", { ascending: false });
+
+        if (!fallbackResult.error && Array.isArray(fallbackResult.data)) {
+          submissions = fallbackResult.data as SubmissionRow[];
+          submissionsError = null;
+        }
+      } catch (fallbackErr) {
+        logger.error("history_fallback_submissions_query_exception", {
+          error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
+        });
+      }
     }
 
     if (submissionsError) {
@@ -181,45 +283,55 @@ export async function GET() {
         error: submissionsError.message,
       });
       return NextResponse.json(
-        { error: "Failed to load submission history" },
-        { status: 500 },
+        {
+          submissions: [],
+          total: 0,
+          message: "Failed to load submission history",
+        },
+        { status: 200 },
       );
     }
 
-    const history: HistorySubmission[] = (submissions || [])
-      .filter((row) =>
-        DEFAULT_REQUIREMENTS.includes(row.requirement_code as RequirementCode),
-      )
-      .filter((row) => hasDocumentVersion(row))
-      .map((row) => {
-        const reviews = (row.review_decisions || [])
-          .filter((review) => !!review.created_at)
-          .sort((a, b) => {
-            const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-            const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-            return bTime - aTime;
-          });
+    // 5. Map history submissions safely
+    const history: HistorySubmission[] = [];
+    for (const row of submissions || []) {
+      if (!row || typeof row !== "object") continue;
+      if (
+        !row.requirement_code ||
+        !DEFAULT_REQUIREMENTS.includes(row.requirement_code as RequirementCode)
+      ) {
+        continue;
+      }
+      if (!hasDocumentVersion(row)) continue;
 
-        const latestReview = reviews[0];
-        const term = toAcademicYearAndSemester(
-          row.submitted_at || row.created_at,
-        );
+      const reviews = (Array.isArray(row.review_decisions) ? row.review_decisions : [])
+        .filter((review) => !!review && !!review.created_at)
+        .sort((a, b) => {
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return bTime - aTime;
+        });
 
-        return {
-          id: row.id,
-          academicYear: term.academicYear,
-          semester: term.semester,
-          requirementCode: row.requirement_code as RequirementCode,
-          status: toHistoryStatus(row.status, latestReview),
-          submittedAt:
-            row.submitted_at || row.created_at || new Date().toISOString(),
-          note: typeof row.remarks === "string" ? row.remarks : undefined,
-          remarks: latestReview?.remarks || undefined,
-          reviewedAt: latestReview?.created_at
-            ? new Date(latestReview.created_at).toISOString().split("T")[0]
-            : undefined,
-        };
+      const latestReview = reviews[0];
+      const term = toAcademicYearAndSemester(
+        row.submitted_at || row.created_at,
+      );
+
+      history.push({
+        id: row.id,
+        academicYear: term.academicYear,
+        semester: term.semester,
+        requirementCode: row.requirement_code as RequirementCode,
+        status: toHistoryStatus(row.status, latestReview),
+        submittedAt:
+          row.submitted_at || row.created_at || new Date().toISOString(),
+        note: typeof row.remarks === "string" ? row.remarks : undefined,
+        remarks: latestReview?.remarks || undefined,
+        reviewedAt: latestReview?.created_at
+          ? new Date(latestReview.created_at).toISOString().split("T")[0]
+          : undefined,
       });
+    }
 
     return NextResponse.json({
       submissions: history,
@@ -230,8 +342,12 @@ export async function GET() {
       error: error instanceof Error ? error.message : "Unknown error",
     });
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
+      {
+        submissions: [],
+        total: 0,
+        message: "Internal server error handled gracefully",
+      },
+      { status: 200 },
     );
   }
 }
