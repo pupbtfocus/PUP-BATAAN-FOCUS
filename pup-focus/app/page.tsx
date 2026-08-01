@@ -168,7 +168,7 @@ export default function Home() {
 
     const timeoutId = window.setTimeout(() => {
       window.location.href = targetRoute;
-    }, 1200);
+    }, 2000);
 
     return () => {
       window.clearTimeout(timeoutId);
@@ -225,12 +225,8 @@ export default function Home() {
         errorMessage === "Invalid login credentials";
 
       setAuthModal({
-        title: isInvalidCredentials
-          ? "Invalid login credentials"
-          : "Sign in failed",
-        message: isInvalidCredentials
-          ? "The email or password you entered is incorrect. Please try again."
-          : errorMessage,
+        title: "Invalid email address or password",
+        message: "Invalid email address or password",
         actionLabel: "Try again",
         variant: "error",
       });
