@@ -697,11 +697,54 @@ function FacultySubmissionPanelContent({
     });
   }
 
-  function openVersionHistory(item: RequirementStatus) {
-    if (!item.latestSubmissionId) return;
-    setVersionHistorySubmissionId(item.latestSubmissionId);
-    setVersionHistoryLabel(REQUIREMENT_LABEL[item.code]);
-    setVersionHistoryCode(item.code);
+  function openVersionHistory(
+    item:
+      | RequirementStatus
+      | PastSubmission
+      | {
+          submissionId?: string;
+          id?: string;
+          latestSubmissionId?: string;
+          requirementCode?: RequirementCode;
+          code?: RequirementCode;
+        },
+  ) {
+    const code =
+      "code" in item && item.code
+        ? item.code
+        : "requirementCode" in item && item.requirementCode
+          ? item.requirementCode
+          : undefined;
+
+    let targetSubmissionId =
+      "latestSubmissionId" in item && item.latestSubmissionId
+        ? item.latestSubmissionId
+        : "submissionId" in item && item.submissionId
+          ? item.submissionId
+          : "id" in item && item.id
+            ? item.id
+            : undefined;
+
+    if (!targetSubmissionId && code) {
+      const match = pastSubmissions.find(
+        (s) =>
+          s.requirementCode === code ||
+          (s as unknown as { requirement_type?: string }).requirement_type ===
+            code,
+      );
+      if (match?.id) {
+        targetSubmissionId = match.id;
+      }
+    }
+
+    const finalSubmissionId = targetSubmissionId || code;
+    if (!finalSubmissionId) return;
+
+    setVersionHistorySubmissionId(finalSubmissionId);
+    setVersionHistoryLabel(
+      code ? REQUIREMENT_LABEL[code] || code : "Version History",
+    );
+    setVersionHistoryCode(code || "");
   }
 
   function closeVersionHistory() {

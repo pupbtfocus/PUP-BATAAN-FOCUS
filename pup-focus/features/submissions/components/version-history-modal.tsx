@@ -62,7 +62,7 @@ function ChecksumBadge({ checksum }: { checksum: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard API may fail in some contexts
+      // Clipboard API fallback
     }
   }
 
@@ -70,7 +70,7 @@ function ChecksumBadge({ checksum }: { checksum: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-xs text-slate-400 transition hover:border-slate-500 hover:text-slate-200"
+      className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[11px] text-slate-400 transition hover:border-slate-500 hover:text-slate-200"
       title={`SHA-256: ${checksum}\nClick to copy`}
     >
       <span>{truncateChecksum(checksum)}</span>
@@ -86,7 +86,6 @@ function ChecksumBadge({ checksum }: { checksum: string }) {
 export function VersionHistoryModal({
   submissionId,
   requirementLabel,
-  requirementCode,
   onClose,
 }: VersionHistoryModalProps) {
   const [versions, setVersions] = useState<DocumentVersionDetail[]>([]);
@@ -137,26 +136,23 @@ export function VersionHistoryModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+        className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden"
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
+        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-5">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <History className="h-4 w-4 text-amber-300 shrink-0" />
-              <p className="text-xs uppercase tracking-[0.22em] text-amber-300">
+              <h3
+                id="version-history-title"
+                className="text-lg font-semibold text-slate-100 truncate"
+              >
                 Version History
-              </p>
+              </h3>
             </div>
-            <h3
-              id="version-history-title"
-              className="mt-2 text-xl font-semibold text-slate-100 truncate"
-            >
+            <p className="mt-1 text-sm font-medium text-amber-300/90 truncate">
               {requirementLabel}
-            </h3>
-            <p className="mt-1 text-xs text-slate-500 font-mono">
-              {requirementCode}
             </p>
           </div>
           <button
@@ -243,7 +239,7 @@ export function VersionHistoryModal({
 
                 return (
                   <div key={version.id} className="relative flex gap-4 py-3">
-                    {/* Timeline dot */}
+                    {/* Timeline badge */}
                     <div className="relative z-10 flex shrink-0 items-start pt-1">
                       <div
                         className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-xs font-bold ${
@@ -264,7 +260,7 @@ export function VersionHistoryModal({
                           : "border-slate-700 bg-slate-950/60"
                       }`}
                     >
-                      {/* Top row: version label + download */}
+                      {/* Top row: version title + current badge + download button */}
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
@@ -276,16 +272,11 @@ export function VersionHistoryModal({
                                 Current
                               </span>
                             )}
-                            {!isCurrent && (
-                              <span className="rounded-full border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                                Archived
-                              </span>
-                            )}
                           </div>
 
                           {/* Timestamp */}
-                          <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
-                            <Clock className="h-3 w-3" />
+                          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-400">
+                            <Clock className="h-3.5 w-3.5 text-slate-500" />
                             <span>{formatTimestamp(version.createdAt)}</span>
                           </div>
                         </div>
@@ -296,7 +287,7 @@ export function VersionHistoryModal({
                             href={version.downloadUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-700 shrink-0"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-700 shrink-0"
                           >
                             <Download className="h-3.5 w-3.5" />
                             Download
@@ -304,27 +295,28 @@ export function VersionHistoryModal({
                         )}
                       </div>
 
-                      {/* File info */}
-                      <div className="mt-3 flex items-center gap-2 text-sm">
-                        <FileText className="h-4 w-4 text-slate-500 shrink-0" />
-                        <span className="text-slate-300 truncate">
-                          {version.fileName}
-                        </span>
-                        <span className="text-slate-500">—</span>
-                        <span className="text-slate-400 whitespace-nowrap">
-                          {formatFileSize(version.sizeBytes)}
-                        </span>
-                      </div>
-
-                      {/* Checksum */}
-                      {version.checksumSha256 && (
-                        <div className="mt-2.5 flex items-center gap-2">
-                          <span className="text-[10px] uppercase tracking-wider text-slate-500">
-                            SHA-256
+                      {/* File info & Checksum row */}
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800/80">
+                        <div className="flex items-center gap-2 text-xs min-w-0">
+                          <FileText className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <span className="text-slate-200 font-medium truncate max-w-[200px]">
+                            {version.fileName}
                           </span>
-                          <ChecksumBadge checksum={version.checksumSha256} />
+                          <span className="text-slate-500">•</span>
+                          <span className="text-slate-400 whitespace-nowrap">
+                            {formatFileSize(version.sizeBytes)}
+                          </span>
                         </div>
-                      )}
+
+                        {version.checksumSha256 && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500">
+                              SHA-256:
+                            </span>
+                            <ChecksumBadge checksum={version.checksumSha256} />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -336,10 +328,8 @@ export function VersionHistoryModal({
         {/* Footer */}
         <div className="border-t border-slate-800 px-6 py-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              {versions.length > 0
-                ? `${versions.length} version${versions.length === 1 ? "" : "s"} found`
-                : ""}
+            <p className="text-xs font-medium text-slate-400">
+              {versions.length} {versions.length === 1 ? "version" : "versions"} found
             </p>
             <Button type="button" variant="secondary" size="sm" onClick={onClose}>
               Close
@@ -350,3 +340,4 @@ export function VersionHistoryModal({
     </div>
   );
 }
+
