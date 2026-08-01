@@ -240,6 +240,7 @@ function FacultySubmissionPanelContent({
   const showIncompleteRequirementsModal =
     activeView === "dashboard" &&
     !hasSeenIncompleteRequirementsModal &&
+    Boolean(submissionWindow?.isConfigured && submissionWindow?.isOpen) &&
     statusCounts !== null &&
     statusCounts.pending + statusCounts.notSubmitted > 0;
 
