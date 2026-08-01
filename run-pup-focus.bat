@@ -1,40 +1,30 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 
-REM Resolve paths relative to this script location.
-set "ROOT_DIR=%~dp0"
-set "APP_DIR=%ROOT_DIR%pup-focus"
+:: Get current folder path
+set "TARGET_DIR=%~dp0pup-focus"
 
-if not exist "%APP_DIR%\package.json" (
-  echo [ERROR] package.json not found in:
-  echo         "%APP_DIR%"
-  echo.
-  echo Make sure this script is in the parent folder of "pup-focus".
-  pause
-  exit /b 1
+:: Force drive letter to Uppercase C:\ to fix Webpack Casing Bug
+if "!TARGET_DIR:~0,1!"=="c" (
+    set "TARGET_DIR=C!TARGET_DIR:~1!"
 )
 
-cd /d "%APP_DIR%"
+cd /d "!TARGET_DIR!"
 
-echo [INFO] Starting PUP FOCUS dev server from:
-echo        %CD%
-echo.
-echo [INFO] Opening http://localhost:3000 in your default browser...
-start "" "http://localhost:3000"
+echo =========================================
+echo   Starting PUP FOCUS Development Server
+echo =========================================
+echo [INFO] Working Directory: !TARGET_DIR!
 echo.
 
-where npm >nul 2>&1
-if %ERRORLEVEL% EQU 0 (
-  npm run dev
-) else (
-  if exist "C:\Program Files\nodejs\npm.cmd" (
-    "C:\Program Files\nodejs\npm.cmd" run dev
-  ) else (
-    echo [ERROR] npm was not found in PATH and fallback npm.cmd does not exist.
-    echo Install Node.js or add npm to PATH.
-    pause
-    exit /b 1
-  )
-)
+echo [INFO] Clearing Next.js build and cache...
+if exist .next rmdir /s /q .next
+if exist node_modules\.cache rmdir /s /q node_modules\.cache
+
+echo [INFO] Opening http://localhost:3000 in browser...
+start http://localhost:3000
+
+echo.
+npm run dev
 
 endlocal

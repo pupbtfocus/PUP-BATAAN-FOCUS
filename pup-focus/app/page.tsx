@@ -550,6 +550,7 @@ export default function Home() {
               src="/icons/pup-seal.png"
               alt="PUP Seal"
               fill
+              sizes="48px"
               className="object-cover"
               priority
             />

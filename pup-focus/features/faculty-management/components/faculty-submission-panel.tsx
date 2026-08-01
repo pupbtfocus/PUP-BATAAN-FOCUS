@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -150,7 +150,7 @@ function getSubmissionPreviewUrl(submissionId: string) {
   return `/api/faculty/submissions/view?submissionId=${encodeURIComponent(submissionId)}`;
 }
 
-export function FacultySubmissionPanel({
+function FacultySubmissionPanelContent({
   facultyName,
 }: {
   facultyName?: string | null;
@@ -1648,5 +1648,24 @@ export function FacultySubmissionPanel({
         </div>
       </div>
     </div>
+  );
+}
+
+function FacultySubmissionPanelFallback() {
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-slate-950 text-amber-400 p-8">
+      <div className="flex items-center gap-3">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+        <span className="text-sm font-medium">Loading panel...</span>
+      </div>
+    </div>
+  );
+}
+
+export function FacultySubmissionPanel(props: { facultyName?: string | null }) {
+  return (
+    <Suspense fallback={<FacultySubmissionPanelFallback />}>
+      <FacultySubmissionPanelContent {...props} />
+    </Suspense>
   );
 }
