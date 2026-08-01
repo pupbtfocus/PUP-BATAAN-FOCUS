@@ -78,11 +78,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse submission metadata
+    const requirementCodeInput =
+      (formData.get("requirementCode") as string) ||
+      (formData.get("requirement_type") as string) ||
+      "";
+
     const payload = {
       academicYear: formData.get("academicYear") as string,
       semester: formData.get("semester") as string,
-      requirementCode: formData.get("requirementCode") as string,
-      remarks: formData.get("remarks") as string,
+      requirementCode: requirementCodeInput,
+      remarks:
+        (formData.get("remarks") as string) ||
+        (formData.get("notes") as string) ||
+        "",
     };
 
     // Validate inputs
@@ -153,6 +161,46 @@ export async function POST(request: NextRequest) {
         { error: "Faculty profile not found" },
         { status: 404 },
       );
+    }
+
+    // Backend Guard Against Duplicate Submissions
+    // Check if an existing submission for this requirement_code & faculty_profile_id is already uploaded, pending, or validated.
+    const { data: existingSubmissions } = await supabase
+      .from("submissions")
+      .select("id, status")
+      .eq("faculty_profile_id", appUser.profile_id)
+      .eq("requirement_code", payload.requirementCode)
+      .order("submitted_at", { ascending: false });
+
+    if (existingSubmissions && existingSubmissions.length > 0) {
+      const latestSub = existingSubmissions[0];
+      const { data: decisions } = await supabase
+        .from("review_decisions")
+        .select("decision")
+        .eq("submission_id", latestSub.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const latestDecision = decisions?.[0]?.decision;
+      const isRejected =
+        latestSub.status === "rejected" || latestDecision === "rejected";
+
+      if (
+        !isRejected &&
+        (latestSub.status === "uploaded" ||
+          latestSub.status === "pending" ||
+          latestSub.status === "submitted" ||
+          latestSub.status === "validated" ||
+          latestDecision === "validated")
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "This requirement has already been submitted and is currently pending or validated.",
+          },
+          { status: 400 },
+        );
+      }
     }
 
     // Get faculty's assigned curriculum and assignment record for the selected term,
@@ -357,91 +405,93 @@ export async function POST(request: NextRequest) {
       requirementCode: payload.requirementCode,
     });
 
-    // Trigger notifications for Program Heads & Admins – fire-and-forget; never blocks upload
-    try {
-      const { data: facultyProfile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", appUser.profile_id)
-        .maybeSingle();
+    // Non-critical background tasks: notifications and audit logging (executed asynchronously so endpoint returns fast)
+    void (async () => {
+      try {
+        const { data: facultyProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", appUser.profile_id)
+          .maybeSingle();
 
-      const facultyName = facultyProfile?.full_name || appUser.full_name || "Faculty Member";
-      const reqCode = payload.requirementCode as RequirementCode;
-      const reqLabel = REQUIREMENT_LABEL[reqCode] || payload.requirementCode;
+        const facultyName =
+          facultyProfile?.full_name || appUser.full_name || "Faculty Member";
+        const reqCode = payload.requirementCode as RequirementCode;
+        const reqLabel = REQUIREMENT_LABEL[reqCode] || payload.requirementCode;
 
-      const reviewerSet = new Set<string>();
+        const reviewerSet = new Set<string>();
 
-      const { data: reviewerAppUsers } = await supabase
-        .from("app_users")
-        .select("auth_user_id")
-        .in("role", ["program_head", "admin", "super_admin"]);
+        const { data: reviewerAppUsers } = await supabase
+          .from("app_users")
+          .select("auth_user_id")
+          .in("role", ["program_head", "admin", "super_admin"]);
 
-      if (reviewerAppUsers) {
-        for (const r of reviewerAppUsers) {
-          if (r.auth_user_id) reviewerSet.add(r.auth_user_id);
+        if (reviewerAppUsers) {
+          for (const r of reviewerAppUsers) {
+            if (r.auth_user_id) reviewerSet.add(r.auth_user_id);
+          }
         }
-      }
 
-      const { data: reviewerProfiles } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .in("role", ["program_head", "admin", "super_admin"]);
+        const { data: reviewerProfiles } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .in("role", ["program_head", "admin", "super_admin"]);
 
-      if (reviewerProfiles) {
-        for (const p of reviewerProfiles) {
-          if (p.user_id) reviewerSet.add(p.user_id);
+        if (reviewerProfiles) {
+          for (const p of reviewerProfiles) {
+            if (p.user_id) reviewerSet.add(p.user_id);
+          }
         }
-      }
 
-      const uniqueAuthUserIds = Array.from(reviewerSet);
+        const uniqueAuthUserIds = Array.from(reviewerSet);
 
-      for (const reviewerAuthUserId of uniqueAuthUserIds) {
-        if (reviewerAuthUserId === user.id) continue;
+        for (const reviewerAuthUserId of uniqueAuthUserIds) {
+          if (reviewerAuthUserId === user.id) continue;
 
-        await createNotification({
-          userId: reviewerAuthUserId,
-          type: "submission_uploaded",
-          title: `New Submission from ${facultyName}`,
-          message: `Uploaded ${reqLabel} for ${payload.academicYear} ${payload.semester}.`,
-          metadata: {
-            submission_id: submissionId,
-            submissionId,
-            faculty_profile_id: appUser.profile_id,
-            facultyName,
-            requirement_code: payload.requirementCode,
-            requirementCode: payload.requirementCode,
-          },
+          await createNotification({
+            userId: reviewerAuthUserId,
+            type: "submission_uploaded",
+            title: `New Submission from ${facultyName}`,
+            message: `Uploaded ${reqLabel} for ${payload.academicYear} ${payload.semester}.`,
+            metadata: {
+              submission_id: submissionId,
+              submissionId,
+              faculty_profile_id: appUser.profile_id,
+              facultyName,
+              requirement_code: payload.requirementCode,
+              requirementCode: payload.requirementCode,
+            },
+          });
+        }
+      } catch (notifErr) {
+        logger.error("notification_creation_failed_on_upload", {
+          submissionId,
+          error: notifErr instanceof Error ? notifErr.message : String(notifErr),
         });
       }
-    } catch (notifErr) {
-      logger.error("notification_creation_failed_on_upload", {
-        submissionId,
-        error: notifErr instanceof Error ? notifErr.message : String(notifErr),
-      });
-    }
 
-    // Audit log – fire-and-forget; failures are logged but never block the upload response
-    try {
-      await logAuditEvent({
-        actorId: user.id,
-        action: "submission.upload",
-        entityType: "submission",
-        entityId: submissionId,
-        metadata: {
-          requirement_code: payload.requirementCode,
-          file_name: fileName,
-          academic_year: payload.academicYear,
-          semester: payload.semester,
-          faculty_profile_id: appUser.profile_id,
-          document_version_id: documentVersion.id,
-        },
-      });
-    } catch (auditError) {
-      logger.error("audit_log_submission_upload_failed", {
-        submissionId,
-        error: auditError instanceof Error ? auditError.message : String(auditError),
-      });
-    }
+      try {
+        await logAuditEvent({
+          actorId: user.id,
+          action: "submission.upload",
+          entityType: "submission",
+          entityId: submissionId,
+          metadata: {
+            requirement_code: payload.requirementCode,
+            file_name: fileName,
+            academic_year: payload.academicYear,
+            semester: payload.semester,
+            faculty_profile_id: appUser.profile_id,
+            document_version_id: documentVersion.id,
+          },
+        });
+      } catch (auditError) {
+        logger.error("audit_log_submission_upload_failed", {
+          submissionId,
+          error: auditError instanceof Error ? auditError.message : String(auditError),
+        });
+      }
+    })();
 
     return NextResponse.json(
       {

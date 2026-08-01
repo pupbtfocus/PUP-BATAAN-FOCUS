@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -260,106 +263,90 @@ export async function GET(request: NextRequest) {
     );
     const currentAssignmentIds = currentTermAssignments.map((row) => row.id);
 
-    // 5. Query submissions safely
-    let submissions: SubmissionRow[] = [];
-    let submissionsError: { message?: string } | null = null;
+    // 5. Query submissions and related tables separately to avoid relational schema cache join errors
+    let rawSubmissions: Array<{
+      id: string;
+      requirement_code: string;
+      status: string | null;
+      submitted_at?: string | null;
+      remarks?: string | null;
+    }> = [];
 
     if (windowState.isConfigured) {
       try {
-        const submissionQuery = supabase
+        const { data, error } = await supabase
           .from("submissions")
-          .select(
-            `
-            id,
-            requirement_code,
-            status,
-            submitted_at,
-            remarks,
-            document_versions(id),
-            review_decisions(
-              decision,
-              remarks,
-              created_at
-            )
-          `,
-          )
+          .select("id, requirement_code, status, submitted_at, remarks")
           .eq("faculty_profile_id", appUser.profile_id)
           .order("submitted_at", { ascending: false });
 
-        if (currentAssignmentIds.length > 0) {
-          submissionQuery.in("faculty_assignment_id", currentAssignmentIds);
-        } else if (currentWindowStart && currentWindowEnd) {
-          submissionQuery.gte("submitted_at", currentWindowStart);
-          submissionQuery.lte("submitted_at", currentWindowEnd);
-        }
-
-        const initialResult = await submissionQuery;
-        if (initialResult.error) {
-          submissionsError = initialResult.error;
-        } else if (Array.isArray(initialResult.data)) {
-          submissions = initialResult.data as SubmissionRow[];
+        if (error && isMissingRemarksColumnError(error)) {
+          const { data: fallbackData } = await supabase
+            .from("submissions")
+            .select("id, requirement_code, status, submitted_at")
+            .eq("faculty_profile_id", appUser.profile_id)
+            .order("submitted_at", { ascending: false });
+          rawSubmissions = (fallbackData as typeof rawSubmissions) || [];
+        } else if (data) {
+          rawSubmissions = data as typeof rawSubmissions;
         }
       } catch (queryErr) {
-        submissionsError = {
-          message: queryErr instanceof Error ? queryErr.message : String(queryErr),
-        };
-      }
-    }
-
-    if (submissionsError && isMissingRemarksColumnError(submissionsError)) {
-      try {
-        const fallbackQuery = supabase
-          .from("submissions")
-          .select(
-            `
-            id,
-            requirement_code,
-            status,
-            submitted_at,
-            document_versions(id),
-            review_decisions(
-              decision,
-              remarks,
-              created_at
-            )
-          `,
-          )
-          .eq("faculty_profile_id", appUser.profile_id)
-          .order("submitted_at", { ascending: false });
-
-        if (currentAssignmentIds.length > 0) {
-          fallbackQuery.in("faculty_assignment_id", currentAssignmentIds);
-        } else if (currentWindowStart && currentWindowEnd) {
-          fallbackQuery.gte("submitted_at", currentWindowStart);
-          fallbackQuery.lte("submitted_at", currentWindowEnd);
-        }
-
-        const fallbackResult = await fallbackQuery;
-        if (!fallbackResult.error && Array.isArray(fallbackResult.data)) {
-          submissions = fallbackResult.data as SubmissionRow[];
-          submissionsError = null;
-        }
-      } catch (fallbackErr) {
-        logger.error("fallback_submissions_query_exception", {
-          error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
+        logger.error("status_submissions_query_exception", {
+          error: queryErr instanceof Error ? queryErr.message : String(queryErr),
         });
       }
     }
 
-    if (submissionsError) {
-      logger.error("submissions_fetch_failed", {
-        facultyId: appUser.profile_id,
-        error: submissionsError.message,
-      });
-      return NextResponse.json(
-        {
-          requirementStatuses: defaultRequirementStatuses,
-          counts: emptyCounts,
-          message: "Failed to load submissions",
-        },
-        { status: 200 },
-      );
+    const submissionIds = rawSubmissions.map((s) => s.id);
+
+    // Fetch document_versions separately
+    const docVersionsMap = new Map<string, Array<{ id: string }>>();
+    if (submissionIds.length > 0) {
+      const { data: docVersions } = await supabase
+        .from("document_versions")
+        .select("id, submission_id")
+        .in("submission_id", submissionIds);
+
+      if (docVersions) {
+        for (const doc of docVersions) {
+          const list = docVersionsMap.get(doc.submission_id) || [];
+          list.push({ id: doc.id });
+          docVersionsMap.set(doc.submission_id, list);
+        }
+      }
     }
+
+    // Fetch review_decisions separately
+    const reviewDecisionsMap = new Map<string, ReviewDecision[]>();
+    if (submissionIds.length > 0) {
+      const { data: decisions } = await supabase
+        .from("review_decisions")
+        .select("submission_id, decision, remarks, created_at")
+        .in("submission_id", submissionIds)
+        .order("created_at", { ascending: false });
+
+      if (decisions) {
+        for (const d of decisions) {
+          const list = reviewDecisionsMap.get(d.submission_id) || [];
+          list.push({
+            decision: d.decision as "validated" | "rejected",
+            remarks: d.remarks,
+            created_at: d.created_at,
+          });
+          reviewDecisionsMap.set(d.submission_id, list);
+        }
+      }
+    }
+
+    const submissions: SubmissionRow[] = rawSubmissions.map((s) => ({
+      id: s.id,
+      requirement_code: s.requirement_code,
+      status: s.status,
+      submitted_at: s.submitted_at,
+      remarks: s.remarks,
+      document_versions: docVersionsMap.get(s.id) || [],
+      review_decisions: reviewDecisionsMap.get(s.id) || [],
+    }));
 
     // 6. Map requirement statuses safely
     const statusMap = new Map<string, RequirementStatus>();
@@ -385,15 +372,11 @@ export async function GET(request: NextRequest) {
       let status: "Validated" | "Rejected" | "Pending" | "Not Submitted" =
         "Not Submitted";
 
-      if (submission.status === "validated") {
+      if (submission.status === "validated" || latestReview?.decision === "validated") {
         status = "Validated";
-      } else if (submission.status === "rejected") {
+      } else if (submission.status === "rejected" || latestReview?.decision === "rejected") {
         status = "Rejected";
-      } else if (latestReview?.decision === "validated") {
-        status = "Validated";
-      } else if (latestReview?.decision === "rejected") {
-        status = "Rejected";
-      } else if (submission.status === "uploaded") {
+      } else {
         status = "Pending";
       }
 

@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -207,90 +210,92 @@ export async function GET() {
       );
     }
 
-    // 4. Query submissions safely
-    let submissions: SubmissionRow[] = [];
-    let submissionsError: { message?: string } | null = null;
+    // 4. Query submissions and related tables separately to avoid relational schema cache join errors
+    let rawSubmissions: Array<{
+      id: string;
+      requirement_code: string;
+      status: string | null;
+      submitted_at?: string | null;
+      created_at?: string | null;
+      remarks?: string | null;
+      faculty_assignment_id?: string | null;
+    }> = [];
 
     try {
-      const initialResult = await supabase
+      const { data, error } = await supabase
         .from("submissions")
-        .select(
-          `
-          id,
-          requirement_code,
-          status,
-          submitted_at,
-          created_at,
-          remarks,
-          document_versions(id),
-          review_decisions(
-            decision,
-            remarks,
-            created_at
-          )
-        `,
-        )
+        .select("id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id")
         .eq("faculty_profile_id", appUser.profile_id)
         .order("submitted_at", { ascending: false });
 
-      if (initialResult.error) {
-        submissionsError = initialResult.error;
-      } else if (Array.isArray(initialResult.data)) {
-        submissions = initialResult.data as SubmissionRow[];
-      }
-    } catch (queryErr) {
-      submissionsError = {
-        message: queryErr instanceof Error ? queryErr.message : String(queryErr),
-      };
-    }
-
-    if (submissionsError && isMissingRemarksColumnError(submissionsError)) {
-      try {
-        const fallbackResult = await supabase
+      if (error && isMissingRemarksColumnError(error)) {
+        const { data: fallbackData } = await supabase
           .from("submissions")
-          .select(
-            `
-            id,
-            requirement_code,
-            status,
-            submitted_at,
-            created_at,
-            document_versions(id),
-            review_decisions(
-              decision,
-              remarks,
-              created_at
-            )
-          `,
-          )
+          .select("id, requirement_code, status, submitted_at, created_at, faculty_assignment_id")
           .eq("faculty_profile_id", appUser.profile_id)
           .order("submitted_at", { ascending: false });
+        rawSubmissions = (fallbackData as typeof rawSubmissions) || [];
+      } else if (data) {
+        rawSubmissions = data as typeof rawSubmissions;
+      }
+    } catch (queryErr) {
+      logger.error("history_submissions_query_exception", {
+        error: queryErr instanceof Error ? queryErr.message : String(queryErr),
+      });
+    }
 
-        if (!fallbackResult.error && Array.isArray(fallbackResult.data)) {
-          submissions = fallbackResult.data as SubmissionRow[];
-          submissionsError = null;
+    const submissionIds = rawSubmissions.map((s) => s.id);
+
+    // Fetch document_versions separately
+    const docVersionsMap = new Map<string, Array<{ id: string }>>();
+    if (submissionIds.length > 0) {
+      const { data: docVersions } = await supabase
+        .from("document_versions")
+        .select("id, submission_id")
+        .in("submission_id", submissionIds);
+
+      if (docVersions) {
+        for (const doc of docVersions) {
+          const list = docVersionsMap.get(doc.submission_id) || [];
+          list.push({ id: doc.id });
+          docVersionsMap.set(doc.submission_id, list);
         }
-      } catch (fallbackErr) {
-        logger.error("history_fallback_submissions_query_exception", {
-          error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
-        });
       }
     }
 
-    if (submissionsError) {
-      logger.error("submission_history_fetch_failed", {
-        facultyId: appUser.profile_id,
-        error: submissionsError.message,
-      });
-      return NextResponse.json(
-        {
-          submissions: [],
-          total: 0,
-          message: "Failed to load submission history",
-        },
-        { status: 200 },
-      );
+    // Fetch review_decisions separately
+    const reviewDecisionsMap = new Map<string, ReviewDecision[]>();
+    if (submissionIds.length > 0) {
+      const { data: decisions } = await supabase
+        .from("review_decisions")
+        .select("submission_id, decision, remarks, created_at")
+        .in("submission_id", submissionIds)
+        .order("created_at", { ascending: false });
+
+      if (decisions) {
+        for (const d of decisions) {
+          const list = reviewDecisionsMap.get(d.submission_id) || [];
+          list.push({
+            decision: d.decision as "validated" | "rejected",
+            remarks: d.remarks,
+            created_at: d.created_at,
+          });
+          reviewDecisionsMap.set(d.submission_id, list);
+        }
+      }
     }
+
+    const submissions: SubmissionRow[] = rawSubmissions.map((s) => ({
+      id: s.id,
+      requirement_code: s.requirement_code,
+      status: s.status,
+      submitted_at: s.submitted_at,
+      created_at: s.created_at,
+      remarks: s.remarks,
+      faculty_assignment_id: s.faculty_assignment_id,
+      document_versions: docVersionsMap.get(s.id) || [],
+      review_decisions: reviewDecisionsMap.get(s.id) || [],
+    }));
 
     // 5. Map history submissions safely
     const history: HistorySubmission[] = [];

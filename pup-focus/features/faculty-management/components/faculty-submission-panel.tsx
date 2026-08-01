@@ -19,7 +19,7 @@ import {
   getTodayInManila,
   buildAcademicYearOptions,
 } from "@/features/submissions/services/submission-window.service";
-import { X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload } from "lucide-react";
+import { X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, CheckCircle2 } from "lucide-react";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
 const REQUIREMENT_DESCRIPTIONS: Record<RequirementCode, string> = {
@@ -131,11 +131,12 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined) {
 
 function requirementStatusStyles(status: RequirementStatus["status"]): string {
   if (status === "Validated")
-    return "bg-green-900/30 text-green-400 border-green-800";
-  if (status === "Rejected") return "bg-red-900/30 text-red-400 border-red-800";
+    return "bg-emerald-950/40 text-emerald-300 border-emerald-500/50";
+  if (status === "Rejected")
+    return "bg-red-950/40 text-red-300 border-red-500/50";
   if (status === "Not Submitted")
-    return "bg-slate-900/30 text-slate-400 border-slate-700";
-  return "bg-yellow-900/30 text-yellow-400 border-yellow-800";
+    return "bg-slate-900/40 text-slate-400 border-slate-700";
+  return "bg-amber-950/40 text-amber-300 border-amber-400/50";
 }
 
 function formatSubmittedDateTime(value?: string): string | null {
@@ -214,6 +215,10 @@ function FacultySubmissionPanelContent({
   const [versionHistoryLabel, setVersionHistoryLabel] = useState("");
   const [versionHistoryCode, setVersionHistoryCode] = useState("");
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [successModalData, setSuccessModalData] = useState<{
+    isOpen: boolean;
+    requirementTitle: string;
+  }>({ isOpen: false, requirementTitle: "" });
 
   const [selectedAcademicYear, setSelectedAcademicYear] =
     useState<string>(academicYears[0] ?? "");
@@ -273,7 +278,10 @@ function FacultySubmissionPanelContent({
     try {
       setIsLoadingHistory(true);
       setHistoryError(null);
-      const response = await fetch("/api/faculty/submissions/history");
+      const response = await fetch("/api/faculty/submissions/history", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (!response.ok) {
         setHistoryError("Failed to load submission history");
         return;
@@ -292,7 +300,10 @@ function FacultySubmissionPanelContent({
     try {
       setIsLoadingStatuses(true);
       setStatusError(null);
-      const response = await fetch("/api/faculty/submissions/status");
+      const response = await fetch("/api/faculty/submissions/status", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (response.ok) {
         const data = await response.json();
         setRequirementStatuses(data.requirementStatuses || []);
@@ -310,7 +321,10 @@ function FacultySubmissionPanelContent({
   const refetchSubmissionWindow = useCallback(async () => {
     setIsLoadingSubmissionWindow(true);
     try {
-      const response = await fetch("/api/faculty/submissions/window");
+      const response = await fetch("/api/faculty/submissions/window", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (response.ok) {
         const data = (await response.json()) as SubmissionWindowState;
         setSubmissionWindow(data);
@@ -459,17 +473,13 @@ function FacultySubmissionPanelContent({
   }, [historyAcademicYear, historySemester, pastSubmissions]);
 
   const displayedRequirementStatuses = useMemo<RequirementStatus[]>(() => {
-    const isCurrentTerm =
-      selectedAcademicYear === form.academicYear &&
-      selectedSemester === form.semester;
-
     return DEFAULT_REQUIREMENTS.map((code) => {
-      const match = pastSubmissions.find(
-        (s) =>
-          s.requirementCode === code &&
-          s.academicYear === selectedAcademicYear &&
-          s.semester === selectedSemester,
-      );
+      const live = requirementStatuses.find((r) => r.code === code);
+      if (live && live.status !== "Not Submitted") {
+        return live;
+      }
+
+      const match = pastSubmissions.find((s) => s.requirementCode === code);
 
       if (match) {
         return {
@@ -488,24 +498,14 @@ function FacultySubmissionPanelContent({
         };
       }
 
-      if (isCurrentTerm) {
-        const live = requirementStatuses.find((r) => r.code === code);
-        if (live) return live;
-      }
+      if (live) return live;
 
       return {
         code,
         status: "Not Submitted" as const,
       };
     });
-  }, [
-    selectedAcademicYear,
-    selectedSemester,
-    form.academicYear,
-    form.semester,
-    pastSubmissions,
-    requirementStatuses,
-  ]);
+  }, [pastSubmissions, requirementStatuses]);
 
   const displayedStatusCounts = useMemo(() => {
     const total = DEFAULT_REQUIREMENTS.length;
@@ -557,12 +557,19 @@ function FacultySubmissionPanelContent({
     setDirectUploadMessage(null);
 
     try {
+      const activeAY =
+        submissionWindow?.academicYear || selectedAcademicYear || form.academicYear || "2025-2026";
+      const activeSem =
+        submissionWindow?.semester || selectedSemester || form.semester || "1st Semester";
+
       const formData = new FormData();
       formData.append("file", directUploadFile);
-      formData.append("academicYear", selectedAcademicYear);
-      formData.append("semester", selectedSemester);
+      formData.append("academicYear", activeAY);
+      formData.append("semester", activeSem);
       formData.append("requirementCode", selectedRequirementForUpload);
+      formData.append("requirement_type", selectedRequirementForUpload);
       formData.append("remarks", directUploadRemarks);
+      formData.append("notes", directUploadRemarks);
 
       const response = await fetch("/api/faculty/submissions/create", {
         method: "POST",
@@ -586,13 +593,46 @@ function FacultySubmissionPanelContent({
       const result = await response.json();
 
       setSubmissionMessage(
-        `✓ Successfully submitted ${REQUIREMENT_LABEL[selectedRequirementForUpload]} for S.Y. ${selectedAcademicYear} ${selectedSemester}. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
+        `✓ Requirement submitted successfully! Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
       );
 
-      await fetchStatuses();
-      await fetchHistory();
+      // Optimistically update status badge to Pending immediately
+      setRequirementStatuses((prev) => {
+        const exists = prev.some((r) => r.code === selectedRequirementForUpload);
+        if (exists) {
+          return prev.map((r) =>
+            r.code === selectedRequirementForUpload
+              ? {
+                  ...r,
+                  status: "Pending" as const,
+                  submittedAt: new Date().toISOString(),
+                  latestSubmissionId: result.submissionId,
+                }
+              : r,
+          );
+        }
+        return [
+          ...prev,
+          {
+            code: selectedRequirementForUpload,
+            status: "Pending" as const,
+            submittedAt: new Date().toISOString(),
+            latestSubmissionId: result.submissionId,
+          },
+        ];
+      });
+
+      const activeReqTitle =
+        REQUIREMENT_LABEL[selectedRequirementForUpload] ||
+        selectedRequirementForUpload;
 
       closeDirectUploadModal();
+      await Promise.all([fetchStatuses(), fetchHistory()]);
+
+      setSuccessModalData({
+        isOpen: true,
+        requirementTitle: activeReqTitle,
+      });
     } catch (error) {
       setDirectUploadMessage(
         `Error: ${error instanceof Error ? error.message : "An unexpected error occurred"}`,
@@ -1279,15 +1319,15 @@ function FacultySubmissionPanelContent({
                               {REQUIREMENT_LABEL[req.code]}
                             </p>
                             <span
-                              className={`rounded-full border px-3 py-1 text-xs font-medium ${requirementStatusStyles(req.status)}`}
+                              className={`rounded-full border px-3 py-1 text-xs font-semibold ${requirementStatusStyles(req.status)}`}
                             >
                               {req.status === "Validated"
-                                ? "✓ Validated"
+                                ? "✅ Validated / Approved"
                                 : req.status === "Rejected"
-                                  ? "✗ Rejected"
-                                  : req.status === "Not Submitted"
-                                    ? "○ Not Submitted"
-                                    : "⏳ Pending"}
+                                  ? "🔴 Needs Revision"
+                                  : req.status === "Pending"
+                                    ? "⏳ Pending Review"
+                                    : "○ Not Submitted"}
                             </span>
                           </div>
                           <p className="mt-1 text-xs text-slate-400">
@@ -1308,27 +1348,35 @@ function FacultySubmissionPanelContent({
                         </div>
 
                         <div className="flex shrink-0 flex-wrap items-center gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => openDirectUploadModal(req.code)}
-                            disabled={
-                              !isSubmissionAvailable ||
-                              req.status === "Validated" ||
-                              req.status === "Pending"
-                            }
-                            className="inline-flex items-center gap-1.5"
-                          >
-                            <Upload className="h-3.5 w-3.5" />
-                            {req.status === "Rejected"
-                              ? "Submit Revision"
-                              : req.status === "Validated"
-                                ? "Validated"
-                                : req.status === "Pending"
-                                  ? "Under Review"
-                                  : "Submit Requirement"}
-                          </Button>
+                          {/* For Not Submitted: Primary Submit Requirement button */}
+                          {req.status === "Not Submitted" && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => openDirectUploadModal(req.code)}
+                              disabled={!isSubmissionAvailable}
+                              className="inline-flex items-center gap-1.5"
+                            >
+                              <Upload className="h-3.5 w-3.5" />
+                              Submit Requirement
+                            </Button>
+                          )}
 
+                          {/* For Needs Revision (Rejected): Primary Resubmit Requirement button */}
+                          {req.status === "Rejected" && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => openDirectUploadModal(req.code)}
+                              disabled={!isSubmissionAvailable}
+                              className="inline-flex items-center gap-1.5 bg-red-600 text-white hover:bg-red-500"
+                            >
+                              <Upload className="h-3.5 w-3.5" />
+                              Resubmit Requirement
+                            </Button>
+                          )}
+
+                          {/* For Pending, Validated, or Rejected: View File / View Submitted File button */}
                           {req.status !== "Not Submitted" &&
                           req.latestSubmissionId ? (
                             <>
@@ -1348,7 +1396,9 @@ function FacultySubmissionPanelContent({
                                     aria-hidden="true"
                                   />
                                 ) : null}
-                                View File
+                                {req.status === "Pending"
+                                  ? "View Submitted File"
+                                  : "View File"}
                               </Button>
 
                               <Button
@@ -1359,7 +1409,9 @@ function FacultySubmissionPanelContent({
                                 className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-100"
                               >
                                 <History className="h-3.5 w-3.5" />
-                                Versions
+                                {req.status === "Validated"
+                                  ? "Version History"
+                                  : "Versions"}
                               </Button>
                             </>
                           ) : null}
@@ -1508,6 +1560,15 @@ function FacultySubmissionPanelContent({
                       />
                     </div>
 
+                    {isUploadingDirect && (
+                      <div className="flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-400/10 p-3.5 text-amber-200">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent shrink-0" />
+                        <p className="text-sm font-medium">
+                          Uploading document to cloud storage, please wait...
+                        </p>
+                      </div>
+                    )}
+
                     {directUploadMessage && (
                       <p className={`text-sm rounded-lg p-3 border ${
                         directUploadMessage.startsWith("Error")
@@ -1543,6 +1604,58 @@ function FacultySubmissionPanelContent({
                       </Button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {successModalData.isOpen && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="success-modal-title"
+                onClick={() =>
+                  setSuccessModalData({ isOpen: false, requirementTitle: "" })
+                }
+              >
+                <div
+                  className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-6 text-center shadow-2xl overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-950/80 border border-emerald-500/50 text-emerald-400 mb-4">
+                    <CheckCircle2 className="h-10 w-10" />
+                  </div>
+
+                  <h3
+                    id="success-modal-title"
+                    className="text-xl font-bold text-slate-100"
+                  >
+                    Requirement Uploaded Successfully!
+                  </h3>
+
+                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                    Your document for{" "}
+                    <span className="font-semibold text-amber-300">
+                      {successModalData.requirementTitle}
+                    </span>{" "}
+                    has been submitted and is now pending review.
+                  </p>
+
+                  <div className="mt-6 flex justify-center">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setSuccessModalData({
+                          isOpen: false,
+                          requirementTitle: "",
+                        });
+                        navigateToView("status");
+                      }}
+                      className="w-full max-w-xs rounded-xl bg-amber-500 hover:bg-amber-400 font-semibold text-slate-950 py-2.5"
+                    >
+                      Back to Requirements
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
