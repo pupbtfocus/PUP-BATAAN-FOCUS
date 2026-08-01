@@ -1269,7 +1269,7 @@ function FacultySubmissionPanelContent({
                       className="inline-flex items-center gap-1.5"
                     >
                       <History className="h-3.5 w-3.5" />
-                      History
+                      Submission History
                     </Button>
                     <button
                       type="button"
