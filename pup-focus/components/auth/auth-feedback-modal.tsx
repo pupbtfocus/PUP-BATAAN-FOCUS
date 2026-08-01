@@ -80,17 +80,15 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
           {modal.message}
         </p>
 
-        {modal.variant === "error" ? (
-          <div className="mt-8 flex justify-center">
-            <Button
-              type="button"
-              className="h-12 w-full rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 font-bold text-[#4d0000] shadow-[0_4px_14px_rgba(255,215,0,0.25)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(255,215,0,0.35)] active:scale-100"
-              onClick={onClose}
-            >
-              {modal.actionLabel}
-            </Button>
-          </div>
-        ) : null}
+        <div className="mt-8 flex justify-center">
+          <Button
+            type="button"
+            className="h-12 w-full rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 font-bold text-[#4d0000] shadow-[0_4px_14px_rgba(255,215,0,0.25)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(255,215,0,0.35)] active:scale-100"
+            onClick={onClose}
+          >
+            {modal.actionLabel}
+          </Button>
+        </div>
       </div>
     </div>
   );
