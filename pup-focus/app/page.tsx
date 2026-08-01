@@ -107,9 +107,7 @@ export default function Home() {
         `${window.location.pathname}${window.location.search}`,
       );
 
-      startTransition(() => {
-        router.replace(nextTarget);
-      });
+      window.location.href = nextTarget;
     }
 
     void handleAuthCallback();
@@ -147,9 +145,7 @@ export default function Home() {
         (user.app_metadata?.role as AppRole | undefined) ??
         ROLE.FACULTY;
 
-      startTransition(() => {
-        router.replace(ROUTE_BY_ROLE[signedInRole]);
-      });
+      window.location.href = ROUTE_BY_ROLE[signedInRole];
     }
 
     void redirectIfAlreadySignedIn();
@@ -171,15 +167,13 @@ export default function Home() {
     const targetRoute = authModal.redirectTo as string;
 
     const timeoutId = window.setTimeout(() => {
-      startTransition(() => {
-        router.push(targetRoute);
-      });
+      window.location.href = targetRoute;
     }, 1200);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [authModal, router]);
+  }, [authModal]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -342,7 +336,13 @@ export default function Home() {
 
       <AuthFeedbackModal
         modal={authModal}
-        onClose={() => setAuthModal(null)}
+        onClose={() => {
+          if (authModal?.variant === "success" && authModal.redirectTo) {
+            window.location.href = authModal.redirectTo;
+          } else {
+            setAuthModal(null);
+          }
+        }}
       />
 
       <ForgotPasswordModal
