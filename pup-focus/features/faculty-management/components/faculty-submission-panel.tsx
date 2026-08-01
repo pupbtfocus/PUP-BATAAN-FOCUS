@@ -19,7 +19,7 @@ import {
   getTodayInManila,
   buildAcademicYearOptions,
 } from "@/features/submissions/services/submission-window.service";
-import { X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, CheckCircle2 } from "lucide-react";
+import { X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, CheckCircle2, Calendar } from "lucide-react";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
 const REQUIREMENT_DESCRIPTIONS: Record<RequirementCode, string> = {
@@ -230,6 +230,14 @@ function FacultySubmissionPanelContent({
     isOpen: boolean;
     requirementTitle: string;
   }>({ isOpen: false, requirementTitle: "" });
+
+  // ─── Page-load overlay state ───────────────────────────────────────
+  const [isPageLoading, setIsPageLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsPageLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [selectedAcademicYear, setSelectedAcademicYear] =
     useState<string>(academicYears[0] ?? "");
@@ -878,6 +886,40 @@ function FacultySubmissionPanelContent({
 
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
+      {/* ─── Initial page-load overlay ─────────────────────────────── */}
+      <div
+        className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950 transition-opacity duration-500 ${
+          isPageLoading ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        aria-hidden={!isPageLoading}
+      >
+        {/* PUP Logo with gold glow */}
+        <div className="relative mb-3 drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]">
+          <BrandMark size={64} className="rounded-full" />
+        </div>
+
+        {/* App Title */}
+        <h1 className="text-xl font-bold tracking-wider text-amber-300">
+          PUP FOCUS
+        </h1>
+
+        {/* Animated hourglass loader */}
+        <div className="my-4 flex items-center justify-center drop-shadow-[0_0_12px_rgba(245,158,11,0.5)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/loading.svg"
+            alt="Loading"
+            width={96}
+            height={96}
+            className="h-24 w-24"
+          />
+        </div>
+
+        {/* Subtext */}
+        <p className="text-xs font-medium tracking-wide text-slate-400">
+          Loading academic portal...
+        </p>
+      </div>
       <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg">
         {/* 'Faculty Workspace' label removed per request */}
         {/* Removed 'Faculty Portal' heading and description per request */}
@@ -1261,16 +1303,13 @@ function FacultySubmissionPanelContent({
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <Button
+                    <button
                       type="button"
-                      variant="secondary"
-                      size="sm"
                       onClick={openHistoryModal}
-                      className="inline-flex items-center gap-1.5"
+                      className="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition-all duration-200 backdrop-blur-sm cursor-pointer"
                     >
-                      <History className="h-3.5 w-3.5" />
                       Submission History
-                    </Button>
+                    </button>
                     <button
                       type="button"
                       onClick={() =>
@@ -1280,7 +1319,7 @@ function FacultySubmissionPanelContent({
                           "noopener,noreferrer",
                         )
                       }
-                      className="whitespace-nowrap rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700"
+                      className="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition-all duration-200 backdrop-blur-sm cursor-pointer whitespace-nowrap"
                     >
                       University Calendar
                     </button>
