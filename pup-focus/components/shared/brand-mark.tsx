@@ -13,7 +13,7 @@ export function BrandMark({ size = 44, className }: BrandMarkProps) {
       aria-hidden="true"
     >
       <Image
-        src="/icons/Untitled - July 24, 2026 at 22.05.24.png"
+        src="/icons/Untitled - August 03, 2026 at 19.02.38.png"
         alt="PUP FOCUS logo"
         fill
         sizes={`${size}px`}

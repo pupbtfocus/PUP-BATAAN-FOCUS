@@ -460,7 +460,7 @@ export function AdminFacultyDashboard({
                       Polytechnic University of the Philippines - Bataan Campus
                     </p>
                     <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#fff8e7]">
-                      PUP FOCUS
+                      ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
                     </h3>
                   </div>
                 </div>
