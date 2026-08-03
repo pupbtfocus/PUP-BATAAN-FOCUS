@@ -211,7 +211,7 @@ export function LoginForm({
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
         <Button
-          className="mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs shadow-[0_4px_14px_rgba(255,215,0,0.2)] transition-all duration-300 hover:scale-[1.02] hover:from-amber-300 hover:to-amber-400 hover:shadow-[0_6px_20px_rgba(255,215,0,0.3)] active:scale-100"
+          className="mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer"
           type="submit"
           disabled={isLoading}
         >

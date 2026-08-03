@@ -63,7 +63,7 @@ export default function ChangePasswordPage() {
     <main className="min-h-screen grid place-items-center px-6 text-[#fff8e7]">
       <section className="w-full max-w-md rounded-3xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/80 p-8 shadow-2xl shadow-black/20 backdrop-blur">
         <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-          PUP FOCUS
+          ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
         </p>
         <h1 className="mt-3 text-2xl font-bold">Set a new password</h1>
         <p className="mt-3 text-sm text-[#f3d9b3]">

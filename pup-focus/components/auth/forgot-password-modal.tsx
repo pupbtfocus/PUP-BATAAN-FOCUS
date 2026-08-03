@@ -76,11 +76,11 @@ export function ForgotPasswordModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-sm rounded-[2rem] border border-[rgba(255,215,0,0.2)] bg-gradient-to-b from-[#4d0000]/95 to-[#2a0000]/95 p-8 text-[#fff8e7] shadow-[0_16px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+      <div className="relative w-full max-w-sm rounded-[2rem] border border-[rgba(255,215,0,0.2)] bg-[#4d0000]/95 p-8 text-[#fff8e7] backdrop-blur-md shadow-2xl">
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-xl bg-white/5 p-2 text-amber-100/70 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white"
+          className="absolute right-4 top-4 rounded-xl bg-white/5 p-2 text-amber-100/70 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white cursor-pointer"
           aria-label="Close modal"
         >
           <svg
@@ -100,10 +100,9 @@ export function ForgotPasswordModal({
         </button>
 
         <div className="text-center">
-          <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-            Password Recovery
-          </p>
-          <h3 className="mt-1 text-2xl font-semibold">Reset Password</h3>
+          <h3 className="text-xl font-bold uppercase tracking-[0.2em] text-[#ffd700]">
+            Reset Password
+          </h3>
           <p className="mt-2 text-xs text-[#f3d9b3]/80">
             Enter your institutional email address to receive a link to reset your password.
           </p>
@@ -124,7 +123,7 @@ export function ForgotPasswordModal({
             </p>
             <Button
               type="button"
-              className="mt-4 h-11 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs shadow-[0_4px_14px_rgba(255,215,0,0.2)] transition-all hover:scale-[1.02]"
+              className="mt-4 h-11 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer"
               onClick={onClose}
             >
               Done
@@ -158,7 +157,7 @@ export function ForgotPasswordModal({
               <Button
                 type="button"
                 variant="ghost"
-                className="h-11 flex-1 rounded-2xl border border-white/10 text-amber-100/70 hover:bg-white/5 hover:text-white"
+                className="h-11 flex-1 rounded-2xl border border-white/10 text-amber-100/70 hover:bg-white/5 hover:text-white cursor-pointer"
                 onClick={onClose}
               >
                 Cancel
@@ -166,7 +165,7 @@ export function ForgotPasswordModal({
               <Button
                 type="submit"
                 disabled={isSendingReset}
-                className="h-11 flex-1 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs shadow-[0_4px_14px_rgba(255,215,0,0.2)] transition-all duration-300 hover:scale-[1.02] hover:from-amber-300 hover:to-amber-400"
+                className="h-11 flex-1 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer"
               >
                 {isSendingReset ? (
                   <span className="flex items-center justify-center gap-2">

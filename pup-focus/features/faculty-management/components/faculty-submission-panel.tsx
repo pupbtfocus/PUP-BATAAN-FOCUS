@@ -900,7 +900,7 @@ function FacultySubmissionPanelContent({
 
         {/* App Title */}
         <h1 className="text-xl font-bold tracking-wider text-amber-300">
-          PUP FOCUS
+          ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
         </h1>
 
         {/* Animated hourglass loader */}

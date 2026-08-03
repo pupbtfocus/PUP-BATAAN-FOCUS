@@ -297,11 +297,25 @@ export default function Home() {
 
       <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto px-2 pt-24 pb-8 no-scrollbar">
         <section className="relative rounded-[2rem] border border-[rgba(255,215,0,0.2)] bg-[#4d0000]/95 p-8 backdrop-blur-md">
-          {/* Logo container sits on top, with NO border */}
-          <div className="absolute -top-14 left-1/2 z-10 flex h-[118px] w-[118px] -translate-x-1/2 items-center justify-center overflow-hidden rounded-full bg-[#4d0000] p-0 shadow-lg">
+          {/* Logo container sits on top */}
+          <div className="absolute -top-14 left-1/2 z-10 flex h-[118px] w-[118px] -translate-x-1/2 items-center justify-center rounded-full bg-[#4d0000] p-3.5 shadow-lg">
+            {/* Curved Baybayin text along top inside of border circle */}
+            <svg className="absolute inset-0 z-20 h-full w-full pointer-events-none overflow-visible" viewBox="0 0 118 118">
+              <path
+                id="circleTopArc"
+                d="M 12,59 A 47,47 0 0,1 106,59"
+                fill="none"
+              />
+              <text className="text-sm font-black fill-[#ffd700] drop-shadow-[0_2px_5px_rgba(0,0,0,0.95)] tracking-widest">
+                <textPath href="#circleTopArc" startOffset="50%" textAnchor="middle">
+                  ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
+                </textPath>
+              </text>
+            </svg>
+
             <BrandMark
-              size={126}
-              className="shrink-0 translate-x-[2px] -translate-y-[3px] drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]"
+              size={84}
+              className="shrink-0 drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]"
             />
           </div>
 
