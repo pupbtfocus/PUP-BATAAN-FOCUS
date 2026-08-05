@@ -41,10 +41,14 @@ export function Logo({ size = 145, className = "" }: LogoProps) {
           {/* Top Arc Baybayin Text */}
           <text
             fill="#FBBF24"
-            fontSize="14"
+            stroke="#FBBF24"
+            strokeWidth="0.8"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            fontSize="16"
             fontWeight="900"
             letterSpacing="2.5"
-            className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
+            className="drop-shadow-[0_2px_5px_rgba(0,0,0,0.95)]"
           >
             <textPath href="#topArc" startOffset="50%" textAnchor="middle">
               ᜉᜓᜉ᜔ ᜉᜓᜃᜓᜐ᜔
