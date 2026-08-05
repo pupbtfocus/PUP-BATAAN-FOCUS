@@ -549,13 +549,7 @@ function FacultyVerificationDrawer({
                         )}
 
                         {/* 3. Lock Validated Requirements (Prevent Re-Validation) */}
-                        {isValidated ? (
-                          <div className="pt-1">
-                            <span className="text-emerald-400 font-medium text-xs">
-                              Validated
-                            </span>
-                          </div>
-                        ) : (
+                        {isValidated ? null : (
                           /* Direct Validation Controls */
                           <div className="space-y-2 pt-1">
                             <input
