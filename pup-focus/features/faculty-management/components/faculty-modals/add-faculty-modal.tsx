@@ -229,10 +229,7 @@ export function AddFacultyModal({
       <div className="w-full max-w-2xl rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-              Faculty Management
-            </p>
-            <h3 className="mt-2 text-xl font-semibold text-[#fff8e7]">
+            <h3 className="text-xl font-semibold text-[#fff8e7]">
               Add Faculty Account
             </h3>
           </div>

@@ -57,7 +57,9 @@ function SidebarButton({
         {title}
       </p>
       {description ? (
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          {description}
+        </p>
       ) : null}
     </button>
   );
@@ -215,7 +217,13 @@ export function AdminFacultyDashboard({
       setInviteModalMessage(inviteMessage);
       setInviteModalOpen(true);
       setAddFacultyModalOpen(false);
-      form.reset({ firstName: "", middleName: "", lastName: "", email: "", programId: "" });
+      form.reset({
+        firstName: "",
+        middleName: "",
+        lastName: "",
+        email: "",
+        programId: "",
+      });
       setProfileImageFile(null);
       setProfileImageInputKey((value) => value + 1);
 
@@ -468,86 +476,77 @@ export function AdminFacultyDashboard({
             ) : null}
 
             {activeSection === "facultyManagement" ? (
-              <article className="space-y-6 p-6 md:p-8">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
+              <article className="space-y-4 p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-100 tracking-tight">
                       Faculty Management
                     </h3>
                   </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => void refreshCurrentPanel()}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Refreshing..." : "Refresh"}
-                  </Button>
-                </div>
-
-                <section className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-5 shadow-lg shadow-black/20">
-                  <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                    <div>
-                      <h4 className="text-base font-semibold text-[#fff8e7]">
-                        Faculty List
-                      </h4>
-                    </div>
-                    <Button
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
                       type="button"
                       onClick={() => {
                         setCreateError(null);
                         setCreateSuccess(null);
                         setAddFacultyModalOpen(true);
                       }}
+                      className="inline-flex items-center gap-1 rounded-lg bg-amber-400 hover:bg-amber-300 px-3.5 py-1.5 text-xs font-semibold text-slate-950 transition"
                     >
-                      Add Faculty
-                    </Button>
+                      + Add Faculty
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void refreshCurrentPanel()}
+                      disabled={isLoading}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+                    >
+                      {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                    </button>
                   </div>
+                </div>
 
-                  <FacultyTable
-                    facultyAccounts={facultyAccounts}
-                    isLoading={isLoading}
-                    onSelectFaculty={setSelectedFacultyId}
-                    onDeleteFaculty={onDeleteFaculty}
-                    onViewDetails={(facultyId) => {
-                      setDetailsFacultyId(facultyId);
-                      setDetailsModalOpen(true);
-                    }}
-                    onActivate={onActivateFaculty}
-                    onDeactivate={onDeactivateFaculty}
-                    loadingFacultyIds={loadingFacultyIds}
-                    deletingFacultyIds={deletingFacultyIds}
-                    deleteError={deleteError}
-                    deleteSuccess={deleteSuccess}
-                    facultyActionError={facultyActionError}
-                    onClearDeleteMessages={() => {
-                      setDeleteError(null);
-                      setDeleteSuccess(null);
-                      setFacultyActionError(null);
-                    }}
-                  />
-                </section>
+                <FacultyTable
+                  facultyAccounts={facultyAccounts}
+                  isLoading={isLoading}
+                  onSelectFaculty={setSelectedFacultyId}
+                  onDeleteFaculty={onDeleteFaculty}
+                  onViewDetails={(facultyId) => {
+                    setDetailsFacultyId(facultyId);
+                    setDetailsModalOpen(true);
+                  }}
+                  onActivate={onActivateFaculty}
+                  onDeactivate={onDeactivateFaculty}
+                  loadingFacultyIds={loadingFacultyIds}
+                  deletingFacultyIds={deletingFacultyIds}
+                  deleteError={deleteError}
+                  deleteSuccess={deleteSuccess}
+                  facultyActionError={facultyActionError}
+                  onClearDeleteMessages={() => {
+                    setDeleteError(null);
+                    setDeleteSuccess(null);
+                    setFacultyActionError(null);
+                  }}
+                />
               </article>
             ) : null}
 
             {activeSection === "requirements" ? (
-              <article className="p-8">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
+              <article className="p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-100 tracking-tight">
                       Requirements Verification
                     </h3>
                   </div>
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
-                    size="sm"
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoading}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
                   >
-                    {isLoading ? "Refreshing..." : "Refresh"}
-                  </Button>
+                    {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                  </button>
                 </div>
 
                 <RequirementsPanel
@@ -560,22 +559,21 @@ export function AdminFacultyDashboard({
             ) : null}
 
             {activeSection === "submissionWindow" ? (
-              <article className="p-8">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
+              <article className="p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-100 tracking-tight">
                       Submission Window
                     </h3>
                   </div>
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
-                    size="sm"
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoading}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
                   >
-                    {isLoading ? "Refreshing..." : "Refresh"}
-                  </Button>
+                    {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                  </button>
                 </div>
 
                 <SubmissionWindowPanel
@@ -587,25 +585,24 @@ export function AdminFacultyDashboard({
             ) : null}
 
             {activeSection === "academicTerms" ? (
-              <article className="p-8">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
+              <article className="p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-100 tracking-tight">
                       Academic Term Management
                     </h3>
                   </div>
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
-                    size="sm"
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoading}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
                   >
-                    {isLoading ? "Refreshing..." : "Refresh"}
-                  </Button>
+                    {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                  </button>
                 </div>
 
-                <section className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-5 shadow-lg shadow-black/20">
+                <section className="rounded-xl border border-slate-800/80 bg-slate-900/50 backdrop-blur-md p-4 shadow-lg">
                   <AdminAcademicTerms adminName={adminName ?? "Admin"} />
                 </section>
               </article>

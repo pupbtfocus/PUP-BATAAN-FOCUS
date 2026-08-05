@@ -230,20 +230,15 @@ export function AdminAcademicTerms({
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-8">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Academic Terms</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            onClick={() => setIsCreateModalOpen(true)}
-            disabled={isLoading || isSaving}
-          >
-            Create Next Academic Year
-          </Button>
-        </div>
+    <div className="w-full">
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        <Button
+          type="button"
+          onClick={() => setIsCreateModalOpen(true)}
+          disabled={isLoading || isSaving}
+        >
+          Create Next Academic Year
+        </Button>
       </div>
 
       {error ? (
