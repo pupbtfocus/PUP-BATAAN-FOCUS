@@ -6,7 +6,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
+import { Sidebar } from "@/components/sidebar";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
+import { AdminSettings } from "@/features/admin-management/components/admin-settings";
 import {
   facultyAccountSchema,
   type FacultyAccountFormInput,
@@ -30,45 +32,14 @@ const LOGIN_PAGE_IMAGES = [
   "/images/attachments/IMG_9402.jpeg",
 ];
 
-function SidebarButton({
-  active,
-  title,
-  description,
-  onClick,
-}: {
-  active: boolean;
-  title: string;
-  description?: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full rounded-xl border px-4 py-3 text-left transition ${
-        active
-          ? "border-amber-400 bg-amber-400/10"
-          : "border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 hover:border-slate-500"
-      }`}
-    >
-      <p
-        className={`font-semibold ${active ? "text-[#7a0000] dark:text-amber-300" : "text-slate-800 dark:text-slate-100"}`}
-      >
-        {title}
-      </p>
-      {description ? (
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {description}
-        </p>
-      ) : null}
-    </button>
-  );
-}
+
 
 export function AdminFacultyDashboard({
   adminName,
+  adminEmail,
 }: {
   adminName?: string | null;
+  adminEmail?: string | null;
 }) {
   const [facultyAccounts, setFacultyAccounts] = useState<FacultyAccount[]>([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
@@ -397,47 +368,11 @@ export function AdminFacultyDashboard({
 
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
-      <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-5 shadow-lg">
-        <div className="my-6 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
-          <p className="mt-2 font-semibold text-white text-center">
-            {adminName ?? "Admin"}
-          </p>
-
-          <div className="my-2 h-px w-full bg-slate-700" />
-
-          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--accent)] text-center">
-            Admin
-          </p>
-        </div>
-
-        <nav className="mt-6 space-y-2">
-          <SidebarButton
-            active={activeSection === "dashboard"}
-            title="Dashboard"
-            onClick={() => setActiveSection("dashboard")}
-          />
-          <SidebarButton
-            active={activeSection === "facultyManagement"}
-            title="Faculty Management"
-            onClick={() => setActiveSection("facultyManagement")}
-          />
-          <SidebarButton
-            active={activeSection === "requirements"}
-            title="Requirements Verification"
-            onClick={() => setActiveSection("requirements")}
-          />
-          <SidebarButton
-            active={activeSection === "submissionWindow"}
-            title="Submission Window"
-            onClick={() => setActiveSection("submissionWindow")}
-          />
-          <SidebarButton
-            active={activeSection === "academicTerms"}
-            title="Academic Term Management"
-            onClick={() => setActiveSection("academicTerms")}
-          />
-        </nav>
-      </aside>
+      <Sidebar
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+        adminName={adminName}
+      />
 
       <div className="ml-72 flex min-h-full w-[calc(100%-18rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-lg">
@@ -605,6 +540,15 @@ export function AdminFacultyDashboard({
                 <section className="rounded-xl border border-slate-800/80 bg-slate-900/50 backdrop-blur-md p-4 shadow-lg">
                   <AdminAcademicTerms adminName={adminName ?? "Admin"} />
                 </section>
+              </article>
+            ) : null}
+
+            {activeSection === "settings" ? (
+              <article className="p-4 md:p-5">
+                <AdminSettings
+                  adminName={adminName ?? "Admin"}
+                  adminEmail={adminEmail ?? null}
+                />
               </article>
             ) : null}
           </div>

@@ -332,6 +332,15 @@ export async function POST() {
   }
 }
 
+function getTermScore(academicYear: string, semester: string): number {
+  const startYear = parseInt(academicYear.split("-")[0], 10) || 0;
+  const semNorm = (semester || "").toLowerCase();
+  let semValue = 1;
+  if (semNorm.includes("2nd") || semNorm.includes("second")) semValue = 2;
+  else if (semNorm.includes("3rd") || semNorm.includes("third") || semNorm.includes("summer")) semValue = 3;
+  return startYear * 10 + semValue;
+}
+
 export async function PATCH(request: NextRequest) {
   try {
     const sessionClient = await createServerSupabaseClient();
@@ -359,27 +368,88 @@ export async function PATCH(request: NextRequest) {
     }
 
     const supabase = getServiceRoleClient();
-    const { data: termRow, error: termError } = await supabase
+    const { data: allTermRows, error: termError } = await supabase
       .from("academic_terms")
-      .select("academic_year, semester, status")
-      .match({ academic_year: academicYear, semester })
-      .maybeSingle();
+      .select("academic_year, semester, status");
 
     if (termError) {
       return NextResponse.json(
         {
-          error: "Failed to fetch academic term",
+          error: "Failed to fetch academic terms",
           details: termError.message,
         },
         { status: 500 },
       );
     }
 
-    if (!termRow) {
+    const allTerms = Array.isArray(allTermRows) ? allTermRows : [];
+    const targetTerm = allTerms.find(
+      (t) =>
+        t.academic_year === academicYear &&
+        normalizeSemester(t.semester) === semester,
+    );
+
+    if (!targetTerm) {
       return NextResponse.json(
         { error: "Academic term not found." },
         { status: 404 },
       );
+    }
+
+    // Guard 1: Term is already Archived or Completed
+    if (
+      targetTerm.status === "Archived" ||
+      (targetTerm.status as string) === "Completed"
+    ) {
+      return NextResponse.json(
+        { error: "Cannot reactivate a completed or past academic term." },
+        { status: 400 },
+      );
+    }
+
+    const currentTerm = allTerms.find((t) => t.status === "Current");
+    const targetScore = getTermScore(academicYear, semester);
+
+    if (currentTerm) {
+      const currentScore = getTermScore(
+        currentTerm.academic_year,
+        currentTerm.semester,
+      );
+
+      // Guard 2: Precedes the currently active term
+      if (targetScore < currentScore) {
+        return NextResponse.json(
+          { error: "Cannot reactivate a completed or past academic term." },
+          { status: 400 },
+        );
+      }
+
+      // Guard 3: Must be activated sequentially (immediate next term)
+      if (targetScore > currentScore) {
+        const upcomingTerms = allTerms
+          .filter(
+            (t) =>
+              t.status !== "Archived" &&
+              (t.status as string) !== "Completed" &&
+              getTermScore(t.academic_year, t.semester) > currentScore,
+          )
+          .sort(
+            (a, b) =>
+              getTermScore(a.academic_year, a.semester) -
+              getTermScore(b.academic_year, b.semester),
+          );
+
+        if (
+          upcomingTerms.length > 0 &&
+          (upcomingTerms[0].academic_year !== academicYear ||
+            normalizeSemester(upcomingTerms[0].semester) !== semester)
+        ) {
+          return NextResponse.json(
+            { error: "Academic terms must be activated in sequential order." },
+            { status: 400 },
+          );
+        }
+      }
     }
 
     const { error: archiveError } = await supabase

@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const profileId = new URL(request.url).searchParams.get("profileId");
+  const { searchParams } = new URL(request.url);
+  const profileId = searchParams.get("profileId");
 
   if (!profileId) {
     return NextResponse.json(
@@ -32,258 +33,62 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = getServiceRoleClient();
 
-    const { data: appUser, error: appUserError } = await supabase
-      .from("app_users")
-      .select(
-        "auth_user_id, profile_id, role, metadata, created_at, updated_at",
-      )
-      .eq("profile_id", profileId)
-      .in("role", [ROLE.ADMIN, ROLE.SUPER_ADMIN])
-      .maybeSingle();
+    let profile: any = null;
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, role, status, avatar_url, created_at")
+        .eq("id", profileId)
+        .maybeSingle();
+      profile = data;
+    } catch {}
 
-    if (appUserError || !appUser) {
+    const authRes = await supabase.auth.admin.getUserById(profileId);
+    const authUser = authRes.data?.user;
+
+    if (!profile && !authUser) {
       return NextResponse.json(
         { error: "Admin account not found" },
         { status: 404 },
       );
     }
 
-    const { data: admin, error: adminError } = await supabase
-      .from("admins")
-      .select(
-        "id, profile_id, full_name, email, department, permissions, is_active, created_at, updated_at",
-      )
-      .eq("profile_id", profileId)
-      .maybeSingle();
-
-    if (adminError || !admin) {
-      return NextResponse.json(
-        { error: "Admin details not found" },
-        { status: 404 },
-      );
-    }
+    const fullName =
+      profile?.full_name ||
+      authUser?.user_metadata?.full_name ||
+      authUser?.user_metadata?.name ||
+      authUser?.email?.split("@")[0] ||
+      "Admin User";
+    const email = profile?.email || authUser?.email || "";
+    const role =
+      profile?.role ||
+      authUser?.user_metadata?.role ||
+      authUser?.app_metadata?.role ||
+      ROLE.ADMIN;
+    const avatarUrl =
+      profile?.avatar_url || authUser?.user_metadata?.avatar_url || null;
+    const isActive =
+      profile?.status === "active" ||
+      profile?.status === "true" ||
+      authUser?.user_metadata?.is_active !== false;
 
     return NextResponse.json({
-      success: true,
       details: {
-        ...admin,
-        auth_user_id: appUser.auth_user_id,
-        role: appUser.role,
-        metadata: appUser.metadata ?? {},
+        id: profileId,
+        profile_id: profileId,
+        full_name: fullName,
+        email,
+        role,
+        department: "Administration",
+        permissions: [],
+        is_active: isActive,
+        created_at: profile?.created_at || authUser?.created_at,
+        profileImageUrl: avatarUrl,
       },
     });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to load admin details", details: String(error) },
-      { status: 500 },
-    );
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  const sessionClient = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await sessionClient.auth.getUser();
-
-  const requesterRole =
-    (user?.user_metadata?.role as string | undefined) ??
-    (user?.app_metadata?.role as string | undefined);
-
-  if (
-    !user ||
-    (requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== ROLE.ADMIN)
-  ) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  try {
-    const payload = (await request.json()) as {
-      profileId?: string;
-      fullName?: string;
-      email?: string;
-      password?: string;
-    };
-
-    const profileId = payload.profileId?.trim();
-    const fullName = payload.fullName?.trim();
-    const email = payload.email?.trim().toLowerCase();
-    const password = payload.password?.trim();
-
-    if (!profileId) {
-      return NextResponse.json(
-        { error: "profileId is required" },
-        { status: 400 },
-      );
-    }
-
-    if (!fullName || !email) {
-      return NextResponse.json(
-        { error: "Full name and email are required" },
-        { status: 400 },
-      );
-    }
-
-    if (password && password.length < 8) {
-      return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
-        { status: 400 },
-      );
-    }
-
-    const supabase = getServiceRoleClient();
-
-    const { data: appUser, error: appUserError } = await supabase
-      .from("app_users")
-      .select("auth_user_id, profile_id, role, metadata")
-      .eq("profile_id", profileId)
-      .eq("role", ROLE.ADMIN)
-      .maybeSingle();
-
-    if (appUserError || !appUser) {
-      return NextResponse.json(
-        { error: "Admin account not found" },
-        { status: 404 },
-      );
-    }
-
-    const { data: admin, error: adminError } = await supabase
-      .from("admins")
-      .select("id, profile_id, full_name, email")
-      .eq("profile_id", profileId)
-      .maybeSingle();
-
-    if (adminError || !admin) {
-      return NextResponse.json(
-        { error: "Admin details not found" },
-        { status: 404 },
-      );
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("user_id")
-      .eq("id", profileId)
-      .maybeSingle();
-
-    const authUserId = appUser.auth_user_id ?? profile?.user_id;
-
-    if (!authUserId) {
-      return NextResponse.json(
-        { error: "Unable to resolve admin auth user" },
-        { status: 400 },
-      );
-    }
-
-    const previousEmail = admin.email ?? email;
-    const previousFullName = admin.full_name ?? fullName;
-
-    const { data: duplicateProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .neq("id", profileId)
-      .maybeSingle();
-
-    if (duplicateProfile) {
-      return NextResponse.json(
-        { error: `Another account already uses ${email}` },
-        { status: 400 },
-      );
-    }
-
-    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
-      authUserId,
-      {
-        email,
-        password: password || undefined,
-        email_confirm: true,
-        user_metadata: {
-          ...(user.user_metadata ?? {}),
-          full_name: fullName,
-          role: ROLE.ADMIN,
-        },
-      },
-    );
-
-    if (authUpdateError) {
-      return NextResponse.json(
-        { error: authUpdateError.message },
-        { status: 400 },
-      );
-    }
-
-    const { error: profileUpdateError } = await supabase
-      .from("profiles")
-      .update({ full_name: fullName, email })
-      .eq("id", profileId);
-
-    if (profileUpdateError) {
-      await supabase.auth.admin.updateUserById(authUserId, {
-        email: previousEmail,
-        email_confirm: true,
-        user_metadata: {
-          ...(user.user_metadata ?? {}),
-          full_name: previousFullName,
-          role: ROLE.ADMIN,
-        },
-      });
-
-      return NextResponse.json(
-        { error: profileUpdateError.message },
-        { status: 400 },
-      );
-    }
-
-    const { error: appUsersUpdateError } = await supabase
-      .from("app_users")
-      .update({ full_name: fullName, email })
-      .eq("profile_id", profileId)
-      .eq("role", ROLE.ADMIN);
-
-    if (appUsersUpdateError) {
-      await supabase.auth.admin.updateUserById(authUserId, {
-        email: previousEmail,
-        email_confirm: true,
-        user_metadata: {
-          ...(user.user_metadata ?? {}),
-          full_name: previousFullName,
-          role: ROLE.ADMIN,
-        },
-      });
-
-      return NextResponse.json(
-        { error: appUsersUpdateError.message },
-        { status: 400 },
-      );
-    }
-
-    const { error: adminUpdateError } = await supabase
-      .from("admins")
-      .update({ full_name: fullName, email })
-      .eq("profile_id", profileId);
-
-    if (adminUpdateError) {
-      return NextResponse.json(
-        { error: adminUpdateError.message },
-        { status: 400 },
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      details: {
-        ...admin,
-        full_name: fullName,
-        email,
-        auth_user_id: appUser.auth_user_id ?? null,
-        role: ROLE.ADMIN,
-        metadata: appUser.metadata ?? {},
-      },
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to update admin details", details: String(error) },
       { status: 500 },
     );
   }

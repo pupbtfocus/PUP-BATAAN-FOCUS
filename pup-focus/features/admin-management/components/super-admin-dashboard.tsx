@@ -167,7 +167,38 @@ export function SuperAdminDashboard({
       setIsLoadingAccounts(true);
       setAccountsError(null);
 
-      const response = await fetch("/api/super-admin/admin/list");
+      let response = await fetch("/api/super-admin/accounts");
+      if (response.ok) {
+        const data = await response.json();
+        const rawAccounts = Array.isArray(data)
+          ? data
+          : data.accounts || data.data || [];
+        const mapped = rawAccounts.map((acc: any) => {
+          const rawRole = (acc.role || "").toLowerCase().trim();
+          const normalizedRole = rawRole.includes("super")
+            ? ROLE.SUPER_ADMIN
+            : ROLE.ADMIN;
+          return {
+            id: acc.id,
+            profile_id: acc.id,
+            full_name: acc.full_name,
+            email: acc.email,
+            department: "Administration",
+            permissions: [],
+            is_active:
+              !acc.status ||
+              acc.status?.toLowerCase() === "active" ||
+              acc.status === "true",
+            created_at: acc.created_at,
+            role: normalizedRole,
+            profileImageUrl: acc.avatar_url || null,
+          };
+        });
+        setAdminAccounts(mapped);
+        return;
+      }
+
+      response = await fetch("/api/super-admin/admin/list");
       if (!response.ok) {
         setAccountsError("Failed to load admin accounts");
         return;
@@ -229,12 +260,29 @@ export function SuperAdminDashboard({
   );
 
   const adminRoleAccounts = useMemo(
-    () => adminAccounts.filter((admin) => admin.role === ROLE.ADMIN),
+    () =>
+      adminAccounts.filter((admin) => {
+        const r = (admin.role || "").toLowerCase().trim();
+        return (
+          r === "admin" ||
+          r === ROLE.ADMIN ||
+          (!r.includes("super") && r !== ROLE.SUPER_ADMIN)
+        );
+      }),
     [adminAccounts],
   );
 
   const superAdminAccounts = useMemo(
-    () => adminAccounts.filter((admin) => admin.role === ROLE.SUPER_ADMIN),
+    () =>
+      adminAccounts.filter((admin) => {
+        const r = (admin.role || "").toLowerCase().trim();
+        return (
+          r === "super_admin" ||
+          r === "superadmin" ||
+          r === ROLE.SUPER_ADMIN ||
+          r.includes("super")
+        );
+      }),
     [adminAccounts],
   );
   const visibleAccountGroups = useMemo(() => {

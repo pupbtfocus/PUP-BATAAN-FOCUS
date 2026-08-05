@@ -1,46 +1,58 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { ROLE } from "@/config/roles";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { FACULTY_PROFILE_IMAGE_BUCKET } from "@/lib/faculty-profile";
+import { ROLE } from "@/config/roles";
 
-function buildProfileName(
-  metadata: Record<string, unknown> | null | undefined,
-) {
-  const firstName =
-    typeof metadata?.first_name === "string" ? metadata.first_name.trim() : "";
-  const middleName =
-    typeof metadata?.middle_name === "string"
-      ? metadata.middle_name.trim()
-      : "";
-  const lastName =
-    typeof metadata?.last_name === "string" ? metadata.last_name.trim() : "";
-  const fullName =
-    typeof metadata?.full_name === "string" ? metadata.full_name.trim() : "";
+async function resolveSignedAvatarUrl(
+  supabaseAdmin: any,
+  email?: string | null,
+  rawAvatarUrl?: string | null
+): Promise<string | null> {
+  if (rawAvatarUrl && rawAvatarUrl.includes("token=") && rawAvatarUrl.startsWith("http")) {
+    return rawAvatarUrl;
+  }
 
-  return {
-    firstName: firstName || null,
-    middleName: middleName || null,
-    lastName: lastName || null,
-    fullName: fullName || null,
-  };
-}
+  if (rawAvatarUrl) {
+    let storagePath = rawAvatarUrl;
+    if (storagePath.includes("/compliance-private/")) {
+      storagePath = storagePath.split("/compliance-private/")[1].split("?")[0];
+    } else if (storagePath.startsWith("http")) {
+      const match = storagePath.match(/admin-profile-images\/[^\s?]+/);
+      if (match) {
+        storagePath = match[0];
+      }
+    }
 
-function buildProfileImageReference(
-  metadata: Record<string, unknown> | null | undefined,
-) {
-  const bucket =
-    typeof metadata?.profile_image_bucket === "string" &&
-    metadata.profile_image_bucket.trim()
-      ? metadata.profile_image_bucket.trim()
-      : FACULTY_PROFILE_IMAGE_BUCKET;
-  const path =
-    typeof metadata?.profile_image_path === "string" &&
-    metadata.profile_image_path.trim()
-      ? metadata.profile_image_path.trim()
-      : null;
+    if (storagePath.includes("admin-profile-images/")) {
+      const { data, error } = await supabaseAdmin.storage
+        .from("compliance-private")
+        .createSignedUrl(storagePath, 60 * 60 * 24);
+      if (!error && data?.signedUrl) {
+        return data.signedUrl;
+      }
+    }
+  }
 
-  return { bucket, path };
+  if (email) {
+    const folderPath = `admin-profile-images/${email}`;
+    const { data: files } = await supabaseAdmin.storage
+      .from("compliance-private")
+      .list(folderPath, { limit: 10, sortBy: { column: "created_at", order: "desc" } });
+
+    if (files && files.length > 0) {
+      const latestFile = files[0];
+      const filePath = `${folderPath}/${latestFile.name}`;
+      const { data, error } = await supabaseAdmin.storage
+        .from("compliance-private")
+        .createSignedUrl(filePath, 60 * 60 * 24);
+
+      if (!error && data?.signedUrl) {
+        return data.signedUrl;
+      }
+    }
+  }
+
+  return null;
 }
 
 export async function GET() {
@@ -61,125 +73,83 @@ export async function GET() {
   }
 
   try {
-    const supabase = getServiceRoleClient();
-    const { data: admins, error: adminsError } = await supabase
-      .from("admins")
-      .select(
-        "id, profile_id, full_name, email, department, permissions, is_active, created_at",
-      )
-      .order("created_at", { ascending: false });
+    const supabaseAdmin = getServiceRoleClient();
 
-    if (adminsError) {
-      return NextResponse.json(
-        {
-          error: "Failed to load admin accounts",
-          details: adminsError.message,
-        },
-        { status: 500 },
-      );
+    // Fetch users directly via Auth Admin API using Service Role
+    const {
+      data: { users },
+      error: authError,
+    } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+
+    if (authError) {
+      console.error("Super Admin admin list fetch error:", authError);
+      return NextResponse.json({ error: authError.message }, { status: 500 });
     }
 
-    const profileIds = (admins ?? [])
-      .map((item) => item.profile_id)
-      .filter((value): value is string => Boolean(value));
-
-    if (profileIds.length === 0) {
-      return NextResponse.json({ admins: [] });
+    // Try fetching profiles for supplementary avatar_url & full_name
+    let profileMap = new Map<string, { full_name?: string | null; avatar_url?: string | null }>();
+    try {
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("id, full_name, avatar_url");
+      if (profiles) {
+        profileMap = new Map(profiles.map((p) => [p.id, p]));
+      }
+    } catch {
+      // Ignore profiles table query error if schema differs
     }
 
-    const { data: appUsers, error: appUsersError } = await supabase
-      .from("app_users")
-      .select("profile_id, auth_user_id, role, metadata, created_at")
-      .in("profile_id", profileIds);
+    const adminAccounts = await Promise.all(
+      (users ?? [])
+        .filter((u) => {
+          const userRole = u.user_metadata?.role || u.app_metadata?.role;
+          return (
+            userRole === ROLE.ADMIN ||
+            userRole === ROLE.SUPER_ADMIN ||
+            userRole === "admin" ||
+            userRole === "super_admin"
+          );
+        })
+        .map(async (u) => {
+          const userRole =
+            u.user_metadata?.role || u.app_metadata?.role || ROLE.ADMIN;
+          const profile = profileMap.get(u.id);
+          const fullName =
+            profile?.full_name ||
+            u.user_metadata?.full_name ||
+            u.user_metadata?.name ||
+            u.email?.split("@")[0] ||
+            "Admin User";
+          const rawAvatarUrl =
+            profile?.avatar_url || u.user_metadata?.avatar_url || null;
 
-    if (appUsersError) {
-      return NextResponse.json(
-        {
-          error: "Failed to load admin accounts",
-          details: appUsersError.message,
-        },
-        { status: 500 },
-      );
-    }
+          const signedAvatarUrl = await resolveSignedAvatarUrl(
+            supabaseAdmin,
+            u.email,
+            rawAvatarUrl
+          );
 
-    const appUserByProfileId = new Map(
-      (appUsers ?? []).map((item) => [item.profile_id, item]),
+          return {
+            id: u.id,
+            profile_id: u.id,
+            full_name: fullName,
+            email: u.email ?? "",
+            department: "Administration",
+            permissions: [],
+            is_active: true,
+            created_at: u.created_at,
+            role: userRole,
+            profileImageUrl: signedAvatarUrl,
+          };
+        })
     );
 
-    const metadataByProfileId = new Map<string, Record<string, unknown>>();
-
-    await Promise.all(
-      (appUsers ?? []).map(async (item) => {
-        const authUserMetadata = item.auth_user_id
-          ? ((await supabase.auth.admin.getUserById(item.auth_user_id)).data
-              .user?.user_metadata ?? {})
-          : {};
-
-        metadataByProfileId.set(item.profile_id, {
-          ...authUserMetadata,
-          ...(item.metadata as Record<string, unknown> | null | undefined),
-        });
-      }),
-    );
-
-    const authUserByProfileId = new Map(
-      (appUsers ?? []).map((item) => [item.profile_id, item.auth_user_id]),
-    );
-
-    const roleByProfileId = new Map(
-      (appUsers ?? []).map((item) => [item.profile_id, item.role]),
-    );
-
-    const profileNameByProfileId = new Map(
-      [...metadataByProfileId.entries()].map(([profileId, metadata]) => [
-        profileId,
-        buildProfileName(metadata),
-      ]),
-    );
-
-    const imageReferenceByProfileId = new Map(
-      [...metadataByProfileId.entries()].map(([profileId, metadata]) => [
-        profileId,
-        buildProfileImageReference(metadata),
-      ]),
-    );
-
-    const profileImageUrlByProfileId = new Map<string, string | null>();
-
-    await Promise.all(
-      (appUsers ?? []).map(async (item) => {
-        const imageReference = imageReferenceByProfileId.get(item.profile_id);
-
-        if (!imageReference?.path) {
-          profileImageUrlByProfileId.set(item.profile_id, null);
-          return;
-        }
-
-        const { data: signedImage, error: signedImageError } =
-          await supabase.storage
-            .from(imageReference.bucket)
-            .createSignedUrl(imageReference.path, 60 * 60 * 24);
-
-        profileImageUrlByProfileId.set(
-          item.profile_id,
-          signedImageError ? null : (signedImage?.signedUrl ?? null),
-        );
-      }),
-    );
-
-    const enrichedAdmins = (admins ?? []).map((admin) => ({
-      ...admin,
-      auth_user_id: authUserByProfileId.get(admin.profile_id) ?? null,
-      role: roleByProfileId.get(admin.profile_id) ?? ROLE.ADMIN,
-      profile: profileNameByProfileId.get(admin.profile_id) ?? null,
-      profileImageUrl: profileImageUrlByProfileId.get(admin.profile_id) ?? null,
-    }));
-
-    return NextResponse.json({ admins: enrichedAdmins });
-  } catch (error) {
+    return NextResponse.json({ admins: adminAccounts });
+  } catch (err: any) {
+    console.error("Super Admin list error:", err);
     return NextResponse.json(
-      { error: "Failed to load admin accounts", details: String(error) },
-      { status: 500 },
+      { error: err.message || "Failed to load admin accounts" },
+      { status: 500 }
     );
   }
 }

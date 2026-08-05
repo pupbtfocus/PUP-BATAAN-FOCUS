@@ -7,7 +7,10 @@ export default async function AdminDashboardPage() {
 
   return (
     <AppShell title="Faculty Management" nav={[]} fullBleed>
-      <AdminFacultyDashboard adminName={user?.fullName ?? null} />
+      <AdminFacultyDashboard
+        adminName={user?.fullName ?? null}
+        adminEmail={user?.email ?? null}
+      />
     </AppShell>
   );
 }
