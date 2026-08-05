@@ -60,6 +60,20 @@ function isMissingRemarksColumnError(
   return message.includes("remarks") && message.includes("submissions");
 }
 
+function normalizeSemester(sem?: string | null): string {
+  if (!sem) return "";
+  const s = sem.toLowerCase().trim();
+  if (s.includes("1") || s.includes("first") || s.includes("1st")) return "1st semester";
+  if (s.includes("2") || s.includes("second") || s.includes("2nd")) return "2nd semester";
+  if (s.includes("3") || s.includes("third") || s.includes("3rd") || s.includes("summer")) return "3rd semester";
+  return s;
+}
+
+function normalizeAcademicYear(ay?: string | null): string {
+  if (!ay) return "";
+  return ay.toLowerCase().trim().replace(/^s\.?y\.?\s*/i, "").replace(/^a\.?y\.?\s*/i, "");
+}
+
 export async function GET(request: NextRequest) {
   try {
     // 1. Authenticate faculty user with try-catch session extraction
@@ -348,7 +362,14 @@ export async function GET(request: NextRequest) {
       review_decisions: reviewDecisionsMap.get(s.id) || [],
     }));
 
-    // 6. Map requirement statuses safely
+    const url = new URL(request.url);
+    const requestedAcademicYear = url.searchParams.get("academicYear")?.trim();
+    const requestedSemester = url.searchParams.get("semester")?.trim();
+
+    const activeAcademicYear = requestedAcademicYear || currentTerm.academicYear;
+    const activeSemester = requestedSemester || currentTerm.semester;
+
+    // 6. Map requirement statuses safely, strictly scoped to active term
     const statusMap = new Map<string, RequirementStatus>();
     for (const code of DEFAULT_REQUIREMENTS) {
       statusMap.set(code, {
@@ -357,7 +378,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    for (const submission of submissions || []) {
+    const normActiveYear = normalizeAcademicYear(activeAcademicYear);
+    const normActiveSem = normalizeSemester(activeSemester);
+
+    const termFilteredSubmissions = (submissions || []).filter((sub) => {
+      const term = toAcademicYearAndSemester(sub.submitted_at);
+      const subSem = normalizeSemester(term.semester || (sub as { semester?: string }).semester);
+      const subYear = normalizeAcademicYear(term.academicYear || (sub as { academic_year?: string }).academic_year);
+
+      return subSem === normActiveSem && subYear === normActiveYear;
+    });
+
+    for (const submission of termFilteredSubmissions) {
       if (!submission || typeof submission !== "object") continue;
       const code = submission.requirement_code;
       if (!code || !isRequirementCode(code)) continue;

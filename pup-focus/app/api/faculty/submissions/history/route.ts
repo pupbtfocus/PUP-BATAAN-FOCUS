@@ -117,22 +117,21 @@ export async function GET() {
 
     const facultyProfileId = appUser.profile_id;
 
-    // 3. Query all submission records for this faculty member (separate query without relational joins)
+    // 3. Query ALL historical submission records for this faculty member (unfiltered by term/semester)
     let rawSubmissions: SubmissionRow[] = [];
     const { data: subData, error: subError } = await supabase
       .from("submissions")
       .select("id, requirement_code, status, submitted_at, created_at, remarks")
-      .eq("faculty_profile_id", facultyProfileId)
+      .or(`faculty_profile_id.eq.${facultyProfileId},user_id.eq.${facultyProfileId},created_by.eq.${user.id}`)
       .order("created_at", { ascending: false });
 
-    if (!subError && subData && subData.length > 0) {
+    if (!subError && subData) {
       rawSubmissions = subData as SubmissionRow[];
     } else {
-      // Fallback query matching user_id or created_by
       const { data: fallbackData } = await supabase
         .from("submissions")
         .select("id, requirement_code, status, submitted_at, created_at, remarks")
-        .or(`user_id.eq.${facultyProfileId},created_by.eq.${user.id}`)
+        .eq("faculty_profile_id", facultyProfileId)
         .order("created_at", { ascending: false });
       if (fallbackData) {
         rawSubmissions = fallbackData as SubmissionRow[];
