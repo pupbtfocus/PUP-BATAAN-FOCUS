@@ -30,6 +30,19 @@ function isMissingRemarksColumnError(
   return message.includes("remarks") && message.includes("submissions");
 }
 
+function isMissingFacultyAssignmentIdError(
+  error: { message?: string } | null,
+): boolean {
+  const message = (error?.message || "").toLowerCase();
+  return (
+    message.includes("faculty_assignment_id") &&
+    (message.includes("submissions") ||
+      message.includes("schema cache") ||
+      message.includes("does not exist") ||
+      message.includes("column"))
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Authenticate faculty user
@@ -313,18 +326,34 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (submissionError && isMissingRemarksColumnError(submissionError)) {
+    if (
+      submissionError &&
+      (isMissingRemarksColumnError(submissionError) ||
+        isMissingFacultyAssignmentIdError(submissionError))
+    ) {
+      const fallbackPayload: Record<string, any> = {
+        id: submissionId,
+        faculty_profile_id: appUser.profile_id,
+        curriculum_id: curriculumId,
+        requirement_code: payload.requirementCode,
+        status: "uploaded",
+        submitted_at: submissionPayload.submitted_at,
+      };
+
+      if (!isMissingRemarksColumnError(submissionError) && trimmedRemarks) {
+        fallbackPayload.remarks = trimmedRemarks;
+      }
+
+      if (
+        !isMissingFacultyAssignmentIdError(submissionError) &&
+        facultyAssignmentId
+      ) {
+        fallbackPayload.faculty_assignment_id = facultyAssignmentId;
+      }
+
       ({ data: submission, error: submissionError } = await supabase
         .from("submissions")
-        .insert({
-          id: submissionId,
-          faculty_profile_id: appUser.profile_id,
-          curriculum_id: curriculumId,
-          faculty_assignment_id: facultyAssignmentId ?? undefined,
-          requirement_code: payload.requirementCode,
-          status: "uploaded",
-          submitted_at: submissionPayload.submitted_at,
-        })
+        .insert(fallbackPayload)
         .select()
         .single());
     }

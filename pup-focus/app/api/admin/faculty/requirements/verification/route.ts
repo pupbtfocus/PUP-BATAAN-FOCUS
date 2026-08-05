@@ -57,6 +57,19 @@ function normalizeSemester(input: string | null): SemesterOption {
   return "1st Semester";
 }
 
+function isMissingFacultyAssignmentIdError(
+  error: { message?: string } | null,
+): boolean {
+  const message = (error?.message || "").toLowerCase();
+  return (
+    message.includes("faculty_assignment_id") &&
+    (message.includes("submissions") ||
+      message.includes("schema cache") ||
+      message.includes("does not exist") ||
+      message.includes("column"))
+  );
+}
+
 function getAvailableSemestersForAcademicYear(
   rows: unknown[],
   academicYear: string,
@@ -325,7 +338,22 @@ export async function GET(request: NextRequest) {
         .order("submitted_at", { ascending: false })
         .limit(1000);
 
-      const submissionResult = await submissionQuery;
+      let submissionResult = await submissionQuery;
+
+      if (
+        submissionResult.error &&
+        isMissingFacultyAssignmentIdError(submissionResult.error)
+      ) {
+        submissionResult = await supabase
+          .from("submissions")
+          .select(
+            "id, requirement_code, status, submitted_at, document_versions(id)",
+          )
+          .eq("faculty_profile_id", facultyProfileId)
+          .order("submitted_at", { ascending: false })
+          .limit(1000);
+      }
+
       submissionRows = submissionResult.data as SubmissionRow[] | null;
       submissionsError = submissionResult.error;
 
