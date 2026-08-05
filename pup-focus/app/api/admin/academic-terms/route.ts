@@ -28,6 +28,19 @@ function isAdminRole(role: string | undefined) {
   return role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN;
 }
 
+function isMissingFacultyAssignmentIdError(
+  error: { message?: string } | null,
+): boolean {
+  const message = (error?.message || "").toLowerCase();
+  return (
+    message.includes("faculty_assignment_id") &&
+    (message.includes("submissions") ||
+      message.includes("schema cache") ||
+      message.includes("does not exist") ||
+      message.includes("column"))
+  );
+}
+
 function isValidAcademicTermStatus(value: string): value is AcademicTermStatus {
   return ["Current", "Upcoming", "Archived"].includes(value);
 }
@@ -115,10 +128,18 @@ export async function GET() {
 
     const submissionMap = new Map<string, number>();
     if (assignmentIds.length > 0) {
-      const { data: submissionRows, error: submissionError } = await supabase
+      let { data: submissionRows, error: submissionError } = await supabase
         .from("submissions")
         .select("faculty_assignment_id")
         .in("faculty_assignment_id", assignmentIds);
+
+      if (
+        submissionError &&
+        isMissingFacultyAssignmentIdError(submissionError)
+      ) {
+        submissionRows = [];
+        submissionError = null;
+      }
 
       if (submissionError) {
         return NextResponse.json(
