@@ -543,6 +543,10 @@ function FacultySubmissionPanelContent({
     return { total, validated, rejected, pending, notSubmitted };
   }, [displayedRequirementStatuses]);
 
+  const totalRequirements = displayedStatusCounts?.total ?? DEFAULT_REQUIREMENTS.length;
+  const validatedCount = displayedStatusCounts?.validated ?? 0;
+  const isAllValidated = totalRequirements > 0 && validatedCount === totalRequirements;
+
   function openDirectUploadModal(code: RequirementCode) {
     setSelectedRequirementForUpload(code);
     setDirectUploadFile(null);
@@ -1300,6 +1304,9 @@ function FacultySubmissionPanelContent({
                     <p className="mt-1 text-sm font-medium text-slate-400 tracking-wide">
                       A.Y. {submissionWindow?.academicYear || selectedAcademicYear || form.academicYear || "2025-2026"} •{" "}
                       {submissionWindow?.semester || selectedSemester || form.semester || "1st Semester"}
+                      {isAllValidated && (
+                        <span className="ml-2 text-emerald-400 font-medium">• Validated</span>
+                      )}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
@@ -1337,22 +1344,21 @@ function FacultySubmissionPanelContent({
                 {displayedStatusCounts && !isLoadingStatuses && (
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-                      <p className="text-xs text-amber-300">Submitted</p>
-                      <p className="mt-1 text-lg font-semibold text-slate-100">
-                        {displayedStatusCounts.validated + displayedStatusCounts.pending}/
-                        {displayedStatusCounts.total}
+                      <p className="text-xs text-amber-300">Progress</p>
+                      <p className={`mt-1 text-lg font-semibold ${isAllValidated ? "text-emerald-400" : "text-slate-100"}`}>
+                        {displayedStatusCounts.validated}/{displayedStatusCounts.total} Validated
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
                       <p className="text-xs text-amber-300">Validated</p>
-                      <p className="mt-1 text-lg font-semibold text-slate-100">
+                      <p className="mt-1 text-lg font-semibold text-emerald-400">
                         {displayedStatusCounts.validated}
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
                       <p className="text-xs text-amber-300">Pending</p>
-                      <p className="mt-1 text-lg font-semibold text-slate-100">
-                        {displayedStatusCounts.pending}
+                      <p className={`mt-1 text-lg font-semibold ${isAllValidated || displayedStatusCounts.pending === 0 ? "text-slate-400" : "text-amber-400"}`}>
+                        {isAllValidated ? 0 : displayedStatusCounts.pending} Pending
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
@@ -1364,7 +1370,7 @@ function FacultySubmissionPanelContent({
                     <div className="rounded-lg border border-slate-600 bg-slate-800/30 px-3 py-2">
                       <p className="text-xs text-amber-300">Not Submitted</p>
                       <p className="mt-1 text-lg font-semibold text-slate-300">
-                        {displayedStatusCounts.notSubmitted}
+                        {isAllValidated ? 0 : displayedStatusCounts.notSubmitted}
                       </p>
                     </div>
                   </div>
