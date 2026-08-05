@@ -211,17 +211,17 @@ export function LoginForm({
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
         <Button
-          className="mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer"
+          className="mt-6 h-13 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-black text-[#3d0000] tracking-widest uppercase text-sm sm:text-base transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-lg"
           type="submit"
           disabled={isLoading}
         >
           {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
+            <span className="flex items-center justify-center gap-2 text-sm sm:text-base font-black">
               <Lottie
                 animationData={loadingAnimation}
                 loop={true}
                 autoplay
-                className="h-5 w-5"
+                className="h-6 w-6"
               />
               Signing in...
             </span>

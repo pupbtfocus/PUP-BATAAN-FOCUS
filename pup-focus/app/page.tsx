@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { BrandMark } from "@/components/shared/brand-mark";
+import { Logo } from "@/components/ui/logo";
 import { LoginForm } from "@/components/auth/login-form";
 import { ForgotPasswordModal } from "@/components/auth/forgot-password-modal";
 import {
@@ -221,8 +221,7 @@ export default function Home() {
 
     if (signInError || !signInData?.user) {
       const errorMessage = signInError?.message ?? "Sign in failed";
-      const isInvalidCredentials =
-        errorMessage === "Invalid login credentials";
+      const isInvalidCredentials = errorMessage === "Invalid login credentials";
 
       setAuthModal({
         title: "Invalid email address or password",
@@ -266,9 +265,7 @@ export default function Home() {
 
     if (isActive === false) {
       await supabase.auth.signOut();
-      setError(
-        "Your account has been deactivated. Contact an administrator.",
-      );
+      setError("Your account has been deactivated. Contact an administrator.");
       setIsSubmitting(false);
       return;
     }
@@ -295,31 +292,12 @@ export default function Home() {
       <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px]" />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-      <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto px-2 pt-24 pb-8 no-scrollbar">
+      <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto px-2 pt-16 pb-8 no-scrollbar">
         <section className="relative rounded-[2rem] border border-[rgba(255,215,0,0.2)] bg-[#4d0000]/95 p-8 backdrop-blur-md">
-          {/* Logo container sits on top */}
-          <div className="absolute -top-14 left-1/2 z-10 flex h-[118px] w-[118px] -translate-x-1/2 items-center justify-center rounded-full bg-[#4d0000] p-3.5 shadow-lg">
-            {/* Curved Baybayin text along top inside of border circle */}
-            <svg className="absolute inset-0 z-20 h-full w-full pointer-events-none overflow-visible" viewBox="0 0 118 118">
-              <path
-                id="circleTopArc"
-                d="M 12,59 A 47,47 0 0,1 106,59"
-                fill="none"
-              />
-              <text className="text-sm font-black fill-[#ffd700] drop-shadow-[0_2px_5px_rgba(0,0,0,0.95)] tracking-widest">
-                <textPath href="#circleTopArc" startOffset="50%" textAnchor="middle">
-                  ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
-                </textPath>
-              </text>
-            </svg>
+          {/* Centered Logo container */}
+          <Logo size={145} className="-mt-16 mb-2" />
 
-            <BrandMark
-              size={84}
-              className="shrink-0 drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]"
-            />
-          </div>
-
-          <div className="mt-20 mb-8 text-center">
+          <div className="mt-4 mb-8 text-center">
             <h2 className="bg-gradient-to-r from-amber-200 via-white to-amber-200 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent drop-shadow-[0_2px_8px_rgba(255,215,0,0.15)] uppercase">
               Sign In
             </h2>
