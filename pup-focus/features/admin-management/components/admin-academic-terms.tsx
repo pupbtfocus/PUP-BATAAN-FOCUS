@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 
-type AcademicTermStatus = "Current" | "Upcoming" | "Archived";
+type AcademicTermStatus = "Current" | "Upcoming" | "Archived" | "Completed";
 
 type AcademicTermItem = {
   academicYear: string;
@@ -13,19 +13,13 @@ type AcademicTermItem = {
   deleteReason?: string;
 };
 
-type AcademicTermsApiResponse = {
-  terms: AcademicTermItem[];
-  nextAcademicYear: string;
-};
-
-const statusStyles: Record<AcademicTermStatus, string> = {
-  Current: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/35",
-  Upcoming: "bg-amber-500/15 text-amber-300 border border-amber-500/35",
-  Archived: "bg-slate-500/15 text-slate-300 border border-slate-500/35",
-};
-
-function statusLabel(status: AcademicTermStatus) {
-  return status;
+function getTermScore(academicYear: string, semester: string): number {
+  const startYear = parseInt(academicYear.split("-")[0], 10) || 0;
+  const semNorm = (semester || "").toLowerCase();
+  let semValue = 1;
+  if (semNorm.includes("2nd") || semNorm.includes("second")) semValue = 2;
+  else if (semNorm.includes("3rd") || semNorm.includes("third") || semNorm.includes("summer")) semValue = 3;
+  return startYear * 10 + semValue;
 }
 
 export function AdminAcademicTerms({
@@ -45,10 +39,76 @@ export function AdminAcademicTerms({
   const [termToDelete, setTermToDelete] = useState<AcademicTermItem | null>(
     null,
   );
+  const [countdown, setCountdown] = useState<number>(10);
 
   useEffect(() => {
     void loadTerms();
   }, []);
+
+  // 10-second countdown timer for action confirmation modals
+  useEffect(() => {
+    if (!termToSetCurrent && !termToDelete) {
+      setCountdown(10);
+      return;
+    }
+
+    setCountdown(10);
+    const timer = setInterval(() => {
+      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [termToSetCurrent, termToDelete]);
+
+  // Progression calculation: find current active term & immediate next upcoming term
+  const currentTermItem = useMemo(
+    () => terms.find((t) => t.status === "Current"),
+    [terms],
+  );
+
+  const currentScore = useMemo(
+    () =>
+      currentTermItem
+        ? getTermScore(currentTermItem.academicYear, currentTermItem.semester)
+        : 0,
+    [currentTermItem],
+  );
+
+  // Immediate next upcoming term in sequence
+  const immediateNextTerm = useMemo(() => {
+    const upcoming = terms
+      .filter(
+        (t) =>
+          t.status !== "Current" &&
+          t.status !== "Archived" &&
+          (t.status as string) !== "Completed" &&
+          (currentScore === 0 ||
+            getTermScore(t.academicYear, t.semester) > currentScore),
+      )
+      .sort(
+        (a, b) =>
+          getTermScore(a.academicYear, a.semester) -
+          getTermScore(b.academicYear, b.semester),
+      );
+    return upcoming.length > 0 ? upcoming[0] : null;
+  }, [terms, currentScore]);
+
+  // Compute next academic year dynamically from existing terms if available
+  const computedNextAcademicYear = useMemo(() => {
+    if (!terms.length) return nextAcademicYear;
+    let maxStartYear = 0;
+    terms.forEach((term) => {
+      const parts = term.academicYear.split("-");
+      const startYear = parseInt(parts[0], 10);
+      if (!isNaN(startYear) && startYear > maxStartYear) {
+        maxStartYear = startYear;
+      }
+    });
+    if (maxStartYear > 0) {
+      return `${maxStartYear + 1}-${maxStartYear + 2}`;
+    }
+    return nextAcademicYear;
+  }, [terms, nextAcademicYear]);
 
   async function loadTerms() {
     setIsLoading(true);
@@ -108,7 +168,7 @@ export function AdminAcademicTerms({
         return;
       }
 
-      setSuccess(`Created academic year ${nextAcademicYear}.`);
+      setSuccess(`Created academic year ${computedNextAcademicYear}.`);
       setIsCreateModalOpen(false);
       await loadTerms();
     } catch (saveError) {
@@ -123,6 +183,16 @@ export function AdminAcademicTerms({
   }
 
   async function handleSetCurrent(term: AcademicTermItem) {
+    if (term.status === "Current") return;
+    const termScore = getTermScore(term.academicYear, term.semester);
+    if (
+      term.status === "Archived" ||
+      (term.status as string) === "Completed" ||
+      (currentScore > 0 && termScore < currentScore)
+    ) {
+      setError("Cannot reactivate a completed or past academic term.");
+      return;
+    }
     setTermToSetCurrent(term);
   }
 
@@ -170,7 +240,8 @@ export function AdminAcademicTerms({
     }
   }
 
-  async function handleDeleteTerm(term: AcademicTermItem) {
+  function handleDeleteClick(term: AcademicTermItem) {
+    if (term.status === "Current" || !term.canDelete) return;
     setTermToDelete(term);
   }
 
@@ -220,98 +291,181 @@ export function AdminAcademicTerms({
   }
 
   function renderStatusBadge(status: AcademicTermStatus) {
+    if (status === "Current") {
+      return (
+        <span className="text-emerald-400 font-semibold text-xs">
+          Current 🟢
+        </span>
+      );
+    }
+    if (status === "Archived" || (status as string) === "Completed") {
+      return (
+        <span className="text-slate-500 font-medium text-xs">
+          Archived
+        </span>
+      );
+    }
     return (
-      <span
-        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[status]}`}
-      >
-        {statusLabel(status)}
+      <span className="text-amber-400 font-medium text-xs">
+        Upcoming
       </span>
     );
   }
 
+  function renderSetCurrentAction(term: AcademicTermItem) {
+    if (term.status === "Current") {
+      return (
+        <span className="text-slate-500 font-medium text-xs px-3 py-1.5 inline-block select-none">
+          Active
+        </span>
+      );
+    }
+
+    const termScore = getTermScore(term.academicYear, term.semester);
+    const isPastOrClosed =
+      term.status === "Archived" ||
+      (term.status as string) === "Completed" ||
+      (currentScore > 0 && termScore < currentScore);
+
+    if (isPastOrClosed) {
+      return (
+        <span
+          title="Term Closed / Completed"
+          className="text-slate-500/70 font-medium text-xs px-2.5 py-1 rounded-md bg-slate-900/60 border border-slate-800/80 cursor-not-allowed select-none inline-flex items-center gap-1"
+        >
+          🔒 Term Closed / Completed
+        </span>
+      );
+    }
+
+    const isImmediateNext =
+      immediateNextTerm &&
+      immediateNextTerm.academicYear === term.academicYear &&
+      immediateNextTerm.semester === term.semester;
+
+    if (!isImmediateNext && currentScore > 0) {
+      return (
+        <button
+          type="button"
+          disabled
+          title={
+            immediateNextTerm
+              ? `Terms must be activated sequentially (Activate ${immediateNextTerm.academicYear} ${immediateNextTerm.semester} first)`
+              : "Terms must be activated sequentially"
+          }
+          className="bg-amber-500/5 text-amber-400/40 border border-amber-500/10 text-xs font-medium px-3 py-1.5 rounded-lg cursor-not-allowed select-none"
+        >
+          Set Current
+        </button>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleSetCurrent(term)}
+        disabled={isLoading || isSaving}
+        className="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-medium px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Set Current
+      </button>
+    );
+  }
+
   return (
-    <div className="w-full">
-      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
-        <Button
+    <div className="w-full space-y-4">
+      {/* Top Header Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-200">Academic Terms</h2>
+          <p className="text-xs text-slate-400">
+            Manage academic years and active term status across the campus system.
+          </p>
+        </div>
+        <button
           type="button"
           onClick={() => setIsCreateModalOpen(true)}
           disabled={isLoading || isSaving}
+          className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-semibold px-4 py-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Create Next Academic Year
-        </Button>
+          + Create Next Academic Year
+        </button>
       </div>
 
       {error ? (
-        <div className="mb-4 rounded-xl border border-red-700 bg-red-950/20 p-4 text-sm text-red-200">
+        <div className="rounded-xl border border-red-500/30 bg-red-950/40 p-3.5 text-xs text-red-300">
           {error}
         </div>
       ) : null}
       {success ? (
-        <div className="mb-4 rounded-xl border border-emerald-600 bg-emerald-950/20 p-4 text-sm text-emerald-200">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3.5 text-xs text-emerald-300">
           {success}
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-3xl border border-slate-700 bg-slate-950/80 shadow-lg shadow-black/20">
+      {/* Dark Slate Table Container matching other Admin Cards */}
+      <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-xl">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-700 text-sm text-left text-slate-300">
-            <thead className="bg-slate-900/95 text-slate-400">
+          <table className="w-full text-left border-collapse">
+            <thead className="border-b border-slate-800 bg-slate-900/60 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
               <tr>
-                <th className="px-4 py-3 font-semibold uppercase tracking-[0.16em]">
-                  Academic Year
-                </th>
-                <th className="px-4 py-3 font-semibold uppercase tracking-[0.16em]">
-                  Semester
-                </th>
-                <th className="px-4 py-3 font-semibold uppercase tracking-[0.16em]">
-                  Status
-                </th>
-                <th className="px-4 py-3 font-semibold uppercase tracking-[0.16em]">
-                  Actions
-                </th>
+                <th className="py-3 px-4">Academic Year</th>
+                <th className="py-3 px-4">Semester</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700 bg-slate-950/60">
-              {terms.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-4 py-6 text-center text-slate-400"
-                  >
+            <tbody className="divide-y divide-slate-800/60">
+              {isLoading ? (
+                <tr className="bg-slate-950/40 py-2.5 px-4 text-xs">
+                  <td colSpan={4} className="py-6 text-center text-slate-500">
+                    Loading academic terms...
+                  </td>
+                </tr>
+              ) : terms.length === 0 ? (
+                <tr className="bg-slate-950/40 py-2.5 px-4 text-xs">
+                  <td colSpan={4} className="py-6 text-center text-slate-500">
                     No academic terms have been created yet.
                   </td>
                 </tr>
               ) : (
                 terms.map((term) => (
-                  <tr key={`${term.academicYear}-${term.semester}`}>
-                    <td className="px-4 py-4">{term.academicYear}</td>
-                    <td className="px-4 py-4">{term.semester}</td>
-                    <td className="px-4 py-4">
+                  <tr
+                    key={`${term.academicYear}-${term.semester}`}
+                    className="bg-slate-950/40 border-b border-slate-800/60 hover:bg-slate-900/50 transition-colors py-2.5 px-4 text-xs"
+                  >
+                    <td className="py-2.5 px-4 font-medium text-slate-200">
+                      {term.academicYear}
+                    </td>
+                    <td className="py-2.5 px-4 text-slate-300">
+                      {term.semester}
+                    </td>
+                    <td className="py-2.5 px-4">
                       {renderStatusBadge(term.status)}
                     </td>
-                    <td className="px-4 py-4 space-x-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleSetCurrent(term)}
-                        disabled={
-                          term.status === "Current" || isLoading || isSaving
-                        }
-                      >
-                        Set Current
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="bg-red-700 text-white hover:bg-red-600"
-                        onClick={() => handleDeleteTerm(term)}
-                        disabled={!term.canDelete || isLoading || isSaving}
-                        title={term.deleteReason}
-                      >
-                        Delete
-                      </Button>
+                    <td className="py-2.5 px-4 text-right">
+                      <div className="inline-flex items-center gap-2 justify-end">
+                        {/* Set Current Action with Term Progression Guardrails */}
+                        {renderSetCurrentAction(term)}
+
+                        {/* Delete Action Guardrail: Disabled/Hidden if Current */}
+                        {term.status !== "Current" && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClick(term)}
+                            disabled={!term.canDelete || isLoading || isSaving}
+                            title={
+                              term.deleteReason ||
+                              (!term.canDelete
+                                ? "Cannot delete term with existing data"
+                                : "Delete academic term")
+                            }
+                            className="text-rose-400/80 hover:text-rose-300 hover:bg-rose-950/30 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -321,155 +475,162 @@ export function AdminAcademicTerms({
         </div>
       </div>
 
+      {/* Modal: Create Next Academic Year */}
       {isCreateModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
-          <div className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-950 p-6 shadow-2xl shadow-black/60">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-xl border border-slate-800 bg-slate-950 p-6 shadow-2xl text-slate-200">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-semibold text-white">
-                  Create New Academic Year
-                </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  The system will create the next academic year and add both
-                  semesters automatically.
+                <h3 className="text-base font-semibold text-slate-100">
+                  Create Next Academic Year
+                </h3>
+                <p className="mt-1 text-xs text-slate-400">
+                  Automatically generate terms for the upcoming academic cycle.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="rounded-full border border-slate-600 bg-slate-900 px-3 py-1 text-sm text-slate-300 hover:bg-slate-800"
+                className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs text-slate-400 hover:text-slate-200 transition-colors"
               >
-                Close
+                ✕
               </button>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-5">
-              <p className="text-sm uppercase tracking-[0.18em] text-amber-300">
+            <div className="mt-5 rounded-lg border border-slate-800/80 bg-slate-900/50 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-400/90">
                 Next Academic Year
               </p>
-              <p className="mt-2 text-3xl font-semibold text-white">
-                {nextAcademicYear}
+              <p className="mt-1 text-2xl font-bold text-slate-100">
+                {computedNextAcademicYear}
               </p>
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950 p-4">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+              
+              <div className="mt-4 space-y-2.5">
+                <div className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold">
                     ✓
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-white">
-                      First Semester
+                    <p className="text-xs font-semibold text-slate-200">
+                      {computedNextAcademicYear} • 1st Semester
                     </p>
-                    <p className="text-xs text-slate-400">
-                      {terms.some(
-                        (term) =>
-                          term.academicYear === nextAcademicYear &&
-                          term.semester === "1st Semester",
-                      )
-                        ? "Already exists"
-                        : "Current if no active term exists, otherwise Upcoming."}
+                    <p className="text-[11px] text-slate-400">
+                      Auto-generated for First Semester.
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950 p-4">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+                <div className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold">
                     ✓
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-white">
-                      Second Semester
+                    <p className="text-xs font-semibold text-slate-200">
+                      {computedNextAcademicYear} • 2nd Semester
                     </p>
-                    <p className="text-xs text-slate-400">
-                      Always created as Upcoming.
+                    <p className="text-[11px] text-slate-400">
+                      Auto-generated for Second Semester.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
                 type="button"
-                variant="secondary"
                 onClick={() => setIsCreateModalOpen(false)}
                 disabled={isSaving}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 text-xs font-medium transition-all disabled:opacity-50"
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
                 onClick={handleCreateNextAcademicYear}
                 disabled={isSaving}
+                className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all disabled:opacity-50"
               >
-                {isSaving ? "Creating..." : "Create"}
-              </Button>
+                {isSaving ? "Creating..." : "Confirm & Create"}
+              </button>
             </div>
           </div>
         </div>
       ) : null}
 
+      {/* Modal: Confirm Set Current with Safety Timed Countdown */}
       {termToSetCurrent ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-950 p-6 shadow-2xl shadow-black/60">
-            <h2 className="text-xl font-semibold text-white">
-              Confirm Current Term
-            </h2>
-            <p className="mt-3 text-sm text-slate-400">
-              Set {termToSetCurrent.academicYear} {termToSetCurrent.semester} as
-              the current academic term?
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-950 p-6 shadow-2xl text-slate-200">
+            <h3 className="text-base font-semibold text-slate-100">
+              Set Current Academic Term
+            </h3>
+            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+              Are you sure you want to set <strong className="text-slate-200">{termToSetCurrent.academicYear} ({termToSetCurrent.semester})</strong> as the active term? This will update system submission parameters.
             </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
                 type="button"
-                variant="secondary"
                 onClick={() => setTermToSetCurrent(null)}
                 disabled={isSaving}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 text-xs font-medium transition-all disabled:opacity-50"
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
                 onClick={confirmSetCurrent}
-                disabled={isSaving}
+                disabled={isSaving || countdown > 0}
+                className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSaving ? "Saving..." : "Confirm"}
-              </Button>
+                {isSaving
+                  ? "Saving..."
+                  : countdown > 0
+                  ? `Confirm Switch (${countdown}s)`
+                  : "Confirm Switch"}
+              </button>
             </div>
           </div>
         </div>
       ) : null}
 
+      {/* Modal: Confirm Delete with Safety Timed Countdown */}
       {termToDelete ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-950 p-6 shadow-2xl shadow-black/60">
-            <h2 className="text-xl font-semibold text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-950 p-6 shadow-2xl text-slate-200">
+            <h3 className="text-base font-semibold text-slate-100">
               Delete Academic Term
-            </h2>
-            <p className="mt-3 text-sm text-slate-400">
-              Are you sure you want to delete {termToDelete.academicYear}{" "}
-              {termToDelete.semester}?
+            </h3>
+            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+              Are you sure you want to permanently delete <strong className="text-slate-200">{termToDelete.academicYear} ({termToDelete.semester})</strong>?
             </p>
             {termToDelete.deleteReason ? (
-              <p className="mt-3 text-sm text-slate-400">
+              <p className="mt-2 text-xs text-amber-400/90 bg-amber-950/20 p-2.5 rounded-lg border border-amber-500/20">
                 {termToDelete.deleteReason}
               </p>
             ) : null}
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
                 type="button"
-                variant="secondary"
                 onClick={() => setTermToDelete(null)}
                 disabled={isSaving}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 text-xs font-medium transition-all disabled:opacity-50"
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
                 onClick={confirmDeleteTerm}
-                disabled={isSaving || !termToDelete.canDelete}
-                className="bg-red-700 text-white hover:bg-red-600"
+                disabled={isSaving || !termToDelete.canDelete || countdown > 0}
+                className="bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSaving ? "Deleting..." : "Delete"}
-              </Button>
+                {isSaving
+                  ? "Deleting..."
+                  : countdown > 0
+                  ? `Confirm Delete (${countdown}s)`
+                  : "Confirm Delete"}
+              </button>
             </div>
           </div>
         </div>
@@ -477,3 +638,4 @@ export function AdminAcademicTerms({
     </div>
   );
 }
+

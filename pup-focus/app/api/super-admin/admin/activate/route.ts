@@ -32,41 +32,21 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    const { data: appUser } = await supabase
-      .from("app_users")
-      .select("id, metadata")
-      .eq("profile_id", profileId)
-      .in("role", [ROLE.ADMIN, ROLE.SUPER_ADMIN])
-      .maybeSingle();
+    try {
+      await supabase
+        .from("profiles")
+        .update({ status: "active", updated_at: new Date().toISOString() })
+        .eq("id", profileId);
+    } catch {}
 
-    if (!appUser) {
-      return NextResponse.json(
-        { error: "Admin account not found" },
-        { status: 404 },
-      );
-    }
-
-    const { error: adminUpdateError } = await supabase
-      .from("admins")
-      .update({ is_active: true, updated_at: new Date().toISOString() })
-      .eq("profile_id", profileId);
-
-    if (adminUpdateError) {
-      return NextResponse.json(
-        {
-          error: "Failed to activate admin",
-          details: adminUpdateError.message,
-        },
-        { status: 500 },
-      );
-    }
-
-    const nextMetadata = { ...(appUser.metadata ?? {}), is_active: true };
-    await supabase
-      .from("app_users")
-      .update({ metadata: nextMetadata, updated_at: new Date().toISOString() })
-      .eq("profile_id", profileId)
-      .in("role", [ROLE.ADMIN, ROLE.SUPER_ADMIN]);
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(profileId);
+      if (userData?.user) {
+        await supabase.auth.admin.updateUserById(profileId, {
+          user_metadata: { ...userData.user.user_metadata, is_active: true },
+        });
+      }
+    } catch {}
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -8,10 +8,12 @@ async function resolveSignedAvatarUrl(
   email?: string | null,
   rawAvatarUrl?: string | null
 ): Promise<string | null> {
+  // 1. If rawAvatarUrl already contains a valid signed token, check if working or return
   if (rawAvatarUrl && rawAvatarUrl.includes("token=") && rawAvatarUrl.startsWith("http")) {
     return rawAvatarUrl;
   }
 
+  // 2. If rawAvatarUrl is a storage path or public URL without token, extract storage path
   if (rawAvatarUrl) {
     let storagePath = rawAvatarUrl;
     if (storagePath.includes("/compliance-private/")) {
@@ -33,6 +35,7 @@ async function resolveSignedAvatarUrl(
     }
   }
 
+  // 3. Fallback: Search compliance-private bucket under admin-profile-images/${email}
   if (email) {
     const folderPath = `admin-profile-images/${email}`;
     const { data: files } = await supabaseAdmin.storage
@@ -82,7 +85,7 @@ export async function GET() {
     } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
 
     if (authError) {
-      console.error("Super Admin admin list fetch error:", authError);
+      console.error("Super Admin auth fetch error:", authError);
       return NextResponse.json({ error: authError.message }, { status: 500 });
     }
 
@@ -102,17 +105,36 @@ export async function GET() {
     const adminAccounts = await Promise.all(
       (users ?? [])
         .filter((u) => {
-          const userRole = u.user_metadata?.role || u.app_metadata?.role;
+          const rawRole = (
+            u.user_metadata?.role ||
+            u.app_metadata?.role ||
+            (u as any).role ||
+            ""
+          ).toString().toLowerCase().trim();
+
           return (
-            userRole === ROLE.ADMIN ||
-            userRole === ROLE.SUPER_ADMIN ||
-            userRole === "admin" ||
-            userRole === "super_admin"
+            rawRole.includes("admin") ||
+            rawRole.includes("super") ||
+            rawRole === "admin" ||
+            rawRole === "super_admin" ||
+            rawRole === "superadmin"
           );
         })
         .map(async (u) => {
-          const userRole =
-            u.user_metadata?.role || u.app_metadata?.role || ROLE.ADMIN;
+          const rawRole = (
+            u.user_metadata?.role ||
+            u.app_metadata?.role ||
+            (u as any).role ||
+            "admin"
+          ).toString().toLowerCase().trim();
+
+          let normalizedRole = "admin";
+          if (rawRole.includes("super")) {
+            normalizedRole = "super_admin";
+          } else if (rawRole.includes("admin")) {
+            normalizedRole = "admin";
+          }
+
           const profile = profileMap.get(u.id);
           const fullName =
             profile?.full_name ||
@@ -131,22 +153,24 @@ export async function GET() {
 
           return {
             id: u.id,
-            profile_id: u.id,
-            full_name: fullName,
             email: u.email ?? "",
-            department: "Administration",
-            permissions: [],
-            is_active: true,
+            full_name: fullName,
+            role: normalizedRole,
+            avatar_url: signedAvatarUrl,
             created_at: u.created_at,
-            role: userRole,
-            profileImageUrl: signedAvatarUrl,
+            status: "active",
           };
         })
     );
 
-    return NextResponse.json({ admins: adminAccounts });
+    console.log("=== SUPER ADMIN ACCOUNTS API RESPONSE ===", JSON.stringify(adminAccounts, null, 2));
+
+    return NextResponse.json({
+      success: true,
+      accounts: adminAccounts || [],
+    });
   } catch (err: any) {
-    console.error("Super Admin list error:", err);
+    console.error("Super Admin fetch error:", err);
     return NextResponse.json(
       { error: err.message || "Failed to load admin accounts" },
       { status: 500 }

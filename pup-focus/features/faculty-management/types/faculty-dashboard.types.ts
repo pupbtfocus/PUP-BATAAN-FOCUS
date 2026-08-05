@@ -9,6 +9,7 @@ export type AdminSection =
   | "requirements"
   | "submissionWindow"
   | "academicTerms"
+  | "settings"
   | "details";
 
 export type FacultyProgramInfo = {

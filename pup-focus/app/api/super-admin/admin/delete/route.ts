@@ -32,56 +32,18 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    const { data: appUser } = await supabase
-      .from("app_users")
-      .select("auth_user_id, role")
-      .eq("profile_id", profileId)
-      .maybeSingle();
+    try {
+      await supabase.from("profiles").delete().eq("id", profileId);
+    } catch {}
 
-    if (
-      !appUser ||
-      (appUser.role !== ROLE.ADMIN && appUser.role !== ROLE.SUPER_ADMIN)
-    ) {
-      return NextResponse.json(
-        { error: "Admin account not found" },
-        { status: 404 },
-      );
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("user_id")
-      .eq("id", profileId)
-      .maybeSingle();
-
-    await supabase
-      .from("admin_assignments")
-      .delete()
-      .eq("admin_profile_id", profileId);
-
-    await supabase.from("user_roles").delete().eq("profile_id", profileId);
-    await supabase.from("admins").delete().eq("profile_id", profileId);
-    await supabase
-      .from("app_users")
-      .delete()
-      .or(`profile_id.eq.${profileId},auth_user_id.eq.${appUser.auth_user_id}`);
-    await supabase.from("profiles").delete().eq("id", profileId);
-
-    const authUserId = appUser.auth_user_id ?? profile?.user_id;
-    if (authUserId) {
-      try {
-        await supabase.auth.admin.deleteUser(authUserId);
-      } catch (e) {
-        // If the auth user is already deleted or not found, ignore and continue
-        // as we've already cleaned up DB rows. Log the error for debugging.
-        console.warn("Warning: could not delete auth user:", String(e));
-      }
-    }
+    try {
+      await supabase.auth.admin.deleteUser(profileId);
+    } catch {}
 
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to delete admin", details: String(error) },
+      { error: "Failed to delete admin account", details: String(error) },
       { status: 500 },
     );
   }
