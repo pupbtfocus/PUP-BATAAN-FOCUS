@@ -292,34 +292,49 @@ export default function Home() {
       <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px]" />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-      <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto px-2 pt-16 pb-8 no-scrollbar">
-        <section className="relative rounded-[2rem] border border-[rgba(255,215,0,0.2)] bg-[#4d0000]/95 p-8 backdrop-blur-md">
-          {/* Centered Logo container */}
-          <Logo size={145} className="-mt-16 mb-2" />
+      <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto px-2 pt-20 pb-8 no-scrollbar">
+        <div className="relative w-full max-w-md mx-auto drop-shadow-2xl">
+          {/* Curved Card Top Header SVG */}
+          <div className="relative">
+            <svg
+              viewBox="0 0 400 60"
+              className="w-full h-auto text-[#4d0000] fill-current stroke-[rgba(255,215,0,0.25)] stroke-[1] block -mb-0.5 pointer-events-none"
+            >
+              <path d="M 0,60 L 0,20 Q 0,0 20,0 L 130,0 C 150,0 155,45 200,45 C 245,45 250,0 270,0 L 380,0 Q 400,0 400,20 L 400,60 Z" />
+            </svg>
 
-          <div className="mt-4 mb-8 text-center">
-            <h2 className="bg-gradient-to-r from-amber-200 via-white to-amber-200 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent drop-shadow-[0_2px_8px_rgba(255,215,0,0.15)] uppercase">
-              Sign In
-            </h2>
-            <div className="mx-auto mt-3 h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
-            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/65">
-              Enter your institutional credentials to continue
-            </p>
+            {/* Logo positioned precisely inside the arch */}
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-20">
+              <Logo size={145} className="mb-0" />
+            </div>
           </div>
 
-          <LoginForm
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
-            onSubmit={onSubmit}
-            onOpenForgotPassword={() => setIsForgotModalOpen(true)}
-            isSubmitting={isSubmitting}
-            isPending={isPending}
-            error={error}
-            publicEnvConfigured={Boolean(PUBLIC_ENV)}
-          />
-        </section>
+          {/* Card Body */}
+          <section className="relative rounded-b-[2rem] border-x border-b border-[rgba(255,215,0,0.25)] bg-[#4d0000] p-8 pt-10 backdrop-blur-md">
+            <div className="mt-4 mb-8 text-center">
+              <h2 className="text-3xl font-extrabold tracking-wider text-amber-200 drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)] uppercase mb-1">
+                Sign In
+              </h2>
+              <div className="mx-auto my-2.5 h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
+              <p className="text-[10px] text-amber-200/90 font-bold tracking-widest uppercase mb-6">
+                Enter your institutional credentials to continue
+              </p>
+            </div>
+
+            <LoginForm
+              email={email}
+              setEmail={setEmail}
+              password={password}
+              setPassword={setPassword}
+              onSubmit={onSubmit}
+              onOpenForgotPassword={() => setIsForgotModalOpen(true)}
+              isSubmitting={isSubmitting}
+              isPending={isPending}
+              error={error}
+              publicEnvConfigured={Boolean(PUBLIC_ENV)}
+            />
+          </section>
+        </div>
       </div>
 
       <AuthFeedbackModal
