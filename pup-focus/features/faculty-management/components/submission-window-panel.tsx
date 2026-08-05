@@ -5,19 +5,17 @@ import { BellRing, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
   ApiBody,
-  DatePartState,
   SubmissionWindowResponse,
-  TimePartState,
 } from "@/features/faculty-management/types/faculty-dashboard.types";
 
-function getCurrentYearInManila(): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Manila",
-    year: "numeric",
-  }).formatToParts(new Date());
-
-  const yearPart = parts.find((part) => part.type === "year");
-  return yearPart ? Number.parseInt(yearPart.value, 10) : new Date().getFullYear();
+function getNowIsoLocal(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 function toTimeInputValue(timeLabel: string): string | null {
@@ -60,333 +58,9 @@ function toTimeLabel(timeInput: string): string | null {
   return `${hour12}:${minute} ${period}`;
 }
 
-function padScheduleNumber(value: number): string {
-  return value.toString().padStart(2, "0");
-}
-
-function getDaysInMonth(year: number, month: number): number {
-  return new Date(year, month, 0).getDate();
-}
-
-function parseScheduleDate(value: string | null | undefined): {
-  year: string;
-  month: string;
-  day: string;
-} {
-  if (!value) {
-    return { year: "", month: "", day: "" };
-  }
-
-  const parts = value.split("-");
-  if (parts.length !== 3) {
-    return { year: "", month: "", day: "" };
-  }
-
-  return { year: parts[0], month: parts[1], day: parts[2] };
-}
-
-function formatScheduleDate(year: string, month: string, day: string): string {
-  if (!year || !month || !day) {
-    return "";
-  }
-
-  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-}
-
-function buildScheduleYearOptions(selectedYear?: number): number[] {
-  const currentYear = getCurrentYearInManila();
-  const startYear = currentYear;
-  const endYear = currentYear + 10;
-
-  const years = Array.from(
-    { length: endYear - startYear + 1 },
-    (_, index) => startYear + index,
-  );
-
-  if (selectedYear !== undefined && !years.includes(selectedYear)) {
-    years.push(selectedYear);
-  }
-
-  return years.sort((a, b) => a - b);
-}
-
-function parseScheduleTime(value: string | null | undefined): {
-  hour: string;
-  minute: string;
-  period: "AM" | "PM" | "";
-} {
-  if (!value) {
-    return { hour: "", minute: "", period: "" };
-  }
-
-  const parts = value.split(":");
-  if (parts.length !== 2) {
-    return { hour: "", minute: "", period: "" };
-  }
-
-  const hour24 = Number.parseInt(parts[0], 10);
-  const minute = parts[1];
-
-  if (Number.isNaN(hour24) || hour24 < 0 || hour24 > 23) {
-    return { hour: "", minute: "", period: "" };
-  }
-
-  const period = hour24 >= 12 ? "PM" : "AM";
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-
-  return {
-    hour: hour12.toString(),
-    minute: minute.padStart(2, "0"),
-    period,
-  };
-}
-
-function ScheduleDateInput({
-  id,
-  value,
-  onChange,
-  onPartialChange,
-  disabled,
-}: {
-  id: string;
-  value: string;
-  onChange: (value: string) => void;
-  onPartialChange?: (parts: DatePartState) => void;
-  disabled: boolean;
-}) {
-  const parsedValue = parseScheduleDate(value);
-  const [selectedYear, setSelectedYear] = useState(parsedValue.year);
-  const [selectedMonth, setSelectedMonth] = useState(parsedValue.month);
-  const [selectedDay, setSelectedDay] = useState(parsedValue.day);
-
-  useEffect(() => {
-    setSelectedYear(parsedValue.year);
-    setSelectedMonth(parsedValue.month);
-    setSelectedDay(parsedValue.day);
-  }, [parsedValue.year, parsedValue.month, parsedValue.day]);
-
-  const yearOptions = buildScheduleYearOptions(
-    selectedYear ? Number.parseInt(selectedYear, 10) : undefined,
-  );
-  const dayLimit =
-    selectedYear && selectedMonth
-      ? getDaysInMonth(
-          Number.parseInt(selectedYear, 10),
-          Number.parseInt(selectedMonth, 10),
-        )
-      : 31;
-
-  function handlePartChange(part: "year" | "month" | "day", nextValue: string) {
-    const nextYear = part === "year" ? nextValue : selectedYear;
-    const nextMonth = part === "month" ? nextValue : selectedMonth;
-    const nextDay = part === "day" ? nextValue : selectedDay;
-
-    setSelectedYear(nextYear);
-    setSelectedMonth(nextMonth);
-    setSelectedDay(nextDay);
-
-    onPartialChange?.({
-      year: nextYear,
-      month: nextMonth,
-      day: nextDay,
-    });
-
-    if (nextYear && nextMonth && nextDay) {
-      onChange(formatScheduleDate(nextYear, nextMonth, nextDay));
-    }
-  }
-
-  return (
-    <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-[minmax(4.5rem,1fr)_minmax(3rem,1fr)_minmax(4.5rem,1fr)] min-w-0">
-      <div className="min-w-0">
-        <label className="sr-only" htmlFor={`${id}-month`}>
-          Month
-        </label>
-        <select
-          id={`${id}-month`}
-          className="w-full min-w-[4.5rem] rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
-          value={selectedMonth}
-          onChange={(event) => handlePartChange("month", event.target.value)}
-          disabled={disabled}
-        >
-          <option value="">Month</option>
-          {Array.from({ length: 12 }, (_, index) => {
-            const monthNumber = index + 1;
-            return (
-              <option key={monthNumber} value={padScheduleNumber(monthNumber)}>
-                {new Date(0, index).toLocaleString("en-US", { month: "short" })}
-              </option>
-            );
-          })}
-        </select>
-      </div>
-      <div className="min-w-0">
-        <label className="sr-only" htmlFor={`${id}-day`}>
-          Day
-        </label>
-        <select
-          id={`${id}-day`}
-          className="w-full min-w-[3.5rem] rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
-          value={selectedDay}
-          onChange={(event) => handlePartChange("day", event.target.value)}
-          disabled={disabled}
-        >
-          <option value="">Day</option>
-          {Array.from({ length: dayLimit }, (_, index) => {
-            const dayValue = index + 1;
-            return (
-              <option key={dayValue} value={padScheduleNumber(dayValue)}>
-                {dayValue}
-              </option>
-            );
-          })}
-        </select>
-      </div>
-      <div className="min-w-0">
-        <label className="sr-only" htmlFor={`${id}-year`}>
-          Year
-        </label>
-        <select
-          id={`${id}-year`}
-          className="w-full min-w-[4.25rem] rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
-          value={selectedYear}
-          onChange={(event) => handlePartChange("year", event.target.value)}
-          disabled={disabled}
-        >
-          <option value="">Year</option>
-          {yearOptions.map((yearOption) => (
-            <option key={yearOption} value={yearOption}>
-              {yearOption}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-}
-
-function ScheduleTimeInput({
-  id,
-  value,
-  onChange,
-  onPartialChange,
-  disabled,
-}: {
-  id: string;
-  value: string;
-  onChange: (value: string) => void;
-  onPartialChange?: (parts: TimePartState) => void;
-  disabled: boolean;
-}) {
-  const parsedValue = parseScheduleTime(value);
-  const [selectedHour, setSelectedHour] = useState(parsedValue.hour);
-  const [selectedMinute, setSelectedMinute] = useState(parsedValue.minute);
-  const [selectedPeriod, setSelectedPeriod] = useState(parsedValue.period);
-
-  useEffect(() => {
-    setSelectedHour(parsedValue.hour);
-    setSelectedMinute(parsedValue.minute);
-    setSelectedPeriod(parsedValue.period);
-  }, [parsedValue.hour, parsedValue.minute, parsedValue.period]);
-
-  function handlePartChange(
-    part: "hour" | "minute" | "period",
-    nextValue: string,
-  ) {
-    const nextHour = part === "hour" ? nextValue : selectedHour;
-    const nextMinute = part === "minute" ? nextValue : selectedMinute;
-    const nextPeriod =
-      part === "period" ? (nextValue as "AM" | "PM" | "") : selectedPeriod;
-
-    setSelectedHour(nextHour);
-    setSelectedMinute(nextMinute);
-    setSelectedPeriod(nextPeriod);
-
-    onPartialChange?.({
-      hour: nextHour,
-      minute: nextMinute,
-      period: nextPeriod,
-    });
-
-    if (nextHour && nextMinute && nextPeriod) {
-      const hour12 = Number.parseInt(nextHour, 10);
-      const hour24 =
-        nextPeriod === "AM"
-          ? hour12 === 12
-            ? 0
-            : hour12
-          : hour12 === 12
-            ? 12
-            : hour12 + 12;
-
-      onChange(`${hour24.toString().padStart(2, "0")}:${nextMinute.padStart(2, "0")}`);
-    }
-  }
-
-  return (
-    <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-3 min-w-0">
-      <div className="min-w-0">
-        <label className="sr-only" htmlFor={`${id}-hour`}>
-          Hour
-        </label>
-        <select
-          id={`${id}-hour`}
-          className="w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
-          value={selectedHour}
-          onChange={(event) => handlePartChange("hour", event.target.value)}
-          disabled={disabled}
-        >
-          <option value="">Hour</option>
-          {Array.from({ length: 12 }, (_, index) => {
-            const hourValue = index + 1;
-            return (
-              <option key={hourValue} value={hourValue.toString()}>
-                {hourValue}
-              </option>
-            );
-          })}
-        </select>
-      </div>
-      <div className="min-w-0">
-        <label className="sr-only" htmlFor={`${id}-minute`}>
-          Minute
-        </label>
-        <select
-          id={`${id}-minute`}
-          className="w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
-          value={selectedMinute}
-          onChange={(event) => handlePartChange("minute", event.target.value)}
-          disabled={disabled}
-        >
-          <option value="">Min</option>
-          {Array.from({ length: 60 }, (_, index) => {
-            const minuteValue = index;
-            return (
-              <option key={minuteValue} value={padScheduleNumber(minuteValue)}>
-                {padScheduleNumber(minuteValue)}
-              </option>
-            );
-          })}
-        </select>
-      </div>
-      <div className="min-w-0">
-        <label className="sr-only" htmlFor={`${id}-period`}>
-          AM / PM
-        </label>
-        <select
-          id={`${id}-period`}
-          className="w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-2 py-1 text-sm outline-none focus:ring focus:ring-amber-300/30"
-          value={selectedPeriod}
-          onChange={(event) => handlePartChange("period", event.target.value)}
-          disabled={disabled}
-        >
-          <option value="">Period</option>
-          <option value="AM">AM</option>
-          <option value="PM">PM</option>
-        </select>
-      </div>
-    </div>
-  );
+function toIsoLocalString(d: Date): string {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 async function readApiBody(response: Response): Promise<unknown> {
@@ -407,30 +81,9 @@ export interface SubmissionWindowPanelProps {
 }
 
 export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelProps) {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [, setStartDateParts] = useState<DatePartState>({
-    year: "",
-    month: "",
-    day: "",
-  });
-  const [, setEndDateParts] = useState<DatePartState>({
-    year: "",
-    month: "",
-    day: "",
-  });
-  const [, setStartTimeParts] = useState<TimePartState>({
-    hour: "",
-    minute: "",
-    period: "",
-  });
-  const [, setEndTimeParts] = useState<TimePartState>({
-    hour: "",
-    minute: "",
-    period: "",
-  });
+  const [openDateTime, setOpenDateTime] = useState("");
+  const [closeDateTime, setCloseDateTime] = useState("");
+
   const [windowStatus, setWindowStatus] = useState<SubmissionWindowResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -441,58 +94,50 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  function formatScheduleDateTime(
-    date: string | null,
-    timeLabel: string | null,
-  ): string | null {
-    if (!date || !timeLabel) {
-      return null;
-    }
+  const nowIso = getNowIsoLocal();
 
-    const timeValue = toTimeInputValue(timeLabel);
-    if (!timeValue) {
-      return null;
-    }
+  function formatDisplayDateTime(isoDateTime: string): string | null {
+    if (!isoDateTime) return null;
+    const parsed = new Date(isoDateTime);
+    if (Number.isNaN(parsed.getTime())) return null;
 
-    const parsed = new Date(`${date}T${timeValue}`);
-    if (Number.isNaN(parsed.getTime())) {
-      return null;
-    }
-
-    return parsed.toLocaleString("en-US", {
+    const dateStr = parsed.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
+    });
+    const timeStr = parsed.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
+      hour12: true,
     });
+
+    return `${dateStr} at ${timeStr}`;
   }
 
-  function getStatusIcon(status: SubmissionWindowResponse["status"] | null) {
-    if (status === "Upcoming") {
-      return "🟡";
+  function handlePreset(days?: number, isEndOfMonth?: boolean) {
+    const base = openDateTime ? new Date(openDateTime) : new Date();
+    const validBase = Number.isNaN(base.getTime()) ? new Date() : base;
+    const target = new Date(validBase);
+
+    if (isEndOfMonth) {
+      target.setMonth(target.getMonth() + 1, 0);
+      target.setHours(23, 59, 0, 0);
+    } else if (days) {
+      target.setDate(target.getDate() + days);
     }
 
-    if (status === "Open") {
-      return "🟢";
-    }
-
-    return "🔴";
+    setCloseDateTime(toIsoLocalString(target));
   }
 
   function validateSchedule(): boolean {
-    if (!startDate || !endDate || !startTime || !endTime) {
-      setError("Start/end date and time are required.");
+    if (!openDateTime || !closeDateTime) {
+      setError("Opening and closing schedule date and time are required.");
       return false;
     }
 
-    if (
-      startDate > endDate ||
-      (startDate === endDate && startTime >= endTime)
-    ) {
-      setError(
-        "The closing date and time must be later than the opening date and time.",
-      );
+    if (openDateTime >= closeDateTime) {
+      setError("The closing schedule must be later than the opening schedule.");
       return false;
     }
 
@@ -505,16 +150,13 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     setSuccess(null);
 
     try {
-      const response = await fetch("/api/admin/submission-window", {
-        credentials: "include",
-      });
+      const response = await fetch("/api/admin/submission-window", { credentials: "include" });
       const body = await readApiBody(response);
 
       if (!response.ok) {
         const details =
           typeof body === "object" && body !== null
-            ? (((body as ApiBody).error || (body as ApiBody).details) ??
-              `HTTP ${response.status}`)
+            ? (((body as ApiBody).error || (body as ApiBody).details) ?? `HTTP ${response.status}`)
             : `HTTP ${response.status}`;
 
         setError(`Failed to load submission window: ${details}`);
@@ -522,44 +164,37 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       }
 
       if (typeof body !== "object" || body === null) {
-        setError(
-          `Failed to load submission window: Invalid response (HTTP ${response.status})`,
-        );
+        setError(`Failed to load submission window: Invalid response (HTTP ${response.status})`);
         return;
       }
 
       const data = body as SubmissionWindowResponse;
       setWindowStatus(data);
-      setStartDate(data.startDate ?? "");
-      setEndDate(data.endDate ?? "");
-      setStartDateParts(parseScheduleDate(data.startDate ?? ""));
-      setEndDateParts(parseScheduleDate(data.endDate ?? ""));
-      setStartTime(
-        data.startTimeLabel
-          ? (toTimeInputValue(data.startTimeLabel) ?? "")
-          : "",
-      );
-      setEndTime(
-        data.endTimeLabel
-          ? (toTimeInputValue(data.endTimeLabel) ?? "")
-          : "",
-      );
-      setStartTimeParts(
-        data.startTimeLabel
-          ? parseScheduleTime(toTimeInputValue(data.startTimeLabel) ?? "")
-          : { hour: "", minute: "", period: "" },
-      );
-      setEndTimeParts(
-        data.endTimeLabel
-          ? parseScheduleTime(toTimeInputValue(data.endTimeLabel) ?? "")
-          : { hour: "", minute: "", period: "" },
-      );
+
+      if (data.status === "Closed") {
+        setOpenDateTime("");
+        setCloseDateTime("");
+      } else {
+        if (data.startDate && data.startTimeLabel) {
+          const time24 = toTimeInputValue(data.startTimeLabel);
+          setOpenDateTime(time24 ? `${data.startDate}T${time24}` : `${data.startDate}T09:00`);
+        } else if (data.startDate) {
+          setOpenDateTime(`${data.startDate}T09:00`);
+        } else {
+          setOpenDateTime("");
+        }
+
+        if (data.endDate && data.endTimeLabel) {
+          const time24 = toTimeInputValue(data.endTimeLabel);
+          setCloseDateTime(time24 ? `${data.endDate}T${time24}` : `${data.endDate}T17:00`);
+        } else if (data.endDate) {
+          setCloseDateTime(`${data.endDate}T17:00`);
+        } else {
+          setCloseDateTime("");
+        }
+      }
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Failed to load submission window",
-      );
+      setError(loadError instanceof Error ? loadError.message : "Failed to load submission window");
     } finally {
       setIsLoading(false);
     }
@@ -573,15 +208,38 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     return () => window.clearTimeout(timeoutId);
   }, []);
 
+  useEffect(() => {
+    if (!closeDateTime) return;
+
+    const checkExpiration = () => {
+      const nowLocal = getNowIsoLocal();
+      if (closeDateTime <= nowLocal) {
+        setOpenDateTime("");
+        setCloseDateTime("");
+        fetch("/api/admin/submission-window", {
+          method: "DELETE",
+          credentials: "include",
+        })
+          .then(() => {
+            void loadWindow();
+            onWindowChange?.();
+          })
+          .catch(() => {});
+      }
+    };
+
+    checkExpiration();
+    const interval = setInterval(checkExpiration, 5000);
+    return () => clearInterval(interval);
+  }, [closeDateTime, onWindowChange]);
+
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setSuccess(null);
 
     if (!windowStatus?.academicYear || !windowStatus?.semester) {
-      setError(
-        "No active academic term is configured. Please set a current academic term first.",
-      );
+      setError("No active academic term is configured. Please set a current academic term first.");
       return;
     }
 
@@ -589,8 +247,11 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       return;
     }
 
-    const startTimeLabel = toTimeLabel(startTime);
-    const endTimeLabel = toTimeLabel(endTime);
+    const [startDate, startTime24] = openDateTime.split("T");
+    const [endDate, endTime24] = closeDateTime.split("T");
+
+    const startTimeLabel = toTimeLabel(startTime24);
+    const endTimeLabel = toTimeLabel(endTime24);
 
     if (!startTimeLabel || !endTimeLabel) {
       setError("Please select valid start and end times.");
@@ -606,8 +267,11 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     setError(null);
     setSuccess(null);
 
-    const startTimeLabel = toTimeLabel(startTime);
-    const endTimeLabel = toTimeLabel(endTime);
+    const [startDate, startTime24] = openDateTime.split("T");
+    const [endDate, endTime24] = closeDateTime.split("T");
+
+    const startTimeLabel = toTimeLabel(startTime24);
+    const endTimeLabel = toTimeLabel(endTime24);
 
     try {
       const response = await fetch("/api/admin/submission-window", {
@@ -625,9 +289,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
 
       if (!response.ok) {
         if (typeof body !== "object" || body === null) {
-          setError(
-            `Failed to save submission window (HTTP ${response.status}).`,
-          );
+          setError(`Failed to save submission window (HTTP ${response.status}).`);
           return;
         }
 
@@ -641,9 +303,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       }
 
       if (typeof body !== "object" || body === null) {
-        setError(
-          `Failed to save submission window: Invalid response (HTTP ${response.status}).`,
-        );
+        setError(`Failed to save submission window: Invalid response (HTTP ${response.status}).`);
         return;
       }
 
@@ -651,11 +311,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       setSuccess("Submission window updated successfully.");
       onWindowChange?.();
     } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Failed to save submission window",
-      );
+      setError(saveError instanceof Error ? saveError.message : "Failed to save submission window");
     } finally {
       setIsSaving(false);
     }
@@ -679,7 +335,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       const body = await readApiBody(response);
 
       if (!response.ok) {
-        if (typeof body === "object" && body !== null) {
+        if (typeof body !== "object" && body === null) {
           setError((body as ApiBody).error || "Failed to close submissions");
         } else {
           setError(`Failed to close submissions (HTTP ${response.status}).`);
@@ -688,25 +344,17 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       }
 
       if (typeof body !== "object" || body === null) {
-        setError(
-          `Failed to close submissions: Invalid response (HTTP ${response.status}).`,
-        );
+        setError(`Failed to close submissions: Invalid response (HTTP ${response.status}).`);
         return;
       }
 
       setWindowStatus(body as SubmissionWindowResponse);
-      setStartDate("");
-      setEndDate("");
-      setStartTime("");
-      setEndTime("");
+      setOpenDateTime("");
+      setCloseDateTime("");
       setSuccess("Submissions closed and schedule cleared.");
       onWindowChange?.();
     } catch (closeError) {
-      setError(
-        closeError instanceof Error
-          ? closeError.message
-          : "Failed to close submissions",
-      );
+      setError(closeError instanceof Error ? closeError.message : "Failed to close submissions");
     } finally {
       setIsSaving(false);
     }
@@ -719,21 +367,17 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     setSuccess(null);
 
     try {
-      const response = await fetch(
-        "/api/admin/submission-window/broadcast-reminder",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        },
-      );
+      const response = await fetch("/api/admin/submission-window/broadcast-reminder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
       const body = await readApiBody(response);
 
       if (!response.ok) {
         const details =
           typeof body === "object" && body !== null
-            ? (((body as ApiBody).error || (body as ApiBody).details) ??
-              `HTTP ${response.status}`)
+            ? (((body as ApiBody).error || (body as ApiBody).details) ?? `HTTP ${response.status}`)
             : `HTTP ${response.status}`;
         setError(`Failed to broadcast reminder: ${details}`);
         return;
@@ -748,11 +392,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
 
       setSuccess(message);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to broadcast deadline reminder.",
-      );
+      setError(err instanceof Error ? err.message : "Failed to broadcast deadline reminder.");
     } finally {
       setIsBroadcasting(false);
     }
@@ -768,253 +408,272 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     windowStatus?.startTimeLabel &&
     windowStatus?.endDate &&
     windowStatus?.endTimeLabel
-      ? `${formatScheduleDateTime(windowStatus.startDate, windowStatus.startTimeLabel)} to ${formatScheduleDateTime(windowStatus.endDate, windowStatus.endTimeLabel)}`
+      ? `${formatDisplayDateTime(`${windowStatus.startDate}T${toTimeInputValue(windowStatus.startTimeLabel)}`)} to ${formatDisplayDateTime(`${windowStatus.endDate}T${toTimeInputValue(windowStatus.endTimeLabel)}`)}`
       : "Not configured";
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-5 shadow-lg shadow-black/20">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h4 className="text-base font-semibold text-[#fff8e7]">
-              Submission Window Status
-            </h4>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Current term: <span className="font-medium text-slate-200">{currentTermLabel}</span>
-            </p>
+    <div className="rounded-xl border border-slate-800 bg-slate-950 p-5 shadow-xl space-y-6">
+      {/* Header & Status Section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4">
+        <div>
+          <h4 className="text-base font-semibold text-slate-100">
+            Submission Window Manager
+          </h4>
+          <p className="mt-1 text-xs text-slate-400">
+            Current term: <span className="font-medium text-slate-200">{currentTermLabel}</span>
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:items-end">
+          {windowStatus?.status === "Open" ? (
+            <span className="text-emerald-400 font-semibold text-xs">Status: Open</span>
+          ) : windowStatus?.status === "Closed" ? (
+            <span className="text-amber-400 font-semibold text-xs">Status: Closed</span>
+          ) : windowStatus?.status === "Upcoming" ? (
+            <span className="text-sky-400 font-semibold text-xs">Status: Upcoming</span>
+          ) : (
+            <span className="text-slate-400 font-semibold text-xs">Status: Checking...</span>
+          )}
+          <p className="mt-0.5 text-[11px] text-slate-400">{currentScheduleLabel}</p>
+        </div>
+      </div>
+
+      {error ? (
+        <p className="rounded-lg border border-red-500/30 bg-red-950/30 px-3 py-2 text-xs text-red-300">
+          {error}
+        </p>
+      ) : null}
+
+      {success ? (
+        <p className="rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-xs text-emerald-300">
+          {success}
+        </p>
+      ) : null}
+
+      {/* Main Schedule Configuration Form */}
+      <form onSubmit={handleSave} className="space-y-5">
+        <div className="grid gap-5 md:grid-cols-2">
+          {/* Opening Schedule Input */}
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 flex flex-col justify-between">
+            <div>
+              <label htmlFor="opening-schedule" className="block text-xs font-semibold text-amber-400">
+                Opening Schedule
+              </label>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Select the opening date and time for document uploads.
+              </p>
+            </div>
+            <div className="mt-3">
+              <input
+                id="opening-schedule"
+                type="datetime-local"
+                min={nowIso}
+                value={openDateTime}
+                onChange={(e) => setOpenDateTime(e.target.value)}
+                disabled={isLoading || isSaving}
+                className="w-full bg-slate-900 border border-slate-800 text-slate-100 rounded-lg p-2.5 text-xs focus:border-amber-500/50 outline-none transition"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{getStatusIcon(windowStatus?.status ?? null)}</span>
-            <div>
-              <span className="text-sm font-semibold text-slate-200">
-                {windowStatus?.status ?? "Checking..."}
-              </span>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{currentScheduleLabel}</p>
+          {/* Closing Schedule Input & Presets */}
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 flex flex-col justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <label htmlFor="closing-schedule" className="block text-xs font-semibold text-rose-400">
+                  Closing Schedule
+                </label>
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Select or use quick presets for deadline.
+                </p>
+              </div>
+
+              {/* Quick Presets */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handlePreset(7)}
+                  disabled={isLoading || isSaving}
+                  className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-[11px] font-semibold rounded-md px-2 py-1 transition disabled:opacity-50"
+                >
+                  +7 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePreset(14)}
+                  disabled={isLoading || isSaving}
+                  className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-[11px] font-semibold rounded-md px-2 py-1 transition disabled:opacity-50"
+                >
+                  +14 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePreset(undefined, true)}
+                  disabled={isLoading || isSaving}
+                  className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-[11px] font-semibold rounded-md px-2 py-1 transition disabled:opacity-50"
+                >
+                  End of Month
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <input
+                id="closing-schedule"
+                type="datetime-local"
+                min={openDateTime || nowIso}
+                value={closeDateTime}
+                onChange={(e) => setCloseDateTime(e.target.value)}
+                disabled={isLoading || isSaving}
+                className="w-full bg-slate-900 border border-slate-800 text-slate-100 rounded-lg p-2.5 text-xs focus:border-amber-500/50 outline-none transition"
+              />
             </div>
           </div>
         </div>
 
-        {error ? (
-          <p className="mt-4 rounded-md border border-red-700 bg-red-950/20 px-3 py-2 text-sm text-red-300">
-            {error}
-          </p>
-        ) : null}
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setShowBroadcastConfirmation(true)}
+            disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isOpen}
+            className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold rounded-lg px-4 py-2 flex items-center transition disabled:opacity-50"
+          >
+            {isBroadcasting ? (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <BellRing className="mr-2 h-3.5 w-3.5 text-amber-400" />
+            )}
+            Broadcast Deadline Reminder
+          </button>
+          <button
+            type="button"
+            onClick={handleCloseSubmission}
+            disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isOpen}
+            className="bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 text-xs font-semibold rounded-lg px-4 py-2 transition disabled:opacity-50"
+          >
+            Close Submissions
+          </button>
+          <button
+            type="submit"
+            disabled={isLoading || isSaving || isBroadcasting}
+            className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold rounded-lg px-4 py-2 transition disabled:opacity-50"
+          >
+            {isSaving ? "Saving..." : "Save Window Schedule"}
+          </button>
+        </div>
+      </form>
 
-        {success ? (
-          <p className="mt-4 rounded-md border border-emerald-700 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-300">
-            {success}
-          </p>
-        ) : null}
-      </section>
-
-      <section className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-5 shadow-lg shadow-black/20">
-        <h4 className="text-base font-semibold text-[#fff8e7]">
-          Configure Schedule
-        </h4>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Set the opening and closing date and time for document submissions.
-        </p>
-
-        <form onSubmit={handleSave} className="mt-6 space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
-              <h5 className="font-semibold text-amber-300">Opening Schedule</h5>
-              <div className="mt-4 space-y-3">
-                <div>
-                  <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Opening Date
-                  </label>
-                  <ScheduleDateInput
-                    id="start-date"
-                    value={startDate}
-                    onChange={setStartDate}
-                    onPartialChange={setStartDateParts}
-                    disabled={isLoading || isSaving}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Opening Time
-                  </label>
-                  <ScheduleTimeInput
-                    id="start-time"
-                    value={startTime}
-                    onChange={setStartTime}
-                    onPartialChange={setStartTimeParts}
-                    disabled={isLoading || isSaving}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
-              <h5 className="font-semibold text-rose-300">Closing Schedule</h5>
-              <div className="mt-4 space-y-3">
-                <div>
-                  <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Closing Date
-                  </label>
-                  <ScheduleDateInput
-                    id="end-date"
-                    value={endDate}
-                    onChange={setEndDate}
-                    onPartialChange={setEndDateParts}
-                    disabled={isLoading || isSaving}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Closing Time
-                  </label>
-                  <ScheduleTimeInput
-                    id="end-time"
-                    value={endTime}
-                    onChange={setEndTime}
-                    onPartialChange={setEndTimeParts}
-                    disabled={isLoading || isSaving}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setShowBroadcastConfirmation(true)}
-              disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isConfigured}
-              className="border border-amber-500/40 text-amber-300 hover:bg-amber-500/10 hover:text-amber-200 dark:border-amber-500/40 dark:text-amber-300"
-            >
-              {isBroadcasting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <BellRing className="mr-2 h-4 w-4 text-amber-400" />
-              )}
-              Broadcast Deadline Reminder
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleCloseSubmission}
-              disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isOpen}
-              className="text-rose-400 hover:text-rose-300"
-            >
-              Close Submissions
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading || isSaving || isBroadcasting}
-            >
-              {isSaving ? "Saving..." : "Save Window Schedule"}
-            </Button>
-          </div>
-        </form>
-      </section>
-
+      {/* Save Confirmation Modal */}
       {showSaveConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
-            <p className="text-xs uppercase tracking-[0.28em] text-amber-400">
+          <div className="w-full max-w-lg bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-4">
+            <p className="text-xs uppercase tracking-wider text-amber-400 font-medium">
               Confirm Window Schedule
             </p>
-            <h3 className="mt-3 text-2xl font-semibold text-white">
+            <h3 className="text-xl font-semibold text-slate-100">
               Save Submission Schedule?
             </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
+            <p className="text-xs leading-5 text-slate-300">
               Faculty will be permitted to upload compliance documents starting from{" "}
-              <span className="font-semibold text-white">
-                {formatScheduleDateTime(startDate, toTimeLabel(startTime))}
+              <span className="font-semibold text-amber-400">
+                {formatDisplayDateTime(openDateTime)}
               </span>{" "}
               until{" "}
-              <span className="font-semibold text-white">
-                {formatScheduleDateTime(endDate, toTimeLabel(endTime))}
+              <span className="font-semibold text-amber-400">
+                {formatDisplayDateTime(closeDateTime)}
               </span>.
             </p>
 
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <div className="flex justify-end gap-3 pt-2">
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => setShowSaveConfirmation(false)}
+                className="bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 text-xs"
               >
                 Cancel
               </Button>
-              <Button type="button" onClick={() => void submitSave()}>
+              <button
+                type="button"
+                onClick={() => void submitSave()}
+                className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold rounded-lg px-4 py-2 transition"
+              >
                 Confirm Save
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       ) : null}
 
+      {/* Close Confirmation Modal */}
       {showCloseConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
-            <p className="text-xs uppercase tracking-[0.28em] text-rose-400">
+          <div className="w-full max-w-lg bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-4">
+            <p className="text-xs uppercase tracking-wider text-rose-400 font-medium">
               Confirm Close
             </p>
-            <h3 className="mt-3 text-2xl font-semibold text-white">
+            <h3 className="text-xl font-semibold text-slate-100">
               Close Submissions Now?
             </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
+            <p className="text-xs leading-5 text-slate-300">
               This will immediately close the active submission window and clear the schedule.
             </p>
 
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <div className="flex justify-end gap-3 pt-2">
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => setShowCloseConfirmation(false)}
+                className="bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 text-xs"
               >
                 Cancel
               </Button>
-              <Button
+              <button
                 type="button"
-                className="bg-rose-600 text-white hover:bg-rose-500"
                 onClick={() => void confirmCloseSubmission()}
+                className="bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 text-xs font-semibold rounded-lg px-4 py-2 transition"
               >
                 Close Window
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       ) : null}
 
+      {/* Broadcast Confirmation Modal */}
       {showBroadcastConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
-            <p className="text-xs uppercase tracking-[0.28em] text-amber-400">
+          <div className="w-full max-w-lg bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-4">
+            <p className="text-xs uppercase tracking-wider text-amber-400 font-medium">
               Confirm Deadline Broadcast
             </p>
-            <h3 className="mt-3 text-2xl font-semibold text-white flex items-center gap-2">
-              <BellRing className="h-6 w-6 text-amber-400" />
+            <h3 className="text-xl font-semibold text-slate-100 flex items-center gap-2">
+              <BellRing className="h-5 w-5 text-amber-400" />
               Broadcast Deadline Reminder?
             </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
-              This will send an immediate <span className="font-semibold text-amber-300">Deadline Alert notification</span> to all active faculty members reminding them of the upcoming submission window closing date.
+            <p className="text-xs leading-5 text-slate-300">
+              This will send an immediate <span className="font-semibold text-amber-400">Deadline Alert notification</span> to all active faculty members reminding them of the upcoming submission window closing date.
             </p>
 
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <div className="flex justify-end gap-3 pt-2">
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => setShowBroadcastConfirmation(false)}
                 disabled={isBroadcasting}
+                className="bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 text-xs"
               >
                 Cancel
               </Button>
-              <Button
+              <button
                 type="button"
-                className="bg-amber-600 text-white hover:bg-amber-500"
                 onClick={() => void handleBroadcastReminder()}
                 disabled={isBroadcasting}
+                className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold rounded-lg px-4 py-2 transition disabled:opacity-50"
               >
                 {isBroadcasting ? "Sending..." : "Confirm & Send"}
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -1022,3 +681,5 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     </div>
   );
 }
+
+export { SubmissionWindowPanel as SubmissionWindowManager };

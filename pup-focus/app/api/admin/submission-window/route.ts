@@ -69,7 +69,17 @@ export async function GET() {
       }
     }
 
-    const status = evaluateSubmissionWindow(config);
+    let status = evaluateSubmissionWindow(config);
+    if (config && status.status === "Closed") {
+      try {
+        await supabase.from("submission_windows").delete().eq("id", 1);
+      } catch (deleteErr) {
+        console.error("Failed to auto-reset expired submission window:", deleteErr);
+      }
+      config = null;
+      status = evaluateSubmissionWindow(null);
+    }
+
     if (!config && fallbackAcademicYear && fallbackSemester) {
       status.academicYear = fallbackAcademicYear;
       status.semester = fallbackSemester;
