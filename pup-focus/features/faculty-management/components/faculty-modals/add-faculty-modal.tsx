@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useId } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import type { FacultyAccountFormInput } from "@/features/faculty-management/schemas/faculty-account.schema";
 
 function FieldError({ message }: { message?: string }) {
@@ -10,7 +11,7 @@ function FieldError({ message }: { message?: string }) {
     return null;
   }
 
-  return <p className="mt-1 text-xs text-red-400">{message}</p>;
+  return <p className="mt-1 text-xs font-medium text-red-400">{message}</p>;
 }
 
 export type ProgramOption = {
@@ -18,6 +19,23 @@ export type ProgramOption = {
   code: string;
   name: string;
 };
+
+const DEFAULT_DEGREE_PROGRAMS = [
+  { code: "BEED", name: "Bachelor of Elementary Education" },
+  { code: "BSA", name: "Bachelor of Science in Accountancy" },
+  { code: "BSMA", name: "Bachelor of Science in Management Accounting" },
+  { code: "BSIE", name: "Bachelor of Science in Industrial Engineering" },
+  { code: "BSIT", name: "Bachelor of Science in Information Technology" },
+  { code: "BSBAHRM", name: "Bachelor of Science in Business Administration major in Human Resource Management" },
+  { code: "BSEnt", name: "Bachelor of Science in Entrepreneurship" },
+];
+
+const DEFAULT_DIPLOMA_COURSES = [
+  { code: "DIT", name: "Diploma in Information Technology" },
+  { code: "DOMT-LOM", name: "Diploma in Office Management Technology major in Legal Office Management" },
+];
+
+const REDUNDANT_CODES = new Set(["BSBA", "BSE"]);
 
 export interface AddFacultyPanelProps {
   form: UseFormReturn<FacultyAccountFormInput>;
@@ -44,23 +62,73 @@ export function AddFacultyPanel({
   wrapperClassName,
   formClassName,
 }: AddFacultyPanelProps) {
-  const [programs, setPrograms] = useState<ProgramOption[]>([]);
+  const [degreePrograms, setDegreePrograms] = useState<ProgramOption[]>([]);
+  const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const photoInputId = useId();
+
+  useEffect(() => {
+    if (!profileImageFile) {
+      setImagePreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(profileImageFile);
+    setImagePreview(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [profileImageFile]);
 
   useEffect(() => {
     let isMounted = true;
+
     async function loadPrograms() {
       try {
         setIsLoadingPrograms(true);
-        const res = await fetch("/api/programs");
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && Array.isArray(data.programs)) {
-            setPrograms(data.programs);
-          }
+        const supabase = createClient();
+        const { data: fetchedPrograms, error } = await supabase
+          .from("programs")
+          .select("id, code, name")
+          .order("code", { ascending: true });
+
+        if (error) {
+          console.error("Failed to fetch programs from Supabase:", error.message);
         }
-      } catch {
-        // Fallback UI handles empty array
+
+        if (isMounted) {
+          const rawPrograms = (fetchedPrograms ?? []) as ProgramOption[];
+          const filtered = rawPrograms.filter((p: ProgramOption) => !REDUNDANT_CODES.has(p.code.toUpperCase()));
+
+          const degrees: ProgramOption[] = [];
+          const diplomas: ProgramOption[] = [];
+
+          if (filtered.length > 0) {
+            filtered.forEach((p: ProgramOption) => {
+              const codeUpper = p.code.toUpperCase();
+              const nameUpper = p.name.toUpperCase();
+              if (codeUpper.startsWith("D") || nameUpper.includes("DIPLOMA")) {
+                diplomas.push(p);
+              } else {
+                degrees.push(p);
+              }
+            });
+          } else {
+            DEFAULT_DEGREE_PROGRAMS.forEach((p: { code: string; name: string }) => degrees.push({ id: p.code, ...p }));
+            DEFAULT_DIPLOMA_COURSES.forEach((p: { code: string; name: string }) => diplomas.push({ id: p.code, ...p }));
+          }
+
+          setDegreePrograms(degrees);
+          setDiplomaCourses(diplomas);
+        }
+      } catch (err) {
+        console.error("Program fetch error:", err);
+        if (isMounted) {
+          setDegreePrograms(DEFAULT_DEGREE_PROGRAMS.map((p: { code: string; name: string }) => ({ id: p.code, ...p })));
+          setDiplomaCourses(DEFAULT_DIPLOMA_COURSES.map((p: { code: string; name: string }) => ({ id: p.code, ...p })));
+        }
       } finally {
         if (isMounted) {
           setIsLoadingPrograms(false);
@@ -74,44 +142,51 @@ export function AddFacultyPanel({
     };
   }, []);
 
+  const handleImageChange = (file: File | null) => {
+    onProfileImageChange(file);
+  };
+
   return (
-    <div className={wrapperClassName ?? "flex flex-col max-w-sm mx-auto"}>
+    <div className={wrapperClassName ?? "flex flex-col w-full"}>
       <form
-        className={`mt-6 flex flex-1 w-full flex-col gap-3 rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 p-6 shadow-lg ${formClassName ?? ""}`}
+        className={`flex flex-1 w-full flex-col gap-4 ${formClassName ?? ""}`}
         onSubmit={form.handleSubmit(onAddFaculty)}
       >
         <div className="grid gap-3 md:grid-cols-3">
           <div>
-            <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="firstName">
-              First Name
+            <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90" htmlFor="firstName">
+              First Name <span className="text-red-400">*</span>
             </label>
             <input
               id="firstName"
-              className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+              placeholder="e.g. Juan"
+              className="mt-1.5 w-full bg-[#1f0407]/80 border border-amber-500/30 focus:border-amber-500 text-slate-100 placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
               {...form.register("firstName")}
             />
             <FieldError message={form.formState.errors.firstName?.message} />
           </div>
 
           <div>
-            <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="middleName">
+            <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90" htmlFor="middleName">
               Middle Name
             </label>
             <input
               id="middleName"
-              className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+              placeholder="e.g. Santos"
+              className="mt-1.5 w-full bg-[#1f0407]/80 border border-amber-500/30 focus:border-amber-500 text-slate-100 placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
               {...form.register("middleName")}
             />
             <FieldError message={form.formState.errors.middleName?.message} />
           </div>
 
           <div>
-            <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="lastName">
-              Last Name
+            <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90" htmlFor="lastName">
+              Last Name <span className="text-red-400">*</span>
             </label>
             <input
               id="lastName"
-              className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+              placeholder="e.g. Dela Cruz"
+              className="mt-1.5 w-full bg-[#1f0407]/80 border border-amber-500/30 focus:border-amber-500 text-slate-100 placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
               {...form.register("lastName")}
             />
             <FieldError message={form.formState.errors.lastName?.message} />
@@ -119,67 +194,102 @@ export function AddFacultyPanel({
         </div>
 
         <div>
-          <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="programId">
-            Department / Program <span className="text-red-400">*</span>
+          <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90" htmlFor="programId">
+            Academic Program / Department <span className="text-red-400">*</span>
           </label>
           <select
             id="programId"
-            className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30 disabled:opacity-50"
+            className="mt-1.5 w-full bg-[#1f0407]/80 border border-amber-500/30 text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-sm outline-none transition-all disabled:opacity-50"
             disabled={isLoadingPrograms || isCreating}
             {...form.register("programId")}
           >
-            <option value="">
+            <option value="" className="bg-[#1f0407] text-slate-400">
               {isLoadingPrograms ? "Loading programs..." : "-- Select Program / Department --"}
             </option>
-            {programs.map((program) => (
-              <option key={program.id} value={program.id}>
-                {program.code} — {program.name}
-              </option>
-            ))}
+
+            {degreePrograms.length > 0 && (
+              <optgroup label="Degree Programs" className="bg-[#1f0407] text-amber-300 font-bold">
+                {degreePrograms.map((p) => (
+                  <option key={p.id} value={p.id} className="bg-[#1f0407] text-slate-100 font-normal">
+                    {p.code} — {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+
+            {diplomaCourses.length > 0 && (
+              <optgroup label="Diploma Courses" className="bg-[#1f0407] text-amber-300 font-bold">
+                {diplomaCourses.map((p) => (
+                  <option key={p.id} value={p.id} className="bg-[#1f0407] text-slate-100 font-normal">
+                    {p.code} — {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
           <FieldError message={form.formState.errors.programId?.message} />
         </div>
 
         <div>
-          <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="profileImage">
-            Profile Image
+          <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90 mb-1.5 block">
+            Profile Photo
           </label>
-          <input
-            key={profileImageInputKey}
-            id="profileImage"
-            type="file"
-            accept="image/*"
-            className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-amber-400 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-950 focus:ring focus:ring-amber-300/30"
-            onChange={(event) => {
-              const file = event.target.files?.[0] ?? null;
-              onProfileImageChange(file);
-            }}
-          />
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Upload a square image for the faculty directory.
-          </p>
-          {profileImageFile ? (
-            <div className="mt-2 flex items-center justify-between rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
-              <span className="truncate">{profileImageFile.name}</span>
+          <div className="flex items-center gap-4 p-3 bg-[#1f0407]/50 border border-dashed border-amber-500/30 rounded-xl">
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-12 h-12 rounded-full object-cover border border-amber-500/50 shrink-0"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">
+                IMG
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <label
+                htmlFor={photoInputId}
+                className="cursor-pointer text-xs font-bold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3 py-1.5 rounded-lg inline-block transition-all"
+              >
+                Choose Profile Photo
+              </label>
+              <input
+                key={profileImageInputKey}
+                id={photoInputId}
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  handleImageChange(file);
+                }}
+                className="hidden"
+              />
+              {profileImageFile ? (
+                <p className="text-[11px] text-slate-400 mt-1 truncate">
+                  {profileImageFile.name}
+                </p>
+              ) : null}
+            </div>
+            {profileImageFile ? (
               <button
                 type="button"
-                className="ml-3 text-[#7a0000] dark:text-amber-300 hover:text-amber-200"
-                onClick={() => onProfileImageChange(null)}
+                className="text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2.5 py-1.5 rounded-lg transition-all shrink-0"
+                onClick={() => handleImageChange(null)}
               >
                 Remove
               </button>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
 
         <div>
-          <label className="text-sm text-slate-700 dark:text-slate-300" htmlFor="email">
-            Email
+          <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90" htmlFor="email">
+            Email Address <span className="text-red-400">*</span>
           </label>
           <input
             id="email"
             type="email"
-            className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+            className="mt-1.5 w-full bg-[#1f0407]/80 border border-amber-500/30 focus:border-amber-500 text-slate-100 placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
             placeholder="faculty@pup.edu.ph"
             {...form.register("email")}
           />
@@ -187,24 +297,24 @@ export function AddFacultyPanel({
         </div>
 
         {createError ? (
-          <p className="rounded-md border border-red-700 bg-red-950/20 px-3 py-2 text-sm text-red-300">
+          <p className="rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-300">
             {createError}
           </p>
         ) : null}
 
         {createSuccess ? (
-          <p className="rounded-md border border-emerald-700 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-300">
+          <p className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300">
             {createSuccess}
           </p>
         ) : null}
 
-        <Button
-          className="mt-auto w-full"
+        <button
+          className="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition-all shadow-lg hover:shadow-amber-500/20 disabled:opacity-50 cursor-pointer text-sm tracking-wide"
           type="submit"
           disabled={isCreating || isLoadingPrograms}
         >
           {isCreating ? "Sending invite..." : "Create Faculty Account"}
-        </Button>
+        </button>
       </form>
     </div>
   );
@@ -225,18 +335,20 @@ export function AddFacultyModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
-      <div className="w-full max-w-2xl rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-xl font-semibold text-[#fff8e7]">
-              Add Faculty Account
-            </h3>
-          </div>
-
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Close
-          </Button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-2xl rounded-2xl border border-amber-500/30 bg-[#2a060a]/95 p-6 shadow-2xl shadow-black/60">
+        <div className="flex items-center justify-between pb-4 mb-6 border-b border-amber-500/20">
+          <h3 className="text-xl font-bold text-[#fff8e7] tracking-tight">
+            Add Faculty Account
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 transition-all cursor-pointer"
+            aria-label="Close modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <AddFacultyPanel {...panelProps} />

@@ -37,19 +37,41 @@ interface FacultyRequirementSubmission {
 }
 
 function getPureStatusText(
-  status: RequirementStatus | "rejected" | "needs_revision" | null
-): "Validated" | "Pending Review" | "Needs Revision" {
-  if (status === "validated" || status === "approved" as any) return "Validated";
-  if (status === "rejected" || status === "needs_revision") return "Needs Revision";
-  return "Pending Review";
+  status: RequirementStatus | "rejected" | "needs_revision" | null | string
+): "Validated" | "Pending Review" | "Needs Revision" | "Not Submitted" {
+  if (!status) return "Not Submitted";
+  const s = String(status).toLowerCase();
+  if (s === "validated" || s === "approved") return "Validated";
+  if (s === "rejected" || s === "needs_revision") return "Needs Revision";
+  if (
+    s === "uploaded" ||
+    s === "pending" ||
+    s === "submitted" ||
+    s === "under_review" ||
+    s === "pending_review"
+  ) {
+    return "Pending Review";
+  }
+  return "Not Submitted";
 }
 
 function getStatusTextColor(
-  status: RequirementStatus | "rejected" | "needs_revision" | null
+  status: RequirementStatus | "rejected" | "needs_revision" | null | string
 ): string {
-  if (status === "validated" || status === "approved" as any) return "text-emerald-400";
-  if (status === "rejected" || status === "needs_revision") return "text-rose-400";
-  return "text-amber-400";
+  if (!status) return "text-slate-400";
+  const s = String(status).toLowerCase();
+  if (s === "validated" || s === "approved") return "text-emerald-400";
+  if (s === "rejected" || s === "needs_revision") return "text-rose-400";
+  if (
+    s === "uploaded" ||
+    s === "pending" ||
+    s === "submitted" ||
+    s === "under_review" ||
+    s === "pending_review"
+  ) {
+    return "text-amber-400";
+  }
+  return "text-slate-400";
 }
 
 function formatBytes(bytes?: number | null): string {
@@ -124,6 +146,7 @@ function FacultyVerificationDrawer({
   const [historyAcademicYears, setHistoryAcademicYears] = useState<string[]>([]);
   const [selectedHistoryAy, setSelectedHistoryAy] = useState<string>("");
   const [selectedHistorySem, setSelectedHistorySem] = useState<SemesterOption>("1st Semester");
+  const [isDownloadingHistoryZip, setIsDownloadingHistoryZip] = useState(false);
 
   const [previewingDoc, setPreviewingDoc] = useState<{
     url: string;
@@ -133,6 +156,29 @@ function FacultyVerificationDrawer({
   } | null>(null);
 
   const [remarksInput, setRemarksInput] = useState<Record<string, string>>({});
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: "info" | "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const pendingSubmissionsCount = useMemo(() => {
+    return submissions.filter((s) => {
+      const term = toAcademicYearAndSemester(s.submitted_at || s.created_at);
+      const matchesTerm =
+        term.academicYear === academicYear && term.semester === semester;
+      const isPending =
+        s.status === "uploaded" ||
+        s.status === "pending" ||
+        s.status === "submitted" ||
+        s.status === "under_review";
+      return (
+        matchesTerm &&
+        isPending &&
+        Array.isArray(s.document_versions) &&
+        s.document_versions.length > 0
+      );
+    }).length;
+  }, [submissions, academicYear, semester]);
 
   useEffect(() => {
     async function loadDrawerData() {
@@ -252,7 +298,11 @@ function FacultyVerificationDrawer({
       });
 
       if (uploadedSubmissions.length === 0) {
-        alert("No uploaded requirement files available to download.");
+        setActionFeedback({
+          type: "info",
+          message: "No uploaded requirement files available to download.",
+        });
+        setTimeout(() => setActionFeedback(null), 4000);
         return;
       }
 
@@ -295,6 +345,72 @@ function FacultyVerificationDrawer({
     }
   }
 
+  // 1b. "Download History ZIP" Action for Verification History
+  async function handleDownloadHistoryZip() {
+    setIsDownloadingHistoryZip(true);
+    try {
+      const sanitizedName = faculty.fullName.replace(/[\\/:*?"<>|]+/g, "_");
+      const zipFilename = `${sanitizedName}_Requirements_${selectedHistoryAy}_${selectedHistorySem}.zip`.replace(
+        /[\\/:*?"<>|]+/g,
+        "_"
+      );
+
+      const historySubmissionsWithDocs = historySubmissions.filter(
+        (s) => Array.isArray(s.document_versions) && s.document_versions.length > 0
+      );
+
+      if (historySubmissionsWithDocs.length === 0) {
+        setActionFeedback({
+          type: "info",
+          message: `No uploaded requirement files available for A.Y. ${selectedHistoryAy} • ${selectedHistorySem}.`,
+        });
+        setTimeout(() => setActionFeedback(null), 4000);
+        return;
+      }
+
+      const zip = new JSZip();
+
+      for (const sub of historySubmissionsWithDocs) {
+        const reqCode = sub.requirement_code as RequirementCode;
+        const label = REQUIREMENT_LABEL[reqCode] || reqCode;
+        const docs = sub.document_versions || [];
+
+        for (const doc of docs) {
+          if (!doc.storage_path) continue;
+          const downloadUrl = `/api/storage/download?path=${encodeURIComponent(
+            doc.storage_path
+          )}`;
+          const fileRes = await fetch(downloadUrl);
+          if (fileRes.ok) {
+            const fileBlob = await fileRes.blob();
+            const ext = doc.storage_path.match(/\.[^.]+$/)?.[0] || ".pdf";
+            const fileName = `${label}${ext}`;
+            zip.file(`${label}/${fileName}`, fileBlob);
+          }
+        }
+      }
+
+      const zipContent = await zip.generateAsync({ type: "blob" });
+      const url = window.URL.createObjectURL(zipContent);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = zipFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("History ZIP download failed:", err);
+      setActionFeedback({
+        type: "error",
+        message: "Failed to generate history ZIP download.",
+      });
+      setTimeout(() => setActionFeedback(null), 4000);
+    } finally {
+      setIsDownloadingHistoryZip(false);
+    }
+  }
+
   // 2. "Validate All" Bulk Action
   async function handleValidateAllPending() {
     const pendingSubmissions = submissions.filter((s) => {
@@ -312,7 +428,11 @@ function FacultyVerificationDrawer({
     });
 
     if (pendingSubmissions.length === 0) {
-      alert("No pending requirements available to validate.");
+      setActionFeedback({
+        type: "info",
+        message: "No pending requirements available to validate.",
+      });
+      setTimeout(() => setActionFeedback(null), 4000);
       return;
     }
 
@@ -347,10 +467,19 @@ function FacultyVerificationDrawer({
           pendingIds.has(sub.id) ? { ...sub, status: "validated" } : sub
         )
       );
+      setActionFeedback({
+        type: "success",
+        message: `Successfully validated ${pendingSubmissions.length} requirement(s)!`,
+      });
+      setTimeout(() => setActionFeedback(null), 4000);
       onStatusUpdated();
     } catch (err) {
       console.error("Bulk validate failed:", err);
-      alert("Failed to process bulk validation.");
+      setActionFeedback({
+        type: "error",
+        message: "Failed to process bulk validation.",
+      });
+      setTimeout(() => setActionFeedback(null), 4000);
     } finally {
       setIsValidatingAll(false);
     }
@@ -389,36 +518,14 @@ function FacultyVerificationDrawer({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* "Validate All Pending" Bulk Action */}
-            <button
-              type="button"
-              disabled={isValidatingAll}
-              onClick={handleValidateAllPending}
-              className="text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-medium rounded-lg px-3 py-1.5 transition cursor-pointer disabled:opacity-50"
-            >
-              {isValidatingAll ? "Validating..." : "Validate All Pending"}
-            </button>
-
-            {/* "Download All (ZIP)" Action */}
-            <button
-              type="button"
-              disabled={isDownloadingZip}
-              onClick={handleDownloadZip}
-              className="text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-medium rounded-lg px-3 py-1.5 transition cursor-pointer disabled:opacity-50"
-            >
-              {isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}
-            </button>
-
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-800 p-1.5 text-slate-400 transition hover:bg-slate-900 hover:text-slate-200"
-            >
-              ✕
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-slate-800 p-1.5 text-slate-400 transition hover:bg-slate-900 hover:text-slate-200 cursor-pointer"
+            aria-label="Close modal"
+          >
+            ✕
+          </button>
         </div>
 
         {/* 1. Tab Navigation Bar */}
@@ -456,6 +563,57 @@ function FacultyVerificationDrawer({
           ) : activeTab === "current" ? (
             /* Tab 1: Current Submissions */
             <div className="space-y-4">
+              {/* Current Term Actions Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Bulk Actions
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* "Validate All Pending" Bulk Action */}
+                  <button
+                    type="button"
+                    disabled={isValidatingAll}
+                    onClick={handleValidateAllPending}
+                    className="text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-medium rounded-lg px-3 py-1.5 transition cursor-pointer disabled:opacity-50"
+                  >
+                    {isValidatingAll
+                      ? "Validating..."
+                      : `Validate All Pending (${pendingSubmissionsCount})`}
+                  </button>
+
+                  {/* "Download All (ZIP)" Action */}
+                  <button
+                    type="button"
+                    disabled={isDownloadingZip}
+                    onClick={handleDownloadZip}
+                    className="text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-medium rounded-lg px-3 py-1.5 transition cursor-pointer disabled:opacity-50"
+                  >
+                    {isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Feedback Banner */}
+              {actionFeedback ? (
+                <div
+                  className={`flex items-center gap-2.5 rounded-xl border p-3 text-xs font-semibold shadow-md transition-all ${
+                    actionFeedback.type === "info"
+                      ? "border-amber-500/40 bg-amber-950/60 text-amber-300"
+                      : actionFeedback.type === "success"
+                      ? "border-emerald-500/40 bg-emerald-950/60 text-emerald-300"
+                      : "border-rose-500/40 bg-rose-950/60 text-rose-300"
+                  }`}
+                >
+                  <span className="text-sm">
+                    {actionFeedback.type === "info"
+                      ? "ℹ️"
+                      : actionFeedback.type === "success"
+                      ? "✅"
+                      : "⚠️"}
+                  </span>
+                  <span>{actionFeedback.message}</span>
+                </div>
+              ) : null}
               {DEFAULT_REQUIREMENTS.map((code) => {
                 const reqLabel = REQUIREMENT_LABEL[code];
                 const matchingSubmission = submissions.find((s) => {
@@ -472,7 +630,9 @@ function FacultyVerificationDrawer({
                 const documents = matchingSubmission?.document_versions ?? [];
                 const firstDoc = documents[0] ?? null;
 
-                const rawStatus = (matchingSubmission?.status || "").toLowerCase();
+                const rawStatus = matchingSubmission
+                  ? (matchingSubmission.status || "").toLowerCase()
+                  : "not_submitted";
                 const isValidated = rawStatus === "validated" || rawStatus === "approved";
                 const pureStatus = getPureStatusText(rawStatus as any);
                 const statusColor = getStatusTextColor(rawStatus as any);
@@ -609,34 +769,68 @@ function FacultyVerificationDrawer({
           ) : (
             /* Tab 2: Verification History */
             <div className="space-y-4">
-              {/* Term Dropdown Selector */}
-              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Past Academic Term:
-                </span>
-                <select
-                  value={selectedHistoryAy}
-                  onChange={(e) => setSelectedHistoryAy(e.target.value)}
-                  className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 outline-none transition focus:border-amber-400/80"
-                >
-                  {historyAcademicYears.map((year) => (
-                    <option key={year} value={year}>
-                      A.Y. {year}
-                    </option>
-                  ))}
-                </select>
+              {/* Term Dropdown Selector & Download Action */}
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    Past Academic Term:
+                  </span>
+                  <select
+                    value={selectedHistoryAy}
+                    onChange={(e) => setSelectedHistoryAy(e.target.value)}
+                    className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 outline-none transition focus:border-amber-400/80"
+                  >
+                    {historyAcademicYears.map((year) => (
+                      <option key={year} value={year}>
+                        A.Y. {year}
+                      </option>
+                    ))}
+                  </select>
 
-                <select
-                  value={selectedHistorySem}
-                  onChange={(e) =>
-                    setSelectedHistorySem(e.target.value as SemesterOption)
-                  }
-                  className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 outline-none transition focus:border-amber-400/80"
+                  <select
+                    value={selectedHistorySem}
+                    onChange={(e) =>
+                      setSelectedHistorySem(e.target.value as SemesterOption)
+                    }
+                    className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 outline-none transition focus:border-amber-400/80"
+                  >
+                    <option value="1st Semester">1st Semester</option>
+                    <option value="2nd Semester">2nd Semester</option>
+                  </select>
+                </div>
+
+                {/* "Download All (ZIP)" Action for Verification History */}
+                <button
+                  type="button"
+                  disabled={isDownloadingHistoryZip}
+                  onClick={handleDownloadHistoryZip}
+                  className="text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-medium rounded-lg px-3 py-1.5 transition cursor-pointer disabled:opacity-50"
                 >
-                  <option value="1st Semester">1st Semester</option>
-                  <option value="2nd Semester">2nd Semester</option>
-                </select>
+                  {isDownloadingHistoryZip ? "Zipping..." : "Download History ZIP"}
+                </button>
               </div>
+
+              {/* Action Feedback Banner */}
+              {actionFeedback ? (
+                <div
+                  className={`flex items-center gap-2.5 rounded-xl border p-3 text-xs font-semibold shadow-md transition-all ${
+                    actionFeedback.type === "info"
+                      ? "border-amber-500/40 bg-amber-950/60 text-amber-300"
+                      : actionFeedback.type === "success"
+                      ? "border-emerald-500/40 bg-emerald-950/60 text-emerald-300"
+                      : "border-rose-500/40 bg-rose-950/60 text-rose-300"
+                  }`}
+                >
+                  <span className="text-sm">
+                    {actionFeedback.type === "info"
+                      ? "ℹ️"
+                      : actionFeedback.type === "success"
+                      ? "✅"
+                      : "⚠️"}
+                  </span>
+                  <span>{actionFeedback.message}</span>
+                </div>
+              ) : null}
 
               {/* Past Submissions List */}
               <div className="space-y-3">
@@ -849,6 +1043,8 @@ export function RequirementsPanel({
     null
   );
 
+
+
   // Derive unique programs from facultyAccounts
   const availablePrograms = useMemo(() => {
     const set = new Set<string>();
@@ -981,7 +1177,7 @@ export function RequirementsPanel({
           </select>
         </div>
 
-        {/* Text-only Active Term Indicator */}
+        {/* Active Term Indicator */}
         <div className="text-slate-400 text-xs font-medium tracking-wide shrink-0">
           A.Y. {academicYear || "2026-2027"} &bull; {semester}
         </div>
@@ -1026,19 +1222,19 @@ export function RequirementsPanel({
                     : 0;
 
                   // Overall pure text status
-                  let overallStatus: "Validated" | "Pending Review" | "Needs Revision" =
-                    "Pending Review";
-                  let textColor = "text-amber-400";
+                  let overallStatus: "Validated" | "Pending Review" | "Needs Revision" | "Not Submitted" =
+                    "Not Submitted";
+                  let textColor = "text-slate-400";
 
                   if (validatedCount === DEFAULT_REQUIREMENTS.length) {
                     overallStatus = "Validated";
                     textColor = "text-emerald-400";
-                  } else if (uploadedCount > 0) {
+                  } else if (uploadedCount > 0 || (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)) {
                     overallStatus = "Pending Review";
                     textColor = "text-amber-400";
                   } else {
-                    overallStatus = "Pending Review";
-                    textColor = "text-amber-400";
+                    overallStatus = "Not Submitted";
+                    textColor = "text-slate-400";
                   }
 
                   const programCode =
@@ -1097,6 +1293,8 @@ export function RequirementsPanel({
           </table>
         </div>
       </div>
+
+
 
       {/* 3. Faculty Verification Modal / Slide-over Drawer */}
       {reviewingFaculty ? (
