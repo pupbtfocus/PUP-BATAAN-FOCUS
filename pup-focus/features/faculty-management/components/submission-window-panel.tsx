@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { BellRing, Loader2, Clock, History, Calendar, ShieldAlert, Sparkles, CheckCircle2, Pencil, Save, X } from "lucide-react";
+import { Loader2, Clock, History, Calendar, ShieldAlert, CheckCircle2, Pencil, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
   ApiBody,
@@ -131,10 +131,8 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
   const [windowStatus, setWindowStatus] = useState<SubmissionWindowResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
-  const [showBroadcastConfirmation, setShowBroadcastConfirmation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -234,7 +232,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
   const fetchLogs = useCallback(async () => {
     try {
       setIsLoadingLogs(true);
-      const res = await fetch("/api/admin/submission-window/extend", { credentials: "include" });
+      const res = await fetch("/api/admin/submission-window/logs", { credentials: "include" });
       if (res.ok) {
         const body = await res.json();
         setExtensionLogs(body.logs || []);
@@ -245,6 +243,10 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       setIsLoadingLogs(false);
     }
   }, []);
+
+  const refetchLogs = useCallback(() => {
+    void fetchLogs();
+  }, [fetchLogs]);
 
   async function loadWindow() {
     setIsLoading(true);
@@ -474,52 +476,12 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     }
   }
 
-  async function handleBroadcastReminder() {
-    setShowBroadcastConfirmation(false);
-    setIsBroadcasting(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const response = await fetch("/api/admin/submission-window/broadcast-reminder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      const body = await readApiBody(response);
-
-      if (!response.ok) {
-        const details =
-          typeof body === "object" && body !== null
-            ? (((body as ApiBody).error || (body as ApiBody).details) ?? `HTTP ${response.status}`)
-            : `HTTP ${response.status}`;
-        setError(`Failed to broadcast reminder: ${details}`);
-        return;
-      }
-
-      const message =
-        typeof body === "object" &&
-        body !== null &&
-        typeof (body as { message?: string }).message === "string"
-          ? (body as { message: string }).message
-          : "Successfully sent deadline reminders to faculty members.";
-
-      setSuccess(message);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to broadcast deadline reminder.");
-    } finally {
-      setIsBroadcasting(false);
-    }
-  }
-
   const handleExtensionSuccess = (msg: string) => {
     setSuccess(msg);
     void loadWindow();
-    void fetchLogs();
+    refetchLogs();
     onWindowChange?.();
   };
-
-  const latestExtension = extensionLogs[0];
 
   const currentTermLabel =
     windowStatus?.academicYear && windowStatus?.semester
@@ -543,17 +505,6 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
             <h4 className="text-base font-semibold text-slate-100">
               Submission Window Manager
             </h4>
-            {/* Extension Badge */}
-            {latestExtension ? (
-              <span
-                onClick={() => setShowLogsModal(true)}
-                className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/20 transition shadow-sm"
-                title="Click to view full Extension Logs"
-              >
-                <Sparkles className="h-3 w-3 text-amber-400" />
-                Extended ({latestExtension.extension_preset || "Preset"} by {latestExtension.extended_by_name || "Admin"})
-              </span>
-            ) : null}
           </div>
           <p className="mt-1 text-xs text-slate-400">
             Current term: <span className="font-medium text-slate-200">{currentTermLabel}</span>
@@ -759,35 +710,24 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
           <div className="flex items-center gap-2.5">
             <button
               type="button"
+              onClick={() => {
+                setShowLogsModal(true);
+                refetchLogs();
+              }}
+              className="flex items-center gap-1.5 bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all"
+            >
+              <History className="w-3.5 h-3.5 text-slate-400" />
+              <span>Extension Logs ({extensionLogs.length})</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleCloseSubmission}
-              disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isOpen}
+              disabled={isLoading || isSaving || !windowStatus?.isOpen}
               className="flex items-center gap-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all disabled:opacity-50"
             >
               <ShieldAlert className="w-3.5 h-3.5" />
               <span>Close Submissions</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowBroadcastConfirmation(true)}
-              disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isOpen}
-              className="flex items-center gap-1.5 bg-slate-900/80 hover:bg-slate-800 text-amber-300 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all disabled:opacity-50"
-            >
-              {isBroadcasting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <BellRing className="w-3.5 h-3.5" />
-              )}
-              <span>Broadcast Reminder</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowLogsModal(true)}
-              className="flex items-center gap-1.5 bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all"
-            >
-              <History className="w-3.5 h-3.5 text-slate-400" />
-              <span>Logs ({extensionLogs.length})</span>
             </button>
           </div>
 
@@ -811,7 +751,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
 
                 <button
                   type="submit"
-                  disabled={isLoading || isSaving || isBroadcasting}
+                  disabled={isLoading || isSaving}
                   className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl px-5 py-2.5 text-xs shadow-lg hover:shadow-amber-500/20 transition-all disabled:opacity-50"
                 >
                   {isSaving ? (
@@ -896,7 +836,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 extensionLogs.map((log) => (
                   <div
                     key={log.id}
-                    className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2 text-xs"
+                    className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2.5 text-xs"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -910,7 +850,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                           Scope: {log.scope} ({log.scope_target || "Global"})
                         </span>
                       </div>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-[11px] text-slate-400 font-medium">
                         {new Date(log.created_at).toLocaleString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -922,23 +862,19 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                       </span>
                     </div>
 
-                    <div className="text-slate-300">
-                      <span className="text-slate-500">New Deadline:</span>{" "}
-                      <span className="font-semibold text-amber-300">
-                        {log.new_end_date} at {log.new_end_time}
-                      </span>
+                    <div className="flex flex-wrap items-center gap-2 text-slate-300 bg-slate-950/80 p-2.5 rounded-lg border border-slate-800/80">
+                      <span className="text-slate-400 font-medium text-[11px]">Deadline Change:</span>
                       {log.old_end_date ? (
-                        <span className="text-slate-500 text-[11px] ml-2">
-                          (Previous: {log.old_end_date} {log.old_end_time || ""})
-                        </span>
+                        <>
+                          <span className="text-slate-400 line-through">
+                            {log.old_end_date} {log.old_end_time || ""}
+                          </span>
+                          <span className="text-amber-400 font-bold">➔</span>
+                        </>
                       ) : null}
-                    </div>
-
-                    <div className="rounded-lg bg-slate-950 p-2.5 border border-slate-800/80 text-slate-300">
-                      <span className="font-semibold text-amber-400">Reason:</span> {log.reason}
-                      {log.reason_details ? (
-                        <p className="mt-1 text-[11px] text-slate-400">{log.reason_details}</p>
-                      ) : null}
+                      <span className="font-bold text-amber-300">
+                        {log.new_end_date} {log.new_end_time ? `at ${log.new_end_time}` : ""}
+                      </span>
                     </div>
                   </div>
                 ))
@@ -1064,44 +1000,6 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 }`}
               >
                 {closeCountdown > 0 ? `Confirm Close (${closeCountdown}s)` : "Confirm Close Submissions"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Broadcast Confirmation Modal */}
-      {showBroadcastConfirmation ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-4">
-            <p className="text-xs uppercase tracking-wider text-amber-400 font-medium">
-              Confirm Deadline Broadcast
-            </p>
-            <h3 className="text-xl font-semibold text-slate-100 flex items-center gap-2">
-              <BellRing className="h-5 w-5 text-amber-400" />
-              Broadcast Deadline Reminder?
-            </h3>
-            <p className="text-xs leading-5 text-slate-300">
-              This will send an immediate <span className="font-semibold text-amber-400">Deadline Alert notification</span> to all active faculty members reminding them of the upcoming submission window closing date.
-            </p>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setShowBroadcastConfirmation(false)}
-                disabled={isBroadcasting}
-                className="bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 text-xs"
-              >
-                Cancel
-              </Button>
-              <button
-                type="button"
-                onClick={() => void handleBroadcastReminder()}
-                disabled={isBroadcasting}
-                className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold rounded-lg px-4 py-2 transition disabled:opacity-50"
-              >
-                {isBroadcasting ? "Sending..." : "Confirm & Send"}
               </button>
             </div>
           </div>

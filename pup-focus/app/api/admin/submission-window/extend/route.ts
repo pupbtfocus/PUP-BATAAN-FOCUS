@@ -4,7 +4,6 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { logger } from "@/lib/observability/logger";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
-import { createNotification } from "@/features/notifications/services/notification.service";
 import {
   convert12HourTo24Hour,
   evaluateSubmissionWindow,
@@ -22,9 +21,6 @@ type ExtendPayload = {
   preset?: string;
   newEndDate?: string;
   newEndTime?: string;
-  reason?: string;
-  reasonDetails?: string;
-  notifyFaculty?: boolean;
 };
 
 export async function GET() {
@@ -72,10 +68,7 @@ export async function GET() {
         new_end_time: log.metadata?.new_end_time || log.metadata?.newEndTime || "",
         scope: log.metadata?.scope || "global",
         scope_target: log.metadata?.scope_target || log.metadata?.scopeTarget || null,
-        reason: log.metadata?.reason || "Extension",
-        reason_details: log.metadata?.reason_details || log.metadata?.reasonDetails || null,
         extension_preset: log.metadata?.extension_preset || log.metadata?.preset || null,
-        notified_faculty: log.metadata?.notified_faculty ?? true,
       }));
 
       return NextResponse.json({ logs: mappedAuditLogs });
@@ -120,9 +113,6 @@ export async function POST(request: NextRequest) {
       preset = "Custom",
       newEndDate,
       newEndTime,
-      reason,
-      reasonDetails,
-      notifyFaculty = true,
     } = body;
 
     if (!newEndDate || !isValidDateInput(newEndDate)) {
@@ -135,13 +125,6 @@ export async function POST(request: NextRequest) {
     if (!newEndTime) {
       return NextResponse.json(
         { error: "New end time is required." },
-        { status: 400 },
-      );
-    }
-
-    if (!reason || !reason.trim()) {
-      return NextResponse.json(
-        { error: "Reason/Justification for extension is required." },
         { status: 400 },
       );
     }
@@ -267,10 +250,9 @@ export async function POST(request: NextRequest) {
       new_end_time: endTimeLabel,
       scope,
       scope_target: scopeTarget || (scope === "global" ? "All Faculty" : null),
-      reason,
-      reason_details: reasonDetails?.trim() || null,
+      reason: "Administrative Extension",
       extension_preset: preset,
-      notified_faculty: Boolean(notifyFaculty),
+      notified_faculty: false,
     };
 
     const { data: insertedLog, error: logError } = await supabase
@@ -300,95 +282,9 @@ export async function POST(request: NextRequest) {
         new_end_time: endTimeLabel,
         scope,
         scope_target: scopeTarget || "All Faculty",
-        reason,
-        reason_details: reasonDetails?.trim() || null,
         preset,
-        notified_faculty: Boolean(notifyFaculty),
       },
     });
-
-    // 5. Notify impacted faculty if enabled
-    let notifiedCount = 0;
-    if (notifyFaculty) {
-      try {
-        let facultyAuthUserIds: string[] = [];
-
-        if (scope === "faculty" && scopeTarget) {
-          // Find auth user id for specific faculty
-          const { data: targetFaculty } = await supabase
-            .from("app_users")
-            .select("auth_user_id")
-            .or(`id.eq.${scopeTarget},profile_id.eq.${scopeTarget},auth_user_id.eq.${scopeTarget}`)
-            .limit(1);
-
-          if (targetFaculty && targetFaculty[0]?.auth_user_id) {
-            facultyAuthUserIds = [targetFaculty[0].auth_user_id];
-          }
-        } else if (scope === "program" && scopeTarget) {
-          // Look up the program UUID from the programs table by code
-          const { data: programRow } = await supabase
-            .from("programs")
-            .select("id")
-            .eq("code", scopeTarget)
-            .limit(1)
-            .maybeSingle();
-
-          if (programRow?.id) {
-            // Find faculty assigned to this program by program_id (UUID)
-            const { data: assignments } = await supabase
-              .from("faculty_program_assignments")
-              .select("faculty_profile_id")
-              .eq("program_id", programRow.id);
-
-            if (assignments && assignments.length > 0) {
-              const profileIds = assignments.map((a) => a.faculty_profile_id).filter(Boolean);
-              const { data: users } = await supabase
-                .from("app_users")
-                .select("auth_user_id")
-                .in("profile_id", profileIds);
-
-              if (users) {
-                facultyAuthUserIds = users.map((u) => u.auth_user_id).filter(Boolean) as string[];
-              }
-            }
-          }
-        } else {
-          // Global scope: all active faculty users
-          const { data: allFaculty } = await supabase
-            .from("app_users")
-            .select("auth_user_id")
-            .eq("role", "faculty");
-
-          if (allFaculty) {
-            facultyAuthUserIds = allFaculty
-              .map((u) => u.auth_user_id)
-              .filter(Boolean) as string[];
-          }
-        }
-
-        const uniqueAuthUserIds = Array.from(new Set(facultyAuthUserIds));
-
-        for (const facultyAuthUserId of uniqueAuthUserIds) {
-          await createNotification({
-            userId: facultyAuthUserId,
-            type: "deadline_alert",
-            title: "⏰ Submission Window Extended",
-            message: `The submission window has been extended to ${newEndDate} ${endTimeLabel}. Reason: ${reason}`,
-            metadata: {
-              newEndDate,
-              newEndTime: endTimeLabel,
-              reason,
-              scope,
-            },
-          });
-          notifiedCount++;
-        }
-      } catch (notifErr) {
-        logger.error("extension_notification_creation_failed", {
-          error: notifErr instanceof Error ? notifErr.message : String(notifErr),
-        });
-      }
-    }
 
     // Evaluate new window state
     const { data: updatedRaw } = await supabase
@@ -412,7 +308,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Submission window successfully extended and re-opened to ${newEndDate} at ${endTimeLabel}.${notifyFaculty ? ` Sent notifications to ${notifiedCount} faculty members.` : ""}`,
+      message: `Submission window successfully extended and re-opened to ${newEndDate} at ${endTimeLabel}.`,
       logRecord: insertedLog || logRecord,
       windowState,
     });
@@ -426,3 +322,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

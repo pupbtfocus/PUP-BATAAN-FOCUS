@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Clock, Calendar, Bell, AlertCircle, Loader2, CheckCircle2, RefreshCw } from "lucide-react";
+import { Clock, Calendar, AlertCircle, Loader2, CheckCircle2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface ExtendSubmissionWindowModalProps {
@@ -99,8 +99,6 @@ export function ExtendSubmissionWindowModal({
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("17:00");
 
-  const [notifyFaculty, setNotifyFaculty] = useState(true);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -161,7 +159,6 @@ export function ExtendSubmissionWindowModal({
     e.preventDefault();
     setError(null);
 
-
     if (scope === "faculty" && !facultyNameInput.trim()) {
       setError("Please specify the faculty member's name or ID.");
       return;
@@ -181,8 +178,6 @@ export function ExtendSubmissionWindowModal({
         preset,
         newEndDate: computedTarget.dateIso,
         newEndTime: computedTarget.time12h,
-        reason: "Administrative Extension",
-        notifyFaculty,
       };
 
       const response = await fetch("/api/admin/submission-window/extend", {
@@ -219,7 +214,7 @@ export function ExtendSubmissionWindowModal({
               <h3 className="text-lg font-bold text-slate-100">Extend & Re-open Submission Window</h3>
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              Grant a deadline extension with audit logging and faculty alerts for{" "}
+              Grant a deadline extension for{" "}
               <span className="font-semibold text-slate-300">
                 {academicYear && semester ? `${academicYear} • ${semester}` : "Active Term"}
               </span>.
@@ -392,32 +387,6 @@ export function ExtendSubmissionWindowModal({
             </span>
           </div>
 
-
-          {/* Section 4: Notification Toggle */}
-          <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 p-3.5">
-            <div className="flex items-center gap-2.5">
-              <Bell className="h-4 w-4 text-amber-400" />
-              <div>
-                <span className="text-xs font-medium text-slate-200 block">
-                  Broadcast Alert Notification
-                </span>
-                <span className="text-[11px] text-slate-400">
-                  Instantly notify all affected faculty members of this extension.
-                </span>
-              </div>
-            </div>
-
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                checked={notifyFaculty}
-                onChange={(e) => setNotifyFaculty(e.target.checked)}
-                className="peer sr-only"
-              />
-              <div className="peer h-5 w-9 rounded-full bg-slate-800 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-slate-400 after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:bg-white" />
-            </label>
-          </div>
-
           {/* Footer Actions */}
           <div className="flex items-center justify-end gap-3 border-t border-slate-800 pt-4">
             <Button
@@ -452,3 +421,4 @@ export function ExtendSubmissionWindowModal({
     </div>
   );
 }
+
