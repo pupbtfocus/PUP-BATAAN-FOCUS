@@ -81,7 +81,8 @@ export default function AboutPage() {
 
           {/* Bottom Statement */}
           <p className="text-base sm:text-xl text-slate-100 font-semibold leading-relaxed">
-            PUP FOCUS centralizes faculty compliance submission, review, and monitoring across curriculum-based teaching loads.
+            PUP FOCUS centralizes faculty compliance submission, review, and
+            monitoring across curriculum-based teaching loads.
           </p>
         </div>
 
@@ -92,7 +93,8 @@ export default function AboutPage() {
               Requirement Submission
             </h3>
             <p className="text-xs text-slate-300/90 leading-relaxed">
-              Streamlined uploading and tracking of syllabi, instructional materials, and academic requirement compliance per term.
+              Streamlined uploading and tracking of syllabi, instructional
+              materials, and academic requirement compliance per term.
             </p>
           </div>
 
@@ -101,7 +103,8 @@ export default function AboutPage() {
               Review & Verification
             </h3>
             <p className="text-xs text-slate-300/90 leading-relaxed">
-              Enables Program Heads and Academic Administrators to efficiently evaluate and approve faculty submission packages.
+              Enables Program Heads and Academic Administrators to efficiently
+              evaluate and approve faculty submission packages.
             </p>
           </div>
 
@@ -110,7 +113,8 @@ export default function AboutPage() {
               Curriculum Monitoring
             </h3>
             <p className="text-xs text-slate-300/90 leading-relaxed">
-              Ensures institutional alignment with curriculum standards and institutional outcomes across all teaching loads.
+              Ensures institutional alignment with curriculum standards and
+              institutional outcomes across all teaching loads.
             </p>
           </div>
         </div>
@@ -118,7 +122,8 @@ export default function AboutPage() {
 
       {/* Footer */}
       <footer className="relative z-10 text-center text-xs text-amber-200/50 pt-4 border-t border-amber-500/10 max-w-5xl mx-auto w-full">
-        © {new Date().getFullYear()} Polytechnic University of the Philippines - Bataan Campus. All rights reserved.
+        © {new Date().getFullYear()} Polytechnic University of the Philippines -
+        Bataan Campus. All rights reserved.
       </footer>
     </main>
   );
