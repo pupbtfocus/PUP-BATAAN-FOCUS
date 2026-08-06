@@ -19,11 +19,15 @@ type ExtensionScope = "global" | "program" | "faculty";
 
 
 const PROGRAM_OPTIONS = [
-  { code: "BSIT", name: "BS Information Technology" },
-  { code: "BSIE", name: "BS Industrial Engineering" },
-  { code: "BSBA", name: "BS Business Administration" },
-  { code: "BSED", name: "BS Education" },
-  { code: "BEED", name: "BE Elementary Education" },
+  { code: "BEED", name: "Bachelor of Elementary Education" },
+  { code: "BSA", name: "Bachelor of Science in Accountancy" },
+  { code: "BSMA", name: "Bachelor of Science in Management Accounting" },
+  { code: "BSIE", name: "Bachelor of Science in Industrial Engineering" },
+  { code: "BSIT", name: "Bachelor of Science in Information Technology" },
+  { code: "BSBAHRM", name: "Bachelor of Science in Business Administration major in Human Resource Management" },
+  { code: "BSEnt", name: "Bachelor of Science in Entrepreneurship" },
+  { code: "DIT", name: "Diploma in Information Technology" },
+  { code: "DOMT-LOM", name: "Diploma in Office Management Technology major in Legal Office Management" },
 ];
 
 function parse12HourTime(timeLabel?: string | null): { hour24: number; minute: number } {

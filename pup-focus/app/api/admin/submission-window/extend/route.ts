@@ -325,21 +325,31 @@ export async function POST(request: NextRequest) {
             facultyAuthUserIds = [targetFaculty[0].auth_user_id];
           }
         } else if (scope === "program" && scopeTarget) {
-          // Find faculty assigned to specific program code
-          const { data: assignments } = await supabase
-            .from("faculty_program_assignments")
-            .select("faculty_profile_id")
-            .eq("program_code", scopeTarget);
+          // Look up the program UUID from the programs table by code
+          const { data: programRow } = await supabase
+            .from("programs")
+            .select("id")
+            .eq("code", scopeTarget)
+            .limit(1)
+            .maybeSingle();
 
-          if (assignments && assignments.length > 0) {
-            const profileIds = assignments.map((a) => a.faculty_profile_id).filter(Boolean);
-            const { data: users } = await supabase
-              .from("app_users")
-              .select("auth_user_id")
-              .in("profile_id", profileIds);
+          if (programRow?.id) {
+            // Find faculty assigned to this program by program_id (UUID)
+            const { data: assignments } = await supabase
+              .from("faculty_program_assignments")
+              .select("faculty_profile_id")
+              .eq("program_id", programRow.id);
 
-            if (users) {
-              facultyAuthUserIds = users.map((u) => u.auth_user_id).filter(Boolean) as string[];
+            if (assignments && assignments.length > 0) {
+              const profileIds = assignments.map((a) => a.faculty_profile_id).filter(Boolean);
+              const { data: users } = await supabase
+                .from("app_users")
+                .select("auth_user_id")
+                .in("profile_id", profileIds);
+
+              if (users) {
+                facultyAuthUserIds = users.map((u) => u.auth_user_id).filter(Boolean) as string[];
+              }
             }
           }
         } else {
