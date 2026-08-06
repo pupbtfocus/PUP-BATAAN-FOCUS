@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url);
     const path = url.searchParams.get("path");
+    const download = url.searchParams.get("download");
+    const filename = url.searchParams.get("filename");
 
     if (!path) {
       return NextResponse.json({ error: "path is required" }, { status: 400 });
@@ -31,9 +33,14 @@ export async function GET(request: NextRequest) {
 
     // Get signed URL from Supabase
     const supabase = getServiceRoleClient();
+    const options =
+      download === "true" || filename
+        ? { download: filename || path.split("/").pop() || true }
+        : undefined;
+
     const { data, error } = await supabase.storage
       .from("faculty-submissions")
-      .createSignedUrl(path, 3600); // 1 hour expiry
+      .createSignedUrl(path, 3600, options); // 1 hour expiry
 
     if (error || !data?.signedUrl) {
       return NextResponse.json(
