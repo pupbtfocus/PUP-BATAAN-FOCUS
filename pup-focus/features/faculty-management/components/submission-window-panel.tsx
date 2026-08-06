@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { BellRing, Loader2 } from "lucide-react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { BellRing, Loader2, Clock, History, Calendar, ShieldAlert, Sparkles, CheckCircle2, Pencil, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
   ApiBody,
   SubmissionWindowResponse,
 } from "@/features/faculty-management/types/faculty-dashboard.types";
+import { ExtendSubmissionWindowModal } from "./extend-submission-window-modal";
 
 function getNowIsoLocal(): string {
   const d = new Date();
@@ -58,11 +59,6 @@ function toTimeLabel(timeInput: string): string | null {
   return `${hour12}:${minute} ${period}`;
 }
 
-function toIsoLocalString(d: Date): string {
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 async function readApiBody(response: Response): Promise<unknown> {
   const text = await response.text();
   if (!text) {
@@ -74,6 +70,23 @@ async function readApiBody(response: Response): Promise<unknown> {
   } catch {
     return text;
   }
+}
+
+export interface ExtensionLogEntry {
+  id: string;
+  created_at: string;
+  extended_by?: string;
+  extended_by_name?: string;
+  old_end_date?: string;
+  old_end_time?: string;
+  new_end_date: string;
+  new_end_time: string;
+  scope: string;
+  scope_target?: string;
+  reason: string;
+  reason_details?: string;
+  extension_preset?: string;
+  notified_faculty?: boolean;
 }
 
 export interface SubmissionWindowPanelProps {
@@ -93,6 +106,22 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
   const [showBroadcastConfirmation, setShowBroadcastConfirmation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Extension Modal & History states
+  const [showExtendModal, setShowExtendModal] = useState(false);
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [extensionLogs, setExtensionLogs] = useState<ExtensionLogEntry[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  // Edit vs. Save schedule toggle (defaults to editing if no schedule exists yet)
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
+
+  // 10-second safety countdown for Close Submissions
+  const [closeCountdown, setCloseCountdown] = useState(10);
+
+  // Snapshot refs for cancel-edit restore
+  const savedOpenDateTimeRef = useRef("");
+  const savedCloseDateTimeRef = useRef("");
 
   const nowIso = getNowIsoLocal();
 
@@ -115,21 +144,6 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     return `${dateStr} at ${timeStr}`;
   }
 
-  function handlePreset(days?: number, isEndOfMonth?: boolean) {
-    const base = openDateTime ? new Date(openDateTime) : new Date();
-    const validBase = Number.isNaN(base.getTime()) ? new Date() : base;
-    const target = new Date(validBase);
-
-    if (isEndOfMonth) {
-      target.setMonth(target.getMonth() + 1, 0);
-      target.setHours(23, 59, 0, 0);
-    } else if (days) {
-      target.setDate(target.getDate() + days);
-    }
-
-    setCloseDateTime(toIsoLocalString(target));
-  }
-
   function validateSchedule(): boolean {
     if (!openDateTime || !closeDateTime) {
       setError("Opening and closing schedule date and time are required.");
@@ -144,10 +158,24 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     return true;
   }
 
+  const fetchLogs = useCallback(async () => {
+    try {
+      setIsLoadingLogs(true);
+      const res = await fetch("/api/admin/submission-window/extend", { credentials: "include" });
+      if (res.ok) {
+        const body = await res.json();
+        setExtensionLogs(body.logs || []);
+      }
+    } catch {
+      // Ignore background log fetch error
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  }, []);
+
   async function loadWindow() {
     setIsLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const response = await fetch("/api/admin/submission-window", { credentials: "include" });
@@ -203,10 +231,30 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void loadWindow();
+      void fetchLogs();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, []);
+  }, [fetchLogs]);
+
+  // Sync isEditingSchedule: lock inputs once a valid schedule loads
+  useEffect(() => {
+    if (!isLoading && windowStatus) {
+      const hasSchedule = !!(windowStatus.startDate && windowStatus.endDate && windowStatus.status !== "Closed");
+      setIsEditingSchedule(!hasSchedule);
+    }
+  }, [isLoading, windowStatus]);
+
+  // Close countdown timer tick
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (showCloseConfirmation && closeCountdown > 0) {
+      interval = setInterval(() => {
+        setCloseCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [showCloseConfirmation, closeCountdown]);
 
   useEffect(() => {
     if (!closeDateTime) return;
@@ -244,17 +292,6 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     }
 
     if (!validateSchedule()) {
-      return;
-    }
-
-    const [startDate, startTime24] = openDateTime.split("T");
-    const [endDate, endTime24] = closeDateTime.split("T");
-
-    const startTimeLabel = toTimeLabel(startTime24);
-    const endTimeLabel = toTimeLabel(endTime24);
-
-    if (!startTimeLabel || !endTimeLabel) {
-      setError("Please select valid start and end times.");
       return;
     }
 
@@ -308,8 +345,10 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       }
 
       setWindowStatus(body as SubmissionWindowResponse);
+      setIsEditingSchedule(false);
       setSuccess("Submission window updated successfully.");
       onWindowChange?.();
+      void fetchLogs();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save submission window");
     } finally {
@@ -318,6 +357,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
   }
 
   function handleCloseSubmission() {
+    setCloseCountdown(10);
     setShowCloseConfirmation(true);
   }
 
@@ -353,6 +393,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       setCloseDateTime("");
       setSuccess("Submissions closed and schedule cleared.");
       onWindowChange?.();
+      void fetchLogs();
     } catch (closeError) {
       setError(closeError instanceof Error ? closeError.message : "Failed to close submissions");
     } finally {
@@ -398,6 +439,15 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
     }
   }
 
+  const handleExtensionSuccess = (msg: string) => {
+    setSuccess(msg);
+    void loadWindow();
+    void fetchLogs();
+    onWindowChange?.();
+  };
+
+  const latestExtension = extensionLogs[0];
+
   const currentTermLabel =
     windowStatus?.academicYear && windowStatus?.semester
       ? `${windowStatus.academicYear} • ${windowStatus.semester}`
@@ -413,12 +463,25 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
 
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-950 p-5 shadow-xl space-y-6">
-      {/* Header & Status Section */}
+      {/* 1. Header & Status Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4">
         <div>
-          <h4 className="text-base font-semibold text-slate-100">
-            Submission Window Manager
-          </h4>
+          <div className="flex items-center gap-2.5">
+            <h4 className="text-base font-semibold text-slate-100">
+              Submission Window Manager
+            </h4>
+            {/* Extension Badge */}
+            {latestExtension ? (
+              <span
+                onClick={() => setShowLogsModal(true)}
+                className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/20 transition shadow-sm"
+                title="Click to view full Extension Logs"
+              >
+                <Sparkles className="h-3 w-3 text-amber-400" />
+                Extended ({latestExtension.extension_preset || "Preset"} by {latestExtension.extended_by_name || "Admin"})
+              </span>
+            ) : null}
+          </div>
           <p className="mt-1 text-xs text-slate-400">
             Current term: <span className="font-medium text-slate-200">{currentTermLabel}</span>
           </p>
@@ -426,11 +489,20 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
 
         <div className="flex flex-col sm:items-end">
           {windowStatus?.status === "Open" ? (
-            <span className="text-emerald-400 font-semibold text-xs">Status: Open</span>
+            <span className="text-emerald-400 font-semibold text-xs flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              Status: Open
+            </span>
           ) : windowStatus?.status === "Closed" ? (
-            <span className="text-amber-400 font-semibold text-xs">Status: Closed</span>
+            <span className="text-amber-400 font-semibold text-xs flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-amber-400" />
+              Status: Closed
+            </span>
           ) : windowStatus?.status === "Upcoming" ? (
-            <span className="text-sky-400 font-semibold text-xs">Status: Upcoming</span>
+            <span className="text-sky-400 font-semibold text-xs flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-sky-400" />
+              Status: Upcoming
+            </span>
           ) : (
             <span className="text-slate-400 font-semibold text-xs">Status: Checking...</span>
           )}
@@ -450,14 +522,18 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
         </p>
       ) : null}
 
-      {/* Main Schedule Configuration Form */}
-      <form onSubmit={handleSave} className="space-y-5">
+      {/* 2. 2-Column Schedule Configuration Grid */}
+      <form onSubmit={handleSave} className="space-y-6">
         <div className="grid gap-5 md:grid-cols-2">
-          {/* Opening Schedule Input */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 flex flex-col justify-between">
+          {/* Left Column: Opening Schedule Input */}
+          <div className={`rounded-xl p-4 flex flex-col justify-between transition-all duration-300 ${
+            isEditingSchedule
+              ? "border-2 border-amber-500 ring-4 ring-amber-500/20 bg-amber-500/5"
+              : "border border-slate-800 bg-slate-900/50"
+          }`}>
             <div>
               <label htmlFor="opening-schedule" className="block text-xs font-semibold text-amber-400">
-                Opening Schedule
+                Opening Date & Time
               </label>
               <p className="mt-1 text-[11px] text-slate-400">
                 Select the opening date and time for document uploads.
@@ -470,99 +546,268 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 min={nowIso}
                 value={openDateTime}
                 onChange={(e) => setOpenDateTime(e.target.value)}
-                disabled={isLoading || isSaving}
-                className="w-full bg-slate-900 border border-slate-800 text-slate-100 rounded-lg p-2.5 text-xs focus:border-amber-500/50 outline-none transition"
+                disabled={!isEditingSchedule || isLoading || isSaving}
+                className={`w-full rounded-lg p-2.5 text-xs outline-none transition-all duration-300 ${
+                  isEditingSchedule
+                    ? "bg-slate-900 border-2 border-amber-500/60 text-amber-100 ring-2 ring-amber-500/10"
+                    : "bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed"
+                }`}
               />
             </div>
           </div>
 
-          {/* Closing Schedule Input & Presets */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 flex flex-col justify-between">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <label htmlFor="closing-schedule" className="block text-xs font-semibold text-rose-400">
-                  Closing Schedule
-                </label>
-                <p className="mt-1 text-[11px] text-slate-400">
-                  Select or use quick presets for deadline.
-                </p>
-              </div>
-
-              {/* Quick Presets */}
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handlePreset(7)}
-                  disabled={isLoading || isSaving}
-                  className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-[11px] font-semibold rounded-md px-2 py-1 transition disabled:opacity-50"
-                >
-                  +7 Days
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handlePreset(14)}
-                  disabled={isLoading || isSaving}
-                  className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-[11px] font-semibold rounded-md px-2 py-1 transition disabled:opacity-50"
-                >
-                  +14 Days
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handlePreset(undefined, true)}
-                  disabled={isLoading || isSaving}
-                  className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-[11px] font-semibold rounded-md px-2 py-1 transition disabled:opacity-50"
-                >
-                  End of Month
-                </button>
-              </div>
+          {/* Right Column: Closing Schedule & Deadline */}
+          <div className={`rounded-xl p-4 flex flex-col justify-between transition-all duration-300 ${
+            isEditingSchedule
+              ? "border-2 border-amber-500 ring-4 ring-amber-500/20 bg-amber-500/5"
+              : "border border-slate-800 bg-slate-900/50"
+          }`}>
+            <div>
+              <label htmlFor="closing-schedule" className="block text-xs font-semibold text-rose-400">
+                Closing Date & Deadline
+              </label>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Current active deadline for faculty compliance document uploads.
+              </p>
             </div>
 
             <div className="mt-3">
-              <input
-                id="closing-schedule"
-                type="datetime-local"
-                min={openDateTime || nowIso}
-                value={closeDateTime}
-                onChange={(e) => setCloseDateTime(e.target.value)}
-                disabled={isLoading || isSaving}
-                className="w-full bg-slate-900 border border-slate-800 text-slate-100 rounded-lg p-2.5 text-xs focus:border-amber-500/50 outline-none transition"
-              />
+              {!isEditingSchedule && windowStatus?.endDate && windowStatus?.endTimeLabel ? (
+                <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 p-2.5">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-rose-400" />
+                    <span className="text-xs font-bold text-slate-100">
+                      {windowStatus.endDate} at {windowStatus.endTimeLabel}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">
+                    Configured Deadline
+                  </span>
+                </div>
+              ) : (
+                <input
+                  id="closing-schedule"
+                  type="datetime-local"
+                  min={openDateTime || nowIso}
+                  value={closeDateTime}
+                  onChange={(e) => setCloseDateTime(e.target.value)}
+                  disabled={!isEditingSchedule || isLoading || isSaving}
+                  className={`w-full rounded-lg p-2.5 text-xs outline-none transition-all duration-300 ${
+                    isEditingSchedule
+                      ? "bg-slate-900 border-2 border-amber-500/60 text-amber-100 ring-2 ring-amber-500/10"
+                      : "bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed"
+                  }`}
+                />
+              )}
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => setShowBroadcastConfirmation(true)}
-            disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isOpen}
-            className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold rounded-lg px-4 py-2 flex items-center transition disabled:opacity-50"
-          >
-            {isBroadcasting ? (
-              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+        {/* 3. Structured Footer Action Toolbar — Zone-Separated Split Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-800/80 pt-5 mt-6">
+          {/* LEFT: Operational & Destructive Triggers */}
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleCloseSubmission}
+              disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isOpen}
+              className="flex items-center gap-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all disabled:opacity-50"
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Close Submissions</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowBroadcastConfirmation(true)}
+              disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isOpen}
+              className="flex items-center gap-1.5 bg-slate-900/80 hover:bg-slate-800 text-amber-300 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all disabled:opacity-50"
+            >
+              {isBroadcasting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <BellRing className="w-3.5 h-3.5" />
+              )}
+              <span>Broadcast Reminder</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowLogsModal(true)}
+              className="flex items-center gap-1.5 bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all"
+            >
+              <History className="w-3.5 h-3.5 text-slate-400" />
+              <span>Logs ({extensionLogs.length})</span>
+            </button>
+          </div>
+
+          {/* RIGHT: Active Mode Controls (Edit / Save / Cancel / Extend) */}
+          <div className="flex items-center gap-2.5">
+            {isEditingSchedule ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenDateTime(savedOpenDateTimeRef.current);
+                    setCloseDateTime(savedCloseDateTimeRef.current);
+                    setIsEditingSchedule(false);
+                  }}
+                  disabled={isSaving}
+                  className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Cancel</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isLoading || isSaving || isBroadcasting}
+                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl px-5 py-2.5 text-xs shadow-lg hover:shadow-amber-500/20 transition-all disabled:opacity-50"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isSaving ? "Saving..." : "Save Window Schedule"}</span>
+                </button>
+              </>
             ) : (
-              <BellRing className="mr-2 h-3.5 w-3.5 text-amber-400" />
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    savedOpenDateTimeRef.current = openDateTime;
+                    savedCloseDateTimeRef.current = closeDateTime;
+                    setIsEditingSchedule(true);
+                  }}
+                  disabled={isLoading || isSaving}
+                  className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 rounded-xl px-4 py-2.5 text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Edit Schedule</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowExtendModal(true)}
+                  disabled={isLoading || isSaving}
+                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl px-5 py-2.5 text-xs shadow-lg hover:shadow-amber-500/20 transition-all disabled:opacity-50"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Extend Window</span>
+                </button>
+              </>
             )}
-            Broadcast Deadline Reminder
-          </button>
-          <button
-            type="button"
-            onClick={handleCloseSubmission}
-            disabled={isLoading || isSaving || isBroadcasting || !windowStatus?.isOpen}
-            className="bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 text-xs font-semibold rounded-lg px-4 py-2 transition disabled:opacity-50"
-          >
-            Close Submissions
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading || isSaving || isBroadcasting}
-            className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold rounded-lg px-4 py-2 transition disabled:opacity-50"
-          >
-            {isSaving ? "Saving..." : "Save Window Schedule"}
-          </button>
+          </div>
         </div>
       </form>
+
+      {/* Workflow Modal: Extend Submission Window */}
+      <ExtendSubmissionWindowModal
+        isOpen={showExtendModal}
+        onClose={() => setShowExtendModal(false)}
+        onSuccess={handleExtensionSuccess}
+        currentEndDate={windowStatus?.endDate}
+        currentEndTimeLabel={windowStatus?.endTimeLabel}
+        academicYear={windowStatus?.academicYear}
+        semester={windowStatus?.semester}
+      />
+
+      {/* Extension Logs History Modal */}
+      {showLogsModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-amber-400" />
+                <h3 className="text-lg font-bold text-slate-100">Extension Audit Logs</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLogsModal(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-900 hover:text-slate-200 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-3 pr-1 flex-1">
+              {isLoadingLogs ? (
+                <div className="py-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                  Loading extension history...
+                </div>
+              ) : extensionLogs.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  No extension history recorded yet.
+                </div>
+              ) : (
+                extensionLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2 text-xs"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-100">
+                          {log.extended_by_name || "Admin"}
+                        </span>
+                        <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30 uppercase">
+                          {log.extension_preset || "Extended"}
+                        </span>
+                        <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-300 capitalize">
+                          Scope: {log.scope} ({log.scope_target || "Global"})
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500">
+                        {new Date(log.created_at).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                      </span>
+                    </div>
+
+                    <div className="text-slate-300">
+                      <span className="text-slate-500">New Deadline:</span>{" "}
+                      <span className="font-semibold text-amber-300">
+                        {log.new_end_date} at {log.new_end_time}
+                      </span>
+                      {log.old_end_date ? (
+                        <span className="text-slate-500 text-[11px] ml-2">
+                          (Previous: {log.old_end_date} {log.old_end_time || ""})
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="rounded-lg bg-slate-950 p-2.5 border border-slate-800/80 text-slate-300">
+                      <span className="font-semibold text-amber-400">Reason:</span> {log.reason}
+                      {log.reason_details ? (
+                        <p className="mt-1 text-[11px] text-slate-400">{log.reason_details}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-800 flex justify-end shrink-0">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowLogsModal(false)}
+                className="bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 text-xs"
+              >
+                Close Logs
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Save Confirmation Modal */}
       {showSaveConfirmation ? (
@@ -606,25 +851,54 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
         </div>
       ) : null}
 
-      {/* Close Confirmation Modal */}
+      {/* Close Confirmation Modal — 10-second Safety Countdown */}
       {showCloseConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-lg bg-slate-950 border border-rose-500/30 rounded-xl p-6 shadow-2xl space-y-4">
             <p className="text-xs uppercase tracking-wider text-rose-400 font-medium">
-              Confirm Close
+              ⚠ Destructive Action
             </p>
             <h3 className="text-xl font-semibold text-slate-100">
               Close Submissions Now?
             </h3>
             <p className="text-xs leading-5 text-slate-300">
-              This will immediately close the active submission window and clear the schedule.
+              This will <span className="font-bold text-rose-400">immediately close</span> the active submission window and clear the schedule. Faculty will no longer be able to upload compliance documents.
             </p>
+
+            {/* Countdown indicator */}
+            {closeCountdown > 0 ? (
+              <div className="flex items-center gap-3 rounded-lg border border-rose-500/20 bg-rose-950/30 px-4 py-3">
+                <div className="relative flex items-center justify-center h-10 w-10 shrink-0">
+                  <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-800" />
+                    <circle
+                      cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5"
+                      className="text-rose-500 transition-all duration-1000 ease-linear"
+                      strokeDasharray="97.39"
+                      strokeDashoffset={97.39 * (1 - closeCountdown / 10)}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="absolute text-sm font-black text-rose-400">{closeCountdown}</span>
+                </div>
+                <p className="text-[11px] text-rose-300">
+                  Please wait <span className="font-bold">{closeCountdown} second{closeCountdown !== 1 ? "s" : ""}</span> before confirming. This safety timer protects against accidental closures.
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-4 py-3">
+                <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+                <p className="text-[11px] text-emerald-300 font-semibold">
+                  Safety timer completed. You may now confirm the closure.
+                </p>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-2">
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setShowCloseConfirmation(false)}
+                onClick={() => { setShowCloseConfirmation(false); setCloseCountdown(10); }}
                 className="bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 text-xs"
               >
                 Cancel
@@ -632,9 +906,14 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
               <button
                 type="button"
                 onClick={() => void confirmCloseSubmission()}
-                className="bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 text-xs font-semibold rounded-lg px-4 py-2 transition"
+                disabled={closeCountdown > 0}
+                className={`text-xs font-semibold rounded-lg px-4 py-2 transition-all ${
+                  closeCountdown > 0
+                    ? "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60"
+                    : "bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20"
+                }`}
               >
-                Close Window
+                {closeCountdown > 0 ? `Confirm Close (${closeCountdown}s)` : "Confirm Close Submissions"}
               </button>
             </div>
           </div>
