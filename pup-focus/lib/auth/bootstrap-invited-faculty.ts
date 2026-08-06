@@ -78,6 +78,7 @@ export async function bootstrapInvitedFacultyAccount(user: {
         user_id: user.id,
         full_name: fullName,
         email,
+        department_id: programId ?? undefined,
       },
       { onConflict: "user_id" },
     )

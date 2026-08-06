@@ -1,18 +1,15 @@
 "use client";
 
 import { useEffect, useState, useId } from "react";
-import type { UseFormReturn } from "react-hook-form";
+import { useForm, type UseFormReturn } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { FacultyAccountFormInput } from "@/features/faculty-management/schemas/faculty-account.schema";
-
-function FieldError({ message }: { message?: string }) {
-  if (!message) {
-    return null;
-  }
-
-  return <p className="mt-1 text-xs font-medium text-red-400">{message}</p>;
-}
+import {
+  facultyAccountSchema,
+  type FacultyAccountFormInput,
+} from "@/features/faculty-management/schemas/faculty-account.schema";
+import type { CreateFacultyResult } from "@/features/faculty-management/types/faculty-dashboard.types";
 
 export type ProgramOption = {
   id: string;
@@ -37,7 +34,15 @@ const DEFAULT_DIPLOMA_COURSES = [
 
 const REDUNDANT_CODES = new Set(["BSBA", "BSE"]);
 
-export interface AddFacultyPanelProps {
+function FieldError({ message }: { message?: string }) {
+  if (!message) {
+    return null;
+  }
+
+  return <p className="mt-1 text-xs font-medium text-red-400">{message}</p>;
+}
+
+export interface CreateFacultyPanelProps {
   form: UseFormReturn<FacultyAccountFormInput>;
   onAddFaculty: (input: FacultyAccountFormInput) => void;
   isCreating: boolean;
@@ -50,7 +55,7 @@ export interface AddFacultyPanelProps {
   formClassName?: string;
 }
 
-export function AddFacultyPanel({
+export function CreateFacultyPanel({
   form,
   onAddFaculty,
   isCreating,
@@ -61,7 +66,7 @@ export function AddFacultyPanel({
   profileImageInputKey,
   wrapperClassName,
   formClassName,
-}: AddFacultyPanelProps) {
+}: CreateFacultyPanelProps) {
   const [degreePrograms, setDegreePrograms] = useState<ProgramOption[]>([]);
   const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
@@ -320,18 +325,89 @@ export function AddFacultyPanel({
   );
 }
 
-export interface AddFacultyModalProps extends AddFacultyPanelProps {
+export interface CreateFacultyModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onFacultyCreated?: () => void;
 }
 
-export function AddFacultyModal({
+export function CreateFacultyModal({
   isOpen,
   onClose,
-  ...panelProps
-}: AddFacultyModalProps) {
+  onFacultyCreated,
+}: CreateFacultyModalProps) {
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [profileImageInputKey, setProfileImageInputKey] = useState(0);
+
+  const form = useForm<FacultyAccountFormInput>({
+    resolver: zodResolver(facultyAccountSchema),
+    defaultValues: {
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      email: "",
+      programId: "",
+    },
+  });
+
   if (!isOpen) {
     return null;
+  }
+
+  async function handleAddFaculty(input: FacultyAccountFormInput) {
+    setIsCreating(true);
+    setCreateError(null);
+    setCreateSuccess(null);
+
+    try {
+      const payload = new FormData();
+      payload.append("firstName", input.firstName);
+      payload.append("middleName", input.middleName);
+      payload.append("lastName", input.lastName);
+      payload.append("email", input.email);
+      payload.append("program_id", input.programId);
+      payload.append("programId", input.programId);
+
+      if (profileImageFile) {
+        payload.append("profileImage", profileImageFile);
+      }
+
+      const response = await fetch("/api/super-admin/faculty/create", {
+        method: "POST",
+        body: payload,
+      });
+
+      const data = (await response.json()) as CreateFacultyResult;
+
+      if (!response.ok) {
+        setCreateError(data.error ?? "Failed to send faculty invite");
+        setIsCreating(false);
+        return;
+      }
+
+      const invitedEmail = data.user?.email ?? input.email;
+      setCreateSuccess(`Faculty account created and invitation sent to ${invitedEmail}.`);
+      form.reset({
+        firstName: "",
+        middleName: "",
+        lastName: "",
+        email: "",
+        programId: "",
+      });
+      setProfileImageFile(null);
+      setProfileImageInputKey((v) => v + 1);
+
+      if (onFacultyCreated) {
+        onFacultyCreated();
+      }
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsCreating(false);
+    }
   }
 
   return (
@@ -351,7 +427,16 @@ export function AddFacultyModal({
           </button>
         </div>
 
-        <AddFacultyPanel {...panelProps} />
+        <CreateFacultyPanel
+          createError={createError}
+          createSuccess={createSuccess}
+          form={form}
+          isCreating={isCreating}
+          onAddFaculty={handleAddFaculty}
+          onProfileImageChange={setProfileImageFile}
+          profileImageFile={profileImageFile}
+          profileImageInputKey={profileImageInputKey}
+        />
       </div>
     </div>
   );
