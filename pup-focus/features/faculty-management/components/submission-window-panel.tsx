@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { BellRing, Loader2, Clock, History, Calendar, ShieldAlert, Sparkles, CheckCircle2, Pencil, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
@@ -20,6 +20,34 @@ function toDateTimeLocal(d: Date): string {
 
 function getNowIsoLocal(): string {
   return toDateTimeLocal(new Date());
+}
+
+function formatTimeDifference(ms: number): string {
+  if (ms <= 0) return "0s";
+  const seconds = Math.floor((ms / 1000) % 60);
+  const minutes = Math.floor((ms / (1000 * 60)) % 60);
+  const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0 || days > 0) parts.push(`${hours}h`);
+  if (minutes > 0 || hours > 0 || days > 0) parts.push(`${minutes}m`);
+  parts.push(`${seconds}s`);
+
+  return parts.join(" ");
+}
+
+function formatTimeAgo(ms: number): string {
+  if (ms <= 0) return "just now";
+  const minutes = Math.floor(ms / (1000 * 60));
+  const hours = Math.floor(ms / (1000 * 60 * 60));
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+
+  if (days > 0) return `${days}d ${hours % 24}h ago`;
+  if (hours > 0) return `${hours}h ${minutes % 60}m ago`;
+  if (minutes > 0) return `${minutes}m ago`;
+  return "just now";
 }
 
 function toTimeInputValue(timeLabel: string): string | null {
@@ -125,6 +153,48 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
   // Snapshot refs for cancel-edit restore
   const savedOpenDateTimeRef = useRef("");
   const savedCloseDateTimeRef = useRef("");
+
+  // Live clock state updating every second
+  const [now, setNow] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const startDateObj = useMemo(() => {
+    if (!openDateTime) return null;
+    const d = new Date(openDateTime);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }, [openDateTime]);
+
+  const endDateObj = useMemo(() => {
+    if (!closeDateTime) return null;
+    const d = new Date(closeDateTime);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }, [closeDateTime]);
+
+  const isWindowOpen = Boolean(
+    startDateObj && endDateObj && now >= startDateObj && now <= endDateObj
+  );
+
+  const isUpcoming = Boolean(startDateObj && now < startDateObj);
+
+  const formattedCountdownTime = useMemo(() => {
+    if (isWindowOpen && endDateObj) {
+      const diff = endDateObj.getTime() - now.getTime();
+      return formatTimeDifference(diff);
+    }
+    if (isUpcoming && startDateObj) {
+      const diff = startDateObj.getTime() - now.getTime();
+      return formatTimeDifference(diff);
+    }
+    if (endDateObj && now > endDateObj) {
+      const diff = now.getTime() - endDateObj.getTime();
+      return `Expired ${formatTimeAgo(diff)}`;
+    }
+    return "Not Configured";
+  }, [isWindowOpen, isUpcoming, startDateObj, endDateObj, now]);
 
   const nowIso = getNowIsoLocal();
 
@@ -489,27 +559,42 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
             Current term: <span className="font-medium text-slate-200">{currentTermLabel}</span>
           </p>
         </div>
+      </div>
 
-        <div className="flex flex-col sm:items-end">
-          {windowStatus?.status === "Open" ? (
-            <span className="text-emerald-400 font-semibold text-xs flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Status: Open
-            </span>
-          ) : windowStatus?.status === "Closed" ? (
-            <span className="text-amber-400 font-semibold text-xs flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              Status: Closed
-            </span>
-          ) : windowStatus?.status === "Upcoming" ? (
-            <span className="text-sky-400 font-semibold text-xs flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-sky-400" />
-              Status: Upcoming
-            </span>
-          ) : (
-            <span className="text-slate-400 font-semibold text-xs">Status: Checking...</span>
-          )}
-          <p className="mt-0.5 text-[11px] text-slate-400">{currentScheduleLabel}</p>
+      {/* Real-time Status Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-[#1a0407]/90 border border-amber-500/20 shadow-xl backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          {/* Live Pulsing Badge */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
+            isWindowOpen
+              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+              : isUpcoming
+              ? "bg-amber-500/10 text-amber-300 border border-amber-500/30"
+              : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+          }`}>
+            <span className={`w-2.5 h-2.5 rounded-full ${
+              isWindowOpen ? "bg-emerald-400 animate-pulse" : isUpcoming ? "bg-amber-400 animate-ping" : "bg-rose-500"
+            }`} />
+            <span>{isWindowOpen ? "Live Submission Window" : isUpcoming ? "Scheduled Window" : "Window Closed"}</span>
+          </div>
+
+          {/* Term Context */}
+          <span className="text-xs text-slate-300 font-semibold">
+            {currentTermLabel}
+          </span>
+        </div>
+
+        {/* Real-Time Countdown Timer Display */}
+        <div className="flex items-center gap-2 bg-slate-950/60 border border-slate-800 rounded-xl px-4 py-2">
+          <Clock className="w-4 h-4 text-amber-400 animate-[spin_6s_linear_infinite]" />
+          <div className="text-right">
+            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+              {isWindowOpen ? "Time Remaining" : isUpcoming ? "Opens In" : "Status"}
+            </p>
+            <p className="text-sm font-black text-amber-300 font-mono">
+              {formattedCountdownTime}
+            </p>
+          </div>
         </div>
       </div>
 
