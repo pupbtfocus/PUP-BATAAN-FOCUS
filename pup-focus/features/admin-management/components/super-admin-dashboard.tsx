@@ -819,7 +819,7 @@ export function SuperAdminDashboard({
 
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
-      <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-5 shadow-lg">
+      <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-none border-r border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-5 shadow-lg">
         <div className="my-6 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
           <p className="mt-2 font-semibold text-white text-center">
             {adminName ?? "Super Admin"}

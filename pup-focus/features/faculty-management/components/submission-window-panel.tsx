@@ -497,7 +497,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       : "Not configured";
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950 p-5 shadow-xl space-y-6">
+    <div className="rounded-l-xl rounded-r-none border border-slate-800 bg-slate-950 p-5 shadow-xl space-y-6">
       {/* 1. Header & Status Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4">
         <div>

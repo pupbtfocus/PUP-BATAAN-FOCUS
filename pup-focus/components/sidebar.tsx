@@ -59,7 +59,7 @@ export function Sidebar({
   }, [isAcademicCycleActive]);
 
   return (
-    <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-r-2xl border border-l-0 border-slate-800 bg-slate-950 p-5 shadow-lg">
+    <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-5 shadow-lg">
       <div className="my-6 rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col items-center">
         <p className="mt-2 font-semibold text-white text-center">
           {adminName ?? "Admin"}
