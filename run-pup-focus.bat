@@ -21,10 +21,12 @@ echo [INFO] Clearing Next.js build and cache...
 if exist .next rmdir /s /q .next
 if exist node_modules\.cache rmdir /s /q node_modules\.cache
 
-echo [INFO] Opening http://localhost:3000 in browser...
-start http://localhost:3000
+echo [INFO] Opening http://localhost:3001 in browser...
+start http://localhost:3001
+echo [INFO] Opening https://pup-bt-focus.vercel.app/ in browser...
+start https://pup-bt-focus.vercel.app/
 
 echo.
-npm run dev
+npm run dev -- -p 3001
 
 endlocal
