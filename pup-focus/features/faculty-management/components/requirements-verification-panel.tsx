@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import JSZip from "jszip";
+import { ExternalLink } from "lucide-react";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -34,6 +35,13 @@ interface FacultyRequirementSubmission {
     remarks?: string | null;
     created_at?: string | null;
   }> | null;
+}
+
+function buildFacultyInitials(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "F";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
 function getPureStatusText(
@@ -153,6 +161,7 @@ function FacultyVerificationDrawer({
     name: string;
     mimeType?: string | null;
     label: string;
+    storagePath?: string | null;
   } | null>(null);
 
   const [remarksInput, setRemarksInput] = useState<Record<string, string>>({});
@@ -160,6 +169,32 @@ function FacultyVerificationDrawer({
     type: "info" | "success" | "error";
     message: string;
   } | null>(null);
+
+  const [isValidateModalOpen, setIsValidateModalOpen] = useState(false);
+  const [validateTimerSeconds, setValidateTimerSeconds] = useState(5);
+  const [noticeModalData, setNoticeModalData] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
+
+  const [zipProgressData, setZipProgressData] = useState<{
+    status: "zipping" | "success" | "error";
+    title: string;
+    message: string;
+    progressText?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isValidateModalOpen && validateTimerSeconds > 0) {
+      interval = setInterval(() => {
+        setValidateTimerSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isValidateModalOpen, validateTimerSeconds]);
 
   const pendingSubmissionsCount = useMemo(() => {
     return submissions.filter((s) => {
@@ -255,6 +290,65 @@ function FacultyVerificationDrawer({
     }
   }
 
+  async function handleSingleFileDownload(
+    storagePath?: string | null,
+    fileName: string = "Document"
+  ) {
+    if (!storagePath) {
+      setNoticeModalData({
+        title: "File Unavailable",
+        message: `The file "${fileName}" is not attached or no longer exists on the server.`,
+      });
+      return;
+    }
+
+    setZipProgressData({
+      status: "zipping",
+      title: "Downloading File",
+      message: `Fetching file "${fileName}"...`,
+      progressText: "Preparing download...",
+    });
+
+    try {
+      const downloadUrl = `/api/storage/download?path=${encodeURIComponent(
+        storagePath
+      )}&download=true`;
+      const res = await fetch(downloadUrl);
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        setZipProgressData({
+          status: "success",
+          title: "Download Started",
+          message: `"${fileName}" has been downloaded successfully!`,
+          progressText: "Complete 100%",
+        });
+      } else {
+        setZipProgressData({
+          status: "error",
+          title: "Download Error",
+          message: `Failed to download file "${fileName}".`,
+        });
+      }
+    } catch (err) {
+      console.error("Single file download error:", err);
+      setZipProgressData({
+        status: "error",
+        title: "Download Error",
+        message: `Failed to download "${fileName}". Please try again.`,
+      });
+    }
+  }
+
   // 1. "Download All as ZIP" Action
   async function handleDownloadZip() {
     setIsDownloadingZip(true);
@@ -264,28 +358,7 @@ function FacultyVerificationDrawer({
         "_"
       );
 
-      const response = await fetch(
-        `/api/admin/faculty/submissions/download-validated?facultyId=${encodeURIComponent(
-          faculty.id
-        )}&academicYear=${encodeURIComponent(
-          academicYear
-        )}&semester=${encodeURIComponent(semester)}`
-      );
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = zipFilename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        return;
-      }
-
-      // Fallback: Bundle all uploaded requirement files using JSZip
+      // Check uploaded requirement files
       const uploadedSubmissions = submissions.filter((s) => {
         const term = toAcademicYearAndSemester(s.submitted_at || s.created_at);
         const matchesTerm =
@@ -298,15 +371,26 @@ function FacultyVerificationDrawer({
       });
 
       if (uploadedSubmissions.length === 0) {
-        setActionFeedback({
-          type: "info",
-          message: "No uploaded requirement files available to download.",
+        setNoticeModalData({
+          title: "No Downloadable Requirements",
+          message: `There are no uploaded requirement files available for download for ${faculty.fullName} for A.Y. ${academicYear} • ${semester}.`,
         });
-        setTimeout(() => setActionFeedback(null), 4000);
         return;
       }
 
+      setZipProgressData({
+        status: "zipping",
+        title: "Packaging Requirements (ZIP)",
+        message: `Preparing ZIP package for ${faculty.fullName}...`,
+        progressText: "Initializing files...",
+      });
+
       const zip = new JSZip();
+      let processedCount = 0;
+      const totalCount = uploadedSubmissions.reduce(
+        (acc, s) => acc + (s.document_versions?.length || 0),
+        0
+      );
 
       for (const sub of uploadedSubmissions) {
         const reqCode = sub.requirement_code as RequirementCode;
@@ -315,6 +399,14 @@ function FacultyVerificationDrawer({
 
         for (const doc of docs) {
           if (!doc.storage_path) continue;
+          processedCount++;
+          setZipProgressData({
+            status: "zipping",
+            title: "Packaging Requirements (ZIP)",
+            message: `Fetching "${label}"...`,
+            progressText: `Processing file ${processedCount} of ${totalCount}...`,
+          });
+
           const downloadUrl = `/api/storage/download?path=${encodeURIComponent(
             doc.storage_path
           )}`;
@@ -328,6 +420,13 @@ function FacultyVerificationDrawer({
         }
       }
 
+      setZipProgressData({
+        status: "zipping",
+        title: "Packaging Requirements (ZIP)",
+        message: "Compressing files into ZIP archive...",
+        progressText: "Finalizing archive...",
+      });
+
       const zipContent = await zip.generateAsync({ type: "blob" });
       const url = window.URL.createObjectURL(zipContent);
       const link = document.createElement("a");
@@ -337,9 +436,20 @@ function FacultyVerificationDrawer({
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+
+      setZipProgressData({
+        status: "success",
+        title: "Download Started",
+        message: `Requirement ZIP package generated successfully! (${totalCount} file(s))`,
+        progressText: "Complete 100%",
+      });
     } catch (err) {
       console.error("ZIP download failed:", err);
-      alert("Failed to generate ZIP download.");
+      setZipProgressData({
+        status: "error",
+        title: "Download Error",
+        message: "Failed to generate requirement ZIP package. Please try again.",
+      });
     } finally {
       setIsDownloadingZip(false);
     }
@@ -360,15 +470,26 @@ function FacultyVerificationDrawer({
       );
 
       if (historySubmissionsWithDocs.length === 0) {
-        setActionFeedback({
-          type: "info",
-          message: `No uploaded requirement files available for A.Y. ${selectedHistoryAy} • ${selectedHistorySem}.`,
+        setNoticeModalData({
+          title: "No Downloadable Requirements",
+          message: `There are no uploaded requirement files available for download for ${faculty.fullName} for A.Y. ${selectedHistoryAy} • ${selectedHistorySem}.`,
         });
-        setTimeout(() => setActionFeedback(null), 4000);
         return;
       }
 
+      setZipProgressData({
+        status: "zipping",
+        title: "Packaging History ZIP",
+        message: `Packaging past submission files for A.Y. ${selectedHistoryAy} • ${selectedHistorySem}...`,
+        progressText: "Initializing history files...",
+      });
+
       const zip = new JSZip();
+      let processedCount = 0;
+      const totalCount = historySubmissionsWithDocs.reduce(
+        (acc, s) => acc + (s.document_versions?.length || 0),
+        0
+      );
 
       for (const sub of historySubmissionsWithDocs) {
         const reqCode = sub.requirement_code as RequirementCode;
@@ -377,6 +498,14 @@ function FacultyVerificationDrawer({
 
         for (const doc of docs) {
           if (!doc.storage_path) continue;
+          processedCount++;
+          setZipProgressData({
+            status: "zipping",
+            title: "Packaging History ZIP",
+            message: `Fetching "${label}"...`,
+            progressText: `Processing file ${processedCount} of ${totalCount}...`,
+          });
+
           const downloadUrl = `/api/storage/download?path=${encodeURIComponent(
             doc.storage_path
           )}`;
@@ -390,6 +519,13 @@ function FacultyVerificationDrawer({
         }
       }
 
+      setZipProgressData({
+        status: "zipping",
+        title: "Packaging History ZIP",
+        message: "Compressing history files into ZIP archive...",
+        progressText: "Finalizing archive...",
+      });
+
       const zipContent = await zip.generateAsync({ type: "blob" });
       const url = window.URL.createObjectURL(zipContent);
       const link = document.createElement("a");
@@ -399,20 +535,27 @@ function FacultyVerificationDrawer({
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+
+      setZipProgressData({
+        status: "success",
+        title: "History Download Started",
+        message: `History ZIP archive generated successfully! (${totalCount} file(s))`,
+        progressText: "Complete 100%",
+      });
     } catch (err) {
       console.error("History ZIP download failed:", err);
-      setActionFeedback({
-        type: "error",
-        message: "Failed to generate history ZIP download.",
+      setZipProgressData({
+        status: "error",
+        title: "Download Error",
+        message: "Failed to generate history ZIP archive.",
       });
-      setTimeout(() => setActionFeedback(null), 4000);
     } finally {
       setIsDownloadingHistoryZip(false);
     }
   }
 
-  // 2. "Validate All" Bulk Action
-  async function handleValidateAllPending() {
+  // 2. "Validate All" Bulk Action Pop-up Modal Trigger
+  function triggerValidateAllPendingModal() {
     const pendingSubmissions = submissions.filter((s) => {
       const term = toAcademicYearAndSemester(s.submitted_at || s.created_at);
       const matchesTerm =
@@ -421,26 +564,41 @@ function FacultyVerificationDrawer({
         s.status === "uploaded" ||
         s.status === "pending" ||
         s.status === "submitted" ||
-        s.status === "under_review" ||
-        s.status === "not_submitted" ||
-        !s.status;
+        s.status === "under_review";
       return matchesTerm && isPending && Array.isArray(s.document_versions) && s.document_versions.length > 0;
     });
 
     if (pendingSubmissions.length === 0) {
-      setActionFeedback({
-        type: "info",
-        message: "No pending requirements available to validate.",
+      setNoticeModalData({
+        title: "No Pending Requirements",
+        message: `No pending requirement submissions are available to validate for ${faculty.fullName} (A.Y. ${academicYear} • ${semester}).`,
       });
-      setTimeout(() => setActionFeedback(null), 4000);
       return;
     }
 
-    if (
-      !confirm(
-        `Are you sure you want to validate all ${pendingSubmissions.length} pending requirement(s)?`
-      )
-    ) {
+    setValidateTimerSeconds(5);
+    setIsValidateModalOpen(true);
+  }
+
+  async function executeValidateAllPending() {
+    const pendingSubmissions = submissions.filter((s) => {
+      const term = toAcademicYearAndSemester(s.submitted_at || s.created_at);
+      const matchesTerm =
+        term.academicYear === academicYear && term.semester === semester;
+      const isPending =
+        s.status === "uploaded" ||
+        s.status === "pending" ||
+        s.status === "submitted" ||
+        s.status === "under_review";
+      return matchesTerm && isPending && Array.isArray(s.document_versions) && s.document_versions.length > 0;
+    });
+
+    if (pendingSubmissions.length === 0) {
+      setIsValidateModalOpen(false);
+      setNoticeModalData({
+        title: "No Pending Requirements",
+        message: `No pending requirement submissions are available to validate for ${faculty.fullName}.`,
+      });
       return;
     }
 
@@ -473,6 +631,7 @@ function FacultyVerificationDrawer({
       });
       setTimeout(() => setActionFeedback(null), 4000);
       onStatusUpdated();
+      setIsValidateModalOpen(false);
     } catch (err) {
       console.error("Bulk validate failed:", err);
       setActionFeedback({
@@ -509,13 +668,26 @@ function FacultyVerificationDrawer({
       >
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-6 py-4">
-          <div>
-            <h3 className="text-base font-semibold text-slate-100">
-              {faculty.fullName}
-            </h3>
-            <p className="mt-0.5 text-xs text-slate-400">
-              {departmentLabel} &bull; Active Term: A.Y. {academicYear} &bull; {semester}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-300 shadow-md">
+              {faculty.profileImageUrl ? (
+                <img
+                  src={faculty.profileImageUrl}
+                  alt={faculty.fullName}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span>{buildFacultyInitials(faculty.fullName)}</span>
+              )}
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-100">
+                {faculty.fullName}
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-400">
+                {departmentLabel} &bull; Active Term: A.Y. {academicYear} &bull; {semester}
+              </p>
+            </div>
           </div>
 
           <button
@@ -529,14 +701,14 @@ function FacultyVerificationDrawer({
         </div>
 
         {/* 1. Tab Navigation Bar */}
-        <div className="flex border-b border-slate-800 px-6 bg-slate-900/60">
+        <div className="flex items-center gap-2 border-b border-slate-800 px-6 py-3 bg-slate-900/60">
           <button
             type="button"
             onClick={() => setActiveTab("current")}
-            className={`px-4 py-3 text-xs font-medium transition cursor-pointer ${
+            className={`rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer border ${
               activeTab === "current"
-                ? "text-amber-300 border-b-2 border-amber-400 font-semibold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-300 shadow-sm"
+                : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-slate-200"
             }`}
           >
             Current Submissions
@@ -544,10 +716,10 @@ function FacultyVerificationDrawer({
           <button
             type="button"
             onClick={() => setActiveTab("history")}
-            className={`px-4 py-3 text-xs font-medium transition cursor-pointer ${
+            className={`rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer border ${
               activeTab === "history"
-                ? "text-amber-300 border-b-2 border-amber-400 font-semibold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-300 shadow-sm"
+                : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-slate-200"
             }`}
           >
             Verification History
@@ -573,7 +745,7 @@ function FacultyVerificationDrawer({
                   <button
                     type="button"
                     disabled={isValidatingAll}
-                    onClick={handleValidateAllPending}
+                    onClick={triggerValidateAllPendingModal}
                     className="text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-medium rounded-lg px-3 py-1.5 transition cursor-pointer disabled:opacity-50"
                   >
                     {isValidatingAll
@@ -679,14 +851,6 @@ function FacultyVerificationDrawer({
                         {/* File Preview Links */}
                         {fileDownloadUrl ? (
                           <div className="flex flex-wrap items-center gap-2">
-                            <a
-                              href={fileDownloadUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs text-blue-400 hover:bg-slate-850 hover:text-blue-300 transition"
-                            >
-                              Download File
-                            </a>
                             <button
                               type="button"
                               onClick={() => {
@@ -695,11 +859,25 @@ function FacultyVerificationDrawer({
                                   name: firstDoc?.storage_path.split("/").pop() || "File",
                                   mimeType: firstDoc?.mime_type,
                                   label: reqLabel,
+                                  storagePath: firstDoc?.storage_path,
                                 });
                               }}
-                              className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs text-amber-300 hover:bg-slate-850 transition"
+                              className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition cursor-pointer"
                             >
                               Preview File
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleSingleFileDownload(
+                                  firstDoc?.storage_path,
+                                  firstDoc?.storage_path?.split("/").pop() || `${reqLabel}.pdf`
+                                )
+                              }
+                              className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-850 hover:text-slate-100 transition cursor-pointer"
+                            >
+                              Download
                             </button>
                           </div>
                         ) : (
@@ -894,8 +1072,8 @@ function FacultyVerificationDrawer({
                             doc.storage_path?.split("/").pop() || "Document";
                           const fileSize = formatBytes(doc.size_bytes);
                           const versionLabel = doc.version_number
-                            ? `v${doc.version_number}`
-                            : `v1`;
+                            ? `Version ${doc.version_number}`
+                            : `Version 1`;
                           const downloadUrl = `/api/storage/download?path=${encodeURIComponent(
                             doc.storage_path
                           )}`;
@@ -903,10 +1081,10 @@ function FacultyVerificationDrawer({
                           return (
                             <div
                               key={doc.id || idx}
-                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800/80 bg-slate-950 p-2.5 text-xs"
+                              className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-slate-800/80 bg-slate-950 p-3 text-xs"
                             >
                               <div className="flex items-center gap-2">
-                                <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-amber-300">
+                                <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
                                   {versionLabel}
                                 </span>
                                 <span className="font-medium text-slate-200">
@@ -918,14 +1096,34 @@ function FacultyVerificationDrawer({
                                   </span>
                                 ) : null}
                               </div>
-                              <a
-                                href={downloadUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs font-medium text-blue-400 hover:text-blue-300 transition"
-                              >
-                                Download
-                              </a>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPreviewingDoc({
+                                      url: downloadUrl,
+                                      name: fileName,
+                                      mimeType: doc.mime_type || null,
+                                      label: reqLabel,
+                                      storagePath: doc.storage_path,
+                                    });
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition cursor-pointer"
+                                >
+                                  Preview File
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleSingleFileDownload(doc.storage_path, fileName)
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-850 hover:text-slate-100 transition cursor-pointer"
+                                >
+                                  Download
+                                </button>
+                              </div>
                             </div>
                           );
                         })
@@ -935,23 +1133,26 @@ function FacultyVerificationDrawer({
                         </p>
                       )}
 
-                      {/* Past Admin Feedback / Remarks block */}
-                      {latestReview?.remarks ? (
-                        <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs">
-                          <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
-                            Admin Feedback:
-                          </span>
-                          <p className="mt-1 text-slate-300 italic">
-                            "{latestReview.remarks}"
-                          </p>
-                        </div>
-                      ) : matchingSub.remarks ? (
-                        <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs">
-                          <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
+                      {/* Faculty Remarks */}
+                      {matchingSub.remarks ? (
+                        <div className="rounded-lg border border-slate-800/80 bg-slate-950 p-2.5 text-xs">
+                          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
                             Faculty Remarks:
                           </span>
                           <p className="mt-1 text-slate-300 italic">
                             "{matchingSub.remarks}"
+                          </p>
+                        </div>
+                      ) : null}
+
+                      {/* Admin Feedback */}
+                      {latestReview?.remarks ? (
+                        <div className="rounded-lg border border-amber-500/20 bg-amber-950/20 p-2.5 text-xs">
+                          <span className="text-[10px] uppercase tracking-wider text-amber-400/90 font-semibold">
+                            Admin Feedback:
+                          </span>
+                          <p className="mt-1 text-amber-200/90 italic">
+                            "{latestReview.remarks}"
                           </p>
                         </div>
                       ) : null}
@@ -975,16 +1176,51 @@ function FacultyVerificationDrawer({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-              <span className="text-xs font-semibold text-slate-200">
-                {previewingDoc.label} ({previewingDoc.name})
-              </span>
-              <button
-                type="button"
-                onClick={() => setPreviewingDoc(null)}
-                className="text-xs text-slate-400 hover:text-slate-200"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-2 truncate max-w-[60%]">
+                <span className="text-xs font-semibold text-slate-100">
+                  {previewingDoc.label}
+                </span>
+                <span className="text-[11px] text-slate-400 font-mono">
+                  ({previewingDoc.name})
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Full View Button */}
+                <a
+                  href={previewingDoc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-300 transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Full View
+                </a>
+
+                {/* Direct Download Button inside Preview Modal */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSingleFileDownload(
+                      previewingDoc.storagePath || null,
+                      previewingDoc.name
+                    )
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 transition cursor-pointer"
+                >
+                  Download
+                </button>
+
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setPreviewingDoc(null)}
+                  className="rounded-lg border border-slate-800 p-1.5 text-slate-400 hover:bg-slate-900 hover:text-slate-200 transition cursor-pointer"
+                  aria-label="Close preview"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             <div className="relative flex-1 overflow-hidden bg-slate-900 flex items-center justify-center">
               {previewingDoc.mimeType?.startsWith("image/") ||
@@ -1010,6 +1246,203 @@ function FacultyVerificationDrawer({
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Notice Pop-up Modal (No Downloadable / No Pending Requirements) */}
+      {noticeModalData ? (
+        <div
+          className="fixed inset-0 z-70 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => setNoticeModalData(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-[#2a060a]/95 p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-amber-500/20 pb-3 mb-4">
+              <h3 className="text-base font-bold text-[#fff8e7]">
+                {noticeModalData.title}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setNoticeModalData(null)}
+                className="text-amber-400 hover:text-amber-300 text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex items-start gap-3 mb-5">
+              <span className="text-2xl shrink-0">ℹ️</span>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {noticeModalData.message}
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setNoticeModalData(null)}
+                className="rounded-lg bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-bold text-slate-950 transition cursor-pointer shadow-md"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Validate All Pending Confirmation Pop-up Modal with 5s Safety Timer */}
+      {isValidateModalOpen ? (
+        <div
+          className="fixed inset-0 z-70 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => setIsValidateModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-[#2a060a]/95 p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-amber-500/20 pb-3 mb-4">
+              <h3 className="text-base font-bold text-[#fff8e7]">
+                Confirm Bulk Validation
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsValidateModalOpen(false)}
+                className="text-amber-400 hover:text-amber-300 text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              <p className="text-xs text-slate-300 leading-relaxed">
+                You are about to validate <span className="font-bold text-amber-300">{pendingSubmissionsCount} pending requirement(s)</span> for <span className="font-semibold text-slate-100">{faculty.fullName}</span> for <span className="font-semibold text-slate-100">A.Y. {academicYear} &bull; {semester}</span>.
+              </p>
+              {validateTimerSeconds > 0 ? (
+                <p className="rounded-lg border border-amber-500/30 bg-amber-950/40 p-2.5 text-[11px] font-medium text-amber-300 flex items-center gap-2">
+                  <span className="animate-pulse">⏳</span> Please review for {validateTimerSeconds} second(s) before confirming.
+                </p>
+              ) : (
+                <p className="rounded-lg border border-emerald-500/30 bg-emerald-950/40 p-2.5 text-[11px] font-medium text-emerald-300 flex items-center gap-2">
+                  <span>✅</span> Ready to confirm bulk validation.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isValidatingAll}
+                onClick={() => setIsValidateModalOpen(false)}
+                className="rounded-lg bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isValidatingAll || validateTimerSeconds > 0}
+                onClick={executeValidateAllPending}
+                className="rounded-lg bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-bold text-slate-950 transition shadow-md disabled:opacity-50 cursor-pointer"
+              >
+                {isValidatingAll
+                  ? "Validating..."
+                  : validateTimerSeconds > 0
+                  ? `Confirm (${validateTimerSeconds}s)`
+                  : `Confirm & Validate All (${pendingSubmissionsCount})`}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Zipping / Downloading Progress Modal */}
+      {zipProgressData ? (
+        <div
+          className="fixed inset-0 z-70 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => {
+            if (zipProgressData.status !== "zipping") {
+              setZipProgressData(null);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-[#2a060a]/95 p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-amber-500/20 pb-3 mb-4">
+              <h3 className="text-base font-bold text-[#fff8e7]">
+                {zipProgressData.title}
+              </h3>
+              {zipProgressData.status !== "zipping" ? (
+                <button
+                  type="button"
+                  onClick={() => setZipProgressData(null)}
+                  className="text-amber-400 hover:text-amber-300 text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col items-center justify-center py-4 text-center space-y-4">
+              {zipProgressData.status === "zipping" ? (
+                <>
+                  <div className="relative flex h-14 w-14 items-center justify-center">
+                    <div className="absolute h-full w-full animate-spin rounded-full border-4 border-amber-500/20 border-t-amber-400"></div>
+                    <span className="text-xl">📦</span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-200">
+                      {zipProgressData.message}
+                    </p>
+                    {zipProgressData.progressText ? (
+                      <p className="mt-1 text-[11px] font-mono text-amber-300">
+                        {zipProgressData.progressText}
+                      </p>
+                    ) : null}
+                  </div>
+                </>
+              ) : zipProgressData.status === "success" ? (
+                <>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 text-2xl border border-emerald-500/30">
+                    ✅
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-emerald-300">
+                      {zipProgressData.message}
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      Check your browser's downloads folder.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-500/20 text-rose-400 text-2xl border border-rose-500/30">
+                    ⚠️
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-rose-300">
+                      {zipProgressData.message}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {zipProgressData.status !== "zipping" ? (
+              <div className="flex justify-end pt-2 border-t border-amber-500/20 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setZipProgressData(null)}
+                  className="rounded-lg bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-bold text-slate-950 transition cursor-pointer shadow-md"
+                >
+                  Done
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -1246,12 +1679,27 @@ export function RequirementsPanel({
                       className="transition hover:bg-slate-900/40"
                     >
                       <td className="px-4 py-3 font-medium text-slate-200">
-                        <div>{faculty.fullName}</div>
-                        {faculty.email ? (
-                          <div className="text-[10px] text-slate-500 font-normal">
-                            {faculty.email}
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-300 shadow-sm">
+                            {faculty.profileImageUrl ? (
+                              <img
+                                src={faculty.profileImageUrl}
+                                alt={faculty.fullName}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span>{buildFacultyInitials(faculty.fullName)}</span>
+                            )}
                           </div>
-                        ) : null}
+                          <div>
+                            <div className="font-semibold text-slate-100">{faculty.fullName}</div>
+                            {faculty.email ? (
+                              <div className="text-[10px] text-slate-500 font-normal">
+                                {faculty.email}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-slate-400 font-medium">
                         {programCode}
