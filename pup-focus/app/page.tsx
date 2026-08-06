@@ -293,7 +293,7 @@ export default function Home() {
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
       <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto px-2 pt-20 pb-8 no-scrollbar">
-        <div className="relative w-full max-w-md mx-auto drop-shadow-2xl">
+        <div className="relative w-full max-w-md mx-auto">
           {/* Curved Card Top Header SVG */}
           <div className="relative">
             <svg
