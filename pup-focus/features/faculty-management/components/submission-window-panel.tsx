@@ -9,14 +9,17 @@ import type {
 } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { ExtendSubmissionWindowModal } from "./extend-submission-window-modal";
 
-function getNowIsoLocal(): string {
-  const d = new Date();
+function toDateTimeLocal(d: Date): string {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const hours = String(d.getHours()).padStart(2, "0");
   const minutes = String(d.getMinutes()).padStart(2, "0");
   return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function getNowIsoLocal(): string {
+  return toDateTimeLocal(new Date());
 }
 
 function toTimeInputValue(timeLabel: string): string | null {
@@ -553,6 +556,18 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                     : "bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed"
                 }`}
               />
+              {isEditingSchedule ? (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setOpenDateTime(toDateTimeLocal(new Date()))}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition"
+                  >
+                    <Clock className="w-3 h-3" />
+                    <span>Set to Now / Today</span>
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -585,19 +600,69 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                   </span>
                 </div>
               ) : (
-                <input
-                  id="closing-schedule"
-                  type="datetime-local"
-                  min={openDateTime || nowIso}
-                  value={closeDateTime}
-                  onChange={(e) => setCloseDateTime(e.target.value)}
-                  disabled={!isEditingSchedule || isLoading || isSaving}
-                  className={`w-full rounded-lg p-2.5 text-xs outline-none transition-all duration-300 ${
-                    isEditingSchedule
-                      ? "bg-slate-900 border-2 border-amber-500/60 text-amber-100 ring-2 ring-amber-500/10"
-                      : "bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed"
-                  }`}
-                />
+                <>
+                  <input
+                    id="closing-schedule"
+                    type="datetime-local"
+                    min={openDateTime || nowIso}
+                    value={closeDateTime}
+                    onChange={(e) => setCloseDateTime(e.target.value)}
+                    disabled={!isEditingSchedule || isLoading || isSaving}
+                    className={`w-full rounded-lg p-2.5 text-xs outline-none transition-all duration-300 ${
+                      isEditingSchedule
+                        ? "bg-slate-900 border-2 border-amber-500/60 text-amber-100 ring-2 ring-amber-500/10"
+                        : "bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed"
+                    }`}
+                  />
+                  {isEditingSchedule ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setHours(23, 59, 0, 0);
+                          setCloseDateTime(toDateTimeLocal(d));
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition"
+                      >
+                        <span>Today (End of Day)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 3);
+                          setCloseDateTime(toDateTimeLocal(d));
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition"
+                      >
+                        <span>+3 Days</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 7);
+                          setCloseDateTime(toDateTimeLocal(d));
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition"
+                      >
+                        <span>+1 Week</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 14);
+                          setCloseDateTime(toDateTimeLocal(d));
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition"
+                      >
+                        <span>+2 Weeks</span>
+                      </button>
+                    </div>
+                  ) : null}
+                </>
               )}
             </div>
           </div>
