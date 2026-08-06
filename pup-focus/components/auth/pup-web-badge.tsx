@@ -66,13 +66,18 @@ export function PupWebBadge() {
             {/* Body Description */}
             <div className="space-y-3 text-sm text-slate-200/90 leading-relaxed">
               <p>
-                <strong>PUP FOCUS</strong> centralizes faculty compliance submission, document review, and curriculum monitoring across teaching loads for the Polytechnic University of the Philippines - Bataan Campus.
+                <strong>PUP FOCUS</strong> centralizes faculty compliance
+                submission, document review, and curriculum monitoring across
+                teaching loads for the Polytechnic University of the Philippines
+                - Bataan Campus.
               </p>
 
               <div className="rounded-2xl border border-amber-500/20 bg-black/30 p-3.5 space-y-2 text-xs">
                 <div className="flex items-center gap-2 text-amber-200">
                   <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Centralized Faculty Requirement Submission & Tracking</span>
+                  <span>
+                    Centralized Faculty Requirement Submission & Tracking
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-amber-200">
                   <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
