@@ -988,20 +988,20 @@ function FacultySubmissionPanelContent({
       )}
 
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-72 overflow-y-auto rounded-none border-r border-l-0 border-slate-700 bg-slate-900 p-5 shadow-lg">
-        <div className="my-6 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
-          <p className="mt-2 font-semibold text-white text-center">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-700 bg-slate-900 p-2.5 shadow-lg">
+        <div className="my-1.5 rounded-lg bg-[var(--card)] p-2 text-[var(--accent)] flex flex-col items-center border border-slate-800">
+          <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
             {facultyName ?? "Faculty"}
           </p>
 
-          <div className="my-2 h-px w-full bg-slate-700" />
+          <div className="my-1.5 h-px w-full bg-slate-700" />
 
-          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--accent)] text-center">
+          <p className="mt-0 text-[10px] uppercase tracking-[0.12em] text-amber-400 text-center font-semibold">
             Faculty
           </p>
         </div>
 
-        <div className="my-4">
+        <div className="my-2">
           <SubmissionWindowCountdown
             window={submissionWindow}
             isLoading={isLoadingSubmissionWindow}
@@ -1009,7 +1009,7 @@ function FacultySubmissionPanelContent({
           />
         </div>
 
-        <nav className="mt-4 space-y-2">
+        <nav className="mt-1.5 space-y-1">
           {[
             { key: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
             { key: "status", label: "Requirements Management", Icon: ClipboardList },
@@ -1021,14 +1021,14 @@ function FacultySubmissionPanelContent({
                 key={key}
                 type="button"
                 onClick={() => navigateToView(key as PanelView)}
-                className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${
+                className={`flex w-full items-center gap-2.5 rounded-lg border px-3 py-1.5 text-left text-xs transition ${
                   isActive
-                    ? "border-amber-400 bg-amber-400/10 text-amber-300"
-                    : "border-slate-700 bg-slate-950/60 text-slate-100 hover:border-slate-500 hover:bg-slate-900"
+                    ? "border-amber-400 bg-amber-400/10 text-amber-300 font-semibold"
+                    : "border-slate-700 bg-slate-950/60 text-slate-200 hover:border-slate-500 hover:bg-slate-900"
                 }`}
               >
-                <Icon size={18} className={isActive ? "text-amber-300" : "text-slate-400"} />
-                <span className="font-semibold">{label}</span>
+                <Icon size={16} className={isActive ? "text-amber-300" : "text-slate-400"} />
+                <span className="font-medium">{label}</span>
               </button>
             );
           })}
@@ -1042,7 +1042,7 @@ function FacultySubmissionPanelContent({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-72 max-w-[80%] bg-slate-900 h-full p-5 border-r border-slate-700 flex flex-col z-10 shadow-2xl overflow-y-auto">
+          <aside className="relative w-64 max-w-[80%] bg-slate-900 h-full p-3 border-r border-slate-700 flex flex-col z-10 shadow-2xl overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Navigation</span>
               <button
@@ -1055,19 +1055,19 @@ function FacultySubmissionPanelContent({
               </button>
             </div>
 
-            <div className="my-4 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
-              <p className="mt-2 font-semibold text-white text-center">
+            <div className="my-2 rounded-lg bg-[var(--card)] p-2 text-[var(--accent)] flex flex-col items-center border border-slate-800">
+              <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
                 {facultyName ?? "Faculty"}
               </p>
 
-              <div className="my-2 h-px w-full bg-slate-700" />
+              <div className="my-1.5 h-px w-full bg-slate-700" />
 
-              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--accent)] text-center">
+              <p className="mt-0 text-[10px] uppercase tracking-[0.12em] text-amber-400 text-center font-semibold">
                 Faculty
               </p>
             </div>
 
-            <div className="my-4">
+            <div className="my-2">
               <SubmissionWindowCountdown
                 window={submissionWindow}
                 isLoading={isLoadingSubmissionWindow}
@@ -1075,7 +1075,7 @@ function FacultySubmissionPanelContent({
               />
             </div>
 
-            <nav className="mt-4 space-y-2 flex-1">
+            <nav className="mt-1.5 space-y-1 flex-1">
               {[
                 { key: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
                 { key: "status", label: "Requirements Management", Icon: ClipboardList },
@@ -1087,14 +1087,14 @@ function FacultySubmissionPanelContent({
                     key={key}
                     type="button"
                     onClick={() => navigateToView(key as PanelView)}
-                    className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${
+                    className={`flex w-full items-center gap-2.5 rounded-lg border px-3 py-1.5 text-left text-xs transition ${
                       isActive
-                        ? "border-amber-400 bg-amber-400/10 text-amber-300"
-                        : "border-slate-700 bg-slate-950/60 text-slate-100 hover:border-slate-500 hover:bg-slate-900"
+                        ? "border-amber-400 bg-amber-400/10 text-amber-300 font-semibold"
+                        : "border-slate-700 bg-slate-950/60 text-slate-200 hover:border-slate-500 hover:bg-slate-900"
                     }`}
                   >
-                    <Icon size={18} className={isActive ? "text-amber-300" : "text-slate-400"} />
-                    <span className="font-semibold">{label}</span>
+                    <Icon size={16} className={isActive ? "text-amber-300" : "text-slate-400"} />
+                    <span className="font-medium">{label}</span>
                   </button>
                 );
               })}
@@ -1103,20 +1103,20 @@ function FacultySubmissionPanelContent({
         </div>
       )}
 
-      <div className="md:ml-72 flex min-h-full w-full md:w-[calc(100%-18rem)] flex-col">
+      <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
-          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#090d16]">
             {activeView !== "dashboard" && activeView !== "status" ? (
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <div className="inline-block w-max rounded-xl border border-slate-700 bg-slate-950 px-4 py-2">
-                  <h3 className="text-lg font-semibold text-amber-300">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
                     {activeView === "submit" ? "Submit Requirements" : "Settings"}
-                  </h3>
+                  </h1>
                 </div>
               </div>
             ) : null}
             {activeView === "dashboard" && (
-              <article className="relative -m-6 h-[calc(100vh-4rem)] w-[calc(100%+3rem)] overflow-hidden p-0">
+              <article className="relative -m-4 sm:-m-6 lg:-m-8 h-[calc(100vh-4rem)] w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] lg:w-[calc(100%+4rem)] overflow-hidden p-0">
                 <div className="relative h-full overflow-hidden bg-[#4d0000]/80">
                   <Image
                     src={LOGIN_PAGE_IMAGES[0]}
@@ -1148,7 +1148,7 @@ function FacultySubmissionPanelContent({
             )}
 
             {activeView === "submit" && (
-              <article className="p-8 pt-0">
+              <article className="space-y-6 p-2 sm:p-4 md:p-5">
                 {isSubmissionAvailable ? (
                   <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                     <div className="grid gap-4 md:grid-cols-2">
@@ -1418,12 +1418,12 @@ function FacultySubmissionPanelContent({
             )}
 
             {activeView === "status" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] p-6 pt-0">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+              <article className="space-y-6 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
                   <div>
-                    <h2 className="text-xl font-semibold text-slate-100">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
                       Requirements Management
-                    </h2>
+                    </h1>
                     <p className="mt-1 text-sm font-medium text-slate-400 tracking-wide">
                       A.Y. {submissionWindow?.academicYear || selectedAcademicYear || form.academicYear || "2025-2026"} •{" "}
                       {submissionWindow?.semester || selectedSemester || form.semester || "1st Semester"}
@@ -2203,7 +2203,7 @@ function FacultySubmissionPanelContent({
 
 
             {activeView === "settings" && (
-              <article className="min-h-[calc(100vh-4rem-3rem)] p-6 pt-0">
+              <article className="space-y-6 p-2 sm:p-4 md:p-5">
                 <FacultySettingsPanel />
               </article>
             )}

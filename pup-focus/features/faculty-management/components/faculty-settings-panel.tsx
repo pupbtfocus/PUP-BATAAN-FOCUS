@@ -267,36 +267,35 @@ export function FacultySettingsPanel() {
     profileImagePreviewUrl ?? account?.profileImageUrl;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button
+        <button
           type="button"
-          variant="secondary"
-          size="sm"
           onClick={() => void refreshAccount()}
           disabled={isLoading}
+          className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
         >
-          {isLoading ? "Refreshing..." : "Refresh"}
-        </Button>
+          {isLoading ? "Refreshing..." : "⟳ Refresh"}
+        </button>
       </div>
 
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <article className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/90 p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300">
-            Profile
+        <article className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/90 p-4 sm:p-5 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300 font-semibold">
+            Profile Details
           </p>
           {isLoading ? (
-            <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading profile...</p>
+            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Loading profile...</p>
           ) : error ? (
-            <p className="mt-4 text-sm text-red-400">{error}</p>
+            <p className="mt-4 text-xs text-red-400">{error}</p>
           ) : account ? (
             <>
-              <div className="mt-4 grid gap-6 sm:grid-cols-[auto_1fr] sm:items-start">
+              <div className="mt-4 grid gap-5 sm:grid-cols-[auto_1fr] sm:items-start">
                 <div className="space-y-2">
                 <button
                   type="button"
                   onClick={() => setIsProfileImageMenuOpen(true)}
-                  className="group relative flex h-36 w-36 items-center justify-center overflow-hidden rounded-3xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 text-3xl font-semibold text-[#7a0000] dark:text-amber-300 shadow-inner transition hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+                  className="group relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 text-2xl font-semibold text-[#7a0000] dark:text-amber-300 shadow-inner transition hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
                   aria-label="Open profile picture options"
                 >
                   {displayedProfileImage ? (
@@ -308,8 +307,8 @@ export function FacultySettingsPanel() {
                   ) : (
                     <span>{buildFacultyInitials(account.fullName)}</span>
                   )}
-                  <span className="absolute inset-0 flex items-end justify-center bg-slate-950/0 px-3 pb-3 text-xs font-medium text-transparent transition group-hover:bg-slate-950/40 group-hover:text-white">
-                    Click to manage image
+                  <span className="absolute inset-0 flex items-end justify-center bg-slate-950/0 px-2 pb-2 text-[10px] font-medium text-transparent transition group-hover:bg-slate-950/50 group-hover:text-white">
+                    Manage image
                   </span>
                 </button>
                 <input
@@ -323,65 +322,65 @@ export function FacultySettingsPanel() {
                   }}
                 />
                 {profileImageFile ? (
-                  <p className="text-xs text-[#7a0000] dark:text-amber-300">
-                    New image selected. Save profile changes to upload it.
+                  <p className="text-[11px] text-[#7a0000] dark:text-amber-300">
+                    New image selected. Save changes to upload.
                   </p>
                 ) : null}
               </div>
-              <div className="space-y-6">
-                <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    <label className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
                       First Name
                     </label>
                     <input
-                      className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-3 text-sm text-slate-700 dark:text-slate-300 outline-none"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 outline-none"
                       value={account.firstName}
                       readOnly
                     />
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    <label className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
                       Middle Name
                     </label>
                     <input
-                      className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-3 text-sm text-slate-700 dark:text-slate-300 outline-none"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 outline-none"
                       value={account.middleName}
                       readOnly
                     />
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    <label className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
                       Last Name
                     </label>
                     <input
-                      className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-3 text-sm text-slate-700 dark:text-slate-300 outline-none"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 outline-none"
                       value={account.lastName}
                       readOnly
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    <label className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
                       Email
                     </label>
                     <input
-                      className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-3 text-sm text-slate-700 dark:text-slate-300 outline-none"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 outline-none"
                       value={account.email}
                       readOnly
                     />
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    <label className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
                       Department / Program
                     </label>
-                    <div className="mt-1 flex items-center rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-3 text-sm text-slate-700 dark:text-slate-300">
+                    <div className="mt-1 flex items-center rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
                       {account.program ? (
                         <span className="font-semibold text-amber-600 dark:text-amber-300">
                           {account.program.code} — {account.program.name}
                         </span>
                       ) : (
-                        <span className="inline-flex rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
+                        <span className="inline-flex rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] text-slate-400">
                           Unassigned
                         </span>
                       )}
@@ -391,22 +390,23 @@ export function FacultySettingsPanel() {
               </div>
             </div>
 
-            <div className="mt-8">
-              <form className="space-y-4" onSubmit={handleSaveName}>
+            <div className="mt-6 border-t border-slate-200 dark:border-slate-800/80 pt-4">
+              <form className="space-y-3" onSubmit={handleSaveName}>
                 {profileImageFile ? (
-                  <p className="text-center text-sm text-slate-700 dark:text-slate-300">
-                    You have a new profile picture selected. Click below to apply the changes.
+                  <p className="text-center text-xs text-slate-700 dark:text-slate-300">
+                    New profile picture selected. Click below to save changes.
                   </p>
                 ) : null}
 
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <Button type="submit" disabled={isSaving || isLoading || !profileImageFile}>
+                <div className="flex flex-wrap items-center justify-center gap-2.5">
+                  <Button type="submit" size="sm" disabled={isSaving || isLoading || !profileImageFile}>
                     {isSaving ? "Saving..." : "Save Profile Changes"}
                   </Button>
                   {profileImageFile && !isSaving ? (
                     <Button
                       type="button"
                       variant="secondary"
+                      size="sm"
                       onClick={() => {
                         setProfileImageFile(null);
                         if (profileImageInputRef.current) {
@@ -418,10 +418,10 @@ export function FacultySettingsPanel() {
                     </Button>
                   ) : null}
                   {message ? (
-                    <p className="text-sm text-emerald-300">{message}</p>
+                    <p className="text-xs text-emerald-300">{message}</p>
                   ) : null}
                   {error && !isLoading ? (
-                    <p className="text-sm text-red-400">{error}</p>
+                    <p className="text-xs text-red-400">{error}</p>
                   ) : null}
                 </div>
               </form>
@@ -430,79 +430,80 @@ export function FacultySettingsPanel() {
           ) : null}
         </article>
 
-        <article className="h-fit rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/90 p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300">
+        <article className="h-fit rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/90 p-4 sm:p-5 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300 font-semibold">
             Change Password
           </p>
-          <form className="mt-4 space-y-4" onSubmit={handleChangePasswordSubmit}>
-            <div className="space-y-3">
-              <label className="block space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
-                <span className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+          <form className="mt-3 space-y-3" onSubmit={handleChangePasswordSubmit}>
+            <div className="space-y-2.5">
+              <label className="block space-y-1 text-xs text-slate-700 dark:text-slate-300">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
                   Current Password
                 </span>
                 <div className="relative">
                   <input
                     type={showOldPassword ? "text" : "password"}
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 py-3 pl-3 pr-10 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-amber-400"
+                    className="w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 py-2 pl-3 pr-9 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-amber-400"
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
                   />
                   <button
                     type="button"
                     onClick={() => setShowOldPassword(!showOldPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
+                    className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
                   >
-                    {showOldPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                    {showOldPassword ? <Eye size={16} /> : <EyeOff size={16} />}
                   </button>
                 </div>
               </label>
 
-              <label className="block space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
-                <span className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              <label className="block space-y-1 text-xs text-slate-700 dark:text-slate-300">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
                   New Password
                 </span>
                 <div className="relative">
                   <input
                     type={showNewPassword ? "text" : "password"}
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 py-3 pl-3 pr-10 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-amber-400"
+                    className="w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 py-2 pl-3 pr-9 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-amber-400"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
+                    className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
                   >
-                    {showNewPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                    {showNewPassword ? <Eye size={16} /> : <EyeOff size={16} />}
                   </button>
                 </div>
               </label>
 
-              <label className="block space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
-                <span className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              <label className="block space-y-1 text-xs text-slate-700 dark:text-slate-300">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
                   Confirm New Password
                 </span>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 py-3 pl-3 pr-10 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-amber-400"
+                    className="w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 py-2 pl-3 pr-9 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-amber-400"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
+                    className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
                   >
-                    {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                    {showConfirmPassword ? <Eye size={16} /> : <EyeOff size={16} />}
                   </button>
                 </div>
               </label>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
               <Button 
                 type="submit" 
+                size="sm"
                 disabled={
                   isChangingPassword || 
                   isLoading || 
@@ -514,10 +515,10 @@ export function FacultySettingsPanel() {
                 {isChangingPassword ? "Updating..." : "Update Password"}
               </Button>
               {passwordMessage ? (
-                <p className="text-sm text-emerald-300">{passwordMessage}</p>
+                <p className="text-xs text-emerald-300">{passwordMessage}</p>
               ) : null}
               {passwordError ? (
-                <p className="text-sm text-red-400">{passwordError}</p>
+                <p className="text-xs text-red-400">{passwordError}</p>
               ) : null}
             </div>
           </form>
