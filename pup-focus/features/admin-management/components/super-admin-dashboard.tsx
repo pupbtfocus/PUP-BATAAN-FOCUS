@@ -834,20 +834,20 @@ export function SuperAdminDashboard({
       )}
 
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-72 overflow-y-auto rounded-none border-r border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-5 shadow-lg">
-        <div className="my-6 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
-          <p className="mt-2 font-semibold text-white text-center">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-2.5 shadow-lg">
+        <div className="my-1.5 rounded-lg bg-[var(--card)] p-2 text-[var(--accent)] flex flex-col items-center border border-slate-700 dark:border-slate-800">
+          <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
             {adminName ?? "Super Admin"}
           </p>
 
-          <div className="my-2 h-px w-full bg-slate-700" />
+          <div className="my-1.5 h-px w-full bg-slate-700" />
 
-          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--accent)] text-center">
+          <p className="mt-0 text-[10px] uppercase tracking-[0.12em] text-amber-400 text-center font-semibold">
             Super Admin
           </p>
         </div>
 
-        <nav className="mt-6 space-y-2">
+        <nav className="mt-1.5 space-y-1">
           <SidebarButton
             active={activeSection === "dashboard"}
             title="Dashboard"
@@ -878,7 +878,7 @@ export function SuperAdminDashboard({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-72 max-w-[80%] bg-white dark:bg-slate-900 h-full p-5 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 shadow-2xl overflow-y-auto">
+          <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-900 h-full p-3 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 shadow-2xl overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <span className="text-xs font-semibold uppercase tracking-wider text-[#7a0000] dark:text-amber-400">Navigation</span>
               <button
@@ -891,19 +891,19 @@ export function SuperAdminDashboard({
               </button>
             </div>
 
-            <div className="my-4 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
-              <p className="mt-2 font-semibold text-white text-center">
+            <div className="my-2 rounded-lg bg-[var(--card)] p-2 text-[var(--accent)] flex flex-col items-center border border-slate-700 dark:border-slate-800">
+              <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
                 {adminName ?? "Super Admin"}
               </p>
 
-              <div className="my-2 h-px w-full bg-slate-700" />
+              <div className="my-1.5 h-px w-full bg-slate-700" />
 
-              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--accent)] text-center">
+              <p className="mt-0 text-[10px] uppercase tracking-[0.12em] text-amber-400 text-center font-semibold">
                 Super Admin
               </p>
             </div>
 
-            <nav className="mt-6 space-y-2 flex-1">
+            <nav className="mt-1.5 space-y-1 flex-1">
               <SidebarButton
                 active={activeSection === "dashboard"}
                 title="Dashboard"
@@ -929,7 +929,7 @@ export function SuperAdminDashboard({
         </div>
       )}
 
-      <div className="md:ml-72 flex min-h-full w-full md:w-[calc(100%-18rem)] flex-col">
+      <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
             {activeSection === "dashboard" ? (
@@ -967,12 +967,12 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "accounts" ? (
-              <article className="p-8">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
+              <article className="space-y-6 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                       Admin Accounts
-                    </h3>
+                    </h1>
                   </div>
                   <Button
                     type="button"
@@ -981,7 +981,7 @@ export function SuperAdminDashboard({
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoadingAccounts}
                   >
-                    {isLoadingAccounts ? "Refreshing..." : "Refresh"}
+                    {isLoadingAccounts ? "Refreshing..." : "⟳ Refresh"}
                   </Button>
                 </div>
 
@@ -1088,12 +1088,12 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "auditLogs" ? (
-              <article className="p-8">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
+              <article className="space-y-6 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                       Audit Logs
-                    </h3>
+                    </h1>
                   </div>
                 </div>
 
@@ -1102,12 +1102,12 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "settings" ? (
-              <article className="p-8">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="inline-block w-max rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-2">
-                    <h3 className="text-lg font-semibold text-[#7a0000] dark:text-amber-300">
+              <article className="space-y-6 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                       Settings
-                    </h3>
+                    </h1>
                   </div>
                   <Button
                     type="button"
@@ -1116,7 +1116,7 @@ export function SuperAdminDashboard({
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoadingSettings}
                   >
-                    {isLoadingSettings ? "Refreshing..." : "Refresh"}
+                    {isLoadingSettings ? "Refreshing..." : "⟳ Refresh"}
                   </Button>
                 </div>
 
