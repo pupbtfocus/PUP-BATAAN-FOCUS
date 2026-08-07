@@ -419,17 +419,35 @@ export async function PATCH(request: NextRequest) {
 
       const assignmentIds = (assignments ?? []).map((a: any) => a.id);
 
-      const { data: unvalidatedSubs } = await supabase
+      const { data: currentTermSubs } = await supabase
         .from("submissions")
         .select("id, status")
-        .in("faculty_assignment_id", assignmentIds.length > 0 ? assignmentIds : ["00000000-0000-0000-0000-000000000000"])
-        .not("status", "in", '("validated","approved")');
+        .in(
+          "faculty_assignment_id",
+          assignmentIds.length > 0
+            ? assignmentIds
+            : ["00000000-0000-0000-0000-000000000000"],
+        );
 
-      if (Array.isArray(unvalidatedSubs) && unvalidatedSubs.length > 0) {
+      const unvalidatedSubs = (currentTermSubs ?? []).filter(
+        (s: any) => s.status !== "validated" && s.status !== "approved",
+      );
+
+      const expectedSubmissionsCount = (assignments ?? []).length * 6;
+      const validatedSubmissionsCount = (currentTermSubs ?? []).filter(
+        (s: any) => s.status === "validated" || s.status === "approved",
+      ).length;
+
+      const hasIncompleteRequirements =
+        unvalidatedSubs.length > 0 ||
+        validatedSubmissionsCount < expectedSubmissionsCount;
+
+      if (hasIncompleteRequirements) {
         return NextResponse.json(
           {
-            error: "Cannot close or switch submission window. There are still unvalidated or incomplete requirements for this academic term.",
-            details: "Hindi pa pwedeng palitan o isara ang submission window. May mga kulang pa na requirements o hindi pa validated na submissions para sa kasalukuyang term.",
+            error: "Incomplete Term Requirements",
+            details:
+              "The submission window cannot be changed or closed yet. There are still missing requirements or unvalidated submissions for the current term.",
             unvalidatedCount: unvalidatedSubs.length,
           },
           { status: 400 },

@@ -228,14 +228,14 @@ export function AdminAcademicTerms({
         if (
           data?.error?.includes("unvalidated or incomplete requirements") ||
           data?.details?.includes("unvalidated") ||
-          data?.error?.includes("Cannot close")
+          data?.error?.includes("Cannot close") ||
+          data?.error?.includes("Incomplete Term Requirements")
         ) {
           setWarningModalData({
             isOpen: true,
             title: "⚠️ Incomplete Term Requirements",
             description:
-              data.details ||
-              "Hindi pa pwedeng palitan o isara ang submission window. May mga kulang pa na requirements o hindi pa validated na submissions para sa kasalukuyang term.",
+              "The submission window cannot be changed or closed yet. There are still missing requirements or unvalidated submissions for the current term.",
           });
           setTermToSetCurrent(null);
           return;
