@@ -287,13 +287,13 @@ export default function Home() {
   }
 
   return (
-    <main className="relative min-h-screen flex items-center justify-center px-4 py-8 text-[#fff8e7] overflow-hidden">
+    <main className="relative min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-8 text-[#fff8e7] overflow-x-hidden">
       {/* Overlay with Blur on top of the global body background */}
       <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px]" />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-      <div className="relative z-10 w-full max-w-md max-h-[calc(100vh-64px)] overflow-y-auto px-2 pt-20 pb-8 no-scrollbar">
-        <div className="relative w-full max-w-md mx-auto">
+      <div className="relative z-10 w-full max-w-[390px] sm:max-w-md mx-auto my-auto pt-8 sm:pt-12 pb-16 sm:pb-8">
+        <div className="relative w-full mx-auto">
           {/* Curved Card Top Header SVG */}
           <div className="relative">
             <svg
@@ -310,13 +310,13 @@ export default function Home() {
           </div>
 
           {/* Card Body */}
-          <section className="relative rounded-b-[2rem] border-x border-b border-[rgba(255,215,0,0.25)] bg-[#4d0000] p-8 pt-10 backdrop-blur-md">
-            <div className="mt-4 mb-8 text-center">
-              <h2 className="text-3xl font-extrabold tracking-wider text-amber-200 drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)] uppercase mb-1">
+          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x border-b border-[rgba(255,215,0,0.25)] bg-[#4d0000] p-6 pt-10 sm:p-8 sm:pt-10 backdrop-blur-md">
+            <div className="mt-4 mb-6 sm:mb-8 text-center">
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-wider text-amber-200 drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)] uppercase mb-1">
                 Sign In
               </h2>
               <div className="mx-auto my-2.5 h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
-              <p className="text-[10px] text-amber-200/90 font-bold tracking-widest uppercase mb-6">
+              <p className="text-[9px] sm:text-[10px] text-amber-200/90 font-bold tracking-widest uppercase mb-4 sm:mb-6">
                 Enter your institutional credentials to continue
               </p>
             </div>

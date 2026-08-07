@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
+import { Menu, X } from "lucide-react";
 
 const DASHBOARD_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
@@ -121,6 +122,7 @@ export function SuperAdminDashboard({
   const [activeSection, setActiveSection] = useState<
     "dashboard" | "accounts" | "settings" | "auditLogs"
   >("dashboard");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -819,7 +821,20 @@ export function SuperAdminDashboard({
 
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
-      <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-none border-r border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-5 shadow-lg">
+      {/* Mobile Menu Button (visible only on small screens when drawer is closed) */}
+      {!isMobileMenuOpen && (
+        <button
+          type="button"
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-amber-300 hover:bg-amber-500/10 rounded-xl transition-all"
+          aria-label="Open Navigation Menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* Desktop Sidebar (hidden on mobile) */}
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-72 overflow-y-auto rounded-none border-r border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-5 shadow-lg">
         <div className="my-6 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
           <p className="mt-2 font-semibold text-white text-center">
             {adminName ?? "Super Admin"}
@@ -856,7 +871,65 @@ export function SuperAdminDashboard({
         </nav>
       </aside>
 
-      <div className="ml-72 flex min-h-full w-[calc(100%-18rem)] flex-col">
+      {/* Mobile Navigation Drawer */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] md:hidden flex">
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <aside className="relative w-72 max-w-[80%] bg-white dark:bg-slate-900 h-full p-5 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 shadow-2xl overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#7a0000] dark:text-amber-400">Navigation</span>
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                aria-label="Close navigation"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="my-4 rounded-xl bg-[var(--card)] p-4 text-[var(--accent)] flex flex-col items-center">
+              <p className="mt-2 font-semibold text-white text-center">
+                {adminName ?? "Super Admin"}
+              </p>
+
+              <div className="my-2 h-px w-full bg-slate-700" />
+
+              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--accent)] text-center">
+                Super Admin
+              </p>
+            </div>
+
+            <nav className="mt-6 space-y-2 flex-1">
+              <SidebarButton
+                active={activeSection === "dashboard"}
+                title="Dashboard"
+                onClick={() => { setActiveSection("dashboard"); setIsMobileMenuOpen(false); }}
+              />
+              <SidebarButton
+                active={activeSection === "accounts"}
+                title="Admin Accounts"
+                onClick={() => { setActiveSection("accounts"); setIsMobileMenuOpen(false); }}
+              />
+              <SidebarButton
+                active={activeSection === "settings"}
+                title="Settings"
+                onClick={() => { setActiveSection("settings"); setIsMobileMenuOpen(false); }}
+              />
+              <SidebarButton
+                active={activeSection === "auditLogs"}
+                title="Audit Logs"
+                onClick={() => { setActiveSection("auditLogs"); setIsMobileMenuOpen(false); }}
+              />
+            </nav>
+          </aside>
+        </div>
+      )}
+
+      <div className="md:ml-72 flex min-h-full w-full md:w-[calc(100%-18rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
             {activeSection === "dashboard" ? (

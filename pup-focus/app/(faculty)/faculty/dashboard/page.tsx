@@ -7,7 +7,7 @@ export default async function FacultyDashboardPage() {
   const user = await getCurrentUser();
 
   return (
-    <AppShell title="PUP Bataan FOCUS" nav={[]} fullBleed>
+    <AppShell title="PUP FOCUS" nav={[]} fullBleed>
       <Suspense
         fallback={
           <div className="flex h-full w-full items-center justify-center p-8 text-amber-400">

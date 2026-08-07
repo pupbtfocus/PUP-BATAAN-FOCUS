@@ -12,7 +12,7 @@ export default async function SuperAdminDashboardPage() {
   }
 
   return (
-    <AppShell title="PUP Bataan FOCUS" nav={[]} fullBleed>
+    <AppShell title="PUP FOCUS" nav={[]} fullBleed>
       <SuperAdminDashboard adminName={user?.fullName ?? null} />
     </AppShell>
   );
