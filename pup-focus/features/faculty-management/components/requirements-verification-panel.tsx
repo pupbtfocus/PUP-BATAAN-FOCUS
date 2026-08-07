@@ -170,6 +170,8 @@ function doesSubmissionMatchTerm(
   targetSem: SemesterOption
 ): boolean {
   if (!s) return false;
+
+  // If the submission has explicit term metadata, verify it matches
   const directAy = s.academic_year || s.academicYear || s.faculty_assignment?.academic_year;
   const directSem = s.semester || s.term || s.faculty_assignment?.term;
 
@@ -180,21 +182,10 @@ function doesSubmissionMatchTerm(
     );
   }
 
-  if (s.submitted_at || s.created_at) {
-    const subTime = new Date(s.submitted_at || s.created_at).getTime();
-    if (!isNaN(subTime)) {
-      const is2ndSemTarget = normalizeSemester(targetSem) === "2nd Semester";
-      const winStartFallback = new Date("2026-08-05T00:00:00+08:00").getTime();
-      if (subTime >= winStartFallback) {
-        return is2ndSemTarget;
-      } else {
-        return !is2ndSemTarget;
-      }
-    }
-  }
-
-  const term = toAcademicYearAndSemester(s.submitted_at || s.created_at);
-  return term.academicYear === targetAY && term.semester === targetSem;
+  // Backend API already scopes submissions by faculty_assignment_id for the
+  // requested term.  If no explicit term metadata is embedded on the row,
+  // trust the backend's assignment-ID filtering and treat as matching.
+  return true;
 }
 
 interface FacultyVerificationDrawerProps {
@@ -277,17 +268,24 @@ function FacultyVerificationDrawer({
     }).length;
   }, [submissions, academicYear, semester]);
 
+  const targetAY =
+    activeTab === "history" ? selectedHistoryAy || academicYear : academicYear;
+  const targetSem =
+    activeTab === "history" ? selectedHistorySem : semester;
+
   useEffect(() => {
     async function loadDrawerData() {
+      if (!faculty.id || !targetAY || !targetSem) return;
       setIsLoading(true);
+      setSubmissions([]); // Clear stale submissions immediately to prevent cross-term bleed
       try {
         const [subRes, verRes] = await Promise.all([
           fetch(
-            `/api/admin/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}`,
-            { credentials: "include" }
+            `/api/admin/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(targetAY)}&semester=${encodeURIComponent(targetSem)}`,
+            { credentials: "include", cache: "no-store" }
           ),
           fetch(
-            `/api/admin/faculty/requirements/verification?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(academicYear)}&semester=${encodeURIComponent(semester)}`,
+            `/api/admin/faculty/requirements/verification?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(targetAY)}&semester=${encodeURIComponent(targetSem)}`,
             { credentials: "include" }
           ),
         ]);
@@ -300,10 +298,12 @@ function FacultyVerificationDrawer({
         if (verRes.ok) {
           const verData = await verRes.json();
           const years: string[] = verData.availableAcademicYears ?? [];
-          setHistoryAcademicYears(years);
-          const pastYear =
-            years.find((y) => y !== academicYear) || years[0] || "2025-2026";
-          setSelectedHistoryAy(pastYear);
+          setHistoryAcademicYears((prev) => (prev.length > 0 ? prev : years));
+          if (!selectedHistoryAy && years.length > 0) {
+            const pastYear =
+              years.find((y) => y !== academicYear) || years[0] || "2025-2026";
+            setSelectedHistoryAy(pastYear);
+          }
         }
       } catch (err) {
         console.error("Failed to load drawer data:", err);
@@ -312,7 +312,16 @@ function FacultyVerificationDrawer({
       }
     }
     loadDrawerData();
-  }, [faculty.id, academicYear]);
+  }, [
+    faculty.id,
+    academicYear,
+    semester,
+    activeTab,
+    selectedHistoryAy,
+    selectedHistorySem,
+    targetAY,
+    targetSem,
+  ]);
 
   async function handleReviewSubmission(
     submissionId: string,
@@ -697,6 +706,9 @@ function FacultyVerificationDrawer({
   }
 
   const historySubmissions = useMemo(() => {
+    if (activeTab === "history") {
+      return submissions;
+    }
     return submissions.filter((sub) => {
       return doesSubmissionMatchTerm(
         sub,
@@ -704,7 +716,7 @@ function FacultyVerificationDrawer({
         selectedHistorySem
       );
     });
-  }, [submissions, selectedHistoryAy, selectedHistorySem]);
+  }, [submissions, activeTab, selectedHistoryAy, selectedHistorySem]);
 
   const departmentLabel =
     faculty.program?.name || faculty.program?.code || "Department";

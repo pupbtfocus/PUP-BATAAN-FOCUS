@@ -213,6 +213,20 @@ export async function GET(request: NextRequest) {
       request.nextUrl?.searchParams?.get("semester")
     )?.trim();
 
+    if (requestedAcademicYear && requestedSemester) {
+      const { data: targetTerm } = await supabase
+        .from("academic_terms")
+        .select("id, academic_year, semester")
+        .ilike("academic_year", `%${requestedAcademicYear}%`)
+        .ilike("semester", `%${requestedSemester}%`)
+        .maybeSingle();
+
+      if (targetTerm) {
+        currentTerm.academicYear = targetTerm.academic_year;
+        currentTerm.semester = normalizeSemester(targetTerm.semester);
+      }
+    }
+
     const activeAcademicYear = requestedAcademicYear || currentTerm.academicYear;
     const activeSemester = requestedSemester || currentTerm.semester;
     const normActiveYear = normalizeAcademicYear(activeAcademicYear);
@@ -453,8 +467,13 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // 3. Window timestamp separation & legacy date matching
-      if (sub.submitted_at) {
+      // If requested term has explicit assignments configured or if sub belongs to another assignment, DO NOT bleed unassigned rows.
+      if (currentAssignmentIds.length > 0) {
+        return false;
+      }
+
+      // 3. Fallback for legacy unassigned rows ONLY if active term matches 2026-2027
+      if (normActiveYear === "2026-2027" && sub.submitted_at) {
         const subTime = new Date(sub.submitted_at).getTime();
 
         if (!isNaN(subTime)) {
@@ -471,12 +490,10 @@ export async function GET(request: NextRequest) {
 
           const { academicYear: subAY, semester: subSem } =
             toAcademicYearAndSemester(sub.submitted_at);
-          if (
+          return (
             normalizeAcademicYear(subAY) === normActiveYear &&
             normalizeSemester(subSem) === normActiveSem
-          ) {
-            return true;
-          }
+          );
         }
       }
 

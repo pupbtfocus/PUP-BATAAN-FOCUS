@@ -407,7 +407,35 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const currentTerm = allTerms.find((t) => t.status === "Current");
+  const currentTerm = allTerms.find((t) => t.status === "Current");
+
+    if (currentTerm && (currentTerm.academic_year !== academicYear || normalizeSemester(currentTerm.semester) !== semester)) {
+      // Guard: Check if current term has unvalidated or incomplete submissions
+      const { data: assignments } = await supabase
+        .from("faculty_program_assignments")
+        .select("id")
+        .eq("academic_year", currentTerm.academic_year)
+        .ilike("term", `%${currentTerm.semester}%`);
+
+      const assignmentIds = (assignments ?? []).map((a: any) => a.id);
+
+      const { data: unvalidatedSubs } = await supabase
+        .from("submissions")
+        .select("id, status")
+        .in("faculty_assignment_id", assignmentIds.length > 0 ? assignmentIds : ["00000000-0000-0000-0000-000000000000"])
+        .not("status", "in", '("validated","approved")');
+
+      if (Array.isArray(unvalidatedSubs) && unvalidatedSubs.length > 0) {
+        return NextResponse.json(
+          {
+            error: "Cannot close or switch submission window. There are still unvalidated or incomplete requirements for this academic term.",
+            details: "Hindi pa pwedeng palitan o isara ang submission window. May mga kulang pa na requirements o hindi pa validated na submissions para sa kasalukuyang term.",
+            unvalidatedCount: unvalidatedSubs.length,
+          },
+          { status: 400 },
+        );
+      }
+    }
     const targetScore = getTermScore(academicYear, semester);
 
     if (currentTerm) {

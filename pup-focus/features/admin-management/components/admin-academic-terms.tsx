@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 
+import { AlertTriangle } from "lucide-react";
+
 type AcademicTermStatus = "Current" | "Upcoming" | "Archived" | "Completed";
 
 type AcademicTermItem = {
@@ -28,6 +30,11 @@ export function AdminAcademicTerms({
   adminName?: string | null;
 }) {
   const [terms, setTerms] = useState<AcademicTermItem[]>([]);
+  const [warningModalData, setWarningModalData] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+  }>({ isOpen: false, title: "", description: "" });
   const [nextAcademicYear, setNextAcademicYear] = useState("2026-2027");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -218,6 +225,21 @@ export function AdminAcademicTerms({
       const data = await response.json();
 
       if (!response.ok) {
+        if (
+          data?.error?.includes("unvalidated or incomplete requirements") ||
+          data?.details?.includes("unvalidated") ||
+          data?.error?.includes("Cannot close")
+        ) {
+          setWarningModalData({
+            isOpen: true,
+            title: "⚠️ Incomplete Term Requirements",
+            description:
+              data.details ||
+              "Hindi pa pwedeng palitan o isara ang submission window. May mga kulang pa na requirements o hindi pa validated na submissions para sa kasalukuyang term.",
+          });
+          setTermToSetCurrent(null);
+          return;
+        }
         setError(
           data?.error || `Failed to set current term (HTTP ${response.status})`,
         );
@@ -630,6 +652,43 @@ export function AdminAcademicTerms({
                   : countdown > 0
                   ? `Confirm Delete (${countdown}s)`
                   : "Confirm Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {warningModalData.isOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="bg-gradient-to-b from-[#2a0808] via-[#1f0505] to-[#120202] border border-amber-500/40 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4">
+            <div className="w-16 h-16 bg-amber-500/20 border-2 border-amber-500/50 rounded-full flex items-center justify-center mx-auto text-amber-400">
+              <AlertTriangle className="w-9 h-9 animate-pulse" />
+            </div>
+            <h3 className="text-xl font-bold text-amber-200">
+              {warningModalData.title}
+            </h3>
+            <p className="text-sm text-amber-100/90 leading-relaxed">
+              {warningModalData.description}
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setWarningModalData({ ...warningModalData, isOpen: false })
+                }
+                className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500 text-xs font-semibold"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setWarningModalData({ ...warningModalData, isOpen: false });
+                  window.location.href = "/admin/dashboard?tab=verification";
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-xs shadow-lg transition-all"
+              >
+                Review Requirements
               </button>
             </div>
           </div>
