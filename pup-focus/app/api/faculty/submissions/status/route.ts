@@ -185,13 +185,23 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const currentTerm =
-      windowState.academicYear && windowState.semester
-        ? {
-            academicYear: windowState.academicYear,
-            semester: windowState.semester,
-          }
-        : toAcademicYearAndSemester(windowState.today);
+    const { data: dbCurrentTerm } = await supabase
+      .from("academic_terms")
+      .select("id, academic_year, semester")
+      .eq("status", "Current")
+      .maybeSingle();
+
+    const currentTerm = {
+      academicYear:
+        windowState.academicYear ||
+        dbCurrentTerm?.academic_year ||
+        "2026-2027",
+      semester: normalizeSemester(
+        windowState.semester ||
+        dbCurrentTerm?.semester ||
+        "2nd Semester"
+      ),
+    };
 
     const url = new URL(request.url);
     const requestedAcademicYear = (
@@ -436,38 +446,26 @@ export async function GET(request: NextRequest) {
       }
 
       // 2. Secondary Check: Match faculty_assignment_id if present
-      if (
-        sub.faculty_assignment_id &&
-        currentAssignmentIds.length > 0 &&
-        currentAssignmentIds.includes(sub.faculty_assignment_id)
-      ) {
-        return true;
+      if (sub.faculty_assignment_id) {
+        return (
+          currentAssignmentIds.length > 0 &&
+          currentAssignmentIds.includes(sub.faculty_assignment_id)
+        );
       }
 
-      // 3. Active Window & Current Term Check: If submitted during active submission window or recent current term period
+      // 3. Window timestamp separation & legacy date matching
       if (sub.submitted_at) {
         const subTime = new Date(sub.submitted_at).getTime();
 
         if (!isNaN(subTime)) {
           if (currentWindowStart) {
             const winStart = new Date(currentWindowStart).getTime();
-            const winEnd = currentWindowEnd
-              ? new Date(currentWindowEnd).getTime()
-              : Infinity;
+            const is2ndSemActive = normActiveSem === "2nd semester";
 
-            if (subTime >= winStart && subTime <= winEnd) {
-              return true;
-            }
-          }
-
-          if (
-            normActiveYear ===
-              normalizeAcademicYear(currentTerm.academicYear) &&
-            normActiveSem === normalizeSemester(currentTerm.semester)
-          ) {
-            const ageInHours = (Date.now() - subTime) / (1000 * 60 * 60);
-            if (ageInHours >= 0 && ageInHours <= 72) {
-              return true;
+            if (subTime >= winStart) {
+              return is2ndSemActive;
+            } else {
+              return !is2ndSemActive;
             }
           }
 

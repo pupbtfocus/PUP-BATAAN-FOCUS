@@ -117,24 +117,41 @@ export async function GET() {
 
     const facultyProfileId = appUser.profile_id;
 
-    // 3. Query ALL historical submission records for this faculty member (unfiltered by term/semester)
-    let rawSubmissions: SubmissionRow[] = [];
+    // 3. Query ALL historical submission records for this faculty member
+    let rawSubmissions: (SubmissionRow & { faculty_assignment_id?: string | null })[] = [];
     const { data: subData, error: subError } = await supabase
       .from("submissions")
-      .select("id, requirement_code, status, submitted_at, created_at, remarks")
+      .select("id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id")
       .or(`faculty_profile_id.eq.${facultyProfileId},user_id.eq.${facultyProfileId},created_by.eq.${user.id}`)
       .order("created_at", { ascending: false });
 
     if (!subError && subData) {
-      rawSubmissions = subData as SubmissionRow[];
+      rawSubmissions = subData as (SubmissionRow & { faculty_assignment_id?: string | null })[];
     } else {
       const { data: fallbackData } = await supabase
         .from("submissions")
-        .select("id, requirement_code, status, submitted_at, created_at, remarks")
+        .select("id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id")
         .eq("faculty_profile_id", facultyProfileId)
         .order("created_at", { ascending: false });
       if (fallbackData) {
-        rawSubmissions = fallbackData as SubmissionRow[];
+        rawSubmissions = fallbackData as (SubmissionRow & { faculty_assignment_id?: string | null })[];
+      }
+    }
+
+    const { data: assignments } = await supabase
+      .from("faculty_program_assignments")
+      .select("id, academic_year, term")
+      .eq("faculty_profile_id", facultyProfileId);
+
+    const assignmentMap = new Map<string, { academicYear: string; semester: "1st Semester" | "2nd Semester" }>();
+    if (assignments) {
+      for (const a of assignments) {
+        if (a.id) {
+          assignmentMap.set(a.id, {
+            academicYear: a.academic_year,
+            semester: (a.term?.toLowerCase().includes("2nd") ? "2nd Semester" : "1st Semester") as "1st Semester" | "2nd Semester",
+          });
+        }
       }
     }
 
@@ -169,7 +186,20 @@ export async function GET() {
 
       const reviews = reviewDecisionsMap.get(row.id) || [];
       const latestReview = reviews[0];
-      const term = toAcademicYearAndSemester(row.submitted_at || row.created_at);
+
+      let term = assignmentMap.get(row.faculty_assignment_id || "");
+
+      if (!term && (row.submitted_at || row.created_at)) {
+        const subTime = new Date(row.submitted_at || row.created_at || "").getTime();
+        const winStartFallback = new Date("2026-08-05T00:00:00+08:00").getTime();
+        if (!isNaN(subTime) && subTime >= winStartFallback) {
+          term = { academicYear: "2026-2027", semester: "2nd Semester" };
+        }
+      }
+
+      if (!term) {
+        term = toAcademicYearAndSemester(row.submitted_at || row.created_at);
+      }
 
       history.push({
         id: row.id,

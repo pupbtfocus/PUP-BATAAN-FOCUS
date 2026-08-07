@@ -6,9 +6,18 @@ import JSZip from "jszip";
 import { ExternalLink, ChevronDown } from "lucide-react";
 import {
   DEFAULT_REQUIREMENTS,
+  REQUIREMENT_CODE,
   REQUIREMENT_LABEL,
   type RequirementCode,
 } from "@/config/compliance";
+import {
+  normalizeSemester,
+} from "@/features/submissions/services/submission-window.service";
+
+function normalizeAcademicYear(value: string | null | undefined): string {
+  if (!value) return "";
+  return value.trim();
+}
 import type {
   FacultyAccount,
   RequirementStatus,
@@ -128,6 +137,66 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined): {
   };
 }
 
+function matchRequirementCode(
+  inputCode?: string | null,
+  inputReqId?: string | null,
+): RequirementCode | null {
+  const candidates = [inputCode, inputReqId].filter(Boolean) as string[];
+  for (const raw of candidates) {
+    const s = raw.toLowerCase().trim().replace(/[-_\s]+/g, "");
+    if (s.includes("gradesheet") || s.includes("grade"))
+      return REQUIREMENT_CODE.GRADE_SHEET;
+    if (s.includes("syllabus") || s.includes("enhancedsyllabus"))
+      return REQUIREMENT_CODE.ENHANCED_SYLLABUS;
+    if (s.includes("orientation") || s.includes("classorientation"))
+      return REQUIREMENT_CODE.CLASS_ORIENTATION;
+    if (s.includes("midterm") || s.includes("midtermpackage"))
+      return REQUIREMENT_CODE.MIDTERM_PACKAGE;
+    if (s.includes("final") || s.includes("finalpackage"))
+      return REQUIREMENT_CODE.FINAL_PACKAGE;
+    if (
+      s.includes("classrecord") ||
+      s.includes("records") ||
+      s.includes("classrecords")
+    )
+      return REQUIREMENT_CODE.CLASS_RECORDS;
+  }
+  return null;
+}
+
+function doesSubmissionMatchTerm(
+  s: any,
+  targetAY: string,
+  targetSem: SemesterOption
+): boolean {
+  if (!s) return false;
+  const directAy = s.academic_year || s.academicYear || s.faculty_assignment?.academic_year;
+  const directSem = s.semester || s.term || s.faculty_assignment?.term;
+
+  if (directAy && directSem) {
+    return (
+      normalizeAcademicYear(directAy) === normalizeAcademicYear(targetAY) &&
+      normalizeSemester(directSem) === normalizeSemester(targetSem)
+    );
+  }
+
+  if (s.submitted_at || s.created_at) {
+    const subTime = new Date(s.submitted_at || s.created_at).getTime();
+    if (!isNaN(subTime)) {
+      const is2ndSemTarget = normalizeSemester(targetSem) === "2nd Semester";
+      const winStartFallback = new Date("2026-08-05T00:00:00+08:00").getTime();
+      if (subTime >= winStartFallback) {
+        return is2ndSemTarget;
+      } else {
+        return !is2ndSemTarget;
+      }
+    }
+  }
+
+  const term = toAcademicYearAndSemester(s.submitted_at || s.created_at);
+  return term.academicYear === targetAY && term.semester === targetSem;
+}
+
 interface FacultyVerificationDrawerProps {
   faculty: FacultyAccount;
   academicYear: string;
@@ -198,20 +267,13 @@ function FacultyVerificationDrawer({
 
   const pendingSubmissionsCount = useMemo(() => {
     return submissions.filter((s) => {
-      const term = toAcademicYearAndSemester(s.submitted_at || s.created_at);
-      const matchesTerm =
-        term.academicYear === academicYear && term.semester === semester;
+      const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
       const isPending =
         s.status === "uploaded" ||
         s.status === "pending" ||
         s.status === "submitted" ||
         s.status === "under_review";
-      return (
-        matchesTerm &&
-        isPending &&
-        Array.isArray(s.document_versions) &&
-        s.document_versions.length > 0
-      );
+      return matchesTerm && isPending;
     }).length;
   }, [submissions, academicYear, semester]);
 
@@ -225,7 +287,7 @@ function FacultyVerificationDrawer({
             { credentials: "include" }
           ),
           fetch(
-            `/api/admin/faculty/requirements/verification?facultyId=${encodeURIComponent(faculty.id)}`,
+            `/api/admin/faculty/requirements/verification?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(academicYear)}&semester=${encodeURIComponent(semester)}`,
             { credentials: "include" }
           ),
         ]);
@@ -360,14 +422,8 @@ function FacultyVerificationDrawer({
 
       // Check uploaded requirement files
       const uploadedSubmissions = submissions.filter((s) => {
-        const term = toAcademicYearAndSemester(s.submitted_at || s.created_at);
-        const matchesTerm =
-          term.academicYear === academicYear && term.semester === semester;
-        return (
-          matchesTerm &&
-          Array.isArray(s.document_versions) &&
-          s.document_versions.length > 0
-        );
+        const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
+        return matchesTerm && Boolean(s.id);
       });
 
       if (uploadedSubmissions.length === 0) {
@@ -557,15 +613,13 @@ function FacultyVerificationDrawer({
   // 2. "Validate All" Bulk Action Pop-up Modal Trigger
   function triggerValidateAllPendingModal() {
     const pendingSubmissions = submissions.filter((s) => {
-      const term = toAcademicYearAndSemester(s.submitted_at || s.created_at);
-      const matchesTerm =
-        term.academicYear === academicYear && term.semester === semester;
+      const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
       const isPending =
         s.status === "uploaded" ||
         s.status === "pending" ||
         s.status === "submitted" ||
         s.status === "under_review";
-      return matchesTerm && isPending && Array.isArray(s.document_versions) && s.document_versions.length > 0;
+      return matchesTerm && isPending && Boolean(s.id);
     });
 
     if (pendingSubmissions.length === 0) {
@@ -582,15 +636,13 @@ function FacultyVerificationDrawer({
 
   async function executeValidateAllPending() {
     const pendingSubmissions = submissions.filter((s) => {
-      const term = toAcademicYearAndSemester(s.submitted_at || s.created_at);
-      const matchesTerm =
-        term.academicYear === academicYear && term.semester === semester;
+      const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
       const isPending =
         s.status === "uploaded" ||
         s.status === "pending" ||
         s.status === "submitted" ||
         s.status === "under_review";
-      return matchesTerm && isPending && Array.isArray(s.document_versions) && s.document_versions.length > 0;
+      return matchesTerm && isPending && Boolean(s.id);
     });
 
     if (pendingSubmissions.length === 0) {
@@ -646,10 +698,10 @@ function FacultyVerificationDrawer({
 
   const historySubmissions = useMemo(() => {
     return submissions.filter((sub) => {
-      const term = toAcademicYearAndSemester(sub.submitted_at || sub.created_at);
-      return (
-        term.academicYear === selectedHistoryAy &&
-        term.semester === selectedHistorySem
+      return doesSubmissionMatchTerm(
+        sub,
+        selectedHistoryAy,
+        selectedHistorySem
       );
     });
   }, [submissions, selectedHistoryAy, selectedHistorySem]);
@@ -789,14 +841,15 @@ function FacultyVerificationDrawer({
               {DEFAULT_REQUIREMENTS.map((code) => {
                 const reqLabel = REQUIREMENT_LABEL[code];
                 const matchingSubmission = submissions.find((s) => {
-                  if (s.requirement_code !== code) return false;
-                  const term = toAcademicYearAndSemester(
-                    s.submitted_at || s.created_at
+                  const codeMatched =
+                    matchRequirementCode(
+                      s.requirement_code,
+                      (s as { requirement_id?: string }).requirement_id
+                    ) === code || s.requirement_code === code;
+                  return (
+                    codeMatched &&
+                    doesSubmissionMatchTerm(s, academicYear, semester)
                   );
-                  if (academicYear && term.academicYear !== academicYear)
-                    return false;
-                  if (semester && term.semester !== semester) return false;
-                  return true;
                 });
 
                 const documents = matchingSubmission?.document_versions ?? [];
