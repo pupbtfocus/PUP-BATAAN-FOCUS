@@ -22,7 +22,7 @@ export function FacultyFilterBar({
         value={searchTerm}
         onChange={(event) => onSearchChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full sm:w-72 h-9 rounded-lg border border-slate-800 bg-slate-900 px-3 text-xs text-slate-200 placeholder-slate-500 outline-none transition focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/30"
+        className="w-full max-w-[240px] sm:w-64 h-9 rounded-lg border border-slate-800 bg-slate-900 px-3 text-xs text-slate-200 placeholder-slate-500 outline-none transition focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/30"
       />
 
       {onStatusFilterChange ? (

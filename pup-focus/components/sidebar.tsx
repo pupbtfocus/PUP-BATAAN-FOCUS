@@ -26,7 +26,7 @@ export function SidebarButton({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+      className={`w-full rounded-lg border px-3 py-1.5 text-left transition ${
         active
           ? "border-amber-400 bg-amber-400/10 text-amber-300 font-semibold"
           : "border-slate-800 bg-[#070c18] hover:bg-[#0d152a] text-slate-300 hover:text-slate-100"
@@ -34,7 +34,7 @@ export function SidebarButton({
     >
       <p className="text-xs font-semibold">{title}</p>
       {description ? (
-        <p className="mt-1 text-[11px] text-slate-400">{description}</p>
+        <p className="mt-0.5 text-[11px] text-slate-400">{description}</p>
       ) : null}
     </button>
   );
@@ -69,19 +69,19 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-4 rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col items-center">
-        <p className="mt-1 font-semibold text-white text-center text-sm">
+      <div className="my-1.5 rounded-lg bg-slate-900 border border-slate-800 p-2 flex flex-col items-center">
+        <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
           {adminName ?? "Admin"}
         </p>
 
-        <div className="my-2 h-px w-full bg-slate-800" />
+        <div className="my-1.5 h-px w-full bg-slate-800" />
 
-        <p className="mt-0.5 text-xs uppercase tracking-[0.12em] text-amber-400 text-center font-medium">
+        <p className="mt-0 text-[10px] uppercase tracking-[0.12em] text-amber-400 text-center font-semibold">
           {roleTitle}
         </p>
       </div>
 
-      <nav className="mt-4 space-y-2 flex-1 overflow-y-auto">
+      <nav className="mt-1.5 space-y-1 flex-1 overflow-y-auto">
         <SidebarButton
           active={activeSection === "dashboard"}
           title="Dashboard"
@@ -103,7 +103,7 @@ export function SidebarContent({
           <button
             type="button"
             onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
-            className={`w-full flex items-center justify-between rounded-xl border px-4 py-3 text-left transition bg-[#070c18] hover:bg-[#0d152a] ${
+            className={`w-full flex items-center justify-between rounded-lg border px-3 py-1.5 text-left transition bg-[#070c18] hover:bg-[#0d152a] ${
               isAcademicCycleActive
                 ? "border-amber-500/40 text-amber-300"
                 : "border-slate-800 text-slate-300 hover:text-slate-100"
@@ -113,19 +113,19 @@ export function SidebarContent({
               Academic Cycle Management
             </span>
             {isAcademicCycleOpen ? (
-              <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+              <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0 ml-1" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0 ml-1" />
             )}
           </button>
 
           {/* Child Sub-items (Indented with left border indicator) */}
           {isAcademicCycleOpen && (
-            <div className="border-l border-slate-800 ml-4 pl-3 flex flex-col gap-1.5 mt-2">
+            <div className="border-l border-slate-800 ml-2.5 pl-2 flex flex-col gap-1 mt-1">
               <button
                 type="button"
                 onClick={() => handleSelect("academicTerms")}
-                className={`w-full text-left px-3 py-2 text-xs rounded-lg border transition-all ${
+                className={`w-full text-left px-2.5 py-1 text-xs rounded-md border transition-all ${
                   activeSection === "academicTerms"
                     ? "border-amber-500/30 bg-amber-500/10 text-amber-400 font-semibold"
                     : "border-slate-800 bg-[#070c18] text-slate-400 hover:text-slate-200 hover:bg-[#0d152a] hover:border-slate-700"
@@ -136,7 +136,7 @@ export function SidebarContent({
               <button
                 type="button"
                 onClick={() => handleSelect("submissionWindow")}
-                className={`w-full text-left px-3 py-2 text-xs rounded-lg border transition-all ${
+                className={`w-full text-left px-2.5 py-1 text-xs rounded-md border transition-all ${
                   activeSection === "submissionWindow"
                     ? "border-amber-500/30 bg-amber-500/10 text-amber-400 font-semibold"
                     : "border-slate-800 bg-[#070c18] text-slate-400 hover:text-slate-200 hover:bg-[#0d152a] hover:border-slate-700"
@@ -160,7 +160,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 flex-col overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-5 shadow-lg z-30">
+    <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-4rem)] w-56 flex-col overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-2.5 shadow-lg z-30">
       <SidebarContent {...props} />
     </aside>
   );

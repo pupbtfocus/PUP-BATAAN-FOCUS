@@ -331,9 +331,11 @@ export function AdminAcademicTerms({
       return (
         <span
           title="Term Closed / Completed"
-          className="text-slate-500/70 font-medium text-xs px-2.5 py-1 rounded-md bg-slate-900/60 border border-slate-800/80 cursor-not-allowed select-none inline-flex items-center gap-1"
+          className="text-slate-500/70 font-medium text-[11px] sm:text-xs px-2 py-1 rounded-md bg-slate-900/60 border border-slate-800/80 cursor-not-allowed select-none inline-flex items-center gap-1 shrink-0 whitespace-nowrap"
         >
-          🔒 Term Closed / Completed
+          <span>🔒</span>
+          <span className="sm:hidden">Closed</span>
+          <span className="hidden sm:inline">Term Closed / Completed</span>
         </span>
       );
     }

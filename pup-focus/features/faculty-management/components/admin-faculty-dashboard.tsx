@@ -403,7 +403,7 @@ export function AdminFacultyDashboard({
       {/* Body Wrapper */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex w-64 flex-col bg-[#0d121f] border-r border-slate-800/80 shrink-0">
+        <aside className="hidden md:flex w-56 flex-col bg-[#0d121f] border-r border-slate-800/80 shrink-0 p-2.5">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={setActiveSection}
@@ -418,7 +418,7 @@ export function AdminFacultyDashboard({
               className="fixed inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <aside className="relative w-72 max-w-[80%] bg-[#0d121f] h-full p-4 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto">
+            <aside className="relative w-64 max-w-[80%] bg-[#0d121f] h-full p-3 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Navigation</span>
                 <button

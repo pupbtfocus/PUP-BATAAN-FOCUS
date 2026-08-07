@@ -45,7 +45,7 @@ export default function DashboardLayout({
       {/* Body Wrapper */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex w-64 flex-col bg-[#0d121f] border-r border-slate-800/80 shrink-0">
+        <aside className="hidden md:flex w-56 flex-col bg-[#0d121f] border-r border-slate-800/80 shrink-0 p-2.5">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={setActiveSection}
@@ -59,7 +59,7 @@ export default function DashboardLayout({
               className="fixed inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <aside className="relative w-72 max-w-[80%] bg-[#0d121f] h-full p-4 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl">
+            <aside className="relative w-64 max-w-[80%] bg-[#0d121f] h-full p-3 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl">
               <SidebarContent
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}
