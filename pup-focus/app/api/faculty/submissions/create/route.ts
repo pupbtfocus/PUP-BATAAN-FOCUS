@@ -17,6 +17,7 @@ import {
   isValidAcademicYear,
   isValidSemester,
   normalizeSemester,
+  normalizeTime24Hour,
 } from "@/features/submissions/services/submission-window.service";
 import crypto from "crypto";
 
@@ -144,15 +145,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    // Query current active term directly from database
+    const { data: dbCurrentTerm } = await supabase
+      .from("academic_terms")
+      .select("id, academic_year, semester")
+      .eq("status", "Current")
+      .maybeSingle();
+
     // Parse submission metadata
     const requirementCodeInput =
       (formData.get("requirementCode") as string) ||
       (formData.get("requirement_type") as string) ||
       "";
 
+    const activeAcademicYear =
+      (formData.get("academicYear") as string) ||
+      submissionWindow?.academicYear ||
+      dbCurrentTerm?.academic_year ||
+      "2026-2027";
+
+    const activeSemester = normalizeSemester(
+      (formData.get("semester") as string) ||
+      submissionWindow?.semester ||
+      dbCurrentTerm?.semester ||
+      "2nd Semester"
+    );
+
     const payload = {
-      academicYear: formData.get("academicYear") as string,
-      semester: formData.get("semester") as string,
+      academicYear: activeAcademicYear,
+      semester: activeSemester,
       requirementCode: requirementCodeInput,
       remarks:
         (formData.get("remarks") as string) ||
@@ -240,7 +261,7 @@ export async function POST(request: NextRequest) {
       .select("id, curriculum_id")
       .eq("faculty_profile_id", appUser.profile_id)
       .eq("academic_year", payload.academicYear)
-      .eq("term", payload.semester)
+      .ilike("term", `%${payload.semester}%`)
       .maybeSingle();
 
     if (currentTermAssignment?.id) {
@@ -368,13 +389,24 @@ export async function POST(request: NextRequest) {
         ) {
           return true;
         }
-        const term = toAcademicYearAndSemester(sub.submitted_at);
-        return (
-          normalizeAcademicYear(term.academicYear) ===
-            normalizeAcademicYear(payload.academicYear) &&
-          normalizeSemester(term.semester) ===
-            normalizeSemester(payload.semester)
-        );
+
+        if (sub.submitted_at && windowState.startDate && windowState.startTime) {
+          const subTime = new Date(sub.submitted_at).getTime();
+          const winStart = new Date(
+            `${windowState.startDate}T${normalizeTime24Hour(windowState.startTime)}+08:00`,
+          ).getTime();
+          const is2ndSem = normalizeSemester(payload.semester) === "2nd Semester";
+
+          if (!isNaN(subTime) && !isNaN(winStart)) {
+            if (subTime >= winStart) {
+              return is2ndSem;
+            } else {
+              return !is2ndSem;
+            }
+          }
+        }
+
+        return false;
       });
 
       if (activeTermSubmissions.length > 0) {
@@ -416,7 +448,7 @@ export async function POST(request: NextRequest) {
       id: submissionId,
       faculty_profile_id: appUser.profile_id,
       curriculum_id: curriculumId,
-      faculty_assignment_id: facultyAssignmentId ?? undefined,
+      faculty_assignment_id: facultyAssignmentId ?? null,
       requirement_code: payload.requirementCode,
       status: "uploaded",
       submitted_at: new Date().toISOString(),

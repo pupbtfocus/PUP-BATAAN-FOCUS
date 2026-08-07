@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
+import {
+  DEFAULT_REQUIREMENTS,
+  REQUIREMENT_CODE,
+  type RequirementCode,
+} from "@/config/compliance";
 import { ROLE } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -21,6 +25,33 @@ type SubmissionRow = {
 };
 
 const SEMESTER_OPTIONS: SemesterOption[] = ["1st Semester", "2nd Semester"];
+
+function matchRequirementCode(
+  inputCode?: string | null,
+  inputReqId?: string | null,
+): RequirementCode | null {
+  const candidates = [inputCode, inputReqId].filter(Boolean) as string[];
+  for (const raw of candidates) {
+    const s = raw.toLowerCase().trim().replace(/[-_\s]+/g, "");
+    if (s.includes("gradesheet") || s.includes("grade"))
+      return REQUIREMENT_CODE.GRADE_SHEET;
+    if (s.includes("syllabus") || s.includes("enhancedsyllabus"))
+      return REQUIREMENT_CODE.ENHANCED_SYLLABUS;
+    if (s.includes("orientation") || s.includes("classorientation"))
+      return REQUIREMENT_CODE.CLASS_ORIENTATION;
+    if (s.includes("midterm") || s.includes("midtermpackage"))
+      return REQUIREMENT_CODE.MIDTERM_PACKAGE;
+    if (s.includes("final") || s.includes("finalpackage"))
+      return REQUIREMENT_CODE.FINAL_PACKAGE;
+    if (
+      s.includes("classrecord") ||
+      s.includes("records") ||
+      s.includes("classrecords")
+    )
+      return REQUIREMENT_CODE.CLASS_RECORDS;
+  }
+  return null;
+}
 
 function getCurrentYearInManila(): number {
   const yearText = new Intl.DateTimeFormat("en-US", {
@@ -177,11 +208,13 @@ function buildInitialRequirementStatus(): Record<
 }
 
 function hasDocumentVersion(submission: {
+  id?: string;
   document_versions?: Array<{ id: string }> | null;
 }): boolean {
-  return Array.isArray(submission.document_versions)
-    ? submission.document_versions.length > 0
-    : false;
+  if (Array.isArray(submission.document_versions)) {
+    return submission.document_versions.length > 0;
+  }
+  return Boolean(submission.id);
 }
 
 export async function GET(request: NextRequest) {
@@ -303,9 +336,9 @@ export async function GET(request: NextRequest) {
     const effectiveSelectedSemester =
       selectedSemester && availableSemesters.includes(selectedSemester)
         ? selectedSemester
-        : (availableSemesters[0] ??
-          currentAcademicTerm?.semester ??
-          "1st Semester");
+        : (currentAcademicTerm?.semester ??
+          availableSemesters[0] ??
+          "2nd Semester");
 
     const filteredAssignmentIds = (assignmentRows ?? [])
       .filter(
@@ -361,13 +394,36 @@ export async function GET(request: NextRequest) {
         ) {
           return true;
         }
-        const term = toAcademicYearAndSemester(sub.submitted_at);
-        return (
-          normalizeAcademicYear(term.academicYear) ===
-            normalizeAcademicYear(selectedAcademicYear) &&
-          normalizeSemester(term.semester) ===
-            normalizeSemester(effectiveSelectedSemester)
-        );
+
+        if (sub.submitted_at) {
+          const subTime = new Date(sub.submitted_at).getTime();
+
+          if (!isNaN(subTime)) {
+            if (currentWindowStart) {
+              const winStart = new Date(currentWindowStart).getTime();
+              const is2ndSemSelected =
+                normalizeSemester(effectiveSelectedSemester) === "2nd Semester";
+
+              if (subTime >= winStart) {
+                return is2ndSemSelected;
+              } else {
+                return !is2ndSemSelected;
+              }
+            }
+
+            const term = toAcademicYearAndSemester(sub.submitted_at);
+            if (
+              normalizeAcademicYear(term.academicYear) ===
+                normalizeAcademicYear(selectedAcademicYear) &&
+              normalizeSemester(term.semester) ===
+                normalizeSemester(effectiveSelectedSemester)
+            ) {
+              return true;
+            }
+          }
+        }
+
+        return false;
       }) as SubmissionRow[];
     } else if (submissionsError) {
       submissionRows = [];
@@ -391,18 +447,16 @@ export async function GET(request: NextRequest) {
 
     // Process submissions: get the best status for each requirement (highest rank)
     for (const row of submissionRows ?? []) {
-      const code =
-        row.requirement_code as (typeof DEFAULT_REQUIREMENTS)[number];
+      const code = matchRequirementCode(
+        row.requirement_code,
+        (row as { requirement_id?: string }).requirement_id,
+      );
 
-      if (!DEFAULT_REQUIREMENTS.includes(code)) {
+      if (!code) {
         continue;
       }
 
       if (!hasDocumentVersion(row)) {
-        continue;
-      }
-
-      if (requirementStatus[code] !== "not_submitted") {
         continue;
       }
 
