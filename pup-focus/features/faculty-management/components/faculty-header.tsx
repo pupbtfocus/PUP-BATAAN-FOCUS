@@ -15,7 +15,7 @@ type FacultyHeaderProps = {
 };
 
 export function FacultyHeader({
-  title = "PUP Bataan FOCUS",
+  title = "PUP FOCUS",
   subtitle,
   nav = [],
 }: FacultyHeaderProps) {

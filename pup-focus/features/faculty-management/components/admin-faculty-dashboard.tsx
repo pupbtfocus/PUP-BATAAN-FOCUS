@@ -413,12 +413,23 @@ export function AdminFacultyDashboard({
 
         {/* Mobile Navigation Drawer / Sheet */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden flex">
+          <div className="fixed inset-0 z-[60] md:hidden flex">
             <div
               className="fixed inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <aside className="relative w-72 max-w-[80%] bg-[#0d121f] h-full p-4 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl">
+            <aside className="relative w-72 max-w-[80%] bg-[#0d121f] h-full p-4 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Navigation</span>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                  aria-label="Close navigation"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               <SidebarContent
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}

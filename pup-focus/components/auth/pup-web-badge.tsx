@@ -9,16 +9,16 @@ export function PupWebBadge() {
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3">
+      <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 flex items-center gap-2 sm:gap-3">
         {/* 1. FOCUS System Info / About Icon Button */}
         <button
           type="button"
           onClick={() => setIsAboutOpen(true)}
-          className="h-11 w-11 rounded-full flex items-center justify-center bg-[#3a080e]/90 hover:bg-[#4a0e17] shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 text-amber-400 focus:outline-none"
+          className="h-9 w-9 sm:h-11 sm:w-11 rounded-full flex items-center justify-center bg-[#3a080e]/90 hover:bg-[#4a0e17] shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 text-amber-400 focus:outline-none"
           title="About PUP FOCUS"
           aria-label="About PUP FOCUS"
         >
-          <Info className="w-5 h-5" />
+          <Info className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         {/* 2. PUP Official Website Icon Link */}
@@ -26,13 +26,13 @@ export function PupWebBadge() {
           href="https://www.pup.edu.ph"
           target="_blank"
           rel="noopener noreferrer"
-          className="h-11 w-11 rounded-full flex items-center justify-center bg-[#3a080e]/90 hover:bg-[#4a0e17] shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95"
+          className="h-9 w-9 sm:h-11 sm:w-11 rounded-full flex items-center justify-center bg-[#3a080e]/90 hover:bg-[#4a0e17] shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95"
           title="PUP Official Website"
         >
           <img
             src="/images/pup-seal.png"
             alt="PUP Official Website"
-            className="w-6 h-6 rounded-full object-cover"
+            className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover"
           />
         </a>
       </div>
