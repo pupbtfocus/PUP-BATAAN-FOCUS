@@ -6,6 +6,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   DEFAULT_REQUIREMENTS,
+  REQUIREMENT_CODE,
   type RequirementCode,
 } from "@/config/compliance";
 import { logger } from "@/lib/observability/logger";
@@ -37,6 +38,7 @@ type SubmissionRow = {
   status: string | null;
   submitted_at?: string | null;
   remarks?: string | null;
+  faculty_assignment_id?: string | null;
   document_versions?: Array<{ id: string }> | null;
   review_decisions?: ReviewDecision[] | null;
 };
@@ -46,11 +48,16 @@ function isRequirementCode(value: string): value is RequirementCode {
 }
 
 function hasDocumentVersion(submission: {
+  id?: string;
   document_versions?: Array<{ id: string }> | null;
 }): boolean {
-  return Array.isArray(submission.document_versions)
-    ? submission.document_versions.length > 0
-    : false;
+  if (
+    Array.isArray(submission.document_versions) &&
+    submission.document_versions.length > 0
+  ) {
+    return true;
+  }
+  return Boolean(submission.id);
 }
 
 function isMissingRemarksColumnError(
@@ -62,7 +69,7 @@ function isMissingRemarksColumnError(
 
 function normalizeSemester(sem?: string | null): string {
   if (!sem) return "";
-  const s = sem.toLowerCase().trim();
+  const s = sem.toLowerCase().trim().replace(/[-_]/g, " ");
   if (s.includes("1") || s.includes("first") || s.includes("1st")) return "1st semester";
   if (s.includes("2") || s.includes("second") || s.includes("2nd")) return "2nd semester";
   if (s.includes("3") || s.includes("third") || s.includes("3rd") || s.includes("summer")) return "3rd semester";
@@ -186,7 +193,50 @@ export async function GET(request: NextRequest) {
           }
         : toAcademicYearAndSemester(windowState.today);
 
-    // 3. App user lookup with null-guard
+    const url = new URL(request.url);
+    const requestedAcademicYear = (
+      url.searchParams.get("academicYear") ||
+      request.nextUrl?.searchParams?.get("academicYear")
+    )?.trim();
+    const requestedSemester = (
+      url.searchParams.get("semester") ||
+      request.nextUrl?.searchParams?.get("semester")
+    )?.trim();
+
+    const activeAcademicYear = requestedAcademicYear || currentTerm.academicYear;
+    const activeSemester = requestedSemester || currentTerm.semester;
+    const normActiveYear = normalizeAcademicYear(activeAcademicYear);
+    const normActiveSem = normalizeSemester(activeSemester);
+
+    function matchRequirementCode(
+      inputCode?: string | null,
+      inputReqId?: string | null,
+    ): RequirementCode | null {
+      const candidates = [inputCode, inputReqId].filter(Boolean) as string[];
+      for (const raw of candidates) {
+        const s = raw.toLowerCase().trim().replace(/[-_\s]+/g, "");
+        if (s.includes("gradesheet") || s.includes("grade"))
+          return REQUIREMENT_CODE.GRADE_SHEET;
+        if (s.includes("syllabus") || s.includes("enhancedsyllabus"))
+          return REQUIREMENT_CODE.ENHANCED_SYLLABUS;
+        if (s.includes("orientation") || s.includes("classorientation"))
+          return REQUIREMENT_CODE.CLASS_ORIENTATION;
+        if (s.includes("midterm") || s.includes("midtermpackage"))
+          return REQUIREMENT_CODE.MIDTERM_PACKAGE;
+        if (s.includes("final") || s.includes("finalpackage"))
+          return REQUIREMENT_CODE.FINAL_PACKAGE;
+        if (
+          s.includes("classrecord") ||
+          s.includes("records") ||
+          s.includes("classrecords")
+        )
+          return REQUIREMENT_CODE.CLASS_RECORDS;
+      }
+      return null;
+    }
+
+    // 3. Multi-faculty ID lookup (Auth ID + Profile ID)
+    const facultyIds = new Set<string>([user.id]);
     let appUser: { profile_id: string | null } | null = null;
     try {
       const { data, error } = await supabase
@@ -195,13 +245,9 @@ export async function GET(request: NextRequest) {
         .eq("auth_user_id", user.id)
         .maybeSingle();
 
-      if (!error && data) {
+      if (!error && data?.profile_id) {
         appUser = data;
-      } else if (error) {
-        logger.error("app_user_query_error", {
-          authUserId: user.id,
-          error: error.message,
-        });
+        facultyIds.add(data.profile_id);
       }
     } catch (userQueryErr) {
       logger.error("app_user_query_exception", {
@@ -209,106 +255,104 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    try {
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profileRow?.id) {
+        facultyIds.add(profileRow.id);
+      }
+    } catch {}
+
+    const facultyIdList = Array.from(facultyIds);
+
     const defaultRequirementStatuses: RequirementStatus[] = DEFAULT_REQUIREMENTS.map(
       (code) => ({
         code,
         status: "Not Submitted" as const,
       }),
     );
-    const emptyCounts = {
-      total: defaultRequirementStatuses.length,
-      validated: 0,
-      rejected: 0,
-      pending: 0,
-      notSubmitted: defaultRequirementStatuses.length,
-    };
 
-    if (!appUser || !appUser.profile_id) {
-      logger.warn("faculty_profile_missing", { authUserId: user.id });
-      return NextResponse.json(
-        {
-          requirementStatuses: defaultRequirementStatuses,
-          counts: emptyCounts,
-          message: "No program assigned",
-        },
-        { status: 200 },
-      );
-    }
-
-    // 4. Program assignments null-guard
+    // 4. Program assignments lookup (non-blocking if empty)
     let assignmentRows: Array<{ id: string; academic_year?: string; term?: string }> = [];
     try {
       const { data, error } = await supabase
         .from("faculty_program_assignments")
         .select("id, academic_year, term")
-        .eq("faculty_profile_id", appUser.profile_id);
+        .in("faculty_profile_id", facultyIdList);
 
       if (!error && Array.isArray(data)) {
         assignmentRows = data;
-      } else if (error) {
-        logger.warn("faculty_program_assignments_fetch_failed", {
-          facultyId: appUser.profile_id,
-          error: error.message,
-        });
       }
     } catch (assignmentErr) {
       logger.warn("faculty_program_assignments_exception", {
-        facultyId: appUser.profile_id,
+        facultyIds: facultyIdList,
         error: assignmentErr instanceof Error ? assignmentErr.message : String(assignmentErr),
       });
     }
 
-    if (assignmentRows.length === 0) {
-      logger.info("no_program_assignments_found", { facultyId: appUser.profile_id });
-      return NextResponse.json(
-        {
-          requirementStatuses: defaultRequirementStatuses,
-          counts: emptyCounts,
-          message: "No program assigned",
-        },
-        { status: 200 },
-      );
-    }
-
     const currentTermAssignments = assignmentRows.filter(
       (row) =>
-        row.academic_year === currentTerm.academicYear &&
-        row.term === currentTerm.semester,
+        normalizeAcademicYear(row.academic_year) === normActiveYear &&
+        normalizeSemester(row.term) === normActiveSem,
     );
     const currentAssignmentIds = currentTermAssignments.map((row) => row.id);
 
-    // 5. Query submissions and related tables separately to avoid relational schema cache join errors
+    // 5. Query submissions matching EITHER faculty profile ID or auth user ID
     let rawSubmissions: Array<{
       id: string;
-      requirement_code: string;
+      requirement_code?: string | null;
+      requirement_id?: string | null;
       status: string | null;
       submitted_at?: string | null;
       remarks?: string | null;
+      faculty_assignment_id?: string | null;
     }> = [];
 
-    if (windowState.isConfigured) {
-      try {
-        const { data, error } = await supabase
-          .from("submissions")
-          .select("id, requirement_code, status, submitted_at, remarks")
-          .eq("faculty_profile_id", appUser.profile_id)
-          .order("submitted_at", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("submissions")
+        .select(
+          "id, requirement_code, status, submitted_at, remarks, faculty_assignment_id",
+        )
+        .in("faculty_profile_id", facultyIdList)
+        .order("submitted_at", { ascending: false });
 
-        if (error && isMissingRemarksColumnError(error)) {
-          const { data: fallbackData } = await supabase
-            .from("submissions")
-            .select("id, requirement_code, status, submitted_at")
-            .eq("faculty_profile_id", appUser.profile_id)
-            .order("submitted_at", { ascending: false });
-          rawSubmissions = (fallbackData as typeof rawSubmissions) || [];
-        } else if (data) {
-          rawSubmissions = data as typeof rawSubmissions;
-        }
-      } catch (queryErr) {
-        logger.error("status_submissions_query_exception", {
-          error: queryErr instanceof Error ? queryErr.message : String(queryErr),
-        });
+      if (error && isMissingRemarksColumnError(error)) {
+        const { data: fallbackData } = await supabase
+          .from("submissions")
+          .select(
+            "id, requirement_code, status, submitted_at, faculty_assignment_id",
+          )
+          .in("faculty_profile_id", facultyIdList)
+          .order("submitted_at", { ascending: false });
+        rawSubmissions = (fallbackData as typeof rawSubmissions) || [];
+      } else if (data) {
+        rawSubmissions = data as typeof rawSubmissions;
       }
+    } catch (queryErr) {
+      logger.error("status_submissions_query_exception", {
+        error:
+          queryErr instanceof Error ? queryErr.message : String(queryErr),
+      });
+    }
+
+    if (rawSubmissions.length === 0) {
+      try {
+        const { data: altData } = await supabase
+          .from("submissions")
+          .select(
+            "id, requirement_code, status, submitted_at, faculty_assignment_id",
+          )
+          .in("faculty_id", facultyIdList)
+          .order("submitted_at", { ascending: false });
+        if (altData && altData.length > 0) {
+          rawSubmissions = altData as typeof rawSubmissions;
+        }
+      } catch {}
     }
 
     const submissionIds = rawSubmissions.map((s) => s.id);
@@ -354,20 +398,16 @@ export async function GET(request: NextRequest) {
 
     const submissions: SubmissionRow[] = rawSubmissions.map((s) => ({
       id: s.id,
-      requirement_code: s.requirement_code,
+      requirement_code: (s.requirement_code ||
+        (s as { requirement_id?: string }).requirement_id ||
+        "") as RequirementCode,
       status: s.status,
       submitted_at: s.submitted_at,
       remarks: s.remarks,
+      faculty_assignment_id: s.faculty_assignment_id,
       document_versions: docVersionsMap.get(s.id) || [],
       review_decisions: reviewDecisionsMap.get(s.id) || [],
     }));
-
-    const url = new URL(request.url);
-    const requestedAcademicYear = url.searchParams.get("academicYear")?.trim();
-    const requestedSemester = url.searchParams.get("semester")?.trim();
-
-    const activeAcademicYear = requestedAcademicYear || currentTerm.academicYear;
-    const activeSemester = requestedSemester || currentTerm.semester;
 
     // 6. Map requirement statuses safely, strictly scoped to active term
     const statusMap = new Map<string, RequirementStatus>();
@@ -378,42 +418,130 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const normActiveYear = normalizeAcademicYear(activeAcademicYear);
-    const normActiveSem = normalizeSemester(activeSemester);
-
     const termFilteredSubmissions = (submissions || []).filter((sub) => {
-      const term = toAcademicYearAndSemester(sub.submitted_at);
-      const subSem = normalizeSemester(term.semester || (sub as { semester?: string }).semester);
-      const subYear = normalizeAcademicYear(term.academicYear || (sub as { academic_year?: string }).academic_year);
+      // 1. Primary Check: Match explicit academic_year and normalized semester columns if present
+      const subSemDirect =
+        (sub as { semester?: string; term?: string }).semester ||
+        (sub as { term?: string }).term;
+      const subAYDirect =
+        (sub as { academic_year?: string; academicYear?: string })
+          .academic_year ||
+        (sub as { academicYear?: string }).academicYear;
 
-      return subSem === normActiveSem && subYear === normActiveYear;
+      if (subAYDirect && subSemDirect) {
+        return (
+          normalizeAcademicYear(subAYDirect) === normActiveYear &&
+          normalizeSemester(subSemDirect) === normActiveSem
+        );
+      }
+
+      // 2. Secondary Check: Match faculty_assignment_id if present
+      if (
+        sub.faculty_assignment_id &&
+        currentAssignmentIds.length > 0 &&
+        currentAssignmentIds.includes(sub.faculty_assignment_id)
+      ) {
+        return true;
+      }
+
+      // 3. Active Window & Current Term Check: If submitted during active submission window or recent current term period
+      if (sub.submitted_at) {
+        const subTime = new Date(sub.submitted_at).getTime();
+
+        if (!isNaN(subTime)) {
+          if (currentWindowStart) {
+            const winStart = new Date(currentWindowStart).getTime();
+            const winEnd = currentWindowEnd
+              ? new Date(currentWindowEnd).getTime()
+              : Infinity;
+
+            if (subTime >= winStart && subTime <= winEnd) {
+              return true;
+            }
+          }
+
+          if (
+            normActiveYear ===
+              normalizeAcademicYear(currentTerm.academicYear) &&
+            normActiveSem === normalizeSemester(currentTerm.semester)
+          ) {
+            const ageInHours = (Date.now() - subTime) / (1000 * 60 * 60);
+            if (ageInHours >= 0 && ageInHours <= 72) {
+              return true;
+            }
+          }
+
+          const { academicYear: subAY, semester: subSem } =
+            toAcademicYearAndSemester(sub.submitted_at);
+          if (
+            normalizeAcademicYear(subAY) === normActiveYear &&
+            normalizeSemester(subSem) === normActiveSem
+          ) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    });
+
+    console.log("[DEBUG STATUS API]", {
+      facultyIds: facultyIdList,
+      academicYear: normActiveYear,
+      semester: normActiveSem,
+      foundSubmissionsCount: rawSubmissions?.length ?? 0,
+      rawSubmissions,
+      termFilteredCount: termFilteredSubmissions.length,
     });
 
     for (const submission of termFilteredSubmissions) {
       if (!submission || typeof submission !== "object") continue;
-      const code = submission.requirement_code;
-      if (!code || !isRequirementCode(code)) continue;
+      const matchedCode = matchRequirementCode(
+        submission.requirement_code,
+        (submission as { requirement_id?: string }).requirement_id,
+      );
+      if (!matchedCode) continue;
       if (!hasDocumentVersion(submission)) continue;
-      if (statusMap.get(code)?.status !== "Not Submitted") continue;
+      if (statusMap.get(matchedCode)?.status !== "Not Submitted") continue;
 
       const reviews = Array.isArray(submission.review_decisions)
         ? submission.review_decisions
         : [];
       const latestReview = reviews[0];
 
+      const rawStatus = (submission.status || "").toLowerCase().trim();
+      const latestDecision = (latestReview?.decision || "").toLowerCase().trim();
+
       let status: "Validated" | "Rejected" | "Pending" | "Not Submitted" =
         "Not Submitted";
 
-      if (submission.status === "validated" || latestReview?.decision === "validated") {
+      if (
+        rawStatus === "validated" ||
+        rawStatus === "approved" ||
+        latestDecision === "validated" ||
+        latestDecision === "approved"
+      ) {
         status = "Validated";
-      } else if (submission.status === "rejected" || latestReview?.decision === "rejected") {
+      } else if (
+        rawStatus === "rejected" ||
+        latestDecision === "rejected"
+      ) {
         status = "Rejected";
+      } else if (
+        rawStatus === "pending" ||
+        rawStatus === "uploaded" ||
+        rawStatus === "submitted" ||
+        rawStatus === "under_review" ||
+        rawStatus === "pending_review" ||
+        !rawStatus
+      ) {
+        status = "Pending";
       } else {
         status = "Pending";
       }
 
-      statusMap.set(code, {
-        code,
+      statusMap.set(matchedCode, {
+        code: matchedCode,
         status,
         reviewedAt: latestReview?.created_at
           ? new Date(latestReview.created_at).toISOString().split("T")[0]
@@ -441,7 +569,7 @@ export async function GET(request: NextRequest) {
       requirementStatuses,
       counts,
       debug: {
-        profileId: appUser.profile_id,
+        profileId: appUser?.profile_id || facultyIdList[0] || null,
         submissionsFound: submissions?.length || 0,
       },
     });

@@ -198,6 +198,50 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    function normalizeSemester(sem?: string | null): string {
+      if (!sem) return "";
+      const s = sem.toLowerCase().trim();
+      if (s.includes("1") || s.includes("first") || s.includes("1st")) return "1st semester";
+      if (s.includes("2") || s.includes("second") || s.includes("2nd")) return "2nd semester";
+      return s;
+    }
+
+    function normalizeAcademicYear(ay?: string | null): string {
+      if (!ay) return "";
+      return ay.toLowerCase().trim().replace(/^s\.?y\.?\s*/i, "").replace(/^a\.?y\.?\s*/i, "");
+    }
+
+    function toAcademicYearAndSemester(dateInput: string | null | undefined): {
+      academicYear: string;
+      semester: "1st Semester" | "2nd Semester";
+    } {
+      const sourceDate = dateInput ? new Date(dateInput) : new Date();
+      const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const startsSchoolYear = month >= 6;
+
+      return {
+        academicYear: startsSchoolYear
+          ? `${year}-${year + 1}`
+          : `${year - 1}-${year}`,
+        semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
+      };
+    }
+
+    const { data: activeTerm } = await supabase
+      .from("academic_terms")
+      .select("academic_year, semester")
+      .eq("status", "Current")
+      .maybeSingle();
+
+    const activeAY = activeTerm?.academic_year
+      ? normalizeAcademicYear(activeTerm.academic_year)
+      : null;
+    const activeSem = activeTerm?.semester
+      ? normalizeSemester(activeTerm.semester)
+      : null;
+
     for (const row of (submissionRows ?? []) as SubmissionRow[]) {
       const profileId = row.faculty_profile_id;
       const requirementCode = row.requirement_code as
@@ -214,6 +258,16 @@ export async function GET(request: NextRequest) {
 
       if (!hasDocumentVersion(row)) {
         continue;
+      }
+
+      if (activeAY && activeSem && row.submitted_at) {
+        const subTerm = toAcademicYearAndSemester(row.submitted_at);
+        if (
+          normalizeAcademicYear(subTerm.academicYear) !== activeAY ||
+          normalizeSemester(subTerm.semester) !== activeSem
+        ) {
+          continue;
+        }
       }
 
       const mappedStatus = toRequirementStatus(row.status);

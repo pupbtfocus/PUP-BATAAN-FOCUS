@@ -915,7 +915,8 @@ function FacultySubmissionPanelContent({
         return [...prev, { code: form.requirementCode, status: "Pending" }];
       });
 
-      await fetchStatuses();
+      await Promise.all([fetchStatuses(), fetchHistory()]);
+      router.refresh();
 
       setForm((prev) => ({
         ...prev,

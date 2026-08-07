@@ -57,6 +57,33 @@ function normalizeSemester(input: string | null): SemesterOption {
   return "1st Semester";
 }
 
+function normalizeAcademicYear(value: string | null | undefined): string {
+  if (!value) return "";
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^s\.?y\.?\s*/i, "")
+    .replace(/^a\.?y\.?\s*/i, "");
+}
+
+function toAcademicYearAndSemester(dateInput: string | null | undefined): {
+  academicYear: string;
+  semester: SemesterOption;
+} {
+  const sourceDate = dateInput ? new Date(dateInput) : new Date();
+  const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const startsSchoolYear = month >= 6;
+
+  return {
+    academicYear: startsSchoolYear
+      ? `${year}-${year + 1}`
+      : `${year - 1}-${year}`,
+    semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
+  };
+}
+
 function isMissingFacultyAssignmentIdError(
   error: { message?: string } | null,
 ): boolean {
@@ -315,64 +342,34 @@ export async function GET(request: NextRequest) {
     let submissionRows: SubmissionRow[] | null = null;
     let submissionsError: { message?: string } | null = null;
 
-    const getWindowFallbackQuery = () =>
-      supabase
-        .from("submissions")
-        .select(
-          "id, requirement_code, status, submitted_at, document_versions(id)",
-        )
-        .eq("faculty_profile_id", facultyProfileId)
-        .gte("submitted_at", currentWindowStart!)
-        .lte("submitted_at", currentWindowEnd!)
-        .order("submitted_at", { ascending: false })
-        .limit(1000);
+    const { data: rawAllSubmissions, error: fetchSubError } = await supabase
+      .from("submissions")
+      .select(
+        "id, requirement_code, status, submitted_at, faculty_assignment_id, document_versions(id)",
+      )
+      .eq("faculty_profile_id", facultyProfileId)
+      .order("submitted_at", { ascending: false })
+      .limit(1000);
 
-    if (filteredAssignmentIds.length > 0) {
-      const submissionQuery = supabase
-        .from("submissions")
-        .select(
-          "id, requirement_code, status, submitted_at, document_versions(id)",
-        )
-        .eq("faculty_profile_id", facultyProfileId)
-        .in("faculty_assignment_id", filteredAssignmentIds)
-        .order("submitted_at", { ascending: false })
-        .limit(1000);
+    submissionsError = fetchSubError;
 
-      let submissionResult = await submissionQuery;
-
-      if (
-        submissionResult.error &&
-        isMissingFacultyAssignmentIdError(submissionResult.error)
-      ) {
-        submissionResult = await supabase
-          .from("submissions")
-          .select(
-            "id, requirement_code, status, submitted_at, document_versions(id)",
-          )
-          .eq("faculty_profile_id", facultyProfileId)
-          .order("submitted_at", { ascending: false })
-          .limit(1000);
-      }
-
-      submissionRows = submissionResult.data as SubmissionRow[] | null;
-      submissionsError = submissionResult.error;
-
-      if (!submissionsError && shouldUseCurrentWindowFallback) {
-        const fallbackResult = await getWindowFallbackQuery();
-        if (!fallbackResult.error && Array.isArray(fallbackResult.data)) {
-          const fallbackRows = fallbackResult.data as SubmissionRow[];
-          const existingIds = new Set(submissionRows?.map((row) => row.id));
-          submissionRows = [
-            ...(submissionRows ?? []),
-            ...fallbackRows.filter((row) => !existingIds.has(row.id)),
-          ];
+    if (!submissionsError && rawAllSubmissions) {
+      submissionRows = (rawAllSubmissions as any[]).filter((sub: any) => {
+        if (
+          sub.faculty_assignment_id &&
+          filteredAssignmentIds.includes(sub.faculty_assignment_id)
+        ) {
+          return true;
         }
-      }
-    } else if (shouldUseCurrentWindowFallback) {
-      const fallbackResult = await getWindowFallbackQuery();
-      submissionRows = fallbackResult.data as SubmissionRow[] | null;
-      submissionsError = fallbackResult.error;
-    } else {
+        const term = toAcademicYearAndSemester(sub.submitted_at);
+        return (
+          normalizeAcademicYear(term.academicYear) ===
+            normalizeAcademicYear(selectedAcademicYear) &&
+          normalizeSemester(term.semester) ===
+            normalizeSemester(effectiveSelectedSemester)
+        );
+      }) as SubmissionRow[];
+    } else if (submissionsError) {
       submissionRows = [];
     }
 

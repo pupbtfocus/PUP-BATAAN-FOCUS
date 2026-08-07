@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Clock3,
@@ -105,6 +106,7 @@ function statusIcon(status: RequirementStatus["status"]) {
 }
 
 export function FacultyRequirementsModule() {
+  const router = useRouter();
   const academicYears = useMemo(() => buildAcademicYears(), []);
   const [requirementStatuses, setRequirementStatuses] = useState<
     RequirementStatus[]
@@ -275,6 +277,7 @@ export function FacultyRequirementsModule() {
       }
 
       await refreshStatuses();
+      router.refresh();
       setMessage("Requirement submitted successfully.");
       setSelectedFile(null);
       setForm((current) => ({
