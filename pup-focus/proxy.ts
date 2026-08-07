@@ -135,6 +135,10 @@ export async function proxy(request: NextRequest) {
         response,
       );
     }
+
+    if (mustChangePassword && isChangePasswordPage) {
+      return response;
+    }
   }
 
   if (user && isAuthOrLandingPage) {
