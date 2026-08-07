@@ -119,6 +119,24 @@ export async function proxy(request: NextRequest) {
     pathname === "/sign-in" ||
     AUTH_ROUTES.some((route) => pathname === route);
 
+  if (user) {
+    const mustChangePassword =
+      user.user_metadata?.must_change_password === true ||
+      user.user_metadata?.force_password_change === true;
+
+    const isChangePasswordPage =
+      pathname === "/auth/change-password" || pathname === "/change-password";
+
+    if (mustChangePassword && !isChangePasswordPage && !pathname.startsWith("/api")) {
+      return createRedirectResponse(
+        request,
+        "/auth/change-password",
+        undefined,
+        response,
+      );
+    }
+  }
+
   if (user && isAuthOrLandingPage) {
     return createRedirectResponse(request, roleDashboard, undefined, response);
   }

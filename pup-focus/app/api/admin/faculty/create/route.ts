@@ -110,14 +110,59 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Verify program exists
-    const { data: programRecord, error: programError } = await supabase
-      .from("programs")
-      .select("id, code, name")
-      .eq("id", programId)
-      .maybeSingle();
+    const DEFAULT_PROGRAM_NAME_MAP: Record<string, string> = {
+      BEED: "Bachelor of Elementary Education",
+      BSA: "Bachelor of Science in Accountancy",
+      BSMA: "Bachelor of Science in Management Accounting",
+      BSIE: "Bachelor of Science in Industrial Engineering",
+      BSIT: "Bachelor of Science in Information Technology",
+      BSBAHRM: "Bachelor of Science in Business Administration major in Human Resource Management",
+      BSENT: "Bachelor of Science in Entrepreneurship",
+      DIT: "Diploma in Information Technology",
+      "DOMT-LOM": "Diploma in Office Management Technology major in Legal Office Management",
+    };
 
-    if (programError || !programRecord) {
+    let programRecord: { id: string; code: string; name: string } | null = null;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(programId);
+
+    if (isUuid) {
+      const { data } = await supabase
+        .from("programs")
+        .select("id, code, name")
+        .eq("id", programId)
+        .maybeSingle();
+      programRecord = data;
+    }
+
+    if (!programRecord) {
+      const { data } = await supabase
+        .from("programs")
+        .select("id, code, name")
+        .ilike("code", programId)
+        .maybeSingle();
+      programRecord = data;
+    }
+
+    if (!programRecord) {
+      const upperCode = programId.toUpperCase();
+      const programName = DEFAULT_PROGRAM_NAME_MAP[upperCode] || `Department ${programId}`;
+
+      const { data: createdProgram } = await supabase
+        .from("programs")
+        .upsert(
+          {
+            code: programId,
+            name: programName,
+          },
+          { onConflict: "code" }
+        )
+        .select("id, code, name")
+        .maybeSingle();
+
+      programRecord = createdProgram;
+    }
+
+    if (!programRecord) {
       return NextResponse.json(
         { error: "Selected academic program or department is invalid." },
         { status: 400 },

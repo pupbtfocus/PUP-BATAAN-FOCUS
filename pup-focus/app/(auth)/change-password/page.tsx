@@ -35,7 +35,10 @@ export default function ChangePasswordPage() {
     const supabase = createClient();
     const { error: updateError } = await supabase.auth.updateUser({
       password,
-      data: { force_password_change: false },
+      data: {
+        must_change_password: false,
+        force_password_change: false,
+      },
     });
 
     if (updateError) {

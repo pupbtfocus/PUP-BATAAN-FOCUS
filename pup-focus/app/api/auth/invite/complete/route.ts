@@ -131,7 +131,8 @@ export async function POST(req: Request) {
       user_metadata: {
         ...(authUser.user_metadata ?? {}),
         full_name: fullNameToSet,
-        ...(isTempPasswordGenerated ? { force_password_change: true } : {}),
+        must_change_password: true,
+        force_password_change: true,
       },
     };
 
