@@ -6,7 +6,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
-import { Sidebar } from "@/components/sidebar";
+import { Sidebar, SidebarContent } from "@/components/sidebar";
+import { Menu, X } from "lucide-react";
+import { LogoutButton } from "@/components/shared/logout-button";
+import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { AdminSettings } from "@/features/admin-management/components/admin-settings";
 import {
@@ -47,6 +50,7 @@ export function AdminFacultyDashboard({
   );
   const [activeSection, setActiveSection] =
     useState<AdminSection>("facultyManagement");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
@@ -367,58 +371,92 @@ export function AdminFacultyDashboard({
   }
 
   return (
-    <div className="relative flex min-h-full w-full items-stretch gap-0">
-      <Sidebar
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        adminName={adminName}
-      />
+    <div className="flex flex-col h-screen w-full bg-[#090d16] text-slate-100 overflow-hidden font-sans">
+      {/* Consolidated Top Header (All Views) */}
+      <header className="w-full bg-gradient-to-r from-[#400000] via-[#2a0000] to-[#1a0000] border-b border-amber-500/20 px-4 py-3 flex items-center justify-between shrink-0 z-40">
+        {/* Left: Mobile Menu Trigger & Title */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="md:hidden p-2 text-amber-300 hover:bg-amber-500/10 rounded-xl transition-all"
+            aria-label="Open Navigation Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
-      <div className="ml-72 flex min-h-full w-[calc(100%-18rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-lg">
-          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+          <div className="flex items-center gap-2">
+            <BrandMark size={28} className="shrink-0" />
+            <span className="font-bold text-slate-100 text-sm sm:text-base tracking-wide">
+              PUP FOCUS
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <NotificationDrawer />
+          <LogoutButton />
+        </div>
+      </header>
+
+      {/* Body Wrapper */}
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Desktop Fixed Sidebar */}
+        <aside className="hidden md:flex w-64 flex-col bg-[#0d121f] border-r border-slate-800/80 shrink-0">
+          <SidebarContent
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            adminName={adminName}
+          />
+        </aside>
+
+        {/* Mobile Navigation Drawer / Sheet */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50 md:hidden flex">
+            <div
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <aside className="relative w-72 max-w-[80%] bg-[#0d121f] h-full p-4 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl">
+              <SidebarContent
+                activeSection={activeSection}
+                setActiveSection={setActiveSection}
+                adminName={adminName}
+                onNavigate={() => setIsMobileMenuOpen(false)}
+              />
+            </aside>
+          </div>
+        )}
+
+        {/* Scrollable Main Content Area */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#090d16]">
+          <div className="max-w-7xl mx-auto w-full">
             {activeSection === "dashboard" ? (
-              <article className="relative -m-6 h-[calc(100vh-4rem)] w-[calc(100%+3rem)] overflow-hidden p-0">
-                <div className="relative h-full overflow-hidden bg-[#4d0000]/80">
-                  <Image
-                    src={LOGIN_PAGE_IMAGES[0]}
-                    alt="PUP Bataan login background"
-                    fill
-                    sizes="100vw"
-                    className="object-cover"
-                    style={{ animation: "backgroundFadeA 16s infinite linear" }}
-                  />
-                  <Image
-                    src={LOGIN_PAGE_IMAGES[1]}
-                    alt="PUP Bataan login background"
-                    fill
-                    sizes="100vw"
-                    className="object-cover"
-                    style={{ animation: "backgroundFadeB 16s infinite linear" }}
-                  />
-
-                  <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
-                    <BrandMark size={90} className="rounded-full" />
-                    <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-                      Polytechnic University of the Philippines - Bataan Campus
-                    </p>
-                    <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#fff8e7]">
-                      ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
-                    </h3>
-                  </div>
+            <article className="space-y-6">
+              <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur">
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <BrandMark size={90} className="rounded-full" />
+                  <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+                    Polytechnic University of the Philippines - Bataan Campus
+                  </p>
+                  <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#fff8e7]">
+                    PUP FOCUS Dashboard
+                  </h3>
                 </div>
-              </article>
-            ) : null}
+              </div>
+            </article>
+          ) : null}
 
             {activeSection === "facultyManagement" ? (
-              <article className="space-y-4 p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
                       Faculty Management
-                    </h3>
+                    </h1>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => {
@@ -426,7 +464,7 @@ export function AdminFacultyDashboard({
                         setCreateSuccess(null);
                         setAddFacultyModalOpen(true);
                       }}
-                      className="inline-flex items-center gap-1 rounded-lg bg-amber-400 hover:bg-amber-300 px-3.5 py-1.5 text-xs font-semibold text-slate-950 transition"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-lg bg-amber-400 hover:bg-amber-300 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-950 transition"
                     >
                       + Add Faculty
                     </button>
@@ -434,7 +472,7 @@ export function AdminFacultyDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoading}
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
                     >
                       {isLoading ? "Refreshing..." : "⟳ Refresh"}
                     </button>
@@ -552,7 +590,7 @@ export function AdminFacultyDashboard({
               </article>
             ) : null}
           </div>
-        </div>
+        </main>
       </div>
 
       {detailsModalOpen && detailsFacultyId ? (

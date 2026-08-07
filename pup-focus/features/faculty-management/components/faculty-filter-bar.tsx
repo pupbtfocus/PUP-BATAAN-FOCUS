@@ -16,18 +16,18 @@ export function FacultyFilterBar({
   placeholder = "Search faculty by name or email...",
 }: FacultyFilterBarProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 mb-4 shadow-xl">
-      <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder={placeholder}
-          className="w-full sm:w-64 h-9 rounded-lg border border-slate-800 bg-slate-900 px-3 text-xs text-slate-200 placeholder-slate-500 outline-none transition focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/30"
-        />
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-[#0d121f] rounded-xl border border-slate-800 mb-6 shadow-xl text-slate-200">
+      <input
+        type="text"
+        value={searchTerm}
+        onChange={(event) => onSearchChange(event.target.value)}
+        placeholder={placeholder}
+        className="w-full sm:w-72 h-9 rounded-lg border border-slate-800 bg-slate-900 px-3 text-xs text-slate-200 placeholder-slate-500 outline-none transition focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/30"
+      />
 
-        {onStatusFilterChange ? (
-          <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1 h-9">
+      {onStatusFilterChange ? (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1 h-9 shrink-0">
             <button
               type="button"
               onClick={() => onStatusFilterChange("all")}
@@ -62,8 +62,8 @@ export function FacultyFilterBar({
               Inactive
             </button>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

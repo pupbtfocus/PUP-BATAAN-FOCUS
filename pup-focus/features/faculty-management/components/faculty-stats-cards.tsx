@@ -16,7 +16,7 @@ export function FacultyStatsCards({
   const inactiveCount = facultyAccounts.filter((f) => !f.is_active).length;
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 mb-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
       <div className="rounded-xl border border-slate-800 border-l-2 border-l-amber-500 bg-slate-950 p-4 shadow-xl">
         <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">
           Total Faculty

@@ -8,6 +8,7 @@ export interface SidebarProps {
   setActiveSection: (section: any) => void;
   adminName?: string | null;
   roleTitle?: string;
+  onNavigate?: () => void;
 }
 
 export function SidebarButton({
@@ -39,11 +40,12 @@ export function SidebarButton({
   );
 }
 
-export function Sidebar({
+export function SidebarContent({
   activeSection,
   setActiveSection,
   adminName = "Admin",
   roleTitle = "Admin",
+  onNavigate,
 }: SidebarProps) {
   const isAcademicCycleActive =
     activeSection === "academicTerms" || activeSection === "submissionWindow";
@@ -58,35 +60,42 @@ export function Sidebar({
     }
   }, [isAcademicCycleActive]);
 
+  const handleSelect = (section: string) => {
+    setActiveSection(section);
+    if (onNavigate) {
+      onNavigate();
+    }
+  };
+
   return (
-    <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-5 shadow-lg">
-      <div className="my-6 rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col items-center">
-        <p className="mt-2 font-semibold text-white text-center">
+    <div className="flex flex-col h-full w-full">
+      <div className="my-4 rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col items-center">
+        <p className="mt-1 font-semibold text-white text-center text-sm">
           {adminName ?? "Admin"}
         </p>
 
         <div className="my-2 h-px w-full bg-slate-800" />
 
-        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-amber-400 text-center font-medium">
+        <p className="mt-0.5 text-xs uppercase tracking-[0.12em] text-amber-400 text-center font-medium">
           {roleTitle}
         </p>
       </div>
 
-      <nav className="mt-6 space-y-2">
+      <nav className="mt-4 space-y-2 flex-1 overflow-y-auto">
         <SidebarButton
           active={activeSection === "dashboard"}
           title="Dashboard"
-          onClick={() => setActiveSection("dashboard")}
+          onClick={() => handleSelect("dashboard")}
         />
         <SidebarButton
           active={activeSection === "facultyManagement"}
           title="Faculty Management"
-          onClick={() => setActiveSection("facultyManagement")}
+          onClick={() => handleSelect("facultyManagement")}
         />
         <SidebarButton
           active={activeSection === "requirements"}
           title="Requirements Verification"
-          onClick={() => setActiveSection("requirements")}
+          onClick={() => handleSelect("requirements")}
         />
 
         {/* Collapsible Parent Item: Academic Cycle Management */}
@@ -115,7 +124,7 @@ export function Sidebar({
             <div className="border-l border-slate-800 ml-4 pl-3 flex flex-col gap-1.5 mt-2">
               <button
                 type="button"
-                onClick={() => setActiveSection("academicTerms")}
+                onClick={() => handleSelect("academicTerms")}
                 className={`w-full text-left px-3 py-2 text-xs rounded-lg border transition-all ${
                   activeSection === "academicTerms"
                     ? "border-amber-500/30 bg-amber-500/10 text-amber-400 font-semibold"
@@ -126,7 +135,7 @@ export function Sidebar({
               </button>
               <button
                 type="button"
-                onClick={() => setActiveSection("submissionWindow")}
+                onClick={() => handleSelect("submissionWindow")}
                 className={`w-full text-left px-3 py-2 text-xs rounded-lg border transition-all ${
                   activeSection === "submissionWindow"
                     ? "border-amber-500/30 bg-amber-500/10 text-amber-400 font-semibold"
@@ -142,9 +151,17 @@ export function Sidebar({
         <SidebarButton
           active={activeSection === "settings"}
           title="Settings"
-          onClick={() => setActiveSection("settings")}
+          onClick={() => handleSelect("settings")}
         />
       </nav>
+    </div>
+  );
+}
+
+export function Sidebar(props: SidebarProps) {
+  return (
+    <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 flex-col overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-5 shadow-lg z-30">
+      <SidebarContent {...props} />
     </aside>
   );
 }

@@ -275,9 +275,8 @@ export function AdminAccountsDirectory() {
       </div>
 
       {/* Accounts Directory Table */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950 shadow-xl">
+        <table className="w-full text-left border-collapse min-w-[600px]">
             <thead className="bg-slate-900/60 border-b border-slate-800 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
               <tr>
                 <th className="py-3.5 px-4">Account Profile</th>
@@ -374,7 +373,6 @@ export function AdminAccountsDirectory() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
     </div>
   );

@@ -404,9 +404,8 @@ export function AdminAcademicTerms({
       ) : null}
 
       {/* Dark Slate Table Container matching other Admin Cards */}
-      <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950 shadow-xl">
+        <table className="w-full text-left border-collapse min-w-[600px]">
             <thead className="border-b border-slate-800 bg-slate-900/60 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-4">Academic Year</th>
@@ -472,7 +471,6 @@ export function AdminAcademicTerms({
               )}
             </tbody>
           </table>
-        </div>
       </div>
 
       {/* Modal: Create Next Academic Year */}
