@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { bootstrapInvitedAdminAccount } from "@/lib/auth/bootstrap-invited-admin";
 import { bootstrapInvitedFacultyAccount } from "@/lib/auth/bootstrap-invited-faculty";
-import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { sendTempPasswordEmail } from "@/lib/email/send-invite";
 import { ROLE } from "@/config/roles";
 
@@ -16,145 +16,245 @@ function generateTempPassword(len = 12) {
   return out;
 }
 
-export async function POST() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function POST(req: Request) {
   try {
-    await bootstrapInvitedAdminAccount(user);
-    await bootstrapInvitedFacultyAccount(user);
-
-    const metadata = user.user_metadata ?? {};
-    const isInvitedAdmin =
-      metadata.role === ROLE.ADMIN &&
-      metadata.created_via === "super_admin_admin_panel";
-    const isInvitedFaculty =
-      metadata.role === ROLE.FACULTY &&
-      metadata.created_via === "admin_faculty_panel";
-
-    if (!isInvitedAdmin && !isInvitedFaculty) {
-      return NextResponse.json({
-        success: true,
-        bootstrapped: true,
-        needsPasswordSetup: false,
-      });
+    // 1. Properly parse incoming request body (e.g., userId, password, full_name, token)
+    let body: Record<string, any> = {};
+    try {
+      body = await req.json();
+    } catch {
+      // Body may be empty if request sent without payload
+      body = {};
     }
 
-    const tempPassword = generateTempPassword(12);
+    const {
+      userId: bodyUserId,
+      user_id: bodyUserIdSnake,
+      id: bodyId,
+      password: bodyPassword,
+      full_name: bodyFullNameSnake,
+      fullName: bodyFullNameCamel,
+      name: bodyName,
+      token,
+    } = body;
 
-    try {
-      const service = getServiceRoleClient();
-      const recipientEmail = user.email?.trim().toLowerCase();
+    const requestedUserId = bodyUserId || bodyUserIdSnake || bodyId;
+    const requestedFullName = bodyFullNameSnake || bodyFullNameCamel || bodyName;
+    const requestedPassword = bodyPassword;
 
-      if (!recipientEmail) {
-        return NextResponse.json(
-          {
-            error: "Missing email address for invited account",
-            tempPasswordIssued: false,
-            tempPasswordEmailSent: false,
-            tempPassword,
-          },
-          { status: 400 },
-        );
-      }
+    // 2. Use @supabase/supabase-js initialized with process.env.SUPABASE_SERVICE_ROLE_KEY to grant admin privileges
+    const supabaseUrl =
+      process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-      const { error: pwError } = await service.auth.admin.updateUserById(
-        user.id,
-        {
-          password: tempPassword,
-          email_confirm: true,
-          user_metadata: {
-            ...(user.user_metadata ?? {}),
-            force_password_change: true,
-          },
-        },
+    if (!supabaseUrl) {
+      return NextResponse.json(
+        { error: "Missing environment variable: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL" },
+        { status: 400 }
       );
+    }
 
-      if (pwError) {
+    if (!serviceRoleKey) {
+      return NextResponse.json(
+        { error: "Missing environment variable: SUPABASE_SERVICE_ROLE_KEY is required to grant admin privileges." },
+        { status: 400 }
+      );
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    // Identify target user by provided userId or token/session
+    let targetUserId: string | null = requestedUserId || null;
+    let authUser: any = null;
+
+    if (targetUserId) {
+      const { data: userData, error: getUserError } =
+        await supabaseAdmin.auth.admin.getUserById(targetUserId);
+
+      if (getUserError || !userData?.user) {
         return NextResponse.json(
           {
-            success: true,
-            tempPasswordIssued: false,
-            tempPasswordEmailSent: false,
-            tempPasswordError: pwError.message,
-            tempPassword,
+            error: `Failed to fetch user by ID (${targetUserId}): ${getUserError?.message || "User does not exist"}`,
           },
-          { status: 400 },
+          { status: 400 }
         );
       }
-
-      const fullName =
-        (user.user_metadata && (user.user_metadata as any).full_name) ||
-        recipientEmail ||
-        "Admin User";
-
+      authUser = userData.user;
+    } else {
+      // Fallback to active session user if userId is not in request body
       try {
-        await sendTempPasswordEmail({
-          to: recipientEmail,
-          tempPassword,
-          fullName,
-        });
+        const serverSupabase = await createServerSupabaseClient();
+        const {
+          data: { user: sessionUser },
+        } = await serverSupabase.auth.getUser();
 
-        return NextResponse.json({
-          success: true,
-          tempPasswordIssued: true,
-          tempPasswordEmailSent: true,
-          tempPassword,
-        });
-      } catch (emailErr) {
-        const emailError =
-          emailErr instanceof Error ? emailErr.message : String(emailErr);
-
-        return NextResponse.json(
-          {
-            success: true,
-            tempPasswordIssued: true,
-            tempPasswordEmailSent: false,
-            tempPasswordError: emailError,
-            tempPassword,
-          },
-          { status: 202 },
-        );
+        if (sessionUser) {
+          authUser = sessionUser;
+          targetUserId = sessionUser.id;
+        }
+      } catch {
+        // Session lookup fallback ignored if unauthenticated
       }
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : String(e);
+    }
 
-      console.error("Failed to prepare invited account temporary password", {
-        userId: user.id,
-        email: user.email,
-        errorMessage,
-      });
-
+    if (!targetUserId || !authUser) {
       return NextResponse.json(
         {
-          success: true,
-          tempPasswordIssued: false,
-          tempPasswordEmailSent: false,
-          tempPasswordError: errorMessage,
-          tempPassword,
+          error:
+            "Missing target user identification. Please supply userId in the request body or ensure an active session exists.",
         },
-        { status: 500 },
+        { status: 400 }
       );
+    }
+
+    // 3. Call supabase.auth.admin.updateUserById to update the password and set email_confirm: true
+    const isTempPasswordGenerated = !requestedPassword;
+    const passwordToSet = requestedPassword || generateTempPassword(12);
+    const fullNameToSet =
+      requestedFullName ||
+      authUser.user_metadata?.full_name ||
+      authUser.email ||
+      "Admin User";
+
+    const updatePayload: {
+      password: string;
+      email_confirm: boolean;
+      user_metadata: Record<string, any>;
+    } = {
+      password: passwordToSet,
+      email_confirm: true,
+      user_metadata: {
+        ...(authUser.user_metadata ?? {}),
+        full_name: fullNameToSet,
+        ...(isTempPasswordGenerated ? { force_password_change: true } : {}),
+      },
+    };
+
+    const { data: updateData, error: updateError } =
+      await supabaseAdmin.auth.admin.updateUserById(targetUserId, updatePayload);
+
+    if (updateError) {
+      return NextResponse.json(
+        { error: `Failed to update auth user: ${updateError.message}` },
+        { status: 400 }
+      );
+    }
+
+    const updatedUser = updateData.user;
+    const email =
+      updatedUser.email?.trim().toLowerCase() ||
+      authUser.email?.trim().toLowerCase() ||
+      body.email?.trim().toLowerCase();
+
+    if (!email) {
+      return NextResponse.json(
+        { error: "User email address is missing and required for profile setup." },
+        { status: 400 }
+      );
+    }
+
+    // 4. Ensure profiles and app_users tables are updated/upserted with user's id, email, and full_name
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .upsert(
+        {
+          user_id: targetUserId,
+          email: email,
+          full_name: fullNameToSet,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      )
+      .select("id")
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        {
+          error: `Failed to upsert profiles table: ${profileError?.message || "Unknown error"}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    const userRole =
+      updatedUser.user_metadata?.role ||
+      authUser.user_metadata?.role ||
+      ROLE.ADMIN;
+
+    const { error: appUserError } = await supabaseAdmin.from("app_users").upsert(
+      {
+        auth_user_id: targetUserId,
+        profile_id: profile.id,
+        email: email,
+        full_name: fullNameToSet,
+        role: userRole,
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...(updatedUser.user_metadata || {}),
+          is_active: true,
+          invite_accepted_at: new Date().toISOString(),
+        },
+      },
+      { onConflict: "email" }
+    );
+
+    if (appUserError) {
+      return NextResponse.json(
+        {
+          error: `Failed to upsert app_users table: ${appUserError.message}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Sync roles / admin tables via bootstrap helpers if required
+    try {
+      await bootstrapInvitedAdminAccount(updatedUser);
+      await bootstrapInvitedFacultyAccount(updatedUser);
+    } catch (bootstrapErr) {
+      console.warn("Bootstrap sync note:", bootstrapErr);
+    }
+
+    // Send temp password email if generated automatically
+    let tempPasswordEmailSent = false;
+    let tempPasswordError: string | undefined = undefined;
+
+    if (isTempPasswordGenerated) {
+      try {
+        await sendTempPasswordEmail({
+          to: email,
+          tempPassword: passwordToSet,
+          fullName: fullNameToSet,
+        });
+        tempPasswordEmailSent = true;
+      } catch (emailErr) {
+        tempPasswordError =
+          emailErr instanceof Error ? emailErr.message : String(emailErr);
+      }
     }
 
     return NextResponse.json({
       success: true,
       bootstrapped: true,
-      needsPasswordSetup: true,
+      needsPasswordSetup: isTempPasswordGenerated,
+      tempPasswordIssued: isTempPasswordGenerated,
+      tempPasswordEmailSent,
+      ...(tempPasswordError ? { tempPasswordError } : {}),
+      ...(isTempPasswordGenerated ? { tempPassword: passwordToSet } : {}),
     });
   } catch (error) {
+    // 5. Return exact error messages in JSON response payload if validation or Supabase calls fail
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      {
-        error: "Failed to complete invited admin setup",
-        details: String(error),
-      },
-      { status: 400 },
+      { error: `Failed to complete invited admin setup: ${errorMessage}` },
+      { status: 400 }
     );
   }
 }
