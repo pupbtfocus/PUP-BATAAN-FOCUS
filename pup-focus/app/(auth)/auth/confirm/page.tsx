@@ -132,8 +132,32 @@ function AuthConfirmContent() {
         return;
       }
 
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const userSession = user ?? (await supabase.auth.getSession()).data.session?.user;
+
+      if (!userSession) {
+        setMessage("Could not establish user session. Please try clicking the invitation link again.");
+        return;
+      }
+
+      const fullName =
+        (userSession.user_metadata && (userSession.user_metadata as any).full_name) ||
+        (userSession.user_metadata && (userSession.user_metadata as any).first_name
+          ? `${(userSession.user_metadata as any).first_name} ${(userSession.user_metadata as any).last_name || ""}`.trim()
+          : undefined);
+
       const completeResponse = await fetch("/api/auth/invite/complete", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userSession.id,
+          full_name: fullName,
+        }),
       });
 
       const completeBody = (await completeResponse.json()) as {
