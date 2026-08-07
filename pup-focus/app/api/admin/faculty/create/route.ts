@@ -297,7 +297,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Pre-create profile and program assignment record in DB
+    // Pre-create profile, user_roles, app_users, and program assignment in DB
+    // so the faculty account appears immediately in the admin faculty list.
     const createdAuthUser = genData?.user;
     if (createdAuthUser) {
       try {
@@ -316,6 +317,51 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (newProfile?.id) {
+          // Insert user_roles so the faculty list API can discover this user
+          const { data: facultyRoleRow } = await supabase
+            .from("roles")
+            .select("id")
+            .eq("code", ROLE.FACULTY)
+            .maybeSingle();
+
+          if (facultyRoleRow?.id) {
+            await supabase
+              .from("user_roles")
+              .upsert(
+                {
+                  profile_id: newProfile.id,
+                  role_id: facultyRoleRow.id,
+                },
+                { onConflict: "profile_id,role_id" },
+              );
+          }
+
+          // Insert app_users so metadata (name, active status, etc.) is available
+          await supabase
+            .from("app_users")
+            .upsert(
+              {
+                auth_user_id: createdAuthUser.id,
+                profile_id: newProfile.id,
+                email: normalizedEmail,
+                full_name: fullName,
+                role: ROLE.FACULTY,
+                metadata: {
+                  is_active: true,
+                  created_via: "admin_faculty_panel",
+                  created_by_admin_id: user.id,
+                  first_name: firstName.trim(),
+                  middle_name: middleName.trim(),
+                  last_name: lastName.trim(),
+                  full_name: fullName,
+                  profile_image_bucket: profileImageMetadata.profile_image_bucket,
+                  profile_image_path: profileImageMetadata.profile_image_path,
+                },
+              },
+              { onConflict: "email" },
+            );
+
+          // Insert program assignment
           const { data: activeTerm } = await supabase
             .from("academic_terms")
             .select("academic_year, semester")
@@ -333,7 +379,7 @@ export async function POST(request: NextRequest) {
           });
         }
       } catch (assignError) {
-        logger.error("faculty_program_assignment_preinsert_failed", {
+        logger.error("faculty_preinsert_failed", {
           error: assignError instanceof Error ? assignError.message : String(assignError),
         });
       }
