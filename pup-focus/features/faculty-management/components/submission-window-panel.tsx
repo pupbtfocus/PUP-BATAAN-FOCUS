@@ -459,14 +459,14 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
         if (
           apiBody?.error?.includes("unvalidated or incomplete requirements") ||
           apiBody?.details?.includes("unvalidated") ||
-          apiBody?.error?.includes("Cannot close")
+          apiBody?.error?.includes("Cannot close") ||
+          apiBody?.error?.includes("Incomplete Term Requirements")
         ) {
           setWarningModalData({
             isOpen: true,
             title: "⚠️ Incomplete Term Requirements",
             description:
-              apiBody.details ||
-              "Hindi pa pwedeng palitan o isara ang submission window. May mga kulang pa na requirements o hindi pa validated na submissions para sa kasalukuyang term.",
+              "The submission window cannot be changed or closed yet. There are still missing requirements or unvalidated submissions for the current term.",
           });
           return;
         }

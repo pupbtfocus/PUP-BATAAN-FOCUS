@@ -185,24 +185,6 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const { data: dbCurrentTerm } = await supabase
-      .from("academic_terms")
-      .select("id, academic_year, semester")
-      .eq("status", "Current")
-      .maybeSingle();
-
-    const currentTerm = {
-      academicYear:
-        windowState.academicYear ||
-        dbCurrentTerm?.academic_year ||
-        "2026-2027",
-      semester: normalizeSemester(
-        windowState.semester ||
-        dbCurrentTerm?.semester ||
-        "2nd Semester"
-      ),
-    };
-
     const url = new URL(request.url);
     const requestedAcademicYear = (
       url.searchParams.get("academicYear") ||
@@ -213,22 +195,25 @@ export async function GET(request: NextRequest) {
       request.nextUrl?.searchParams?.get("semester")
     )?.trim();
 
-    if (requestedAcademicYear && requestedSemester) {
-      const { data: targetTerm } = await supabase
-        .from("academic_terms")
-        .select("id, academic_year, semester")
-        .ilike("academic_year", `%${requestedAcademicYear}%`)
-        .ilike("semester", `%${requestedSemester}%`)
-        .maybeSingle();
+    const { data: dbCurrentTerm } = await supabase
+      .from("academic_terms")
+      .select("id, academic_year, semester")
+      .eq("status", "Current")
+      .maybeSingle();
 
-      if (targetTerm) {
-        currentTerm.academicYear = targetTerm.academic_year;
-        currentTerm.semester = normalizeSemester(targetTerm.semester);
-      }
-    }
+    const activeAcademicYear =
+      requestedAcademicYear ||
+      dbCurrentTerm?.academic_year ||
+      windowState?.academicYear ||
+      "2027-2028";
 
-    const activeAcademicYear = requestedAcademicYear || currentTerm.academicYear;
-    const activeSemester = requestedSemester || currentTerm.semester;
+    const activeSemester = normalizeSemester(
+      requestedSemester ||
+      dbCurrentTerm?.semester ||
+      windowState?.semester ||
+      "1st Semester"
+    );
+
     const normActiveYear = normalizeAcademicYear(activeAcademicYear);
     const normActiveSem = normalizeSemester(activeSemester);
 
@@ -580,9 +565,20 @@ export async function GET(request: NextRequest) {
       notSubmitted: requirementStatuses.filter((r) => r.status === "Not Submitted").length,
     };
 
+    const normalizedSemLabel =
+      activeSemester === "1st semester"
+        ? "1st Semester"
+        : activeSemester === "2nd semester"
+          ? "2nd Semester"
+          : activeSemester;
+
     return NextResponse.json({
       requirementStatuses,
       counts,
+      academicYear: activeAcademicYear,
+      semester: normalizedSemLabel,
+      hasActiveSchedule: Boolean(windowState.isConfigured && windowState.isOpen),
+      isLocked: !windowState.isOpen || !windowState.isConfigured,
       debug: {
         profileId: appUser?.profile_id || facultyIdList[0] || null,
         submissionsFound: submissions?.length || 0,

@@ -232,6 +232,9 @@ function FacultySubmissionPanelContent({
   const [statusError, setStatusError] = useState<string | null>(null);
   const [submissionWindow, setSubmissionWindow] =
     useState<SubmissionWindowState | null>(null);
+  const [hasActiveSchedule, setHasActiveSchedule] = useState<boolean>(true);
+  const [statusAcademicYear, setStatusAcademicYear] = useState<string>("");
+  const [statusSemester, setStatusSemester] = useState<string>("");
   const [isLoadingSubmissionWindow, setIsLoadingSubmissionWindow] =
     useState(true);
   const [versionHistorySubmissionId, setVersionHistorySubmissionId] =
@@ -338,20 +341,12 @@ function FacultySubmissionPanelContent({
     try {
       setIsLoadingStatuses(true);
       setStatusError(null);
-      const ay =
-        year ||
-        submissionWindow?.academicYear ||
-        selectedAcademicYear ||
-        form.academicYear;
-      const s =
-        sem ||
-        submissionWindow?.semester ||
-        selectedSemester ||
-        form.semester;
 
       const params = new URLSearchParams();
-      if (ay) params.set("academicYear", ay);
-      if (s) params.set("semester", s);
+      if (year && sem) {
+        params.set("academicYear", year);
+        params.set("semester", sem);
+      }
 
       const response = await fetch(`/api/faculty/submissions/status?${params.toString()}`, {
         cache: "no-store",
@@ -361,6 +356,11 @@ function FacultySubmissionPanelContent({
         const data = await response.json();
         setRequirementStatuses(data.requirementStatuses || []);
         setStatusCounts(data.counts || null);
+        if (data.academicYear) setStatusAcademicYear(data.academicYear);
+        if (data.semester) setStatusSemester(data.semester);
+        if (typeof data.hasActiveSchedule === "boolean") {
+          setHasActiveSchedule(data.hasActiveSchedule);
+        }
       } else {
         setStatusError("Failed to load requirement statuses");
       }
@@ -414,19 +414,10 @@ function FacultySubmissionPanelContent({
   }, [refetchSubmissionWindow]);
 
   useEffect(() => {
-    const ay =
-      submissionWindow?.academicYear ||
-      selectedAcademicYear ||
-      form.academicYear;
-    const s =
-      submissionWindow?.semester ||
-      selectedSemester ||
-      form.semester;
-
-    if (ay && s) {
-      void fetchStatuses(ay, s);
+    if (submissionWindow?.academicYear && submissionWindow?.semester) {
+      void fetchStatuses(submissionWindow.academicYear, submissionWindow.semester);
     }
-  }, [submissionWindow, selectedAcademicYear, selectedSemester, form.academicYear, form.semester]);
+  }, [submissionWindow]);
 
   useEffect(() => {
     if (isHistoryModalOpen) {
@@ -538,6 +529,13 @@ function FacultySubmissionPanelContent({
   const activeSem = submissionWindow?.semester || selectedSemester || form.semester;
 
   const displayedRequirementStatuses = useMemo<RequirementStatus[]>(() => {
+    if (!hasActiveSchedule) {
+      return DEFAULT_REQUIREMENTS.map((code) => ({
+        code,
+        status: "Not Submitted" as const,
+      }));
+    }
+
     const normActiveAY = normalizeAcademicYear(activeAY);
     const normActiveSem = normalizeSemester(activeSem);
 
@@ -578,7 +576,7 @@ function FacultySubmissionPanelContent({
         status: "Not Submitted" as const,
       };
     });
-  }, [activeAY, activeSem, pastSubmissions, requirementStatuses]);
+  }, [hasActiveSchedule, activeAY, activeSem, pastSubmissions, requirementStatuses]);
 
   const displayedStatusCounts = useMemo(() => {
     const total = DEFAULT_REQUIREMENTS.length;
@@ -1427,10 +1425,16 @@ function FacultySubmissionPanelContent({
                       Requirements Management
                     </h1>
                     <p className="mt-1 text-sm font-medium text-slate-400 tracking-wide">
-                      A.Y. {submissionWindow?.academicYear || selectedAcademicYear || form.academicYear || "2025-2026"} •{" "}
-                      {submissionWindow?.semester || selectedSemester || form.semester || "1st Semester"}
-                      {isAllValidated && (
-                        <span className="ml-2 text-emerald-400 font-medium">• Validated</span>
+                      {!hasActiveSchedule ? (
+                        "No Active Academic Schedule"
+                      ) : (
+                        <>
+                          A.Y. {statusAcademicYear || submissionWindow?.academicYear || "2027-2028"} •{" "}
+                          {statusSemester || submissionWindow?.semester || "1st Semester"}
+                          {isAllValidated && (
+                            <span className="ml-2 text-emerald-400 font-medium">• Validated</span>
+                          )}
+                        </>
                       )}
                     </p>
                   </div>
@@ -1501,13 +1505,15 @@ function FacultySubmissionPanelContent({
                   </div>
                 )}
 
-                {isWindowClosed && (
+                {(!hasActiveSchedule || isWindowClosed) && (
                   <div className="mt-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
                     <h4 className="text-xs font-semibold text-amber-300 tracking-wider uppercase mb-1">
-                      Uploads Locked
+                      Submission Window Closed
                     </h4>
                     <p className="text-xs text-slate-300 leading-relaxed">
-                      Submission Window is currently closed. Document uploads are locked for this term. Please contact your Program Head or Admin for window extension requests.
+                      {!hasActiveSchedule
+                        ? "There is currently no active academic schedule set for document submissions. Document uploads are locked. Please wait for the Admin or Program Head to open the submission window."
+                        : "Submission Window is currently closed. Document uploads are locked for this term. Please contact your Program Head or Admin for window extension requests."}
                     </p>
                   </div>
                 )}
@@ -1556,7 +1562,7 @@ function FacultySubmissionPanelContent({
                               type="button"
                               size="sm"
                               onClick={() => openDirectUploadModal(req.code)}
-                              disabled={isWindowClosed}
+                              disabled={!hasActiveSchedule || isWindowClosed}
                               className="inline-flex items-center gap-1.5"
                             >
                               <Upload className="h-3.5 w-3.5" />
@@ -1570,7 +1576,7 @@ function FacultySubmissionPanelContent({
                               type="button"
                               size="sm"
                               onClick={() => openDirectUploadModal(req.code)}
-                              disabled={isWindowClosed}
+                              disabled={!hasActiveSchedule || isWindowClosed}
                               className="inline-flex items-center gap-1.5 bg-red-600 text-white hover:bg-red-500"
                             >
                               <Upload className="h-3.5 w-3.5" />
