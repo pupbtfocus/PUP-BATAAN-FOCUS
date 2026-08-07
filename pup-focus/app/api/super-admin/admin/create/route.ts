@@ -194,6 +194,8 @@ export async function POST(request: NextRequest) {
             role: ROLE.ADMIN,
             created_via: "super_admin_admin_panel",
             created_by_super_admin_id: user.id,
+            must_change_password: true,
+            force_password_change: true,
           },
           redirectTo: callbackUrl.toString(),
         },

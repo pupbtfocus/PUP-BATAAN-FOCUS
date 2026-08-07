@@ -84,6 +84,7 @@ export default function Home() {
       }
 
       const mustChange =
+        (user.user_metadata as any)?.must_change_password === true ||
         (user.user_metadata as any)?.force_password_change === true;
       if (mustChange) {
         window.history.replaceState(
@@ -134,6 +135,7 @@ export default function Home() {
       }
 
       const mustChange =
+        (user.user_metadata as any)?.must_change_password === true ||
         (user.user_metadata as any)?.force_password_change === true;
       if (mustChange) {
         window.location.assign("/auth/change-password");
@@ -235,6 +237,7 @@ export default function Home() {
 
     const user = signInData.user;
     const mustChange =
+      (user.user_metadata as any)?.must_change_password === true ||
       (user.user_metadata as any)?.force_password_change === true;
     if (mustChange) {
       setIsSubmitting(false);
