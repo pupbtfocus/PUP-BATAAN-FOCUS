@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import JSZip from "jszip";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ChevronDown } from "lucide-react";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -1463,6 +1463,7 @@ export function RequirementsPanel({
 }: RequirementsPanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("All Programs");
+  const [isProgramDropdownOpen, setIsProgramDropdownOpen] = useState(false);
 
   const [academicYear, setAcademicYear] = useState("");
   const [semester, setSemester] = useState<SemesterOption>("1st Semester");
@@ -1584,30 +1585,70 @@ export function RequirementsPanel({
   return (
     <div className="w-full">
       {/* 1. Top Control Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 mb-6">
-        <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto">
           {/* Search Input */}
           <input
             type="text"
             placeholder="Search faculty by name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full max-w-[240px] sm:w-56 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 outline-none transition focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/30"
+            className="w-full sm:w-56 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 outline-none transition focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/30"
           />
 
-          {/* Program Dropdown Filter */}
-          <select
-            value={selectedProgram}
-            onChange={(e) => setSelectedProgram(e.target.value)}
-            className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 outline-none transition focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/30"
-          >
-            <option value="All Programs">All Programs</option>
-            {availablePrograms.map((prog) => (
-              <option key={prog} value={prog}>
-                {prog}
-              </option>
-            ))}
-          </select>
+          {/* Custom Program Dropdown Filter (attaches directly below trigger, avoids native mobile OS popup) */}
+          <div className="relative w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsProgramDropdownOpen((prev) => !prev)}
+              className="flex w-full sm:w-auto items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 outline-none transition hover:border-slate-700 focus:border-amber-400/80"
+            >
+              <span>{selectedProgram}</span>
+              <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${isProgramDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {isProgramDropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-20"
+                  onClick={() => setIsProgramDropdownOpen(false)}
+                />
+                <div className="absolute left-0 top-full mt-1.5 z-30 w-full sm:w-48 rounded-lg border border-slate-800 bg-slate-900 py-1 shadow-xl text-xs text-slate-200 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedProgram("All Programs");
+                      setIsProgramDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 transition hover:bg-slate-800 ${
+                      selectedProgram === "All Programs"
+                        ? "bg-amber-500/10 text-amber-300 font-semibold"
+                        : "text-slate-300"
+                    }`}
+                  >
+                    All Programs
+                  </button>
+                  {availablePrograms.map((prog) => (
+                    <button
+                      key={prog}
+                      type="button"
+                      onClick={() => {
+                        setSelectedProgram(prog);
+                        setIsProgramDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 transition hover:bg-slate-800 ${
+                        selectedProgram === prog
+                          ? "bg-amber-500/10 text-amber-300 font-semibold"
+                          : "text-slate-300"
+                      }`}
+                    >
+                      {prog}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Active Term Indicator */}
