@@ -68,6 +68,26 @@ export async function bootstrapInvitedFacultyAccount(user: {
   }
 
   if (existingAppUser) {
+    // app_users already exists, but ensure user_roles entry is present
+    // so the faculty list API can discover this user
+    const { data: facultyRoleForExisting } = await serviceRoleClient
+      .from("roles")
+      .select("id")
+      .eq("code", ROLE.FACULTY)
+      .maybeSingle();
+
+    if (facultyRoleForExisting?.id && existingAppUser.profile_id) {
+      await serviceRoleClient
+        .from("user_roles")
+        .upsert(
+          {
+            profile_id: existingAppUser.profile_id,
+            role_id: facultyRoleForExisting.id,
+          },
+          { onConflict: "profile_id,role_id" },
+        );
+    }
+
     return;
   }
 
