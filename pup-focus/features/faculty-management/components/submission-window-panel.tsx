@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Loader2, Clock, History, Calendar, ShieldAlert, CheckCircle2, Pencil, Save, X } from "lucide-react";
+import { Loader2, Clock, History, Calendar, ShieldAlert, CheckCircle2, Pencil, Save, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
   ApiBody,
@@ -133,6 +133,11 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
   const [isSaving, setIsSaving] = useState(false);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+  const [warningModalData, setWarningModalData] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+  }>({ isOpen: false, title: "", description: "" });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -450,11 +455,22 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       const body = await readApiBody(response);
 
       if (!response.ok) {
-        if (typeof body !== "object" && body === null) {
-          setError((body as ApiBody).error || "Failed to close submissions");
-        } else {
-          setError(`Failed to close submissions (HTTP ${response.status}).`);
+        const apiBody = body as ApiBody;
+        if (
+          apiBody?.error?.includes("unvalidated or incomplete requirements") ||
+          apiBody?.details?.includes("unvalidated") ||
+          apiBody?.error?.includes("Cannot close")
+        ) {
+          setWarningModalData({
+            isOpen: true,
+            title: "⚠️ Incomplete Term Requirements",
+            description:
+              apiBody.details ||
+              "Hindi pa pwedeng palitan o isara ang submission window. May mga kulang pa na requirements o hindi pa validated na submissions para sa kasalukuyang term.",
+          });
+          return;
         }
+        setError(apiBody?.error || "Failed to close submissions");
         return;
       }
 
@@ -1000,6 +1016,43 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 }`}
               >
                 {closeCountdown > 0 ? `Confirm Close (${closeCountdown}s)` : "Confirm Close Submissions"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {warningModalData.isOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="bg-gradient-to-b from-[#2a0808] via-[#1f0505] to-[#120202] border border-amber-500/40 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4">
+            <div className="w-16 h-16 bg-amber-500/20 border-2 border-amber-500/50 rounded-full flex items-center justify-center mx-auto text-amber-400">
+              <AlertTriangle className="w-9 h-9 animate-pulse" />
+            </div>
+            <h3 className="text-xl font-bold text-amber-200">
+              {warningModalData.title}
+            </h3>
+            <p className="text-sm text-amber-100/90 leading-relaxed">
+              {warningModalData.description}
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setWarningModalData({ ...warningModalData, isOpen: false })
+                }
+                className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500 text-xs font-semibold"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setWarningModalData({ ...warningModalData, isOpen: false });
+                  window.location.href = "/admin/dashboard?tab=verification";
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-xs shadow-lg transition-all"
+              >
+                Review Requirements
               </button>
             </div>
           </div>

@@ -83,7 +83,39 @@ export async function GET(request: NextRequest) {
 
     const facultyProfileId = appUserRow.profile_id;
 
-    // 1. Fetch submissions for this faculty profile
+    const requestedAcademicYear = url.searchParams.get("academicYear")?.trim();
+    const requestedSemester = url.searchParams.get("semester")?.trim();
+
+    let targetAcademicYear = requestedAcademicYear;
+    let targetSemester = requestedSemester;
+
+    const { data: activeTermRow } = await supabase
+      .from("academic_terms")
+      .select("academic_year, semester, created_at")
+      .eq("status", "Current")
+      .maybeSingle();
+
+    if (!targetAcademicYear || !targetSemester) {
+      if (activeTermRow) {
+        targetAcademicYear = targetAcademicYear || activeTermRow.academic_year;
+        targetSemester = targetSemester || activeTermRow.semester;
+      }
+    }
+
+    targetAcademicYear = targetAcademicYear || "2026-2027";
+    targetSemester = targetSemester || "2nd Semester";
+
+    // Fetch target assignment IDs for this faculty & requested term
+    const { data: targetAssignments } = await supabase
+      .from("faculty_program_assignments")
+      .select("id")
+      .eq("faculty_profile_id", facultyProfileId)
+      .eq("academic_year", targetAcademicYear)
+      .ilike("term", `%${targetSemester}%`);
+
+    const targetAssignmentIds = (targetAssignments || []).map((a) => a.id);
+
+    // 1. Fetch submissions for this faculty profile and term
     let rawSubmissions: Array<{
       id: string;
       requirement_code: string;
@@ -93,33 +125,19 @@ export async function GET(request: NextRequest) {
       remarks?: string | null;
     }> = [];
 
-    const { data: subData, error: subError } = await supabase
-      .from("submissions")
-      .select("id, requirement_code, status, submitted_at, created_at, remarks")
-      .eq("faculty_profile_id", facultyProfileId)
-      .order("submitted_at", { ascending: false });
-
-    if (subError && isMissingRemarksColumnError(subError)) {
-      const { data: fallbackSubData, error: fallbackSubErr } = await supabase
+    if (targetAssignmentIds.length > 0) {
+      const { data: subData } = await supabase
         .from("submissions")
-        .select("id, requirement_code, status, submitted_at, created_at")
+        .select("id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id")
         .eq("faculty_profile_id", facultyProfileId)
+        .in("faculty_assignment_id", targetAssignmentIds)
         .order("submitted_at", { ascending: false });
 
-      if (fallbackSubErr) {
-        return NextResponse.json(
-          { error: "Failed to load submissions", details: fallbackSubErr.message },
-          { status: 500 },
-        );
+      if (subData) {
+        rawSubmissions = subData as typeof rawSubmissions;
       }
-      rawSubmissions = (fallbackSubData as typeof rawSubmissions) || [];
-    } else if (subError) {
-      return NextResponse.json(
-        { error: "Failed to load submissions", details: subError.message },
-        { status: 500 },
-      );
     } else {
-      rawSubmissions = (subData as typeof rawSubmissions) || [];
+      rawSubmissions = [];
     }
 
     const submissionIds = rawSubmissions.map((s) => s.id);

@@ -147,10 +147,10 @@ function getAvailableSemestersForAcademicYear(
 
 async function getCurrentAcademicTerm(
   supabase: any,
-): Promise<{ academicYear: string; semester: SemesterOption } | null> {
+): Promise<{ academicYear: string; semester: SemesterOption; createdAt?: string | null } | null> {
   const { data: currentTerm, error } = await supabase
     .from("academic_terms")
-    .select("academic_year, semester")
+    .select("academic_year, semester, created_at")
     .eq("status", "Current")
     .limit(1)
     .maybeSingle();
@@ -162,6 +162,7 @@ async function getCurrentAcademicTerm(
   return {
     academicYear: currentTerm.academic_year,
     semester: normalizeSemester(currentTerm.semester),
+    createdAt: currentTerm.created_at || null,
   };
 }
 
@@ -375,57 +376,21 @@ export async function GET(request: NextRequest) {
     let submissionRows: SubmissionRow[] | null = null;
     let submissionsError: { message?: string } | null = null;
 
-    const { data: rawAllSubmissions, error: fetchSubError } = await supabase
-      .from("submissions")
-      .select(
-        "id, requirement_code, status, submitted_at, faculty_assignment_id, document_versions(id)",
-      )
-      .eq("faculty_profile_id", facultyProfileId)
-      .order("submitted_at", { ascending: false })
-      .limit(1000);
+    if (filteredAssignmentIds.length > 0) {
+      // Strict query: only get submissions for the target term's assignment IDs
+      const { data: termSubmissions, error: fetchSubError } = await supabase
+        .from("submissions")
+        .select(
+          "id, requirement_code, status, submitted_at, faculty_assignment_id, document_versions(id)",
+        )
+        .eq("faculty_profile_id", facultyProfileId)
+        .in("faculty_assignment_id", filteredAssignmentIds)
+        .order("submitted_at", { ascending: false });
 
-    submissionsError = fetchSubError;
-
-    if (!submissionsError && rawAllSubmissions) {
-      submissionRows = (rawAllSubmissions as any[]).filter((sub: any) => {
-        if (
-          sub.faculty_assignment_id &&
-          filteredAssignmentIds.includes(sub.faculty_assignment_id)
-        ) {
-          return true;
-        }
-
-        if (sub.submitted_at) {
-          const subTime = new Date(sub.submitted_at).getTime();
-
-          if (!isNaN(subTime)) {
-            if (currentWindowStart) {
-              const winStart = new Date(currentWindowStart).getTime();
-              const is2ndSemSelected =
-                normalizeSemester(effectiveSelectedSemester) === "2nd Semester";
-
-              if (subTime >= winStart) {
-                return is2ndSemSelected;
-              } else {
-                return !is2ndSemSelected;
-              }
-            }
-
-            const term = toAcademicYearAndSemester(sub.submitted_at);
-            if (
-              normalizeAcademicYear(term.academicYear) ===
-                normalizeAcademicYear(selectedAcademicYear) &&
-              normalizeSemester(term.semester) ===
-                normalizeSemester(effectiveSelectedSemester)
-            ) {
-              return true;
-            }
-          }
-        }
-
-        return false;
-      }) as SubmissionRow[];
-    } else if (submissionsError) {
+      submissionsError = fetchSubError;
+      submissionRows = (termSubmissions as SubmissionRow[] | null) ?? [];
+    } else {
+      // No assignment exists for this term — return empty (all requirements = not_submitted)
       submissionRows = [];
     }
 

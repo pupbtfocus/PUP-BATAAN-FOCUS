@@ -326,117 +326,114 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!facultyAssignmentId && curriculumId && programId) {
+    if (!facultyAssignmentId) {
+      if (!programId) {
+        const { data: firstProgram } = await supabase
+          .from("programs")
+          .select("id")
+          .limit(1)
+          .maybeSingle();
+        programId = firstProgram?.id ?? null;
+      }
+
+      if (!curriculumId) {
+        const { data: firstCurriculum } = await supabase
+          .from("curricula")
+          .select("id")
+          .limit(1)
+          .maybeSingle();
+        curriculumId = firstCurriculum?.id ?? null;
+      }
+
+      const insertPayload: Record<string, any> = {
+        faculty_profile_id: appUser.profile_id,
+        academic_year: payload.academicYear,
+        term: payload.semester,
+      };
+      if (programId) insertPayload.program_id = programId;
+      if (curriculumId) insertPayload.curriculum_id = curriculumId;
+
       const { data: createdAssignment, error: createAssignmentError } =
         await supabase
           .from("faculty_program_assignments")
-          .insert({
-            faculty_profile_id: appUser.profile_id,
-            program_id: programId,
-            academic_year: payload.academicYear,
-            term: payload.semester,
-            curriculum_id: curriculumId,
-          })
+          .insert(insertPayload)
           .select("id")
           .maybeSingle();
 
       if (createdAssignment?.id) {
         facultyAssignmentId = createdAssignment.id;
-      } else if (createAssignmentError) {
-        logger.warn("auto_create_faculty_assignment_failed", {
-          facultyId: appUser.profile_id,
-          academicYear: payload.academicYear,
-          semester: payload.semester,
-          error: createAssignmentError.message,
-        });
+      } else {
+        const { data: retryAssignment } = await supabase
+          .from("faculty_program_assignments")
+          .select("id")
+          .eq("faculty_profile_id", appUser.profile_id)
+          .eq("academic_year", payload.academicYear)
+          .ilike("term", `%${payload.semester}%`)
+          .maybeSingle();
+
+        if (retryAssignment?.id) {
+          facultyAssignmentId = retryAssignment.id;
+        } else if (createAssignmentError) {
+          logger.warn("auto_create_faculty_assignment_failed", {
+            facultyId: appUser.profile_id,
+            academicYear: payload.academicYear,
+            semester: payload.semester,
+            error: createAssignmentError.message,
+          });
+        }
       }
     }
 
     // Backend Guard Against Duplicate Submissions
-    // Check if an existing submission for this requirement_code & faculty_profile_id is already uploaded, pending, or validated FOR THIS SPECIFIC TERM.
-    const { data: existingSubmissions } = await supabase
-      .from("submissions")
-      .select("id, status, submitted_at, faculty_assignment_id, requirement_code")
-      .eq("faculty_profile_id", appUser.profile_id)
-      .order("submitted_at", { ascending: false });
+    // Check if an existing submission for this requirement_code & faculty_profile_id is already uploaded, pending, or validated FOR THIS SPECIFIC TERM ASSIGNMENT.
+    if (facultyAssignmentId) {
+      const { data: existingInCurrentTerm } = await supabase
+        .from("submissions")
+        .select("id, status, requirement_code, faculty_assignment_id")
+        .eq("faculty_profile_id", appUser.profile_id)
+        .eq("faculty_assignment_id", facultyAssignmentId);
 
-    if (existingSubmissions && existingSubmissions.length > 0) {
-      const codeMatchingSubmissions = existingSubmissions.filter((sub) => {
-        const matched = matchRequirementCode(
-          sub.requirement_code,
-          (sub as { requirement_id?: string }).requirement_id,
-        );
-        return (
-          matched === payload.requirementCode ||
-          sub.requirement_code === payload.requirementCode
-        );
-      });
-
-      const activeTermSubmissions = codeMatchingSubmissions.filter((sub) => {
-        const subAY = (sub as { academic_year?: string }).academic_year;
-        const subSem = (sub as { semester?: string }).semester;
-        if (subAY && subSem) {
+      if (existingInCurrentTerm && existingInCurrentTerm.length > 0) {
+        const activeTermSubmissions = existingInCurrentTerm.filter((sub) => {
+          const matched = matchRequirementCode(
+            sub.requirement_code,
+            (sub as { requirement_id?: string }).requirement_id,
+          );
           return (
-            normalizeAcademicYear(subAY) ===
-              normalizeAcademicYear(payload.academicYear) &&
-            normalizeSemester(subSem) ===
-              normalizeSemester(payload.semester)
+            matched === payload.requirementCode ||
+            sub.requirement_code === payload.requirementCode
           );
-        }
-        if (
-          facultyAssignmentId &&
-          sub.faculty_assignment_id === facultyAssignmentId
-        ) {
-          return true;
-        }
+        });
 
-        if (sub.submitted_at && windowState.startDate && windowState.startTime) {
-          const subTime = new Date(sub.submitted_at).getTime();
-          const winStart = new Date(
-            `${windowState.startDate}T${normalizeTime24Hour(windowState.startTime)}+08:00`,
-          ).getTime();
-          const is2ndSem = normalizeSemester(payload.semester) === "2nd Semester";
+        if (activeTermSubmissions.length > 0) {
+          const latestSub = activeTermSubmissions[0];
+          const { data: decisions } = await supabase
+            .from("review_decisions")
+            .select("decision")
+            .eq("submission_id", latestSub.id)
+            .order("created_at", { ascending: false })
+            .limit(1);
 
-          if (!isNaN(subTime) && !isNaN(winStart)) {
-            if (subTime >= winStart) {
-              return is2ndSem;
-            } else {
-              return !is2ndSem;
-            }
+          const latestDecision = decisions?.[0]?.decision;
+          const isRejected =
+            latestSub.status === "rejected" || latestDecision === "rejected";
+
+          if (
+            !isRejected &&
+            (latestSub.status === "uploaded" ||
+              latestSub.status === "pending" ||
+              latestSub.status === "submitted" ||
+              latestSub.status === "validated" ||
+              latestDecision === "validated")
+          ) {
+            return NextResponse.json(
+              {
+                error:
+                  "This requirement has already been submitted for the current academic term.",
+              },
+              { status: 400 },
+            );
           }
-        }
-
-        return false;
-      });
-
-      if (activeTermSubmissions.length > 0) {
-        const latestSub = activeTermSubmissions[0];
-        const { data: decisions } = await supabase
-          .from("review_decisions")
-          .select("decision")
-          .eq("submission_id", latestSub.id)
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        const latestDecision = decisions?.[0]?.decision;
-        const isRejected =
-          latestSub.status === "rejected" || latestDecision === "rejected";
-
-        if (
-          !isRejected &&
-          (latestSub.status === "uploaded" ||
-            latestSub.status === "pending" ||
-            latestSub.status === "submitted" ||
-            latestSub.status === "validated" ||
-            latestDecision === "validated")
-        ) {
-          return NextResponse.json(
-            {
-              error:
-                "This requirement has already been submitted for the current academic term.",
-            },
-            { status: 400 },
-          );
         }
       }
     }
