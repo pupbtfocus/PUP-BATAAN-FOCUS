@@ -19,7 +19,7 @@ import {
   getTodayInManila,
   buildAcademicYearOptions,
 } from "@/features/submissions/services/submission-window.service";
-import { Menu, X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, CheckCircle2, Calendar } from "lucide-react";
+import { Menu, X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, UploadCloud, CheckCircle2, Calendar, Loader2 } from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 
@@ -103,7 +103,6 @@ type SubmissionWindowState = {
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
 };
-
 
 function buildAcademicYears(count = 5): string[] {
   const now = new Date();
@@ -272,6 +271,17 @@ function FacultySubmissionPanelContent({
   );
   const [isDraggingFile, setIsDraggingFile] = useState(false);
 
+  const [isSubmittingModalOpen, setIsSubmittingModalOpen] = useState(false);
+  const [isSubmitSuccess, setIsSubmitSuccess] = useState(false);
+
+  function handleCloseModalAndRefresh() {
+    setIsSubmittingModalOpen(false);
+    setIsSubmitSuccess(false);
+    closeDirectUploadModal();
+    router.refresh();
+    void fetchStatuses();
+  }
+
   const hasSubmissionWindowAcademicTerm = Boolean(
     submissionWindow?.isConfigured &&
     submissionWindow.academicYear &&
@@ -427,12 +437,6 @@ function FacultySubmissionPanelContent({
   useEffect(() => {
     if (!submissionWindow) {
       return;
-    }
-
-    if (!submissionWindow.isOpen) {
-      setRequirementStatuses([]);
-      setStatusCounts(null);
-      setHasSeenIncompleteRequirementsModal(false);
     }
 
     const currentTerm =
@@ -627,6 +631,8 @@ function FacultySubmissionPanelContent({
     }
 
     setIsUploadingDirect(true);
+    setIsSubmittingModalOpen(true);
+    setIsSubmitSuccess(false);
     setDirectUploadMessage(null);
 
     try {
@@ -650,6 +656,7 @@ function FacultySubmissionPanelContent({
       });
 
       if (!response.ok) {
+        setIsSubmittingModalOpen(false);
         try {
           const errorData = await response.json();
           setDirectUploadMessage(
@@ -695,18 +702,12 @@ function FacultySubmissionPanelContent({
         ];
       });
 
-      const activeReqTitle =
-        REQUIREMENT_LABEL[selectedRequirementForUpload] ||
-        selectedRequirementForUpload;
-
-      closeDirectUploadModal();
-      await Promise.all([fetchStatuses(), fetchHistory()]);
-
-      setSuccessModalData({
-        isOpen: true,
-        requirementTitle: activeReqTitle,
-      });
+      setIsSubmitSuccess(true);
+      router.refresh();
+      void fetchStatuses();
+      void fetchHistory();
     } catch (error) {
+      setIsSubmittingModalOpen(false);
       setDirectUploadMessage(
         `Error: ${error instanceof Error ? error.message : "An unexpected error occurred"}`,
       );
@@ -1669,68 +1670,75 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   <form onSubmit={handleDirectUploadSubmit} className="p-6 space-y-5">
-                    <div>
-                      <label className="block text-xs uppercase tracking-[0.18em] font-semibold text-amber-300 mb-2">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-amber-200/90">
                         Upload Document File
                       </label>
-                      <div
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          setIsDraggingFile(true);
-                        }}
-                        onDragLeave={() => setIsDraggingFile(false)}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          setIsDraggingFile(false);
-                          const droppedFile = e.dataTransfer.files?.[0];
-                          if (droppedFile) setDirectUploadFile(droppedFile);
-                        }}
-                        className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition cursor-pointer ${
-                          isDraggingFile
-                            ? "border-amber-400 bg-amber-400/10 text-amber-200"
-                            : directUploadFile
-                              ? "border-emerald-500/60 bg-emerald-950/20 text-emerald-300"
-                              : "border-slate-700 bg-slate-950 hover:border-slate-500 text-slate-300"
-                        }`}
-                        onClick={() => {
-                          const input = document.getElementById("directFileInput");
-                          if (input) input.click();
-                        }}
-                      >
-                        <input
-                          id="directFileInput"
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.docx,.xlsx,.doc,.jpg,.jpeg,.png"
-                          onChange={(e) => {
-                            const selected = e.target.files?.[0];
-                            if (selected) setDirectUploadFile(selected);
-                          }}
-                        />
-
-                        <Upload className={`h-8 w-8 mb-2 ${directUploadFile ? "text-emerald-400" : "text-amber-400"}`} />
-
-                        {directUploadFile ? (
-                          <div>
-                            <p className="font-semibold text-slate-100 text-sm">
-                              {directUploadFile.name}
+                        {!directUploadFile ? (
+                          <div
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setIsDraggingFile(true);
+                            }}
+                            onDragLeave={() => setIsDraggingFile(false)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              setIsDraggingFile(false);
+                              const droppedFile = e.dataTransfer.files?.[0];
+                              if (droppedFile) setDirectUploadFile(droppedFile);
+                            }}
+                            onClick={() => {
+                              const input = document.getElementById("directFileInput");
+                              if (input) input.click();
+                            }}
+                            className={`border-2 border-dashed border-amber-500/30 hover:border-amber-500/60 rounded-2xl p-6 text-center bg-black/20 hover:bg-black/30 transition-all cursor-pointer ${
+                              isDraggingFile ? "border-amber-400 bg-amber-400/10 text-amber-200" : ""
+                            }`}
+                          >
+                            <UploadCloud className="w-10 h-10 mx-auto text-amber-400/80 mb-2 animate-pulse" />
+                            <p className="text-sm font-medium text-amber-100">
+                              Drag and drop your file here, or <span className="text-amber-400 underline">browse</span>
                             </p>
-                            <p className="text-xs text-slate-400 mt-1">
-                              {(directUploadFile.size / (1024 * 1024)).toFixed(2)} MB · Click or drag to replace
-                            </p>
-                          </div>
-                        ) : (
-                          <div>
-                            <p className="text-sm font-medium text-slate-200">
-                              Drag and drop your file here, or <span className="text-amber-300 underline">browse</span>
-                            </p>
-                            <p className="mt-1 text-xs text-slate-400">
+                            <p className="text-xs text-amber-300/60 mt-1">
                               Supported formats: PDF, DOCX, XLSX (Max 10MB)
                             </p>
+                            <input
+                              id="directFileInput"
+                              type="file"
+                              className="hidden"
+                              accept=".pdf,.docx,.xlsx,.doc,.jpg,.jpeg,.png"
+                              onChange={(e) => {
+                                const selected = e.target.files?.[0];
+                                if (selected) setDirectUploadFile(selected);
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="relative flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-red-950/30 to-black/40 border border-amber-500/40 shadow-lg animate-in fade-in zoom-in-95">
+                            <div className="flex items-center space-x-3 overflow-hidden">
+                              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
+                                <FileText className="w-6 h-6" />
+                              </div>
+                              <div className="truncate">
+                                <p className="text-sm font-semibold text-amber-100 truncate">
+                                  {directUploadFile.name}
+                                </p>
+                                <p className="text-xs text-amber-300/70">
+                                  {(directUploadFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to submit
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setDirectUploadFile(null)}
+                              className="p-2 rounded-xl text-amber-300/60 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                              title="Remove file"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
                           </div>
                         )}
                       </div>
-                    </div>
 
                     <div>
                       <label
@@ -1749,21 +1757,14 @@ function FacultySubmissionPanelContent({
                       />
                     </div>
 
-                    {isUploadingDirect && (
-                      <div className="flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-400/10 p-3.5 text-amber-200">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent shrink-0" />
-                        <p className="text-sm font-medium">
-                          Uploading document to cloud storage, please wait...
-                        </p>
-                      </div>
-                    )}
-
                     {directUploadMessage && (
-                      <p className={`text-sm rounded-lg p-3 border ${
-                        directUploadMessage.startsWith("Error")
-                          ? "border-red-800 bg-red-950/40 text-red-300"
-                          : "border-emerald-800 bg-emerald-950/40 text-emerald-300"
-                      }`}>
+                      <p
+                        className={`text-sm rounded-lg p-3 border ${
+                          directUploadMessage.startsWith("Error")
+                            ? "border-red-800 bg-red-950/40 text-red-300"
+                            : "border-emerald-800 bg-emerald-950/40 text-emerald-300"
+                        }`}
+                      >
                         {directUploadMessage}
                       </p>
                     )}
@@ -1784,7 +1785,7 @@ function FacultySubmissionPanelContent({
                       >
                         {isUploadingDirect ? (
                           <>
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                             <span>Uploading...</span>
                           </>
                         ) : (
@@ -1793,6 +1794,40 @@ function FacultySubmissionPanelContent({
                       </Button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* SUBMITTING & SUCCESS MODAL POPUPS */}
+            {isSubmittingModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
+                <div className="bg-gradient-to-b from-[#3a0000] to-[#1a0000] border border-amber-500/30 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4">
+                  {isUploadingDirect ? (
+                    <>
+                      <Loader2 className="w-12 h-12 text-amber-400 mx-auto animate-spin" />
+                      <h3 className="text-lg font-bold text-amber-200">Submitting Document...</h3>
+                      <p className="text-xs text-amber-300/70">
+                        Please wait while your file is being uploaded to the system.
+                      </p>
+                    </>
+                  ) : isSubmitSuccess ? (
+                    <>
+                      <div className="w-16 h-16 bg-green-500/20 border-2 border-green-500/50 rounded-full flex items-center justify-center mx-auto text-green-400 animate-in zoom-in">
+                        <CheckCircle2 className="w-10 h-10" />
+                      </div>
+                      <h3 className="text-xl font-bold text-amber-200">Submitted Successfully!</h3>
+                      <p className="text-xs text-amber-300/80">
+                        Your requirement has been uploaded and sent for validation.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleCloseModalAndRefresh}
+                        className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold rounded-xl shadow-lg transition-all"
+                      >
+                        Done
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </div>
             )}
