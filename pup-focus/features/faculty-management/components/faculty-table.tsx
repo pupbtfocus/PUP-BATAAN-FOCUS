@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { FacultyFilterBar } from "./faculty-filter-bar";
@@ -20,6 +20,7 @@ export interface FacultyTableProps {
   deleteSuccess: string | null;
   facultyActionError: string | null;
   onClearDeleteMessages: () => void;
+  programs?: Array<{ id: string; code: string; name: string }>;
 }
 
 export function FacultyTable({
@@ -36,11 +37,39 @@ export function FacultyTable({
   deleteSuccess,
   facultyActionError,
   onClearDeleteMessages,
+  programs: initialPrograms,
 }: FacultyTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
   >("all");
+  const [programFilter, setProgramFilter] = useState("all");
+  const [programs, setPrograms] = useState<
+    Array<{ id: string; code: string; name: string }>
+  >(initialPrograms ?? []);
+
+  useEffect(() => {
+    if (initialPrograms && initialPrograms.length > 0) {
+      setPrograms(initialPrograms);
+      return;
+    }
+
+    async function loadPrograms() {
+      try {
+        const res = await fetch("/api/programs");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.programs) {
+            setPrograms(data.programs);
+          }
+        }
+      } catch {
+        // Ignore fetch error
+      }
+    }
+
+    void loadPrograms();
+  }, [initialPrograms]);
 
   const filteredFacultyAccounts = useMemo(() => {
     let result = facultyAccounts;
@@ -49,6 +78,15 @@ export function FacultyTable({
       result = result.filter((f) => f.is_active);
     } else if (statusFilter === "inactive") {
       result = result.filter((f) => !f.is_active);
+    }
+
+    if (programFilter && programFilter !== "all") {
+      const targetProg = programFilter.toUpperCase();
+      result = result.filter((f) => {
+        const code = f.program?.code?.toUpperCase();
+        const id = f.program?.id?.toLowerCase();
+        return code === targetProg || id === programFilter.toLowerCase();
+      });
     }
 
     const query = searchTerm.trim().toLowerCase();
@@ -60,7 +98,7 @@ export function FacultyTable({
       const haystack = `${faculty.fullName} ${faculty.email}`.toLowerCase();
       return haystack.includes(query);
     });
-  }, [facultyAccounts, searchTerm, statusFilter]);
+  }, [facultyAccounts, searchTerm, statusFilter, programFilter]);
 
   return (
     <div className="space-y-3">
@@ -113,6 +151,9 @@ export function FacultyTable({
         onSearchChange={setSearchTerm}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        programFilter={programFilter}
+        onProgramFilterChange={setProgramFilter}
+        programs={programs}
       />
 
       <div className="w-full overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950 shadow-xl">

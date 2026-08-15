@@ -298,15 +298,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data: programAssignments } = await supabase
-      .from("faculty_program_assignments")
-      .select("faculty_profile_id, program_id, programs(id, code, name)")
-      .in("faculty_profile_id", profileIds);
+    const [{ data: programAssignments }, { data: allPrograms }] =
+      await Promise.all([
+        supabase
+          .from("faculty_program_assignments")
+          .select("faculty_profile_id, program_id, programs(id, code, name)")
+          .in("faculty_profile_id", profileIds),
+        supabase.from("programs").select("id, code, name"),
+      ]);
 
     const programByProfileId = new Map<
       string,
       { id: string; code: string; name: string }
     >();
+
+    const programsLookup = new Map<string, { id: string; code: string; name: string }>();
+    for (const prog of (allPrograms ?? []) as Array<{ id: string; code: string; name: string }>) {
+      if (prog?.id) programsLookup.set(prog.id.toLowerCase(), prog);
+      if (prog?.code) programsLookup.set(prog.code.toUpperCase(), prog);
+    }
 
     for (const row of (programAssignments ?? []) as any[]) {
       if (row.faculty_profile_id && row.programs) {
@@ -336,16 +346,35 @@ export async function GET(request: NextRequest) {
           ...authUserMetadata,
           ...(appUser?.metadata ?? {}),
         };
+
+        const firstName =
+          typeof metadata.first_name === "string" ? metadata.first_name.trim() : "";
+        const middleName =
+          typeof metadata.middle_name === "string" ? metadata.middle_name.trim() : "";
+        const lastName =
+          typeof metadata.last_name === "string" ? metadata.last_name.trim() : "";
+
         const fullNameFromMetadata = buildFacultyFullName({
-          firstName:
-            typeof metadata.first_name === "string" ? metadata.first_name : "",
-          middleName:
-            typeof metadata.middle_name === "string"
-              ? metadata.middle_name
-              : "",
-          lastName:
-            typeof metadata.last_name === "string" ? metadata.last_name : "",
+          firstName,
+          middleName,
+          lastName,
         });
+
+        // Resolve assigned program: 1) from assignments table, 2) from profile.department_id, 3) from metadata.program_id
+        let resolvedProgram = programByProfileId.get(profile.id) ?? null;
+        if (!resolvedProgram && profile.department_id) {
+          resolvedProgram =
+            programsLookup.get(String(profile.department_id).toLowerCase()) ??
+            programsLookup.get(String(profile.department_id).toUpperCase()) ??
+            null;
+        }
+        if (!resolvedProgram && metadata.program_id) {
+          resolvedProgram =
+            programsLookup.get(String(metadata.program_id).toLowerCase()) ??
+            programsLookup.get(String(metadata.program_id).toUpperCase()) ??
+            null;
+        }
+
         const profileImageBucket =
           typeof metadata.profile_image_bucket === "string" &&
           metadata.profile_image_bucket.trim()
@@ -377,9 +406,15 @@ export async function GET(request: NextRequest) {
           id: profile.id,
           user_id: appUser?.auth_user_id ?? profile.user_id ?? null,
           fullName: fullNameFromMetadata || profile.full_name || "Unknown",
+          firstName: firstName || "",
+          middleName: middleName || "",
+          lastName: lastName || "",
+          first_name: firstName || "",
+          middle_name: middleName || "",
+          last_name: lastName || "",
           email: profile.email || "Unknown",
           profileImageUrl,
-          program: programByProfileId.get(profile.id) ?? null,
+          program: resolvedProgram,
           is_active: appUser?.metadata?.is_active ?? true,
           created_at:
             appUser?.created_at ||
