@@ -1,4 +1,4 @@
-import { ROLE, type AppRole } from "@/config/roles";
+import { ROLE, type AppRole } from "./roles";
 
 export const ROUTE_BY_ROLE: Record<AppRole, string> = {
   [ROLE.SUPER_ADMIN]: "/super-admin/dashboard",
@@ -30,6 +30,7 @@ export const PUBLIC_ROUTES = [
   "/",
   "/about",
   "/contact",
+  "/auth/callback",
   "/api/auth/callback",
   "/api/bootstrap/super-admin",
   "/email-preview",
