@@ -243,6 +243,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       bootstrapped: true,
+      email: email,
+      fullName: fullNameToSet,
+      role: userRole,
       needsPasswordSetup: isTempPasswordGenerated,
       tempPasswordIssued: isTempPasswordGenerated,
       tempPasswordEmailSent,

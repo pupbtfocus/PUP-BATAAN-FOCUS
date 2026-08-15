@@ -107,20 +107,26 @@ function buildEmailLayout({
 
 export function buildInviteEmailHtml({
   fullName,
+  firstName,
   link,
   invitedRole = ROLE.ADMIN,
 }: {
-  fullName: string;
+  fullName?: string;
+  firstName?: string;
   link: string;
   invitedRole?: AppRole;
 }) {
-  const roleLabel = ROLE_LABEL[invitedRole] ?? "Account";
-  const safeFullName = escapeHtml(fullName);
+  const roleLabel = ROLE_LABEL[invitedRole] ?? "Faculty";
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
+  const safeFirstName = escapeHtml(resolvedFirstName);
   const safeRoleLabel = escapeHtml(roleLabel);
 
   return buildEmailLayout({
     title: "Welcome to PUP FOCUS",
-    intro: `Hello ${safeFullName}, your ${safeRoleLabel.toLowerCase()} account is almost ready.`,
+    intro: `Hello ${safeFirstName}, your ${safeRoleLabel.toLowerCase()} account is almost ready.`,
     body: `Your access has been prepared for PUP FOCUS. Use the button below to continue setting up your account and get started right away.`,
     actionLabel: "Open invitation",
     actionHref: link,
@@ -131,19 +137,25 @@ export function buildInviteEmailHtml({
 
 export function buildTempPasswordEmailHtml({
   fullName,
+  firstName,
   tempPassword,
   signInHref,
 }: {
-  fullName: string;
+  fullName?: string;
+  firstName?: string;
   tempPassword: string;
   signInHref?: string;
 }) {
-  const safeFullName = escapeHtml(fullName);
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
+  const safeFirstName = escapeHtml(resolvedFirstName);
   const safeTempPassword = escapeHtml(tempPassword);
 
   return buildEmailLayout({
     title: "Temporary Password",
-    intro: `Hello ${safeFullName}, your account is ready.`,
+    intro: `Hello ${safeFirstName}, your account is ready.`,
     body: `Use the temporary password below to sign in to PUP FOCUS. After you sign in, please change your password immediately for security.`,
     actionLabel: "Sign in",
     actionHref: signInHref || buildAppUrl("/auth/sign-in"),
@@ -155,7 +167,8 @@ export function buildTempPasswordEmailHtml({
 type SendInviteOpts = {
   to: string;
   link: string;
-  fullName: string;
+  fullName?: string;
+  firstName?: string;
   from?: string;
   invitedRole?: AppRole;
 };
@@ -164,6 +177,7 @@ export async function sendInviteEmail({
   to,
   link,
   fullName,
+  firstName,
   from,
   invitedRole = ROLE.ADMIN,
 }: SendInviteOpts) {
@@ -192,11 +206,16 @@ export async function sendInviteEmail({
     from || process.env.EMAIL_FROM || user,
   );
 
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
   const roleLabel = ROLE_LABEL[invitedRole] ?? "account";
   const subject = "PUP FOCUS - Account access";
-  const text = `Hello ${fullName},\n\nYour ${roleLabel.toLowerCase()} account is ready. Use the link below to continue:\n\n${link}\n\nIf you did not expect this, ignore this message.`;
+  const text = `Hello ${resolvedFirstName},\n\nYour ${roleLabel.toLowerCase()} account is ready. Use the link below to continue:\n\n${link}\n\nIf you did not expect this, ignore this message.`;
   const html = buildInviteEmailHtml({
     fullName,
+    firstName: resolvedFirstName,
     link,
     invitedRole,
   });

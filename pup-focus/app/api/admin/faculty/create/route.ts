@@ -402,6 +402,7 @@ export async function POST(request: NextRequest) {
         await sendInviteEmail({
           to: normalizedEmail,
           link: actionLink,
+          firstName: firstName.trim(),
           fullName,
           invitedRole: ROLE.FACULTY,
         });
