@@ -93,19 +93,39 @@ export function CreateFacultyPanel({
     async function loadPrograms() {
       try {
         setIsLoadingPrograms(true);
-        const supabase = createClient();
-        const { data: fetchedPrograms, error } = await supabase
-          .from("programs")
-          .select("id, code, name")
-          .order("code", { ascending: true });
+        let rawPrograms: ProgramOption[] = [];
 
-        if (error) {
-          console.error("Failed to fetch programs from Supabase:", error.message);
+        try {
+          const res = await fetch("/api/programs");
+          if (res.ok) {
+            const data = await res.json();
+            rawPrograms = (data.programs ?? []) as ProgramOption[];
+          }
+        } catch {
+          // Fallback to direct client
+        }
+
+        if (rawPrograms.length === 0) {
+          const supabase = createClient();
+          const { data: fetchedPrograms, error } = await supabase
+            .from("programs")
+            .select("id, code, name")
+            .order("code", { ascending: true });
+
+          if (error) {
+            console.error(
+              "Failed to fetch programs from Supabase:",
+              error.message,
+            );
+          } else if (fetchedPrograms) {
+            rawPrograms = fetchedPrograms as ProgramOption[];
+          }
         }
 
         if (isMounted) {
-          const rawPrograms = (fetchedPrograms ?? []) as ProgramOption[];
-          const filtered = rawPrograms.filter((p: ProgramOption) => !REDUNDANT_CODES.has(p.code.toUpperCase()));
+          const filtered = rawPrograms.filter(
+            (p: ProgramOption) => !REDUNDANT_CODES.has(p.code.toUpperCase()),
+          );
 
           const degrees: ProgramOption[] = [];
           const diplomas: ProgramOption[] = [];
@@ -121,8 +141,14 @@ export function CreateFacultyPanel({
               }
             });
           } else {
-            DEFAULT_DEGREE_PROGRAMS.forEach((p: { code: string; name: string }) => degrees.push({ id: p.code, ...p }));
-            DEFAULT_DIPLOMA_COURSES.forEach((p: { code: string; name: string }) => diplomas.push({ id: p.code, ...p }));
+            DEFAULT_DEGREE_PROGRAMS.forEach(
+              (p: { code: string; name: string }) =>
+                degrees.push({ id: p.code, ...p }),
+            );
+            DEFAULT_DIPLOMA_COURSES.forEach(
+              (p: { code: string; name: string }) =>
+                diplomas.push({ id: p.code, ...p }),
+            );
           }
 
           setDegreePrograms(degrees);
@@ -131,8 +157,18 @@ export function CreateFacultyPanel({
       } catch (err) {
         console.error("Program fetch error:", err);
         if (isMounted) {
-          setDegreePrograms(DEFAULT_DEGREE_PROGRAMS.map((p: { code: string; name: string }) => ({ id: p.code, ...p })));
-          setDiplomaCourses(DEFAULT_DIPLOMA_COURSES.map((p: { code: string; name: string }) => ({ id: p.code, ...p })));
+          setDegreePrograms(
+            DEFAULT_DEGREE_PROGRAMS.map((p: { code: string; name: string }) => ({
+              id: p.code,
+              ...p,
+            })),
+          );
+          setDiplomaCourses(
+            DEFAULT_DIPLOMA_COURSES.map((p: { code: string; name: string }) => ({
+              id: p.code,
+              ...p,
+            })),
+          );
         }
       } finally {
         if (isMounted) {

@@ -267,10 +267,11 @@ export async function POST(request: NextRequest) {
         options: {
           data: {
             first_name: firstName.trim(),
-            middle_name: middleName.trim(),
+            middle_name: middleName.trim() || null,
             last_name: lastName.trim(),
             full_name: fullName,
-            program_id: programId,
+            program_id: programRecord.id,
+            program_code: programRecord.code,
             profile_image_bucket: profileImageMetadata.profile_image_bucket,
             profile_image_path: profileImageMetadata.profile_image_path,
             role: ROLE.FACULTY,
@@ -309,7 +310,7 @@ export async function POST(request: NextRequest) {
               user_id: createdAuthUser.id,
               full_name: fullName,
               email: normalizedEmail,
-              department_id: programId,
+              department_id: programRecord.id,
             },
             { onConflict: "user_id" },
           )
@@ -351,10 +352,13 @@ export async function POST(request: NextRequest) {
                   created_via: "admin_faculty_panel",
                   created_by_admin_id: user.id,
                   first_name: firstName.trim(),
-                  middle_name: middleName.trim(),
+                  middle_name: middleName.trim() || null,
                   last_name: lastName.trim(),
                   full_name: fullName,
-                  profile_image_bucket: profileImageMetadata.profile_image_bucket,
+                  program_id: programRecord.id,
+                  program_code: programRecord.code,
+                  profile_image_bucket:
+                    profileImageMetadata.profile_image_bucket,
                   profile_image_path: profileImageMetadata.profile_image_path,
                 },
               },
@@ -371,12 +375,15 @@ export async function POST(request: NextRequest) {
           const academicYear = activeTerm?.academic_year || "2026-2027";
           const term = activeTerm?.semester || "1st Semester";
 
-          await supabase.from("faculty_program_assignments").insert({
-            faculty_profile_id: newProfile.id,
-            program_id: programId,
-            academic_year: academicYear,
-            term: term,
-          });
+          await supabase.from("faculty_program_assignments").upsert(
+            {
+              faculty_profile_id: newProfile.id,
+              program_id: programRecord.id,
+              academic_year: academicYear,
+              term: term,
+            },
+            { onConflict: "faculty_profile_id,program_id,academic_year,term" },
+          );
         }
       } catch (assignError) {
         logger.error("faculty_preinsert_failed", {

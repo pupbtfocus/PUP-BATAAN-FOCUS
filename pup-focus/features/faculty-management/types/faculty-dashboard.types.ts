@@ -21,6 +21,12 @@ export type FacultyProgramInfo = {
 export type FacultyAccount = {
   id: string;
   fullName: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
   email: string;
   profileImageUrl: string | null;
   is_active: boolean;

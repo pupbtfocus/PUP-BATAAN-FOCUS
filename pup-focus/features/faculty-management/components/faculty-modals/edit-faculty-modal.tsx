@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { buildFacultyInitials } from "@/lib/faculty-profile";
+import { buildFacultyInitials, parseFullNameFallback } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
+import type { ProgramOption } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
 
 export interface EditFacultyModalProps {
   facultyId: string;
@@ -22,6 +23,10 @@ export function EditFacultyModal({
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [programId, setProgramId] = useState("");
+  const [degreePrograms, setDegreePrograms] = useState<ProgramOption[]>([]);
+  const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
+  const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
     string | null
@@ -30,28 +35,93 @@ export function EditFacultyModal({
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  if (!selectedFaculty) {
-    return null;
-  }
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPrograms() {
+      try {
+        setIsLoadingPrograms(true);
+        const res = await fetch("/api/programs");
+        if (res.ok) {
+          const data = await res.json();
+          const programs = (data.programs ?? []) as ProgramOption[];
+          if (isMounted) {
+            const degrees: ProgramOption[] = [];
+            const diplomas: ProgramOption[] = [];
+            programs.forEach((p) => {
+              const codeUpper = p.code.toUpperCase();
+              const nameUpper = p.name.toUpperCase();
+              if (codeUpper.startsWith("D") || nameUpper.includes("DIPLOMA")) {
+                diplomas.push(p);
+              } else {
+                degrees.push(p);
+              }
+            });
+            setDegreePrograms(degrees);
+            setDiplomaCourses(diplomas);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load programs in EditFacultyModal:", err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingPrograms(false);
+        }
+      }
+    }
+
+    void loadPrograms();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
-    const fullNameParts = selectedFaculty.fullName
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
+    if (!selectedFaculty) return;
 
-    setFirstName(fullNameParts[0] ?? "");
-    setLastName(fullNameParts.length > 1 ? fullNameParts.slice(-1)[0] : "");
-    setMiddleName(
-      fullNameParts.length > 2 ? fullNameParts.slice(1, -1).join(" ") : "",
+    // Strictly display first_name, middle_name, last_name directly from database fields
+    const directFirstName =
+      selectedFaculty.first_name ?? selectedFaculty.firstName ?? "";
+    const directMiddleName =
+      selectedFaculty.middle_name ?? selectedFaculty.middleName ?? "";
+    const directLastName =
+      selectedFaculty.last_name ?? selectedFaculty.lastName ?? "";
+
+    setFirstName(directFirstName);
+    setMiddleName(directMiddleName);
+    setLastName(directLastName);
+
+    const targetProgramId = selectedFaculty.program?.id;
+    const targetProgramCode = selectedFaculty.program?.code?.toUpperCase();
+
+    const allOptions = [...degreePrograms, ...diplomaCourses];
+    const matchedOption = allOptions.find(
+      (opt) =>
+        (targetProgramId &&
+          (opt.id === targetProgramId ||
+            opt.id.toLowerCase() === targetProgramId.toLowerCase())) ||
+        (targetProgramCode && opt.code.toUpperCase() === targetProgramCode),
     );
+
+    if (matchedOption) {
+      setProgramId(matchedOption.id);
+    } else if (targetProgramId) {
+      setProgramId(targetProgramId);
+    } else if (targetProgramCode) {
+      setProgramId(targetProgramCode);
+    } else {
+      setProgramId("");
+    }
+
     setProfileImageFile(null);
     setProfileImagePreviewUrl(selectedFaculty.profileImageUrl);
     setSaveMessage(null);
     setSaveError(null);
-  }, [selectedFaculty]);
+  }, [selectedFaculty, degreePrograms, diplomaCourses]);
 
   useEffect(() => {
+    if (!selectedFaculty) return;
+
     if (!profileImageFile) {
       setProfileImagePreviewUrl(selectedFaculty.profileImageUrl);
       return;
@@ -63,7 +133,11 @@ export function EditFacultyModal({
     return () => {
       URL.revokeObjectURL(previewUrl);
     };
-  }, [profileImageFile, selectedFaculty.profileImageUrl]);
+  }, [profileImageFile, selectedFaculty]);
+
+  if (!selectedFaculty) {
+    return null;
+  }
 
   const createdDate = new Date(selectedFaculty.created_at);
   const formattedDate = createdDate.toLocaleDateString("en-US", {
@@ -89,6 +163,13 @@ export function EditFacultyModal({
       formData.append("firstName", firstName);
       formData.append("middleName", middleName);
       formData.append("lastName", lastName);
+      formData.append("first_name", firstName);
+      formData.append("middle_name", middleName);
+      formData.append("last_name", lastName);
+      if (programId) {
+        formData.append("programId", programId);
+        formData.append("program_id", programId);
+      }
 
       if (profileImageFile) {
         formData.append("profileImage", profileImageFile);
@@ -211,6 +292,40 @@ export function EditFacultyModal({
                   </label>
                 </div>
 
+                <div>
+                  <label className="block">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                      Department / Program
+                    </p>
+                    <select
+                      value={programId}
+                      onChange={(e) => setProgramId(e.target.value)}
+                      disabled={isLoadingPrograms}
+                      className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
+                    >
+                      <option value="">-- Select Program / Department --</option>
+                      {degreePrograms.length > 0 && (
+                        <optgroup label="Degree Programs">
+                          {degreePrograms.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.code} — {p.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {diplomaCourses.length > 0 && (
+                        <optgroup label="Diploma Courses">
+                          {diplomaCourses.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.code} — {p.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
+                  </label>
+                </div>
+
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                     Email
@@ -241,20 +356,6 @@ export function EditFacultyModal({
                     </p>
                     <p className="text-sm text-slate-200">{formattedDate}</p>
                   </div>
-                  <div className="sm:col-span-2 mt-1">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      Department / Program
-                    </p>
-                    {selectedFaculty.program ? (
-                      <span className="mt-1 inline-flex items-center rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-300">
-                        {selectedFaculty.program.code} — {selectedFaculty.program.name}
-                      </span>
-                    ) : (
-                      <span className="mt-1 inline-flex items-center rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-400">
-                        Unassigned
-                      </span>
-                    )}
-                  </div>
                 </div>
               </div>
 
@@ -264,7 +365,7 @@ export function EditFacultyModal({
                     Edit faculty details
                   </p>
                   <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    Change the name and profile picture for this faculty
+                    Change the name, department/program, and profile picture for this faculty
                     account.
                   </p>
                 </div>

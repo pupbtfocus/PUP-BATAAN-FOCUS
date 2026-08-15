@@ -22,3 +22,48 @@ export function buildFacultyInitials(fullName: string) {
 
   return initials.slice(0, 3) || "F";
 }
+
+/**
+ * Fallback parser for single full_name strings on legacy records where separate
+ * first_name, middle_name, and last_name database columns are not populated.
+ * Handles multi-word first names (e.g. "Christian Jay Cereza") without incorrectly
+ * pushing parts of the first name into the middle name field.
+ */
+export function parseFullNameFallback(fullName?: string | null): {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+} {
+  if (!fullName) {
+    return { firstName: "", middleName: "", lastName: "" };
+  }
+
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) {
+    return { firstName: "", middleName: "", lastName: "" };
+  }
+
+  if (parts.length === 1) {
+    return { firstName: parts[0], middleName: "", lastName: "" };
+  }
+
+  if (parts.length === 2) {
+    return { firstName: parts[0], middleName: "", lastName: parts[1] };
+  }
+
+  // 3 or more words (e.g., "Christian Jay Cereza" or "Mary Ann S. Dela Cruz")
+  const lastName = parts[parts.length - 1];
+  const penultimate = parts[parts.length - 2];
+
+  // If penultimate part is an explicit middle initial (e.g. "S.", "A", "C."):
+  if (parts.length >= 3 && (penultimate.length === 1 || penultimate.endsWith("."))) {
+    const firstName = parts.slice(0, -2).join(" ");
+    const middleName = penultimate.replace(/\.$/, "");
+    return { firstName, middleName, lastName };
+  }
+
+  // Default: treat all preceding words as multi-word first name (e.g. "Christian Jay" + "Cereza")
+  const firstName = parts.slice(0, -1).join(" ");
+  return { firstName, middleName: "", lastName };
+}

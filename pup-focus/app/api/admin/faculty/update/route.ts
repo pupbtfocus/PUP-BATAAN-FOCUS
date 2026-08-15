@@ -19,10 +19,25 @@ async function readRequestPayload(request: NextRequest) {
   if (contentType.includes("multipart/form-data")) {
     const formData = await request.formData();
     return {
-      facultyProfileId: trimOrEmpty(formData.get("facultyProfileId")),
-      firstName: trimOrEmpty(formData.get("firstName")),
-      middleName: trimOrEmpty(formData.get("middleName")),
-      lastName: trimOrEmpty(formData.get("lastName")),
+      facultyProfileId: trimOrEmpty(
+        formData.get("facultyProfileId") ||
+          formData.get("faculty_profile_id") ||
+          formData.get("id"),
+      ),
+      firstName: trimOrEmpty(
+        formData.get("firstName") || formData.get("first_name"),
+      ),
+      middleName: trimOrEmpty(
+        formData.get("middleName") || formData.get("middle_name"),
+      ),
+      lastName: trimOrEmpty(
+        formData.get("lastName") || formData.get("last_name"),
+      ),
+      programId: trimOrEmpty(
+        formData.get("programId") ||
+          formData.get("program_id") ||
+          formData.get("department_id"),
+      ),
       profileImage:
         formData.get("profileImage") instanceof File
           ? (formData.get("profileImage") as File)
@@ -30,18 +45,18 @@ async function readRequestPayload(request: NextRequest) {
     };
   }
 
-  const body = (await request.json()) as {
-    facultyProfileId?: string;
-    firstName?: string;
-    middleName?: string;
-    lastName?: string;
-  };
+  const body = (await request.json()) as Record<string, unknown>;
 
   return {
-    facultyProfileId: trimOrEmpty(body.facultyProfileId),
-    firstName: trimOrEmpty(body.firstName),
-    middleName: trimOrEmpty(body.middleName),
-    lastName: trimOrEmpty(body.lastName),
+    facultyProfileId: trimOrEmpty(
+      body.facultyProfileId || body.faculty_profile_id || body.id,
+    ),
+    firstName: trimOrEmpty(body.firstName || body.first_name),
+    middleName: trimOrEmpty(body.middleName || body.middle_name),
+    lastName: trimOrEmpty(body.lastName || body.last_name),
+    programId: trimOrEmpty(
+      body.programId || body.program_id || body.department_id,
+    ),
     profileImage: null,
   };
 }
@@ -64,8 +79,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { facultyProfileId, firstName, middleName, lastName, profileImage } =
-      await readRequestPayload(request);
+    const {
+      facultyProfileId,
+      firstName,
+      middleName,
+      lastName,
+      programId,
+      profileImage,
+    } = await readRequestPayload(request);
 
     if (!facultyProfileId) {
       return NextResponse.json(
@@ -99,7 +120,7 @@ export async function PATCH(request: NextRequest) {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, email, full_name")
+      .select("id, email, full_name, department_id")
       .eq("id", facultyProfileId)
       .maybeSingle();
 
@@ -124,12 +145,43 @@ export async function PATCH(request: NextRequest) {
       lastName,
     });
 
+    // Resolve programId if provided
+    let resolvedProgramId: string | null = null;
+    let resolvedProgramRecord: { id: string; code: string; name: string } | null =
+      null;
+    if (programId) {
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          programId,
+        );
+      if (isUuid) {
+        const { data } = await supabase
+          .from("programs")
+          .select("id, code, name")
+          .eq("id", programId)
+          .maybeSingle();
+        resolvedProgramRecord = data;
+      }
+      if (!resolvedProgramRecord) {
+        const { data } = await supabase
+          .from("programs")
+          .select("id, code, name")
+          .ilike("code", programId)
+          .maybeSingle();
+        resolvedProgramRecord = data;
+      }
+      if (resolvedProgramRecord) {
+        resolvedProgramId = resolvedProgramRecord.id;
+      }
+    }
+
     const updatedMetadata: Record<string, unknown> = {
       ...previousAppUserMetadata,
       first_name: firstName,
       middle_name: middleName || null,
       last_name: lastName,
       full_name: updatedFullName,
+      ...(resolvedProgramId ? { program_id: resolvedProgramId } : {}),
     };
 
     let uploadedProfileImagePath = trimOrEmpty(
@@ -178,9 +230,16 @@ export async function PATCH(request: NextRequest) {
       updatedMetadata.profile_image_path = uploadedProfileImagePath;
     }
 
+    const profileUpdatePayload: Record<string, unknown> = {
+      full_name: updatedFullName,
+    };
+    if (resolvedProgramId) {
+      profileUpdatePayload.department_id = resolvedProgramId;
+    }
+
     const { error: profileUpdateError } = await supabase
       .from("profiles")
-      .update({ full_name: updatedFullName })
+      .update(profileUpdatePayload)
       .eq("id", profile.id);
 
     if (profileUpdateError) {
@@ -188,6 +247,37 @@ export async function PATCH(request: NextRequest) {
         { error: profileUpdateError.message },
         { status: 400 },
       );
+    }
+
+    if (resolvedProgramId) {
+      try {
+        const { data: activeTerm } = await supabase
+          .from("academic_terms")
+          .select("academic_year, semester")
+          .eq("status", "Current")
+          .maybeSingle();
+
+        const academicYear = activeTerm?.academic_year || "2026-2027";
+        const term = activeTerm?.semester || "1st Semester";
+
+        await supabase.from("faculty_program_assignments").upsert(
+          {
+            faculty_profile_id: profile.id,
+            program_id: resolvedProgramId,
+            academic_year: academicYear,
+            term,
+          },
+          { onConflict: "faculty_profile_id,program_id,academic_year,term" },
+        );
+      } catch (assignErr) {
+        logger.error("faculty_update_program_assign_error", {
+          facultyProfileId,
+          error:
+            assignErr instanceof Error
+              ? assignErr.message
+              : String(assignErr),
+        });
+      }
     }
 
     const { error: appUsersUpdateError } = await supabase
@@ -229,6 +319,7 @@ export async function PATCH(request: NextRequest) {
             last_name: lastName,
             full_name: updatedFullName,
             role: ROLE.FACULTY,
+            ...(resolvedProgramId ? { program_id: resolvedProgramId } : {}),
           },
         });
 
