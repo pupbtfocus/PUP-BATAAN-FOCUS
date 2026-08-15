@@ -64,6 +64,22 @@ function AuthConfirmContent() {
         (hashParams.get("type") as string | null) ||
         "invite";
 
+      // Force sign-out any existing active session (e.g. Superadmin) BEFORE code exchange, OTP verification, or setting session
+      // to avoid session collision and ensure the invite setup belongs purely to the invited account.
+      if (
+        verificationType === "invite" ||
+        code ||
+        tokenHash ||
+        token ||
+        (accessToken && refreshToken)
+      ) {
+        try {
+          await supabase.auth.signOut();
+        } catch {
+          // Ignore signOut errors if no active session
+        }
+      }
+
       if (accessToken && refreshToken) {
         const { error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,

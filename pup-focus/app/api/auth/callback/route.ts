@@ -3,25 +3,67 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { bootstrapInvitedAdminAccount } from "@/lib/auth/bootstrap-invited-admin";
 import { bootstrapInvitedFacultyAccount } from "@/lib/auth/bootstrap-invited-faculty";
+import type { EmailOtpType } from "@supabase/supabase-js";
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.clone();
   const code = url.searchParams.get("code");
+  const tokenHash = url.searchParams.get("token_hash");
+  const type = url.searchParams.get("type") as EmailOtpType | null;
   const next = url.searchParams.get("next") ?? "/";
+  const error = url.searchParams.get("error");
+  const errorDescription = url.searchParams.get("error_description");
 
-  if (!code) {
+  if (error) {
+    return NextResponse.redirect(
+      new URL(
+        `/sign-in?error=${encodeURIComponent(errorDescription || error)}`,
+        request.url,
+      ),
+    );
+  }
+
+  if (!code && !tokenHash) {
     return NextResponse.redirect(
       new URL("/sign-in?error=missing_code", request.url),
     );
   }
 
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error) {
+  // Force sign-out any existing active session (e.g. Superadmin) BEFORE code exchange or OTP verification
+  // if this is an invite flow or if exchanging an auth code, preventing session collision.
+  const isInviteOrAuthAction = type === "invite" || Boolean(code) || Boolean(tokenHash);
+  if (isInviteOrAuthAction) {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore signOut failure if no active session
+    }
+  }
+
+  let authErrorMessage: string | null = null;
+
+  if (code) {
+    const { error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code);
+    if (exchangeError) {
+      authErrorMessage = exchangeError.message;
+    }
+  } else if (tokenHash && type) {
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type,
+    });
+    if (verifyError) {
+      authErrorMessage = verifyError.message;
+    }
+  }
+
+  if (authErrorMessage) {
     return NextResponse.redirect(
       new URL(
-        `/sign-in?error=${encodeURIComponent(error.message)}`,
+        `/sign-in?error=${encodeURIComponent(authErrorMessage)}`,
         request.url,
       ),
     );
@@ -65,7 +107,7 @@ export async function GET(request: NextRequest) {
             `/sign-in?error=${encodeURIComponent(
               bootstrapError instanceof Error
                 ? bootstrapError.message
-                : "Failed to complete invited admin setup",
+                : "Failed to complete invited account setup",
             )}`,
             request.url,
           ),

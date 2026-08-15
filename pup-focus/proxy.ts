@@ -113,11 +113,29 @@ export async function proxy(request: NextRequest) {
   const roleDashboard = userRole ? ROUTE_BY_ROLE[userRole] : "/";
 
   // 3. Public Route Handling: If authenticated user visits `/` or `/sign-in` (or auth sign-in pages),
-  // automatically redirect them to their designated role dashboard.
+  // automatically redirect them to their designated role dashboard, UNLESS they are accessing
+  // an auth callback or confirmation flow (e.g. invite links, token verification).
+  const isAuthCallbackOrConfirm =
+    pathname === "/auth/confirm" ||
+    pathname === "/auth/callback" ||
+    pathname.startsWith("/api/auth/callback");
+
+  const hasInviteOrAuthParams =
+    request.nextUrl.searchParams.has("code") ||
+    request.nextUrl.searchParams.has("token_hash") ||
+    request.nextUrl.searchParams.has("token") ||
+    request.nextUrl.searchParams.get("type") === "invite" ||
+    request.nextUrl.searchParams.has("error") ||
+    request.nextUrl.searchParams.has("access_token");
+
   const isAuthOrLandingPage =
-    pathname === "/" ||
-    pathname === "/sign-in" ||
-    AUTH_ROUTES.some((route) => pathname === route);
+    !isAuthCallbackOrConfirm &&
+    !hasInviteOrAuthParams &&
+    (pathname === "/" ||
+      pathname === "/sign-in" ||
+      AUTH_ROUTES.some(
+        (route) => pathname === route && route !== "/auth/confirm",
+      ));
 
   if (user) {
     const mustChangePassword =
@@ -127,7 +145,13 @@ export async function proxy(request: NextRequest) {
     const isChangePasswordPage =
       pathname === "/auth/change-password" || pathname === "/change-password";
 
-    if (mustChangePassword && !isChangePasswordPage && !pathname.startsWith("/api")) {
+    if (
+      mustChangePassword &&
+      !isChangePasswordPage &&
+      !isAuthCallbackOrConfirm &&
+      !hasInviteOrAuthParams &&
+      !pathname.startsWith("/api")
+    ) {
       return createRedirectResponse(
         request,
         "/auth/change-password",
