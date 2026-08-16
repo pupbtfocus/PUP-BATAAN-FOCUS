@@ -22,10 +22,21 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
+export interface AdminSettingsInitialData {
+  fullName?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+  autoEmailReminders?: boolean;
+  newSubmissionAlerts?: boolean;
+  sessionTimeout?: string;
+  userId?: string | null;
+}
+
 export interface AdminSettingsProps {
   adminName?: string | null;
   adminEmail?: string | null;
   profileImageUrl?: string | null;
+  initialData?: AdminSettingsInitialData | null;
   onProfileImageChange?: (file: File | null) => void;
 }
 
@@ -143,21 +154,28 @@ export function AdminSettings({
   adminName,
   adminEmail,
   profileImageUrl,
+  initialData,
   onProfileImageChange,
 }: AdminSettingsProps) {
   // ---------------------------------------------------------------------------
-  // Profile Information State
+  // Profile Information State (Hydrated from initialData)
   // ---------------------------------------------------------------------------
-  const [fullName, setFullName] = useState<string>(adminName ?? "Admin User");
-  const [userEmail, setUserEmail] = useState<string>(adminEmail ?? "");
-  const [userId, setUserId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string>(
+    initialData?.fullName || adminName || "Admin User"
+  );
+  const [userEmail, setUserEmail] = useState<string>(
+    initialData?.email || adminEmail || ""
+  );
+  const [userId, setUserId] = useState<string | null>(
+    initialData?.userId || null
+  );
 
   // ---------------------------------------------------------------------------
   // Avatar State & Instant Preview
   // ---------------------------------------------------------------------------
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(
-    profileImageUrl ?? null
+    initialData?.avatarUrl || profileImageUrl || null
   );
   const [hasImageError, setHasImageError] = useState<boolean>(false);
   const [isAvatarRemoved, setIsAvatarRemoved] = useState<boolean>(false);
@@ -177,15 +195,21 @@ export function AdminSettings({
   }, [avatarFile]);
 
   // ---------------------------------------------------------------------------
-  // System & Notification Preferences
+  // System & Notification Preferences (Hydrated from initialData)
   // ---------------------------------------------------------------------------
-  const [emailReminders, setEmailReminders] = useState<boolean>(true);
-  const [submissionAlerts, setSubmissionAlerts] = useState<boolean>(true);
+  const [emailReminders, setEmailReminders] = useState<boolean>(
+    initialData?.autoEmailReminders ?? true
+  );
+  const [submissionAlerts, setSubmissionAlerts] = useState<boolean>(
+    initialData?.newSubmissionAlerts ?? true
+  );
 
   // ---------------------------------------------------------------------------
-  // Security & Session Controls
+  // Security & Session Controls (Hydrated from initialData)
   // ---------------------------------------------------------------------------
-  const [sessionTimeout, setSessionTimeout] = useState<string>("1 hour");
+  const [sessionTimeout, setSessionTimeout] = useState<string>(
+    initialData?.sessionTimeout || "60"
+  );
 
   // ---------------------------------------------------------------------------
   // Password Change Modal State
@@ -205,7 +229,9 @@ export function AdminSettings({
   // Save & Toast Feedback State
   // ---------------------------------------------------------------------------
   const [isSavingSettings, setIsSavingSettings] = useState<boolean>(false);
-  const [isLoadingProfile, setIsLoadingProfile] = useState<boolean>(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState<boolean>(
+    !initialData
+  );
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
   const addToast = (type: "success" | "error" | "info", message: string) => {
@@ -220,6 +246,18 @@ export function AdminSettings({
 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Helper to normalize timeout minutes
+  const normalizeTimeoutVal = (raw: any): string => {
+    if (raw === undefined || raw === null) return "60";
+    const str = String(raw).trim();
+    if (str === "15" || str === "15 mins") return "15";
+    if (str === "30" || str === "30 mins") return "30";
+    if (str === "60" || str === "1 hour") return "60";
+    if (str === "120" || str === "2 hours") return "120";
+    if (str === "0" || str === "Never") return "0";
+    return !isNaN(parseInt(str, 10)) ? str : "60";
   };
 
   // ---------------------------------------------------------------------------
@@ -246,14 +284,19 @@ export function AdminSettings({
                 setHasImageError(false);
                 setIsAvatarRemoved(false);
               }
-              if (typeof data.email_reminders === "boolean") {
+              if (typeof data.auto_email_reminders === "boolean") {
+                setEmailReminders(data.auto_email_reminders);
+              } else if (typeof data.email_reminders === "boolean") {
                 setEmailReminders(data.email_reminders);
               }
-              if (typeof data.submission_alerts === "boolean") {
+              if (typeof data.new_submission_alerts === "boolean") {
+                setSubmissionAlerts(data.new_submission_alerts);
+              } else if (typeof data.submission_alerts === "boolean") {
                 setSubmissionAlerts(data.submission_alerts);
               }
-              if (typeof data.session_timeout === "string") {
-                setSessionTimeout(data.session_timeout);
+              const timeout = data.session_timeout_minutes ?? data.session_timeout;
+              if (timeout !== undefined) {
+                setSessionTimeout(normalizeTimeoutVal(timeout));
               }
               console.log("[AdminSettings Avatar Debug from /api/admin/profile]", data);
               return;
@@ -300,14 +343,19 @@ export function AdminSettings({
 
         setUserEmail(userEmail);
         setFullName(userFullName);
-        if (typeof metadata.email_reminders === "boolean") {
+        if (typeof metadata.auto_email_reminders === "boolean") {
+          setEmailReminders(metadata.auto_email_reminders);
+        } else if (typeof metadata.email_reminders === "boolean") {
           setEmailReminders(metadata.email_reminders);
         }
-        if (typeof metadata.submission_alerts === "boolean") {
+        if (typeof metadata.new_submission_alerts === "boolean") {
+          setSubmissionAlerts(metadata.new_submission_alerts);
+        } else if (typeof metadata.submission_alerts === "boolean") {
           setSubmissionAlerts(metadata.submission_alerts);
         }
-        if (typeof metadata.session_timeout === "string") {
-          setSessionTimeout(metadata.session_timeout);
+        const timeout = metadata.session_timeout_minutes ?? metadata.session_timeout;
+        if (timeout !== undefined) {
+          setSessionTimeout(normalizeTimeoutVal(timeout));
         }
 
         const rawAvatar: string | null =
@@ -480,12 +528,18 @@ export function AdminSettings({
       const metadataPayload: Record<string, any> = {
         full_name: fullName.trim() || adminName || "Admin User",
         avatar_url: updatedAvatarUrl,
+        auto_email_reminders: emailReminders,
+        new_submission_alerts: submissionAlerts,
         email_reminders: emailReminders,
         submission_alerts: submissionAlerts,
+        session_timeout_minutes: sessionTimeout,
         session_timeout: sessionTimeout,
         system_settings: {
+          auto_email_reminders: emailReminders,
+          new_submission_alerts: submissionAlerts,
           email_reminders: emailReminders,
           submission_alerts: submissionAlerts,
+          session_timeout_minutes: sessionTimeout,
           session_timeout: sessionTimeout,
           updated_at: new Date().toISOString(),
         },
@@ -982,11 +1036,11 @@ export function AdminSettings({
                   onChange={(e) => setSessionTimeout(e.target.value)}
                   className="w-full sm:w-48 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-medium text-slate-200 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer transition"
                 >
-                  <option value="15 mins">15 minutes</option>
-                  <option value="30 mins">30 minutes</option>
-                  <option value="1 hour">1 hour (Recommended)</option>
-                  <option value="2 hours">2 hours</option>
-                  <option value="Never">Never (Persistent Session)</option>
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="60">1 hour (Recommended)</option>
+                  <option value="120">2 hours</option>
+                  <option value="0">Never (Persistent Session)</option>
                 </select>
               </div>
             </div>

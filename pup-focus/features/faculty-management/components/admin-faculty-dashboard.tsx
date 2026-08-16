@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
 import { Menu, X } from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
+import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { AdminSettings } from "@/features/admin-management/components/admin-settings";
@@ -36,22 +38,111 @@ const LOGIN_PAGE_IMAGES = [
   "/images/attachments/IMG_9402.jpeg",
 ];
 
-
+function normalizeAdminSection(raw?: string | null): AdminSection | null {
+  if (!raw) return null;
+  const val = raw.toLowerCase().trim();
+  if (val === "dashboard") return "dashboard";
+  if (
+    val === "facultymanagement" ||
+    val === "faculty-management" ||
+    val === "faculty"
+  )
+    return "facultyManagement";
+  if (
+    val === "requirements" ||
+    val === "requirements-verification"
+  )
+    return "requirements";
+  if (
+    val === "submissionwindow" ||
+    val === "submission-window"
+  )
+    return "submissionWindow";
+  if (
+    val === "academicterms" ||
+    val === "academic-terms"
+  )
+    return "academicTerms";
+  if (
+    val === "settings" ||
+    val === "admin-settings"
+  )
+    return "settings";
+  if (val === "details") return "details";
+  return null;
+}
 
 export function AdminFacultyDashboard({
   adminName,
   adminEmail,
+  initialTab,
 }: {
   adminName?: string | null;
   adminEmail?: string | null;
+  initialTab?: string | null;
 }) {
+  const searchParams = useSearchParams();
+
+  // Initialize active tab from SSR-safe parameters (identical on server and client)
+  const [activeSection, setActiveSection] = useState<AdminSection>(() => {
+    const fromProp = normalizeAdminSection(initialTab);
+    if (fromProp) return fromProp;
+
+    const tabParam = searchParams?.get("tab") || searchParams?.get("section");
+    const fromParams = normalizeAdminSection(tabParam);
+    if (fromParams) return fromParams;
+
+    return "facultyManagement";
+  });
+
   const [facultyAccounts, setFacultyAccounts] = useState<FacultyAccount[]>([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     null,
   );
-  const [activeSection, setActiveSection] =
-    useState<AdminSection>("facultyManagement");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Restore stored tab if no URL param was provided, then mark mounted
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab") || searchParams?.get("section");
+    if (!tabParam) {
+      try {
+        const stored =
+          localStorage.getItem("activeAdminTab") ||
+          localStorage.getItem("activeAdminSection");
+        const fromStorage = normalizeAdminSection(stored);
+        if (fromStorage && fromStorage !== activeSection) {
+          setActiveSection(fromStorage);
+          const url = new URL(window.location.href);
+          url.searchParams.set("tab", fromStorage);
+          window.history.replaceState(null, "", url.toString());
+        }
+      } catch {}
+    }
+    setIsMounted(true);
+  }, []);
+
+  // Sync tab state when URL changes externally (e.g. browser back/forward buttons)
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab") || searchParams?.get("section");
+    const normalizedParam = normalizeAdminSection(tabParam);
+    if (normalizedParam && normalizedParam !== activeSection) {
+      setActiveSection(normalizedParam);
+    }
+  }, [searchParams, activeSection]);
+
+  const handleSetActiveSection = (section: AdminSection) => {
+    setActiveSection(section);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("activeAdminTab", section);
+        localStorage.setItem("activeAdminSection", section);
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", section);
+        window.history.replaceState(null, "", url.toString());
+      } catch {}
+    }
+  };
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
@@ -403,6 +494,10 @@ export function AdminFacultyDashboard({
     }
   }
 
+  if (!isMounted) {
+    return <SystemLoadingScreen />;
+  }
+
   return (
     <div className="flex flex-col h-screen w-full bg-[#090d16] text-slate-100 overflow-hidden font-sans">
       {/* Consolidated Top Header (All Views) */}
@@ -439,7 +534,7 @@ export function AdminFacultyDashboard({
         <aside className="hidden md:flex w-56 flex-col bg-[#0d121f] border-r border-slate-800/80 shrink-0 p-2.5">
           <SidebarContent
             activeSection={activeSection}
-            setActiveSection={setActiveSection}
+            setActiveSection={handleSetActiveSection}
             adminName={adminName}
             profileImageUrl={adminAvatarUrl}
           />
@@ -466,7 +561,7 @@ export function AdminFacultyDashboard({
               </div>
               <SidebarContent
                 activeSection={activeSection}
-                setActiveSection={setActiveSection}
+                setActiveSection={handleSetActiveSection}
                 adminName={adminName}
                 profileImageUrl={adminAvatarUrl}
                 onNavigate={() => setIsMobileMenuOpen(false)}
@@ -479,163 +574,163 @@ export function AdminFacultyDashboard({
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#090d16]">
           <div className="max-w-7xl mx-auto w-full">
             {activeSection === "dashboard" ? (
-            <article className="space-y-6">
-              <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur">
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <BrandMark size={90} className="rounded-full" />
-                  <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-                    Polytechnic University of the Philippines - Bataan Campus
-                  </p>
-                  <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#fff8e7]">
-                    PUP FOCUS Dashboard
-                  </h3>
-                </div>
-              </div>
-            </article>
-          ) : null}
-
-            {activeSection === "facultyManagement" ? (
-              <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
-                  <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
-                      Faculty Management
-                    </h1>
+              <article className="space-y-6">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur">
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <BrandMark size={90} className="rounded-full" />
+                    <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+                      Polytechnic University of the Philippines - Bataan Campus
+                    </p>
+                    <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#fff8e7]">
+                      PUP FOCUS Dashboard
+                    </h3>
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCreateError(null);
-                        setCreateSuccess(null);
-                        setAddFacultyModalOpen(true);
+                </div>
+              </article>
+            ) : null}
+
+                {activeSection === "facultyManagement" ? (
+                  <article className="space-y-4 p-2 sm:p-4 md:p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
+                      <div>
+                        <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+                          Faculty Management
+                        </h1>
+                      </div>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCreateError(null);
+                            setCreateSuccess(null);
+                            setAddFacultyModalOpen(true);
+                          }}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-lg bg-amber-400 hover:bg-amber-300 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-950 transition"
+                        >
+                          + Add Faculty
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void refreshCurrentPanel()}
+                          disabled={isLoading}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+                        >
+                          {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <FacultyTable
+                      facultyAccounts={facultyAccounts}
+                      isLoading={isLoading}
+                      onSelectFaculty={setSelectedFacultyId}
+                      onDeleteFaculty={onDeleteFaculty}
+                      onViewDetails={(facultyId) => {
+                        setDetailsFacultyId(facultyId);
+                        setDetailsModalOpen(true);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-lg bg-amber-400 hover:bg-amber-300 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-950 transition"
-                    >
-                      + Add Faculty
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void refreshCurrentPanel()}
-                      disabled={isLoading}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
-                    >
-                      {isLoading ? "Refreshing..." : "⟳ Refresh"}
-                    </button>
-                  </div>
-                </div>
+                      onActivate={onActivateFaculty}
+                      onDeactivate={onDeactivateFaculty}
+                      loadingFacultyIds={loadingFacultyIds}
+                      deletingFacultyIds={deletingFacultyIds}
+                      deleteError={deleteError}
+                      deleteSuccess={deleteSuccess}
+                      facultyActionError={facultyActionError}
+                      onClearDeleteMessages={() => {
+                        setDeleteError(null);
+                        setDeleteSuccess(null);
+                        setFacultyActionError(null);
+                      }}
+                    />
+                  </article>
+                ) : null}
 
-                <FacultyTable
-                  facultyAccounts={facultyAccounts}
-                  isLoading={isLoading}
-                  onSelectFaculty={setSelectedFacultyId}
-                  onDeleteFaculty={onDeleteFaculty}
-                  onViewDetails={(facultyId) => {
-                    setDetailsFacultyId(facultyId);
-                    setDetailsModalOpen(true);
-                  }}
-                  onActivate={onActivateFaculty}
-                  onDeactivate={onDeactivateFaculty}
-                  loadingFacultyIds={loadingFacultyIds}
-                  deletingFacultyIds={deletingFacultyIds}
-                  deleteError={deleteError}
-                  deleteSuccess={deleteSuccess}
-                  facultyActionError={facultyActionError}
-                  onClearDeleteMessages={() => {
-                    setDeleteError(null);
-                    setDeleteSuccess(null);
-                    setFacultyActionError(null);
-                  }}
-                />
-              </article>
-            ) : null}
+                {activeSection === "requirements" ? (
+                  <article className="p-4 md:p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                          Requirements Verification
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void refreshCurrentPanel()}
+                        disabled={isLoading}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+                      >
+                        {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                      </button>
+                    </div>
 
-            {activeSection === "requirements" ? (
-              <article className="p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-100 tracking-tight">
-                      Requirements Verification
-                    </h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void refreshCurrentPanel()}
-                    disabled={isLoading}
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
-                  >
-                    {isLoading ? "Refreshing..." : "⟳ Refresh"}
-                  </button>
-                </div>
+                    <RequirementsPanel
+                      facultyAccounts={facultyAccounts}
+                      selectedFaculty={selectedFaculty}
+                      onSelectFaculty={setSelectedFacultyId}
+                      resetTrigger={verificationResetTrigger}
+                    />
+                  </article>
+                ) : null}
 
-                <RequirementsPanel
-                  facultyAccounts={facultyAccounts}
-                  selectedFaculty={selectedFaculty}
-                  onSelectFaculty={setSelectedFacultyId}
-                  resetTrigger={verificationResetTrigger}
-                />
-              </article>
-            ) : null}
+                {activeSection === "submissionWindow" ? (
+                  <article className="p-4 md:p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                          Submission Window
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void refreshCurrentPanel()}
+                        disabled={isLoading}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+                      >
+                        {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                      </button>
+                    </div>
 
-            {activeSection === "submissionWindow" ? (
-              <article className="p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-100 tracking-tight">
-                      Submission Window
-                    </h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void refreshCurrentPanel()}
-                    disabled={isLoading}
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
-                  >
-                    {isLoading ? "Refreshing..." : "⟳ Refresh"}
-                  </button>
-                </div>
+                    <SubmissionWindowPanel
+                      onWindowChange={() =>
+                        setVerificationResetTrigger((prev) => prev + 1)
+                      }
+                    />
+                  </article>
+                ) : null}
 
-                <SubmissionWindowPanel
-                  onWindowChange={() =>
-                    setVerificationResetTrigger((prev) => prev + 1)
-                  }
-                />
-              </article>
-            ) : null}
+                {activeSection === "academicTerms" ? (
+                  <article className="p-4 md:p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                          Academic Term Management
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void refreshCurrentPanel()}
+                        disabled={isLoading}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+                      >
+                        {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                      </button>
+                    </div>
 
-            {activeSection === "academicTerms" ? (
-              <article className="p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-100 tracking-tight">
-                      Academic Term Management
-                    </h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void refreshCurrentPanel()}
-                    disabled={isLoading}
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
-                  >
-                    {isLoading ? "Refreshing..." : "⟳ Refresh"}
-                  </button>
-                </div>
+                    <section className="rounded-xl border border-slate-800/80 bg-slate-900/50 backdrop-blur-md p-4 shadow-lg">
+                      <AdminAcademicTerms adminName={adminName ?? "Admin"} />
+                    </section>
+                  </article>
+                ) : null}
 
-                <section className="rounded-xl border border-slate-800/80 bg-slate-900/50 backdrop-blur-md p-4 shadow-lg">
-                  <AdminAcademicTerms adminName={adminName ?? "Admin"} />
-                </section>
-              </article>
-            ) : null}
-
-            {activeSection === "settings" ? (
-              <article className="p-4 md:p-5">
-                <AdminSettings
-                  adminName={adminName ?? "Admin"}
-                  adminEmail={adminEmail ?? null}
-                  profileImageUrl={adminAvatarUrl}
-                />
-              </article>
-            ) : null}
+                {activeSection === "settings" ? (
+                  <article className="p-4 md:p-5">
+                    <AdminSettings
+                      adminName={adminName ?? "Admin"}
+                      adminEmail={adminEmail ?? null}
+                      profileImageUrl={adminAvatarUrl}
+                    />
+                  </article>
+                ) : null}
           </div>
         </main>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { FormEvent, useEffect, useMemo, useState } from "react";
+import React, { FormEvent, useEffect, useMemo, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
 import { Menu, X } from "lucide-react";
+import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 
 const DASHBOARD_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
@@ -30,17 +32,24 @@ interface AdminAccount {
     firstName?: string | null;
     middleName?: string | null;
     lastName?: string | null;
+    avatar_url?: string | null;
+    picture?: string | null;
     fullName?: string | null;
   } | null;
   role: AppRole;
   is_active: boolean;
   department?: string | null;
   permissions?: string[];
+  created_at: string;
 }
 
 interface AdminDetails {
+  id?: string;
   profile_id: string;
   full_name?: string | null;
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
   email?: string | null;
   role?: AppRole | null;
   is_active?: boolean;
@@ -69,6 +78,11 @@ type CreateAdminResult = {
   user?: { email?: string; fullName?: string } | null;
 };
 
+interface UserProgram {
+  id: string;
+  program_id: string;
+}
+
 function getInitials(name?: string | null, fallback = "SA"): string {
   if (!name || !name.trim()) return fallback;
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -89,11 +103,65 @@ function buildAdminFullName(input: {
     .join(" ");
 }
 
+function formatAdminName(admin: AdminAccount): string {
+  const profile = admin.profile;
+  const firstName = profile?.firstName?.trim() || "";
+  const middleName = profile?.middleName?.trim() || "";
+  const lastName = profile?.lastName?.trim() || "";
+
+  if (firstName || lastName) {
+    const middleInitial = middleName ? `${middleName[0]}.` : "";
+    return [firstName, middleInitial, lastName].filter(Boolean).join(" ");
+  }
+
+  if (admin.full_name?.trim()) {
+    return admin.full_name.trim();
+  }
+
+  const parts = (admin.email || "").split("@")[0].split(/[._-]/);
+  return parts
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function normalizeSuperAdminSection(
+  raw?: string | null
+): "dashboard" | "accounts" | "settings" | "auditLogs" | null {
+  if (!raw) return null;
+  const val = raw.toLowerCase().trim();
+  if (val === "dashboard") return "dashboard";
+  if (val === "accounts" || val === "admin-accounts" || val === "admins") return "accounts";
+  if (val === "settings" || val === "super-admin-settings") return "settings";
+  if (val === "auditlogs" || val === "audit-logs" || val === "logs") return "auditLogs";
+  return null;
+}
+
 export function SuperAdminDashboard({
   adminName,
+  adminEmail,
+  initialTab,
 }: {
   adminName?: string | null;
+  adminEmail?: string | null;
+  initialTab?: string | null;
 }) {
+  const searchParams = useSearchParams();
+
+  // Initialize active tab from SSR-safe parameters (identical on server and client)
+  const [activeSection, setActiveSection] = useState<
+    "dashboard" | "accounts" | "settings" | "auditLogs"
+  >(() => {
+    const fromProp = normalizeSuperAdminSection(initialTab);
+    if (fromProp) return fromProp;
+
+    const tabParam = searchParams?.get("tab") || searchParams?.get("section");
+    const fromParams = normalizeSuperAdminSection(tabParam);
+    if (fromParams) return fromParams;
+
+    return "dashboard";
+  });
+
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
   const [superAdminAvatarUrl, setSuperAdminAvatarUrl] = useState<string | null>(
     null
@@ -135,10 +203,52 @@ export function SuperAdminDashboard({
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
-  const [activeSection, setActiveSection] = useState<
-    "dashboard" | "accounts" | "settings" | "auditLogs"
-  >("dashboard");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Restore stored tab if no URL param was provided, then mark mounted
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab") || searchParams?.get("section");
+    if (!tabParam) {
+      try {
+        const stored =
+          localStorage.getItem("activeSuperAdminTab") ||
+          localStorage.getItem("activeSuperAdminSection");
+        const fromStorage = normalizeSuperAdminSection(stored);
+        if (fromStorage && fromStorage !== activeSection) {
+          setActiveSection(fromStorage);
+          const url = new URL(window.location.href);
+          url.searchParams.set("tab", fromStorage);
+          window.history.replaceState(null, "", url.toString());
+        }
+      } catch {}
+    }
+    setIsMounted(true);
+  }, []);
+
+  // Sync tab state when URL changes externally (e.g. browser back/forward buttons)
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab") || searchParams?.get("section");
+    const normalizedParam = normalizeSuperAdminSection(tabParam);
+    if (normalizedParam && normalizedParam !== activeSection) {
+      setActiveSection(normalizedParam);
+    }
+  }, [searchParams, activeSection]);
+
+  const handleSetActiveSection = (
+    section: "dashboard" | "accounts" | "settings" | "auditLogs"
+  ) => {
+    setActiveSection(section);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("activeSuperAdminTab", section);
+        localStorage.setItem("activeSuperAdminSection", section);
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", section);
+        window.history.replaceState(null, "", url.toString());
+      } catch {}
+    }
+  };
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -874,6 +984,10 @@ export function SuperAdminDashboard({
     ));
   }
 
+  if (!isMounted) {
+    return <SystemLoadingScreen />;
+  }
+
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
       {/* Mobile Menu Button (visible only on small screens when drawer is closed) */}
@@ -925,22 +1039,22 @@ export function SuperAdminDashboard({
           <SidebarButton
             active={activeSection === "dashboard"}
             title="Dashboard"
-            onClick={() => setActiveSection("dashboard")}
+            onClick={() => handleSetActiveSection("dashboard")}
           />
           <SidebarButton
             active={activeSection === "accounts"}
             title="Admin Accounts"
-            onClick={() => setActiveSection("accounts")}
+            onClick={() => handleSetActiveSection("accounts")}
           />
           <SidebarButton
             active={activeSection === "settings"}
             title="Settings"
-            onClick={() => setActiveSection("settings")}
+            onClick={() => handleSetActiveSection("settings")}
           />
           <SidebarButton
             active={activeSection === "auditLogs"}
             title="Audit Logs"
-            onClick={() => setActiveSection("auditLogs")}
+            onClick={() => handleSetActiveSection("auditLogs")}
           />
         </nav>
       </aside>
@@ -1000,22 +1114,22 @@ export function SuperAdminDashboard({
               <SidebarButton
                 active={activeSection === "dashboard"}
                 title="Dashboard"
-                onClick={() => { setActiveSection("dashboard"); setIsMobileMenuOpen(false); }}
+                onClick={() => { handleSetActiveSection("dashboard"); setIsMobileMenuOpen(false); }}
               />
               <SidebarButton
                 active={activeSection === "accounts"}
                 title="Admin Accounts"
-                onClick={() => { setActiveSection("accounts"); setIsMobileMenuOpen(false); }}
+                onClick={() => { handleSetActiveSection("accounts"); setIsMobileMenuOpen(false); }}
               />
               <SidebarButton
                 active={activeSection === "settings"}
                 title="Settings"
-                onClick={() => { setActiveSection("settings"); setIsMobileMenuOpen(false); }}
+                onClick={() => { handleSetActiveSection("settings"); setIsMobileMenuOpen(false); }}
               />
               <SidebarButton
                 active={activeSection === "auditLogs"}
                 title="Audit Logs"
-                onClick={() => { setActiveSection("auditLogs"); setIsMobileMenuOpen(false); }}
+                onClick={() => { handleSetActiveSection("auditLogs"); setIsMobileMenuOpen(false); }}
               />
             </nav>
           </aside>

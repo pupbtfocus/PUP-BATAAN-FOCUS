@@ -605,6 +605,26 @@ export async function POST(request: NextRequest) {
         for (const reviewerAuthUserId of uniqueAuthUserIds) {
           if (reviewerAuthUserId === user.id) continue;
 
+          // Check if the administrator/reviewer has enabled new submission alerts (default to true if undefined)
+          try {
+            const { data: authUserData } = await supabase.auth.admin.getUserById(
+              reviewerAuthUserId
+            );
+            const userMeta = authUserData?.user?.user_metadata || {};
+            const isAlertEnabled =
+              typeof userMeta.new_submission_alerts === "boolean"
+                ? userMeta.new_submission_alerts
+                : typeof userMeta.submission_alerts === "boolean"
+                ? userMeta.submission_alerts
+                : true;
+
+            if (!isAlertEnabled) {
+              continue;
+            }
+          } catch (prefErr) {
+            // Default to sending notification if preference check fails
+          }
+
           await createNotification({
             userId: reviewerAuthUserId,
             type: "submission_uploaded",

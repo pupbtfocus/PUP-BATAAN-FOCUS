@@ -4,6 +4,12 @@ import { useState, type FormEvent } from "react";
 import Lottie from "lottie-react";
 import { Button } from "@/components/ui/button";
 import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
+import { Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+
+export interface NoticeBanner {
+  type: "timeout" | "error" | "success" | "info";
+  message: string;
+}
 
 interface LoginFormProps {
   email: string;
@@ -14,7 +20,8 @@ interface LoginFormProps {
   onOpenForgotPassword: () => void;
   isSubmitting: boolean;
   isPending?: boolean;
-  error: string | null;
+  error?: string | null;
+  notice?: NoticeBanner | null;
   publicEnvConfigured: boolean;
 }
 
@@ -28,6 +35,7 @@ export function LoginForm({
   isSubmitting,
   isPending,
   error,
+  notice,
   publicEnvConfigured,
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
@@ -45,6 +53,33 @@ export function LoginForm({
       ) : null}
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+        {/* Universal Alert Banner */}
+        {notice ? (
+          <div
+            className={`rounded-xl p-3.5 text-xs flex items-start gap-2.5 border transition-all ${
+              notice.type === "timeout"
+                ? "bg-amber-500/15 border-amber-400/30 text-amber-200"
+                : notice.type === "success"
+                ? "bg-emerald-500/15 border-emerald-400/30 text-emerald-200"
+                : "bg-rose-500/15 border-rose-500/30 text-rose-200"
+            }`}
+          >
+            {notice.type === "timeout" ? (
+              <Clock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+            ) : notice.type === "success" ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+            )}
+            <span className="leading-relaxed font-medium">{notice.message}</span>
+          </div>
+        ) : error ? (
+          <div className="rounded-xl p-3.5 text-xs flex items-start gap-2.5 border bg-rose-500/15 border-rose-500/30 text-rose-200 transition-all">
+            <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+            <span className="leading-relaxed font-medium">{error}</span>
+          </div>
+        ) : null}
+
         <div className="space-y-1.5">
           <label
             className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/65"
@@ -207,8 +242,6 @@ export function LoginForm({
             </p>
           )}
         </div>
-
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
         <Button
           className="mt-6 h-13 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-black text-[#3d0000] tracking-widest uppercase text-sm sm:text-base transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-lg"

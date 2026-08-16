@@ -168,24 +168,49 @@ export async function GET() {
       rawAvatarUrl
     );
 
+    const autoEmailReminders =
+      typeof metadata.auto_email_reminders === "boolean"
+        ? metadata.auto_email_reminders
+        : typeof metadata.email_reminders === "boolean"
+        ? metadata.email_reminders
+        : true;
+
+    const newSubmissionAlerts =
+      typeof metadata.new_submission_alerts === "boolean"
+        ? metadata.new_submission_alerts
+        : typeof metadata.submission_alerts === "boolean"
+        ? metadata.submission_alerts
+        : true;
+
+    const rawTimeout =
+      metadata.session_timeout_minutes ?? metadata.session_timeout;
+    let sessionTimeoutMinutes = "60";
+    if (typeof rawTimeout === "number" || (typeof rawTimeout === "string" && !isNaN(Number(rawTimeout)))) {
+      sessionTimeoutMinutes = String(rawTimeout);
+    } else if (rawTimeout === "15 mins") {
+      sessionTimeoutMinutes = "15";
+    } else if (rawTimeout === "30 mins") {
+      sessionTimeoutMinutes = "30";
+    } else if (rawTimeout === "1 hour") {
+      sessionTimeoutMinutes = "60";
+    } else if (rawTimeout === "2 hours") {
+      sessionTimeoutMinutes = "120";
+    } else if (rawTimeout === "Never") {
+      sessionTimeoutMinutes = "0";
+    }
+
     return NextResponse.json({
       success: true,
       id: user.id,
       email,
       full_name: fullName,
       avatar_url: resolvedAvatarUrl,
-      email_reminders:
-        typeof metadata.email_reminders === "boolean"
-          ? metadata.email_reminders
-          : true,
-      submission_alerts:
-        typeof metadata.submission_alerts === "boolean"
-          ? metadata.submission_alerts
-          : true,
-      session_timeout:
-        typeof metadata.session_timeout === "string"
-          ? metadata.session_timeout
-          : "1 hour",
+      auto_email_reminders: autoEmailReminders,
+      new_submission_alerts: newSubmissionAlerts,
+      email_reminders: autoEmailReminders,
+      submission_alerts: newSubmissionAlerts,
+      session_timeout_minutes: sessionTimeoutMinutes,
+      session_timeout: sessionTimeoutMinutes,
     });
   } catch (error: any) {
     console.error("[Admin Profile API Error]:", error);
