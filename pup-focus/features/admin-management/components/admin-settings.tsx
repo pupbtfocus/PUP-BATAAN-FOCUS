@@ -673,14 +673,9 @@ export function AdminSettings({
       {/* --------------------------------------------------------------------- */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold tracking-tight text-slate-100">
-              Admin System Settings
-            </h2>
-            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">
-              System Control
-            </span>
-          </div>
+          <h2 className="text-xl font-bold tracking-tight text-slate-100">
+            Admin System Settings
+          </h2>
           <p className="mt-1 text-xs text-slate-400">
             Manage your administrator profile, security credentials, notification rules, and session lifecycle.
           </p>
@@ -701,7 +696,7 @@ export function AdminSettings({
             ) : (
               <>
                 <Save className="h-4 w-4 text-amber-400" />
-                <span>Save Settings</span>
+                <span>Save Changes</span>
               </>
             )}
           </button>
@@ -710,17 +705,12 @@ export function AdminSettings({
 
       <div className="space-y-6">
         {/* ------------------------------------------------------------------- */}
-        {/* 1. Admin Profile & Credentials Section                              */}
+        {/* Card 1: Profile & Credentials Section                               */}
         {/* ------------------------------------------------------------------- */}
         <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-5 py-3.5">
-            <div className="flex items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-slate-300">
-              <User className="h-4 w-4 text-amber-400" />
-              <span>Admin Profile & Credentials</span>
-            </div>
-            <span className="text-[11px] text-slate-500">
-              Identity & Authentication
-            </span>
+          <div className="flex items-center gap-2.5 border-b border-slate-800 bg-slate-900/60 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-300">
+            <User className="h-4 w-4 text-amber-400" />
+            <span>Profile & Credentials</span>
           </div>
 
           <div className="space-y-6 p-5 sm:p-6">
@@ -761,7 +751,7 @@ export function AdminSettings({
                       Administrator Avatar
                     </h4>
                     <p className="text-xs text-slate-400">
-                      Supports JPG, PNG, or WebP (up to 5MB). Generates an instant local preview and stores to Supabase bucket.
+                      JPG, PNG, or WebP (Max 5MB)
                     </p>
                   </div>
 
@@ -780,14 +770,14 @@ export function AdminSettings({
                       className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/20 hover:border-amber-500/50"
                     >
                       <Camera className="h-3.5 w-3.5 text-amber-400" />
-                      <span>Upload Avatar</span>
+                      <span>Upload Photo</span>
                     </button>
 
                     {(avatarPreviewUrl || avatarFile) && !isAvatarRemoved && (
                       <button
                         type="button"
                         onClick={handleRemoveAvatar}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-950/20 px-3 py-1.5 text-xs font-medium text-rose-300 transition-all hover:bg-rose-950/40 hover:border-rose-500/50"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-950/20 px-3.5 py-1.5 text-xs font-medium text-rose-300 transition-all hover:bg-rose-950/40 hover:border-rose-500/50"
                       >
                         <Trash2 className="h-3.5 w-3.5 text-rose-400" />
                         <span>Remove Photo</span>
@@ -819,7 +809,7 @@ export function AdminSettings({
                   className="w-full rounded-lg border border-slate-800 bg-slate-900/90 px-3.5 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 transition"
                 />
                 <p className="text-[11px] text-slate-500">
-                  Displayed across reports, logs, and faculty review dashboards.
+                  Displayed on audit logs, reports, and review workflows.
                 </p>
               </div>
 
@@ -838,7 +828,7 @@ export function AdminSettings({
                   <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Primary authentication identifier registered with the system.
+                  Primary login email associated with your administrator account.
                 </p>
               </div>
             </div>
@@ -874,15 +864,12 @@ export function AdminSettings({
         </section>
 
         {/* ------------------------------------------------------------------- */}
-        {/* 2. System & Notification Preferences Section                        */}
+        {/* Card 2: Notification Preferences Section                            */}
         {/* ------------------------------------------------------------------- */}
         <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/90 shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-5 py-3.5">
-            <div className="flex items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-slate-300">
-              <Bell className="h-4 w-4 text-amber-400" />
-              <span>System & Notification Preferences</span>
-            </div>
-            <span className="text-[11px] text-slate-500">Automated Alerts</span>
+          <div className="flex items-center gap-2.5 border-b border-slate-800 bg-slate-900/60 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-300">
+            <Bell className="h-4 w-4 text-amber-400" />
+            <span>Notification Preferences</span>
           </div>
 
           <div className="divide-y divide-slate-800/70">
@@ -900,7 +887,7 @@ export function AdminSettings({
                   )}
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed max-w-xl">
-                  Automatically dispatch automated reminder emails to faculty members regarding upcoming compliance deadlines and open submission windows.
+                  Send automated deadline and window reminders to faculty.
                 </p>
               </div>
 
@@ -939,7 +926,7 @@ export function AdminSettings({
                   )}
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed max-w-xl">
-                  Receive immediate real-time notifications and dashboard alerts whenever a faculty member uploads or re-submits required compliance documents.
+                  Receive notifications when faculty members submit compliance documents.
                 </p>
               </div>
 
@@ -967,15 +954,12 @@ export function AdminSettings({
         </section>
 
         {/* ------------------------------------------------------------------- */}
-        {/* 3. Security & Session Controls Section                              */}
+        {/* Card 3: Security & Session Controls Section                         */}
         {/* ------------------------------------------------------------------- */}
         <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-5 py-3.5">
-            <div className="flex items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-slate-300">
-              <Shield className="h-4 w-4 text-amber-400" />
-              <span>Security & Session Controls</span>
-            </div>
-            <span className="text-[11px] text-slate-500">Access Governance</span>
+          <div className="flex items-center gap-2.5 border-b border-slate-800 bg-slate-900/60 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-300">
+            <Shield className="h-4 w-4 text-amber-400" />
+            <span>Security & Session Controls</span>
           </div>
 
           <div className="p-5">
@@ -988,7 +972,7 @@ export function AdminSettings({
                   </p>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed max-w-xl">
-                  Specify the duration of administrative inactivity after which the active session is automatically terminated for compliance protection.
+                  Automatically log out after inactivity for security.
                 </p>
               </div>
 
@@ -1008,28 +992,6 @@ export function AdminSettings({
             </div>
           </div>
         </section>
-
-        {/* Bottom Save Button Trigger */}
-        <div className="flex items-center justify-end gap-3 border-t border-slate-800/80 pt-4">
-          <button
-            type="button"
-            onClick={() => handleSaveSettings()}
-            disabled={isSavingSettings || isLoadingProfile}
-            className="inline-flex items-center gap-2 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/20 to-amber-600/20 px-6 py-2.5 text-xs font-semibold text-amber-300 shadow-md transition-all hover:border-amber-400 hover:from-amber-500/30 hover:to-amber-600/30 hover:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-400/40 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSavingSettings ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
-                <span>Saving All Settings...</span>
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 text-amber-400" />
-                <span>Save All Settings</span>
-              </>
-            )}
-          </button>
-        </div>
       </div>
 
       {/* --------------------------------------------------------------------- */}
