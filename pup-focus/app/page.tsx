@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/ui/logo";
-import { LoginForm } from "@/components/auth/login-form";
+import { LoginForm, type NoticeBanner } from "@/components/auth/login-form";
 import { ForgotPasswordModal } from "@/components/auth/forgot-password-modal";
 import {
   AuthFeedbackModal,
@@ -32,6 +32,7 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<NoticeBanner | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authModal, setAuthModal] = useState<AuthModalState | null>(null);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
@@ -40,6 +41,30 @@ export default function Home() {
     PREFETCH_ROUTES.forEach((route) => {
       router.prefetch(route);
     });
+
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const reason = searchParams.get("reason");
+      const urlError = searchParams.get("error");
+      const urlMessage = searchParams.get("message");
+
+      if (reason === "timeout") {
+        setNotice({
+          type: "timeout",
+          message: "Your session has expired due to inactivity. Please sign in again.",
+        });
+      } else if (urlError) {
+        setNotice({
+          type: "error",
+          message: decodeURIComponent(urlError),
+        });
+      } else if (urlMessage) {
+        setNotice({
+          type: "success",
+          message: decodeURIComponent(urlMessage),
+        });
+      }
+    }
   }, [router]);
 
   useEffect(() => {
@@ -181,12 +206,15 @@ export default function Home() {
     event.preventDefault();
     setIsSubmitting(true);
     setError(null);
+    setNotice(null);
     setAuthModal(null);
 
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!isValidEmailAddress(normalizedEmail)) {
-      setError("Please provide a real email address.");
+      const errorMsg = "Please provide a real email address.";
+      setError(errorMsg);
+      setNotice({ type: "error", message: errorMsg });
       setIsSubmitting(false);
       return;
     }
@@ -334,6 +362,7 @@ export default function Home() {
               isSubmitting={isSubmitting}
               isPending={isPending}
               error={error}
+              notice={notice}
               publicEnvConfigured={Boolean(PUBLIC_ENV)}
             />
           </section>
