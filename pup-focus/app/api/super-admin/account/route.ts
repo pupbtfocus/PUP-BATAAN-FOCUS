@@ -36,6 +36,32 @@ export async function GET() {
       );
     }
 
+    let avatarUrl: string | null =
+      user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
+
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", appUser.profile_id)
+        .maybeSingle();
+
+      if (profile?.full_name && !appUser.full_name) {
+        appUser.full_name = profile.full_name;
+      }
+    } catch {}
+
+    if (avatarUrl && !avatarUrl.startsWith("http")) {
+      let cleanPath = avatarUrl.replace(/^avatars\//, "");
+      if (cleanPath.includes("/avatars/")) {
+        cleanPath = cleanPath.split("/avatars/")[1].split("?")[0];
+      }
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(cleanPath);
+      if (pub?.publicUrl) {
+        avatarUrl = pub.publicUrl;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       account: {
@@ -44,6 +70,8 @@ export async function GET() {
           (user.user_metadata?.full_name as string | undefined) ??
           "",
         email: appUser.email ?? user.email ?? "",
+        avatar_url: avatarUrl,
+        profileImageUrl: avatarUrl,
       },
     });
   } catch (error) {

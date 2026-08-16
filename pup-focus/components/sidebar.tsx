@@ -8,7 +8,17 @@ export interface SidebarProps {
   setActiveSection: (section: any) => void;
   adminName?: string | null;
   roleTitle?: string;
+  profileImageUrl?: string | null;
   onNavigate?: () => void;
+}
+
+function getSidebarInitials(name?: string | null): string {
+  if (!name || !name.trim()) return "AD";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+  return parts[0].slice(0, 2).toUpperCase() || "AD";
 }
 
 export function SidebarButton({
@@ -45,8 +55,10 @@ export function SidebarContent({
   setActiveSection,
   adminName = "Admin",
   roleTitle = "Admin",
+  profileImageUrl,
   onNavigate,
 }: SidebarProps) {
+  const [hasAvatarError, setHasAvatarError] = useState(false);
   const isAcademicCycleActive =
     activeSection === "academicTerms" || activeSection === "submissionWindow";
 
@@ -69,8 +81,24 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 rounded-lg bg-slate-900 border border-slate-800 p-2 flex flex-col items-center">
-        <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
+      <div className="my-1.5 rounded-lg bg-slate-900 border border-slate-800 p-2.5 flex flex-col items-center">
+        <div className="relative mb-2">
+          {profileImageUrl && !hasAvatarError ? (
+            <img
+              src={profileImageUrl}
+              alt={adminName ?? "User"}
+              className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950 shadow-md ring-2 ring-slate-950"
+              onError={() => setHasAvatarError(true)}
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 font-bold text-xs flex items-center justify-center shadow-md ring-2 ring-slate-950">
+              {getSidebarInitials(adminName)}
+            </div>
+          )}
+          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-900" title="Active" />
+        </div>
+
+        <p className="font-semibold text-white text-center text-xs sm:text-sm">
           {adminName ?? "Admin"}
         </p>
 

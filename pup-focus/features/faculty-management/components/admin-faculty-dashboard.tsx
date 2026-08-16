@@ -12,6 +12,7 @@ import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { AdminSettings } from "@/features/admin-management/components/admin-settings";
+import { createClient } from "@/lib/supabase/client";
 import {
   facultyAccountSchema,
   type FacultyAccountFormInput,
@@ -77,9 +78,41 @@ export function AdminFacultyDashboard({
     null,
   );
   const [verificationResetTrigger, setVerificationResetTrigger] = useState(0);
+  const [adminAvatarUrl, setAdminAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     void loadFacultyFromDatabase();
+
+    async function loadAdminAvatar() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const activeAvatar =
+          user.user_metadata?.avatar_url ||
+          user.user_metadata?.picture ||
+          null;
+
+        if (activeAvatar) {
+          if (!activeAvatar.startsWith("http")) {
+            const cleanPath = activeAvatar.replace(/^avatars\//, "");
+            const { data: pub } = supabase.storage
+              .from("avatars")
+              .getPublicUrl(cleanPath);
+            setAdminAvatarUrl(pub?.publicUrl || activeAvatar);
+          } else {
+            setAdminAvatarUrl(activeAvatar);
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load admin avatar:", e);
+      }
+    }
+
+    void loadAdminAvatar();
   }, []);
 
   async function loadFacultyFromDatabase() {
@@ -408,6 +441,7 @@ export function AdminFacultyDashboard({
             activeSection={activeSection}
             setActiveSection={setActiveSection}
             adminName={adminName}
+            profileImageUrl={adminAvatarUrl}
           />
         </aside>
 
@@ -434,6 +468,7 @@ export function AdminFacultyDashboard({
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}
                 adminName={adminName}
+                profileImageUrl={adminAvatarUrl}
                 onNavigate={() => setIsMobileMenuOpen(false)}
               />
             </aside>
@@ -597,6 +632,7 @@ export function AdminFacultyDashboard({
                 <AdminSettings
                   adminName={adminName ?? "Admin"}
                   adminEmail={adminEmail ?? null}
+                  profileImageUrl={adminAvatarUrl}
                 />
               </article>
             ) : null}

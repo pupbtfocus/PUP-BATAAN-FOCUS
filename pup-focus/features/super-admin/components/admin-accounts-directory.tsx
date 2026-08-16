@@ -13,13 +13,13 @@ export interface AdminAccountItem {
   created_at: string;
 }
 
-function getInitials(name?: string | null): string {
-  if (!name || !name.trim()) return "AD";
+function getInitials(name?: string | null, fallback = "AD"): string {
+  if (!name || !name.trim()) return fallback;
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
   }
-  return parts[0].slice(0, 2).toUpperCase();
+  return parts[0].slice(0, 2).toUpperCase() || fallback;
 }
 
 function getAccountRole(acc: any): string {
@@ -326,7 +326,7 @@ export function AdminAccountsDirectory() {
                             />
                           ) : (
                             <div className="w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-xs flex items-center justify-center shadow-sm">
-                              {getInitials(account.full_name)}
+                              {getInitials(account.full_name, isSuperAdmin ? "SA" : "AD")}
                             </div>
                           )}
                           <span className="font-semibold text-slate-200">

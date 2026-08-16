@@ -5,6 +5,20 @@ const nextConfig: NextConfig = {
   // doesn't error when a custom `webpack` function is present.
   turbopack: {},
   outputFileTracingRoot: __dirname,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "vivhzxlyipalvzqqiibn.supabase.co",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+        pathname: "/**",
+      },
+    ],
+  },
   webpack: (config, { dev }) => {
     if (dev) {
       // Disable webpack filesystem cache to avoid noisy serialization warnings.
