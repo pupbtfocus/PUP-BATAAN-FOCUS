@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, email, role, status, avatar_url, created_at")
+        .select("id, full_name, email")
         .eq("id", profileId)
         .maybeSingle();
       profile = data;
@@ -61,12 +61,27 @@ export async function GET(request: NextRequest) {
       "Admin User";
     const email = profile?.email || authUser?.email || "";
     const role =
-      profile?.role ||
       authUser?.user_metadata?.role ||
       authUser?.app_metadata?.role ||
       ROLE.ADMIN;
     const avatarUrl =
-      profile?.avatar_url || authUser?.user_metadata?.avatar_url || null;
+      authUser?.user_metadata?.avatar_url ||
+      authUser?.user_metadata?.picture ||
+      null;
+    let resolvedAvatarUrl = avatarUrl;
+    if (resolvedAvatarUrl && !resolvedAvatarUrl.startsWith("http")) {
+      let cleanPath = resolvedAvatarUrl.replace(/^avatars\//, "");
+      if (cleanPath.includes("/avatars/")) {
+        cleanPath = cleanPath.split("/avatars/")[1].split("?")[0];
+      }
+      const { data: pub } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(cleanPath);
+      if (pub?.publicUrl) {
+        resolvedAvatarUrl = pub.publicUrl;
+      }
+    }
+
     const isActive =
       profile?.status === "active" ||
       profile?.status === "true" ||
@@ -83,7 +98,8 @@ export async function GET(request: NextRequest) {
         permissions: [],
         is_active: isActive,
         created_at: profile?.created_at || authUser?.created_at,
-        profileImageUrl: avatarUrl,
+        profileImageUrl: resolvedAvatarUrl,
+        avatar_url: resolvedAvatarUrl,
       },
     });
   } catch (error) {

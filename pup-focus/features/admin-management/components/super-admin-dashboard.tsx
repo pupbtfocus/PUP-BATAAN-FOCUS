@@ -49,6 +49,8 @@ interface AdminDetails {
   created_at?: string | null;
   updated_at?: string | null;
   metadata?: Record<string, unknown> | null;
+  profileImageUrl?: string | null;
+  avatar_url?: string | null;
 }
 
 type SuperAdminAccountResult = {
@@ -67,6 +69,15 @@ type CreateAdminResult = {
   user?: { email?: string; fullName?: string } | null;
 };
 
+function getInitials(name?: string | null, fallback = "SA"): string {
+  if (!name || !name.trim()) return fallback;
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+  return parts[0].slice(0, 2).toUpperCase() || fallback;
+}
+
 function buildAdminFullName(input: {
   firstName?: string;
   middleName?: string;
@@ -84,6 +95,11 @@ export function SuperAdminDashboard({
   adminName?: string | null;
 }) {
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
+  const [superAdminAvatarUrl, setSuperAdminAvatarUrl] = useState<string | null>(
+    null
+  );
+  const [isAvatarImageError, setIsAvatarImageError] = useState<boolean>(false);
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
   const [accountViewRole, setAccountViewRole] =
     useState<AccountViewRole>("all");
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
@@ -221,7 +237,7 @@ export function SuperAdminDashboard({
       setSettingsError(null);
 
       const response = await fetch("/api/super-admin/account");
-      const data = (await response.json()) as SuperAdminAccountResult;
+      const data = (await response.json()) as any;
 
       if (!response.ok || !data.account) {
         setSettingsError(data.error ?? "Failed to load account settings");
@@ -230,6 +246,13 @@ export function SuperAdminDashboard({
 
       setSettingsFullName(data.account.fullName ?? "");
       setSettingsEmail(data.account.email ?? "");
+
+      const activeAvatar =
+        data.account.avatar_url || data.account.profileImageUrl;
+      if (activeAvatar) {
+        setSuperAdminAvatarUrl(activeAvatar);
+        setIsAvatarImageError(false);
+      }
     } catch {
       setSettingsError("Error loading account settings");
     } finally {
@@ -254,6 +277,38 @@ export function SuperAdminDashboard({
 
   useEffect(() => {
     void loadAccountSettings();
+
+    async function loadSuperAdminProfileAvatar() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const activeAvatar =
+          user.user_metadata?.avatar_url ||
+          user.user_metadata?.picture ||
+          null;
+
+        if (activeAvatar) {
+          if (!activeAvatar.startsWith("http")) {
+            const cleanPath = activeAvatar.replace(/^avatars\//, "");
+            const { data: pub } = supabase.storage
+              .from("avatars")
+              .getPublicUrl(cleanPath);
+            setSuperAdminAvatarUrl(pub?.publicUrl || activeAvatar);
+          } else {
+            setSuperAdminAvatarUrl(activeAvatar);
+          }
+          setIsAvatarImageError(false);
+        }
+      } catch (e) {
+        console.warn("Failed to load super admin avatar:", e);
+      }
+    }
+
+    void loadSuperAdminProfileAvatar();
   }, []);
 
   const activeAccounts = useMemo(
@@ -709,21 +764,21 @@ export function SuperAdminDashboard({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-3">
-              {admin.profileImageUrl ? (
+              {admin.profileImageUrl && !failedImageIds.has(admin.profile_id) ? (
                 <img
                   src={admin.profileImageUrl}
                   alt={admin.full_name}
-                  className="h-12 w-12 rounded-full border border-slate-700 object-cover"
+                  className="h-12 w-12 rounded-full border border-slate-700 object-cover bg-slate-900 shadow-sm"
+                  onError={() => {
+                    setFailedImageIds((prev) => new Set(prev).add(admin.profile_id));
+                  }}
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {admin.full_name
-                    .split(" ")
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((part) => part[0])
-                    .join("")
-                    .toUpperCase()}
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-400 shadow-sm">
+                  {getInitials(
+                    admin.full_name,
+                    admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
+                  )}
                 </div>
               )}
               <div>
@@ -835,7 +890,26 @@ export function SuperAdminDashboard({
 
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-2.5 shadow-lg">
-        <div className="my-1.5 rounded-lg bg-[var(--card)] p-2 text-[var(--accent)] flex flex-col items-center border border-slate-700 dark:border-slate-800">
+        <div className="my-1.5 rounded-lg bg-[var(--card)] p-2.5 text-[var(--accent)] flex flex-col items-center border border-slate-700 dark:border-slate-800">
+          <div className="relative mb-2">
+            {superAdminAvatarUrl && !isAvatarImageError ? (
+              <img
+                src={superAdminAvatarUrl}
+                alt={adminName ?? "Super Admin"}
+                className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950 shadow-md ring-2 ring-slate-950"
+                onError={() => setIsAvatarImageError(true)}
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 font-bold text-sm flex items-center justify-center shadow-md ring-2 ring-slate-950">
+                {getInitials(adminName, "SA")}
+              </div>
+            )}
+            <span
+              className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900"
+              title="Active"
+            />
+          </div>
+
           <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
             {adminName ?? "Super Admin"}
           </p>
@@ -891,7 +965,26 @@ export function SuperAdminDashboard({
               </button>
             </div>
 
-            <div className="my-2 rounded-lg bg-[var(--card)] p-2 text-[var(--accent)] flex flex-col items-center border border-slate-700 dark:border-slate-800">
+            <div className="my-2 rounded-lg bg-[var(--card)] p-2.5 text-[var(--accent)] flex flex-col items-center border border-slate-700 dark:border-slate-800">
+              <div className="relative mb-2">
+                {superAdminAvatarUrl && !isAvatarImageError ? (
+                  <img
+                    src={superAdminAvatarUrl}
+                    alt={adminName ?? "Super Admin"}
+                    className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950 shadow-md ring-2 ring-slate-950"
+                    onError={() => setIsAvatarImageError(true)}
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 font-bold text-sm flex items-center justify-center shadow-md ring-2 ring-slate-950">
+                    {getInitials(adminName, "SA")}
+                  </div>
+                )}
+                <span
+                  className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900"
+                  title="Active"
+                />
+              </div>
+
               <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
                 {adminName ?? "Super Admin"}
               </p>
@@ -1144,6 +1237,25 @@ export function SuperAdminDashboard({
                         </p>
                       ) : (
                         <form className="space-y-4" onSubmit={onSettingsSubmit}>
+                          <div className="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                            {superAdminAvatarUrl && !isAvatarImageError ? (
+                              <img
+                                src={superAdminAvatarUrl}
+                                alt={settingsFullName || "Super Admin"}
+                                className="w-16 h-16 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950 shadow-md ring-2 ring-slate-950"
+                                onError={() => setIsAvatarImageError(true)}
+                              />
+                            ) : (
+                              <div className="w-16 h-16 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-slate-950">
+                                {getInitials(settingsFullName || adminName, "SA")}
+                              </div>
+                            )}
+                            <div>
+                              <h4 className="text-sm font-semibold text-slate-100">Super Admin Profile</h4>
+                              <p className="text-xs text-slate-400">Manage your system credentials and display identity</p>
+                            </div>
+                          </div>
+
                           <div>
                             <label
                               className="block text-sm font-medium text-slate-200"
@@ -1740,6 +1852,7 @@ function AdminDetailsModal({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [modalAvatarError, setModalAvatarError] = useState(false);
   const canEdit = Boolean(editable) && details?.role !== ROLE.SUPER_ADMIN;
 
   useEffect(() => {
@@ -1749,6 +1862,7 @@ function AdminDetailsModal({
     setError(null);
     setSuccess(null);
     setShowPassword(false);
+    setModalAvatarError(false);
   }, [details]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -1833,8 +1947,36 @@ function AdminDetailsModal({
         {isLoading ? (
           <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading details...</p>
         ) : details ? (
-          canEdit ? (
-            <form className="mt-4 space-y-4" onSubmit={onSubmit}>
+          <div className="space-y-4">
+            <div className="mt-4 flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              {details.profileImageUrl && !modalAvatarError ? (
+                <img
+                  src={details.profileImageUrl}
+                  alt={details.full_name ?? "Admin"}
+                  className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950 shadow-md ring-2 ring-slate-950"
+                  onError={() => setModalAvatarError(true)}
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-slate-950">
+                  {getInitials(
+                    details.full_name,
+                    details.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
+                  )}
+                </div>
+              )}
+              <div>
+                <h4 className="text-base font-bold text-slate-100">
+                  {details.full_name || "Admin User"}
+                </h4>
+                <p className="text-xs text-slate-400">{details.email}</p>
+                <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                  {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
+                </span>
+              </div>
+            </div>
+
+            {canEdit ? (
+              <form className="mt-4 space-y-4" onSubmit={onSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label
@@ -2021,11 +2163,12 @@ function AdminDetailsModal({
                 </div>
               </div>
             </div>
-          )
-        ) : (
-          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No details available.</p>
-        )}
-      </div>
+          )}
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No details available.</p>
+      )}
     </div>
-  );
+  </div>
+);
 }
