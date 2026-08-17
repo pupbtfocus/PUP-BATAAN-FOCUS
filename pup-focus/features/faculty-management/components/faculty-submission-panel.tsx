@@ -19,7 +19,7 @@ import {
   getTodayInManila,
   buildAcademicYearOptions,
 } from "@/features/submissions/services/submission-window.service";
-import { Menu, X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, UploadCloud, CheckCircle2, Calendar, Loader2 } from "lucide-react";
+import { Menu, X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, UploadCloud, CheckCircle2, Calendar, Loader2, Eye, RotateCw, Clock3 } from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 
@@ -52,17 +52,25 @@ type RequirementStatus = {
   status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
   reviewedAt?: string;
   feedback?: string;
-  note?: string;
+  admin_remarks?: string;
+  adminRemarks?: string | null;
+  remarks?: string;
+  note?: string | null;
   submittedAt?: string;
   latestSubmissionId?: string;
+  is_read?: boolean;
+  isViewed?: boolean;
+  viewed_at?: string;
 };
 
 type SubmissionPreview = {
   code: RequirementCode;
   title: string;
   submittedAt?: string;
-  note?: string;
+  note?: string | null;
   feedback?: string;
+  admin_remarks?: string;
+  adminRemarks?: string | null;
   reviewedAt?: string;
   latestSubmissionId: string;
 };
@@ -76,7 +84,13 @@ type PastSubmission = {
   submittedAt: string;
   note?: string;
   remarks?: string;
+  admin_remarks?: string;
+  adminRemarks?: string | null;
+  feedback?: string;
   reviewedAt?: string;
+  is_read?: boolean;
+  isViewed?: boolean;
+  viewed_at?: string;
 };
 
 type SubmissionFormState = {
@@ -156,6 +170,28 @@ function getStatusTextColorClass(
   return "text-amber-400 font-medium text-xs tracking-wider uppercase";
 }
 
+function getStatusBadgeTone(
+  status: RequirementStatus["status"] | HistorySubmissionStatus,
+): string {
+  if (status === "Validated")
+    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-400";
+  if (status === "Rejected")
+    return "border-amber-500/20 bg-amber-500/10 text-amber-400";
+  if (status === "Not Submitted")
+    return "border-slate-700 bg-slate-800 text-slate-400";
+  return "border-amber-500/20 bg-amber-500/10 text-amber-400";
+}
+
+function getStatusIcon(
+  status: RequirementStatus["status"] | HistorySubmissionStatus,
+) {
+  if (status === "Validated") return <CheckCircle2 className="h-3 w-3" />;
+  if (status === "Rejected") return <AlertCircle className="h-3 w-3" />;
+  if (status === "Not Submitted")
+    return <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />;
+  return <Clock3 className="h-3 w-3" />;
+}
+
 function getStatusText(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
@@ -190,6 +226,9 @@ function FacultySubmissionPanelContent({
 }: {
   facultyName?: string | null;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const academicYears = useMemo(() => buildAcademicYearOptions(), []);
   const [activeView, setActiveView] = useState<PanelView>("dashboard");
@@ -219,7 +258,22 @@ function FacultySubmissionPanelContent({
   const [previewSubmission, setPreviewSubmission] =
     useState<SubmissionPreview | null>(null);
   const [viewedSubmissionIds, setViewedSubmissionIds] = useState<Set<string>>(
-    () => new Set(),
+    () => {
+      if (typeof window !== "undefined") {
+        try {
+          const cached = localStorage.getItem("pup_focus_viewed_submission_ids");
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed)) {
+              return new Set(parsed);
+            }
+          }
+        } catch {
+          // safe
+        }
+      }
+      return new Set();
+    },
   );
   const [statusCounts, setStatusCounts] = useState<{
     total: number;
@@ -329,7 +383,18 @@ function FacultySubmissionPanelContent({
       }
 
       const data = await response.json();
-      setPastSubmissions(data.submissions || []);
+      const historyList: PastSubmission[] = data.submissions || [];
+      setPastSubmissions(historyList);
+
+      setViewedSubmissionIds((current) => {
+        const next = new Set(current);
+        historyList.forEach((s) => {
+          if (s.id && (s.is_read || s.isViewed)) {
+            next.add(s.id);
+          }
+        });
+        return next;
+      });
     } catch {
       setHistoryError("Error loading submission history");
     } finally {
@@ -354,13 +419,36 @@ function FacultySubmissionPanelContent({
       });
       if (response.ok) {
         const data = await response.json();
-        setRequirementStatuses(data.requirementStatuses || []);
+        const statuses: RequirementStatus[] = data.requirementStatuses || [];
+        setRequirementStatuses(statuses);
         setStatusCounts(data.counts || null);
         if (data.academicYear) setStatusAcademicYear(data.academicYear);
         if (data.semester) setStatusSemester(data.semester);
         if (typeof data.hasActiveSchedule === "boolean") {
           setHasActiveSchedule(data.hasActiveSchedule);
         }
+
+        setViewedSubmissionIds((current) => {
+          const next = new Set(current);
+          try {
+            const cached = localStorage.getItem("pup_focus_viewed_submission_ids");
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed)) {
+                parsed.forEach((id: string) => next.add(id));
+              }
+            }
+          } catch {
+            // safe fallback
+          }
+
+          statuses.forEach((r) => {
+            if (r.latestSubmissionId && (r.is_read || r.isViewed)) {
+              next.add(r.latestSubmissionId);
+            }
+          });
+          return next;
+        });
       } else {
         setStatusError("Failed to load requirement statuses");
       }
@@ -397,21 +485,53 @@ function FacultySubmissionPanelContent({
   useEffect(() => {
     void fetchStatuses();
     void refetchSubmissionWindow();
-    // Read view and history from URL on mount
+  }, [refetchSubmissionWindow]);
+
+  // Deep-linking, view routing, and auto-scrolling with highlight
+  useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const view = params.get("view");
+      const highlightParam =
+        params.get("highlight") || params.get("requirement");
       const historyParam = params.get("history");
+
       if (view === "history" || (view === "status" && historyParam === "true")) {
         setActiveView("status");
         setIsHistoryModalOpen(true);
+      } else if (highlightParam) {
+        setActiveView("status");
       } else if (view && (PANEL_VIEWS as readonly string[]).includes(view)) {
         setActiveView(view as PanelView);
+      }
+
+      if (highlightParam) {
+        const timer = setTimeout(() => {
+          const targetElement =
+            document.getElementById(`requirement-${highlightParam}`) ||
+            document.getElementById(highlightParam);
+          if (targetElement) {
+            targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+            targetElement.classList.add(
+              "ring-2",
+              "ring-amber-400",
+              "bg-amber-500/10",
+            );
+            setTimeout(() => {
+              targetElement.classList.remove(
+                "ring-2",
+                "ring-amber-400",
+                "bg-amber-500/10",
+              );
+            }, 3500);
+          }
+        }, 500);
+        return () => clearTimeout(timer);
       }
     } catch {
       // ignore
     }
-  }, [refetchSubmissionWindow]);
+  }, [searchParams, requirementStatuses]);
 
   useEffect(() => {
     if (submissionWindow?.academicYear && submissionWindow?.semester) {
@@ -457,10 +577,6 @@ function FacultySubmissionPanelContent({
       setHistorySemester(historySemesterOptions[0] ?? "All");
     }
   }, [historyAcademicYears, historySemesterOptions]);
-
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   function openHistoryModal() {
     setIsHistoryModalOpen(true);
@@ -553,8 +669,15 @@ function FacultySubmissionPanelContent({
       });
 
       if (match) {
+        const adminRemarks =
+          match.adminRemarks ||
+          match.admin_remarks ||
+          match.feedback ||
+          match.remarks ||
+          null;
+
         return {
-          code,
+          code: match.requirementCode || code,
           status:
             match.status === "Validated"
               ? "Validated"
@@ -563,13 +686,29 @@ function FacultySubmissionPanelContent({
                 : "Pending",
           submittedAt: match.submittedAt,
           reviewedAt: match.reviewedAt,
-          feedback: match.remarks,
-          note: match.note,
+          note: match.note || null,
           latestSubmissionId: match.id,
+          adminRemarks: adminRemarks,
+          admin_remarks: adminRemarks || undefined,
+          feedback: adminRemarks || undefined,
         };
       }
 
-      if (live) return live;
+      if (live) {
+        const liveAdminRemarks =
+          live.adminRemarks ||
+          live.admin_remarks ||
+          live.feedback ||
+          live.remarks ||
+          null;
+
+        return {
+          ...live,
+          adminRemarks: liveAdminRemarks,
+          admin_remarks: liveAdminRemarks || undefined,
+          feedback: liveAdminRemarks || undefined,
+        };
+      }
 
       return {
         code,
@@ -726,14 +865,29 @@ function FacultySubmissionPanelContent({
   }
 
   function markSubmissionViewed(submissionId: string) {
-    setViewedSubmissionIds((current) => {
-      if (current.has(submissionId)) {
-        return current;
-      }
+    if (!submissionId) return;
 
+    setViewedSubmissionIds((current) => {
       const next = new Set(current);
       next.add(submissionId);
+      try {
+        localStorage.setItem(
+          "pup_focus_viewed_submission_ids",
+          JSON.stringify(Array.from(next)),
+        );
+      } catch {
+        // safe
+      }
       return next;
+    });
+
+    // Persist viewed state to backend database
+    void fetch("/api/faculty/submissions/mark-viewed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ submissionId }),
+    }).catch((err) => {
+      console.warn("Failed to persist mark-viewed on server:", err);
     });
   }
 
@@ -744,12 +898,21 @@ function FacultySubmissionPanelContent({
 
     markSubmissionViewed(item.latestSubmissionId);
 
+    const adminRemarks =
+      item.adminRemarks ||
+      item.admin_remarks ||
+      item.feedback ||
+      item.remarks ||
+      null;
+
     setPreviewSubmission({
       code: item.code,
       title: REQUIREMENT_LABEL[item.code],
       submittedAt: item.submittedAt,
       note: item.note,
-      feedback: item.feedback,
+      feedback: adminRemarks || undefined,
+      admin_remarks: adminRemarks || undefined,
+      adminRemarks: adminRemarks,
       reviewedAt: item.reviewedAt,
       latestSubmissionId: item.latestSubmissionId,
     });
@@ -758,12 +921,21 @@ function FacultySubmissionPanelContent({
   function openHistorySubmissionPreview(submission: PastSubmission) {
     markSubmissionViewed(submission.id);
 
+    const adminRemarks =
+      submission.adminRemarks ||
+      submission.admin_remarks ||
+      submission.feedback ||
+      submission.remarks ||
+      null;
+
     setPreviewSubmission({
       code: submission.requirementCode,
       title: REQUIREMENT_LABEL[submission.requirementCode],
       submittedAt: submission.submittedAt,
       note: submission.note,
-      feedback: submission.remarks,
+      feedback: adminRemarks || undefined,
+      admin_remarks: adminRemarks || undefined,
+      adminRemarks: adminRemarks,
       reviewedAt: submission.reviewedAt,
       latestSubmissionId: submission.id,
     });
@@ -1418,8 +1590,8 @@ function FacultySubmissionPanelContent({
             )}
 
             {activeView === "status" && (
-              <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-2">
                   <div>
                     <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
                       Requirements Management
@@ -1438,12 +1610,13 @@ function FacultySubmissionPanelContent({
                       )}
                     </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                     <button
                       type="button"
                       onClick={openHistoryModal}
-                      className="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition-all duration-200 backdrop-blur-sm cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition-all duration-200 backdrop-blur-sm cursor-pointer whitespace-nowrap"
                     >
+                      <History className="h-3.5 w-3.5" />
                       Submission History
                     </button>
                     <button
@@ -1455,58 +1628,69 @@ function FacultySubmissionPanelContent({
                           "noopener,noreferrer",
                         )
                       }
-                      className="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition-all duration-200 backdrop-blur-sm cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition-all duration-200 backdrop-blur-sm cursor-pointer whitespace-nowrap"
                     >
+                      <Calendar className="h-3.5 w-3.5" />
                       University Calendar
                     </button>
                     <button
                       type="button"
                       onClick={() => void fetchStatuses()}
                       disabled={isLoadingStatuses}
-                      className="whitespace-nowrap rounded-md bg-slate-800 px-3 py-2 text-xs text-white hover:bg-slate-700 disabled:opacity-50"
+                      title="Refresh status"
+                      className="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-slate-300 hover:bg-slate-700 hover:text-white transition disabled:opacity-50 cursor-pointer"
                     >
-                      {isLoadingStatuses ? "⟳ Refreshing..." : "⟳ Refresh"}
+                      <RotateCw className={`h-4 w-4 ${isLoadingStatuses ? "animate-spin text-amber-400" : ""}`} />
+                      <span className="sr-only">Refresh</span>
                     </button>
                   </div>
                 </div>
 
+                {/* Compact Header Summary Bar */}
                 {displayedStatusCounts && !isLoadingStatuses && (
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                    <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-                      <p className="text-xs text-amber-300">Progress</p>
-                      <p className={`mt-1 text-lg font-semibold ${isAllValidated ? "text-emerald-400" : "text-slate-100"}`}>
-                        {displayedStatusCounts.validated}/{displayedStatusCounts.total} Validated
-                      </p>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3.5 sm:p-4 shadow-sm space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                          Compliance Progress
+                        </span>
+                        <span className="text-xs font-bold text-amber-300">
+                          {displayedStatusCounts.validated} of {displayedStatusCounts.total} ({Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100)}%)
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                          {displayedStatusCounts.validated} Validated
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-400">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                          {isAllValidated ? 0 : displayedStatusCounts.pending} Pending
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-0.5 text-xs font-medium text-rose-400">
+                          <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+                          {displayedStatusCounts.rejected} Needs Revision
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/80 px-2.5 py-0.5 text-xs font-medium text-slate-400">
+                          <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                          {isAllValidated ? 0 : displayedStatusCounts.notSubmitted} Not Submitted
+                        </span>
+                      </div>
                     </div>
-                    <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-                      <p className="text-xs text-amber-300">Validated</p>
-                      <p className="mt-1 text-lg font-semibold text-emerald-400">
-                        {displayedStatusCounts.validated}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-                      <p className="text-xs text-amber-300">Pending</p>
-                      <p className={`mt-1 text-lg font-semibold ${isAllValidated || displayedStatusCounts.pending === 0 ? "text-slate-400" : "text-amber-400"}`}>
-                        {isAllValidated ? 0 : displayedStatusCounts.pending} Pending
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-                      <p className="text-xs text-amber-300">Rejected</p>
-                      <p className="mt-1 text-lg font-semibold text-slate-100">
-                        {displayedStatusCounts.rejected}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-slate-600 bg-slate-800/30 px-3 py-2">
-                      <p className="text-xs text-amber-300">Not Submitted</p>
-                      <p className="mt-1 text-lg font-semibold text-slate-300">
-                        {isAllValidated ? 0 : displayedStatusCounts.notSubmitted}
-                      </p>
+                    {/* Progress Bar */}
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-500 rounded-full"
+                        style={{
+                          width: `${Math.min(100, Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100))}%`,
+                        }}
+                      />
                     </div>
                   </div>
                 )}
 
                 {(!hasActiveSchedule || isWindowClosed) && (
-                  <div className="mt-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
+                  <div className="p-3.5 sm:p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
                     <h4 className="text-xs font-semibold text-amber-300 tracking-wider uppercase mb-1">
                       Submission Window Closed
                     </h4>
@@ -1518,129 +1702,134 @@ function FacultySubmissionPanelContent({
                   </div>
                 )}
 
-                <div className="mt-6 space-y-4">
+                <div className="space-y-3">
                   {isLoadingStatuses ? (
-                    <p className="text-sm text-slate-400">
+                    <p className="text-sm text-slate-400 py-4 text-center">
                       Loading requirement statuses...
                     </p>
                   ) : statusError ? (
-                    <p className="text-sm text-red-400">{statusError}</p>
-                  ) : displayedRequirementStatuses.map((req) => (
-                    <article
-                      key={req.code}
-                      id={`requirement-${req.code}`}
-                      className="rounded-xl border border-slate-700 bg-slate-950 p-5 transition-all duration-300 hover:border-slate-600"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-base text-slate-100">
-                            {REQUIREMENT_LABEL[req.code]}
-                          </p>
-                          {req.reviewedAt && (
-                            <p className="mt-1.5 text-xs text-slate-500">
-                              Reviewed on {req.reviewedAt}
-                            </p>
-                          )}
-                          {req.submittedAt &&
-                          formatSubmittedDateTime(req.submittedAt) ? (
-                            <p className="mt-1 text-xs text-slate-500">
-                              Submitted on{" "}
-                              {formatSubmittedDateTime(req.submittedAt)}
-                            </p>
-                          ) : null}
-                        </div>
-
-                        <div className="flex shrink-0 flex-wrap items-center gap-4">
-                          {/* Pure text-only status indicator aligned on the action row */}
-                          <span className={getStatusTextColorClass(req.status)}>
-                            {getStatusText(req.status)}
-                          </span>
-
-                          {/* For Not Submitted: Primary Submit button */}
-                          {req.status === "Not Submitted" && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => openDirectUploadModal(req.code)}
-                              disabled={!hasActiveSchedule || isWindowClosed}
-                              className="inline-flex items-center gap-1.5"
-                            >
-                              <Upload className="h-3.5 w-3.5" />
-                              Submit
-                            </Button>
-                          )}
-
-                          {/* For Needs Revision (Rejected): Primary Resubmit button */}
-                          {req.status === "Rejected" && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => openDirectUploadModal(req.code)}
-                              disabled={!hasActiveSchedule || isWindowClosed}
-                              className="inline-flex items-center gap-1.5 bg-red-600 text-white hover:bg-red-500"
-                            >
-                              <Upload className="h-3.5 w-3.5" />
-                              Resubmit
-                            </Button>
-                          )}
-
-                          {/* For Pending, Validated, or Rejected: View File button */}
-                          {req.status !== "Not Submitted" &&
-                          req.latestSubmissionId ? (
-                            <>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => openSubmissionPreview(req)}
-                                className="inline-flex items-center gap-2"
-                              >
-                                {req.feedback &&
-                                !viewedSubmissionIds.has(
-                                  req.latestSubmissionId,
-                                ) ? (
-                                  <span
-                                    className="h-2 w-2 rounded-full bg-red-500"
-                                    aria-hidden="true"
-                                  />
-                                ) : null}
-                                View File
-                              </Button>
-
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openVersionHistory(req)}
-                                className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-100"
-                              >
-                                <History className="h-3.5 w-3.5" />
-                                History
-                              </Button>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      {/* Rejection / Revision alert */}
-                      {req.status === "Rejected" && (
-                        <div className="mt-3 rounded-lg border border-red-800/60 bg-red-950/30 p-3">
-                          <div className="flex items-start gap-2">
-                            <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
-                            <div className="flex-1">
-                              <p className="text-xs font-medium uppercase tracking-wider text-red-400">
-                                Revision Required
-                              </p>
-                              <p className="mt-1 text-sm text-red-200 leading-relaxed">
-                                {req.feedback ??
-                                  "The reviewer has requested revisions for this requirement. Please resubmit an updated document."}
-                              </p>
+                    <p className="text-sm text-red-400 py-4">{statusError}</p>
+                  ) : displayedRequirementStatuses.map((req) => {
+                    return (
+                      <article
+                        key={req.code}
+                        id={`requirement-${req.code}`}
+                        className="rounded-xl border border-slate-800 bg-slate-950 p-3.5 sm:p-4 transition-all duration-200 hover:border-slate-700 shadow-sm"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm sm:text-base text-slate-100 truncate">
+                              {REQUIREMENT_LABEL[req.code]}
+                            </h4>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-400">
+                              {req.submittedAt &&
+                              formatSubmittedDateTime(req.submittedAt) ? (
+                                <span>
+                                  Submitted: {formatSubmittedDateTime(req.submittedAt)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500">
+                                  No submission recorded yet
+                                </span>
+                              )}
+                              {req.reviewedAt && (
+                                <span>Reviewed: {req.reviewedAt}</span>
+                              )}
                             </div>
                           </div>
+
+                          <div className="flex shrink-0 flex-wrap items-center gap-2">
+                            {/* Modern Pill Status Badge */}
+                            <div
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${getStatusBadgeTone(req.status)}`}
+                            >
+                              {getStatusIcon(req.status)}
+                              <span>{getStatusText(req.status)}</span>
+                            </div>
+
+                            {/* For Not Submitted: Primary Submit button */}
+                            {req.status === "Not Submitted" && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => openDirectUploadModal(req.code)}
+                                disabled={!hasActiveSchedule || isWindowClosed}
+                                className="inline-flex items-center gap-1.5 text-xs h-8 px-3 cursor-pointer"
+                              >
+                                <Upload className="h-3.5 w-3.5" />
+                                Submit
+                              </Button>
+                            )}
+
+                            {/* For Needs Revision (Rejected): Primary Resubmit button */}
+                            {req.status === "Rejected" && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => openDirectUploadModal(req.code)}
+                                disabled={!hasActiveSchedule || isWindowClosed}
+                                className="inline-flex items-center gap-1.5 text-xs h-8 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold cursor-pointer"
+                              >
+                                <Upload className="h-3.5 w-3.5" />
+                                Resubmit
+                              </Button>
+                            )}
+
+                            {/* For Pending, Validated, or Rejected: View File button */}
+                            {req.status !== "Not Submitted" &&
+                            req.latestSubmissionId ? (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => openSubmissionPreview(req)}
+                                  className="relative inline-flex items-center gap-1.5 text-xs h-8 px-3 cursor-pointer"
+                                >
+                                  {Boolean(
+                                    req.feedback &&
+                                    !viewedSubmissionIds.has(
+                                      req.latestSubmissionId,
+                                    ) &&
+                                    req.is_read !== true
+                                  ) ? (
+                                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                                    </span>
+                                  ) : null}
+                                  <Eye className="h-3.5 w-3.5" />
+                                  View File
+                                </Button>
+
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openVersionHistory(req)}
+                                  className="inline-flex items-center gap-1.5 text-xs h-8 px-2.5 text-slate-400 hover:text-slate-100 cursor-pointer"
+                                >
+                                  <History className="h-3.5 w-3.5" />
+                                  History
+                                </Button>
+                              </>
+                            ) : null}
+                          </div>
                         </div>
-                      )}
-                    </article>
-                  ))}
+
+                        {/* Compact 1-line amber banner for 'Needs Revision' (Rejected) */}
+                        {req.status === "Rejected" && (
+                          <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200">
+                            <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                            <span className="font-semibold text-amber-400 shrink-0">Revision Note:</span>
+                            <span className="truncate italic">
+                              &ldquo;{req.adminRemarks || req.admin_remarks || req.feedback || "Revision requested. Please check and resubmit."}&rdquo;
+                            </span>
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
                 </div>
               </article>
             )}
@@ -2014,15 +2203,19 @@ function FacultySubmissionPanelContent({
                                 onClick={() =>
                                   openHistorySubmissionPreview(submission)
                                 }
-                                className="inline-flex items-center gap-2"
+                                className="relative inline-flex items-center gap-1.5"
                               >
-                                {submission.remarks &&
-                                !viewedSubmissionIds.has(submission.id) ? (
-                                  <span
-                                    className="h-2 w-2 rounded-full bg-red-500"
-                                    aria-hidden="true"
-                                  />
+                                {Boolean(
+                                  (submission.remarks || submission.feedback || submission.adminRemarks || submission.admin_remarks) &&
+                                  !viewedSubmissionIds.has(submission.id) &&
+                                  submission.is_read !== true
+                                ) ? (
+                                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                                  </span>
                                 ) : null}
+                                <Eye className="h-3.5 w-3.5" />
                                 View File
                               </Button>
 
@@ -2033,6 +2226,24 @@ function FacultySubmissionPanelContent({
                               </span>
                             </div>
                           </div>
+
+                          {/* Historical Admin Feedback Callout */}
+                          {(submission.status === "Rejected" || submission.status === "Validated") && (
+                            <div
+                              className={`mt-3 rounded-lg border p-2.5 text-xs leading-relaxed ${
+                                submission.status === "Rejected"
+                                  ? "border-red-800/60 bg-red-950/20 text-red-200"
+                                  : "border-emerald-800/60 bg-emerald-950/20 text-emerald-200"
+                              }`}
+                            >
+                              <span className="font-semibold block mb-0.5 text-[10px] uppercase tracking-wider">
+                                Admin Feedback:
+                              </span>
+                              <span className="italic">
+                                &ldquo;{submission.adminRemarks || submission.admin_remarks || submission.feedback || submission.remarks || (submission.status === "Rejected" ? "Revision requested. Please check and resubmit." : "Validated with no additional remarks.")}&rdquo;
+                              </span>
+                            </div>
+                          )}
                         </article>
                       ))
                     ) : (
@@ -2101,14 +2312,18 @@ function FacultySubmissionPanelContent({
                       </div>
 
                       {previewSubmission.reviewedAt ||
+                      previewSubmission.adminRemarks ||
+                      previewSubmission.admin_remarks ||
                       previewSubmission.feedback ? (
                         <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4">
                           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
                             Admin Remarks
                           </p>
                           <p className="mt-2 text-sm leading-6 italic text-slate-200">
-                            {previewSubmission.feedback ||
-                              "No admin remarks were added."}
+                            {previewSubmission.adminRemarks ||
+                              previewSubmission.admin_remarks ||
+                              previewSubmission.feedback ||
+                              "Validated with no additional remarks."}
                           </p>
                           {previewSubmission.reviewedAt ? (
                             <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">

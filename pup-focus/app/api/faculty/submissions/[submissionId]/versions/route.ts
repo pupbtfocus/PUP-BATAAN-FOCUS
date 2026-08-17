@@ -247,6 +247,8 @@ export async function GET(
           requirementCode: reqCode,
           status: submission.status ?? "uploaded",
           feedback: latestReview?.remarks ?? undefined,
+          admin_remarks: latestReview?.remarks ?? undefined,
+          notes: submission.remarks ?? submission.notes ?? undefined,
           reviewedAt: latestReview?.created_at
             ? new Date(latestReview.created_at).toISOString().split("T")[0]
             : undefined,
@@ -291,6 +293,8 @@ export async function GET(
         requirementCode: reqCode,
         status: submission.status ?? "uploaded",
         feedback: latestReview?.remarks ?? undefined,
+        admin_remarks: latestReview?.remarks ?? undefined,
+        notes: submission.remarks ?? submission.notes ?? undefined,
         reviewedAt: latestReview?.created_at
           ? new Date(latestReview.created_at).toISOString().split("T")[0]
           : undefined,

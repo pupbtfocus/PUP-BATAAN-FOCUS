@@ -73,11 +73,67 @@ export async function POST(request: NextRequest) {
       .eq("id", submissionId)
       .maybeSingle();
 
-    // Update the submission status
-    const { error: updateError } = await supabase
+    const cleanRemarks =
+      remarks && typeof remarks === "string" && remarks.trim()
+        ? remarks.trim()
+        : null;
+
+    // Update the submission status and admin_remarks (gracefully handling missing columns)
+    let updateError: { message: string } | null = null;
+
+    // Step 1: Attempt update with status, admin_remarks, and updated_at
+    const fullPayload: Record<string, unknown> = {
+      status: decision,
+      updated_at: new Date().toISOString(),
+    };
+    if (cleanRemarks) {
+      fullPayload.admin_remarks = cleanRemarks;
+    }
+
+    const { error: firstErr } = await supabase
       .from("submissions")
-      .update({ status: decision })
+      .update(fullPayload)
       .eq("id", submissionId);
+
+    if (firstErr) {
+      console.warn("Full submission update failed, trying fallback without updated_at:", firstErr.message);
+
+      // Step 2: Fallback without updated_at (if updated_at column missing / PGRST204)
+      const payloadNoUpdatedAt: Record<string, unknown> = { status: decision };
+      if (cleanRemarks) {
+        payloadNoUpdatedAt.admin_remarks = cleanRemarks;
+      }
+
+      const { error: secondErr } = await supabase
+        .from("submissions")
+        .update(payloadNoUpdatedAt)
+        .eq("id", submissionId);
+
+      if (secondErr) {
+        console.warn("Fallback without updated_at failed, trying fallback with updated_at but without admin_remarks:", secondErr.message);
+
+        // Step 3: Fallback without admin_remarks (if admin_remarks column missing)
+        const { error: thirdErr } = await supabase
+          .from("submissions")
+          .update({
+            status: decision,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", submissionId);
+
+        if (thirdErr) {
+          console.warn("Fallback without admin_remarks failed, trying minimal update:", thirdErr.message);
+
+          // Step 4: Minimal update (status only)
+          const { error: minimalErr } = await supabase
+            .from("submissions")
+            .update({ status: decision })
+            .eq("id", submissionId);
+
+          updateError = minimalErr;
+        }
+      }
+    }
 
     if (updateError) {
       console.error("Update error:", updateError);
@@ -93,12 +149,24 @@ export async function POST(request: NextRequest) {
         submission_id: submissionId,
         reviewer_profile_id: adminAppUser.profile_id,
         decision: decision,
-        remarks: remarks || null,
+        remarks: cleanRemarks,
       });
 
     if (reviewError) {
       console.error("Failed to create review decision:", reviewError);
-      // Don't return error since submission was already updated
+    }
+
+    try {
+      await supabase.from("verification_history").insert({
+        submission_id: submissionId,
+        status: decision,
+        decision,
+        remarks: cleanRemarks,
+        reviewed_by: adminAppUser.profile_id,
+        reviewer_profile_id: adminAppUser.profile_id,
+      });
+    } catch {
+      // verification_history is optional
     }
 
     console.log("Review processed successfully");
@@ -216,6 +284,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      submissionId,
+      status: decision,
+      remarks: cleanRemarks,
       message: `Submission ${decision} successfully`,
     });
   } catch (error) {

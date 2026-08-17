@@ -21,9 +21,15 @@ type RequirementStatus = {
   status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
   reviewedAt?: string;
   feedback?: string;
+  admin_remarks?: string;
+  adminRemarks?: string;
   note?: string;
+  remarks?: string;
   submittedAt?: string;
   latestSubmissionId?: string;
+  is_read?: boolean;
+  isViewed?: boolean;
+  viewed_at?: string;
 };
 
 type ReviewDecision = {
@@ -38,6 +44,10 @@ type SubmissionRow = {
   status: string | null;
   submitted_at?: string | null;
   remarks?: string | null;
+  admin_remarks?: string | null;
+  adminRemarks?: string | null;
+  is_read?: boolean | null;
+  viewed_at?: string | null;
   faculty_assignment_id?: string | null;
   document_versions?: Array<{ id: string }> | null;
   review_decisions?: ReviewDecision[] | null;
@@ -318,6 +328,9 @@ export async function GET(request: NextRequest) {
       status: string | null;
       submitted_at?: string | null;
       remarks?: string | null;
+      admin_remarks?: string | null;
+      is_read?: boolean | null;
+      viewed_at?: string | null;
       faculty_assignment_id?: string | null;
     }> = [];
 
@@ -325,20 +338,33 @@ export async function GET(request: NextRequest) {
       const { data, error } = await supabase
         .from("submissions")
         .select(
-          "id, requirement_code, status, submitted_at, remarks, faculty_assignment_id",
+          "id, requirement_code, status, submitted_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id",
         )
         .in("faculty_profile_id", facultyIdList)
         .order("submitted_at", { ascending: false });
 
-      if (error && isMissingRemarksColumnError(error)) {
-        const { data: fallbackData } = await supabase
+      if (error) {
+        // Fallback without is_read / viewed_at if columns don't exist
+        const { data: fallbackData, error: fallbackError } = await supabase
           .from("submissions")
           .select(
-            "id, requirement_code, status, submitted_at, faculty_assignment_id",
+            "id, requirement_code, status, submitted_at, remarks, admin_remarks, faculty_assignment_id",
           )
           .in("faculty_profile_id", facultyIdList)
           .order("submitted_at", { ascending: false });
-        rawSubmissions = (fallbackData as typeof rawSubmissions) || [];
+
+        if (fallbackError) {
+          const { data: minimalData } = await supabase
+            .from("submissions")
+            .select(
+              "id, requirement_code, status, submitted_at, faculty_assignment_id",
+            )
+            .in("faculty_profile_id", facultyIdList)
+            .order("submitted_at", { ascending: false });
+          rawSubmissions = (minimalData as typeof rawSubmissions) || [];
+        } else if (fallbackData) {
+          rawSubmissions = fallbackData as typeof rawSubmissions;
+        }
       } else if (data) {
         rawSubmissions = data as typeof rawSubmissions;
       }
@@ -403,6 +429,29 @@ export async function GET(request: NextRequest) {
           reviewDecisionsMap.set(d.submission_id, list);
         }
       }
+
+      try {
+        const { data: vHistory } = await supabase
+          .from("verification_history")
+          .select("submission_id, decision, status, remarks, created_at")
+          .in("submission_id", submissionIds)
+          .order("created_at", { ascending: false });
+
+        if (vHistory) {
+          for (const v of vHistory) {
+            const list = reviewDecisionsMap.get(v.submission_id) || [];
+            const dec = (v.decision || v.status || "validated").toLowerCase() as "validated" | "rejected";
+            list.push({
+              decision: dec === "rejected" ? "rejected" : "validated",
+              remarks: v.remarks,
+              created_at: v.created_at,
+            });
+            reviewDecisionsMap.set(v.submission_id, list);
+          }
+        }
+      } catch {
+        // verification_history optional
+      }
     }
 
     const submissions: SubmissionRow[] = rawSubmissions.map((s) => ({
@@ -413,6 +462,10 @@ export async function GET(request: NextRequest) {
       status: s.status,
       submitted_at: s.submitted_at,
       remarks: s.remarks,
+      admin_remarks: s.admin_remarks,
+      adminRemarks: s.admin_remarks,
+      is_read: s.is_read,
+      viewed_at: s.viewed_at,
       faculty_assignment_id: s.faculty_assignment_id,
       document_versions: docVersionsMap.get(s.id) || [],
       review_decisions: reviewDecisionsMap.get(s.id) || [],
@@ -505,8 +558,15 @@ export async function GET(request: NextRequest) {
       if (statusMap.get(matchedCode)?.status !== "Not Submitted") continue;
 
       const reviews = Array.isArray(submission.review_decisions)
-        ? submission.review_decisions
+        ? [...submission.review_decisions].sort((a, b) => {
+            const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return timeB - timeA;
+          })
         : [];
+      const latestReviewWithRemarks = reviews.find(
+        (r) => r.remarks && r.remarks.trim() !== "",
+      );
       const latestReview = reviews[0];
 
       const rawStatus = (submission.status || "").toLowerCase().trim();
@@ -540,19 +600,35 @@ export async function GET(request: NextRequest) {
         status = "Pending";
       }
 
+      // Faculty's own note attached during submission
+      const facultyNote =
+        "remarks" in submission && typeof submission.remarks === "string" && submission.remarks.trim()
+          ? submission.remarks.trim()
+          : undefined;
+
+      // Admin's review remarks from the latest review_decisions entry with non-empty remarks or latest review
+      const adminFeedback =
+        latestReviewWithRemarks?.remarks?.trim() ||
+        latestReview?.remarks?.trim() ||
+        (submission as { admin_remarks?: string }).admin_remarks?.trim() ||
+        undefined;
+
       statusMap.set(matchedCode, {
         code: matchedCode,
         status,
-        reviewedAt: latestReview?.created_at
-          ? new Date(latestReview.created_at).toISOString().split("T")[0]
+        reviewedAt: (latestReviewWithRemarks || latestReview)?.created_at
+          ? new Date((latestReviewWithRemarks || latestReview)!.created_at!).toISOString().split("T")[0]
           : undefined,
-        feedback: latestReview?.remarks || undefined,
-        note:
-          "remarks" in submission && typeof submission.remarks === "string"
-            ? submission.remarks
-            : undefined,
+        feedback: adminFeedback,
+        admin_remarks: adminFeedback,
+        adminRemarks: adminFeedback,
+        note: facultyNote,
+        remarks: adminFeedback,
         submittedAt: submission.submitted_at || undefined,
         latestSubmissionId: submission.id,
+        is_read: Boolean(submission.is_read),
+        isViewed: Boolean(submission.is_read),
+        viewed_at: submission.viewed_at || undefined,
       });
     }
 

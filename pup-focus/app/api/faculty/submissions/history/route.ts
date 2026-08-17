@@ -21,7 +21,13 @@ type HistorySubmission = {
   submittedAt: string;
   note?: string;
   remarks?: string;
+  admin_remarks?: string;
+  adminRemarks?: string;
+  feedback?: string;
   reviewedAt?: string;
+  is_read?: boolean;
+  isViewed?: boolean;
+  viewed_at?: string;
 };
 
 type ReviewDecision = {
@@ -37,6 +43,9 @@ type SubmissionRow = {
   submitted_at?: string | null;
   created_at?: string | null;
   remarks?: string | null;
+  admin_remarks?: string | null;
+  is_read?: boolean | null;
+  viewed_at?: string | null;
 };
 
 function toAcademicYearAndSemester(dateInput: string | null | undefined): {
@@ -121,7 +130,7 @@ export async function GET() {
     let rawSubmissions: (SubmissionRow & { faculty_assignment_id?: string | null })[] = [];
     const { data: subData, error: subError } = await supabase
       .from("submissions")
-      .select("id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id")
+      .select("id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id")
       .or(`faculty_profile_id.eq.${facultyProfileId},user_id.eq.${facultyProfileId},created_by.eq.${user.id}`)
       .order("created_at", { ascending: false });
 
@@ -177,6 +186,29 @@ export async function GET() {
           reviewDecisionsMap.set(d.submission_id, list);
         }
       }
+
+      try {
+        const { data: vHistory } = await supabase
+          .from("verification_history")
+          .select("submission_id, decision, status, remarks, created_at")
+          .in("submission_id", submissionIds)
+          .order("created_at", { ascending: false });
+
+        if (vHistory) {
+          for (const v of vHistory) {
+            const list = reviewDecisionsMap.get(v.submission_id) || [];
+            const dec = (v.decision || v.status || "validated").toLowerCase() as "validated" | "rejected";
+            list.push({
+              decision: dec === "rejected" ? "rejected" : "validated",
+              remarks: v.remarks,
+              created_at: v.created_at,
+            });
+            reviewDecisionsMap.set(v.submission_id, list);
+          }
+        }
+      } catch {
+        // verification_history optional
+      }
     }
 
     // 5. Map and attach decisions to each submission item
@@ -185,7 +217,15 @@ export async function GET() {
       if (!row || !row.requirement_code) continue;
 
       const reviews = reviewDecisionsMap.get(row.id) || [];
-      const latestReview = reviews[0];
+      const sortedReviews = [...reviews].sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return timeB - timeA;
+      });
+      const latestReviewWithRemarks = sortedReviews.find(
+        (r) => r.remarks && r.remarks.trim() !== "",
+      );
+      const latestReview = sortedReviews[0];
 
       let term = assignmentMap.get(row.faculty_assignment_id || "");
 
@@ -201,6 +241,17 @@ export async function GET() {
         term = toAcademicYearAndSemester(row.submitted_at || row.created_at);
       }
 
+      // Faculty's own note attached during submission
+      const facultyNote =
+        typeof row.remarks === "string" && row.remarks.trim() ? row.remarks.trim() : undefined;
+
+      // Admin's review remarks from the latest review_decisions entry with non-empty remarks or latest review
+      const adminFeedback =
+        latestReviewWithRemarks?.remarks?.trim() ||
+        latestReview?.remarks?.trim() ||
+        (row as { admin_remarks?: string }).admin_remarks?.trim() ||
+        undefined;
+
       history.push({
         id: row.id,
         academicYear: term.academicYear,
@@ -209,11 +260,17 @@ export async function GET() {
         status: toHistoryStatus(row.status, latestReview),
         submittedAt:
           row.submitted_at || row.created_at || new Date().toISOString(),
-        note: typeof row.remarks === "string" ? row.remarks : undefined,
-        remarks: latestReview?.remarks || undefined,
-        reviewedAt: latestReview?.created_at
-          ? new Date(latestReview.created_at).toISOString().split("T")[0]
+        note: facultyNote,
+        remarks: adminFeedback,
+        admin_remarks: adminFeedback,
+        adminRemarks: adminFeedback,
+        feedback: adminFeedback,
+        reviewedAt: (latestReviewWithRemarks || latestReview)?.created_at
+          ? new Date((latestReviewWithRemarks || latestReview)!.created_at!).toISOString().split("T")[0]
           : undefined,
+        is_read: Boolean(row.is_read),
+        isViewed: Boolean(row.is_read),
+        viewed_at: row.viewed_at || undefined,
       });
     }
 
