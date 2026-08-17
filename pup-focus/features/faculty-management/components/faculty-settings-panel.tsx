@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
   buildFacultyFullName,
   buildFacultyInitials,
 } from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, RotateCw, X, Camera } from "lucide-react";
 
 type FacultyAccountResponse = {
   profileId: string;
@@ -257,60 +256,111 @@ export function FacultySettingsPanel() {
     }
   }
 
-  const fullNamePreview = buildFacultyFullName({
-    firstName: form.firstName,
-    middleName: form.middleName,
-    lastName: form.lastName,
-  });
-
   const displayedProfileImage =
     profileImagePreviewUrl ?? account?.profileImageUrl;
 
+  const isProfileChanged =
+    Boolean(profileImageFile) ||
+    (account &&
+      (form.firstName !== account.firstName ||
+        form.middleName !== account.middleName ||
+        form.lastName !== account.lastName));
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+        <div>
+          <h1 className="text-xl font-medium text-slate-100 tracking-tight">
+            Settings
+          </h1>
+          <p className="mt-0.5 text-xs text-slate-400 font-normal">
+            Manage your faculty account details and security settings.
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => void refreshAccount()}
           disabled={isLoading}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+          title="Refresh account details"
+          className="inline-flex items-center justify-center rounded-md border border-slate-800 bg-slate-900/60 p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer"
         >
-          {isLoading ? "Refreshing..." : "⟳ Refresh"}
+          <RotateCw className={`h-4 w-4 ${isLoading ? "animate-spin text-slate-200" : ""}`} />
+          <span className="sr-only">Refresh</span>
         </button>
       </div>
 
-      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <article className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/90 p-4 sm:p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300 font-semibold">
-            Profile Details
-          </p>
+      {/* Grid Layout */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Profile Details Card */}
+        <article className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-6 shadow-sm">
+          <div className="pb-4 border-b border-slate-800/80">
+            <h2 className="text-sm font-semibold text-slate-200 tracking-normal">
+              Profile Details
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5 font-normal">
+              View and update your personal information.
+            </p>
+          </div>
+
           {isLoading ? (
-            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Loading profile...</p>
+            <p className="mt-6 text-xs text-slate-400">Loading profile details...</p>
           ) : error ? (
-            <p className="mt-4 text-xs text-red-400">{error}</p>
+            <p className="mt-6 text-xs text-red-400">{error}</p>
           ) : account ? (
-            <>
-              <div className="mt-4 grid gap-5 sm:grid-cols-[auto_1fr] sm:items-start">
-                <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => setIsProfileImageMenuOpen(true)}
-                  className="group relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 text-2xl font-semibold text-[#7a0000] dark:text-amber-300 shadow-inner transition hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
-                  aria-label="Open profile picture options"
-                >
-                  {displayedProfileImage ? (
-                    <img
-                      src={displayedProfileImage}
-                      alt={account.fullName}
-                      className="h-full w-full object-cover transition duration-200 group-hover:blur-sm"
-                    />
-                  ) : (
-                    <span>{buildFacultyInitials(account.fullName)}</span>
-                  )}
-                  <span className="absolute inset-0 flex items-end justify-center bg-slate-950/0 px-2 pb-2 text-[10px] font-medium text-transparent transition group-hover:bg-slate-950/50 group-hover:text-white">
-                    Manage image
-                  </span>
-                </button>
+            <form onSubmit={handleSaveName} className="mt-5 space-y-5">
+              {/* Profile Avatar Layout */}
+              <div className="flex items-center gap-4">
+                <div className="relative group shrink-0">
+                  <div className="h-20 w-20 rounded-full border border-slate-700/80 bg-slate-950 overflow-hidden flex items-center justify-center text-lg font-semibold text-slate-200 shadow-inner">
+                    {displayedProfileImage ? (
+                      <img
+                        src={displayedProfileImage}
+                        alt={account.fullName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span>{buildFacultyInitials(account.fullName)}</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileImageMenuOpen(true)}
+                    className="absolute inset-0 rounded-full bg-slate-950/60 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center cursor-pointer"
+                    aria-label="Change profile picture"
+                  >
+                    <Camera className="h-4 w-4 mb-0.5" />
+                    <span>Change</span>
+                  </button>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-medium text-slate-100 truncate">
+                    {account.fullName}
+                  </h3>
+                  <p className="text-xs text-slate-400 truncate mt-0.5">
+                    {account.email}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => profileImageInputRef.current?.click()}
+                      className="text-xs text-slate-400 hover:text-slate-200 transition underline underline-offset-2 cursor-pointer"
+                    >
+                      Upload new image
+                    </button>
+                    {displayedProfileImage && (
+                      <button
+                        type="button"
+                        onClick={() => setIsFullImageOpen(true)}
+                        className="text-xs text-slate-500 hover:text-slate-300 transition cursor-pointer"
+                      >
+                        • View full
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 <input
                   ref={profileImageInputRef}
                   type="file"
@@ -321,211 +371,244 @@ export function FacultySettingsPanel() {
                     setIsProfileImageMenuOpen(false);
                   }}
                 />
-                {profileImageFile ? (
-                  <p className="text-[11px] text-[#7a0000] dark:text-amber-300">
-                    New image selected. Save changes to upload.
-                  </p>
-                ) : null}
               </div>
-              <div className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
-                      First Name
-                    </label>
-                    <input
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 outline-none"
-                      value={account.firstName}
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
-                      Middle Name
-                    </label>
-                    <input
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 outline-none"
-                      value={account.middleName}
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
-                      Last Name
-                    </label>
-                    <input
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 outline-none"
-                      value={account.lastName}
-                      readOnly
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
-                      Email
-                    </label>
-                    <input
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 outline-none"
-                      value={account.email}
-                      readOnly
-                    />
-                  </div>
 
-                  <div className="sm:col-span-2">
-                    <label className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
-                      Department / Program
-                    </label>
-                    <div className="mt-1 flex items-center rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
-                      {account.program ? (
-                        <span className="font-semibold text-amber-600 dark:text-amber-300">
-                          {account.program.code} — {account.program.name}
-                        </span>
-                      ) : (
-                        <span className="inline-flex rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] text-slate-400">
-                          Unassigned
-                        </span>
-                      )}
-                    </div>
-                  </div>
+              {profileImageFile && (
+                <div className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-300 font-normal">
+                  <span className="truncate">New image selected: {profileImageFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileImageFile(null);
+                      if (profileImageInputRef.current) {
+                        profileImageInputRef.current.value = "";
+                      }
+                    }}
+                    className="ml-2 text-slate-400 hover:text-slate-200 shrink-0 cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+
+              {/* Form Input Fields */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-medium text-slate-400 mb-1.5 block">
+                    First Name
+                  </label>
+                  <input
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-600 transition"
+                    value={form.firstName}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, firstName: e.target.value }))
+                    }
+                    placeholder="First name"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-slate-400 mb-1.5 block">
+                    Middle Name
+                  </label>
+                  <input
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-600 transition"
+                    value={form.middleName}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, middleName: e.target.value }))
+                    }
+                    placeholder="Middle name"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-medium text-slate-400 mb-1.5 block">
+                    Last Name
+                  </label>
+                  <input
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-600 transition"
+                    value={form.lastName}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, lastName: e.target.value }))
+                    }
+                    placeholder="Last name"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-medium text-slate-400 mb-1.5 block">
+                    Email Address
+                  </label>
+                  <input
+                    className="w-full bg-slate-950/50 border border-slate-800/60 rounded-lg px-3.5 py-2 text-sm text-slate-400 cursor-not-allowed"
+                    value={account.email}
+                    disabled
+                    readOnly
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-medium text-slate-400 mb-1.5 block">
+                    Department / Program
+                  </label>
+                  <input
+                    className="w-full bg-slate-950/50 border border-slate-800/60 rounded-lg px-3.5 py-2 text-sm text-slate-400 cursor-not-allowed"
+                    value={
+                      account.program
+                        ? `${account.program.code} — ${account.program.name}`
+                        : "Unassigned"
+                    }
+                    disabled
+                    readOnly
+                  />
                 </div>
               </div>
-            </div>
 
-            <div className="mt-6 border-t border-slate-200 dark:border-slate-800/80 pt-4">
-              <form className="space-y-3" onSubmit={handleSaveName}>
-                {profileImageFile ? (
-                  <p className="text-center text-xs text-slate-700 dark:text-slate-300">
-                    New profile picture selected. Click below to save changes.
-                  </p>
-                ) : null}
+              {message && (
+                <p className="text-xs text-emerald-400 font-medium">{message}</p>
+              )}
+              {error && (
+                <p className="text-xs text-red-400 font-medium">{error}</p>
+              )}
 
-                <div className="flex flex-wrap items-center justify-center gap-2.5">
-                  <Button type="submit" size="sm" disabled={isSaving || isLoading || !profileImageFile}>
-                    {isSaving ? "Saving..." : "Save Profile Changes"}
-                  </Button>
-                  {profileImageFile && !isSaving ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setProfileImageFile(null);
-                        if (profileImageInputRef.current) {
-                          profileImageInputRef.current.value = "";
-                        }
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  ) : null}
-                  {message ? (
-                    <p className="text-xs text-emerald-300">{message}</p>
-                  ) : null}
-                  {error && !isLoading ? (
-                    <p className="text-xs text-red-400">{error}</p>
-                  ) : null}
-                </div>
-              </form>
-            </div>
-            </>
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                {isProfileChanged && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm({
+                        firstName: account.firstName,
+                        middleName: account.middleName,
+                        lastName: account.lastName,
+                      });
+                      setProfileImageFile(null);
+                      if (profileImageInputRef.current) {
+                        profileImageInputRef.current.value = "";
+                      }
+                    }}
+                    className="text-xs text-slate-400 hover:text-slate-200 px-3 py-2 rounded-lg transition cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={isSaving || isLoading || !isProfileChanged}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isSaving ? "Saving..." : "Save Profile Changes"}
+                </button>
+              </div>
+            </form>
           ) : null}
         </article>
 
-        <article className="h-fit rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/90 p-4 sm:p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.18em] text-[#7a0000] dark:text-amber-300 font-semibold">
-            Change Password
-          </p>
-          <form className="mt-3 space-y-3" onSubmit={handleChangePasswordSubmit}>
-            <div className="space-y-2.5">
-              <label className="block space-y-1 text-xs text-slate-700 dark:text-slate-300">
-                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
-                  Current Password
-                </span>
-                <div className="relative">
-                  <input
-                    type={showOldPassword ? "text" : "password"}
-                    className="w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 py-2 pl-3 pr-9 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-amber-400"
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowOldPassword(!showOldPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
-                  >
-                    {showOldPassword ? <Eye size={16} /> : <EyeOff size={16} />}
-                  </button>
-                </div>
-              </label>
+        {/* Change Password Card */}
+        <article className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-6 shadow-sm">
+          <div className="pb-4 border-b border-slate-800/80">
+            <h2 className="text-sm font-semibold text-slate-200 tracking-normal">
+              Change Password
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5 font-normal">
+              Update your account password for security.
+            </p>
+          </div>
 
-              <label className="block space-y-1 text-xs text-slate-700 dark:text-slate-300">
-                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
-                  New Password
-                </span>
-                <div className="relative">
-                  <input
-                    type={showNewPassword ? "text" : "password"}
-                    className="w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 py-2 pl-3 pr-9 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-amber-400"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
-                  >
-                    {showNewPassword ? <Eye size={16} /> : <EyeOff size={16} />}
-                  </button>
-                </div>
+          <form className="mt-5 space-y-4" onSubmit={handleChangePasswordSubmit}>
+            <div>
+              <label className="text-xs font-medium text-slate-400 mb-1.5 block">
+                Current Password
               </label>
-
-              <label className="block space-y-1 text-xs text-slate-700 dark:text-slate-300">
-                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-medium">
-                  Confirm New Password
-                </span>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    className="w-full rounded-lg border border-slate-300 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 py-2 pl-3 pr-9 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-amber-400"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
-                  >
-                    {showConfirmPassword ? <Eye size={16} /> : <EyeOff size={16} />}
-                  </button>
-                </div>
-              </label>
+              <div className="relative">
+                <input
+                  type={showOldPassword ? "text" : "password"}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 pr-10 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-600 transition"
+                  placeholder="Enter current password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowOldPassword(!showOldPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-200 cursor-pointer"
+                >
+                  {showOldPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+                </button>
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
-              <Button 
-                type="submit" 
-                size="sm"
+            <div>
+              <label className="text-xs font-medium text-slate-400 mb-1.5 block">
+                New Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 pr-10 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-600 transition"
+                  placeholder="At least 8 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-200 cursor-pointer"
+                >
+                  {showNewPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-slate-400 mb-1.5 block">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 pr-10 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-600 transition"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-200 cursor-pointer"
+                >
+                  {showConfirmPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {passwordMessage && (
+              <p className="text-xs text-emerald-400 font-medium">{passwordMessage}</p>
+            )}
+            {passwordError && (
+              <p className="text-xs text-red-400 font-medium">{passwordError}</p>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
                 disabled={
-                  isChangingPassword || 
-                  isLoading || 
-                  !oldPassword.trim() || 
-                  newPassword.length < 8 || 
+                  isChangingPassword ||
+                  isLoading ||
+                  !oldPassword.trim() ||
+                  newPassword.length < 8 ||
                   newPassword !== confirmPassword
                 }
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isChangingPassword ? "Updating..." : "Update Password"}
-              </Button>
-              {passwordMessage ? (
-                <p className="text-xs text-emerald-300">{passwordMessage}</p>
-              ) : null}
-              {passwordError ? (
-                <p className="text-xs text-red-400">{passwordError}</p>
-              ) : null}
+              </button>
             </div>
           </form>
         </article>
       </section>
 
-      {isProfileImageMenuOpen ? (
+      {/* Profile Image Modal */}
+      {isProfileImageMenuOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
           role="dialog"
@@ -537,106 +620,112 @@ export function FacultySettingsPanel() {
           }}
         >
           <div
-            className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-2xl"
+            className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between border-b border-slate-700 px-6 py-5">
-              <div>
-                <p className="text-sm uppercase tracking-[0.22em] text-[#7a0000] dark:text-amber-300">
-                  Profile Picture
-                </p>
-                <h3
-                  id="profile-image-menu-title"
-                  className="mt-2 text-xl font-semibold text-slate-800 dark:text-slate-100"
-                >
-                  Manage your image
-                </h3>
-              </div>
-              <Button
+            <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+              <h3
+                id="profile-image-menu-title"
+                className="text-sm font-semibold text-slate-100"
+              >
+                Manage Profile Picture
+              </h3>
+              <button
                 type="button"
-                variant="secondary"
-                size="sm"
+                className="text-slate-400 hover:text-slate-200 p-1 rounded-md hover:bg-slate-800 transition cursor-pointer"
                 onClick={() => {
                   setIsProfileImageMenuOpen(false);
                   setIsFullImageOpen(false);
                 }}
               >
-                Close
-              </Button>
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </button>
             </div>
 
-            <div className="space-y-4 px-6 py-6">
-              {isFullImageOpen ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center overflow-hidden rounded-3xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950">
-                    {displayedProfileImage ? (
-                      <img
-                        src={displayedProfileImage}
-                        alt={account?.fullName ?? "Profile picture"}
-                        className="max-h-[70vh] w-full object-contain"
-                      />
-                    ) : (
-                      <div className="flex h-80 w-full items-center justify-center text-2xl font-semibold text-slate-500">
-                        No profile picture available
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => setIsFullImageOpen(false)}
-                    >
-                      Back
-                    </Button>
-                  </div>
+            <div className="p-6 space-y-3">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3.5 text-left text-slate-200 transition hover:border-slate-700 hover:bg-slate-800/40 cursor-pointer"
+                onClick={() => {
+                  setIsFullImageOpen(true);
+                  setIsProfileImageMenuOpen(false);
+                }}
+              >
+                <div>
+                  <span className="block text-sm font-medium">View full photo</span>
+                  <span className="block text-xs text-slate-500">
+                    Open a larger preview of your current photo
+                  </span>
                 </div>
-              ) : (
-                <ul className="space-y-3">
-                  <li>
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-4 text-left text-slate-800 dark:text-slate-100 transition hover:border-amber-400 hover:bg-slate-900"
-                      onClick={() => setIsFullImageOpen(true)}
-                    >
-                      <span>
-                        <span className="block font-semibold">
-                          View image in full
-                        </span>
-                        <span className="block text-sm text-slate-500 dark:text-slate-400">
-                          Open a larger preview of the current photo.
-                        </span>
-                      </span>
-                      <span className="text-[#7a0000] dark:text-amber-300">↗</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-4 py-4 text-left text-slate-800 dark:text-slate-100 transition hover:border-amber-400 hover:bg-slate-900"
-                      onClick={() => {
-                        profileImageInputRef.current?.click();
-                        setIsProfileImageMenuOpen(false);
-                      }}
-                    >
-                      <span>
-                        <span className="block font-semibold">
-                          Change image
-                        </span>
-                        <span className="block text-sm text-slate-500 dark:text-slate-400">
-                          Upload a new profile picture.
-                        </span>
-                      </span>
-                      <span className="text-[#7a0000] dark:text-amber-300">✎</span>
-                    </button>
-                  </li>
-                </ul>
-              )}
+                <span className="text-slate-400 text-sm">↗</span>
+              </button>
+
+              <button
+                type="button"
+                className="flex w-full items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3.5 text-left text-slate-200 transition hover:border-slate-700 hover:bg-slate-800/40 cursor-pointer"
+                onClick={() => {
+                  profileImageInputRef.current?.click();
+                  setIsProfileImageMenuOpen(false);
+                }}
+              >
+                <div>
+                  <span className="block text-sm font-medium">Upload new photo</span>
+                  <span className="block text-xs text-slate-500">
+                    Select a PNG, JPG, or WEBP file from your device
+                  </span>
+                </div>
+                <span className="text-slate-400 text-sm">✎</span>
+              </button>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
+      {/* Full Image Preview Modal */}
+      {isFullImageOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 px-4 py-6 backdrop-blur-md"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setIsFullImageOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+              <h3 className="text-sm font-semibold text-slate-100">
+                {account?.fullName ?? "Profile Photo"}
+              </h3>
+              <button
+                type="button"
+                className="text-slate-400 hover:text-slate-200 p-1 rounded-md hover:bg-slate-800 transition cursor-pointer"
+                onClick={() => setIsFullImageOpen(false)}
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-800 bg-slate-950 max-h-[60vh]">
+                {displayedProfileImage ? (
+                  <img
+                    src={displayedProfileImage}
+                    alt={account?.fullName ?? "Profile picture"}
+                    className="max-h-[60vh] w-full object-contain"
+                  />
+                ) : (
+                  <div className="flex h-64 w-full items-center justify-center text-sm font-medium text-slate-500">
+                    No profile picture available
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

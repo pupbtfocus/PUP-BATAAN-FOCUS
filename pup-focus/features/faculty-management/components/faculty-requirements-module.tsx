@@ -386,14 +386,14 @@ export function FacultyRequirementsModule() {
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
             <button
               type="button"
-              className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
               onClick={openCalendarModal}
             >
               University Calendar
             </button>
             <button
               type="button"
-              className="inline-flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-1.5 rounded-lg text-xs shadow-sm transition cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
               onClick={openModal}
             >
               Submit Requirements
@@ -468,7 +468,7 @@ export function FacultyRequirementsModule() {
                           setForm((curr) => ({ ...curr, requirementCode: code }));
                           openModal();
                         }}
-                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm transition cursor-pointer"
+                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer"
                       >
                         <FileUp className="h-3.5 w-3.5" />
                         Submit
@@ -481,7 +481,7 @@ export function FacultyRequirementsModule() {
                           setForm((curr) => ({ ...curr, requirementCode: code }));
                           openModal();
                         }}
-                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm transition cursor-pointer"
+                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer"
                       >
                         <FileUp className="h-3.5 w-3.5" />
                         Resubmit
