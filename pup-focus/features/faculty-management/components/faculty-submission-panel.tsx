@@ -158,16 +158,28 @@ function normalizeAcademicYear(ay?: string | null): string {
   return ay.toLowerCase().trim().replace(/^s\.?y\.?\s*/i, "").replace(/^a\.?y\.?\s*/i, "");
 }
 
+function getStatusDotColor(
+  status: RequirementStatus["status"] | HistorySubmissionStatus,
+): string {
+  if (status === "Validated") return "bg-emerald-400";
+  if (status === "Rejected") return "bg-amber-400";
+  if (status === "Not Submitted") return "bg-slate-600";
+  return "bg-blue-400";
+}
+
+function getStatusTextColor(
+  status: RequirementStatus["status"] | HistorySubmissionStatus,
+): string {
+  if (status === "Validated") return "text-emerald-400";
+  if (status === "Rejected") return "text-amber-400";
+  if (status === "Not Submitted") return "text-slate-500";
+  return "text-blue-400";
+}
+
 function getStatusTextColorClass(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
-  if (status === "Validated")
-    return "text-emerald-400 font-medium text-xs tracking-wider uppercase";
-  if (status === "Rejected")
-    return "text-rose-400 font-medium text-xs tracking-wider uppercase";
-  if (status === "Not Submitted")
-    return "text-slate-400 font-medium text-xs tracking-wider uppercase";
-  return "text-amber-400 font-medium text-xs tracking-wider uppercase";
+  return getStatusTextColor(status);
 }
 
 function getStatusBadgeTone(
@@ -178,8 +190,8 @@ function getStatusBadgeTone(
   if (status === "Rejected")
     return "border-amber-500/20 bg-amber-500/10 text-amber-400";
   if (status === "Not Submitted")
-    return "border-slate-700 bg-slate-800 text-slate-400";
-  return "border-amber-500/20 bg-amber-500/10 text-amber-400";
+    return "border-slate-700/50 bg-slate-800/60 text-slate-400";
+  return "border-blue-500/20 bg-blue-500/10 text-blue-400";
 }
 
 function getStatusIcon(
@@ -1590,13 +1602,14 @@ function FacultySubmissionPanelContent({
             )}
 
             {activeView === "status" && (
-              <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-2">
+              <article className="space-y-5 p-2 sm:p-4 md:p-5">
+                {/* Minimalist Header */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+                    <h1 className="text-lg font-medium text-slate-100 tracking-tight">
                       Requirements Management
                     </h1>
-                    <p className="mt-1 text-sm font-medium text-slate-400 tracking-wide">
+                    <p className="mt-0.5 text-xs text-slate-400 font-normal">
                       {!hasActiveSchedule ? (
                         "No Active Academic Schedule"
                       ) : (
@@ -1610,11 +1623,11 @@ function FacultySubmissionPanelContent({
                       )}
                     </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={openHistoryModal}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition-all duration-200 backdrop-blur-sm cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition cursor-pointer whitespace-nowrap"
                     >
                       <History className="h-3.5 w-3.5" />
                       Submission History
@@ -1628,7 +1641,7 @@ function FacultySubmissionPanelContent({
                           "noopener,noreferrer",
                         )
                       }
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition-all duration-200 backdrop-blur-sm cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition cursor-pointer whitespace-nowrap"
                     >
                       <Calendar className="h-3.5 w-3.5" />
                       University Calendar
@@ -1638,49 +1651,43 @@ function FacultySubmissionPanelContent({
                       onClick={() => void fetchStatuses()}
                       disabled={isLoadingStatuses}
                       title="Refresh status"
-                      className="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-slate-300 hover:bg-slate-700 hover:text-white transition disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer"
                     >
-                      <RotateCw className={`h-4 w-4 ${isLoadingStatuses ? "animate-spin text-amber-400" : ""}`} />
+                      <RotateCw className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin text-amber-400" : ""}`} />
                       <span className="sr-only">Refresh</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Compact Header Summary Bar */}
+                {/* Clean Header Progress & Status Counts */}
                 {displayedStatusCounts && !isLoadingStatuses && (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3.5 sm:p-4 shadow-sm space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                          Compliance Progress
+                  <div className="space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                      <span className="font-medium text-slate-300">
+                        {displayedStatusCounts.validated} of {displayedStatusCounts.total} Completed ({Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100)}%)
+                      </span>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                          <span>{displayedStatusCounts.validated} Validated</span>
                         </span>
-                        <span className="text-xs font-bold text-amber-300">
-                          {displayedStatusCounts.validated} of {displayedStatusCounts.total} ({Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100)}%)
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full bg-blue-400" />
+                          <span>{isAllValidated ? 0 : displayedStatusCounts.pending} Pending</span>
                         </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                          {displayedStatusCounts.validated} Validated
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full bg-amber-400" />
+                          <span>{displayedStatusCounts.rejected} Revision</span>
                         </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                          {isAllValidated ? 0 : displayedStatusCounts.pending} Pending
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-0.5 text-xs font-medium text-rose-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
-                          {displayedStatusCounts.rejected} Needs Revision
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/80 px-2.5 py-0.5 text-xs font-medium text-slate-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
-                          {isAllValidated ? 0 : displayedStatusCounts.notSubmitted} Not Submitted
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full bg-slate-600" />
+                          <span>{isAllValidated ? 0 : displayedStatusCounts.notSubmitted} Not Submitted</span>
                         </span>
                       </div>
                     </div>
-                    {/* Progress Bar */}
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
                       <div
-                        className="h-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-500 rounded-full"
+                        className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
                         style={{
                           width: `${Math.min(100, Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100))}%`,
                         }}
@@ -1690,147 +1697,129 @@ function FacultySubmissionPanelContent({
                 )}
 
                 {(!hasActiveSchedule || isWindowClosed) && (
-                  <div className="p-3.5 sm:p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
-                    <h4 className="text-xs font-semibold text-amber-300 tracking-wider uppercase mb-1">
-                      Submission Window Closed
-                    </h4>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      {!hasActiveSchedule
-                        ? "There is currently no active academic schedule set for document submissions. Document uploads are locked. Please wait for the Admin or Program Head to open the submission window."
-                        : "Submission Window is currently closed. Document uploads are locked for this term. Please contact your Program Head or Admin for window extension requests."}
-                    </p>
+                  <div className="p-3 sm:p-3.5 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs text-slate-300">
+                    <span className="font-medium text-amber-300 mr-1.5">
+                      Submission Window Closed:
+                    </span>
+                    {!hasActiveSchedule
+                      ? "There is currently no active academic schedule set for document submissions. Document uploads are locked."
+                      : "Submission Window is currently closed. Document uploads are locked for this term."}
                   </div>
                 )}
 
-                <div className="space-y-3">
-                  {isLoadingStatuses ? (
-                    <p className="text-sm text-slate-400 py-4 text-center">
-                      Loading requirement statuses...
-                    </p>
-                  ) : statusError ? (
-                    <p className="text-sm text-red-400 py-4">{statusError}</p>
-                  ) : displayedRequirementStatuses.map((req) => {
-                    return (
-                      <article
+                {/* Single Unified Table/List Container */}
+                {isLoadingStatuses ? (
+                  <p className="text-sm text-slate-400 py-6 text-center">
+                    Loading requirement statuses...
+                  </p>
+                ) : statusError ? (
+                  <p className="text-sm text-red-400 py-4">{statusError}</p>
+                ) : (
+                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl divide-y divide-slate-800/60 overflow-hidden shadow-sm">
+                    {displayedRequirementStatuses.map((req) => (
+                      <div
                         key={req.code}
                         id={`requirement-${req.code}`}
-                        className="rounded-xl border border-slate-800 bg-slate-950 p-3.5 sm:p-4 transition-all duration-200 hover:border-slate-700 shadow-sm"
+                        className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-800/30 transition-colors"
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-sm sm:text-base text-slate-100 truncate">
-                              {REQUIREMENT_LABEL[req.code]}
-                            </h4>
-                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-400">
-                              {req.submittedAt &&
-                              formatSubmittedDateTime(req.submittedAt) ? (
-                                <span>
-                                  Submitted: {formatSubmittedDateTime(req.submittedAt)}
-                                </span>
-                              ) : (
-                                <span className="text-slate-500">
-                                  No submission recorded yet
-                                </span>
-                              )}
-                              {req.reviewedAt && (
-                                <span>Reviewed: {req.reviewedAt}</span>
-                              )}
-                            </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-slate-200 truncate">
+                            {REQUIREMENT_LABEL[req.code]}
+                          </h4>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500">
+                            {req.submittedAt && formatSubmittedDateTime(req.submittedAt) ? (
+                              <span>Submitted: {formatSubmittedDateTime(req.submittedAt)}</span>
+                            ) : (
+                              <span>No submission recorded yet</span>
+                            )}
+                            {req.reviewedAt && (
+                              <span>• Reviewed: {req.reviewedAt}</span>
+                            )}
+                          </div>
+                          {/* Inline Revision Note */}
+                          {req.status === "Rejected" && (
+                            <p className="text-xs text-amber-300/90 flex items-center gap-1.5 mt-1 font-normal">
+                              <AlertCircle className="h-3.5 w-3.5 text-amber-400/90 shrink-0" />
+                              <span className="italic truncate">
+                                &ldquo;{req.adminRemarks || req.admin_remarks || req.feedback || "Revision requested. Please check and resubmit."}&rdquo;
+                              </span>
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex shrink-0 flex-wrap items-center gap-3">
+                          {/* Minimal Dot Status Indicator */}
+                          <div className={`inline-flex items-center gap-1.5 text-xs font-normal whitespace-nowrap ${getStatusTextColor(req.status)}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${getStatusDotColor(req.status)}`} />
+                            <span>{getStatusText(req.status)}</span>
                           </div>
 
-                          <div className="flex shrink-0 flex-wrap items-center gap-2">
-                            {/* Modern Pill Status Badge */}
-                            <div
-                              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${getStatusBadgeTone(req.status)}`}
-                            >
-                              {getStatusIcon(req.status)}
-                              <span>{getStatusText(req.status)}</span>
-                            </div>
-
-                            {/* For Not Submitted: Primary Submit button */}
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-1.5">
+                            {/* Submit Button for Not Submitted */}
                             {req.status === "Not Submitted" && (
-                              <Button
+                              <button
                                 type="button"
-                                size="sm"
                                 onClick={() => openDirectUploadModal(req.code)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
-                                className="inline-flex items-center gap-1.5 text-xs h-8 px-3 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm transition disabled:opacity-50 cursor-pointer"
                               >
                                 <Upload className="h-3.5 w-3.5" />
                                 Submit
-                              </Button>
+                              </button>
                             )}
 
-                            {/* For Needs Revision (Rejected): Primary Resubmit button */}
+                            {/* Resubmit Button for Rejected */}
                             {req.status === "Rejected" && (
-                              <Button
+                              <button
                                 type="button"
-                                size="sm"
                                 onClick={() => openDirectUploadModal(req.code)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
-                                className="inline-flex items-center gap-1.5 text-xs h-8 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold cursor-pointer"
+                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm transition disabled:opacity-50 cursor-pointer"
                               >
                                 <Upload className="h-3.5 w-3.5" />
                                 Resubmit
-                              </Button>
+                              </button>
                             )}
 
-                            {/* For Pending, Validated, or Rejected: View File button */}
-                            {req.status !== "Not Submitted" &&
-                            req.latestSubmissionId ? (
+                            {/* View File & History Buttons */}
+                            {req.status !== "Not Submitted" && req.latestSubmissionId ? (
                               <>
-                                <Button
+                                <button
                                   type="button"
-                                  variant="secondary"
-                                  size="sm"
                                   onClick={() => openSubmissionPreview(req)}
-                                  className="relative inline-flex items-center gap-1.5 text-xs h-8 px-3 cursor-pointer"
+                                  className="relative inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-slate-100 border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 hover:border-slate-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer"
                                 >
                                   {Boolean(
                                     req.feedback &&
-                                    !viewedSubmissionIds.has(
-                                      req.latestSubmissionId,
-                                    ) &&
+                                    !viewedSubmissionIds.has(req.latestSubmissionId) &&
                                     req.is_read !== true
                                   ) ? (
-                                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
                                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                                     </span>
                                   ) : null}
                                   <Eye className="h-3.5 w-3.5" />
                                   View File
-                                </Button>
+                                </button>
 
-                                <Button
+                                <button
                                   type="button"
-                                  variant="ghost"
-                                  size="sm"
                                   onClick={() => openVersionHistory(req)}
-                                  className="inline-flex items-center gap-1.5 text-xs h-8 px-2.5 text-slate-400 hover:text-slate-100 cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-slate-100 border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 hover:border-slate-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer"
                                 >
                                   <History className="h-3.5 w-3.5" />
                                   History
-                                </Button>
+                                </button>
                               </>
                             ) : null}
                           </div>
                         </div>
-
-                        {/* Compact 1-line amber banner for 'Needs Revision' (Rejected) */}
-                        {req.status === "Rejected" && (
-                          <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200">
-                            <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                            <span className="font-semibold text-amber-400 shrink-0">Revision Note:</span>
-                            <span className="truncate italic">
-                              &ldquo;{req.adminRemarks || req.admin_remarks || req.feedback || "Revision requested. Please check and resubmit."}&rdquo;
-                            </span>
-                          </div>
-                        )}
-                      </article>
-                    );
-                  })}
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </article>
             )}
 
@@ -2195,51 +2184,50 @@ function FacultySubmissionPanelContent({
                               </p>
                             </div>
 
-                            <div className="flex shrink-0 items-center gap-2">
-                              <Button
+                            <div className="flex shrink-0 items-center gap-3">
+                              <div
+                                className={`inline-flex items-center gap-1.5 text-xs font-normal whitespace-nowrap ${getStatusTextColor(submission.status)}`}
+                              >
+                                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${getStatusDotColor(submission.status)}`} />
+                                <span>{getStatusText(submission.status)}</span>
+                              </div>
+
+                              <button
                                 type="button"
-                                variant="secondary"
-                                size="sm"
                                 onClick={() =>
                                   openHistorySubmissionPreview(submission)
                                 }
-                                className="relative inline-flex items-center gap-1.5"
+                                className="relative inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-slate-100 border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 hover:border-slate-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer"
                               >
                                 {Boolean(
                                   (submission.remarks || submission.feedback || submission.adminRemarks || submission.admin_remarks) &&
                                   !viewedSubmissionIds.has(submission.id) &&
                                   submission.is_read !== true
                                 ) ? (
-                                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                  <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                                   </span>
                                 ) : null}
                                 <Eye className="h-3.5 w-3.5" />
                                 View File
-                              </Button>
-
-                              <span
-                                className={getStatusTextColorClass(submission.status)}
-                              >
-                                {getStatusText(submission.status)}
-                              </span>
+                              </button>
                             </div>
                           </div>
 
                           {/* Historical Admin Feedback Callout */}
                           {(submission.status === "Rejected" || submission.status === "Validated") && (
                             <div
-                              className={`mt-3 rounded-lg border p-2.5 text-xs leading-relaxed ${
+                              className={`mt-2.5 flex items-center gap-2 rounded-md border p-2.5 text-xs font-normal leading-relaxed ${
                                 submission.status === "Rejected"
-                                  ? "border-red-800/60 bg-red-950/20 text-red-200"
-                                  : "border-emerald-800/60 bg-emerald-950/20 text-emerald-200"
+                                  ? "border-amber-500/15 bg-amber-500/5 text-amber-300/90"
+                                  : "border-emerald-500/15 bg-emerald-500/5 text-emerald-300/90"
                               }`}
                             >
-                              <span className="font-semibold block mb-0.5 text-[10px] uppercase tracking-wider">
+                              <span className="font-semibold shrink-0 text-[10px] uppercase tracking-wider">
                                 Admin Feedback:
                               </span>
-                              <span className="italic">
+                              <span className="truncate italic">
                                 &ldquo;{submission.adminRemarks || submission.admin_remarks || submission.feedback || submission.remarks || (submission.status === "Rejected" ? "Revision requested. Please check and resubmit." : "Validated with no additional remarks.")}&rdquo;
                               </span>
                             </div>
