@@ -44,6 +44,13 @@ describe("Faculty Name Parsing & Full Name Helpers", () => {
     expect(parsed.lastName).toBe("Cereza");
   });
 
+  it("parseFullNameFallback parses 4-word names properly separating middle and first names", () => {
+    const parsed = parseFullNameFallback("Christian Jay Cereza Mandani");
+    expect(parsed.firstName).toBe("Christian Jay");
+    expect(parsed.middleName).toBe("Cereza");
+    expect(parsed.lastName).toBe("Mandani");
+  });
+
   it("parseFullNameFallback handles empty or single word input safely", () => {
     expect(parseFullNameFallback("")).toEqual({
       firstName: "",

@@ -63,7 +63,26 @@ export function parseFullNameFallback(fullName?: string | null): {
     return { firstName, middleName, lastName };
   }
 
-  // Default: treat all preceding words as multi-word first name (e.g. "Christian Jay" + "Cereza")
+  // 4 or more words (e.g., "Christian Jay Cereza Mandani"):
+  // First Name: "Christian Jay", Middle Name: "Cereza", Last Name: "Mandani"
+  if (parts.length >= 4) {
+    const firstName = parts.slice(0, -2).join(" ");
+    const middleName = penultimate;
+    return { firstName, middleName, lastName };
+  }
+
+  // 3 words without middle initial (e.g., "Christian Jay Cereza"):
   const firstName = parts.slice(0, -1).join(" ");
   return { firstName, middleName: "", lastName };
 }
+
+/**
+ * Extracts the first name from a user's full name (or returns fallback).
+ * Handles multi-word first names cleanly (e.g. "Christian Jay Cereza Mandani" -> "Christian Jay" or "Christian").
+ */
+export function extractFirstName(fullName?: string | null, fallback: string = "Faculty"): string {
+  if (!fullName || !fullName.trim()) return fallback;
+  const parsed = parseFullNameFallback(fullName);
+  return parsed.firstName || fullName.trim().split(/\s+/)[0] || fallback;
+}
+

@@ -9,6 +9,7 @@ import { FacultySettingsPanel } from "@/features/faculty-management/components/f
 import { SubmissionWindowCountdown } from "@/features/submissions/components/submission-window-countdown";
 import { SubmissionLockBanner } from "@/features/submissions/components/submission-lock-banner";
 import { VersionHistoryModal } from "@/features/submissions/components/version-history-modal";
+import { extractFirstName } from "@/lib/faculty-profile";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -19,7 +20,7 @@ import {
   getTodayInManila,
   buildAcademicYearOptions,
 } from "@/features/submissions/services/submission-window.service";
-import { Menu, X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, UploadCloud, CheckCircle2, Calendar, Loader2, Eye, RotateCw, Clock3 } from "lucide-react";
+import { Menu, X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, UploadCloud, CheckCircle2, Calendar, Loader2, Eye, RotateCw, Clock3, Download, ExternalLink, ArrowRight, Sparkles, FileSpreadsheet, FileCheck } from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 
@@ -243,6 +244,7 @@ function FacultySubmissionPanelContent({
   const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const academicYears = useMemo(() => buildAcademicYearOptions(), []);
+  const facultyFirstName = useMemo(() => extractFirstName(facultyName, "Faculty"), [facultyName]);
   const [activeView, setActiveView] = useState<PanelView>("dashboard");
   const [form, setForm] = useState<SubmissionFormState>({
     academicYear: academicYears[0] ?? "",
@@ -373,13 +375,25 @@ function FacultySubmissionPanelContent({
   const [
     hasSeenIncompleteRequirementsModal,
     setHasSeenIncompleteRequirementsModal,
-  ] = useState(false);
-  const showIncompleteRequirementsModal =
-    activeView === "dashboard" &&
-    !hasSeenIncompleteRequirementsModal &&
-    Boolean(submissionWindow?.isConfigured && submissionWindow?.isOpen) &&
-    statusCounts !== null &&
-    statusCounts.pending + statusCounts.notSubmitted > 0;
+  ] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return sessionStorage.getItem("dismissed_requirement_alert") === "true";
+      } catch {
+        // safe
+      }
+    }
+    return false;
+  });
+
+  function dismissIncompleteRequirementsAlert() {
+    setHasSeenIncompleteRequirementsModal(true);
+    try {
+      sessionStorage.setItem("dismissed_requirement_alert", "true");
+    } catch {
+      // safe
+    }
+  }
 
   async function fetchHistory() {
     try {
@@ -653,6 +667,22 @@ function FacultySubmissionPanelContent({
     });
   }, [historyAcademicYear, historySemester, pastSubmissions]);
 
+  const deduplicatedRecentActivities = useMemo(() => {
+    const seen = new Set<string>();
+    const list: PastSubmission[] = [];
+
+    for (const sub of pastSubmissions) {
+      const key = `${sub.requirementCode}-${sub.status}-${sub.submittedAt}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push(sub);
+      }
+      if (list.length >= 4) break;
+    }
+
+    return list;
+  }, [pastSubmissions]);
+
   const activeAY = submissionWindow?.academicYear || selectedAcademicYear || form.academicYear;
   const activeSem = submissionWindow?.semester || selectedSemester || form.semester;
 
@@ -749,6 +779,33 @@ function FacultySubmissionPanelContent({
   const totalRequirements = displayedStatusCounts?.total ?? DEFAULT_REQUIREMENTS.length;
   const validatedCount = displayedStatusCounts?.validated ?? 0;
   const isAllValidated = totalRequirements > 0 && validatedCount === totalRequirements;
+
+  const windowDeadlineDisplay = useMemo(() => {
+    if (!submissionWindow?.endDate) return null;
+    const parsed = new Date(`${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}`);
+    if (Number.isNaN(parsed.getTime())) return submissionWindow.endDate;
+    return parsed.toLocaleDateString("en-PH", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }, [submissionWindow]);
+
+  const windowDaysRemaining = useMemo(() => {
+    if (!submissionWindow?.endDate) return null;
+    const targetMs = new Date(`${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}`).getTime();
+    if (Number.isNaN(targetMs)) return null;
+    const diffMs = targetMs - Date.now();
+    if (diffMs <= 0) return 0;
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  }, [submissionWindow]);
+
+  const showIncompleteRequirementsModal =
+    activeView === "dashboard" &&
+    !hasSeenIncompleteRequirementsModal &&
+    Boolean(submissionWindow?.isConfigured && submissionWindow?.isOpen) &&
+    displayedStatusCounts !== null &&
+    (displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected > 0);
 
   function openDirectUploadModal(code: RequirementCode) {
     setSelectedRequirementForUpload(code);
@@ -1175,7 +1232,7 @@ function FacultySubmissionPanelContent({
       <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-700 bg-slate-900 p-2.5 shadow-lg">
         <div className="my-1.5 rounded-lg bg-[var(--card)] p-2 text-[var(--accent)] flex flex-col items-center border border-slate-800">
           <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
-            {facultyName ?? "Faculty"}
+            {facultyFirstName}
           </p>
 
           <div className="my-1.5 h-px w-full bg-slate-700" />
@@ -1241,7 +1298,7 @@ function FacultySubmissionPanelContent({
 
             <div className="my-2 rounded-lg bg-[var(--card)] p-2 text-[var(--accent)] flex flex-col items-center border border-slate-800">
               <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
-                {facultyName ?? "Faculty"}
+                {facultyFirstName}
               </p>
 
               <div className="my-1.5 h-px w-full bg-slate-700" />
@@ -1290,44 +1347,275 @@ function FacultySubmissionPanelContent({
       <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
           <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#090d16]">
-            {activeView !== "dashboard" && activeView !== "status" ? (
+            {activeView === "submit" ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
                 <div>
                   <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
-                    {activeView === "submit" ? "Submit Requirements" : "Settings"}
+                    Submit Requirements
                   </h1>
                 </div>
               </div>
             ) : null}
             {activeView === "dashboard" && (
-              <article className="relative -m-4 sm:-m-6 lg:-m-8 h-[calc(100vh-4rem)] w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] lg:w-[calc(100%+4rem)] overflow-hidden p-0">
-                <div className="relative h-full overflow-hidden bg-[#4d0000]/80">
-                  <Image
-                    src={LOGIN_PAGE_IMAGES[0]}
-                    alt="PUP Bataan login background"
-                    fill
-                    sizes="100vw"
-                    className="object-cover"
-                    style={{ animation: "backgroundFadeA 16s infinite linear" }}
-                  />
-                  <Image
-                    src={LOGIN_PAGE_IMAGES[1]}
-                    alt="PUP Bataan login background"
-                    fill
-                    sizes="100vw"
-                    className="object-cover"
-                    style={{ animation: "backgroundFadeB 16s infinite linear" }}
-                  />
-                  {/* removed red overlay */}
-
-                  <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
-                    <BrandMark size={90} className="rounded-full" />
-                    <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-                      Polytechnic University of the Philippines - Bataan Campus
-                    </p>
-                    {/* Dashboard title removed */}
+              <article className="space-y-6">
+                {/* Top Hero Section */}
+                <section className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-r from-slate-900/90 via-slate-900/80 to-slate-950 p-6 sm:p-7 shadow-sm">
+                  {/* Subtle Campus Photo Backdrop Overlay */}
+                  <div className="absolute inset-0 pointer-events-none opacity-[0.14] mix-blend-luminosity overflow-hidden">
+                    <Image
+                      src={LOGIN_PAGE_IMAGES[0]}
+                      alt="PUP Bataan campus backdrop"
+                      fill
+                      sizes="100vw"
+                      className="object-cover object-center"
+                      priority
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/60 to-slate-950/90" />
                   </div>
-                </div>
+
+                  <div className="relative z-10 space-y-1">
+                    <h1 className="text-xl sm:text-2xl font-semibold text-slate-100 tracking-tight">
+                      Welcome back, {facultyFirstName}
+                    </h1>
+                    <p className="text-xs text-slate-400 font-normal">
+                      {submissionWindow
+                        ? `A.Y. ${submissionWindow.academicYear} • ${submissionWindow.semester}`
+                        : "A.Y. 2026-2027 • 1st Semester"}
+                    </p>
+                  </div>
+                </section>
+
+                {/* Top Stat Summary Grid (3 Cards) */}
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Card 1: Overall Progress */}
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-400">Overall Progress</span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                        {Math.round(((displayedStatusCounts?.validated ?? 0) / (displayedStatusCounts?.total || 6)) * 100)}%
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        {displayedStatusCounts?.validated ?? 0} of {displayedStatusCounts?.total ?? 6} Validated
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {isAllValidated
+                          ? "All documents completed and validated"
+                          : `${(displayedStatusCounts?.total ?? 6) - (displayedStatusCounts?.validated ?? 0)} items awaiting completion`}
+                      </p>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                      <div
+                        className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
+                        style={{
+                          width: `${Math.min(100, Math.round(((displayedStatusCounts?.validated ?? 0) / (displayedStatusCounts?.total || 6)) * 100))}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Card 2: Submission Window Status */}
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-400">Window Status</span>
+                      <span
+                        className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                          hasActiveSchedule && !isWindowClosed
+                            ? "text-blue-400 bg-blue-500/10 border-blue-500/20"
+                            : "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                        }`}
+                      >
+                        {hasActiveSchedule && !isWindowClosed ? "Open" : "Closed"}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        {!hasActiveSchedule
+                          ? "No Active Window"
+                          : isWindowClosed
+                            ? "Window Closed"
+                            : "Submission Open"}
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {windowDeadlineDisplay
+                          ? `Deadline: ${windowDeadlineDisplay}`
+                          : "Schedule not configured"}
+                      </p>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      {hasActiveSchedule && !isWindowClosed
+                        ? "Uploads and resubmissions are currently enabled"
+                        : "Document submissions are currently locked"}
+                    </p>
+                  </div>
+
+                  {/* Card 3: Action Required */}
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-400">Action Required</span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        {(displayedStatusCounts?.notSubmitted ?? 0) + (displayedStatusCounts?.rejected ?? 0)} Items
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {displayedStatusCounts?.notSubmitted ?? 0} Not Submitted • {displayedStatusCounts?.rejected ?? 0} Needs Revision
+                      </p>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      {(displayedStatusCounts?.pending ?? 0) > 0
+                        ? `${displayedStatusCounts?.pending} item(s) currently under admin review`
+                        : "Direct upload available for pending items"}
+                    </p>
+                  </div>
+                </section>
+
+                {/* Main Dashboard Body (2-Column Grid) */}
+                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                  {/* Left Column (2 Span - Action Required Checklist) */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 sm:p-6 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
+                        <div>
+                          <h2 className="text-sm font-semibold text-slate-100 tracking-normal">
+                            Pending Requirements
+                          </h2>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            Documents awaiting your submission or revision for this semester.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => navigateToView("status")}
+                          className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium transition cursor-pointer"
+                        >
+                          <span>View all 6</span>
+                          <ArrowRight className="h-3 w-3" />
+                        </button>
+                      </div>
+
+                      {isLoadingStatuses ? (
+                        <p className="text-xs text-slate-400 py-6 text-center">Loading requirements...</p>
+                      ) : (
+                        <div className="mt-4">
+                          {displayedRequirementStatuses.filter(
+                            (req) => req.status === "Not Submitted" || req.status === "Rejected"
+                          ).length === 0 ? (
+                            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center space-y-2">
+                              <CheckCircle2 className="h-8 w-8 text-emerald-400 mx-auto" />
+                              <h3 className="text-sm font-semibold text-slate-100">
+                                Great job! No pending requirements.
+                              </h3>
+                              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                                All 6 required faculty documents have been submitted or validated for this semester.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => navigateToView("status")}
+                                className="mt-2 inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer"
+                              >
+                                View Requirements Table
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl divide-y divide-slate-800/60 overflow-hidden">
+                              {displayedRequirementStatuses
+                                .filter((req) => req.status === "Not Submitted" || req.status === "Rejected")
+                                .map((req) => (
+                                  <div
+                                    key={req.code}
+                                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-800/20 transition-colors"
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="text-sm font-medium text-slate-200 truncate">
+                                          {REQUIREMENT_LABEL[req.code]}
+                                        </h4>
+                                        <div className={`inline-flex items-center gap-1 text-[11px] font-normal ${getStatusTextColor(req.status)}`}>
+                                          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${getStatusDotColor(req.status)}`} />
+                                          <span>{getStatusText(req.status)}</span>
+                                        </div>
+                                      </div>
+                                      {req.status === "Rejected" && (
+                                        <p className="text-xs text-amber-300/90 flex items-center gap-1.5 mt-1.5 font-normal">
+                                          <AlertCircle className="h-3.5 w-3.5 text-amber-400/90 shrink-0" />
+                                          <span className="italic truncate">
+                                            &ldquo;{req.adminRemarks || req.admin_remarks || req.feedback || "Revision requested. Please check and resubmit."}&rdquo;
+                                          </span>
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    <div className="shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => openDirectUploadModal(req.code)}
+                                        disabled={!hasActiveSchedule || isWindowClosed}
+                                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                      >
+                                        <Upload className="h-3.5 w-3.5" />
+                                        <span>{req.status === "Rejected" ? "Resubmit" : "Submit Now"}</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column (1 Span - Recent Activity) */}
+                  <div className="space-y-6">
+                    {/* Activity Feed Card */}
+                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-4">
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+                        <h3 className="text-sm font-semibold text-slate-100 tracking-normal">
+                          Recent Activity
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={openHistoryModal}
+                          className="text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                        >
+                          View all
+                        </button>
+                      </div>
+
+                      {deduplicatedRecentActivities.length > 0 ? (
+                        <div className="space-y-3">
+                          {deduplicatedRecentActivities.map((sub) => (
+                            <div
+                              key={sub.id}
+                              className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/60"
+                            >
+                              <div className="mt-0.5 shrink-0">
+                                <span className={`h-2 w-2 rounded-full block ${getStatusDotColor(sub.status)}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-slate-200 truncate">
+                                  {REQUIREMENT_LABEL[sub.requirementCode]}
+                                </p>
+                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                  Status: <span className={getStatusTextColor(sub.status)}>{getStatusText(sub.status)}</span>
+                                </p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">
+                                  {formatSubmittedDateTime(sub.submittedAt) ?? sub.submittedAt}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-500 py-3 text-center">
+                          No submission activity recorded yet.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </section>
               </article>
             )}
 
@@ -1627,7 +1915,7 @@ function FacultySubmissionPanelContent({
                     <button
                       type="button"
                       onClick={openHistoryModal}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
                     >
                       <History className="h-3.5 w-3.5" />
                       Submission History
@@ -1641,7 +1929,7 @@ function FacultySubmissionPanelContent({
                           "noopener,noreferrer",
                         )
                       }
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
                     >
                       <Calendar className="h-3.5 w-3.5" />
                       University Calendar
@@ -1762,7 +2050,7 @@ function FacultySubmissionPanelContent({
                                 type="button"
                                 onClick={() => openDirectUploadModal(req.code)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
-                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm transition disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                               >
                                 <Upload className="h-3.5 w-3.5" />
                                 Submit
@@ -1775,7 +2063,7 @@ function FacultySubmissionPanelContent({
                                 type="button"
                                 onClick={() => openDirectUploadModal(req.code)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
-                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm transition disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                               >
                                 <Upload className="h-3.5 w-3.5" />
                                 Resubmit
@@ -1788,7 +2076,7 @@ function FacultySubmissionPanelContent({
                                 <button
                                   type="button"
                                   onClick={() => openSubmissionPreview(req)}
-                                  className="relative inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-slate-100 border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 hover:border-slate-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer"
+                                  className="relative inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
                                 >
                                   {Boolean(
                                     req.feedback &&
@@ -1807,7 +2095,7 @@ function FacultySubmissionPanelContent({
                                 <button
                                   type="button"
                                   onClick={() => openVersionHistory(req)}
-                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-slate-100 border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 hover:border-slate-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
                                 >
                                   <History className="h-3.5 w-3.5" />
                                   History
@@ -2197,7 +2485,7 @@ function FacultySubmissionPanelContent({
                                 onClick={() =>
                                   openHistorySubmissionPreview(submission)
                                 }
-                                className="relative inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-slate-100 border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 hover:border-slate-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer"
+                                className="relative inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
                               >
                                 {Boolean(
                                   (submission.remarks || submission.feedback || submission.adminRemarks || submission.admin_remarks) &&
@@ -2376,70 +2664,73 @@ function FacultySubmissionPanelContent({
                 aria-modal="true"
                 aria-labelledby="incomplete-requirements-title"
               >
-                <div className="w-full max-w-2xl rounded-3xl border border-amber-400/30 bg-slate-900 p-6 shadow-2xl">
-                  <div className="flex items-start justify-between gap-4">
+                <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm uppercase tracking-[0.18em] text-amber-300">
-                        Attention Required
-                      </p>
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium mb-3">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        <span>Action Required</span>
+                      </div>
                       <h3
                         id="incomplete-requirements-title"
-                        className="mt-2 text-2xl font-semibold text-slate-100"
+                        className="text-base font-semibold text-slate-100 tracking-tight"
                       >
-                        Some requirements still need your attention
+                        Requirements Pending Submission
                       </h3>
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        setHasSeenIncompleteRequirementsModal(true);
-                      }}
-                      className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                      onClick={dismissIncompleteRequirementsAlert}
+                      className="rounded-lg p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition cursor-pointer"
                       aria-label="Close alert"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
 
-                  <div className="mt-5 space-y-4 text-slate-300">
-                    <p>
-                      You have pending or not submitted requirements for the
-                      current submission window. Please submit the missing
-                      documents before the due date.
-                    </p>
-                    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-                      <p>
-                        Remaining requirements:{" "}
-                        <strong>{statusCounts?.pending ?? 0}</strong> pending,{" "}
-                        <strong>{statusCounts?.notSubmitted ?? 0}</strong> not
-                        submitted.
-                      </p>
-                      {submissionWindow?.endDate ? (
-                        <p className="mt-2">
-                          Due date: <strong>{submissionWindow.endDate}</strong>
-                        </p>
-                      ) : null}
+                  <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                    You have documents awaiting submission or revision for this semester. Please submit the missing requirements before the deadline.
+                  </p>
+
+                  {/* Inner Stats Container */}
+                  <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 my-4 flex items-center justify-between text-xs text-slate-300">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-slate-500" />
+                        <span>{displayedStatusCounts?.notSubmitted ?? 0} Not Submitted</span>
+                      </span>
+                      {(displayedStatusCounts?.rejected ?? 0) > 0 && (
+                        <span className="flex items-center gap-1.5 text-amber-400 font-medium">
+                          <span className="h-2 w-2 rounded-full bg-amber-400" />
+                          <span>{displayedStatusCounts?.rejected} Revision</span>
+                        </span>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-3">
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          setHasSeenIncompleteRequirementsModal(true);
-                          navigateToView("status");
-                        }}
-                      >
-                        Go to Requirements Management
-                      </Button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setHasSeenIncompleteRequirementsModal(true);
-                        }}
-                        className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-500"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
+                    {windowDeadlineDisplay && (
+                      <span className="text-[11px] text-slate-400">
+                        Due: {windowDeadlineDisplay}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 mt-5">
+                    <button
+                      type="button"
+                      onClick={dismissIncompleteRequirementsAlert}
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Dismiss
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dismissIncompleteRequirementsAlert();
+                        navigateToView("status");
+                      }}
+                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                      Go to Requirements Management
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2448,7 +2739,7 @@ function FacultySubmissionPanelContent({
 
 
             {activeView === "settings" && (
-              <article className="space-y-6 p-2 sm:p-4 md:p-5">
+              <article className="space-y-6">
                 <FacultySettingsPanel />
               </article>
             )}
