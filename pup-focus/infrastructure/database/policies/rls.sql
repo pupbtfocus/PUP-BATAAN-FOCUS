@@ -94,6 +94,20 @@ CREATE POLICY "faculty_read_own_documents" ON public.document_versions
   FOR SELECT TO authenticated
   USING (submission_id IN (SELECT id FROM public.submissions WHERE faculty_profile_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())) OR public.is_admin_or_super_admin());
 
+CREATE POLICY "faculty_read_own_review_decisions" ON public.review_decisions
+  FOR SELECT TO authenticated
+  USING (
+    submission_id IN (
+      SELECT id FROM public.submissions WHERE faculty_profile_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())
+    )
+    OR public.is_admin_or_super_admin()
+  );
+
+CREATE POLICY "admins_manage_review_decisions" ON public.review_decisions
+  FOR ALL TO authenticated
+  USING (public.is_admin_or_super_admin())
+  WITH CHECK (public.is_admin_or_super_admin());
+
 -- AUDIT LOGS & NOTIFICATIONS
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;

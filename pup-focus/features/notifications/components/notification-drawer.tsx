@@ -15,6 +15,7 @@ import {
   Loader2,
   Clock,
   AlertCircle,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
@@ -125,9 +126,12 @@ function extractRequirementCode(notification: AppNotification): RequirementCode 
     return notification.metadata.requirement_code as RequirementCode;
   }
 
-  const textToScan = `${notification.title} ${notification.message}`;
-  for (const code of Object.keys(REQUIREMENT_LABEL)) {
-    if (textToScan.includes(code)) {
+  const textToScan = `${notification.title} ${notification.message}`.toLowerCase();
+  for (const [code, label] of Object.entries(REQUIREMENT_LABEL)) {
+    if (
+      textToScan.includes(code.toLowerCase()) ||
+      textToScan.includes(label.toLowerCase())
+    ) {
       return code as RequirementCode;
     }
   }
@@ -142,6 +146,8 @@ export function NotificationDrawer() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -214,6 +220,53 @@ export function NotificationDrawer() {
     }
   };
 
+  const handleClearAll = async () => {
+    if (notifications.length === 0 || isClearingAll) return;
+
+    setIsClearingAll(true);
+    const prevNotifications = [...notifications];
+    const prevUnread = unreadCount;
+
+    // Instant optimistic update
+    setNotifications([]);
+    setUnreadCount(0);
+
+    try {
+      const response = await fetch("/api/notifications/clear-all", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (response.ok) {
+        setToastMessage("All notifications cleared");
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 3000);
+      } else {
+        // Fallback retry using generic /api/faculty/notifications DELETE
+        const fallback = await fetch("/api/faculty/notifications", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (fallback.ok) {
+          setToastMessage("All notifications cleared");
+          setTimeout(() => {
+            setToastMessage(null);
+          }, 3000);
+        } else {
+          setNotifications(prevNotifications);
+          setUnreadCount(prevUnread);
+        }
+      }
+    } catch {
+      setNotifications(prevNotifications);
+      setUnreadCount(prevUnread);
+    } finally {
+      setIsClearingAll(false);
+    }
+  };
+
   const handleNotificationClick = async (notification: AppNotification) => {
     if (!notification.isRead) {
       setNotifications((prev) =>
@@ -241,12 +294,12 @@ export function NotificationDrawer() {
 
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
-        element.classList.add("ring-2", "ring-amber-400");
+        element.classList.add("ring-2", "ring-amber-400", "bg-amber-500/10");
         setTimeout(() => {
-          element.classList.remove("ring-2", "ring-amber-400");
-        }, 3000);
+          element.classList.remove("ring-2", "ring-amber-400", "bg-amber-500/10");
+        }, 3500);
       } else {
-        router.push(`/faculty/dashboard?requirement=${requirementCode}#${targetElementId}`);
+        router.push(`/faculty/dashboard?view=status&highlight=${requirementCode}&requirement=${requirementCode}#${targetElementId}`);
       }
     } else if (
       notification.type === "deadline_alert" ||
@@ -259,7 +312,7 @@ export function NotificationDrawer() {
       if (targetElement) {
         targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
       } else {
-        router.push("/faculty/dashboard#requirements");
+        router.push("/faculty/dashboard?view=status#requirements");
       }
     }
   };
@@ -302,44 +355,82 @@ export function NotificationDrawer() {
             {/* Slide-out Sheet Panel */}
             <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-full sm:max-w-md flex-col p-0 bg-slate-900 border-l border-slate-800 shadow-2xl">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-5 py-4 shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <Bell className="h-5 w-5 text-amber-400" />
-                  <h2 className="text-lg font-semibold text-slate-100">Notifications</h2>
+              <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-3 shrink-0">
+                {/* Left Side: Title & Badge */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Bell className="h-5 w-5 text-amber-400 shrink-0" />
+                  <h3 className="text-base font-semibold text-slate-100 truncate">Notifications</h3>
                   {unreadCount > 0 && (
-                    <span className="rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-xs font-medium text-amber-300">
+                    <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400 whitespace-nowrap">
                       {unreadCount} unread
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* Right Side: Actions & Close */}
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                   {unreadCount > 0 && (
-                    <Button
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="sm"
                       onClick={handleMarkAllAsRead}
-                      disabled={isMarkingAll}
-                      className="inline-flex items-center gap-1.5 text-xs text-amber-300 hover:bg-slate-800 hover:text-amber-200"
+                      disabled={isMarkingAll || isClearingAll}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-amber-400 hover:text-amber-300 whitespace-nowrap transition-colors disabled:opacity-50 cursor-pointer"
+                      title="Mark all notifications as read"
                     >
                       {isMarkingAll ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <CheckCheck className="h-3.5 w-3.5" />
                       )}
-                      Mark all read
-                    </Button>
+                      <span>Mark all read</span>
+                    </button>
                   )}
+
+                  {notifications.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearAll}
+                      disabled={isClearingAll || isMarkingAll}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-red-400 hover:text-red-300 whitespace-nowrap transition-colors disabled:opacity-50 cursor-pointer"
+                      title="Clear all notifications"
+                    >
+                      {isClearingAll ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                      <span>Clear all</span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="rounded-md p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                    className="p-1 text-slate-400 hover:text-slate-200 transition-colors rounded-md cursor-pointer"
                     aria-label="Close notifications"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
+
+              {/* Toast Feedback Notification Banner */}
+              {toastMessage && (
+                <div className="flex items-center justify-between gap-2 bg-emerald-500/15 border-b border-emerald-500/30 px-4 py-2.5 text-xs text-emerald-200 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <span className="font-medium">{toastMessage}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setToastMessage(null)}
+                    className="text-emerald-400 hover:text-emerald-200 p-0.5 rounded"
+                    aria-label="Dismiss toast"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
 
               {/* List Body */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">

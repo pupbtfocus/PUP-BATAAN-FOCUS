@@ -218,3 +218,37 @@ export async function markAllNotificationsAsRead(
     return false;
   }
 }
+
+/**
+ * Deletes all notifications for a specific user from Supabase.
+ */
+export async function deleteAllUserNotifications(
+  userId: string,
+): Promise<boolean> {
+  try {
+    const supabase = getServiceRoleClient();
+    const safeUserId = ensureValidUuid(userId);
+
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("user_id", safeUserId);
+
+    if (error) {
+      logger.error("delete_all_user_notifications_failed", {
+        error: error.message,
+        userId,
+      });
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.error("delete_all_user_notifications_exception", {
+      error: err instanceof Error ? err.message : String(err),
+      userId,
+    });
+    return false;
+  }
+}
+

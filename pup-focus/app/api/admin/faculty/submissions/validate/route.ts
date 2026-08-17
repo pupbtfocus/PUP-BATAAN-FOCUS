@@ -62,11 +62,61 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update submission status
-    const { error: updateError } = await supabase
+    const cleanRemarks =
+      remarks && typeof remarks === "string" && remarks.trim()
+        ? remarks.trim()
+        : null;
+
+    // Update submission status and admin_remarks (gracefully handling missing columns)
+    let updateError: { message: string } | null = null;
+
+    // Step 1: Full update with status, admin_remarks, and updated_at
+    const fullPayload: Record<string, unknown> = {
+      status: decision,
+      updated_at: new Date().toISOString(),
+    };
+    if (cleanRemarks) {
+      fullPayload.admin_remarks = cleanRemarks;
+    }
+
+    const { error: firstErr } = await supabase
       .from("submissions")
-      .update({ status: decision })
+      .update(fullPayload)
       .eq("id", submissionId);
+
+    if (firstErr) {
+      // Step 2: Fallback without updated_at
+      const payloadNoUpdatedAt: Record<string, unknown> = { status: decision };
+      if (cleanRemarks) {
+        payloadNoUpdatedAt.admin_remarks = cleanRemarks;
+      }
+
+      const { error: secondErr } = await supabase
+        .from("submissions")
+        .update(payloadNoUpdatedAt)
+        .eq("id", submissionId);
+
+      if (secondErr) {
+        // Step 3: Fallback without admin_remarks
+        const { error: thirdErr } = await supabase
+          .from("submissions")
+          .update({
+            status: decision,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", submissionId);
+
+        if (thirdErr) {
+          // Step 4: Minimal update (status only)
+          const { error: minimalErr } = await supabase
+            .from("submissions")
+            .update({ status: decision })
+            .eq("id", submissionId);
+
+          updateError = minimalErr;
+        }
+      }
+    }
 
     if (updateError) {
       logger.error("submission_update_failed", {
@@ -86,7 +136,7 @@ export async function POST(request: NextRequest) {
         submission_id: submissionId,
         reviewer_profile_id: adminAppUser.profile_id,
         decision,
-        remarks: remarks || null,
+        remarks: cleanRemarks,
       });
 
     if (reviewError) {
@@ -94,10 +144,19 @@ export async function POST(request: NextRequest) {
         submissionId,
         error: reviewError.message,
       });
-      return NextResponse.json(
-        { error: "Failed to create review record" },
-        { status: 500 },
-      );
+    }
+
+    try {
+      await supabase.from("verification_history").insert({
+        submission_id: submissionId,
+        status: decision,
+        decision,
+        remarks: cleanRemarks,
+        reviewed_by: adminAppUser.profile_id,
+        reviewer_profile_id: adminAppUser.profile_id,
+      });
+    } catch {
+      // verification_history is optional
     }
 
     logger.info("submission_validated", {
@@ -110,6 +169,8 @@ export async function POST(request: NextRequest) {
       success: true,
       submissionId,
       decision,
+      status: decision,
+      remarks: cleanRemarks,
     });
   } catch (error) {
     logger.error("validation_endpoint_error", {

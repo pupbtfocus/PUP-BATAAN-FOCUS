@@ -8,6 +8,7 @@ import {
   FileUp,
   Loader2,
   AlertCircle,
+  RotateCw,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ type RequirementStatus = {
   status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
   reviewedAt?: string;
   feedback?: string;
+  admin_remarks?: string;
+  adminRemarks?: string | null;
   submittedAt?: string;
 };
 
@@ -88,21 +91,21 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined) {
 function statusTone(status: RequirementStatus["status"]) {
   switch (status) {
     case "Validated":
-      return "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
+      return "border-emerald-500/20 bg-emerald-500/10 text-emerald-400";
     case "Rejected":
-      return "border-rose-500/30 bg-rose-500/10 text-rose-200";
+      return "border-amber-500/20 bg-amber-500/10 text-amber-400";
     case "Pending":
-      return "border-amber-500/30 bg-amber-500/10 text-amber-100";
+      return "border-amber-500/20 bg-amber-500/10 text-amber-400";
     default:
-      return "border-slate-700 bg-slate-950/70 text-slate-300";
+      return "border-slate-700 bg-slate-800 text-slate-400";
   }
 }
 
 function statusIcon(status: RequirementStatus["status"]) {
-  if (status === "Validated") return <CheckCircle2 className="h-4 w-4" />;
-  if (status === "Pending") return <Clock3 className="h-4 w-4" />;
-  if (status === "Rejected") return <AlertCircle className="h-4 w-4" />;
-  return <FileUp className="h-4 w-4" />;
+  if (status === "Validated") return <CheckCircle2 className="h-3 w-3" />;
+  if (status === "Pending") return <Clock3 className="h-3 w-3" />;
+  if (status === "Rejected") return <AlertCircle className="h-3 w-3" />;
+  return <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />;
 }
 
 export function FacultyRequirementsModule() {
@@ -321,25 +324,45 @@ export function FacultyRequirementsModule() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          ["Total", summary.total],
-          ["Validated", summary.validated],
-          ["Pending", summary.pending],
-          ["Not Submitted", summary.notSubmitted],
-        ].map(([label, value]) => (
-          <article
-            key={label as string}
-            className="rounded-2xl border border-slate-700 bg-slate-900/90 p-4"
-          >
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-              {label}
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-100">
-              {value as number}
-            </p>
-          </article>
-        ))}
+      {/* Compact Header Summary Bar */}
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/90 p-3.5 sm:p-4 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Compliance Progress
+            </span>
+            <span className="text-xs font-bold text-amber-300">
+              {summary.validated} of {summary.total} ({Math.round((summary.validated / (summary.total || 1)) * 100)}%)
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              {summary.validated} Validated
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              {summary.pending} Pending
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-0.5 text-xs font-medium text-rose-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+              {summary.rejected} Needs Revision
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/80 px-2.5 py-0.5 text-xs font-medium text-slate-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+              {summary.notSubmitted} Not Submitted
+            </span>
+          </div>
+        </div>
+        {/* Progress Bar */}
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+          <div
+            className="h-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-500 rounded-full"
+            style={{
+              width: `${Math.min(100, Math.round((summary.validated / (summary.total || 1)) * 100))}%`,
+            }}
+          />
+        </div>
       </section>
 
       <section className="space-y-4">
@@ -352,10 +375,10 @@ export function FacultyRequirementsModule() {
               Current validation status for each required document.
             </p>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
             <Button
               type="button"
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 cursor-pointer"
               onClick={openCalendarModal}
               variant="secondary"
             >
@@ -363,11 +386,21 @@ export function FacultyRequirementsModule() {
             </Button>
             <Button
               type="button"
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto text-xs font-medium cursor-pointer"
               onClick={openModal}
             >
               Submit Requirements
             </Button>
+            <button
+              type="button"
+              onClick={() => void refreshStatuses()}
+              disabled={isLoading}
+              title="Refresh status"
+              className="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-slate-300 hover:bg-slate-700 hover:text-white transition disabled:opacity-50 cursor-pointer"
+            >
+              <RotateCw className={`h-4 w-4 ${isLoading ? "animate-spin text-amber-400" : ""}`} />
+              <span className="sr-only">Refresh</span>
+            </button>
           </div>
         </div>
 
@@ -377,9 +410,9 @@ export function FacultyRequirementsModule() {
           </div>
         ) : null}
 
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {isLoading ? (
-            <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 text-sm text-slate-400">
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-400 text-center">
               Loading requirements status...
             </div>
           ) : (
@@ -392,34 +425,67 @@ export function FacultyRequirementsModule() {
               return (
                 <article
                   key={code}
-                  className="rounded-2xl border border-slate-700 bg-slate-900/90 p-5 shadow-sm"
+                  className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 sm:p-4 shadow-sm transition-all duration-200 hover:border-slate-700"
                 >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm uppercase tracking-[0.18em] text-slate-400">
-                        Requirement
-                      </p>
-                      <h4 className="text-base font-semibold text-slate-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm sm:text-base font-semibold text-slate-100 truncate">
                         {REQUIREMENT_LABEL[code]}
                       </h4>
-                      <p className="text-sm text-slate-400">
+                      <p className="mt-0.5 text-xs text-slate-400">
                         {item?.submittedAt
                           ? `Submitted ${item.submittedAt}`
                           : "No submission has been recorded yet."}
                       </p>
-                      {item?.feedback ? (
-                        <p className="max-w-3xl rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300">
-                          {item.feedback}
-                        </p>
-                      ) : null}
                     </div>
-                    <div
-                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium ${statusTone(status)}`}
-                    >
-                      {statusIcon(status)}
-                      <span>{status}</span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <div
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${statusTone(status)}`}
+                      >
+                        {statusIcon(status)}
+                        <span>{status === "Rejected" ? "Needs Revision" : status}</span>
+                      </div>
+                      {status === "Not Submitted" && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            setForm((curr) => ({ ...curr, requirementCode: code }));
+                            openModal();
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs h-8 px-3 cursor-pointer"
+                        >
+                          <FileUp className="h-3.5 w-3.5" />
+                          Submit
+                        </Button>
+                      )}
+                      {status === "Rejected" && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            setForm((curr) => ({ ...curr, requirementCode: code }));
+                            openModal();
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs h-8 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold cursor-pointer"
+                        >
+                          <FileUp className="h-3.5 w-3.5" />
+                          Resubmit
+                        </Button>
+                      )}
                     </div>
                   </div>
+
+                  {/* Compact 1-line amber banner for 'Needs Revision' (Rejected) */}
+                  {status === "Rejected" && (
+                    <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200">
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                      <span className="font-semibold text-amber-400 shrink-0">Revision Note:</span>
+                      <span className="truncate italic">
+                        &ldquo;{item?.adminRemarks || item?.admin_remarks || item?.feedback || "Revision requested. Please check and resubmit."}&rdquo;
+                      </span>
+                    </div>
+                  )}
                 </article>
               );
             })
