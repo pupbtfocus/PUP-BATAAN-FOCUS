@@ -88,6 +88,20 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined) {
   } as const;
 }
 
+function getStatusDotColor(status: RequirementStatus["status"]): string {
+  if (status === "Validated") return "bg-emerald-400";
+  if (status === "Rejected") return "bg-amber-400";
+  if (status === "Not Submitted") return "bg-slate-600";
+  return "bg-blue-400";
+}
+
+function getStatusTextColor(status: RequirementStatus["status"]): string {
+  if (status === "Validated") return "text-emerald-400";
+  if (status === "Rejected") return "text-amber-400";
+  if (status === "Not Submitted") return "text-slate-500";
+  return "text-blue-400";
+}
+
 function statusTone(status: RequirementStatus["status"]) {
   switch (status) {
     case "Validated":
@@ -95,9 +109,9 @@ function statusTone(status: RequirementStatus["status"]) {
     case "Rejected":
       return "border-amber-500/20 bg-amber-500/10 text-amber-400";
     case "Pending":
-      return "border-amber-500/20 bg-amber-500/10 text-amber-400";
+      return "border-blue-500/20 bg-blue-500/10 text-blue-400";
     default:
-      return "border-slate-700 bg-slate-800 text-slate-400";
+      return "border-slate-700/50 bg-slate-800/60 text-slate-400";
   }
 }
 
@@ -324,40 +338,34 @@ export function FacultyRequirementsModule() {
         </div>
       </section>
 
-      {/* Compact Header Summary Bar */}
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/90 p-3.5 sm:p-4 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Compliance Progress
+      {/* Clean Header Progress & Status Counts */}
+      <section className="space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <span className="font-medium text-slate-300">
+            {summary.validated} of {summary.total} Completed ({Math.round((summary.validated / (summary.total || 1)) * 100)}%)
+          </span>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span>{summary.validated} Validated</span>
             </span>
-            <span className="text-xs font-bold text-amber-300">
-              {summary.validated} of {summary.total} ({Math.round((summary.validated / (summary.total || 1)) * 100)}%)
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-blue-400" />
+              <span>{summary.pending} Pending</span>
             </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              {summary.validated} Validated
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-amber-400" />
+              <span>{summary.rejected} Revision</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-              {summary.pending} Pending
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-0.5 text-xs font-medium text-rose-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
-              {summary.rejected} Needs Revision
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/80 px-2.5 py-0.5 text-xs font-medium text-slate-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
-              {summary.notSubmitted} Not Submitted
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-slate-600" />
+              <span>{summary.notSubmitted} Not Submitted</span>
             </span>
           </div>
         </div>
-        {/* Progress Bar */}
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
           <div
-            className="h-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-500 rounded-full"
+            className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
             style={{
               width: `${Math.min(100, Math.round((summary.validated / (summary.total || 1)) * 100))}%`,
             }}
@@ -366,131 +374,125 @@ export function FacultyRequirementsModule() {
       </section>
 
       <section className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800/80 pb-4">
           <div>
-            <h3 className="text-lg font-semibold text-slate-100">
+            <h3 className="text-lg font-medium text-slate-100 tracking-tight">
               Requirements Management
             </h3>
-            <p className="text-sm text-slate-400">
+            <p className="mt-0.5 text-xs text-slate-400 font-normal">
               Current validation status for each required document.
             </p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
-            <Button
+            <button
               type="button"
-              className="w-full sm:w-auto text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 cursor-pointer"
+              className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 hover:text-amber-200 transition cursor-pointer whitespace-nowrap"
               onClick={openCalendarModal}
-              variant="secondary"
             >
               University Calendar
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              className="w-full sm:w-auto text-xs font-medium cursor-pointer"
+              className="inline-flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-1.5 rounded-lg text-xs shadow-sm transition cursor-pointer whitespace-nowrap"
               onClick={openModal}
             >
               Submit Requirements
-            </Button>
+            </button>
             <button
               type="button"
               onClick={() => void refreshStatuses()}
               disabled={isLoading}
               title="Refresh status"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800/80 p-2 text-slate-300 hover:bg-slate-700 hover:text-white transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center justify-center rounded-md border border-slate-800 bg-slate-900/60 p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer"
             >
-              <RotateCw className={`h-4 w-4 ${isLoading ? "animate-spin text-amber-400" : ""}`} />
+              <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-amber-400" : ""}`} />
               <span className="sr-only">Refresh</span>
             </button>
           </div>
         </div>
 
         {message ? (
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-200">
             {message}
           </div>
         ) : null}
 
-        <div className="grid gap-3">
-          {isLoading ? (
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-400 text-center">
-              Loading requirements status...
-            </div>
-          ) : (
-            DEFAULT_REQUIREMENTS.map((code) => {
+        {/* Single Unified Table/List Container */}
+        {isLoading ? (
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-xs text-slate-400 text-center">
+            Loading requirements status...
+          </div>
+        ) : (
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl divide-y divide-slate-800/60 overflow-hidden shadow-sm">
+            {DEFAULT_REQUIREMENTS.map((code) => {
               const status = getStatus(code);
               const item = requirementStatuses.find(
                 (entry) => entry.code === code,
               );
 
               return (
-                <article
+                <div
                   key={code}
-                  className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 sm:p-4 shadow-sm transition-all duration-200 hover:border-slate-700"
+                  className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-800/30 transition-colors"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm sm:text-base font-semibold text-slate-100 truncate">
-                        {REQUIREMENT_LABEL[code]}
-                      </h4>
-                      <p className="mt-0.5 text-xs text-slate-400">
-                        {item?.submittedAt
-                          ? `Submitted ${item.submittedAt}`
-                          : "No submission has been recorded yet."}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-slate-200 truncate">
+                      {REQUIREMENT_LABEL[code]}
+                    </h4>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {item?.submittedAt
+                        ? `Submitted ${item.submittedAt}`
+                        : "No submission has been recorded yet."}
+                    </p>
+                    {/* Inline Revision Note */}
+                    {status === "Rejected" && (
+                      <p className="text-xs text-amber-300/90 flex items-center gap-1.5 mt-1 font-normal">
+                        <AlertCircle className="h-3.5 w-3.5 text-amber-400/90 shrink-0" />
+                        <span className="italic truncate">
+                          &ldquo;{item?.adminRemarks || item?.admin_remarks || item?.feedback || "Revision requested. Please check and resubmit."}&rdquo;
+                        </span>
                       </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <div
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${statusTone(status)}`}
-                      >
-                        {statusIcon(status)}
-                        <span>{status === "Rejected" ? "Needs Revision" : status}</span>
-                      </div>
-                      {status === "Not Submitted" && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => {
-                            setForm((curr) => ({ ...curr, requirementCode: code }));
-                            openModal();
-                          }}
-                          className="inline-flex items-center gap-1.5 text-xs h-8 px-3 cursor-pointer"
-                        >
-                          <FileUp className="h-3.5 w-3.5" />
-                          Submit
-                        </Button>
-                      )}
-                      {status === "Rejected" && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => {
-                            setForm((curr) => ({ ...curr, requirementCode: code }));
-                            openModal();
-                          }}
-                          className="inline-flex items-center gap-1.5 text-xs h-8 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold cursor-pointer"
-                        >
-                          <FileUp className="h-3.5 w-3.5" />
-                          Resubmit
-                        </Button>
-                      )}
-                    </div>
+                    )}
                   </div>
-
-                  {/* Compact 1-line amber banner for 'Needs Revision' (Rejected) */}
-                  {status === "Rejected" && (
-                    <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200">
-                      <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                      <span className="font-semibold text-amber-400 shrink-0">Revision Note:</span>
-                      <span className="truncate italic">
-                        &ldquo;{item?.adminRemarks || item?.admin_remarks || item?.feedback || "Revision requested. Please check and resubmit."}&rdquo;
-                      </span>
+                  <div className="flex shrink-0 items-center gap-3">
+                    {/* Minimal Dot Status Indicator */}
+                    <div className={`inline-flex items-center gap-1.5 text-xs font-normal whitespace-nowrap ${getStatusTextColor(status)}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${getStatusDotColor(status)}`} />
+                      <span>{status === "Rejected" ? "Needs Revision" : status}</span>
                     </div>
-                  )}
-                </article>
+
+                    {status === "Not Submitted" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForm((curr) => ({ ...curr, requirementCode: code }));
+                          openModal();
+                        }}
+                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm transition cursor-pointer"
+                      >
+                        <FileUp className="h-3.5 w-3.5" />
+                        Submit
+                      </button>
+                    )}
+                    {status === "Rejected" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForm((curr) => ({ ...curr, requirementCode: code }));
+                          openModal();
+                        }}
+                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm transition cursor-pointer"
+                      >
+                        <FileUp className="h-3.5 w-3.5" />
+                        Resubmit
+                      </button>
+                    )}
+                  </div>
+                </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </section>
 
       {isModalOpen ? (
