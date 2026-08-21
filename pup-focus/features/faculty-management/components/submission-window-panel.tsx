@@ -513,52 +513,58 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       : "Not configured";
 
   return (
-    <div className="rounded-l-xl rounded-r-none border border-slate-800 bg-slate-950 p-5 shadow-xl space-y-6">
+    <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-6">
       {/* 1. Header & Status Section */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-400 dark:border-slate-800 pb-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h4 className="text-base font-semibold text-slate-100">
+            <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
               Submission Window Manager
             </h4>
           </div>
-          <p className="mt-1 text-xs text-slate-400">
-            Current term: <span className="font-medium text-slate-200">{currentTermLabel}</span>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+            Current term: <span className="font-semibold text-slate-900 dark:text-slate-200">{currentTermLabel}</span>
           </p>
         </div>
       </div>
 
       {/* Real-time Status Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-[#1a0407]/90 border border-amber-500/20 shadow-xl backdrop-blur-md">
+      <div className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl shadow-sm transition-colors ${
+        isWindowOpen
+          ? "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-300"
+          : isUpcoming
+          ? "bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-300"
+          : "bg-slate-100 dark:bg-slate-900/60 border border-slate-400 dark:border-slate-800 text-slate-900 dark:text-slate-300"
+      }`}>
         <div className="flex items-center gap-3">
           {/* Live Pulsing Badge */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
             isWindowOpen
-              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+              ? "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30"
               : isUpcoming
-              ? "bg-amber-500/10 text-amber-300 border border-amber-500/30"
-              : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+              ? "bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30"
+              : "bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30"
           }`}>
             <span className={`w-2.5 h-2.5 rounded-full ${
-              isWindowOpen ? "bg-emerald-400 animate-pulse" : isUpcoming ? "bg-amber-400 animate-ping" : "bg-rose-500"
+              isWindowOpen ? "bg-emerald-600 dark:bg-emerald-400 animate-pulse" : isUpcoming ? "bg-amber-600 dark:bg-amber-400 animate-ping" : "bg-rose-600 dark:bg-rose-500"
             }`} />
             <span>{isWindowOpen ? "Live Submission Window" : isUpcoming ? "Scheduled Window" : "Window Closed"}</span>
           </div>
 
           {/* Term Context */}
-          <span className="text-xs text-slate-300 font-semibold">
+          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
             {currentTermLabel}
           </span>
         </div>
 
         {/* Real-Time Countdown Timer Display */}
-        <div className="flex items-center gap-2 bg-slate-950/60 border border-slate-800 rounded-xl px-4 py-2">
-          <Clock className="w-4 h-4 text-amber-400 animate-[spin_6s_linear_infinite]" />
+        <div className="flex items-center gap-2 bg-white/90 dark:bg-slate-950/60 border border-slate-400/80 dark:border-slate-800 rounded-xl px-4 py-2 shadow-xs">
+          <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-[spin_6s_linear_infinite]" />
           <div className="text-right">
-            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+            <p className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider">
               {isWindowOpen ? "Time Remaining" : isUpcoming ? "Opens In" : "Status"}
             </p>
-            <p className="text-sm font-black text-amber-300 font-mono">
+            <p className="text-sm font-black text-amber-800 dark:text-amber-300 font-mono">
               {formattedCountdownTime}
             </p>
           </div>
@@ -566,13 +572,13 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       </div>
 
       {error ? (
-        <p className="rounded-lg border border-red-500/30 bg-red-950/30 px-3 py-2 text-xs text-red-300">
+        <p className="rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-2.5 text-xs text-red-300">
           {error}
         </p>
       ) : null}
 
       {success ? (
-        <p className="rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-xs text-emerald-300">
+        <p className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-4 py-2.5 text-xs text-emerald-300">
           {success}
         </p>
       ) : null}
@@ -583,14 +589,14 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
           {/* Left Column: Opening Schedule Input */}
           <div className={`rounded-xl p-4 flex flex-col justify-between transition-all duration-300 ${
             isEditingSchedule
-              ? "border-2 border-amber-500 ring-4 ring-amber-500/20 bg-amber-500/5"
-              : "border border-slate-800 bg-slate-900/50"
+              ? "border-2 border-amber-500 ring-4 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5"
+              : "border border-slate-400 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50"
           }`}>
             <div>
-              <label htmlFor="opening-schedule" className="block text-xs font-semibold text-amber-400">
+              <label htmlFor="opening-schedule" className="block text-xs font-semibold text-amber-800 dark:text-amber-400">
                 Opening Date & Time
               </label>
-              <p className="mt-1 text-[11px] text-slate-400">
+              <p className="mt-1 text-[11px] text-slate-600 dark:text-slate-400">
                 Select the opening date and time for document uploads.
               </p>
             </div>
@@ -602,10 +608,10 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 value={openDateTime}
                 onChange={(e) => setOpenDateTime(e.target.value)}
                 disabled={!isEditingSchedule || isLoading || isSaving}
-                className={`w-full rounded-lg p-2.5 text-xs outline-none transition-all duration-300 ${
+                className={`w-full rounded-xl px-4 py-2.5 text-xs outline-none transition-all duration-300 ${
                   isEditingSchedule
-                    ? "bg-slate-900 border-2 border-amber-500/60 text-amber-100 ring-2 ring-amber-500/10"
-                    : "bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed"
+                    ? "bg-white dark:bg-slate-950 border-2 border-amber-500 text-slate-900 dark:text-slate-100 ring-2 ring-amber-500/10"
+                    : "bg-slate-100 dark:bg-slate-900/50 border border-slate-400 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed"
                 }`}
               />
               {isEditingSchedule ? (
@@ -613,7 +619,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                   <button
                     type="button"
                     onClick={() => setOpenDateTime(toDateTimeLocal(new Date()))}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30 transition cursor-pointer"
                   >
                     <Clock className="w-3 h-3" />
                     <span>Set to Now / Today</span>
@@ -626,28 +632,28 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
           {/* Right Column: Closing Schedule & Deadline */}
           <div className={`rounded-xl p-4 flex flex-col justify-between transition-all duration-300 ${
             isEditingSchedule
-              ? "border-2 border-amber-500 ring-4 ring-amber-500/20 bg-amber-500/5"
-              : "border border-slate-800 bg-slate-900/50"
+              ? "border-2 border-amber-500 ring-4 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5"
+              : "border border-slate-400 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50"
           }`}>
             <div>
-              <label htmlFor="closing-schedule" className="block text-xs font-semibold text-rose-400">
+              <label htmlFor="closing-schedule" className="block text-xs font-semibold text-rose-800 dark:text-rose-400">
                 Closing Date & Deadline
               </label>
-              <p className="mt-1 text-[11px] text-slate-400">
+              <p className="mt-1 text-[11px] text-slate-600 dark:text-slate-400">
                 Current active deadline for faculty compliance document uploads.
               </p>
             </div>
 
             <div className="mt-3">
               {!isEditingSchedule && windowStatus?.endDate && windowStatus?.endTimeLabel ? (
-                <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 p-2.5">
+                <div className="flex items-center justify-between rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-2.5">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-rose-400" />
-                    <span className="text-xs font-bold text-slate-100">
+                    <Calendar className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                       {windowStatus.endDate} at {windowStatus.endTimeLabel}
                     </span>
                   </div>
-                  <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 px-2 py-0.5 rounded">
                     Configured Deadline
                   </span>
                 </div>
@@ -660,10 +666,10 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                     value={closeDateTime}
                     onChange={(e) => setCloseDateTime(e.target.value)}
                     disabled={!isEditingSchedule || isLoading || isSaving}
-                    className={`w-full rounded-lg p-2.5 text-xs outline-none transition-all duration-300 ${
+                    className={`w-full rounded-xl px-4 py-2.5 text-xs outline-none transition-all duration-300 ${
                       isEditingSchedule
-                        ? "bg-slate-900 border-2 border-amber-500/60 text-amber-100 ring-2 ring-amber-500/10"
-                        : "bg-slate-900 border border-slate-800 text-slate-400 cursor-not-allowed"
+                        ? "bg-white dark:bg-slate-950 border-2 border-amber-500 text-slate-900 dark:text-slate-100 ring-2 ring-amber-500/10"
+                        : "bg-slate-100 dark:bg-slate-900/50 border border-slate-400 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed"
                     }`}
                   />
                   {isEditingSchedule ? (
@@ -675,7 +681,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                           d.setHours(23, 59, 0, 0);
                           setCloseDateTime(toDateTimeLocal(d));
                         }}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-500/30 transition cursor-pointer"
                       >
                         <span>Today (End of Day)</span>
                       </button>
@@ -686,7 +692,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                           d.setDate(d.getDate() + 3);
                           setCloseDateTime(toDateTimeLocal(d));
                         }}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 transition cursor-pointer"
                       >
                         <span>+3 Days</span>
                       </button>
@@ -697,7 +703,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                           d.setDate(d.getDate() + 7);
                           setCloseDateTime(toDateTimeLocal(d));
                         }}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 transition cursor-pointer"
                       >
                         <span>+1 Week</span>
                       </button>
@@ -708,7 +714,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                           d.setDate(d.getDate() + 14);
                           setCloseDateTime(toDateTimeLocal(d));
                         }}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 transition cursor-pointer"
                       >
                         <span>+2 Weeks</span>
                       </button>
@@ -721,7 +727,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
         </div>
 
         {/* 3. Structured Footer Action Toolbar — Zone-Separated Split Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-800/80 pt-5 mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-400 dark:border-slate-800/80 pt-5 mt-6">
           {/* LEFT: Operational & Destructive Triggers */}
           <div className="flex items-center gap-2.5">
             <button
@@ -730,9 +736,9 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 setShowLogsModal(true);
                 refetchLogs();
               }}
-              className="flex items-center gap-1.5 bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all"
+              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all cursor-pointer"
             >
-              <History className="w-3.5 h-3.5 text-slate-400" />
+              <History className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
               <span>Extension Logs ({extensionLogs.length})</span>
             </button>
 
@@ -740,7 +746,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
               type="button"
               onClick={handleCloseSubmission}
               disabled={isLoading || isSaving || !windowStatus?.isOpen}
-              className="flex items-center gap-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
             >
               <ShieldAlert className="w-3.5 h-3.5" />
               <span>Close Submissions</span>
@@ -759,7 +765,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                     setIsEditingSchedule(false);
                   }}
                   disabled={isSaving}
-                  className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-bold transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-300 border border-slate-400 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                   <span>Cancel</span>
@@ -768,7 +774,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 <button
                   type="submit"
                   disabled={isLoading || isSaving}
-                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl px-5 py-2.5 text-xs shadow-lg hover:shadow-amber-500/20 transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm hover:shadow-amber-500/20 transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {isSaving ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -788,7 +794,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                     setIsEditingSchedule(true);
                   }}
                   disabled={isLoading || isSaving}
-                  className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 rounded-xl px-4 py-2.5 text-xs font-bold transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
                 >
                   <Pencil className="w-3.5 h-3.5" />
                   <span>Edit Schedule</span>
@@ -798,7 +804,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                   type="button"
                   onClick={() => setShowExtendModal(true)}
                   disabled={isLoading || isSaving}
-                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl px-5 py-2.5 text-xs shadow-lg hover:shadow-amber-500/20 transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm hover:shadow-amber-500/20 transition-all disabled:opacity-50 cursor-pointer"
                 >
                   <Clock className="w-3.5 h-3.5" />
                   <span>Extend Window</span>
@@ -822,17 +828,17 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
 
       {/* Extension Logs History Modal */}
       {showLogsModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-400 dark:border-slate-800 pb-4 shrink-0">
               <div className="flex items-center gap-2">
-                <History className="h-5 w-5 text-amber-400" />
-                <h3 className="text-lg font-bold text-slate-100">Extension Audit Logs</h3>
+                <History className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Extension Audit Logs</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowLogsModal(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-900 hover:text-slate-200 transition"
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200 transition cursor-pointer"
               >
                 ✕
               </button>
@@ -840,33 +846,33 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
 
             <div className="overflow-y-auto space-y-3 pr-1 flex-1">
               {isLoadingLogs ? (
-                <div className="py-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
                   Loading extension history...
                 </div>
               ) : extensionLogs.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400">
+                <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
                   No extension history recorded yet.
                 </div>
               ) : (
                 extensionLogs.map((log) => (
                   <div
                     key={log.id}
-                    className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2.5 text-xs"
+                    className="rounded-xl border border-slate-400/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-4 space-y-2.5 text-xs text-slate-900 dark:text-slate-100"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-100">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
                           {log.extended_by_name || "Admin"}
                         </span>
-                        <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30 uppercase">
+                        <span className="rounded bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30 uppercase">
                           {log.extension_preset || "Extended"}
                         </span>
-                        <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-300 capitalize">
+                        <span className="rounded bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-800 dark:text-slate-300 capitalize">
                           Scope: {log.scope} ({log.scope_target || "Global"})
                         </span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-medium">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                         {new Date(log.created_at).toLocaleString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -878,17 +884,17 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 text-slate-300 bg-slate-950/80 p-2.5 rounded-lg border border-slate-800/80">
-                      <span className="text-slate-400 font-medium text-[11px]">Deadline Change:</span>
+                    <div className="flex flex-wrap items-center gap-2 text-slate-800 dark:text-slate-300 bg-white dark:bg-slate-950/80 p-2.5 rounded-lg border border-slate-400/80 dark:border-slate-800/80">
+                      <span className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">Deadline Change:</span>
                       {log.old_end_date ? (
                         <>
-                          <span className="text-slate-400 line-through">
+                          <span className="text-slate-500 line-through">
                             {log.old_end_date} {log.old_end_time || ""}
                           </span>
-                          <span className="text-amber-400 font-bold">➔</span>
+                          <span className="text-amber-600 dark:text-amber-400 font-bold">➔</span>
                         </>
                       ) : null}
-                      <span className="font-bold text-amber-300">
+                      <span className="font-bold text-amber-800 dark:text-amber-300">
                         {log.new_end_date} {log.new_end_time ? `at ${log.new_end_time}` : ""}
                       </span>
                     </div>
@@ -897,15 +903,14 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
               )}
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex justify-end shrink-0">
-              <Button
+            <div className="pt-3 border-t border-slate-400 dark:border-slate-800 flex justify-end shrink-0">
+              <button
                 type="button"
-                variant="secondary"
                 onClick={() => setShowLogsModal(false)}
-                className="bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 text-xs"
+                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 border border-slate-400 dark:border-slate-800 text-slate-900 dark:text-slate-300 text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer"
               >
                 Close Logs
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -914,37 +919,36 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       {/* Save Confirmation Modal */}
       {showSaveConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-4">
-            <p className="text-xs uppercase tracking-wider text-amber-400 font-medium">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+            <p className="text-xs uppercase tracking-wider text-amber-700 dark:text-amber-400 font-semibold">
               Confirm Window Schedule
             </p>
-            <h3 className="text-xl font-semibold text-slate-100">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
               Save Submission Schedule?
             </h3>
-            <p className="text-xs leading-5 text-slate-300">
+            <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
               Faculty will be permitted to upload compliance documents starting from{" "}
-              <span className="font-semibold text-amber-400">
+              <span className="font-semibold text-amber-800 dark:text-amber-400">
                 {formatDisplayDateTime(openDateTime)}
               </span>{" "}
               until{" "}
-              <span className="font-semibold text-amber-400">
+              <span className="font-semibold text-amber-800 dark:text-amber-400">
                 {formatDisplayDateTime(closeDateTime)}
               </span>.
             </p>
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button
+              <button
                 type="button"
-                variant="secondary"
                 onClick={() => setShowSaveConfirmation(false)}
-                className="bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 text-xs"
+                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 border border-slate-400 dark:border-slate-800 text-slate-900 dark:text-slate-300 text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer"
               >
                 Cancel
-              </Button>
+              </button>
               <button
                 type="button"
                 onClick={() => void submitSave()}
-                className="bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold rounded-lg px-4 py-2 transition"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl px-4 py-2 transition cursor-pointer shadow-sm shadow-amber-500/10"
               >
                 Confirm Save
               </button>
@@ -956,63 +960,62 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       {/* Close Confirmation Modal — 10-second Safety Countdown */}
       {showCloseConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-slate-950 border border-rose-500/30 rounded-xl p-6 shadow-2xl space-y-4">
-            <p className="text-xs uppercase tracking-wider text-rose-400 font-medium">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-red-300 dark:border-rose-500/30 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+            <p className="text-xs uppercase tracking-wider text-rose-700 dark:text-rose-400 font-semibold">
               ⚠ Destructive Action
             </p>
-            <h3 className="text-xl font-semibold text-slate-100">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
               Close Submissions Now?
             </h3>
-            <p className="text-xs leading-5 text-slate-300">
-              This will <span className="font-bold text-rose-400">immediately close</span> the active submission window and clear the schedule. Faculty will no longer be able to upload compliance documents.
+            <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+              This will <span className="font-bold text-rose-700 dark:text-rose-400">immediately close</span> the active submission window and clear the schedule. Faculty will no longer be able to upload compliance documents.
             </p>
 
             {/* Countdown indicator */}
             {closeCountdown > 0 ? (
-              <div className="flex items-center gap-3 rounded-lg border border-rose-500/20 bg-rose-950/30 px-4 py-3">
+              <div className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-950/30 px-4 py-3">
                 <div className="relative flex items-center justify-center h-10 w-10 shrink-0">
                   <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-800" />
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 dark:text-slate-800" />
                     <circle
                       cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5"
-                      className="text-rose-500 transition-all duration-1000 ease-linear"
+                      className="text-rose-600 dark:text-rose-500 transition-all duration-1000 ease-linear"
                       strokeDasharray="97.39"
                       strokeDashoffset={97.39 * (1 - closeCountdown / 10)}
                       strokeLinecap="round"
                     />
                   </svg>
-                  <span className="absolute text-sm font-black text-rose-400">{closeCountdown}</span>
+                  <span className="absolute text-sm font-black text-rose-700 dark:text-rose-400">{closeCountdown}</span>
                 </div>
-                <p className="text-[11px] text-rose-300">
+                <p className="text-[11px] text-rose-800 dark:text-rose-300">
                   Please wait <span className="font-bold">{closeCountdown} second{closeCountdown !== 1 ? "s" : ""}</span> before confirming. This safety timer protects against accidental closures.
                 </p>
               </div>
             ) : (
-              <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-4 py-3">
-                <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-                <p className="text-[11px] text-emerald-300 font-semibold">
+              <div className="flex items-center gap-2 rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold">
                   Safety timer completed. You may now confirm the closure.
                 </p>
               </div>
             )}
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button
+              <button
                 type="button"
-                variant="secondary"
                 onClick={() => { setShowCloseConfirmation(false); setCloseCountdown(10); }}
-                className="bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 text-xs"
+                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 border border-slate-400 dark:border-slate-800 text-slate-900 dark:text-slate-300 text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer"
               >
                 Cancel
-              </Button>
+              </button>
               <button
                 type="button"
                 onClick={() => void confirmCloseSubmission()}
                 disabled={closeCountdown > 0}
-                className={`text-xs font-semibold rounded-lg px-4 py-2 transition-all ${
+                className={`text-xs font-semibold rounded-xl px-4 py-2 transition-all cursor-pointer ${
                   closeCountdown > 0
-                    ? "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60"
-                    : "bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20"
+                    ? "bg-slate-200 dark:bg-slate-800 text-slate-500 border border-slate-400 dark:border-slate-700 cursor-not-allowed opacity-60"
+                    : "bg-red-600 hover:bg-red-500 text-white font-bold shadow-sm"
                 }`}
               >
                 {closeCountdown > 0 ? `Confirm Close (${closeCountdown}s)` : "Confirm Close Submissions"}
@@ -1023,15 +1026,15 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       ) : null}
 
       {warningModalData.isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
-          <div className="bg-gradient-to-b from-[#2a0808] via-[#1f0505] to-[#120202] border border-amber-500/40 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4">
-            <div className="w-16 h-16 bg-amber-500/20 border-2 border-amber-500/50 rounded-full flex items-center justify-center mx-auto text-amber-400">
-              <AlertTriangle className="w-9 h-9 animate-pulse" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-slate-950 border border-amber-500/40 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+            <div className="w-16 h-16 bg-amber-500/10 border-2 border-amber-500/40 rounded-full flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="w-8 h-8 animate-pulse" />
             </div>
-            <h3 className="text-xl font-bold text-amber-200">
+            <h3 className="text-xl font-bold text-amber-800 dark:text-amber-200">
               {warningModalData.title}
             </h3>
-            <p className="text-sm text-amber-100/90 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               {warningModalData.description}
             </p>
             <div className="flex gap-3 pt-2">
@@ -1040,7 +1043,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 onClick={() =>
                   setWarningModalData({ ...warningModalData, isOpen: false })
                 }
-                className="flex-1 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500 text-xs font-semibold"
+                className="flex-1 py-2.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 text-slate-800 dark:text-slate-300 text-xs font-semibold transition cursor-pointer"
               >
                 Close
               </button>
@@ -1048,9 +1051,9 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 type="button"
                 onClick={() => {
                   setWarningModalData({ ...warningModalData, isOpen: false });
-                  window.location.href = "/admin/dashboard?tab=verification";
+                  window.location.href = "/admin/dashboard?tab=requirements";
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-xs shadow-lg transition-all"
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer"
               >
                 Review Requirements
               </button>
