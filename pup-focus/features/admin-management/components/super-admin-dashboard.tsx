@@ -17,6 +17,7 @@ import { FacultyTable } from "@/features/faculty-management/components/faculty-t
 import { RequirementsPanel } from "@/features/faculty-management/components/requirements-verification-panel";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { SubmissionWindowPanel } from "@/features/faculty-management/components/submission-window-panel";
+import { RequirementTemplatesPanel } from "@/features/requirement-templates/components/requirement-templates-panel";
 import { AddFacultyModal } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
 import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
 import { DeleteFacultyModal } from "@/features/faculty-management/components/faculty-modals/delete-faculty-modal";
@@ -45,6 +46,7 @@ export type SuperAdminSection =
   | "verification"
   | "terms"
   | "window"
+  | "templates"
   | "audit"
   | "settings";
 
@@ -162,6 +164,7 @@ function normalizeSuperAdminSection(
   if (val === "verification" || val === "requirements" || val === "requirements-verification") return "verification";
   if (val === "terms" || val === "academicterms" || val === "academic-terms") return "terms";
   if (val === "window" || val === "submissionwindow" || val === "submission-window") return "window";
+  if (val === "templates" || val === "requirementtemplates" || val === "requirement-templates") return "templates";
   if (val === "audit" || val === "auditlogs" || val === "audit-logs" || val === "logs") return "audit";
   if (val === "settings" || val === "super-admin-settings" || val === "admin-settings") return "settings";
   return null;
@@ -1720,6 +1723,12 @@ export function SuperAdminDashboard({
                   }
                 />
               </article>
+            ) : null}
+
+            {activeSection === "templates" ? (
+              <div className="p-2 sm:p-4 md:p-5">
+                <RequirementTemplatesPanel />
+              </div>
             ) : null}
 
             {activeSection === "audit" ? (

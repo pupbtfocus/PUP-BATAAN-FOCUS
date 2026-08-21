@@ -18,8 +18,16 @@ import {
   type RequirementCode,
 } from "@/config/compliance";
 
+export type RequirementTemplateItem = {
+  code: string;
+  title: string;
+  is_mandatory?: boolean;
+  max_size_mb?: number;
+  allowed_formats?: string[];
+};
+
 type RequirementStatus = {
-  code: RequirementCode;
+  code: string;
   status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
   reviewedAt?: string;
   feedback?: string;
@@ -30,6 +38,7 @@ type RequirementStatus = {
 
 type StatusResponse = {
   requirementStatuses: RequirementStatus[];
+  requirementTemplates?: RequirementTemplateItem[];
   counts?: {
     total: number;
     validated: number;
@@ -45,7 +54,7 @@ type SemesterOption = (typeof SEMESTER_OPTIONS)[number];
 type RequirementFormState = {
   academicYear: string;
   semester: SemesterOption;
-  requirementCode: RequirementCode;
+  requirementCode: string;
   remarks: string;
 };
 
@@ -128,6 +137,9 @@ export function FacultyRequirementsModule() {
   const [requirementStatuses, setRequirementStatuses] = useState<
     RequirementStatus[]
   >([]);
+  const [requirementTemplates, setRequirementTemplates] = useState<
+    RequirementTemplateItem[]
+  >([]);
   const [counts, setCounts] = useState<StatusResponse["counts"] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -156,6 +168,15 @@ export function FacultyRequirementsModule() {
 
         const data = (await response.json()) as StatusResponse;
         setRequirementStatuses(data.requirementStatuses || []);
+        if (Array.isArray(data.requirementTemplates) && data.requirementTemplates.length > 0) {
+          setRequirementTemplates(data.requirementTemplates);
+          if (!form.requirementCode || form.requirementCode === DEFAULT_REQUIREMENTS[0]) {
+            setForm((curr) => ({
+              ...curr,
+              requirementCode: data.requirementTemplates![0].code,
+            }));
+          }
+        }
         setCounts(data.counts || null);
       } catch {
         setMessage("Unable to load current requirement status right now.");
@@ -164,7 +185,7 @@ export function FacultyRequirementsModule() {
       }
     }
 
-    loadStatuses();
+    void loadStatuses();
   }, []);
 
   useEffect(() => {
@@ -239,7 +260,7 @@ export function FacultyRequirementsModule() {
     setIsCalendarModalOpen(false);
   }
 
-  function getStatus(code: RequirementCode) {
+  function getStatus(code: string) {
     return (
       requirementStatuses.find((item) => item.code === code)?.status ??
       "Not Submitted"
@@ -254,6 +275,9 @@ export function FacultyRequirementsModule() {
 
     const data = (await response.json()) as StatusResponse;
     setRequirementStatuses(data.requirementStatuses || []);
+    if (Array.isArray(data.requirementTemplates) && data.requirementTemplates.length > 0) {
+      setRequirementTemplates(data.requirementTemplates);
+    }
     setCounts(data.counts || null);
   }
 
@@ -310,12 +334,25 @@ export function FacultyRequirementsModule() {
     }
   }
 
+  const activeRequirementItems = useMemo(() => {
+    if (requirementTemplates.length > 0) {
+      return requirementTemplates.map((t) => ({
+        code: t.code,
+        title: t.title,
+      }));
+    }
+    return DEFAULT_REQUIREMENTS.map((code) => ({
+      code,
+      title: REQUIREMENT_LABEL[code] || code,
+    }));
+  }, [requirementTemplates]);
+
   const summary = counts ?? {
-    total: DEFAULT_REQUIREMENTS.length,
+    total: activeRequirementItems.length,
     validated: 0,
     rejected: 0,
     pending: 0,
-    notSubmitted: DEFAULT_REQUIREMENTS.length,
+    notSubmitted: activeRequirementItems.length,
   };
 
   return (
@@ -424,7 +461,8 @@ export function FacultyRequirementsModule() {
           </div>
         ) : (
           <div className="bg-white dark:bg-slate-900/60 border border-slate-400/80 dark:border-slate-800/80 rounded-2xl divide-y divide-slate-400 dark:divide-slate-800/60 overflow-hidden shadow-sm shadow-slate-200/60 dark:shadow-none">
-            {DEFAULT_REQUIREMENTS.map((code) => {
+            {activeRequirementItems.map((req) => {
+              const code = req.code;
               const status = getStatus(code);
               const item = requirementStatuses.find(
                 (entry) => entry.code === code,
@@ -437,7 +475,7 @@ export function FacultyRequirementsModule() {
                 >
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                      {REQUIREMENT_LABEL[code]}
+                      {req.title}
                     </h4>
                     <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                       {item?.submittedAt
@@ -501,16 +539,16 @@ export function FacultyRequirementsModule() {
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-3xl rounded-3xl border border-slate-400 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="w-full max-w-xl rounded-3xl border border-slate-400 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between border-b border-slate-400 dark:border-slate-800 px-6 py-5">
+            <div className="flex items-start justify-between border-b border-slate-400 dark:border-slate-800 pb-4">
               <div>
                 <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                  Submit Requirements
+                  Submit Faculty Requirement
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Upload the file for the selected requirement.
+                  Upload your compliance file for admin verification.
                 </p>
               </div>
               <button
@@ -523,11 +561,11 @@ export function FacultyRequirementsModule() {
               </button>
             </div>
 
-            <form className="space-y-5 px-6 py-6" onSubmit={handleSubmit}>
-              <div className="grid gap-4 md:grid-cols-2">
+            <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
                   <span className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-600 dark:text-slate-400">
-                    School Year
+                    Academic Year
                   </span>
                   <p className="w-full rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-800 dark:text-slate-100 font-medium">
                     {form.academicYear
@@ -560,9 +598,9 @@ export function FacultyRequirementsModule() {
                     }))
                   }
                 >
-                  {DEFAULT_REQUIREMENTS.map((code) => (
-                    <option key={code} value={code}>
-                      {REQUIREMENT_LABEL[code]}
+                  {activeRequirementItems.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.title}
                     </option>
                   ))}
                 </select>
