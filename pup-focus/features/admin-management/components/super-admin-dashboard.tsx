@@ -18,6 +18,7 @@ import { RequirementsPanel } from "@/features/faculty-management/components/requ
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { SubmissionWindowPanel } from "@/features/faculty-management/components/submission-window-panel";
 import { RequirementTemplatesPanel } from "@/features/requirement-templates/components/requirement-templates-panel";
+import { BackupArchivePanel } from "@/features/backup-archive/components/backup-archive-panel";
 import { AddFacultyModal } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
 import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
 import { DeleteFacultyModal } from "@/features/faculty-management/components/faculty-modals/delete-faculty-modal";
@@ -47,6 +48,7 @@ export type SuperAdminSection =
   | "terms"
   | "window"
   | "templates"
+  | "backups"
   | "audit"
   | "settings";
 
@@ -165,6 +167,14 @@ function normalizeSuperAdminSection(
   if (val === "terms" || val === "academicterms" || val === "academic-terms") return "terms";
   if (val === "window" || val === "submissionwindow" || val === "submission-window") return "window";
   if (val === "templates" || val === "requirementtemplates" || val === "requirement-templates") return "templates";
+  if (
+    val === "backups" ||
+    val === "backuparchive" ||
+    val === "backup-archive" ||
+    val === "archives" ||
+    val === "archiving"
+  )
+    return "backups";
   if (val === "audit" || val === "auditlogs" || val === "audit-logs" || val === "logs") return "audit";
   if (val === "settings" || val === "super-admin-settings" || val === "admin-settings") return "settings";
   return null;
@@ -1728,6 +1738,12 @@ export function SuperAdminDashboard({
             {activeSection === "templates" ? (
               <div className="p-2 sm:p-4 md:p-5">
                 <RequirementTemplatesPanel />
+              </div>
+            ) : null}
+
+            {activeSection === "backups" ? (
+              <div className="p-2 sm:p-4 md:p-5">
+                <BackupArchivePanel />
               </div>
             ) : null}
 

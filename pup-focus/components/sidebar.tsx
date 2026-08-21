@@ -99,13 +99,19 @@ export function SidebarContent({
     activeSection === "templates" ||
     activeSection === "requirementTemplates" ||
     activeSection === "requirement-templates";
+  const isBackupsActive =
+    activeSection === "backups" ||
+    activeSection === "backupArchive" ||
+    activeSection === "backup-archive" ||
+    activeSection === "archives";
   const isAuditActive =
     activeSection === "audit" ||
     activeSection === "auditLogs" ||
     activeSection === "audit-logs";
   const isSettingsActive = activeSection === "settings";
 
-  const isAcademicCycleActive = isTermsActive || isWindowActive || isTemplatesActive;
+  const isAcademicCycleActive =
+    isTermsActive || isWindowActive || isTemplatesActive || isBackupsActive;
   const isUserManagementActive = isAccountsActive || isFacultyActive;
 
   const [isUserManagementOpen, setIsUserManagementOpen] =
@@ -290,6 +296,17 @@ export function SidebarContent({
                 }`}
               >
                 Requirement Templates
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelect(isSuperAdmin ? "backups" : "backupArchive")}
+                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
+                  isBackupsActive
+                    ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
+                }`}
+              >
+                Backups & Archiving
               </button>
             </div>
           )}
