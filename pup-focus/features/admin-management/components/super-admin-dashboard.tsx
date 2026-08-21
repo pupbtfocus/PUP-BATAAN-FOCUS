@@ -595,7 +595,6 @@ export function SuperAdminDashboard({
   const [createAdminFirstName, setCreateAdminFirstName] = useState("");
   const [createAdminMiddleName, setCreateAdminMiddleName] = useState("");
   const [createAdminLastName, setCreateAdminLastName] = useState("");
-  const [createAdminDepartment, setCreateAdminDepartment] = useState("");
   const [createAdminProfileImage, setCreateAdminProfileImage] =
     useState<File | null>(null);
   const [createAdminProfileImagePreview, setCreateAdminProfileImagePreview] =
@@ -607,7 +606,6 @@ export function SuperAdminDashboard({
     setCreateAdminFirstName("");
     setCreateAdminMiddleName("");
     setCreateAdminLastName("");
-    setCreateAdminDepartment("");
     setCreateAdminProfileImage(null);
     setCreateAdminProfileImagePreview(null);
     setEmail("");
@@ -619,7 +617,6 @@ export function SuperAdminDashboard({
     setIsSubmitting(false);
     setError(null);
     setSuccess(null);
-    setCreateAdminDepartment("");
     if (createAdminProfileImagePreview) {
       URL.revokeObjectURL(createAdminProfileImagePreview);
     }
@@ -868,10 +865,6 @@ export function SuperAdminDashboard({
       body.append("middleName", middleName);
       body.append("lastName", lastName);
       body.append("email", normalizedEmail);
-
-      if (createAdminDepartment) {
-        body.append("department", createAdminDepartment);
-      }
 
       if (createAdminProfileImage) {
         body.append("profileImage", createAdminProfileImage);
@@ -2060,33 +2053,7 @@ export function SuperAdminDashboard({
                 </div>
               </div>
 
-              {/* Row 2: Department / Scope Dropdown */}
-              <div>
-                <label
-                  className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
-                  htmlFor="adminDepartment"
-                >
-                  Department / Role <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="adminDepartment"
-                  value={createAdminDepartment}
-                  onChange={(e) => setCreateAdminDepartment(e.target.value)}
-                  className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20 cursor-pointer"
-                >
-                  <option value="" className="text-slate-400">
-                    -- Select Department / Role --
-                  </option>
-                  <option value="Academic Affairs">Academic Affairs</option>
-                  <option value="Student Services">Student Services</option>
-                  <option value="Registrar & Admissions">Registrar & Admissions</option>
-                  <option value="Administrative Services">Administrative Services</option>
-                  <option value="IT & Campus Systems">IT & Campus Systems</option>
-                  <option value="General Administration">General Administration</option>
-                </select>
-              </div>
-
-              {/* Row 3: Profile Photo Dashed Container */}
+              {/* Row 2: Profile Photo Dashed Container */}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 block">
                   Profile Photo
@@ -2150,7 +2117,7 @@ export function SuperAdminDashboard({
                 </div>
               </div>
 
-              {/* Row 4: Email Input */}
+              {/* Row 3: Email Input */}
               <div>
                 <label
                   className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
