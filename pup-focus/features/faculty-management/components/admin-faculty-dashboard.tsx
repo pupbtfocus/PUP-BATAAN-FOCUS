@@ -803,9 +803,7 @@ export function AdminFacultyDashboard({
                       </button>
                     </div>
 
-                    <section className="rounded-2xl border border-slate-400/80 bg-white dark:border-slate-800/80 dark:bg-slate-900/60 p-4 shadow-sm shadow-slate-200/60 dark:shadow-none">
-                      <AdminAcademicTerms adminName={adminName ?? "Admin"} />
-                    </section>
+                    <AdminAcademicTerms adminName={adminName ?? "Admin"} />
                   </article>
                 ) : null}
 

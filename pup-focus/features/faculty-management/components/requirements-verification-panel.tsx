@@ -1731,7 +1731,7 @@ export function RequirementsPanel({
             placeholder="Search faculty by name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-56 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            className="w-full sm:w-56 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
           />
 
           {/* Custom Program Dropdown Filter */}
@@ -1739,7 +1739,7 @@ export function RequirementsPanel({
             <button
               type="button"
               onClick={() => setIsProgramDropdownOpen((prev) => !prev)}
-              className="flex w-full sm:w-auto items-center justify-between gap-2 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 outline-none transition hover:border-slate-500 dark:hover:border-slate-700 focus:border-amber-500"
+              className="flex w-full sm:w-auto items-center justify-between gap-2 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-200 outline-none transition hover:border-slate-500 dark:hover:border-slate-700 focus:border-amber-500 cursor-pointer"
             >
               <span>{selectedProgram}</span>
               <ChevronDown className={`h-3.5 w-3.5 text-slate-500 dark:text-slate-400 transition-transform ${isProgramDropdownOpen ? "rotate-180" : ""}`} />
@@ -1796,7 +1796,7 @@ export function RequirementsPanel({
       </div>
 
       {/* 2. Faculty List / Table View */}
-      <div className="w-full overflow-x-auto rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm shadow-slate-200/60 dark:shadow-none">
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-200/60 dark:shadow-none">
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[600px]">
             <thead className="border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
               <tr>
@@ -1839,10 +1839,10 @@ export function RequirementsPanel({
 
                   if (validatedCount === DEFAULT_REQUIREMENTS.length) {
                     overallStatus = "Validated";
-                    textColor = "text-emerald-500 dark:text-emerald-400";
+                    textColor = "text-emerald-600 dark:text-emerald-400";
                   } else if (uploadedCount > 0 || (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)) {
                     overallStatus = "Pending Review";
-                    textColor = "text-amber-600 dark:text-amber-400";
+                    textColor = "text-amber-700 dark:text-amber-400";
                   } else {
                     overallStatus = "Not Submitted";
                     textColor = "text-slate-500 dark:text-slate-400";
@@ -1854,7 +1854,7 @@ export function RequirementsPanel({
                   return (
                     <tr
                       key={faculty.id}
-                      className="transition hover:bg-slate-50 dark:hover:bg-slate-900/40"
+                      className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-400 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
                     >
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-200">
                         <div className="flex items-center gap-3">
@@ -1897,7 +1897,7 @@ export function RequirementsPanel({
                             ...
                           </span>
                         ) : (
-                          <span className={`text-xs font-medium ${textColor}`}>
+                          <span className={`text-xs font-semibold ${textColor}`}>
                             {overallStatus}
                           </span>
                         )}
@@ -1906,7 +1906,7 @@ export function RequirementsPanel({
                         <button
                           type="button"
                           onClick={() => setReviewingFaculty(faculty)}
-                          className="inline-flex items-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 transition cursor-pointer"
+                          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-1.5 rounded-xl text-xs shadow-sm shadow-amber-500/10 transition cursor-pointer"
                         >
                           Review Requirements
                         </button>

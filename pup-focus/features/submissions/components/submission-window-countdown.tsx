@@ -227,7 +227,7 @@ export function SubmissionWindowCountdown({
       label: "Window Open",
       icon: <Unlock className="h-3 w-3" />,
       dotClass: "bg-emerald-600 dark:bg-emerald-400 pulse-dot",
-      borderClass: "border-emerald-200 dark:border-emerald-700/60",
+      borderClass: "border-emerald-300 dark:border-emerald-700/60",
       bgClass: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-950",
       textClass: "text-emerald-950 dark:text-emerald-400",
       numberClass: "text-emerald-950 font-bold dark:text-emerald-300",
@@ -236,7 +236,7 @@ export function SubmissionWindowCountdown({
       label: "Window Closed",
       icon: <Lock className="h-3 w-3" />,
       dotClass: "bg-red-600 dark:bg-red-400",
-      borderClass: "border-red-200 dark:border-red-700/60",
+      borderClass: "border-red-300 dark:border-red-700/60",
       bgClass: "bg-red-50 dark:bg-red-950/30 text-red-950",
       textClass: "text-red-950 dark:text-red-400",
       numberClass: "text-red-950 font-bold dark:text-red-300",
@@ -245,7 +245,7 @@ export function SubmissionWindowCountdown({
       label: "Opening Soon",
       icon: <Clock className="h-3 w-3" />,
       dotClass: "bg-amber-600 dark:bg-amber-400",
-      borderClass: "border-amber-200 dark:border-amber-700/60",
+      borderClass: "border-amber-300 dark:border-amber-700/60",
       bgClass: "bg-amber-50 dark:bg-amber-950/30 text-amber-950",
       textClass: "text-amber-950 dark:text-amber-400",
       numberClass: "text-amber-950 font-bold dark:text-amber-300",
@@ -311,7 +311,7 @@ export function SubmissionWindowCountdown({
 
       {/* Closed state — show window dates */}
       {status === "Closed" && startDate && endDate ? (
-        <div className="mt-2.5 rounded-lg bg-white/80 dark:bg-slate-950/50 border border-red-200/60 dark:border-red-900/40 px-2.5 py-2 text-center">
+        <div className="mt-2.5 rounded-lg bg-white/80 dark:bg-slate-950/50 border border-red-300 dark:border-red-900/40 px-2.5 py-2 text-center">
           <p className="text-[10px] text-red-950 dark:text-slate-400">
             Window was {formatDateReadable(startDate)}{" "}
             {startTimeLabel ?? ""} – {formatDateReadable(endDate)}{" "}
@@ -322,7 +322,7 @@ export function SubmissionWindowCountdown({
 
       {/* Upcoming — show scheduled start */}
       {status === "Upcoming" && startDate ? (
-        <div className="mt-2 rounded-lg bg-white/80 dark:bg-slate-950/50 border border-amber-200/60 dark:border-amber-900/40 px-2.5 py-1.5 text-center">
+        <div className="mt-2 rounded-lg bg-white/80 dark:bg-slate-950/50 border border-amber-300 dark:border-amber-900/40 px-2.5 py-1.5 text-center">
           <p className="text-[10px] text-amber-950 dark:text-slate-400">
             Opens {formatDateReadable(startDate)} {startTimeLabel ?? ""}
           </p>
@@ -331,7 +331,7 @@ export function SubmissionWindowCountdown({
 
       {/* Expired flash */}
       {hasExpired ? (
-        <div className="mt-2 rounded-lg border border-red-200 dark:border-red-700/40 bg-red-100 dark:bg-red-950/40 px-2.5 py-1.5 text-center">
+        <div className="mt-2 rounded-lg border border-red-300 dark:border-red-700/40 bg-red-100 dark:bg-red-950/40 px-2.5 py-1.5 text-center">
           <p className="text-[10px] font-medium text-red-800 dark:text-red-400">
             Window has just expired — refreshing…
           </p>

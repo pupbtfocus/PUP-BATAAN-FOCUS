@@ -22,21 +22,21 @@ export function FacultyFilterBar({
   placeholder = "Search faculty by name or email...",
 }: FacultyFilterBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white dark:bg-slate-950 rounded-2xl border border-slate-400/80 dark:border-slate-800 mb-6 shadow-sm shadow-slate-200/60 dark:shadow-none text-slate-900 dark:text-slate-200">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-400 dark:border-slate-800 mb-6 shadow-sm shadow-slate-200/60 dark:shadow-none text-slate-900 dark:text-slate-200">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={placeholder}
-          className="w-full sm:w-64 h-9 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+          className="w-full sm:w-64 h-9 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
         />
 
         {onProgramFilterChange ? (
           <select
             value={programFilter || "all"}
             onChange={(e) => onProgramFilterChange(e.target.value)}
-            className="w-full sm:w-48 h-9 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-xs text-slate-900 dark:text-slate-200 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            className="w-full sm:w-48 h-9 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
           >
             <option value="all">All Programs</option>
             {programs.map((p) => (
@@ -49,7 +49,7 @@ export function FacultyFilterBar({
 
         {onStatusFilterChange ? (
           <div className="flex items-center justify-start gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-            <div className="flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1 h-9 shrink-0">
+            <div className="flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 p-1 h-9 shrink-0">
               <button
                 type="button"
                 onClick={() => onStatusFilterChange("all")}
