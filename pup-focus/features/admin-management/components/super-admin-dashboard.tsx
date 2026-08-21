@@ -12,6 +12,7 @@ import { Menu, X, Shield, ScrollText, Activity, CheckCircle2, Clock3, Users } fr
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
+import { AdminAccountsTable } from "@/features/super-admin/components/admin-accounts-directory";
 import { FacultyTable } from "@/features/faculty-management/components/faculty-table";
 import { RequirementsPanel } from "@/features/faculty-management/components/requirements-verification-panel";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
@@ -1450,7 +1451,7 @@ export function SuperAdminDashboard({
                     <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-400 dark:border-slate-800">
                         <div>
-                          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Admin Accounts Management</h2>
+                          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Admin Management</h2>
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Overview of all admin and super admin accounts.</p>
                         </div>
                         <button
@@ -1545,18 +1546,18 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "accounts" ? (
-              <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-6">
                   <div>
                     <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                      Admin Accounts
+                      Admin Management
                     </h1>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={openCreateAdminModal}
-                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-4 py-2 text-xs transition cursor-pointer"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition cursor-pointer shadow-sm shadow-amber-500/10"
                     >
                       + Create Admin
                     </button>
@@ -1564,116 +1565,31 @@ export function SuperAdminDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingAccounts}
-                      className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
                     >
                       {isLoadingAccounts ? "Refreshing..." : "⟳ Refresh"}
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-                  <InfoCard
-                    label="Total Accounts"
-                    value={String(adminAccounts.length)}
-                  />
-                  <InfoCard
-                    label="Active Accounts"
-                    value={String(activeAccounts.length)}
-                  />
-                  <InfoCard
-                    label="Admin Accounts"
-                    value={String(adminRoleAccounts.length)}
-                  />
-                  <InfoCard
-                    label="Super Admin Accounts"
-                    value={String(superAdminAccounts.length)}
-                  />
-                </div>
-
-                <div className="mt-6 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                        Account Directory
-                      </h3>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3">
-                      <select
-                        id="accountRoleFilter"
-                        value={accountViewRole}
-                        onChange={(event) =>
-                          setAccountViewRole(
-                            event.target.value as AccountViewRole,
-                          )
-                        }
-                        className="rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs outline-none transition focus:border-amber-500 cursor-pointer"
-                      >
-                        <option value="all">All Accounts</option>
-                        <option value={ROLE.ADMIN}>Admin Accounts</option>
-                        <option value={ROLE.SUPER_ADMIN}>
-                          Super Admin Accounts
-                        </option>
-                      </select>
-                      <button
-                        type="button"
-                        onClick={openCreateAdminModal}
-                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-4 py-2 text-xs transition cursor-pointer"
-                      >
-                        Create Admin
-                      </button>
-                    </div>
-                  </div>
-
-                  {accountsError ? (
-                    <p className="mt-4 text-xs text-rose-600 dark:text-red-300">{accountsError}</p>
-                  ) : null}
-                  {accountActionError ? (
-                    <p className="mt-4 text-xs text-rose-600 dark:text-red-300">
-                      {accountActionError}
-                    </p>
-                  ) : null}
-                  {accountActionSuccess ? (
-                    <p className="mt-4 text-xs text-emerald-600 dark:text-emerald-300">
-                      {accountActionSuccess}
-                    </p>
-                  ) : null}
-
-                  <div className="mt-4 space-y-6">
-                    {isLoadingAccounts ? (
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Loading account directory...
-                      </p>
-                    ) : (
-                      visibleAccountGroups.map((group) => (
-                        <section
-                          key={group.key}
-                          className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-4 transition-colors"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                              {group.title}
-                            </h4>
-                            <span className="text-xs text-slate-600 dark:text-slate-400">
-                              {group.accounts.length} account
-                              {group.accounts.length === 1 ? "" : "s"}
-                            </span>
-                          </div>
-
-                          <div className="mt-3 space-y-3">
-                            {group.accounts.length ? (
-                              renderAccountCards(group.accounts)
-                            ) : (
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                {group.emptyMessage}
-                              </p>
-                            )}
-                          </div>
-                        </section>
-                      ))
-                    )}
-                  </div>
-                </div>
+                <AdminAccountsTable
+                  adminAccounts={adminAccounts}
+                  isLoading={isLoadingAccounts}
+                  onEditAdmin={(profileId) => void onEditAdmin(profileId)}
+                  onViewDetails={(profileId) => void onViewAdminDetails(profileId)}
+                  onDeactivateAdmin={(profileId) => void onDeactivateAdmin(profileId)}
+                  onActivateAdmin={(profileId) => void onActivateAdmin(profileId)}
+                  onDeleteAdmin={(profileId) => void onDeleteAdmin(profileId)}
+                  loadingAdminIds={loadingAdminIds}
+                  accountsError={accountsError}
+                  accountActionError={accountActionError}
+                  accountActionSuccess={accountActionSuccess}
+                  onClearMessages={() => {
+                    setAccountsError(null);
+                    setAccountActionError(null);
+                    setAccountActionSuccess(null);
+                  }}
+                />
               </article>
             ) : null}
 

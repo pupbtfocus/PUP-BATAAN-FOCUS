@@ -1,16 +1,42 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Users, UserCheck, ShieldAlert, RefreshCw, AlertCircle, Search } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { ROLE, type AppRole } from "@/config/roles";
 
-export interface AdminAccountItem {
-  id: string;
+export interface AdminAccount {
+  id?: string;
+  profile_id: string;
   full_name: string;
   email: string;
-  role: string;
-  status: string;
-  avatar_url?: string | null;
+  profileImageUrl?: string | null;
+  profile?: {
+    firstName?: string | null;
+    middleName?: string | null;
+    lastName?: string | null;
+    avatar_url?: string | null;
+    picture?: string | null;
+    fullName?: string | null;
+  } | null;
+  role: AppRole;
+  is_active: boolean;
+  department?: string | null;
+  permissions?: string[];
   created_at: string;
+}
+
+export interface AdminAccountsTableProps {
+  adminAccounts: AdminAccount[];
+  isLoading: boolean;
+  onEditAdmin: (profileId: string) => void;
+  onViewDetails: (profileId: string) => void;
+  onDeactivateAdmin: (profileId: string) => void;
+  onActivateAdmin: (profileId: string) => void;
+  onDeleteAdmin: (profileId: string) => void;
+  loadingAdminIds?: Set<string>;
+  accountsError?: string | null;
+  accountActionError?: string | null;
+  accountActionSuccess?: string | null;
+  onClearMessages?: () => void;
 }
 
 function getInitials(name?: string | null, fallback = "AD"): string {
@@ -22,360 +48,412 @@ function getInitials(name?: string | null, fallback = "AD"): string {
   return parts[0].slice(0, 2).toUpperCase() || fallback;
 }
 
-function getAccountRole(acc: any): string {
-  const r =
-    acc.role ||
-    acc.user_metadata?.role ||
-    acc.app_metadata?.role ||
-    acc.role_name ||
-    "";
-  const lower = String(r).toLowerCase().trim();
-  if (lower.includes("super")) return "super_admin";
-  return "admin"; // Default fallback so NO account disappears
+function formatAdminName(admin: AdminAccount): string {
+  const profile = admin.profile;
+  const firstName = profile?.firstName?.trim() || "";
+  const middleName = profile?.middleName?.trim() || "";
+  const lastName = profile?.lastName?.trim() || "";
+
+  if (firstName || lastName) {
+    const middleInitial = middleName ? `${middleName[0]}.` : "";
+    return [firstName, middleInitial, lastName].filter(Boolean).join(" ");
+  }
+
+  if (admin.full_name?.trim()) {
+    return admin.full_name.trim();
+  }
+
+  const parts = (admin.email || "").split("@")[0].split(/[._-]/);
+  return parts
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
 }
 
-export function AdminAccountsDirectory() {
-  const [accounts, setAccounts] = useState<AdminAccountItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
-
-  // Search & Tab Filter States
-  const [activeTab, setActiveTab] = useState<"all" | "admin" | "super_admin">("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-
-  const fetchAccounts = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/super-admin/accounts");
-      if (!res.ok) {
-        // Fallback to legacy endpoint if available
-        const fallbackRes = await fetch("/api/super-admin/admin/list");
-        if (!fallbackRes.ok) {
-          throw new Error("Failed to load admin accounts");
-        }
-        const fallbackData = await fallbackRes.json();
-        const rawFallback = Array.isArray(fallbackData)
-          ? fallbackData
-          : fallbackData.admins || fallbackData.accounts || fallbackData.data || [];
-        const mappedAdmins = rawFallback.map((adm: any) => ({
-          id: adm.id,
-          full_name: adm.full_name || adm.profile?.fullName || "Admin User",
-          email: adm.email,
-          role: getAccountRole(adm),
-          status: adm.is_active ? "active" : "inactive",
-          avatar_url: adm.profileImageUrl || null,
-          created_at: adm.created_at,
-        }));
-        setAccounts(mappedAdmins);
-        return;
-      }
-      const data = await res.json();
-      const loadedAccounts = Array.isArray(data)
-        ? data
-        : data.accounts || data.data || [];
-      setAccounts(loadedAccounts);
-    } catch (err: any) {
-      console.error("Accounts fetch error:", err);
-      setError(err?.message || "Failed to load admin accounts");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void fetchAccounts();
-  }, []);
-
-  console.log("=== FRONTEND RECEIVED ACCOUNTS ===", accounts);
-
-  const handleImageError = (id: string) => {
-    setFailedImageIds((prev) => new Set(prev).add(id));
-  };
-
-  // Filter accounts based on tab and search query
-  const filteredAccounts = accounts.filter((acc) => {
-    const role = getAccountRole(acc);
-    const matchesSearch =
-      !searchQuery ||
-      acc.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      acc.email?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (activeTab === "admin") {
-      return matchesSearch && role === "admin";
-    }
-    if (activeTab === "super_admin") {
-      return matchesSearch && role === "super_admin";
-    }
-    return matchesSearch;
-  });
-
-  // Stat Counters
-  const totalAccounts = accounts.length;
-  const activeAccounts = accounts.filter(
-    (a) => !a.status || a.status?.toLowerCase() === "active" || a.status === "true"
-  ).length;
-
-  const superAdminAccounts = accounts.filter(
-    (acc) => getAccountRole(acc) === "super_admin"
-  ).length;
-
-  const adminAccounts = accounts.filter(
-    (acc) => getAccountRole(acc) === "admin"
-  ).length;
+export function AdminStatsCards({
+  adminAccounts,
+  isLoading = false,
+}: {
+  adminAccounts: AdminAccount[];
+  isLoading?: boolean;
+}) {
+  const totalCount = adminAccounts.length;
+  const activeCount = adminAccounts.filter((a) => a.is_active).length;
+  const inactiveCount = adminAccounts.filter((a) => !a.is_active).length;
 
   return (
-    <div className="w-full space-y-6">
-      {/* Header & Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-            Admin Accounts Directory
-          </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-400">
-            Overview of all system administrative and super admin user accounts.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => void fetchAccounts()}
-          disabled={isLoading}
-          className="bg-slate-100 dark:bg-slate-800 border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold px-3.5 py-1.5 rounded-xl transition disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 text-amber-500 dark:text-amber-400 ${isLoading ? "animate-spin" : ""}`} />
-          {isLoading ? "Refreshing..." : "Refresh"}
-        </button>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      {/* 1. TOTAL ADMINS */}
+      <div className="rounded-2xl border border-slate-400 dark:border-slate-800 border-l-4 border-l-amber-500 bg-white dark:bg-slate-900 p-5 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
+        <p className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+          Total Admins
+        </p>
+        <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+          {isLoading ? "..." : totalCount}
+        </p>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                Total Accounts
-              </p>
-              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{totalAccounts}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400">
-              <UserCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                Active Accounts
-              </p>
-              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{activeAccounts}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-400">
-              <ShieldAlert className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                Admin Accounts
-              </p>
-              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{adminAccounts}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-700 dark:text-purple-400">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                Super Admins
-              </p>
-              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{superAdminAccounts}</p>
-            </div>
-          </div>
-        </div>
+      {/* 2. ACTIVE ADMINS */}
+      <div className="rounded-2xl border border-slate-400 dark:border-slate-800 border-l-4 border-l-emerald-500 bg-white dark:bg-slate-900 p-5 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
+        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+          Active Admins
+        </p>
+        <p className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+          {isLoading ? "..." : activeCount}
+        </p>
       </div>
 
-      {/* Graceful Error Recovery Banner */}
-      {error && (
-        <div className="rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 p-4 text-xs text-amber-900 dark:text-amber-300 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-            <span>Unable to load account directory automatically ({error}).</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => void fetchAccounts()}
-            className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-300 px-3 py-1 rounded-lg text-xs font-semibold border border-amber-300 dark:border-amber-500/40 transition cursor-pointer"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      {/* Filter Tabs & Search Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900/60 p-1 rounded-xl border border-slate-400 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={() => setActiveTab("all")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-              activeTab === "all"
-                ? "bg-amber-500/15 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            All Accounts ({totalAccounts})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("admin")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-              activeTab === "admin"
-                ? "bg-amber-500/15 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            Admin Accounts ({adminAccounts})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("super_admin")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-              activeTab === "super_admin"
-                ? "bg-amber-500/15 text-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            Super Admins ({superAdminAccounts})
-          </button>
-        </div>
-
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name or email..."
-            className="w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-xs pl-8 pr-3 py-2 outline-none focus:border-amber-500"
-          />
-        </div>
-      </div>
-
-      {/* Accounts Directory Table */}
-      <div className="w-full overflow-x-auto rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-        <table className="w-full text-left border-collapse min-w-[600px]">
-            <thead className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-400 dark:border-slate-800 text-slate-700 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-              <tr>
-                <th className="py-3 px-4">Account Profile</th>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Role</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Created Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-400 dark:divide-slate-800">
-              {isLoading ? (
-                <tr className="bg-white dark:bg-slate-900">
-                  <td colSpan={5} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                    Loading admin accounts directory...
-                  </td>
-                </tr>
-              ) : filteredAccounts.length === 0 ? (
-                <tr className="bg-white dark:bg-slate-900">
-                  <td colSpan={5} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                    No accounts match the selected filter.
-                  </td>
-                </tr>
-              ) : (
-                filteredAccounts.map((account) => {
-                  const hasImage =
-                    account.avatar_url && !failedImageIds.has(account.id);
-                  const isSuperAdmin =
-                    getAccountRole(account) === "super_admin";
-                  const isActive =
-                    !account.status ||
-                    account.status?.toLowerCase() === "active" ||
-                    account.status === "true";
-
-                  return (
-                    <tr
-                      key={account.id}
-                      className="bg-white dark:bg-slate-900 border-b border-slate-400 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors py-3 px-4 text-xs"
-                    >
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          {hasImage ? (
-                            <img
-                              src={account.avatar_url!}
-                              alt={account.full_name}
-                              className="w-9 h-9 rounded-full object-cover border border-slate-400 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 shadow-sm"
-                              onError={() => handleImageError(account.id)}
-                            />
-                          ) : (
-                            <div className="w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 font-bold text-xs flex items-center justify-center shadow-sm">
-                              {getInitials(account.full_name, isSuperAdmin ? "SA" : "AD")}
-                            </div>
-                          )}
-                          <span className="font-semibold text-slate-900 dark:text-slate-100">
-                            {account.full_name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
-                        {account.email}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
-                            isSuperAdmin
-                              ? "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/30"
-                              : "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/30"
-                          }`}
-                        >
-                          {isSuperAdmin ? "Super Admin" : "Admin"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
-                            isActive ? "text-emerald-700 dark:text-emerald-400" : "text-slate-500"
-                          }`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              isActive ? "bg-emerald-500" : "bg-slate-400"
-                            }`}
-                          />
-                          {isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-400 text-[11px]">
-                        {account.created_at
-                          ? new Date(account.created_at).toLocaleDateString()
-                          : "N/A"}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+      {/* 3. INACTIVE ADMINS */}
+      <div className="rounded-2xl border border-slate-400 dark:border-slate-800 border-l-4 border-l-slate-400 dark:border-l-slate-600 bg-white dark:bg-slate-900 p-5 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+          Inactive Admins
+        </p>
+        <p className="mt-2 text-2xl font-bold text-slate-700 dark:text-slate-300">
+          {isLoading ? "..." : inactiveCount}
+        </p>
       </div>
     </div>
   );
 }
 
-export default AdminAccountsDirectory;
+export function AdminFilterBar({
+  searchTerm,
+  onSearchChange,
+  roleFilter,
+  onRoleFilterChange,
+  statusFilter,
+  onStatusFilterChange,
+  placeholder = "Search admin by name or email...",
+}: {
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  roleFilter: "all" | string;
+  onRoleFilterChange: (role: "all" | string) => void;
+  statusFilter: "all" | "active" | "inactive";
+  onStatusFilterChange: (status: "all" | "active" | "inactive") => void;
+  placeholder?: string;
+}) {
+  return (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-400 dark:border-slate-800 mb-6 shadow-sm shadow-slate-200/60 dark:shadow-none text-slate-900 dark:text-slate-200">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder={placeholder}
+          className="w-full sm:w-64 h-9 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+        />
+
+        <select
+          value={roleFilter}
+          onChange={(e) => onRoleFilterChange(e.target.value)}
+          className="w-full sm:w-44 h-9 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 cursor-pointer"
+        >
+          <option value="all">All Roles</option>
+          <option value={ROLE.ADMIN}>Admin</option>
+          <option value={ROLE.SUPER_ADMIN}>Super Admin</option>
+        </select>
+
+        <div className="flex items-center justify-start gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 p-1 h-9 shrink-0">
+            <button
+              type="button"
+              onClick={() => onStatusFilterChange("all")}
+              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                statusFilter === "all"
+                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => onStatusFilterChange("active")}
+              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                statusFilter === "active"
+                  ? "bg-emerald-500 text-white font-semibold shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              onClick={() => onStatusFilterChange("inactive")}
+              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                statusFilter === "inactive"
+                  ? "bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              Inactive
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AdminAccountsTable({
+  adminAccounts,
+  isLoading,
+  onEditAdmin,
+  onViewDetails,
+  onDeactivateAdmin,
+  onActivateAdmin,
+  onDeleteAdmin,
+  loadingAdminIds = new Set(),
+  accountsError,
+  accountActionError,
+  accountActionSuccess,
+  onClearMessages,
+}: AdminAccountsTableProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | string>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
+
+  const filteredAccounts = useMemo(() => {
+    let result = adminAccounts;
+
+    if (roleFilter !== "all") {
+      result = result.filter((a) => {
+        const r = (a.role || "").toLowerCase().trim();
+        if (roleFilter === ROLE.SUPER_ADMIN) {
+          return r.includes("super");
+        }
+        return !r.includes("super");
+      });
+    }
+
+    if (statusFilter === "active") {
+      result = result.filter((a) => a.is_active);
+    } else if (statusFilter === "inactive") {
+      result = result.filter((a) => !a.is_active);
+    }
+
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return result;
+
+    return result.filter((admin) => {
+      const name = formatAdminName(admin).toLowerCase();
+      const email = (admin.email || "").toLowerCase();
+      return name.includes(query) || email.includes(query);
+    });
+  }, [adminAccounts, searchTerm, roleFilter, statusFilter]);
+
+  return (
+    <div className="space-y-3">
+      {accountsError ? (
+        <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3.5 py-2 text-xs text-red-300 flex justify-between items-center">
+          <span>{accountsError}</span>
+          {onClearMessages ? (
+            <button type="button" onClick={onClearMessages} className="text-red-400 hover:text-red-200 text-xs">
+              ✕
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {accountActionError ? (
+        <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3.5 py-2 text-xs text-red-300 flex justify-between items-center">
+          <span>{accountActionError}</span>
+          {onClearMessages ? (
+            <button type="button" onClick={onClearMessages} className="text-red-400 hover:text-red-200 text-xs">
+              ✕
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {accountActionSuccess ? (
+        <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/30 px-3.5 py-2 text-xs text-emerald-300 flex justify-between items-center">
+          <span>{accountActionSuccess}</span>
+          {onClearMessages ? (
+            <button type="button" onClick={onClearMessages} className="text-emerald-400 hover:text-emerald-200 text-xs">
+              ✕
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* 3 Stat Cards */}
+      <AdminStatsCards adminAccounts={adminAccounts} isLoading={isLoading} />
+
+      {/* Filter Bar */}
+      <AdminFilterBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        roleFilter={roleFilter}
+        onRoleFilterChange={setRoleFilter}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+      />
+
+      {/* Clean Data Table */}
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-200/60 dark:shadow-none">
+        <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[650px]">
+          <thead>
+            <tr className="border-b border-slate-400 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-950/50 text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              <th className="py-3 px-4">Admin Member</th>
+              <th className="py-3 px-4">Role</th>
+              <th className="py-3 px-4">Status</th>
+              <th className="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-400 dark:divide-slate-800">
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                  Loading admin accounts...
+                </td>
+              </tr>
+            ) : filteredAccounts.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                  No admin members match the selected criteria.
+                </td>
+              </tr>
+            ) : (
+              filteredAccounts.map((admin) => {
+                const isSuperAdmin = (admin.role || "").toLowerCase().includes("super");
+                const hasAvatar = admin.profileImageUrl && !failedImageIds.has(admin.profile_id);
+                const isLoadingAction = loadingAdminIds.has(admin.profile_id);
+
+                return (
+                  <tr
+                    key={admin.profile_id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                  >
+                    {/* Admin Member */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative shrink-0">
+                          {hasAvatar ? (
+                            <img
+                              src={admin.profileImageUrl!}
+                              alt={formatAdminName(admin)}
+                              className="w-9 h-9 rounded-full object-cover border border-slate-400 dark:border-slate-700 shadow-xs"
+                              onError={() => setFailedImageIds((prev) => new Set(prev).add(admin.profile_id))}
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-800 border border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-xs">
+                              {getInitials(formatAdminName(admin), isSuperAdmin ? "SA" : "AD")}
+                            </div>
+                          )}
+                          <span
+                            className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${
+                              admin.is_active ? "bg-emerald-500" : "bg-slate-400"
+                            }`}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                            {formatAdminName(admin)}
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                            {admin.email}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Role Badge */}
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                          isSuperAdmin
+                            ? "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20"
+                            : "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
+                        }`}
+                      >
+                        {isSuperAdmin ? "Super Admin" : "Admin"}
+                      </span>
+                    </td>
+
+                    {/* Status Badge */}
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                          admin.is_active
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
+                            : "bg-slate-100 text-slate-700 border-slate-400 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                        }`}
+                      >
+                        {admin.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+
+                    {/* Inline Actions */}
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {/* Edit Button (Admin only) */}
+                        {!isSuperAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => onEditAdmin(admin.profile_id)}
+                            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer"
+                          >
+                            Edit
+                          </button>
+                        )}
+
+                        {/* Deactivate / Activate Button */}
+                        {!isSuperAdmin ? (
+                          admin.is_active ? (
+                            <button
+                              type="button"
+                              onClick={() => onDeactivateAdmin(admin.profile_id)}
+                              disabled={isLoadingAction}
+                              className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                            >
+                              {isLoadingAction ? "..." : "Deactivate"}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => onActivateAdmin(admin.profile_id)}
+                              disabled={isLoadingAction}
+                              className="bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                            >
+                              {isLoadingAction ? "..." : "Activate"}
+                            </button>
+                          )
+                        ) : null}
+
+                        {/* Delete Button (Admin only) */}
+                        {!isSuperAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteAdmin(admin.profile_id)}
+                            disabled={isLoadingAction}
+                            className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                          >
+                            Delete
+                          </button>
+                        )}
+
+                        {/* View Details Button */}
+                        <button
+                          type="button"
+                          onClick={() => onViewDetails(admin.profile_id)}
+                          className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default AdminAccountsTable;
