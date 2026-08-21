@@ -95,13 +95,26 @@ export function BackupArchivePanel() {
         body: JSON.stringify({}),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to generate backup");
+        throw new Error(
+          data.error ||
+            "Failed to save backup history to database. Please ensure SQL migration 0021 was executed."
+        );
       }
 
-      const data = await res.json();
-      setSuccess("Full system backup snapshot generated successfully.");
+      // Push the newly created backup directly to state immediately
+      if (data.backup) {
+        setBackups((prev) => [data.backup, ...prev.filter((b) => b.id !== data.backup.id)]);
+        setStats((prev) => ({
+          ...prev,
+          total_backups: prev.total_backups + 1,
+          last_backup_date: data.backup.created_at,
+        }));
+      }
+
+      setSuccess("Backup generated and saved successfully!");
       setTimeout(() => setSuccess(null), 5000);
 
       // Trigger automatic browser download of snapshot
@@ -118,9 +131,14 @@ export function BackupArchivePanel() {
         URL.revokeObjectURL(url);
       }
 
+      // Re-trigger fetch to sync updated list
       await loadBackupData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error creating backup");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save backup history to database. Please ensure SQL migration 0021 was executed."
+      );
     } finally {
       setIsGeneratingBackup(false);
     }
