@@ -774,13 +774,13 @@ function FacultyVerificationDrawer({
       onClick={handleClose}
     >
       <div
-        className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-2xl"
+        className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-6 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-300 shadow-md">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-800 dark:text-amber-300 shadow-sm">
               {faculty.profileImageUrl ? (
                 <img
                   src={faculty.profileImageUrl}
@@ -792,10 +792,10 @@ function FacultyVerificationDrawer({
               )}
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-100">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                 {faculty.fullName}
               </h3>
-              <p className="mt-0.5 text-xs text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400">
                 {departmentLabel} &bull; Active Term: A.Y. {academicYear} &bull; {semester}
               </p>
             </div>
@@ -804,7 +804,7 @@ function FacultyVerificationDrawer({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-lg border border-slate-800 p-1.5 text-slate-400 transition hover:bg-slate-900 hover:text-slate-200 cursor-pointer"
+            className="rounded-full border border-slate-400 dark:border-slate-800 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
             aria-label="Close modal"
           >
             ✕
@@ -812,14 +812,14 @@ function FacultyVerificationDrawer({
         </div>
 
         {/* 1. Tab Navigation Bar */}
-        <div className="flex items-center gap-2 border-b border-slate-800 px-6 py-3 bg-slate-900/60">
+        <div className="flex items-center gap-2 border-b border-slate-400 dark:border-slate-800 px-6 py-3 bg-slate-50 dark:bg-slate-900/60">
           <button
             type="button"
             onClick={() => setActiveTab("current")}
             className={`rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer border ${
               activeTab === "current"
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-300 shadow-sm"
-                : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-300 shadow-xs font-bold"
+                : "border-slate-400 bg-white dark:border-slate-800 dark:bg-slate-950/60 text-slate-600 dark:text-slate-400 hover:border-slate-500 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
             Current Submissions
@@ -829,8 +829,8 @@ function FacultyVerificationDrawer({
             onClick={() => setActiveTab("history")}
             className={`rounded-xl px-4 py-2 text-xs font-semibold transition cursor-pointer border ${
               activeTab === "history"
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-300 shadow-sm"
-                : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-300 shadow-xs font-bold"
+                : "border-slate-400 bg-white dark:border-slate-800 dark:bg-slate-950/60 text-slate-600 dark:text-slate-400 hover:border-slate-500 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
             Verification History
@@ -840,15 +840,15 @@ function FacultyVerificationDrawer({
         {/* Body Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {isLoading ? (
-            <div className="py-12 text-center text-xs text-slate-400">
+            <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400">
               Loading faculty requirements...
             </div>
           ) : activeTab === "current" ? (
             /* Tab 1: Current Submissions */
             <div className="space-y-4">
               {/* Current Term Actions Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-3 shadow-xs">
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Bulk Actions
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
@@ -857,7 +857,7 @@ function FacultyVerificationDrawer({
                     type="button"
                     disabled={isValidatingAll}
                     onClick={triggerValidateAllPendingModal}
-                    className="text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-medium rounded-lg px-3 py-1.5 transition cursor-pointer disabled:opacity-50"
+                    className="text-amber-900 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-950 dark:hover:text-amber-200 text-xs font-medium rounded-xl px-3.5 py-1.5 transition cursor-pointer disabled:opacity-50"
                   >
                     {isValidatingAll
                       ? "Validating..."
@@ -869,7 +869,7 @@ function FacultyVerificationDrawer({
                     type="button"
                     disabled={isDownloadingZip}
                     onClick={handleDownloadZip}
-                    className="text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-medium rounded-lg px-3 py-1.5 transition cursor-pointer disabled:opacity-50"
+                    className="text-amber-900 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-950 dark:hover:text-amber-200 text-xs font-medium rounded-xl px-3.5 py-1.5 transition cursor-pointer disabled:opacity-50"
                   >
                     {isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}
                   </button>
@@ -879,12 +879,12 @@ function FacultyVerificationDrawer({
               {/* Action Feedback Banner */}
               {actionFeedback ? (
                 <div
-                  className={`flex items-center gap-2.5 rounded-xl border p-3 text-xs font-semibold shadow-md transition-all ${
+                  className={`flex items-center gap-2.5 rounded-2xl border p-3 text-xs font-semibold shadow-xs transition-all ${
                     actionFeedback.type === "info"
-                      ? "border-amber-500/40 bg-amber-950/60 text-amber-300"
+                      ? "border-amber-500/40 bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300"
                       : actionFeedback.type === "success"
-                      ? "border-emerald-500/40 bg-emerald-950/60 text-emerald-300"
-                      : "border-rose-500/40 bg-rose-950/60 text-rose-300"
+                      ? "border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300"
+                      : "border-rose-500/40 bg-rose-50 dark:bg-rose-950/60 text-rose-900 dark:text-rose-300"
                   }`}
                 >
                   <span className="text-sm">
@@ -931,14 +931,14 @@ function FacultyVerificationDrawer({
                 return (
                   <div
                     key={code}
-                    className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-4 transition hover:border-slate-800"
+                    className="rounded-2xl border border-slate-400/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/50 p-4 transition hover:border-slate-500 dark:hover:border-slate-800 shadow-xs"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/60 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-400 dark:border-slate-800/60 pb-3">
                       <div>
-                        <h4 className="text-xs font-semibold text-slate-200">
+                        <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                           {reqLabel}
                         </h4>
-                        <p className="mt-0.5 text-[10px] text-slate-500">
+                        <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
                           Code: {code}
                         </p>
                       </div>
@@ -951,10 +951,10 @@ function FacultyVerificationDrawer({
                       <div className="mt-3 space-y-3">
                         {matchingSubmission.remarks ? (
                           <div className="text-xs">
-                            <span className="text-[10px] uppercase tracking-wider text-slate-500">
+                            <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
                               Faculty Remarks:
                             </span>
-                            <p className="mt-0.5 text-slate-300 italic">
+                            <p className="mt-0.5 text-slate-800 dark:text-slate-300 italic">
                               "{matchingSubmission.remarks}"
                             </p>
                           </div>
@@ -974,7 +974,7 @@ function FacultyVerificationDrawer({
                                   storagePath: firstDoc?.storage_path,
                                 });
                               }}
-                              className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition cursor-pointer"
+                              className="inline-flex items-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition cursor-pointer"
                             >
                               Preview File
                             </button>
@@ -987,24 +987,24 @@ function FacultyVerificationDrawer({
                                   firstDoc?.storage_path?.split("/").pop() || `${reqLabel}.pdf`
                                 )
                               }
-                              className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-850 hover:text-slate-100 transition cursor-pointer"
+                              className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-850 hover:text-slate-950 dark:hover:text-slate-100 transition cursor-pointer"
                             >
                               Download
                             </button>
                           </div>
                         ) : (
-                          <p className="text-xs text-slate-500 italic">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 italic">
                             No file attached
                           </p>
                         )}
 
                         {/* Admin Feedback / Remarks if already validated */}
                         {!isValidated && (matchingSubmission.remarks || matchingSubmission.review_decisions?.[0]?.remarks) ? (
-                          <div className="rounded-lg border border-emerald-500/20 bg-emerald-950/20 p-2.5 text-xs">
-                            <span className="text-[10px] uppercase tracking-wider text-emerald-400/90 font-semibold">
+                          <div className="rounded-xl border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/20 p-2.5 text-xs">
+                            <span className="text-[10px] uppercase tracking-wider text-emerald-800 dark:text-emerald-400/90 font-semibold">
                               Admin Feedback / Remarks:
                             </span>
-                            <p className="mt-1 text-emerald-200/90 italic">
+                            <p className="mt-1 text-emerald-900 dark:text-emerald-200/90 italic">
                               "{matchingSubmission.review_decisions?.[0]?.remarks || matchingSubmission.remarks}"
                             </p>
                           </div>
@@ -1024,7 +1024,7 @@ function FacultyVerificationDrawer({
                                   [code]: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/30 resize-none transition"
+                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 resize-none transition"
                             />
                             <div className="flex items-center gap-2">
                               <button
@@ -1037,7 +1037,7 @@ function FacultyVerificationDrawer({
                                     code
                                   )
                                 }
-                                className="inline-flex items-center justify-center rounded-lg bg-amber-400 hover:bg-amber-300 px-3.5 py-1.5 text-xs font-semibold text-slate-950 transition disabled:opacity-50 min-w-[75px] cursor-pointer"
+                                className="inline-flex items-center justify-center rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition disabled:opacity-50 min-w-[75px] cursor-pointer shadow-xs"
                               >
                                 {reviewingCode === code && submittingAction === "validate" ? (
                                   <>
@@ -1058,7 +1058,7 @@ function FacultyVerificationDrawer({
                                     code
                                   )
                                 }
-                                className="inline-flex items-center justify-center rounded-lg border border-amber-400/60 hover:bg-amber-400/10 px-3.5 py-1.5 text-xs font-semibold text-amber-300 transition disabled:opacity-50 min-w-[115px] cursor-pointer"
+                                className="inline-flex items-center justify-center rounded-xl border border-amber-500/60 hover:bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-800 dark:text-amber-300 transition disabled:opacity-50 min-w-[115px] cursor-pointer"
                               >
                                 {reviewingCode === code && submittingAction === "revision" ? (
                                   <>
@@ -1074,7 +1074,7 @@ function FacultyVerificationDrawer({
                         )}
                       </div>
                     ) : (
-                      <div className="mt-3 text-xs text-slate-500 italic">
+                      <div className="mt-3 text-xs text-slate-500 dark:text-slate-400 italic">
                         Not Submitted
                       </div>
                     )}
@@ -1086,15 +1086,15 @@ function FacultyVerificationDrawer({
             /* Tab 2: Verification History */
             <div className="space-y-4">
               {/* Term Dropdown Selector & Download Action */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-3 shadow-xs">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                     Past Academic Term:
                   </span>
                   <select
                     value={selectedHistoryAy}
                     onChange={(e) => setSelectedHistoryAy(e.target.value)}
-                    className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 outline-none transition focus:border-amber-400/80"
+                    className="rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 outline-none transition focus:border-amber-500"
                   >
                     {historyAcademicYears.map((year) => (
                       <option key={year} value={year}>
@@ -1108,7 +1108,7 @@ function FacultyVerificationDrawer({
                     onChange={(e) =>
                       setSelectedHistorySem(e.target.value as SemesterOption)
                     }
-                    className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 outline-none transition focus:border-amber-400/80"
+                    className="rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 outline-none transition focus:border-amber-500"
                   >
                     <option value="1st Semester">1st Semester</option>
                     <option value="2nd Semester">2nd Semester</option>
@@ -1120,7 +1120,7 @@ function FacultyVerificationDrawer({
                   type="button"
                   disabled={isDownloadingHistoryZip}
                   onClick={handleDownloadHistoryZip}
-                  className="text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-200 text-xs font-medium rounded-lg px-3 py-1.5 transition cursor-pointer disabled:opacity-50"
+                  className="text-amber-900 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-950 dark:hover:text-amber-200 text-xs font-medium rounded-xl px-3.5 py-1.5 transition cursor-pointer disabled:opacity-50"
                 >
                   {isDownloadingHistoryZip ? "Zipping..." : "Download History ZIP"}
                 </button>
@@ -1129,12 +1129,12 @@ function FacultyVerificationDrawer({
               {/* Action Feedback Banner */}
               {actionFeedback ? (
                 <div
-                  className={`flex items-center gap-2.5 rounded-xl border p-3 text-xs font-semibold shadow-md transition-all ${
+                  className={`flex items-center gap-2.5 rounded-2xl border p-3 text-xs font-semibold shadow-xs transition-all ${
                     actionFeedback.type === "info"
-                      ? "border-amber-500/40 bg-amber-950/60 text-amber-300"
+                      ? "border-amber-500/40 bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300"
                       : actionFeedback.type === "success"
-                      ? "border-emerald-500/40 bg-emerald-950/60 text-emerald-300"
-                      : "border-rose-500/40 bg-rose-950/60 text-rose-300"
+                      ? "border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300"
+                      : "border-rose-500/40 bg-rose-50 dark:bg-rose-950/60 text-rose-900 dark:text-rose-300"
                   }`}
                 >
                   <span className="text-sm">
@@ -1166,13 +1166,13 @@ function FacultyVerificationDrawer({
                     return (
                       <div
                         key={code}
-                        className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4"
+                        className="rounded-2xl border border-slate-400/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 p-4 shadow-xs"
                       >
                         <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-semibold text-slate-200">
+                          <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                             {reqLabel}
                           </h4>
-                          <span className="text-xs text-slate-500 italic">
+                          <span className="text-xs text-slate-500 dark:text-slate-400 italic">
                             Not Submitted
                           </span>
                         </div>
@@ -1187,14 +1187,14 @@ function FacultyVerificationDrawer({
                   return (
                     <div
                       key={code}
-                      className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-3"
+                      className="rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 space-y-3 shadow-xs"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/60 pb-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-400 dark:border-slate-800/60 pb-2.5">
                         <div>
-                          <h4 className="text-xs font-semibold text-slate-200">
+                          <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                             {reqLabel}
                           </h4>
-                          <p className="mt-0.5 text-[10px] text-slate-500">
+                          <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
                             Submitted: {submittedDateText}
                           </p>
                         </div>
@@ -1219,17 +1219,17 @@ function FacultyVerificationDrawer({
                           return (
                             <div
                               key={doc.id || idx}
-                              className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-slate-800/80 bg-slate-950 p-3 text-xs"
+                              className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-slate-400 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 p-3 text-xs"
                             >
                               <div className="flex items-center gap-2">
-                                <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                                <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
                                   {versionLabel}
                                 </span>
-                                <span className="font-medium text-slate-200">
+                                <span className="font-medium text-slate-900 dark:text-slate-200">
                                   {fileName}
                                 </span>
                                 {fileSize ? (
-                                  <span className="text-[10px] text-slate-500">
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
                                     ({fileSize})
                                   </span>
                                 ) : null}
@@ -1247,7 +1247,7 @@ function FacultyVerificationDrawer({
                                       storagePath: doc.storage_path,
                                     });
                                   }}
-                                  className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 transition cursor-pointer"
+                                  className="inline-flex items-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition cursor-pointer"
                                 >
                                   Preview File
                                 </button>
@@ -1257,7 +1257,7 @@ function FacultyVerificationDrawer({
                                   onClick={() =>
                                     handleSingleFileDownload(doc.storage_path, fileName)
                                   }
-                                  className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-850 hover:text-slate-100 transition cursor-pointer"
+                                  className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-850 hover:text-slate-950 dark:hover:text-slate-100 transition cursor-pointer"
                                 >
                                   Download
                                 </button>
@@ -1266,18 +1266,18 @@ function FacultyVerificationDrawer({
                           );
                         })
                       ) : (
-                        <p className="text-xs text-slate-500 italic">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 italic">
                           No document files logged.
                         </p>
                       )}
 
                       {/* Faculty Remarks */}
                       {matchingSub.remarks ? (
-                        <div className="rounded-lg border border-slate-800/80 bg-slate-950 p-2.5 text-xs">
-                          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                        <div className="rounded-xl border border-slate-400 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 p-2.5 text-xs">
+                          <span className="text-[10px] uppercase tracking-wider text-slate-600 dark:text-slate-400 font-semibold">
                             Faculty Remarks:
                           </span>
-                          <p className="mt-1 text-slate-300 italic">
+                          <p className="mt-1 text-slate-800 dark:text-slate-300 italic">
                             "{matchingSub.remarks}"
                           </p>
                         </div>
@@ -1285,11 +1285,11 @@ function FacultyVerificationDrawer({
 
                       {/* Admin Feedback */}
                       {latestReview?.remarks ? (
-                        <div className="rounded-lg border border-amber-500/20 bg-amber-950/20 p-2.5 text-xs">
-                          <span className="text-[10px] uppercase tracking-wider text-amber-400/90 font-semibold">
+                        <div className="rounded-xl border border-amber-500/20 bg-amber-50 dark:bg-amber-950/20 p-2.5 text-xs">
+                          <span className="text-[10px] uppercase tracking-wider text-amber-800 dark:text-amber-400/90 font-semibold">
                             Admin Feedback:
                           </span>
-                          <p className="mt-1 text-amber-200/90 italic">
+                          <p className="mt-1 text-amber-900 dark:text-amber-200/90 italic">
                             "{latestReview.remarks}"
                           </p>
                         </div>
@@ -1310,15 +1310,15 @@ function FacultyVerificationDrawer({
           onClick={() => setPreviewingDoc(null)}
         >
           <div
-            className="flex h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-950"
+            className="flex h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+            <div className="flex items-center justify-between border-b border-slate-400 dark:border-slate-800 px-4 py-3">
               <div className="flex items-center gap-2 truncate max-w-[60%]">
-                <span className="text-xs font-semibold text-slate-100">
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                   {previewingDoc.label}
                 </span>
-                <span className="text-[11px] text-slate-400 font-mono">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                   ({previewingDoc.name})
                 </span>
               </div>
@@ -1329,7 +1329,7 @@ function FacultyVerificationDrawer({
                   href={previewingDoc.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-300 transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 transition"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   Full View
@@ -1344,7 +1344,7 @@ function FacultyVerificationDrawer({
                       previewingDoc.name
                     )
                   }
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 transition cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
                 >
                   Download
                 </button>
@@ -1353,14 +1353,14 @@ function FacultyVerificationDrawer({
                 <button
                   type="button"
                   onClick={() => setPreviewingDoc(null)}
-                  className="rounded-lg border border-slate-800 p-1.5 text-slate-400 hover:bg-slate-900 hover:text-slate-200 transition cursor-pointer"
+                  className="rounded-full border border-slate-400 dark:border-slate-800 p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200 transition cursor-pointer"
                   aria-label="Close preview"
                 >
                   ✕
                 </button>
               </div>
             </div>
-            <div className="relative flex-1 overflow-hidden bg-slate-900 flex items-center justify-center">
+            <div className="relative flex-1 overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
               {previewingDoc.mimeType?.startsWith("image/") ||
               /\.(jpe?g|png|gif|bmp|webp)$/i.test(previewingDoc.name) ? (
                 <Image
@@ -1372,14 +1372,14 @@ function FacultyVerificationDrawer({
                   className="h-full w-full object-contain"
                 />
               ) : previewingDoc.mimeType === "application/pdf" ||
-                /\.pdf$/i.test(previewingDoc.name) ? (
+              /\.pdf$/i.test(previewingDoc.name) ? (
                 <iframe
                   title="PDF Preview"
                   src={previewingDoc.url}
                   className="h-full w-full border-0"
                 />
               ) : (
-                <div className="p-4 text-xs text-slate-400">
+                <div className="p-4 text-xs text-slate-600 dark:text-slate-400">
                   Preview not available for this file type. Please download the file.
                 </div>
               )}
@@ -1723,7 +1723,7 @@ export function RequirementsPanel({
   return (
     <div className="w-full">
       {/* 1. Top Control Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-6 shadow-sm shadow-slate-200/60 dark:shadow-none">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto">
           {/* Search Input */}
           <input
@@ -1731,18 +1731,18 @@ export function RequirementsPanel({
             placeholder="Search faculty by name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-56 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 outline-none transition focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/30"
+            className="w-full sm:w-56 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
           />
 
-          {/* Custom Program Dropdown Filter (attaches directly below trigger, avoids native mobile OS popup) */}
+          {/* Custom Program Dropdown Filter */}
           <div className="relative w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setIsProgramDropdownOpen((prev) => !prev)}
-              className="flex w-full sm:w-auto items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 outline-none transition hover:border-slate-700 focus:border-amber-400/80"
+              className="flex w-full sm:w-auto items-center justify-between gap-2 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 outline-none transition hover:border-slate-500 dark:hover:border-slate-700 focus:border-amber-500"
             >
               <span>{selectedProgram}</span>
-              <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${isProgramDropdownOpen ? "rotate-180" : ""}`} />
+              <ChevronDown className={`h-3.5 w-3.5 text-slate-500 dark:text-slate-400 transition-transform ${isProgramDropdownOpen ? "rotate-180" : ""}`} />
             </button>
 
             {isProgramDropdownOpen && (
@@ -1751,17 +1751,17 @@ export function RequirementsPanel({
                   className="fixed inset-0 z-20"
                   onClick={() => setIsProgramDropdownOpen(false)}
                 />
-                <div className="absolute left-0 top-full mt-1.5 z-30 w-full sm:w-48 rounded-lg border border-slate-800 bg-slate-900 py-1 shadow-xl text-xs text-slate-200 overflow-hidden">
+                <div className="absolute left-0 top-full mt-1.5 z-30 w-full sm:w-48 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-xl text-xs text-slate-900 dark:text-slate-200 overflow-hidden">
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedProgram("All Programs");
                       setIsProgramDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 transition hover:bg-slate-800 ${
+                    className={`w-full text-left px-3 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
                       selectedProgram === "All Programs"
-                        ? "bg-amber-500/10 text-amber-300 font-semibold"
-                        : "text-slate-300"
+                        ? "bg-amber-500/10 text-amber-900 dark:text-amber-300 font-semibold"
+                        : "text-slate-700 dark:text-slate-300"
                     }`}
                   >
                     All Programs
@@ -1774,10 +1774,10 @@ export function RequirementsPanel({
                         setSelectedProgram(prog);
                         setIsProgramDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 transition hover:bg-slate-800 ${
+                      className={`w-full text-left px-3 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
                         selectedProgram === prog
-                          ? "bg-amber-500/10 text-amber-300 font-semibold"
-                          : "text-slate-300"
+                          ? "bg-amber-500/10 text-amber-900 dark:text-amber-300 font-semibold"
+                          : "text-slate-700 dark:text-slate-300"
                       }`}
                     >
                       {prog}
@@ -1790,15 +1790,15 @@ export function RequirementsPanel({
         </div>
 
         {/* Active Term Indicator */}
-        <div className="text-slate-400 text-xs font-medium tracking-wide shrink-0">
+        <div className="text-slate-600 dark:text-slate-400 text-xs font-medium tracking-wide shrink-0">
           A.Y. {academicYear || "2026-2027"} &bull; {semester}
         </div>
       </div>
 
       {/* 2. Faculty List / Table View */}
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950 shadow-xl">
-        <table className="w-full text-left border-collapse text-xs text-slate-300 min-w-[600px]">
-            <thead className="border-b border-slate-800 bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-400">
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm shadow-slate-200/60 dark:shadow-none">
+        <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[600px]">
+            <thead className="border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3.5 font-semibold">Faculty Name</th>
                 <th className="px-4 py-3.5 font-semibold">Program</th>
@@ -1807,12 +1807,12 @@ export function RequirementsPanel({
                 <th className="px-4 py-3.5 text-right font-semibold">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-400 dark:divide-slate-800/60">
               {filteredFaculty.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-8 text-center text-xs text-slate-500"
+                    className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
                   >
                     No faculty members found.
                   </td>
@@ -1839,13 +1839,13 @@ export function RequirementsPanel({
 
                   if (validatedCount === DEFAULT_REQUIREMENTS.length) {
                     overallStatus = "Validated";
-                    textColor = "text-emerald-400";
+                    textColor = "text-emerald-500 dark:text-emerald-400";
                   } else if (uploadedCount > 0 || (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)) {
                     overallStatus = "Pending Review";
-                    textColor = "text-amber-400";
+                    textColor = "text-amber-600 dark:text-amber-400";
                   } else {
                     overallStatus = "Not Submitted";
-                    textColor = "text-slate-400";
+                    textColor = "text-slate-500 dark:text-slate-400";
                   }
 
                   const programCode =
@@ -1854,11 +1854,11 @@ export function RequirementsPanel({
                   return (
                     <tr
                       key={faculty.id}
-                      className="transition hover:bg-slate-900/40"
+                      className="transition hover:bg-slate-50 dark:hover:bg-slate-900/40"
                     >
-                      <td className="px-4 py-3 font-medium text-slate-200">
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-200">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-300 shadow-sm">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-800 dark:text-amber-300 shadow-sm">
                             {faculty.profileImageUrl ? (
                               <img
                                 src={faculty.profileImageUrl}
@@ -1870,21 +1870,21 @@ export function RequirementsPanel({
                             )}
                           </div>
                           <div>
-                            <div className="font-semibold text-slate-100">{faculty.fullName}</div>
+                            <div className="font-semibold text-slate-900 dark:text-slate-100">{faculty.fullName}</div>
                             {faculty.email ? (
-                              <div className="text-[10px] text-slate-500 font-normal">
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">
                                 {faculty.email}
                               </div>
                             ) : null}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-slate-400 font-medium">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 font-medium">
                         {programCode}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                         {isLoadingStatuses && !statusRecord ? (
-                          <span className="text-slate-500 italic text-[11px]">
+                          <span className="text-slate-500 dark:text-slate-400 italic text-[11px]">
                             Loading...
                           </span>
                         ) : (
@@ -1893,11 +1893,11 @@ export function RequirementsPanel({
                       </td>
                       <td className="px-4 py-3 font-medium">
                         {isLoadingStatuses && !statusRecord ? (
-                          <span className="text-slate-500 italic text-[11px]">
+                          <span className="text-slate-500 dark:text-slate-400 italic text-[11px]">
                             ...
                           </span>
                         ) : (
-                          <span className={`text-xs ${textColor}`}>
+                          <span className={`text-xs font-medium ${textColor}`}>
                             {overallStatus}
                           </span>
                         )}
@@ -1906,7 +1906,7 @@ export function RequirementsPanel({
                         <button
                           type="button"
                           onClick={() => setReviewingFaculty(faculty)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-amber-400/60 bg-amber-400/10 hover:bg-amber-400/20 px-3 py-1.5 text-xs font-semibold text-amber-300 transition"
+                          className="inline-flex items-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 transition cursor-pointer"
                         >
                           Review Requirements
                         </button>

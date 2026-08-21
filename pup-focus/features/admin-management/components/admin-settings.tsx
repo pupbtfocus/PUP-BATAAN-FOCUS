@@ -725,12 +725,12 @@ export function AdminSettings({
       {/* --------------------------------------------------------------------- */}
       {/* Header Bar & Top Action                                               */}
       {/* --------------------------------------------------------------------- */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-5">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-100">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Admin System Settings
           </h2>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
             Manage your administrator profile, security credentials, notification rules, and session lifecycle.
           </p>
         </div>
@@ -740,16 +740,16 @@ export function AdminSettings({
             type="button"
             onClick={() => handleSaveSettings()}
             disabled={isSavingSettings || isLoadingProfile}
-            className="inline-flex items-center gap-2 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/20 to-amber-600/20 px-5 py-2 text-xs font-semibold text-amber-300 shadow-md transition-all hover:border-amber-400 hover:from-amber-500/30 hover:to-amber-600/30 hover:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-400/40 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           >
             {isSavingSettings ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
                 <span>Saving Changes...</span>
               </>
             ) : (
               <>
-                <Save className="h-4 w-4 text-amber-400" />
+                <Save className="h-4 w-4 text-slate-950" />
                 <span>Save Changes</span>
               </>
             )}
@@ -761,29 +761,29 @@ export function AdminSettings({
         {/* ------------------------------------------------------------------- */}
         {/* Card 1: Profile & Credentials Section                               */}
         {/* ------------------------------------------------------------------- */}
-        <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-xl">
-          <div className="flex items-center gap-2.5 border-b border-slate-800 bg-slate-900/60 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-300">
-            <User className="h-4 w-4 text-amber-400" />
+        <section className="overflow-hidden rounded-2xl border border-slate-400/80 bg-white dark:border-slate-800 dark:bg-slate-950 shadow-sm shadow-slate-200/60 dark:shadow-none">
+          <div className="flex items-center gap-2.5 border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            <User className="h-4 w-4 text-amber-500 dark:text-amber-400" />
             <span>Profile & Credentials</span>
           </div>
 
           <div className="space-y-6 p-5 sm:p-6">
             {/* Avatar Upload & Instant Preview Card */}
-            <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 sm:p-5">
+            <div className="rounded-2xl border border-slate-400/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-900/40 p-4 sm:p-5">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                 <div className="relative group shrink-0">
                   {!hasImageError && avatarPreviewUrl && !isAvatarRemoved ? (
                     <img
                       src={avatarPreviewUrl}
                       alt={fullName || "Admin Avatar"}
-                      className="h-20 w-20 rounded-full border-2 border-amber-500/40 object-cover bg-slate-900 shadow-md ring-4 ring-slate-950 transition group-hover:border-amber-400"
+                      className="h-20 w-20 rounded-full border-2 border-amber-500/40 object-cover bg-slate-100 dark:bg-slate-900 shadow-md ring-4 ring-white dark:ring-slate-950 transition group-hover:border-amber-400"
                       onError={(e) => {
                         console.warn("[AdminSettings] Avatar image failed to load from URL:", avatarPreviewUrl, e);
                         setHasImageError(true);
                       }}
                     />
                   ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/20 to-amber-700/10 text-xl font-bold text-amber-300 shadow-md ring-4 ring-slate-950">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-amber-500/40 bg-amber-500/10 text-xl font-bold text-amber-800 dark:text-amber-300 shadow-md ring-4 ring-white dark:ring-slate-950">
                       {getInitials(fullName)}
                     </div>
                   )}
@@ -801,10 +801,10 @@ export function AdminSettings({
 
                 <div className="flex-1 space-y-2">
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-100">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       Administrator Avatar
                     </h4>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       JPG, PNG, or WebP (Max 5MB)
                     </p>
                   </div>
@@ -821,9 +821,9 @@ export function AdminSettings({
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/20 hover:border-amber-500/50"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 transition-all hover:bg-amber-500/20 cursor-pointer"
                     >
-                      <Camera className="h-3.5 w-3.5 text-amber-400" />
+                      <Camera className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                       <span>Upload Photo</span>
                     </button>
 
@@ -831,15 +831,15 @@ export function AdminSettings({
                       <button
                         type="button"
                         onClick={handleRemoveAvatar}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-950/20 px-3.5 py-1.5 text-xs font-medium text-rose-300 transition-all hover:bg-rose-950/40 hover:border-rose-500/50"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-50 dark:bg-rose-950/20 px-3.5 py-1.5 text-xs font-medium text-rose-800 dark:text-rose-300 transition-all hover:bg-rose-100 dark:hover:bg-rose-950/40 cursor-pointer"
                       >
-                        <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                        <Trash2 className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
                         <span>Remove Photo</span>
                       </button>
                     )}
 
                     {avatarFile && (
-                      <span className="text-[11px] font-medium text-amber-400 flex items-center gap-1">
+                      <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1">
                         <Sparkles className="h-3 w-3" />
                         Selected: {avatarFile.name}
                       </span>
@@ -852,23 +852,23 @@ export function AdminSettings({
             {/* Profile Info Form Inputs */}
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  Admin Full Name <span className="text-amber-400">*</span>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Admin Full Name <span className="text-amber-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g., Prof. Juan Dela Cruz"
-                  className="w-full rounded-lg border border-slate-800 bg-slate-900/90 px-3.5 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 transition"
+                  className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-3.5 py-2.5 text-xs font-medium outline-none transition"
                 />
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Displayed on audit logs, reports, and review workflows.
                 </p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Admin Email Address
                 </label>
                 <div className="relative">
@@ -877,26 +877,26 @@ export function AdminSettings({
                     value={userEmail}
                     readOnly
                     placeholder="admin@pup.edu.ph"
-                    className="w-full rounded-lg border border-slate-800 bg-slate-900/50 px-3.5 py-2.5 pl-9 text-xs text-slate-300 placeholder:text-slate-500 cursor-not-allowed opacity-90 outline-none"
+                    className="w-full rounded-xl border border-slate-400 bg-slate-100 text-slate-600 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400 px-3.5 py-2.5 pl-9 text-xs font-medium cursor-not-allowed outline-none"
                   />
-                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Primary login email associated with your administrator account.
                 </p>
               </div>
             </div>
 
             {/* Password Credentials Card */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-slate-800/80 bg-slate-900/40 p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-slate-400/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-900/40 p-4">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-amber-400" />
-                  <h4 className="text-xs font-semibold text-slate-200">
+                  <Lock className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                  <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                     Authentication Password
                   </h4>
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Keep your account secure with regular password updates.
                 </p>
               </div>
@@ -908,9 +908,9 @@ export function AdminSettings({
                   setPasswordSuccess(null);
                   setIsPasswordModalOpen(true);
                 }}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-2 text-xs font-semibold text-slate-200 transition-all hover:bg-slate-700 hover:text-white hover:border-slate-600 focus:outline-none"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all focus:outline-none cursor-pointer"
               >
-                <KeyRound className="h-3.5 w-3.5 text-amber-400" />
+                <KeyRound className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                 <span>Change Password</span>
               </button>
             </div>
@@ -920,27 +920,27 @@ export function AdminSettings({
         {/* ------------------------------------------------------------------- */}
         {/* Card 2: Notification Preferences Section                            */}
         {/* ------------------------------------------------------------------- */}
-        <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/90 shadow-xl">
-          <div className="flex items-center gap-2.5 border-b border-slate-800 bg-slate-900/60 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-300">
-            <Bell className="h-4 w-4 text-amber-400" />
+        <section className="overflow-hidden rounded-2xl border border-slate-400/80 bg-white dark:border-slate-800 dark:bg-slate-950 shadow-sm shadow-slate-200/60 dark:shadow-none">
+          <div className="flex items-center gap-2.5 border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            <Bell className="h-4 w-4 text-amber-500 dark:text-amber-400" />
             <span>Notification Preferences</span>
           </div>
 
-          <div className="divide-y divide-slate-800/70">
+          <div className="divide-y divide-slate-400 dark:divide-slate-800/70">
             {/* Toggle 1: Automated Email Reminders */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 transition-colors hover:bg-slate-900/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-xs font-semibold text-slate-200">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                     Automated Email Reminders on Submission Windows
                   </p>
                   {emailReminders && (
-                    <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400 border border-emerald-500/20">
+                    <span className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-medium dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
                       Active
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed max-w-xl">
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
                   Send automated deadline and window reminders to faculty.
                 </p>
               </div>
@@ -950,36 +950,36 @@ export function AdminSettings({
                 role="switch"
                 aria-checked={emailReminders}
                 onClick={() => setEmailReminders((prev) => !prev)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-400/50 ${
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
                   emailReminders
-                    ? "bg-amber-500 border border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]"
-                    : "bg-slate-800 border border-slate-700"
+                    ? "bg-amber-500 border border-amber-400"
+                    : "bg-slate-300 dark:bg-slate-800 border border-slate-400 dark:border-slate-700"
                 }`}
               >
                 <span
                   className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out my-auto ${
                     emailReminders
                       ? "translate-x-5.5 bg-slate-950"
-                      : "translate-x-1 bg-slate-400"
+                      : "translate-x-1 bg-white dark:bg-slate-400"
                   }`}
                 />
               </button>
             </div>
 
             {/* Toggle 2: New Submission Alert Notifications */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 transition-colors hover:bg-slate-900/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-xs font-semibold text-slate-200">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                     New Submission Alert Notifications
                   </p>
                   {submissionAlerts && (
-                    <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400 border border-emerald-500/20">
+                    <span className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-medium dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
                       Active
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed max-w-xl">
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
                   Receive notifications when faculty members submit compliance documents.
                 </p>
               </div>
@@ -989,17 +989,17 @@ export function AdminSettings({
                 role="switch"
                 aria-checked={submissionAlerts}
                 onClick={() => setSubmissionAlerts((prev) => !prev)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-400/50 ${
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
                   submissionAlerts
-                    ? "bg-amber-500 border border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]"
-                    : "bg-slate-800 border border-slate-700"
+                    ? "bg-amber-500 border border-amber-400"
+                    : "bg-slate-300 dark:bg-slate-800 border border-slate-400 dark:border-slate-700"
                 }`}
               >
                 <span
                   className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out my-auto ${
                     submissionAlerts
                       ? "translate-x-5.5 bg-slate-950"
-                      : "translate-x-1 bg-slate-400"
+                      : "translate-x-1 bg-white dark:bg-slate-400"
                   }`}
                 />
               </button>
@@ -1010,9 +1010,9 @@ export function AdminSettings({
         {/* ------------------------------------------------------------------- */}
         {/* Card 3: Security & Session Controls Section                         */}
         {/* ------------------------------------------------------------------- */}
-        <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-xl">
-          <div className="flex items-center gap-2.5 border-b border-slate-800 bg-slate-900/60 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-300">
-            <Shield className="h-4 w-4 text-amber-400" />
+        <section className="overflow-hidden rounded-2xl border border-slate-400/80 bg-white dark:border-slate-800 dark:bg-slate-950 shadow-sm shadow-slate-200/60 dark:shadow-none">
+          <div className="flex items-center gap-2.5 border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            <Shield className="h-4 w-4 text-amber-500 dark:text-amber-400" />
             <span>Security & Session Controls</span>
           </div>
 
@@ -1020,12 +1020,12 @@ export function AdminSettings({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-amber-400" />
-                  <p className="text-xs font-semibold text-slate-200">
+                  <Clock className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
                     Session Timeout Duration
                   </p>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed max-w-xl">
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
                   Automatically log out after inactivity for security.
                 </p>
               </div>
@@ -1034,7 +1034,7 @@ export function AdminSettings({
                 <select
                   value={sessionTimeout}
                   onChange={(e) => setSessionTimeout(e.target.value)}
-                  className="w-full sm:w-48 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-medium text-slate-200 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer transition"
+                  className="w-full sm:w-48 rounded-xl border border-slate-400 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 px-3.5 py-2 text-xs font-medium focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 cursor-pointer transition"
                 >
                   <option value="15">15 minutes</option>
                   <option value="30">30 minutes</option>
@@ -1053,18 +1053,18 @@ export function AdminSettings({
       {/* --------------------------------------------------------------------- */}
       {isPasswordModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-2xl text-slate-200">
+          <div className="w-full max-w-md rounded-3xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-200">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+            <div className="flex items-center justify-between border-b border-slate-400 dark:border-slate-800 pb-4 mb-5">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400">
                   <Lock className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-100">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                     Change Password
                   </h3>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
                     Update your account credentials
                   </p>
                 </div>
@@ -1073,7 +1073,7 @@ export function AdminSettings({
               <button
                 type="button"
                 onClick={() => setIsPasswordModalOpen(false)}
-                className="rounded-lg border border-slate-800 bg-slate-900 p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+                className="rounded-full border border-slate-400 dark:border-slate-800 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="h-4 w-4" />
@@ -1082,26 +1082,26 @@ export function AdminSettings({
 
             {/* Error & Success Feedback in Modal */}
             {passwordError && (
-              <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-950/50 p-3.5 text-xs text-rose-300 flex items-start gap-2.5">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
+              <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-50 dark:bg-rose-950/50 p-3.5 text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2.5">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
                 <div className="flex-1">{passwordError}</div>
               </div>
             )}
 
             {passwordSuccess && (
-              <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-950/50 p-3.5 text-xs text-emerald-300 flex items-start gap-2.5">
-                <CheckCircle className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+              <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/50 p-3.5 text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-2.5">
+                <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
                 <div className="flex-1">{passwordSuccess}</div>
               </div>
             )}
 
             {/* Password Form */}
             <form onSubmit={handleChangePassword} className="space-y-4">
-              <div className="space-y-3.5 rounded-xl border border-slate-800/80 bg-slate-900/40 p-4">
+              <div className="space-y-3.5 rounded-2xl border border-slate-400 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/40 p-4">
                 {/* Current Password Field */}
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                    Current Password <span className="text-amber-400">*</span>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Current Password <span className="text-amber-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -1110,12 +1110,12 @@ export function AdminSettings({
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Enter your current password"
                       required
-                      className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 pr-10 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 transition"
+                      className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-3.5 py-2.5 pr-10 text-xs font-medium outline-none transition"
                     />
                     <button
                       type="button"
                       onClick={() => setShowCurrentPassword((prev) => !prev)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                     >
                       {showCurrentPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -1128,8 +1128,8 @@ export function AdminSettings({
 
                 {/* New Password Field */}
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                    New Password <span className="text-amber-400">*</span>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    New Password <span className="text-amber-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -1139,12 +1139,12 @@ export function AdminSettings({
                       placeholder="At least 8 characters"
                       required
                       minLength={8}
-                      className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 pr-10 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 transition"
+                      className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-3.5 py-2.5 pr-10 text-xs font-medium outline-none transition"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword((prev) => !prev)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                     >
                       {showNewPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -1157,8 +1157,8 @@ export function AdminSettings({
 
                 {/* Confirm Password Field */}
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                    Confirm New Password <span className="text-amber-400">*</span>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Confirm New Password <span className="text-amber-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -1168,12 +1168,12 @@ export function AdminSettings({
                       placeholder="Re-enter your new password"
                       required
                       minLength={8}
-                      className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 pr-10 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 transition"
+                      className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-3.5 py-2.5 pr-10 text-xs font-medium outline-none transition"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -1191,7 +1191,7 @@ export function AdminSettings({
                   type="button"
                   onClick={() => setIsPasswordModalOpen(false)}
                   disabled={isChangingPassword}
-                  className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition disabled:opacity-50"
+                  className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-white transition disabled:opacity-50 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1203,11 +1203,11 @@ export function AdminSettings({
                     newPassword.length < 8 ||
                     newPassword !== confirmPassword
                   }
-                  className="inline-flex items-center gap-2 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/20 to-amber-600/20 px-5 py-2 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/30 hover:border-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-5 py-2 text-xs font-semibold text-slate-950 transition-all shadow-sm disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                 >
                   {isChangingPassword ? (
                     <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-950" />
                       <span>Updating...</span>
                     </>
                   ) : (

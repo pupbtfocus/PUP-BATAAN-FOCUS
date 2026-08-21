@@ -26,7 +26,7 @@ export function LogoutButton() {
       size="sm"
       onClick={handleLogout}
       disabled={isLoggingOut}
-      className="border border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+      className="border border-slate-400 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors font-semibold"
     >
       {isLoggingOut ? "Logging out..." : "Logout"}
     </Button>

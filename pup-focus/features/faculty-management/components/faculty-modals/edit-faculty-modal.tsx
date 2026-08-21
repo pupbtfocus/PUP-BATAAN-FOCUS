@@ -205,7 +205,7 @@ export function EditFacultyModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-6">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Faculty Details</h2>
           <button
@@ -219,7 +219,7 @@ export function EditFacultyModal({
         </div>
 
         <div className="space-y-4">
-          <article className="rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
+          <article className="rounded-xl border border-slate-400/80 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
             <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
@@ -267,7 +267,7 @@ export function EditFacultyModal({
                     <input
                       value={firstName}
                       onChange={(event) => setFirstName(event.target.value)}
-                      className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
+                      className="mt-2 w-full rounded-md border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
                     />
                   </label>
                   <label className="block">
@@ -277,7 +277,7 @@ export function EditFacultyModal({
                     <input
                       value={middleName}
                       onChange={(event) => setMiddleName(event.target.value)}
-                      className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
+                      className="mt-2 w-full rounded-md border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
                     />
                   </label>
                   <label className="block sm:col-span-2">
@@ -287,7 +287,7 @@ export function EditFacultyModal({
                     <input
                       value={lastName}
                       onChange={(event) => setLastName(event.target.value)}
-                      className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
+                      className="mt-2 w-full rounded-md border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
                     />
                   </label>
                 </div>
@@ -301,7 +301,7 @@ export function EditFacultyModal({
                       value={programId}
                       onChange={(e) => setProgramId(e.target.value)}
                       disabled={isLoadingPrograms}
-                      className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
+                      className="mt-2 w-full rounded-md border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
                     >
                       <option value="">-- Select Program / Department --</option>
                       {degreePrograms.length > 0 && (
@@ -359,7 +359,7 @@ export function EditFacultyModal({
                 </div>
               </div>
 
-              <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 p-4">
+              <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-400/80 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 p-4">
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                     Edit faculty details

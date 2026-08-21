@@ -499,7 +499,7 @@ export function AdminFacultyDashboard({
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-200">
       {/* Consolidated Top Header (All Views) */}
-      <header className="w-full bg-white/90 border-b border-slate-200/80 dark:bg-slate-950/90 dark:border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 z-40 backdrop-blur-md transition-colors duration-200">
+      <header className="w-full bg-white/90 border-b border-slate-400 dark:bg-slate-950/90 dark:border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 z-40 backdrop-blur-md transition-colors duration-200">
         {/* Left: Mobile Menu Trigger & Title */}
         <div className="flex items-center gap-3">
           <button
@@ -530,7 +530,7 @@ export function AdminFacultyDashboard({
       {/* Body Wrapper */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex w-56 flex-col bg-white border-r border-slate-200/90 dark:bg-slate-950 dark:border-slate-800 shrink-0 p-2.5 transition-colors duration-200">
+        <aside className="hidden md:flex w-56 flex-col bg-white border-r border-slate-400 dark:bg-slate-950 dark:border-slate-800 shrink-0 p-2.5 transition-colors duration-200">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={handleSetActiveSection}
@@ -547,8 +547,8 @@ export function AdminFacultyDashboard({
               className="fixed inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-950 h-full p-3 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto transition-colors">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+            <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-950 h-full p-3 border-r border-slate-400 dark:border-slate-800 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto transition-colors">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-400 dark:border-slate-800">
                 <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Navigation</span>
                 <button
                   type="button"
@@ -577,7 +577,7 @@ export function AdminFacultyDashboard({
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
                 {/* TIER 1: Welcome Banner */}
-                <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-r from-white via-slate-50 to-white dark:border-slate-800/80 dark:bg-gradient-to-r dark:from-slate-900/90 dark:via-slate-900/80 dark:to-slate-950 p-6 sm:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:shadow-none transition-colors">
+                <section className="relative overflow-hidden rounded-2xl border border-slate-400/80 bg-gradient-to-r from-white via-slate-50 to-white dark:border-slate-800/80 dark:bg-gradient-to-r dark:from-slate-900/90 dark:via-slate-900/80 dark:to-slate-950 p-6 sm:p-7 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
                   <div className="relative z-10 space-y-1">
                     <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                       Welcome back, {extractFirstName(adminName, "Admin")}
@@ -591,7 +591,7 @@ export function AdminFacultyDashboard({
                 {/* TIER 2: 3-Column Stat Grid */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Card 1: Faculty Submissions Verified */}
-                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Submissions Verified</span>
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -605,7 +605,7 @@ export function AdminFacultyDashboard({
                   </div>
 
                   {/* Card 2: Pending Verification */}
-                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Pending Verification</span>
                       <Clock3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -619,7 +619,7 @@ export function AdminFacultyDashboard({
                   </div>
 
                   {/* Card 3: Total Active Faculty */}
-                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Total Active Faculty</span>
                       <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -639,8 +639,8 @@ export function AdminFacultyDashboard({
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   {/* Left Column (2-Span) — Pending Verification Queue */}
                   <div className="lg:col-span-2 space-y-4">
-                    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 sm:p-6 transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200 dark:border-slate-800/80">
+                    <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 sm:p-6 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-400 dark:border-slate-800/80">
                         <div>
                           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Pending Submissions Verification Queue</h2>
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Faculty submissions awaiting your review and validation.</p>
@@ -662,8 +662,8 @@ export function AdminFacultyDashboard({
 
                   {/* Right Column (1-Span) — Recent Activity */}
                   <div className="space-y-4">
-                    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
-                      <div className="pb-3 border-b border-slate-200 dark:border-slate-800/80">
+                    <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
+                      <div className="pb-3 border-b border-slate-400 dark:border-slate-800/80">
                         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Recent Admin Actions</h2>
                         <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Latest admin activity feed.</p>
                       </div>
@@ -678,9 +678,9 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "facultyManagement" ? (
                   <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-6">
                       <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           Faculty Management
                         </h1>
                       </div>
@@ -692,7 +692,7 @@ export function AdminFacultyDashboard({
                             setCreateSuccess(null);
                             setAddFacultyModalOpen(true);
                           }}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-lg bg-amber-400 hover:bg-amber-300 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-950 transition"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition cursor-pointer shadow-sm shadow-amber-500/10"
                         >
                           + Add Faculty
                         </button>
@@ -700,7 +700,7 @@ export function AdminFacultyDashboard({
                           type="button"
                           onClick={() => void refreshCurrentPanel()}
                           disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
                         >
                           {isLoading ? "Refreshing..." : "⟳ Refresh"}
                         </button>
@@ -734,9 +734,9 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "requirements" ? (
                   <article className="p-4 md:p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
                       <div>
-                        <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           Requirements Verification
                         </h3>
                       </div>
@@ -744,7 +744,7 @@ export function AdminFacultyDashboard({
                         type="button"
                         onClick={() => void refreshCurrentPanel()}
                         disabled={isLoading}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
                       >
                         {isLoading ? "Refreshing..." : "⟳ Refresh"}
                       </button>
@@ -761,9 +761,9 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "submissionWindow" ? (
                   <article className="p-4 md:p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
                       <div>
-                        <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           Submission Window
                         </h3>
                       </div>
@@ -771,7 +771,7 @@ export function AdminFacultyDashboard({
                         type="button"
                         onClick={() => void refreshCurrentPanel()}
                         disabled={isLoading}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
                       >
                         {isLoading ? "Refreshing..." : "⟳ Refresh"}
                       </button>
@@ -787,9 +787,9 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "academicTerms" ? (
                   <article className="p-4 md:p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
                       <div>
-                        <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           Academic Term Management
                         </h3>
                       </div>
@@ -797,13 +797,13 @@ export function AdminFacultyDashboard({
                         type="button"
                         onClick={() => void refreshCurrentPanel()}
                         disabled={isLoading}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-850 hover:text-white transition disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
                       >
                         {isLoading ? "Refreshing..." : "⟳ Refresh"}
                       </button>
                     </div>
 
-                    <section className="rounded-xl border border-slate-800/80 bg-slate-900/50 backdrop-blur-md p-4 shadow-lg">
+                    <section className="rounded-2xl border border-slate-400/80 bg-white dark:border-slate-800/80 dark:bg-slate-900/60 p-4 shadow-sm shadow-slate-200/60 dark:shadow-none">
                       <AdminAcademicTerms adminName={adminName ?? "Admin"} />
                     </section>
                   </article>

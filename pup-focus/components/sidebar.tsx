@@ -96,7 +96,7 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 rounded-xl bg-slate-100/70 border border-slate-200/90 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm transition-colors">
+      <div className="my-1.5 rounded-2xl bg-slate-100/70 border border-slate-400/80 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm shadow-slate-200/60 transition-colors">
         <div className="relative mb-2">
           {profileImageUrl && !hasAvatarError ? (
             <img
@@ -106,7 +106,7 @@ export function SidebarContent({
               onError={() => setHasAvatarError(true)}
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-sm">
+            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-800 border border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-sm">
               {getSidebarInitials(adminName)}
             </div>
           )}
@@ -117,7 +117,7 @@ export function SidebarContent({
           {extractFirstName(adminName, roleTitle)}
         </p>
 
-        <div className="my-1.5 h-px w-full bg-slate-200 dark:bg-slate-800" />
+        <div className="my-1.5 h-px w-full bg-slate-400 dark:bg-slate-800" />
 
         <span className={`mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full border ${getRoleBadgeClasses(roleTitle)}`}>
           {roleTitle}
@@ -164,7 +164,7 @@ export function SidebarContent({
 
           {/* Child Sub-items (Indented with left border indicator) */}
           {isAcademicCycleOpen && (
-            <div className="border-l border-slate-200 dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
+            <div className="border-l border-slate-400 dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
               <button
                 type="button"
                 onClick={() => handleSelect("academicTerms")}
@@ -203,7 +203,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 flex-col overflow-y-auto rounded-none border-r border-l-0 border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-950 p-2.5 shadow-sm z-30 transition-colors duration-200">
+    <aside className="hidden md:flex fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 flex-col overflow-y-auto rounded-none border-r border-l-0 border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-2.5 shadow-sm z-30 transition-colors duration-200">
       <SidebarContent {...props} />
     </aside>
   );

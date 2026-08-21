@@ -864,7 +864,7 @@ export function SuperAdminDashboard({
     return accounts.map((admin) => (
       <div
         key={admin.id}
-        className="rounded-xl border border-slate-200/90 bg-white dark:border-slate-800/80 dark:bg-slate-900/60 p-4 shadow-sm transition-colors"
+        className="rounded-2xl border border-slate-400/80 bg-white dark:border-slate-800/80 dark:bg-slate-900/60 p-4 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -873,13 +873,13 @@ export function SuperAdminDashboard({
                 <img
                   src={admin.profileImageUrl}
                   alt={admin.full_name}
-                  className="h-12 w-12 rounded-full border border-slate-700 object-cover bg-slate-900 shadow-sm"
+                  className="h-12 w-12 rounded-full border border-slate-400 dark:border-slate-700 object-cover bg-slate-100 dark:bg-slate-900 shadow-sm"
                   onError={() => {
                     setFailedImageIds((prev) => new Set(prev).add(admin.profile_id));
                   }}
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-400 shadow-sm">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-800 dark:text-amber-400 shadow-sm">
                   {getInitials(
                     admin.full_name,
                     admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
@@ -895,21 +895,21 @@ export function SuperAdminDashboard({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 px-3 py-1 text-xs">
+            <span className="rounded-full border border-slate-400 bg-slate-100 text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 px-3 py-1 text-xs font-semibold">
               {ROLE_LABEL[admin.role]}
             </span>
             <span
-              className={`rounded-full border px-3 py-1 text-xs ${
+              className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                 admin.is_active
-                  ? "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  : "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+                  ? "border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  : "border-slate-400 bg-slate-100 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
               }`}
             >
               {admin.is_active ? "Active" : "Inactive"}
             </span>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
+        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-400">
           {admin.department ? (
             <span>Department: {admin.department}</span>
           ) : null}
@@ -925,7 +925,7 @@ export function SuperAdminDashboard({
                 size="sm"
                 onClick={() => onDeactivateAdmin(admin.profile_id)}
                 disabled={loadingAdminIds.has(admin.profile_id)}
-                className="text-[#7a0000] text-amber-300 hover:text-amber-200"
+                className="text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-amber-200 border border-slate-400 dark:border-slate-700"
               >
                 {loadingAdminIds.has(admin.profile_id)
                   ? "Deactivating..."
@@ -937,7 +937,7 @@ export function SuperAdminDashboard({
                 size="sm"
                 onClick={() => onActivateAdmin(admin.profile_id)}
                 disabled={loadingAdminIds.has(admin.profile_id)}
-                className="text-emerald-300 hover:text-emerald-200"
+                className="text-emerald-800 dark:text-emerald-300 hover:text-emerald-950 dark:hover:text-emerald-200 border border-slate-400 dark:border-slate-700"
               >
                 {loadingAdminIds.has(admin.profile_id)
                   ? "Activating..."
@@ -950,7 +950,7 @@ export function SuperAdminDashboard({
               variant="secondary"
               size="sm"
               onClick={() => onEditAdmin(admin.profile_id)}
-              className="text-blue-300 hover:text-blue-200"
+              className="text-blue-800 dark:text-blue-300 hover:text-blue-950 dark:hover:text-blue-200 border border-slate-400 dark:border-slate-700"
             >
               Edit
             </Button>
@@ -959,7 +959,7 @@ export function SuperAdminDashboard({
             variant="secondary"
             size="sm"
             onClick={() => onViewAdminDetails(admin.profile_id)}
-            className="text-blue-300 hover:text-blue-200"
+            className="text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white border border-slate-400 dark:border-slate-700"
           >
             View Details
           </Button>
@@ -969,7 +969,7 @@ export function SuperAdminDashboard({
               size="sm"
               onClick={() => onDeleteAdmin(admin.profile_id)}
               disabled={loadingAdminIds.has(admin.profile_id)}
-              className="text-red-300 hover:text-red-200"
+              className="text-rose-800 dark:text-red-300 hover:text-rose-950 dark:hover:text-red-200 border border-slate-400 dark:border-slate-700"
             >
               Delete
             </Button>
@@ -998,8 +998,8 @@ export function SuperAdminDashboard({
       )}
 
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-950 p-2.5 shadow-sm transition-colors duration-200">
-        <div className="my-1.5 rounded-xl bg-slate-100/70 border border-slate-200/90 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm transition-colors">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-2.5 shadow-sm transition-colors duration-200">
+        <div className="my-1.5 rounded-2xl bg-slate-100/70 border border-slate-400/80 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
           <div className="relative mb-2">
             {superAdminAvatarUrl && !isAvatarImageError ? (
               <img
@@ -1009,7 +1009,7 @@ export function SuperAdminDashboard({
                 onError={() => setIsAvatarImageError(true)}
               />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-sm flex items-center justify-center shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-800 border border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-sm flex items-center justify-center shadow-sm">
                 {getInitials(adminName, "SA")}
               </div>
             )}
@@ -1023,7 +1023,7 @@ export function SuperAdminDashboard({
             {extractFirstName(adminName, "Super Admin")}
           </p>
 
-          <div className="my-1.5 h-px w-full bg-slate-200 dark:bg-slate-800" />
+          <div className="my-1.5 h-px w-full bg-slate-400 dark:bg-slate-800" />
 
           <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-purple-50 text-purple-800 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20">
             Super Admin
@@ -1061,8 +1061,8 @@ export function SuperAdminDashboard({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-950 h-full p-3 border-r border-slate-200 dark:border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-950 h-full p-3 border-r border-slate-400 dark:border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-400 dark:border-slate-800">
               <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Navigation</span>
               <button
                 type="button"
@@ -1074,7 +1074,7 @@ export function SuperAdminDashboard({
               </button>
             </div>
 
-            <div className="my-2 rounded-xl bg-slate-100/70 border border-slate-200/90 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm transition-colors">
+            <div className="my-2 rounded-2xl bg-slate-100/70 border border-slate-400/80 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
               <div className="relative mb-2">
                 {superAdminAvatarUrl && !isAvatarImageError ? (
                   <img
@@ -1084,7 +1084,7 @@ export function SuperAdminDashboard({
                     onError={() => setIsAvatarImageError(true)}
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-sm flex items-center justify-center shadow-sm">
+                  <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-800 border border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-sm flex items-center justify-center shadow-sm">
                     {getInitials(adminName, "SA")}
                   </div>
                 )}
@@ -1098,7 +1098,7 @@ export function SuperAdminDashboard({
                 {extractFirstName(adminName, "Super Admin")}
               </p>
 
-              <div className="my-1.5 h-px w-full bg-slate-200 dark:bg-slate-800" />
+              <div className="my-1.5 h-px w-full bg-slate-400 dark:bg-slate-800" />
 
               <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-purple-50 text-purple-800 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20">
                 Super Admin
@@ -1132,12 +1132,12 @@ export function SuperAdminDashboard({
       )}
 
       <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm transition-colors duration-200">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
           <div className="min-h-0 flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
                 {/* TIER 1: Welcome Banner */}
-                <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-r from-white via-slate-50 to-white dark:border-slate-800/80 dark:bg-gradient-to-r dark:from-slate-900/90 dark:via-slate-900/80 dark:to-slate-950 p-6 sm:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:shadow-none transition-colors">
+                <section className="relative overflow-hidden rounded-2xl border border-slate-400/80 bg-gradient-to-r from-white via-slate-50 to-white dark:border-slate-800/80 dark:bg-gradient-to-r dark:from-slate-900/90 dark:via-slate-900/80 dark:to-slate-950 p-6 sm:p-7 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
                   <div className="relative z-10 space-y-1">
                     <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                       Welcome back, {extractFirstName(adminName, "Super Admin")}
@@ -1151,7 +1151,7 @@ export function SuperAdminDashboard({
                 {/* TIER 2: 3-Column Stat Grid */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Card 1: Active Admin Accounts */}
-                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Active Admin Accounts</span>
                       <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -1167,7 +1167,7 @@ export function SuperAdminDashboard({
                   </div>
 
                   {/* Card 2: Audit Logs Today */}
-                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Audit Logs Today</span>
                       <ScrollText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -1181,7 +1181,7 @@ export function SuperAdminDashboard({
                   </div>
 
                   {/* Card 3: Academic Window Status */}
-                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Academic Window</span>
                       <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -1199,8 +1199,8 @@ export function SuperAdminDashboard({
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   {/* Left Column (2-Span) — Admin Accounts Overview */}
                   <div className="lg:col-span-2 space-y-4">
-                    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 sm:p-6 transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200 dark:border-slate-800/80">
+                    <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 sm:p-6 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-400 dark:border-slate-800/80">
                         <div>
                           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Admin Accounts Management</h2>
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Overview of all admin and super admin accounts.</p>
@@ -1215,11 +1215,11 @@ export function SuperAdminDashboard({
                         </button>
                       </div>
                       {adminAccounts.length > 0 ? (
-                        <div className="divide-y divide-slate-200/80 dark:divide-slate-800/60 mt-2">
+                        <div className="divide-y divide-slate-400 dark:divide-slate-800/60 mt-2">
                           {adminAccounts.slice(0, 5).map((admin) => (
                             <div key={admin.profile_id} className="flex items-center justify-between py-3">
                               <div className="flex items-center gap-3">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-slate-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 text-xs font-bold shadow-sm">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-400 bg-slate-100 text-slate-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 text-xs font-bold shadow-sm">
                                   {getInitials(admin.full_name, admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD")}
                                 </div>
                                 <div>
@@ -1227,7 +1227,7 @@ export function SuperAdminDashboard({
                                   <p className="text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
                                 </div>
                               </div>
-                              <span className={`text-xs px-2 py-0.5 rounded-full border ${admin.is_active ? "text-emerald-800 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20" : "text-slate-600 bg-slate-100 border-slate-200 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700"}`}>
+                              <span className={`text-xs px-2.5 py-0.5 rounded-full border ${admin.is_active ? "text-emerald-800 bg-emerald-50 border-emerald-500/30 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20" : "text-slate-600 bg-slate-100 border-slate-400 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700"}`}>
                                 {admin.is_active ? "Active" : "Inactive"}
                               </span>
                             </div>
@@ -1243,8 +1243,8 @@ export function SuperAdminDashboard({
 
                   {/* Right Column (1-Span) — System Audit Logs */}
                   <div className="space-y-4">
-                    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
-                      <div className="pb-3 border-b border-slate-200 dark:border-slate-800/80">
+                    <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
+                      <div className="pb-3 border-b border-slate-400 dark:border-slate-800/80">
                         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">System Audit Logs</h2>
                         <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Recent system activity.</p>
                       </div>
@@ -1267,9 +1267,9 @@ export function SuperAdminDashboard({
 
             {activeSection === "accounts" ? (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                       Admin Accounts
                     </h1>
                   </div>
@@ -1279,6 +1279,7 @@ export function SuperAdminDashboard({
                     size="sm"
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoadingAccounts}
+                    className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200"
                   >
                     {isLoadingAccounts ? "Refreshing..." : "⟳ Refresh"}
                   </Button>
@@ -1303,7 +1304,7 @@ export function SuperAdminDashboard({
                   />
                 </div>
 
-                <div className="mt-6 rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
+                <div className="mt-6 rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -1320,7 +1321,7 @@ export function SuperAdminDashboard({
                             event.target.value as AccountViewRole,
                           )
                         }
-                        className="rounded-xl border border-slate-300 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 text-sm outline-none transition focus:border-amber-500"
+                        className="rounded-xl border border-slate-400 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 text-sm outline-none transition focus:border-amber-500"
                       >
                         <option value="all">All Accounts</option>
                         <option value={ROLE.ADMIN}>Admin Accounts</option>
@@ -1335,29 +1336,29 @@ export function SuperAdminDashboard({
                   </div>
 
                   {accountsError ? (
-                    <p className="mt-4 text-sm text-red-300">{accountsError}</p>
+                    <p className="mt-4 text-sm text-rose-600 dark:text-red-300">{accountsError}</p>
                   ) : null}
                   {accountActionError ? (
-                    <p className="mt-4 text-sm text-red-300">
+                    <p className="mt-4 text-sm text-rose-600 dark:text-red-300">
                       {accountActionError}
                     </p>
                   ) : null}
                   {accountActionSuccess ? (
-                    <p className="mt-4 text-sm text-emerald-300">
+                    <p className="mt-4 text-sm text-emerald-600 dark:text-emerald-300">
                       {accountActionSuccess}
                     </p>
                   ) : null}
 
                   <div className="mt-4 space-y-6">
                     {isLoadingAccounts ? (
-                      <p className="text-sm text-slate-400">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         Loading account directory...
                       </p>
                     ) : (
                       visibleAccountGroups.map((group) => (
                         <section
                           key={group.key}
-                          className="rounded-2xl border border-slate-200/90 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-950/40 p-4 transition-colors"
+                          className="rounded-2xl border border-slate-400/80 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-950/40 p-4 transition-colors shadow-xs"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100">
@@ -1373,7 +1374,7 @@ export function SuperAdminDashboard({
                             {group.accounts.length ? (
                               renderAccountCards(group.accounts)
                             ) : (
-                              <p className="text-sm text-slate-400">
+                              <p className="text-sm text-slate-500 dark:text-slate-400">
                                 {group.emptyMessage}
                               </p>
                             )}
@@ -1388,9 +1389,9 @@ export function SuperAdminDashboard({
 
             {activeSection === "auditLogs" ? (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                       Audit Logs
                     </h1>
                   </div>
@@ -1402,9 +1403,9 @@ export function SuperAdminDashboard({
 
             {activeSection === "settings" ? (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                       Settings
                     </h1>
                   </div>
@@ -1414,13 +1415,14 @@ export function SuperAdminDashboard({
                     size="sm"
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoadingSettings}
+                    className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200"
                   >
                     {isLoadingSettings ? "Refreshing..." : "⟳ Refresh"}
                   </Button>
                 </div>
 
                 <section className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]">
-                  <div className="space-y-2 rounded-2xl border border-slate-200/90 bg-slate-50/70 dark:border-slate-800/80 dark:bg-slate-900/60 p-3 transition-colors">
+                  <div className="space-y-2 rounded-2xl border border-slate-400/80 bg-slate-50/70 dark:border-slate-800/80 dark:bg-slate-900/60 p-3 transition-colors shadow-xs">
                     <SettingsOptionButton
                       active={activeSettingsOption === "profile"}
                       title="Account Profile"
@@ -1435,7 +1437,7 @@ export function SuperAdminDashboard({
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-6 transition-colors">
+                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-6 transition-colors">
                     {activeSettingsOption === "profile" ? (
                       isLoadingSettings ? (
                         <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -1443,7 +1445,7 @@ export function SuperAdminDashboard({
                         </p>
                       ) : (
                         <form className="space-y-4" onSubmit={onSettingsSubmit}>
-                          <div className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 p-4 transition-colors">
+                          <div className="flex items-center gap-4 rounded-2xl border border-slate-400 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 p-4 transition-colors">
                             {superAdminAvatarUrl && !isAvatarImageError ? (
                               <img
                                 src={superAdminAvatarUrl}
@@ -1452,7 +1454,7 @@ export function SuperAdminDashboard({
                                 onError={() => setIsAvatarImageError(true)}
                               />
                             ) : (
-                              <div className="w-16 h-16 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-600 dark:text-amber-400 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950">
+                              <div className="w-16 h-16 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-800 dark:text-amber-400 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950">
                                 {getInitials(settingsFullName || adminName, "SA")}
                               </div>
                             )}
@@ -1478,7 +1480,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter full name"
-                              className="mt-2 w-full rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 text-sm outline-none ring-amber-300/30 focus:ring transition-colors"
+                              className="mt-2 w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 text-sm outline-none transition-colors"
                             />
                           </div>
 
@@ -1498,17 +1500,17 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter email address"
-                              className="mt-2 w-full rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 text-sm outline-none ring-amber-300/30 focus:ring transition-colors"
+                              className="mt-2 w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 text-sm outline-none transition-colors"
                             />
                           </div>
 
                           {settingsError ? (
-                            <p className="text-sm text-red-300">
+                            <p className="text-sm text-rose-600 dark:text-red-300">
                               {settingsError}
                             </p>
                           ) : null}
                           {settingsSuccess ? (
-                            <p className="text-sm text-emerald-300">
+                            <p className="text-sm text-emerald-600 dark:text-emerald-300">
                               {settingsSuccess}
                             </p>
                           ) : null}
@@ -1530,7 +1532,7 @@ export function SuperAdminDashboard({
                       <form className="space-y-4" onSubmit={onPasswordSubmit}>
                         <div>
                           <label
-                            className="block text-sm font-medium text-slate-200"
+                            className="block text-sm font-medium text-slate-700 dark:text-slate-200"
                             htmlFor="settingsOldPassword"
                           >
                             Old Password
@@ -1545,7 +1547,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter current password"
-                              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 pr-12 text-sm outline-none transition-colors"
                             />
                             <PasswordToggleButton
                               shown={showOldPassword}
@@ -1556,7 +1558,7 @@ export function SuperAdminDashboard({
 
                         <div>
                           <label
-                            className="block text-sm font-medium text-slate-200"
+                            className="block text-sm font-medium text-slate-700 dark:text-slate-200"
                             htmlFor="settingsPassword"
                           >
                             New Password
@@ -1572,7 +1574,7 @@ export function SuperAdminDashboard({
                               required
                               minLength={8}
                               placeholder="Minimum 8 characters"
-                              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 pr-12 text-sm outline-none transition-colors"
                             />
                             <PasswordToggleButton
                               shown={showNewPassword}
@@ -1583,7 +1585,7 @@ export function SuperAdminDashboard({
 
                         <div>
                           <label
-                            className="block text-sm font-medium text-slate-200"
+                            className="block text-sm font-medium text-slate-700 dark:text-slate-200"
                             htmlFor="settingsConfirmPassword"
                           >
                             Confirm New Password
@@ -1599,7 +1601,7 @@ export function SuperAdminDashboard({
                               required
                               minLength={8}
                               placeholder="Retype new password"
-                              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 pr-12 text-sm outline-none transition-colors"
                             />
                             <PasswordToggleButton
                               shown={showConfirmPassword}
@@ -1609,12 +1611,12 @@ export function SuperAdminDashboard({
                         </div>
 
                         {passwordError ? (
-                          <p className="text-sm text-red-300">
+                          <p className="text-sm text-rose-600 dark:text-red-300">
                             {passwordError}
                           </p>
                         ) : null}
                         {passwordSuccess ? (
-                          <p className="text-sm text-emerald-300">
+                          <p className="text-sm text-emerald-600 dark:text-emerald-300">
                             {passwordSuccess}
                           </p>
                         ) : null}
@@ -1895,7 +1897,7 @@ function SidebarButton({
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
+    <div className="rounded-xl border border-slate-400/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
       <p className="mt-0 text-xs font-medium text-slate-600 dark:text-slate-400">
         {label}
       </p>
@@ -1922,7 +1924,7 @@ function SettingsOptionButton({
       className={`w-full rounded-xl border px-4 py-3 text-left transition ${
         active
           ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:border-amber-400 dark:bg-amber-400/10 dark:text-amber-300 font-semibold"
-          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-slate-600"
+          : "border-slate-400 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-slate-600"
       }`}
     >
       <p className="font-semibold text-slate-900 dark:text-slate-100">{title}</p>

@@ -156,9 +156,9 @@ export function FacultyTable({
         programs={programs}
       />
 
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950 shadow-xl">
-        <table className="w-full text-left border-collapse text-xs text-slate-300 min-w-[600px]">
-            <thead className="border-b border-slate-800 bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-400">
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm shadow-slate-200/60 dark:shadow-none">
+        <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[600px]">
+            <thead className="border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-2.5 font-semibold">Faculty Member</th>
                 <th className="px-4 py-2.5 font-semibold">Program</th>
@@ -168,12 +168,12 @@ export function FacultyTable({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-400 dark:divide-slate-800/60">
               {isLoading ? (
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-xs text-slate-500"
+                    className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
                   >
                     Loading faculty accounts...
                   </td>
@@ -182,7 +182,7 @@ export function FacultyTable({
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-xs text-slate-500"
+                    className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
                   >
                     No faculty members found.
                   </td>
@@ -197,14 +197,14 @@ export function FacultyTable({
                   return (
                     <tr
                       key={faculty.id}
-                      className="transition hover:bg-slate-900/40"
+                      className="transition hover:bg-slate-50 dark:hover:bg-slate-900/40"
                     >
-                      <td className="px-4 py-2.5 font-medium text-slate-200">
+                      <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-slate-200">
                         <div
                           className="flex items-center gap-2.5 cursor-pointer"
                           onClick={() => onSelectFaculty(faculty.id)}
                         >
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-400/30 bg-amber-400/10 text-[10px] font-semibold text-amber-200">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-[10px] font-semibold text-amber-800 dark:text-amber-200">
                             {faculty.profileImageUrl ? (
                               <img
                                 src={faculty.profileImageUrl}
@@ -218,27 +218,27 @@ export function FacultyTable({
                             )}
                           </div>
                           <div>
-                            <div className="font-medium text-slate-200 text-xs hover:text-amber-300 transition">
+                            <div className="font-medium text-slate-900 dark:text-slate-200 text-xs hover:text-amber-600 dark:hover:text-amber-300 transition">
                               {faculty.fullName}
                             </div>
-                            <div className="text-[10px] text-slate-500 font-normal">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">
                               {faculty.email}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-2.5 font-medium text-xs">
-                        <span className="text-amber-300 bg-amber-500/10 border border-amber-500/30 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
+                        <span className="text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
                           {programCode}
                         </span>
                       </td>
                       <td className="px-4 py-2.5 font-medium">
                         {faculty.is_active ? (
-                          <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
+                          <span className="text-emerald-800 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
                             Active
                           </span>
                         ) : (
-                          <span className="text-slate-400 bg-slate-800/50 border border-slate-700/50 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
+                          <span className="text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 border border-slate-400 dark:border-slate-700/50 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
                             Inactive
                           </span>
                         )}
@@ -248,7 +248,7 @@ export function FacultyTable({
                           <button
                             type="button"
                             onClick={() => onViewDetails(faculty.id)}
-                            className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-slate-200 hover:bg-slate-800 hover:text-white transition"
+                            className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
                           >
                             Edit
                           </button>
@@ -257,7 +257,7 @@ export function FacultyTable({
                               type="button"
                               onClick={() => onDeactivate(faculty.id)}
                               disabled={loadingFacultyIds.has(faculty.id)}
-                              className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 text-xs font-medium text-amber-300 hover:bg-amber-400/20 transition disabled:opacity-50"
+                              className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition disabled:opacity-50 cursor-pointer"
                             >
                               {loadingFacultyIds.has(faculty.id)
                                 ? "Deactivating..."
@@ -268,7 +268,7 @@ export function FacultyTable({
                               type="button"
                               onClick={() => onActivate(faculty.id)}
                               disabled={loadingFacultyIds.has(faculty.id)}
-                              className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 transition disabled:opacity-50"
+                              className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:text-emerald-400 hover:bg-emerald-500/20 transition disabled:opacity-50 cursor-pointer"
                             >
                               {loadingFacultyIds.has(faculty.id)
                                 ? "Activating..."
@@ -279,7 +279,7 @@ export function FacultyTable({
                             type="button"
                             onClick={() => onDeleteFaculty(faculty.id)}
                             disabled={deletingFacultyIds.has(faculty.id)}
-                            className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-400 hover:bg-rose-500/20 transition disabled:opacity-50"
+                            className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-800 dark:text-rose-400 hover:bg-rose-500/20 transition disabled:opacity-50 cursor-pointer"
                           >
                             {deletingFacultyIds.has(faculty.id)
                               ? "Deleting..."
