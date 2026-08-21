@@ -864,7 +864,7 @@ export function SuperAdminDashboard({
     return accounts.map((admin) => (
       <div
         key={admin.id}
-        className="rounded-2xl border border-slate-400/80 bg-white dark:border-slate-800/80 dark:bg-slate-900/60 p-4 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors"
+        className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -890,7 +890,7 @@ export function SuperAdminDashboard({
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {admin.full_name}
                 </p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{admin.email}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
               </div>
             </div>
           </div>
@@ -920,59 +920,54 @@ export function SuperAdminDashboard({
         <div className="mt-4 flex flex-wrap gap-2">
           {admin.role !== ROLE.SUPER_ADMIN ? (
             admin.is_active ? (
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => onDeactivateAdmin(admin.profile_id)}
                 disabled={loadingAdminIds.has(admin.profile_id)}
-                className="text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-amber-200 border border-slate-400 dark:border-slate-700"
+                className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
               >
                 {loadingAdminIds.has(admin.profile_id)
                   ? "Deactivating..."
                   : "Deactivate"}
-              </Button>
+              </button>
             ) : (
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => onActivateAdmin(admin.profile_id)}
                 disabled={loadingAdminIds.has(admin.profile_id)}
-                className="text-emerald-800 dark:text-emerald-300 hover:text-emerald-950 dark:hover:text-emerald-200 border border-slate-400 dark:border-slate-700"
+                className="bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
               >
                 {loadingAdminIds.has(admin.profile_id)
                   ? "Activating..."
                   : "Activate"}
-              </Button>
+              </button>
             )
           ) : null}
           {admin.role === ROLE.ADMIN ? (
-            <Button
-              variant="secondary"
-              size="sm"
+            <button
+              type="button"
               onClick={() => onEditAdmin(admin.profile_id)}
-              className="text-blue-800 dark:text-blue-300 hover:text-blue-950 dark:hover:text-blue-200 border border-slate-400 dark:border-slate-700"
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer"
             >
               Edit
-            </Button>
+            </button>
           ) : null}
-          <Button
-            variant="secondary"
-            size="sm"
+          <button
+            type="button"
             onClick={() => onViewAdminDetails(admin.profile_id)}
-            className="text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white border border-slate-400 dark:border-slate-700"
+            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer"
           >
             View Details
-          </Button>
+          </button>
           {admin.role !== ROLE.SUPER_ADMIN ? (
-            <Button
-              variant="secondary"
-              size="sm"
+            <button
+              type="button"
               onClick={() => onDeleteAdmin(admin.profile_id)}
               disabled={loadingAdminIds.has(admin.profile_id)}
-              className="text-rose-800 dark:text-red-300 hover:text-rose-950 dark:hover:text-red-200 border border-slate-400 dark:border-slate-700"
+              className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
             >
               Delete
-            </Button>
+            </button>
           ) : null}
         </div>
       </div>
@@ -1137,9 +1132,9 @@ export function SuperAdminDashboard({
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
                 {/* TIER 1: Welcome Banner */}
-                <section className="relative overflow-hidden rounded-2xl border border-slate-400/80 bg-gradient-to-r from-white via-slate-50 to-white dark:border-slate-800/80 dark:bg-gradient-to-r dark:from-slate-900/90 dark:via-slate-900/80 dark:to-slate-950 p-6 sm:p-7 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
+                <section className="relative overflow-hidden rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-sm transition-colors">
                   <div className="relative z-10 space-y-1">
-                    <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                       Welcome back, {extractFirstName(adminName, "Super Admin")}
                     </h1>
                     <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
@@ -1151,7 +1146,7 @@ export function SuperAdminDashboard({
                 {/* TIER 2: 3-Column Stat Grid */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Card 1: Active Admin Accounts */}
-                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Active Admin Accounts</span>
                       <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -1167,7 +1162,7 @@ export function SuperAdminDashboard({
                   </div>
 
                   {/* Card 2: Audit Logs Today */}
-                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Audit Logs Today</span>
                       <ScrollText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -1181,7 +1176,7 @@ export function SuperAdminDashboard({
                   </div>
 
                   {/* Card 3: Academic Window Status */}
-                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Academic Window</span>
                       <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -1199,8 +1194,8 @@ export function SuperAdminDashboard({
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   {/* Left Column (2-Span) — Admin Accounts Overview */}
                   <div className="lg:col-span-2 space-y-4">
-                    <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 sm:p-6 transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-400 dark:border-slate-800/80">
+                    <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-400 dark:border-slate-800">
                         <div>
                           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Admin Accounts Management</h2>
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Overview of all admin and super admin accounts.</p>
@@ -1208,14 +1203,14 @@ export function SuperAdminDashboard({
                         <button
                           type="button"
                           onClick={() => handleSetActiveSection("accounts")}
-                          className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold transition cursor-pointer"
                         >
                           <span>View all</span>
                           <span>→</span>
                         </button>
                       </div>
                       {adminAccounts.length > 0 ? (
-                        <div className="divide-y divide-slate-400 dark:divide-slate-800/60 mt-2">
+                        <div className="divide-y divide-slate-400 dark:divide-slate-800 mt-2">
                           {adminAccounts.slice(0, 5).map((admin) => (
                             <div key={admin.profile_id} className="flex items-center justify-between py-3">
                               <div className="flex items-center gap-3">
@@ -1227,7 +1222,7 @@ export function SuperAdminDashboard({
                                   <p className="text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
                                 </div>
                               </div>
-                              <span className={`text-xs px-2.5 py-0.5 rounded-full border ${admin.is_active ? "text-emerald-800 bg-emerald-50 border-emerald-500/30 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20" : "text-slate-600 bg-slate-100 border-slate-400 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700"}`}>
+                              <span className={`text-xs px-2.5 py-0.5 rounded-full border ${admin.is_active ? "text-emerald-800 bg-emerald-50 border-emerald-300 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20" : "text-slate-700 bg-slate-100 border-slate-400 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700"}`}>
                                 {admin.is_active ? "Active" : "Inactive"}
                               </span>
                             </div>
@@ -1243,8 +1238,8 @@ export function SuperAdminDashboard({
 
                   {/* Right Column (1-Span) — System Audit Logs */}
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
-                      <div className="pb-3 border-b border-slate-400 dark:border-slate-800/80">
+                    <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
+                      <div className="pb-3 border-b border-slate-400 dark:border-slate-800">
                         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">System Audit Logs</h2>
                         <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Recent system activity.</p>
                       </div>
@@ -1253,7 +1248,7 @@ export function SuperAdminDashboard({
                         <button
                           type="button"
                           onClick={() => handleSetActiveSection("auditLogs")}
-                          className="mt-3 inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
+                          className="mt-3 inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold transition cursor-pointer"
                         >
                           <span>View Audit Logs</span>
                           <span>→</span>
@@ -1273,16 +1268,14 @@ export function SuperAdminDashboard({
                       Admin Accounts
                     </h1>
                   </div>
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
-                    size="sm"
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoadingAccounts}
-                    className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200"
+                    className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
                   >
                     {isLoadingAccounts ? "Refreshing..." : "⟳ Refresh"}
-                  </Button>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
@@ -1304,10 +1297,10 @@ export function SuperAdminDashboard({
                   />
                 </div>
 
-                <div className="mt-6 rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
+                <div className="mt-6 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                         Account Directory
                       </h3>
                     </div>
@@ -1321,7 +1314,7 @@ export function SuperAdminDashboard({
                             event.target.value as AccountViewRole,
                           )
                         }
-                        className="rounded-xl border border-slate-400 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 text-sm outline-none transition focus:border-amber-500"
+                        className="rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs outline-none transition focus:border-amber-500 cursor-pointer"
                       >
                         <option value="all">All Accounts</option>
                         <option value={ROLE.ADMIN}>Admin Accounts</option>
@@ -1329,42 +1322,46 @@ export function SuperAdminDashboard({
                           Super Admin Accounts
                         </option>
                       </select>
-                      <Button type="button" onClick={openCreateAdminModal}>
+                      <button
+                        type="button"
+                        onClick={openCreateAdminModal}
+                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-4 py-2 text-xs transition cursor-pointer"
+                      >
                         Create Admin
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
                   {accountsError ? (
-                    <p className="mt-4 text-sm text-rose-600 dark:text-red-300">{accountsError}</p>
+                    <p className="mt-4 text-xs text-rose-600 dark:text-red-300">{accountsError}</p>
                   ) : null}
                   {accountActionError ? (
-                    <p className="mt-4 text-sm text-rose-600 dark:text-red-300">
+                    <p className="mt-4 text-xs text-rose-600 dark:text-red-300">
                       {accountActionError}
                     </p>
                   ) : null}
                   {accountActionSuccess ? (
-                    <p className="mt-4 text-sm text-emerald-600 dark:text-emerald-300">
+                    <p className="mt-4 text-xs text-emerald-600 dark:text-emerald-300">
                       {accountActionSuccess}
                     </p>
                   ) : null}
 
                   <div className="mt-4 space-y-6">
                     {isLoadingAccounts ? (
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         Loading account directory...
                       </p>
                     ) : (
                       visibleAccountGroups.map((group) => (
                         <section
                           key={group.key}
-                          className="rounded-2xl border border-slate-400/80 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-950/40 p-4 transition-colors shadow-xs"
+                          className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-4 transition-colors"
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                               {group.title}
                             </h4>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                            <span className="text-xs text-slate-600 dark:text-slate-400">
                               {group.accounts.length} account
                               {group.accounts.length === 1 ? "" : "s"}
                             </span>
@@ -1374,7 +1371,7 @@ export function SuperAdminDashboard({
                             {group.accounts.length ? (
                               renderAccountCards(group.accounts)
                             ) : (
-                              <p className="text-sm text-slate-500 dark:text-slate-400">
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
                                 {group.emptyMessage}
                               </p>
                             )}
@@ -1409,20 +1406,18 @@ export function SuperAdminDashboard({
                       Settings
                     </h1>
                   </div>
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
-                    size="sm"
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoadingSettings}
-                    className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200"
+                    className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
                   >
                     {isLoadingSettings ? "Refreshing..." : "⟳ Refresh"}
-                  </Button>
+                  </button>
                 </div>
 
                 <section className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]">
-                  <div className="space-y-2 rounded-2xl border border-slate-400/80 bg-slate-50/70 dark:border-slate-800/80 dark:bg-slate-900/60 p-3 transition-colors shadow-xs">
+                  <div className="space-y-2 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm transition-colors">
                     <SettingsOptionButton
                       active={activeSettingsOption === "profile"}
                       title="Account Profile"
@@ -1437,15 +1432,15 @@ export function SuperAdminDashboard({
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-6 transition-colors">
+                  <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
                     {activeSettingsOption === "profile" ? (
                       isLoadingSettings ? (
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           Loading account settings...
                         </p>
                       ) : (
                         <form className="space-y-4" onSubmit={onSettingsSubmit}>
-                          <div className="flex items-center gap-4 rounded-2xl border border-slate-400 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 p-4 transition-colors">
+                          <div className="flex items-center gap-4 rounded-2xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 transition-colors">
                             {superAdminAvatarUrl && !isAvatarImageError ? (
                               <img
                                 src={superAdminAvatarUrl}
@@ -1466,7 +1461,7 @@ export function SuperAdminDashboard({
 
                           <div>
                             <label
-                              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+                              className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                               htmlFor="settingsFullName"
                             >
                               Username / Full Name
@@ -1480,13 +1475,13 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter full name"
-                              className="mt-2 w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 text-sm outline-none transition-colors"
+                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 px-4 py-2.5 text-xs font-medium outline-none transition-colors"
                             />
                           </div>
 
                           <div>
                             <label
-                              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+                              className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                               htmlFor="settingsEmail"
                             >
                               Email Address
@@ -1500,31 +1495,31 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter email address"
-                              className="mt-2 w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 text-sm outline-none transition-colors"
+                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 px-4 py-2.5 text-xs font-medium outline-none transition-colors"
                             />
                           </div>
 
                           {settingsError ? (
-                            <p className="text-sm text-rose-600 dark:text-red-300">
+                            <p className="text-xs text-rose-600 dark:text-red-300">
                               {settingsError}
                             </p>
                           ) : null}
                           {settingsSuccess ? (
-                            <p className="text-sm text-emerald-600 dark:text-emerald-300">
+                            <p className="text-xs text-emerald-600 dark:text-emerald-300">
                               {settingsSuccess}
                             </p>
                           ) : null}
 
-                          <div className="flex justify-center pt-1">
-                            <Button
-                              className="px-5 py-2"
+                          <div className="flex justify-end pt-2">
+                            <button
                               type="submit"
                               disabled={isSavingSettings}
+                              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
                             >
                               {isSavingSettings
                                 ? "Saving..."
                                 : "Update Account"}
-                            </Button>
+                            </button>
                           </div>
                         </form>
                       )
@@ -1532,12 +1527,12 @@ export function SuperAdminDashboard({
                       <form className="space-y-4" onSubmit={onPasswordSubmit}>
                         <div>
                           <label
-                            className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+                            className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                             htmlFor="settingsOldPassword"
                           >
                             Old Password
                           </label>
-                          <div className="relative mt-2">
+                          <div className="relative">
                             <input
                               id="settingsOldPassword"
                               type={showOldPassword ? "text" : "password"}
@@ -1547,7 +1542,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter current password"
-                              className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 pr-12 text-sm outline-none transition-colors"
+                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
                             />
                             <PasswordToggleButton
                               shown={showOldPassword}
@@ -1558,12 +1553,12 @@ export function SuperAdminDashboard({
 
                         <div>
                           <label
-                            className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+                            className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                             htmlFor="settingsPassword"
                           >
                             New Password
                           </label>
-                          <div className="relative mt-2">
+                          <div className="relative">
                             <input
                               id="settingsPassword"
                               type={showNewPassword ? "text" : "password"}
@@ -1574,7 +1569,7 @@ export function SuperAdminDashboard({
                               required
                               minLength={8}
                               placeholder="Minimum 8 characters"
-                              className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 pr-12 text-sm outline-none transition-colors"
+                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
                             />
                             <PasswordToggleButton
                               shown={showNewPassword}
@@ -1585,12 +1580,12 @@ export function SuperAdminDashboard({
 
                         <div>
                           <label
-                            className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+                            className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                             htmlFor="settingsConfirmPassword"
                           >
                             Confirm New Password
                           </label>
-                          <div className="relative mt-2">
+                          <div className="relative">
                             <input
                               id="settingsConfirmPassword"
                               type={showConfirmPassword ? "text" : "password"}
@@ -1601,7 +1596,7 @@ export function SuperAdminDashboard({
                               required
                               minLength={8}
                               placeholder="Retype new password"
-                              className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 pr-12 text-sm outline-none transition-colors"
+                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
                             />
                             <PasswordToggleButton
                               shown={showConfirmPassword}
@@ -1611,24 +1606,24 @@ export function SuperAdminDashboard({
                         </div>
 
                         {passwordError ? (
-                          <p className="text-sm text-rose-600 dark:text-red-300">
+                          <p className="text-xs text-rose-600 dark:text-red-300">
                             {passwordError}
                           </p>
                         ) : null}
                         {passwordSuccess ? (
-                          <p className="text-sm text-emerald-600 dark:text-emerald-300">
+                          <p className="text-xs text-emerald-600 dark:text-emerald-300">
                             {passwordSuccess}
                           </p>
                         ) : null}
 
-                        <div className="flex justify-center pt-1">
-                          <Button
-                            className="px-5 py-2"
+                        <div className="flex justify-end pt-2">
+                          <button
                             type="submit"
                             disabled={isSavingPassword}
+                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
                           >
                             {isSavingPassword ? "Saving..." : "Update Password"}
-                          </Button>
+                          </button>
                         </div>
                       </form>
                     )}
@@ -1641,39 +1636,30 @@ export function SuperAdminDashboard({
       </div>
 
       {createAdminModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur">
-            <div className="flex items-center justify-between gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+                <p className="text-xs uppercase tracking-[0.28em] text-amber-700 dark:text-amber-300 font-semibold">
                   Super Admin
                 </p>
-                <h3 className="mt-2 text-xl font-semibold text-[#fff8e7]">
+                <h3 className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
                   Create Admin Account
                 </h3>
               </div>
-              <Button
+              <button
                 type="button"
-                variant="secondary"
                 onClick={closeCreateAdminModal}
+                className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer"
               >
                 Close
-              </Button>
+              </button>
             </div>
 
-            <div className="mt-5 rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000]/70 p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-[#ffd700]">
-                Profile
-              </p>
-              <p className="mt-2 text-sm text-[#fff8e7]">
-                Super Admin account profile
-              </p>
-            </div>
-
-            <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+            <form className="mt-5 space-y-4" onSubmit={onSubmit}>
               <div>
                 <label
-                  className="block text-sm font-medium text-[#fff8e7]"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                   htmlFor="profileImage"
                 >
                   Profile Image
@@ -1682,7 +1668,7 @@ export function SuperAdminDashboard({
                   id="profileImage"
                   type="file"
                   accept="image/*"
-                  className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none file:mr-3 file:rounded-md file:border-0 file:bg-[#ffd700] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[#3b0000] focus:ring focus:ring-[#ffd700]/40"
+                  className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-amber-500 hover:file:bg-amber-400 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-slate-950 cursor-pointer"
                   onChange={(event) => {
                     const file = event.target.files?.[0] ?? null;
                     setCreateAdminProfileImage(file);
@@ -1694,19 +1680,19 @@ export function SuperAdminDashboard({
                     );
                   }}
                 />
-                <p className="mt-1 text-xs text-[#d8b882]">
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   Upload a square image for the admin profile.
                 </p>
                 {createAdminProfileImagePreview ? (
-                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000]/80 p-3">
+                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
                     <img
                       src={createAdminProfileImagePreview}
                       alt="Selected profile preview"
-                      className="h-16 w-16 rounded-full border border-[rgba(255,215,0,0.18)] object-cover"
+                      className="h-14 w-14 rounded-full border border-slate-400 dark:border-slate-700 object-cover"
                     />
                     <div className="min-w-0">
-                      <p className="text-sm text-[#fff8e7]">Selected image</p>
-                      <p className="truncate text-xs text-[#d8b882]">
+                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Selected image</p>
+                      <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                         {createAdminProfileImage?.name ?? "Preview available"}
                       </p>
                     </div>
@@ -1717,7 +1703,7 @@ export function SuperAdminDashboard({
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <label
-                    className="block text-sm font-medium text-[#fff8e7]"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                     htmlFor="firstName"
                   >
                     First Name
@@ -1731,13 +1717,13 @@ export function SuperAdminDashboard({
                     }
                     required
                     placeholder="Juan"
-                    className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                    className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
 
                 <div>
                   <label
-                    className="block text-sm font-medium text-[#fff8e7]"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                     htmlFor="middleName"
                   >
                     Middle Name
@@ -1750,13 +1736,13 @@ export function SuperAdminDashboard({
                       setCreateAdminMiddleName(event.target.value)
                     }
                     placeholder="Santos"
-                    className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                    className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
 
                 <div>
                   <label
-                    className="block text-sm font-medium text-[#fff8e7]"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                     htmlFor="lastName"
                   >
                     Last Name
@@ -1770,16 +1756,16 @@ export function SuperAdminDashboard({
                     }
                     required
                     placeholder="Dela Cruz"
-                    className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                    className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000]/70 p-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-[#ffd700]">
+              <div className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">
                   Full Name Preview
                 </p>
-                <p className="mt-2 text-sm text-[#fff8e7]">
+                <p className="mt-1 text-xs font-semibold text-slate-900 dark:text-slate-100">
                   {buildAdminFullName({
                     firstName: createAdminFirstName,
                     middleName: createAdminMiddleName,
@@ -1790,7 +1776,7 @@ export function SuperAdminDashboard({
 
               <div>
                 <label
-                  className="block text-sm font-medium text-[#fff8e7]"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                   htmlFor="email"
                 >
                   Email Address
@@ -1802,25 +1788,30 @@ export function SuperAdminDashboard({
                   onChange={(event) => setEmail(event.target.value)}
                   required
                   placeholder="admin@pup-focus.local"
-                  className="mt-2 w-full rounded-xl border border-[rgba(255,215,0,0.18)] bg-[#3b0000] px-4 py-3 text-sm text-[#fff8e7] outline-none ring-[#ffd700]/40 placeholder:text-[#d8b882] focus:ring"
+                  className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                 />
               </div>
 
-              {/* Temporary password removed from create UI — invite-only flow */}
-
-              {error ? <p className="text-sm text-red-300">{error}</p> : null}
+              {error ? <p className="text-xs text-rose-600 dark:text-red-300">{error}</p> : null}
               {success ? (
-                <p className="text-sm text-[#ffd700]">{success}</p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-300">{success}</p>
               ) : null}
 
-              <div className="flex justify-center pt-1">
-                <Button
-                  className="px-5 py-2"
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-400 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={closeCreateAdminModal}
+                  className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 px-4 py-2 text-xs font-semibold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
                   type="submit"
                   disabled={isSubmitting}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? "Creating Admin..." : "Create Admin Account"}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
@@ -1838,24 +1829,28 @@ export function SuperAdminDashboard({
       ) : null}
 
       {inviteModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur">
-            <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+            <p className="text-xs uppercase tracking-[0.28em] text-amber-700 dark:text-amber-300 font-semibold">
               {inviteWasSent ? "Invitation Sent" : "Invite Link Generated"}
             </p>
-            <h3 className="mt-3 text-xl font-semibold text-[#fff8e7]">
+            <h3 className="mt-2 text-xl font-bold text-slate-900 dark:text-slate-100">
               {inviteWasSent
                 ? "Email sent successfully"
                 : "Email delivery failed"}
             </h3>
-            <p className="mt-3 whitespace-pre-wrap text-sm text-[#f3d9b3]">
+            <p className="mt-3 whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-400">
               {inviteModalMessage}
             </p>
 
             <div className="mt-6 flex justify-end">
-              <Button type="button" onClick={() => setInviteModalOpen(false)}>
+              <button
+                type="button"
+                onClick={() => setInviteModalOpen(false)}
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer"
+              >
                 OK
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -1897,11 +1892,11 @@ function SidebarButton({
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-400/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
+    <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition-colors">
       <p className="mt-0 text-xs font-medium text-slate-600 dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">{value}</p>
+      <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
     </div>
   );
 }
@@ -1921,14 +1916,14 @@ function SettingsOptionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+      className={`w-full text-left px-4 py-3 transition cursor-pointer ${
         active
-          ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:border-amber-400 dark:bg-amber-400/10 dark:text-amber-300 font-semibold"
-          : "border-slate-400 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-slate-600"
+          ? "bg-amber-500/15 text-amber-950 dark:text-amber-300 font-semibold border-l-4 border-amber-500 rounded-r-xl"
+          : "text-slate-600 hover:text-slate-900 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-xl"
       }`}
     >
-      <p className="font-semibold text-slate-900 dark:text-slate-100">{title}</p>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+      <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">{title}</p>
+      <p className={`mt-0.5 text-xs ${active ? "text-amber-900/80 dark:text-amber-300/80" : "text-slate-500 dark:text-slate-400"}`}>{description}</p>
     </button>
   );
 }
@@ -2135,35 +2130,35 @@ function AdminDetailsModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-100">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+        <div className="flex items-center justify-between border-b border-slate-400 dark:border-slate-800 pb-4">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             {canEdit ? "Edit Admin Account" : "View Admin Account"}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md px-2 py-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+            className="rounded-full border border-slate-400 dark:border-slate-800 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
           >
-            X
+            <X className="h-4 w-4" />
           </button>
         </div>
 
         {isLoading ? (
-          <p className="mt-4 text-sm text-slate-400">Loading details...</p>
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Loading details...</p>
         ) : details ? (
-          <div className="space-y-4">
-            <div className="mt-4 flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+          <div className="space-y-4 mt-4">
+            <div className="flex items-center gap-4 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4">
               {details.profileImageUrl && !modalAvatarError ? (
                 <img
                   src={details.profileImageUrl}
                   alt={details.full_name ?? "Admin"}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950 shadow-md ring-2 ring-slate-950"
+                  className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950"
                   onError={() => setModalAvatarError(true)}
                 />
               ) : (
-                <div className="w-14 h-14 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-slate-950">
+                <div className="w-14 h-14 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-800 dark:text-amber-400 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950">
                   {getInitials(
                     details.full_name,
                     details.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
@@ -2171,210 +2166,222 @@ function AdminDetailsModal({
                 </div>
               )}
               <div>
-                <h4 className="text-base font-bold text-slate-100">
+                <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
                   {details.full_name || "Admin User"}
                 </h4>
-                <p className="text-xs text-slate-400">{details.email}</p>
-                <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                <p className="text-xs text-slate-500 dark:text-slate-400">{details.email}</p>
+                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30">
                   {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
                 </span>
               </div>
             </div>
 
             {canEdit ? (
-              <form className="mt-4 space-y-4" onSubmit={onSubmit}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label
-                    className="block text-sm font-medium text-slate-200"
-                    htmlFor="adminFullName"
-                  >
-                    Full Name
-                  </label>
-                  <input
-                    id="adminFullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    readOnly={!canEdit}
-                    disabled={!canEdit}
-                    className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
-                  />
+              <form className="space-y-4" onSubmit={onSubmit}>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label
+                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
+                      htmlFor="adminFullName"
+                    >
+                      Full Name
+                    </label>
+                    <input
+                      id="adminFullName"
+                      type="text"
+                      value={fullName}
+                      onChange={(event) => setFullName(event.target.value)}
+                      readOnly={!canEdit}
+                      disabled={!canEdit}
+                      className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
+                      htmlFor="adminEmail"
+                    >
+                      Email Address
+                    </label>
+                    <input
+                      id="adminEmail"
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      readOnly={!canEdit}
+                      disabled={!canEdit}
+                      className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label
-                    className="block text-sm font-medium text-slate-200"
-                    htmlFor="adminEmail"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
+                    htmlFor="adminPassword"
                   >
-                    Email Address
+                    New Password
                   </label>
-                  <input
-                    id="adminEmail"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    readOnly={!canEdit}
-                    disabled={!canEdit}
-                    className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
-                  />
+                  <div className="relative">
+                    <input
+                      id="adminPassword"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      disabled={!canEdit}
+                      minLength={8}
+                      placeholder="Leave blank to keep current password"
+                      className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 pr-12 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+                    />
+                    <PasswordToggleButton
+                      shown={showPassword}
+                      onClick={() => setShowPassword((value) => !value)}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label
-                  className="block text-sm font-medium text-slate-200"
-                  htmlFor="adminPassword"
-                >
-                  New Password
-                </label>
-                <div className="relative mt-2">
-                  <input
-                    id="adminPassword"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    disabled={!canEdit}
-                    minLength={8}
-                    placeholder="Leave blank to keep current password"
-                    className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
-                  />
-                  <PasswordToggleButton
-                    shown={showPassword}
-                    onClick={() => setShowPassword((value) => !value)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-2 text-sm text-slate-400 md:grid-cols-2">
-                <p>
-                  <span className="text-slate-500">Role:</span>{" "}
-                  {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
-                </p>
-                <p>
-                  <span className="text-slate-500">Status:</span>{" "}
-                  {details.is_active ? "Active" : "Inactive"}
-                </p>
-                {details.department ? (
+                <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-400 md:grid-cols-2 p-3 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
                   <p>
-                    <span className="text-slate-500">Department:</span>{" "}
-                    {details.department}
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Role:</span>{" "}
+                    {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
                   </p>
-                ) : null}
-                {details.permissions && details.permissions.length > 0 ? (
                   <p>
-                    <span className="text-slate-500">Permissions:</span>{" "}
-                    {details.permissions.length}
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span>{" "}
+                    {details.is_active ? "Active" : "Inactive"}
                   </p>
-                ) : null}
-              </div>
-
-              {error ? <p className="text-sm text-red-300">{error}</p> : null}
-              {success ? (
-                <p className="text-sm text-emerald-300">{success}</p>
-              ) : null}
-
-              <div className="flex flex-wrap justify-between gap-3 pt-2">
-                <div className="text-xs text-slate-500">
-                  Created{" "}
-                  {details.created_at
-                    ? new Date(details.created_at).toLocaleString()
-                    : "Unknown"}
-                  {details.updated_at
-                    ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
-                    : ""}
-                </div>
-                <div className="flex gap-3">
-                  <Button type="button" variant="secondary" onClick={onClose}>
-                    Close
-                  </Button>
-                  {canEdit ? (
-                    <Button type="submit" disabled={isSaving}>
-                      {isSaving ? "Saving..." : "Save Changes"}
-                    </Button>
+                  {details.department ? (
+                    <p>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Department:</span>{" "}
+                      {details.department}
+                    </p>
+                  ) : null}
+                  {details.permissions && details.permissions.length > 0 ? (
+                    <p>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Permissions:</span>{" "}
+                      {details.permissions.length}
+                    </p>
                   ) : null}
                 </div>
-              </div>
-            </form>
-          ) : (
-            <div className="mt-4 space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-sm font-medium text-slate-200">
-                    Full Name
-                  </p>
-                  <p className="mt-2 text-sm text-slate-100">
-                    {details.full_name}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-200">
-                    Email Address
-                  </p>
-                  <p className="mt-2 text-sm text-slate-100">{details.email}</p>
-                </div>
-              </div>
 
-              <div className="grid gap-2 text-sm text-slate-400 md:grid-cols-2">
-                <p>
-                  <span className="text-slate-500">Role:</span>{" "}
-                  {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
-                </p>
-                <p>
-                  <span className="text-slate-500">Status:</span>{" "}
-                  {details.is_active ? "Active" : "Inactive"}
-                </p>
-                {details.department ? (
-                  <p>
-                    <span className="text-slate-500">Department:</span>{" "}
-                    {details.department}
-                  </p>
+                {error ? <p className="text-xs text-rose-600 dark:text-red-300">{error}</p> : null}
+                {success ? (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-300">{success}</p>
                 ) : null}
-                {details.permissions && details.permissions.length > 0 ? (
+
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-400 dark:border-slate-800">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Created{" "}
+                    {details.created_at
+                      ? new Date(details.created_at).toLocaleString()
+                      : "Unknown"}
+                    {details.updated_at
+                      ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
+                      : ""}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 px-4 py-2 text-xs font-semibold transition cursor-pointer"
+                    >
+                      Close
+                    </button>
+                    {canEdit ? (
+                      <button
+                        type="submit"
+                        disabled={isSaving}
+                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
+                      >
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                      Full Name
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {details.full_name}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                      Email Address
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{details.email}</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-400 md:grid-cols-2 p-3 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
                   <p>
-                    <span className="text-slate-500">Permissions:</span>{" "}
-                    {details.permissions.length}
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Role:</span>{" "}
+                    {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
                   </p>
+                  <p>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span>{" "}
+                    {details.is_active ? "Active" : "Inactive"}
+                  </p>
+                  {details.department ? (
+                    <p>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Department:</span>{" "}
+                      {details.department}
+                    </p>
+                  ) : null}
+                  {details.permissions && details.permissions.length > 0 ? (
+                    <p>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Permissions:</span>{" "}
+                      {details.permissions.length}
+                    </p>
+                  ) : null}
+                </div>
+
+                {details.metadata &&
+                !(
+                  typeof details.metadata === "object" &&
+                  Object.keys(details.metadata).length === 1 &&
+                  (details.metadata as any).is_active === true
+                ) ? (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Metadata</p>
+                    <pre className="mt-1 max-h-40 overflow-auto rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3 text-xs text-slate-900 dark:text-slate-200 font-mono">
+                      {JSON.stringify(details.metadata, null, 2)}
+                    </pre>
+                  </div>
                 ) : null}
-              </div>
 
-              {details.metadata &&
-              !(
-                typeof details.metadata === "object" &&
-                Object.keys(details.metadata).length === 1 &&
-                (details.metadata as any).is_active === true
-              ) ? (
-                <div>
-                  <p className="text-sm font-medium text-slate-200">Metadata</p>
-                  <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-slate-900 p-3 text-xs text-slate-200">
-                    {JSON.stringify(details.metadata, null, 2)}
-                  </pre>
-                </div>
-              ) : null}
-
-              <div className="flex flex-wrap justify-between gap-3 pt-2">
-                <div className="text-xs text-slate-500">
-                  Created{" "}
-                  {details.created_at
-                    ? new Date(details.created_at).toLocaleString()
-                    : "Unknown"}
-                  {details.updated_at
-                    ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
-                    : ""}
-                </div>
-                <div className="flex gap-3">
-                  <Button type="button" variant="secondary" onClick={onClose}>
-                    Close
-                  </Button>
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-400 dark:border-slate-800">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Created{" "}
+                    {details.created_at
+                      ? new Date(details.created_at).toLocaleString()
+                      : "Unknown"}
+                    {details.updated_at
+                      ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
+                      : ""}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 px-4 py-2 text-xs font-semibold transition cursor-pointer"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <p className="mt-4 text-sm text-slate-400">No details available.</p>
-      )}
+            )}
+          </div>
+        ) : (
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">No details available.</p>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 }
