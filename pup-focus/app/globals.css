@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #5f0000;
-  --foreground: #fff8e7;
-  --card: #7a0000;
-  --muted: #f3d9b3;
-  --accent: #ffd700;
-  --accent-strong: #ffdf5d;
-  --surface: #3d0000;
+  --background: #020617;
+  --foreground: #f1f5f9;
+  --card: #0f172a;
+  --muted: #94a3b8;
+  --accent: #f59e0b;
+  --accent-strong: #fbbf24;
+  --surface: #1e293b;
 }
 
 @theme inline {
@@ -31,12 +31,17 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
   position: relative;
-  background-color: #5f0000;
+  background-color: #020617;
   overflow-x: hidden;
 }
 
-body::before,
-body::after {
+/* Campus photo backgrounds — scoped to public/auth routes via .campus-bg class */
+body.campus-bg {
+  background-color: #5f0000;
+}
+
+body.campus-bg::before,
+body.campus-bg::after {
   content: "";
   position: fixed;
   inset: 0;
@@ -48,13 +53,13 @@ body::after {
   z-index: -2;
 }
 
-body::before {
+body.campus-bg::before {
   background-image: url("/images/attachments/IMG_9399.jpeg");
   opacity: 1;
   animation: backgroundFadeA 16s infinite linear;
 }
 
-body::after {
+body.campus-bg::after {
   background-image: url("/images/attachments/IMG_9402.jpeg");
   opacity: 0;
   animation: backgroundFadeB 16s infinite linear;
@@ -88,16 +93,6 @@ a {
 
 * {
   border-color: rgb(51 65 85 / 0.5);
-}
-
-/* Semi-transparent overlay for content readability - much lighter */
-[class*="panel"],
-[class*="card"],
-[class*="container"],
-[class*="shell"],
-[class*="sidebar"],
-[class*="form"] {
-  background-color: rgba(95, 0, 0, 0.4) !important;
 }
 
 /* Prevent browser autofill from forcing a white background (stronger rules)

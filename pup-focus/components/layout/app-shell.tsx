@@ -31,7 +31,7 @@ export function AppShell({
 
   return (
     <div className="min-h-screen text-[var(--foreground)]">
-      <header className="fixed inset-x-0 top-0 h-14 z-50 border-b border-[rgba(255,215,0,0.18)] bg-[#4d0000]/85 backdrop-blur flex items-center">
+      <header className="fixed inset-x-0 top-0 h-14 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur flex items-center">
         <div className="flex w-full items-center justify-between pl-12 sm:pl-14 md:pl-4 pr-3 sm:pr-6">
           <div className="flex items-center gap-2 sm:gap-3">
             <BrandMark
@@ -51,7 +51,7 @@ export function AppShell({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="rounded-md border border-[rgba(255,215,0,0.18)] bg-[#6d0000]/60 px-3 py-2 text-sm text-[#fff8e7] hover:bg-[#850000]"
+                  className="rounded-md border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 hover:bg-slate-800"
                 >
                   {item.label}
                 </Link>

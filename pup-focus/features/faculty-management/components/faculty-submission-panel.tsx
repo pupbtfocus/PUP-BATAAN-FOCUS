@@ -1229,17 +1229,17 @@ function FacultySubmissionPanelContent({
       )}
 
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-700 bg-slate-900 p-2.5 shadow-lg">
-        <div className="my-1.5 rounded-lg bg-[var(--card)] p-2 text-[var(--accent)] flex flex-col items-center border border-slate-800">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-2.5 shadow-lg">
+        <div className="my-1.5 rounded-xl bg-slate-900/60 p-2.5 flex flex-col items-center border border-slate-800/80 shadow-sm">
           <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
             {facultyFirstName}
           </p>
 
-          <div className="my-1.5 h-px w-full bg-slate-700" />
+          <div className="my-1.5 h-px w-full bg-slate-800" />
 
-          <p className="mt-0 text-[10px] uppercase tracking-[0.12em] text-amber-400 text-center font-semibold">
+          <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
             Faculty
-          </p>
+          </span>
         </div>
 
         <div className="my-2">
@@ -1265,7 +1265,7 @@ function FacultySubmissionPanelContent({
                 className={`flex w-full items-center gap-2.5 rounded-lg border px-3 py-1.5 text-left text-xs transition ${
                   isActive
                     ? "border-amber-400 bg-amber-400/10 text-amber-300 font-semibold"
-                    : "border-slate-700 bg-slate-950/60 text-slate-200 hover:border-slate-500 hover:bg-slate-900"
+                    : "border-slate-800 bg-slate-950/60 text-slate-200 hover:border-slate-600 hover:bg-slate-900"
                 }`}
               >
                 <Icon size={16} className={isActive ? "text-amber-300" : "text-slate-400"} />
@@ -1283,7 +1283,7 @@ function FacultySubmissionPanelContent({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-64 max-w-[80%] bg-slate-900 h-full p-3 border-r border-slate-700 flex flex-col z-10 shadow-2xl overflow-y-auto">
+          <aside className="relative w-64 max-w-[80%] bg-slate-950 h-full p-3 border-r border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Navigation</span>
               <button
@@ -1296,16 +1296,16 @@ function FacultySubmissionPanelContent({
               </button>
             </div>
 
-            <div className="my-2 rounded-lg bg-[var(--card)] p-2 text-[var(--accent)] flex flex-col items-center border border-slate-800">
+            <div className="my-2 rounded-xl bg-slate-900/60 p-2.5 flex flex-col items-center border border-slate-800/80 shadow-sm">
               <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
                 {facultyFirstName}
               </p>
 
-              <div className="my-1.5 h-px w-full bg-slate-700" />
+              <div className="my-1.5 h-px w-full bg-slate-800" />
 
-              <p className="mt-0 text-[10px] uppercase tracking-[0.12em] text-amber-400 text-center font-semibold">
+              <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 Faculty
-              </p>
+              </span>
             </div>
 
             <div className="my-2">
@@ -1346,7 +1346,7 @@ function FacultySubmissionPanelContent({
 
       <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#090d16]">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-950">
             {activeView === "submit" ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
                 <div>
