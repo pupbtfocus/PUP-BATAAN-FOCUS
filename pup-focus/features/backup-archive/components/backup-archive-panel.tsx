@@ -17,6 +17,8 @@ import {
   Clock,
   Layers,
   X,
+  FolderArchive,
+  FileArchive,
 } from "lucide-react";
 import type {
   SystemBackup,
@@ -39,6 +41,8 @@ export function BackupArchivePanel() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingBackup, setIsGeneratingBackup] = useState(false);
+  const [exportingTermKey, setExportingTermKey] = useState<string | null>(null);
+  const [exportProgress, setExportProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -141,6 +145,60 @@ export function BackupArchivePanel() {
       );
     } finally {
       setIsGeneratingBackup(false);
+    }
+  };
+
+  const handleDownloadZip = async (academicYear?: string, semester?: string) => {
+    const key = `${academicYear || "all"}__${semester || "all"}`;
+    try {
+      setExportingTermKey(key);
+      setExportProgress("Zipping documents... 25%");
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (academicYear) params.set("academic_year", academicYear);
+      if (semester) params.set("semester", semester);
+
+      const timer1 = setTimeout(() => {
+        setExportProgress("Zipping documents... 60%");
+      }, 600);
+
+      const timer2 = setTimeout(() => {
+        setExportProgress("Finalizing ZIP archive... 90%");
+      }, 1400);
+
+      const res = await fetch(`/api/admin/backups/export-zip?${params.toString()}`);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to generate document vault ZIP");
+      }
+
+      setExportProgress("Finalizing ZIP archive... 100%");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const safeAY = academicYear ? academicYear.replace(/[^a-zA-Z0-9]/g, "_") : "All_AY";
+      const safeSem = semester ? semester.replace(/[^a-zA-Z0-9]/g, "_") : "All_Sem";
+      a.download = `PUP_FOCUS_Document_Vault_${safeAY}_${safeSem}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setSuccess(
+        `Document Vault ZIP for ${academicYear || "all terms"} ${semester ? `(${semester})` : ""} downloaded successfully!`
+      );
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error exporting document vault ZIP");
+    } finally {
+      setExportingTermKey(null);
+      setExportProgress(null);
     }
   };
 
@@ -330,7 +388,26 @@ export function BackupArchivePanel() {
 
             <button
               type="button"
-              disabled={isGeneratingBackup}
+              disabled={Boolean(exportingTermKey) || isGeneratingBackup}
+              onClick={() => void handleDownloadZip()}
+              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-xl text-xs sm:text-sm px-3.5 py-2 transition border border-slate-300 dark:border-slate-700 cursor-pointer disabled:opacity-50"
+            >
+              {exportingTermKey === "all__all" ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
+                  <span>{exportProgress || "Zipping documents..."}</span>
+                </>
+              ) : (
+                <>
+                  <FolderArchive className="w-4 h-4 text-amber-500" />
+                  <span>Download Document Vault (.ZIP)</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              disabled={isGeneratingBackup || Boolean(exportingTermKey)}
               onClick={() => void handleGenerateBackup()}
               className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm px-4 py-2 transition shadow-sm cursor-pointer disabled:opacity-50"
             >
@@ -574,14 +651,36 @@ export function BackupArchivePanel() {
                         {formatDateTime(term.archived_at)}
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setInspectedTerm(term)}
-                          className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition cursor-pointer inline-flex items-center gap-1"
-                        >
-                          <Eye className="w-3 h-3" />
-                          <span>View Vault Details</span>
-                        </button>
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setInspectedTerm(term)}
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>Details</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={Boolean(exportingTermKey)}
+                            onClick={() => void handleDownloadZip(term.academic_year, term.semester)}
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer inline-flex items-center gap-1 shadow-sm disabled:opacity-50"
+                            title="Download Document Vault (.ZIP)"
+                          >
+                            {exportingTermKey === `${term.academic_year}__${term.semester}` ? (
+                              <>
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                <span>{exportProgress || "Zipping..."}</span>
+                              </>
+                            ) : (
+                              <>
+                                <FolderArchive className="w-3 h-3" />
+                                <span>Vault (.ZIP)</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -763,7 +862,25 @@ export function BackupArchivePanel() {
               </p>
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-slate-300 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-300 dark:border-slate-800">
+              <button
+                type="button"
+                disabled={Boolean(exportingTermKey)}
+                onClick={() => void handleDownloadZip(inspectedTerm.academic_year, inspectedTerm.semester)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {exportingTermKey === `${inspectedTerm.academic_year}__${inspectedTerm.semester}` ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>{exportProgress || "Zipping documents..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <FolderArchive className="w-3.5 h-3.5" />
+                    <span>Download Vault (.ZIP)</span>
+                  </>
+                )}
+              </button>
               <button
                 type="button"
                 onClick={() => setInspectedTerm(null)}
