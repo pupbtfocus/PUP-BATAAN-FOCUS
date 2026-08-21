@@ -16,13 +16,13 @@ export interface SidebarProps {
 function getRoleBadgeClasses(roleTitle?: string): string {
   const role = (roleTitle || "").toLowerCase().trim();
   if (role.includes("super")) {
-    return "bg-purple-500/10 text-purple-400 border border-purple-500/20";
+    return "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20";
   }
   if (role.includes("faculty")) {
-    return "bg-blue-500/10 text-blue-400 border border-blue-500/20";
+    return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20";
   }
   // Default: Admin
-  return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+  return "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
 }
 
 function getSidebarInitials(name?: string | null): string {
@@ -49,15 +49,17 @@ export function SidebarButton({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-lg border px-3 py-1.5 text-left transition ${
+      className={`w-full text-left px-3 py-2 text-xs transition ${
         active
-          ? "border-amber-400 bg-amber-400/10 text-amber-300 font-semibold"
-          : "border-slate-800 bg-[#070c18] hover:bg-[#0d152a] text-slate-300 hover:text-slate-100"
+          ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-900 dark:border-amber-400 dark:bg-amber-500/15 dark:text-amber-400 font-semibold rounded-r-lg"
+          : "rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
       }`}
     >
-      <p className="text-xs font-semibold">{title}</p>
+      <p className="text-xs">{title}</p>
       {description ? (
-        <p className="mt-0.5 text-[11px] text-slate-400">{description}</p>
+        <p className={`mt-0.5 text-[11px] font-normal ${active ? "text-amber-800/80 dark:text-amber-300/80" : "text-slate-500 dark:text-slate-400"}`}>
+          {description}
+        </p>
       ) : null}
     </button>
   );
@@ -94,35 +96,35 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 rounded-xl bg-slate-900/60 border border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm">
+      <div className="my-1.5 rounded-xl bg-slate-100/70 border border-slate-200/90 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm transition-colors">
         <div className="relative mb-2">
           {profileImageUrl && !hasAvatarError ? (
             <img
               src={profileImageUrl}
               alt={adminName ?? "User"}
-              className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950 shadow-md ring-2 ring-slate-950"
+              className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950"
               onError={() => setHasAvatarError(true)}
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 font-bold text-xs flex items-center justify-center shadow-md ring-2 ring-slate-950">
+            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-sm">
               {getSidebarInitials(adminName)}
             </div>
           )}
-          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-900" title="Active" />
+          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="Active" />
         </div>
 
-        <p className="font-semibold text-white text-center text-xs sm:text-sm">
+        <p className="font-semibold text-slate-900 dark:text-white text-center text-xs sm:text-sm">
           {extractFirstName(adminName, roleTitle)}
         </p>
 
-        <div className="my-1.5 h-px w-full bg-slate-800" />
+        <div className="my-1.5 h-px w-full bg-slate-200 dark:bg-slate-800" />
 
-        <span className={`mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full ${getRoleBadgeClasses(roleTitle)}`}>
+        <span className={`mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full border ${getRoleBadgeClasses(roleTitle)}`}>
           {roleTitle}
         </span>
       </div>
 
-      <nav className="mt-1.5 space-y-1 flex-1 overflow-y-auto">
+      <nav className="mt-1.5 space-y-0.5 flex-1 overflow-y-auto">
         <SidebarButton
           active={activeSection === "dashboard"}
           title="Dashboard"
@@ -140,36 +142,36 @@ export function SidebarContent({
         />
 
         {/* Collapsible Parent Item: Academic Cycle Management */}
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           <button
             type="button"
             onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
-            className={`w-full flex items-center justify-between rounded-lg border px-3 py-1.5 text-left transition bg-[#070c18] hover:bg-[#0d152a] ${
+            className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs transition ${
               isAcademicCycleActive
-                ? "border-amber-500/40 text-amber-300"
-                : "border-slate-800 text-slate-300 hover:text-slate-100"
+                ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-900 dark:border-amber-400 dark:bg-amber-500/15 dark:text-amber-400 font-semibold rounded-r-lg"
+                : "rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
             }`}
           >
-            <span className="text-xs font-semibold">
+            <span className="text-xs">
               Academic Cycle Management
             </span>
             {isAcademicCycleOpen ? (
-              <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0 ml-1" />
+              <ChevronDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
             ) : (
-              <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0 ml-1" />
+              <ChevronRight className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
             )}
           </button>
 
           {/* Child Sub-items (Indented with left border indicator) */}
           {isAcademicCycleOpen && (
-            <div className="border-l border-slate-800 ml-2.5 pl-2 flex flex-col gap-1 mt-1">
+            <div className="border-l border-slate-200 dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
               <button
                 type="button"
                 onClick={() => handleSelect("academicTerms")}
-                className={`w-full text-left px-2.5 py-1 text-xs rounded-md border transition-all ${
+                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all ${
                   activeSection === "academicTerms"
-                    ? "border-amber-500/30 bg-amber-500/10 text-amber-400 font-semibold"
-                    : "border-slate-800 bg-[#070c18] text-slate-400 hover:text-slate-200 hover:bg-[#0d152a] hover:border-slate-700"
+                    ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
                 }`}
               >
                 Academic Terms
@@ -177,10 +179,10 @@ export function SidebarContent({
               <button
                 type="button"
                 onClick={() => handleSelect("submissionWindow")}
-                className={`w-full text-left px-2.5 py-1 text-xs rounded-md border transition-all ${
+                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all ${
                   activeSection === "submissionWindow"
-                    ? "border-amber-500/30 bg-amber-500/10 text-amber-400 font-semibold"
-                    : "border-slate-800 bg-[#070c18] text-slate-400 hover:text-slate-200 hover:bg-[#0d152a] hover:border-slate-700"
+                    ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
                 }`}
               >
                 Submission Window
@@ -201,7 +203,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 flex-col overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-2.5 shadow-lg z-30">
+    <aside className="hidden md:flex fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 flex-col overflow-y-auto rounded-none border-r border-l-0 border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-950 p-2.5 shadow-sm z-30 transition-colors duration-200">
       <SidebarContent {...props} />
     </aside>
   );

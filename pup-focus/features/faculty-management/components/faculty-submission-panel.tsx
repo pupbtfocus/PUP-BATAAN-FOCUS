@@ -171,10 +171,10 @@ function getStatusDotColor(
 function getStatusTextColor(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
-  if (status === "Validated") return "text-emerald-400";
-  if (status === "Rejected") return "text-amber-400";
-  if (status === "Not Submitted") return "text-slate-500";
-  return "text-blue-400";
+  if (status === "Validated") return "text-emerald-700 dark:text-emerald-400";
+  if (status === "Rejected") return "text-amber-700 dark:text-amber-400";
+  if (status === "Not Submitted") return "text-slate-500 dark:text-slate-500";
+  return "text-blue-700 dark:text-blue-400";
 }
 
 function getStatusTextColorClass(
@@ -187,12 +187,12 @@ function getStatusBadgeTone(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
   if (status === "Validated")
-    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-400";
+    return "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400";
   if (status === "Rejected")
-    return "border-amber-500/20 bg-amber-500/10 text-amber-400";
+    return "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400";
   if (status === "Not Submitted")
-    return "border-slate-700/50 bg-slate-800/60 text-slate-400";
-  return "border-blue-500/20 bg-blue-500/10 text-blue-400";
+    return "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700/50 dark:bg-slate-800/60 dark:text-slate-400";
+  return "border-blue-200 bg-blue-100 text-blue-800 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400";
 }
 
 function getStatusIcon(
@@ -1229,15 +1229,15 @@ function FacultySubmissionPanelContent({
       )}
 
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-2.5 shadow-lg">
-        <div className="my-1.5 rounded-xl bg-slate-900/60 p-2.5 flex flex-col items-center border border-slate-800/80 shadow-sm">
-          <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-200/80 bg-[#F6F8FC] dark:border-slate-800 dark:bg-slate-950 p-2.5 shadow-sm transition-colors duration-200">
+        <div className="my-1.5 rounded-xl bg-white/80 border border-slate-200/80 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm transition-colors">
+          <p className="mt-0.5 font-semibold text-slate-900 dark:text-white text-center text-xs sm:text-sm">
             {facultyFirstName}
           </p>
 
-          <div className="my-1.5 h-px w-full bg-slate-800" />
+          <div className="my-1.5 h-px w-full bg-slate-200 dark:bg-slate-800" />
 
-          <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20">
             Faculty
           </span>
         </div>
@@ -1262,14 +1262,14 @@ function FacultySubmissionPanelContent({
                 key={key}
                 type="button"
                 onClick={() => navigateToView(key as PanelView)}
-                className={`flex w-full items-center gap-2.5 rounded-lg border px-3 py-1.5 text-left text-xs transition ${
+                className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs transition-all ${
                   isActive
-                    ? "border-amber-400 bg-amber-400/10 text-amber-300 font-semibold"
-                    : "border-slate-800 bg-slate-950/60 text-slate-200 hover:border-slate-600 hover:bg-slate-900"
+                    ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                    : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                 }`}
               >
-                <Icon size={16} className={isActive ? "text-amber-300" : "text-slate-400"} />
-                <span className="font-medium">{label}</span>
+                <Icon size={16} className={isActive ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"} />
+                <span>{label}</span>
               </button>
             );
           })}
@@ -1283,27 +1283,27 @@ function FacultySubmissionPanelContent({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-64 max-w-[80%] bg-slate-950 h-full p-3 border-r border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Navigation</span>
+          <aside className="relative w-64 max-w-[80%] bg-[#F6F8FC] dark:bg-slate-950 h-full p-3 border-r border-slate-200 dark:border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Navigation</span>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition"
                 aria-label="Close navigation"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="my-2 rounded-xl bg-slate-900/60 p-2.5 flex flex-col items-center border border-slate-800/80 shadow-sm">
-              <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
+            <div className="my-2 rounded-xl bg-white/80 border border-slate-200/80 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm transition-colors">
+              <p className="mt-0.5 font-semibold text-slate-900 dark:text-white text-center text-xs sm:text-sm">
                 {facultyFirstName}
               </p>
 
-              <div className="my-1.5 h-px w-full bg-slate-800" />
+              <div className="my-1.5 h-px w-full bg-slate-200 dark:bg-slate-800" />
 
-              <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20">
                 Faculty
               </span>
             </div>
@@ -1328,14 +1328,14 @@ function FacultySubmissionPanelContent({
                     key={key}
                     type="button"
                     onClick={() => navigateToView(key as PanelView)}
-                    className={`flex w-full items-center gap-2.5 rounded-lg border px-3 py-1.5 text-left text-xs transition ${
+                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs transition-all ${
                       isActive
-                        ? "border-amber-400 bg-amber-400/10 text-amber-300 font-semibold"
-                        : "border-slate-700 bg-slate-950/60 text-slate-200 hover:border-slate-500 hover:bg-slate-900"
+                        ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                        : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                     }`}
                   >
-                    <Icon size={16} className={isActive ? "text-amber-300" : "text-slate-400"} />
-                    <span className="font-medium">{label}</span>
+                    <Icon size={16} className={isActive ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"} />
+                    <span>{label}</span>
                   </button>
                 );
               })}
@@ -1345,12 +1345,12 @@ function FacultySubmissionPanelContent({
       )}
 
       <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-lg">
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-950">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm transition-colors duration-200">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeView === "submit" ? (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                     Submit Requirements
                   </h1>
                 </div>
@@ -1359,9 +1359,9 @@ function FacultySubmissionPanelContent({
             {activeView === "dashboard" && (
               <article className="space-y-6">
                 {/* Top Hero Section */}
-                <section className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-r from-slate-900/90 via-slate-900/80 to-slate-950 p-6 sm:p-7 shadow-sm">
+                <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-r from-white via-slate-50 to-white dark:border-slate-800/80 dark:bg-gradient-to-r dark:from-slate-900/90 dark:via-slate-900/80 dark:to-slate-950 p-6 sm:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:shadow-none transition-colors">
                   {/* Subtle Campus Photo Backdrop Overlay */}
-                  <div className="absolute inset-0 pointer-events-none opacity-[0.14] mix-blend-luminosity overflow-hidden">
+                  <div className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.14] mix-blend-luminosity overflow-hidden">
                     <Image
                       src={LOGIN_PAGE_IMAGES[0]}
                       alt="PUP Bataan campus backdrop"
@@ -1370,14 +1370,14 @@ function FacultySubmissionPanelContent({
                       className="object-cover object-center"
                       priority
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/60 to-slate-950/90" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/50 to-white/90 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950/90" />
                   </div>
 
                   <div className="relative z-10 space-y-1">
-                    <h1 className="text-xl sm:text-2xl font-semibold text-slate-100 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                       Welcome back, {facultyFirstName}
                     </h1>
-                    <p className="text-xs text-slate-400 font-normal">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
                       {submissionWindow
                         ? `A.Y. ${submissionWindow.academicYear} • ${submissionWindow.semester}`
                         : "A.Y. 2026-2027 • 1st Semester"}
@@ -1386,26 +1386,26 @@ function FacultySubmissionPanelContent({
                 </section>
 
                 {/* Top Stat Summary Grid (3 Cards) */}
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Card 1: Overall Progress */}
-                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400">Overall Progress</span>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Overall Progress</span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20 px-2 py-0.5 rounded-full">
                         {Math.round(((displayedStatusCounts?.validated ?? 0) / (displayedStatusCounts?.total || 6)) * 100)}%
                       </span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {displayedStatusCounts?.validated ?? 0} of {displayedStatusCounts?.total ?? 6} Validated
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {isAllValidated
                           ? "All documents completed and validated"
                           : `${(displayedStatusCounts?.total ?? 6) - (displayedStatusCounts?.validated ?? 0)} items awaiting completion`}
                       </p>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                       <div
                         className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
                         style={{
@@ -1416,34 +1416,34 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Card 2: Submission Window Status */}
-                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400">Window Status</span>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Window Status</span>
                       <span
                         className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
                           hasActiveSchedule && !isWindowClosed
-                            ? "text-blue-400 bg-blue-500/10 border-blue-500/20"
-                            : "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                            ? "text-blue-800 bg-blue-100 border-blue-200 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20"
+                            : "text-amber-800 bg-amber-100 border-amber-200 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20"
                         }`}
                       >
                         {hasActiveSchedule && !isWindowClosed ? "Open" : "Closed"}
                       </span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {!hasActiveSchedule
                           ? "No Active Window"
                           : isWindowClosed
                             ? "Window Closed"
                             : "Submission Open"}
                       </h3>
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {windowDeadlineDisplay
                           ? `Deadline: ${windowDeadlineDisplay}`
                           : "Schedule not configured"}
                       </p>
                     </div>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       {hasActiveSchedule && !isWindowClosed
                         ? "Uploads and resubmissions are currently enabled"
                         : "Document submissions are currently locked"}
@@ -1451,19 +1451,19 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Card 3: Action Required */}
-                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400">Action Required</span>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Action Required</span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {(displayedStatusCounts?.notSubmitted ?? 0) + (displayedStatusCounts?.rejected ?? 0)} Items
                       </h3>
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {displayedStatusCounts?.notSubmitted ?? 0} Not Submitted • {displayedStatusCounts?.rejected ?? 0} Needs Revision
                       </p>
                     </div>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       {(displayedStatusCounts?.pending ?? 0) > 0
                         ? `${displayedStatusCounts?.pending} item(s) currently under admin review`
                         : "Direct upload available for pending items"}
@@ -1475,20 +1475,20 @@ function FacultySubmissionPanelContent({
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   {/* Left Column (2 Span - Action Required Checklist) */}
                   <div className="lg:col-span-2 space-y-4">
-                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 sm:p-6 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
+                    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 sm:p-6 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200 dark:border-slate-800/80">
                         <div>
-                          <h2 className="text-sm font-semibold text-slate-100 tracking-normal">
+                          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
                             Pending Requirements
                           </h2>
-                          <p className="text-xs text-slate-400 mt-0.5">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                             Documents awaiting your submission or revision for this semester.
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => navigateToView("status")}
-                          className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium transition cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
                         >
                           <span>View all 6</span>
                           <ArrowRight className="h-3 w-3" />
@@ -1496,40 +1496,40 @@ function FacultySubmissionPanelContent({
                       </div>
 
                       {isLoadingStatuses ? (
-                        <p className="text-xs text-slate-400 py-6 text-center">Loading requirements...</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 py-6 text-center">Loading requirements...</p>
                       ) : (
                         <div className="mt-4">
                           {displayedRequirementStatuses.filter(
                             (req) => req.status === "Not Submitted" || req.status === "Rejected"
                           ).length === 0 ? (
                             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center space-y-2">
-                              <CheckCircle2 className="h-8 w-8 text-emerald-400 mx-auto" />
-                              <h3 className="text-sm font-semibold text-slate-100">
+                              <CheckCircle2 className="h-8 w-8 text-emerald-500 dark:text-emerald-400 mx-auto" />
+                              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 Great job! No pending requirements.
                               </h3>
-                              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                              <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
                                 All 6 required faculty documents have been submitted or validated for this semester.
                               </p>
                               <button
                                 type="button"
                                 onClick={() => navigateToView("status")}
-                                className="mt-2 inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer"
+                                className="mt-2 inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer"
                               >
                                 View Requirements Table
                               </button>
                             </div>
                           ) : (
-                            <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl divide-y divide-slate-800/60 overflow-hidden">
+                            <div className="bg-slate-50/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 rounded-xl divide-y divide-slate-200/80 dark:divide-slate-800/60 overflow-hidden">
                               {displayedRequirementStatuses
                                 .filter((req) => req.status === "Not Submitted" || req.status === "Rejected")
                                 .map((req) => (
                                   <div
                                     key={req.code}
-                                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-800/20 transition-colors"
+                                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-100/80 dark:hover:bg-slate-800/20 transition-colors"
                                   >
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2">
-                                        <h4 className="text-sm font-medium text-slate-200 truncate">
+                                        <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate">
                                           {REQUIREMENT_LABEL[req.code]}
                                         </h4>
                                         <div className={`inline-flex items-center gap-1 text-[11px] font-normal ${getStatusTextColor(req.status)}`}>
@@ -1538,8 +1538,8 @@ function FacultySubmissionPanelContent({
                                         </div>
                                       </div>
                                       {req.status === "Rejected" && (
-                                        <p className="text-xs text-amber-300/90 flex items-center gap-1.5 mt-1.5 font-normal">
-                                          <AlertCircle className="h-3.5 w-3.5 text-amber-400/90 shrink-0" />
+                                        <p className="text-xs text-amber-700 dark:text-amber-300/90 flex items-center gap-1.5 mt-1.5 font-normal">
+                                          <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
                                           <span className="italic truncate">
                                             &ldquo;{req.adminRemarks || req.admin_remarks || req.feedback || "Revision requested. Please check and resubmit."}&rdquo;
                                           </span>
@@ -1570,15 +1570,15 @@ function FacultySubmissionPanelContent({
                   {/* Right Column (1 Span - Recent Activity) */}
                   <div className="space-y-6">
                     {/* Activity Feed Card */}
-                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-4">
-                      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
-                        <h3 className="text-sm font-semibold text-slate-100 tracking-normal">
+                    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-4 transition-colors">
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800/80">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
                           Recent Activity
                         </h3>
                         <button
                           type="button"
                           onClick={openHistoryModal}
-                          className="text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                          className="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer"
                         >
                           View all
                         </button>
@@ -1589,19 +1589,19 @@ function FacultySubmissionPanelContent({
                           {deduplicatedRecentActivities.map((sub) => (
                             <div
                               key={sub.id}
-                              className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/60"
+                              className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800/60 transition-colors"
                             >
                               <div className="mt-0.5 shrink-0">
                                 <span className={`h-2 w-2 rounded-full block ${getStatusDotColor(sub.status)}`} />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-slate-200 truncate">
+                                <p className="text-xs font-medium text-slate-900 dark:text-slate-200 truncate">
                                   {REQUIREMENT_LABEL[sub.requirementCode]}
                                 </p>
-                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
                                   Status: <span className={getStatusTextColor(sub.status)}>{getStatusText(sub.status)}</span>
                                 </p>
-                                <p className="text-[10px] text-slate-500 mt-0.5">
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                                   {formatSubmittedDateTime(sub.submittedAt) ?? sub.submittedAt}
                                 </p>
                               </div>
@@ -1609,7 +1609,7 @@ function FacultySubmissionPanelContent({
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-500 py-3 text-center">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 py-3 text-center">
                           No submission activity recorded yet.
                         </p>
                       )}
@@ -1892,12 +1892,12 @@ function FacultySubmissionPanelContent({
             {activeView === "status" && (
               <article className="space-y-5 p-2 sm:p-4 md:p-5">
                 {/* Minimalist Header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 pb-4">
                   <div>
-                    <h1 className="text-lg font-medium text-slate-100 tracking-tight">
+                    <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                       Requirements Management
                     </h1>
-                    <p className="mt-0.5 text-xs text-slate-400 font-normal">
+                    <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 font-normal">
                       {!hasActiveSchedule ? (
                         "No Active Academic Schedule"
                       ) : (
@@ -1905,7 +1905,7 @@ function FacultySubmissionPanelContent({
                           A.Y. {statusAcademicYear || submissionWindow?.academicYear || "2027-2028"} •{" "}
                           {statusSemester || submissionWindow?.semester || "1st Semester"}
                           {isAllValidated && (
-                            <span className="ml-2 text-emerald-400 font-medium">• Validated</span>
+                            <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold">• Validated</span>
                           )}
                         </>
                       )}
@@ -1915,7 +1915,7 @@ function FacultySubmissionPanelContent({
                     <button
                       type="button"
                       onClick={openHistoryModal}
-                      className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
                     >
                       <History className="h-3.5 w-3.5" />
                       Submission History
@@ -1929,7 +1929,7 @@ function FacultySubmissionPanelContent({
                           "noopener,noreferrer",
                         )
                       }
-                      className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
                     >
                       <Calendar className="h-3.5 w-3.5" />
                       University Calendar
@@ -1939,9 +1939,9 @@ function FacultySubmissionPanelContent({
                       onClick={() => void fetchStatuses()}
                       disabled={isLoadingStatuses}
                       title="Refresh status"
-                      className="inline-flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-sm"
                     >
-                      <RotateCw className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin text-amber-400" : ""}`} />
+                      <RotateCw className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin text-amber-500" : ""}`} />
                       <span className="sr-only">Refresh</span>
                     </button>
                   </div>
@@ -1951,29 +1951,29 @@ function FacultySubmissionPanelContent({
                 {displayedStatusCounts && !isLoadingStatuses && (
                   <div className="space-y-2.5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                      <span className="font-medium text-slate-300">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {displayedStatusCounts.validated} of {displayedStatusCounts.total} Completed ({Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100)}%)
                       </span>
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
                         <span className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
                           <span>{displayedStatusCounts.validated} Validated</span>
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-blue-400" />
+                          <span className="h-2 w-2 rounded-full bg-blue-500" />
                           <span>{isAllValidated ? 0 : displayedStatusCounts.pending} Pending</span>
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-amber-400" />
+                          <span className="h-2 w-2 rounded-full bg-amber-500" />
                           <span>{displayedStatusCounts.rejected} Revision</span>
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-slate-600" />
+                          <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-600" />
                           <span>{isAllValidated ? 0 : displayedStatusCounts.notSubmitted} Not Submitted</span>
                         </span>
                       </div>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                       <div
                         className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
                         style={{
@@ -1985,8 +1985,8 @@ function FacultySubmissionPanelContent({
                 )}
 
                 {(!hasActiveSchedule || isWindowClosed) && (
-                  <div className="p-3 sm:p-3.5 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs text-slate-300">
-                    <span className="font-medium text-amber-300 mr-1.5">
+                  <div className="p-3 sm:p-3.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-xs text-amber-950 dark:text-amber-200">
+                    <span className="font-semibold text-amber-900 dark:text-amber-300 mr-1.5">
                       Submission Window Closed:
                     </span>
                     {!hasActiveSchedule
@@ -1997,24 +1997,24 @@ function FacultySubmissionPanelContent({
 
                 {/* Single Unified Table/List Container */}
                 {isLoadingStatuses ? (
-                  <p className="text-sm text-slate-400 py-6 text-center">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 py-6 text-center">
                     Loading requirement statuses...
                   </p>
                 ) : statusError ? (
-                  <p className="text-sm text-red-400 py-4">{statusError}</p>
+                  <p className="text-sm text-red-500 dark:text-red-400 py-4">{statusError}</p>
                 ) : (
-                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl divide-y divide-slate-800/60 overflow-hidden shadow-sm">
+                  <div className="bg-white border border-slate-200 shadow-sm shadow-slate-200/50 dark:bg-slate-900/60 dark:border-slate-800/80 dark:shadow-none rounded-2xl divide-y divide-slate-200 dark:divide-slate-800/60 overflow-hidden transition-colors">
                     {displayedRequirementStatuses.map((req) => (
                       <div
                         key={req.code}
                         id={`requirement-${req.code}`}
-                        className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-800/30 transition-colors"
+                        className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
                       >
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-slate-200 truncate">
+                          <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                             {REQUIREMENT_LABEL[req.code]}
                           </h4>
-                          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500">
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
                             {req.submittedAt && formatSubmittedDateTime(req.submittedAt) ? (
                               <span>Submitted: {formatSubmittedDateTime(req.submittedAt)}</span>
                             ) : (
@@ -2026,8 +2026,8 @@ function FacultySubmissionPanelContent({
                           </div>
                           {/* Inline Revision Note */}
                           {req.status === "Rejected" && (
-                            <p className="text-xs text-amber-300/90 flex items-center gap-1.5 mt-1 font-normal">
-                              <AlertCircle className="h-3.5 w-3.5 text-amber-400/90 shrink-0" />
+                            <p className="text-xs text-amber-800 dark:text-amber-300/90 flex items-center gap-1.5 mt-1 font-normal">
+                              <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
                               <span className="italic truncate">
                                 &ldquo;{req.adminRemarks || req.admin_remarks || req.feedback || "Revision requested. Please check and resubmit."}&rdquo;
                               </span>
@@ -2050,7 +2050,7 @@ function FacultySubmissionPanelContent({
                                 type="button"
                                 onClick={() => openDirectUploadModal(req.code)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
-                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                               >
                                 <Upload className="h-3.5 w-3.5" />
                                 Submit
@@ -2063,7 +2063,7 @@ function FacultySubmissionPanelContent({
                                 type="button"
                                 onClick={() => openDirectUploadModal(req.code)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
-                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                               >
                                 <Upload className="h-3.5 w-3.5" />
                                 Resubmit
@@ -2076,7 +2076,7 @@ function FacultySubmissionPanelContent({
                                 <button
                                   type="button"
                                   onClick={() => openSubmissionPreview(req)}
-                                  className="relative inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+                                  className="relative inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer"
                                 >
                                   {Boolean(
                                     req.feedback &&
@@ -2095,7 +2095,7 @@ function FacultySubmissionPanelContent({
                                 <button
                                   type="button"
                                   onClick={() => openVersionHistory(req)}
-                                  className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer"
                                 >
                                   <History className="h-3.5 w-3.5" />
                                   History
@@ -2120,13 +2120,13 @@ function FacultySubmissionPanelContent({
                 onClick={closeDirectUploadModal}
               >
                 <div
-                  className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden"
+                  className="w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between border-b border-slate-800 px-6 py-5">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-5">
                     <h3
                       id="upload-modal-title"
-                      className="text-xl font-semibold text-slate-100"
+                      className="text-xl font-semibold text-slate-900 dark:text-slate-100"
                     >
                       Upload {REQUIREMENT_LABEL[selectedRequirementForUpload]}
                     </h3>
@@ -2134,7 +2134,7 @@ function FacultySubmissionPanelContent({
                       type="button"
                       onClick={closeDirectUploadModal}
                       disabled={isUploadingDirect}
-                      className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100 disabled:opacity-50"
+                      className="rounded-full border border-slate-200 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 disabled:opacity-50"
                       aria-label="Close upload modal"
                     >
                       <X className="h-4 w-4" />
@@ -2143,7 +2143,7 @@ function FacultySubmissionPanelContent({
 
                   <form onSubmit={handleDirectUploadSubmit} className="p-6 space-y-5">
                     <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-amber-200/90">
+                      <label className="block text-sm font-semibold text-slate-900 dark:text-amber-200/90">
                         Upload Document File
                       </label>
                         {!directUploadFile ? (
@@ -2163,15 +2163,15 @@ function FacultySubmissionPanelContent({
                               const input = document.getElementById("directFileInput");
                               if (input) input.click();
                             }}
-                            className={`border-2 border-dashed border-amber-500/30 hover:border-amber-500/60 rounded-2xl p-6 text-center bg-black/20 hover:bg-black/30 transition-all cursor-pointer ${
-                              isDraggingFile ? "border-amber-400 bg-amber-400/10 text-amber-200" : ""
+                            className={`border-2 border-dashed border-amber-500/40 hover:border-amber-500/70 rounded-2xl p-6 text-center bg-amber-500/5 hover:bg-amber-500/10 transition-all cursor-pointer ${
+                              isDraggingFile ? "border-amber-500 bg-amber-500/15 text-amber-900 dark:text-amber-200" : ""
                             }`}
                           >
-                            <UploadCloud className="w-10 h-10 mx-auto text-amber-400/80 mb-2 animate-pulse" />
-                            <p className="text-sm font-medium text-amber-100">
-                              Drag and drop your file here, or <span className="text-amber-400 underline">browse</span>
+                            <UploadCloud className="w-10 h-10 mx-auto text-amber-600 dark:text-amber-400/80 mb-2 animate-pulse" />
+                            <p className="text-sm font-semibold text-slate-900 dark:text-amber-100">
+                              Drag and drop your file here, or <span className="text-amber-600 dark:text-amber-400 underline">browse</span>
                             </p>
-                            <p className="text-xs text-amber-300/60 mt-1">
+                            <p className="text-xs text-slate-500 dark:text-amber-300/60 mt-1">
                               Supported formats: PDF, DOCX, XLSX (Max 10MB)
                             </p>
                             <input
@@ -2186,16 +2186,16 @@ function FacultySubmissionPanelContent({
                             />
                           </div>
                         ) : (
-                          <div className="relative flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-red-950/30 to-black/40 border border-amber-500/40 shadow-lg animate-in fade-in zoom-in-95">
+                          <div className="relative flex items-center justify-between p-4 rounded-2xl bg-amber-50/70 dark:bg-gradient-to-r dark:from-amber-950/40 dark:via-red-950/30 dark:to-black/40 border border-amber-500/40 shadow-sm animate-in fade-in zoom-in-95">
                             <div className="flex items-center space-x-3 overflow-hidden">
-                              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
+                              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 shrink-0">
                                 <FileText className="w-6 h-6" />
                               </div>
                               <div className="truncate">
-                                <p className="text-sm font-semibold text-amber-100 truncate">
+                                <p className="text-sm font-semibold text-slate-900 dark:text-amber-100 truncate">
                                   {directUploadFile.name}
                                 </p>
-                                <p className="text-xs text-amber-300/70">
+                                <p className="text-xs text-slate-600 dark:text-amber-300/70">
                                   {(directUploadFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to submit
                                 </p>
                               </div>
@@ -2203,7 +2203,7 @@ function FacultySubmissionPanelContent({
                             <button
                               type="button"
                               onClick={() => setDirectUploadFile(null)}
-                              className="p-2 rounded-xl text-amber-300/60 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                              className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
                               title="Remove file"
                             >
                               <X className="w-5 h-5" />
@@ -2215,14 +2215,14 @@ function FacultySubmissionPanelContent({
                     <div>
                       <label
                         htmlFor="directUploadRemarks"
-                        className="block text-xs uppercase tracking-[0.18em] font-semibold text-amber-300 mb-2"
+                        className="block text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300 mb-2"
                       >
                         Notes / Remarks for Reviewer (Optional)
                       </label>
                       <textarea
                         id="directUploadRemarks"
                         rows={3}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
                         placeholder="Add optional notes or remarks for the reviewer..."
                         value={directUploadRemarks}
                         onChange={(e) => setDirectUploadRemarks(e.target.value)}
@@ -2231,22 +2231,22 @@ function FacultySubmissionPanelContent({
 
                     {directUploadMessage && (
                       <p
-                        className={`text-sm rounded-lg p-3 border ${
+                        className={`text-sm rounded-xl p-3 border ${
                           directUploadMessage.startsWith("Error")
-                            ? "border-red-800 bg-red-950/40 text-red-300"
-                            : "border-emerald-800 bg-emerald-950/40 text-emerald-300"
+                            ? "border-red-500/30 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300"
+                            : "border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
                         }`}
                       >
                         {directUploadMessage}
                       </p>
                     )}
 
-                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                       <button
                         type="button"
                         onClick={closeDirectUploadModal}
                         disabled={isUploadingDirect}
-                        className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-500 disabled:opacity-50"
+                        className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 font-medium"
                       >
                         Cancel
                       </button>
@@ -2357,38 +2357,38 @@ function FacultySubmissionPanelContent({
                 onClick={closeHistoryModal}
               >
                 <div
-                  className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+                  className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between border-b border-slate-800 px-6 py-5">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-5">
                     <h3
                       id="submission-history-title"
-                      className="text-xl font-semibold text-slate-100"
+                      className="text-xl font-semibold text-slate-900 dark:text-slate-100"
                     >
                       Submission History
                     </h3>
                     <button
                       type="button"
                       onClick={closeHistoryModal}
-                      className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                      className="rounded-full border border-slate-200 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                       aria-label="Close history modal"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/60 px-6 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-6 py-3">
                     <div className="flex flex-wrap items-center gap-4">
                       <div className="flex items-center gap-2">
                         <label
                           htmlFor="modalHistoryAcademicYear"
-                          className="text-xs uppercase tracking-wider text-slate-400"
+                          className="text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 font-medium"
                         >
                           School Year:
                         </label>
                         <select
                           id="modalHistoryAcademicYear"
-                          className="rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 outline-none focus:ring focus:ring-amber-300/30"
+                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                           value={historyAcademicYear}
                           onChange={(event) =>
                             setHistoryAcademicYear(event.target.value)
@@ -2405,13 +2405,13 @@ function FacultySubmissionPanelContent({
                       <div className="flex items-center gap-2">
                         <label
                           htmlFor="modalHistorySemester"
-                          className="text-xs uppercase tracking-wider text-slate-400"
+                          className="text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 font-medium"
                         >
                           Semester:
                         </label>
                         <select
                           id="modalHistorySemester"
-                          className="rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 outline-none focus:ring focus:ring-amber-300/30"
+                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                           value={historySemester}
                           onChange={(event) =>
                             setHistorySemester(
@@ -2443,28 +2443,28 @@ function FacultySubmissionPanelContent({
 
                   <div className="flex-1 overflow-y-auto p-6 space-y-3">
                     {isLoadingHistory ? (
-                      <p className="text-sm text-slate-400">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         Loading submission history...
                       </p>
                     ) : historyError ? (
-                      <p className="text-sm text-red-400">{historyError}</p>
+                      <p className="text-sm text-red-500 dark:text-red-400">{historyError}</p>
                     ) : filteredPastSubmissions.length > 0 ? (
                       filteredPastSubmissions.map((submission) => (
                         <article
                           key={submission.id}
-                          className="rounded-xl border border-slate-800 bg-slate-950 p-4 transition hover:border-slate-700"
+                          className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 transition hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
                         >
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="font-medium text-slate-100">
+                                <p className="font-semibold text-slate-900 dark:text-slate-100">
                                   {REQUIREMENT_LABEL[submission.requirementCode]}
                                 </p>
-                                <span className="inline-flex items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-300">
+                                <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
                                   {submission.semester} • S.Y. {submission.academicYear}
                                 </span>
                               </div>
-                              <p className="mt-1.5 text-xs text-slate-500">
+                              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                                 Submitted on{" "}
                                 {formatSubmittedDateTime(
                                   submission.submittedAt,
@@ -2485,7 +2485,7 @@ function FacultySubmissionPanelContent({
                                 onClick={() =>
                                   openHistorySubmissionPreview(submission)
                                 }
-                                className="relative inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+                                className="relative inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer"
                               >
                                 {Boolean(
                                   (submission.remarks || submission.feedback || submission.adminRemarks || submission.admin_remarks) &&
@@ -2506,10 +2506,10 @@ function FacultySubmissionPanelContent({
                           {/* Historical Admin Feedback Callout */}
                           {(submission.status === "Rejected" || submission.status === "Validated") && (
                             <div
-                              className={`mt-2.5 flex items-center gap-2 rounded-md border p-2.5 text-xs font-normal leading-relaxed ${
+                              className={`mt-2.5 flex items-center gap-2 rounded-xl border p-2.5 text-xs font-normal leading-relaxed ${
                                 submission.status === "Rejected"
-                                  ? "border-amber-500/15 bg-amber-500/5 text-amber-300/90"
-                                  : "border-emerald-500/15 bg-emerald-500/5 text-emerald-300/90"
+                                  ? "border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 text-amber-900 dark:text-amber-300/90"
+                                  : "border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/5 text-emerald-900 dark:text-emerald-300/90"
                               }`}
                             >
                               <span className="font-semibold shrink-0 text-[10px] uppercase tracking-wider">
@@ -2523,14 +2523,14 @@ function FacultySubmissionPanelContent({
                         </article>
                       ))
                     ) : (
-                      <p className="rounded-xl border border-dashed border-slate-800 bg-slate-950/50 px-4 py-8 text-center text-sm text-slate-400">
+                      <p className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
                         No past submissions found for the selected school year
                         and semester.
                       </p>
                     )}
                   </div>
 
-                  <div className="flex justify-end border-t border-slate-800 px-6 py-4">
+                  <div className="flex justify-end border-t border-slate-200 dark:border-slate-800 px-6 py-4">
                     <Button
                       type="button"
                       variant="secondary"
@@ -2549,17 +2549,17 @@ function FacultySubmissionPanelContent({
                 onClick={closeSubmissionPreview}
               >
                 <div
-                  className="w-full max-w-4xl rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+                  className="w-full max-w-4xl rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
-                    <h3 className="text-xl font-semibold text-slate-100">
+                  <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-5">
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
                       {previewSubmission.title}
                     </h3>
                     <button
                       type="button"
                       onClick={closeSubmissionPreview}
-                      className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                      className="rounded-full border border-slate-200 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                       aria-label="Close preview"
                     >
                       <X className="h-4 w-4" />
@@ -2567,7 +2567,7 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
-                    <div className="min-h-[60vh] overflow-hidden rounded-2xl border border-slate-700 bg-slate-950">
+                    <div className="min-h-[60vh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-950">
                       <iframe
                         title={`${previewSubmission.title} preview`}
                         src={getSubmissionPreviewUrl(
@@ -2578,11 +2578,11 @@ function FacultySubmissionPanelContent({
                     </div>
 
                     <div className="space-y-4">
-                      <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-4">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400 font-semibold">
                           My Note
                         </p>
-                        <p className="mt-2 text-sm leading-6 italic text-slate-200">
+                        <p className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
                           {previewSubmission.note || "No note was added."}
                         </p>
                       </div>
@@ -2591,11 +2591,11 @@ function FacultySubmissionPanelContent({
                       previewSubmission.adminRemarks ||
                       previewSubmission.admin_remarks ||
                       previewSubmission.feedback ? (
-                        <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4">
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-4">
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400 font-semibold">
                             Admin Remarks
                           </p>
-                          <p className="mt-2 text-sm leading-6 italic text-slate-200">
+                          <p className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
                             {previewSubmission.adminRemarks ||
                               previewSubmission.admin_remarks ||
                               previewSubmission.feedback ||
@@ -2607,7 +2607,7 @@ function FacultySubmissionPanelContent({
                             </p>
                           ) : null}
                           {previewSubmission.reviewedAt ? (
-                            <p className="mt-1 text-sm leading-6 text-slate-300">
+                            <p className="mt-1 text-sm leading-6 text-slate-700 dark:text-slate-300">
                               {previewSubmission.reviewedAt}
                             </p>
                           ) : null}
@@ -2615,8 +2615,8 @@ function FacultySubmissionPanelContent({
                       ) : null}
 
                       {previewSubmission.submittedAt ? (
-                        <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-4 text-sm text-slate-700 dark:text-slate-300">
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400 font-semibold">
                             Submitted On
                           </p>
                           <p className="mt-2 leading-6">
@@ -2664,16 +2664,16 @@ function FacultySubmissionPanelContent({
                 aria-modal="true"
                 aria-labelledby="incomplete-requirements-title"
               >
-                <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+                <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium mb-3">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold mb-3">
                         <AlertCircle className="h-3.5 w-3.5" />
                         <span>Action Required</span>
                       </div>
                       <h3
                         id="incomplete-requirements-title"
-                        className="text-base font-semibold text-slate-100 tracking-tight"
+                        className="text-base font-semibold text-slate-900 dark:text-slate-100 tracking-tight"
                       >
                         Requirements Pending Submission
                       </h3>
@@ -2681,33 +2681,33 @@ function FacultySubmissionPanelContent({
                     <button
                       type="button"
                       onClick={dismissIncompleteRequirementsAlert}
-                      className="rounded-lg p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition cursor-pointer"
+                      className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                       aria-label="Close alert"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
 
-                  <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                  <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                     You have documents awaiting submission or revision for this semester. Please submit the missing requirements before the deadline.
                   </p>
 
                   {/* Inner Stats Container */}
-                  <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 my-4 flex items-center justify-between text-xs text-slate-300">
+                  <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 my-4 flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
                     <div className="flex items-center gap-3">
                       <span className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-slate-500" />
+                        <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-500" />
                         <span>{displayedStatusCounts?.notSubmitted ?? 0} Not Submitted</span>
                       </span>
                       {(displayedStatusCounts?.rejected ?? 0) > 0 && (
-                        <span className="flex items-center gap-1.5 text-amber-400 font-medium">
-                          <span className="h-2 w-2 rounded-full bg-amber-400" />
+                        <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-semibold">
+                          <span className="h-2 w-2 rounded-full bg-amber-500" />
                           <span>{displayedStatusCounts?.rejected} Revision</span>
                         </span>
                       )}
                     </div>
                     {windowDeadlineDisplay && (
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
                         Due: {windowDeadlineDisplay}
                       </span>
                     )}
@@ -2717,7 +2717,7 @@ function FacultySubmissionPanelContent({
                     <button
                       type="button"
                       onClick={dismissIncompleteRequirementsAlert}
-                      className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                      className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium px-4 py-2 rounded-xl transition-colors cursor-pointer"
                     >
                       Dismiss
                     </button>
@@ -2727,7 +2727,7 @@ function FacultySubmissionPanelContent({
                         dismissIncompleteRequirementsAlert();
                         navigateToView("status");
                       }}
-                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer"
+                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer"
                     >
                       Go to Requirements Management
                     </button>
@@ -2746,17 +2746,17 @@ function FacultySubmissionPanelContent({
 
             {isSubmitModalOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
-                <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
-                  <div className="flex items-start justify-between border-b border-slate-700 px-6 py-5">
-                    <h3 className="text-lg font-semibold text-amber-300">
+                <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl">
+                  <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-700 px-6 py-5">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-amber-300">
                       Submit Requirement
                     </h3>
                     <button
                       type="button"
                       onClick={closeSubmitModal}
-                      className="rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-100 hover:border-slate-500"
+                      className="rounded-full border border-slate-200 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                     >
-                      Close
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
 
@@ -2766,10 +2766,10 @@ function FacultySubmissionPanelContent({
                         <div className="grid gap-4 md:grid-cols-2">
                           <div className="grid gap-4 md:grid-cols-2">
                             <div>
-                              <label className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                              <label className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300">
                                 School Year
                               </label>
-                              <p className="mt-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                              <p className="mt-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-800 dark:text-slate-100 font-medium">
                                 {form.academicYear
                                   ? `S.Y. ${form.academicYear}`
                                   : "Loading current term..."}
@@ -2777,10 +2777,10 @@ function FacultySubmissionPanelContent({
                             </div>
 
                             <div>
-                              <label className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                              <label className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300">
                                 Semester
                               </label>
-                              <p className="mt-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                              <p className="mt-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-800 dark:text-slate-100 font-medium">
                                 {form.semester}
                               </p>
                             </div>
@@ -2789,14 +2789,14 @@ function FacultySubmissionPanelContent({
 
                         <div>
                           <label
-                            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                            className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300"
                             htmlFor="modalRequirementCode"
                           >
                             Requirement Type
                           </label>
                           <select
                             id="modalRequirementCode"
-                            className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                            className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                             value={form.requirementCode}
                             onChange={(event) =>
                               updateField(
@@ -2826,7 +2826,7 @@ function FacultySubmissionPanelContent({
 
                         <div>
                           <label
-                            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                            className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300"
                             htmlFor="modalFileName"
                           >
                             File to Submit
@@ -2835,7 +2835,7 @@ function FacultySubmissionPanelContent({
                             ref={fileInputRef}
                             id="modalFileName"
                             type="file"
-                            className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950 hover:file:bg-amber-400 disabled:opacity-50"
+                            className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-950 hover:file:bg-amber-400 disabled:opacity-50"
                             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                             onChange={(event) => {
                               const file = event.target.files?.[0];
@@ -2852,14 +2852,14 @@ function FacultySubmissionPanelContent({
 
                         <div>
                           <label
-                            className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                            className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300"
                             htmlFor="modalRemarks"
                           >
                             Remarks
                           </label>
                           <textarea
                             id="modalRemarks"
-                            className="mt-0 min-h-24 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                            className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                             placeholder="Enter remarks or notes (optional)"
                             value={form.remarks}
                             onChange={(event) =>
@@ -2877,14 +2877,14 @@ function FacultySubmissionPanelContent({
                           <button
                             type="button"
                             onClick={closeSubmitModal}
-                            className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500"
+                            className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
                           >
                             Cancel
                           </button>
                         </div>
 
                         {submissionMessage && (
-                          <p className="text-sm text-slate-300">
+                          <p className="text-sm text-slate-700 dark:text-slate-300">
                             {submissionMessage}
                           </p>
                         )}
