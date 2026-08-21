@@ -595,6 +595,7 @@ export function SuperAdminDashboard({
   const [createAdminFirstName, setCreateAdminFirstName] = useState("");
   const [createAdminMiddleName, setCreateAdminMiddleName] = useState("");
   const [createAdminLastName, setCreateAdminLastName] = useState("");
+  const [createAdminDepartment, setCreateAdminDepartment] = useState("");
   const [createAdminProfileImage, setCreateAdminProfileImage] =
     useState<File | null>(null);
   const [createAdminProfileImagePreview, setCreateAdminProfileImagePreview] =
@@ -606,6 +607,7 @@ export function SuperAdminDashboard({
     setCreateAdminFirstName("");
     setCreateAdminMiddleName("");
     setCreateAdminLastName("");
+    setCreateAdminDepartment("");
     setCreateAdminProfileImage(null);
     setCreateAdminProfileImagePreview(null);
     setEmail("");
@@ -617,6 +619,7 @@ export function SuperAdminDashboard({
     setIsSubmitting(false);
     setError(null);
     setSuccess(null);
+    setCreateAdminDepartment("");
     if (createAdminProfileImagePreview) {
       URL.revokeObjectURL(createAdminProfileImagePreview);
     }
@@ -865,6 +868,10 @@ export function SuperAdminDashboard({
       body.append("middleName", middleName);
       body.append("lastName", lastName);
       body.append("email", normalizedEmail);
+
+      if (createAdminDepartment) {
+        body.append("department", createAdminDepartment);
+      }
 
       if (createAdminProfileImage) {
         body.append("profileImage", createAdminProfileImage);
@@ -1974,183 +1981,214 @@ export function SuperAdminDashboard({
       </div>
 
       {createAdminModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-amber-700 dark:text-amber-300 font-semibold">
-                  Super Admin
-                </p>
-                <h3 className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
-                  Create Admin Account
-                </h3>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-300 dark:border-slate-800">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                Create Admin Account
+              </h3>
               <button
                 type="button"
                 onClick={closeCreateAdminModal}
-                className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer"
+                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-all cursor-pointer"
+                aria-label="Close modal"
               >
-                Close
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form className="mt-5 space-y-4" onSubmit={onSubmit}>
-              <div>
-                <label
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                  htmlFor="profileImage"
-                >
-                  Profile Image
-                </label>
-                <input
-                  id="profileImage"
-                  type="file"
-                  accept="image/*"
-                  className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-amber-500 hover:file:bg-amber-400 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-slate-950 cursor-pointer"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0] ?? null;
-                    setCreateAdminProfileImage(file);
-                    if (createAdminProfileImagePreview) {
-                      URL.revokeObjectURL(createAdminProfileImagePreview);
-                    }
-                    setCreateAdminProfileImagePreview(
-                      file ? URL.createObjectURL(file) : null,
-                    );
-                  }}
-                />
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Upload a square image for the admin profile.
-                </p>
-                {createAdminProfileImagePreview ? (
-                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
-                    <img
-                      src={createAdminProfileImagePreview}
-                      alt="Selected profile preview"
-                      className="h-14 w-14 rounded-full border border-slate-400 dark:border-slate-700 object-cover"
-                    />
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Selected image</p>
-                      <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                        {createAdminProfileImage?.name ?? "Preview available"}
-                      </p>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
+            <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+              {/* Row 1: Name Grid (3 Columns) */}
+              <div className="grid gap-3 md:grid-cols-3">
                 <div>
                   <label
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                    htmlFor="firstName"
+                    className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
+                    htmlFor="adminFirstName"
                   >
-                    First Name
+                    First Name <span className="text-red-500">*</span>
                   </label>
                   <input
-                    id="firstName"
+                    id="adminFirstName"
                     type="text"
                     value={createAdminFirstName}
                     onChange={(event) =>
                       setCreateAdminFirstName(event.target.value)
                     }
                     required
-                    placeholder="Juan"
-                    className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                    placeholder="e.g. Juan"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
 
                 <div>
                   <label
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                    htmlFor="middleName"
+                    className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
+                    htmlFor="adminMiddleName"
                   >
                     Middle Name
                   </label>
                   <input
-                    id="middleName"
+                    id="adminMiddleName"
                     type="text"
                     value={createAdminMiddleName}
                     onChange={(event) =>
                       setCreateAdminMiddleName(event.target.value)
                     }
-                    placeholder="Santos"
-                    className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                    placeholder="e.g. Santos"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
 
                 <div>
                   <label
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                    htmlFor="lastName"
+                    className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
+                    htmlFor="adminLastName"
                   >
-                    Last Name
+                    Last Name <span className="text-red-500">*</span>
                   </label>
                   <input
-                    id="lastName"
+                    id="adminLastName"
                     type="text"
                     value={createAdminLastName}
                     onChange={(event) =>
                       setCreateAdminLastName(event.target.value)
                     }
                     required
-                    placeholder="Dela Cruz"
-                    className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                    placeholder="e.g. Dela Cruz"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 font-semibold">
-                  Full Name Preview
-                </p>
-                <p className="mt-1 text-xs font-semibold text-slate-900 dark:text-slate-100">
-                  {buildAdminFullName({
-                    firstName: createAdminFirstName,
-                    middleName: createAdminMiddleName,
-                    lastName: createAdminLastName,
-                  }) || "Enter the name parts above"}
-                </p>
-              </div>
-
+              {/* Row 2: Department / Scope Dropdown */}
               <div>
                 <label
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                  htmlFor="email"
+                  className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
+                  htmlFor="adminDepartment"
                 >
-                  Email Address
+                  Department / Role <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="adminDepartment"
+                  value={createAdminDepartment}
+                  onChange={(e) => setCreateAdminDepartment(e.target.value)}
+                  className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20 cursor-pointer"
+                >
+                  <option value="" className="text-slate-400">
+                    -- Select Department / Role --
+                  </option>
+                  <option value="Academic Affairs">Academic Affairs</option>
+                  <option value="Student Services">Student Services</option>
+                  <option value="Registrar & Admissions">Registrar & Admissions</option>
+                  <option value="Administrative Services">Administrative Services</option>
+                  <option value="IT & Campus Systems">IT & Campus Systems</option>
+                  <option value="General Administration">General Administration</option>
+                </select>
+              </div>
+
+              {/* Row 3: Profile Photo Dashed Container */}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Profile Photo
+                </label>
+                <div className="border-2 border-dashed border-slate-300 dark:border-slate-700/80 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-3">
+                  {createAdminProfileImagePreview ? (
+                    <img
+                      src={createAdminProfileImagePreview}
+                      alt="Preview"
+                      className="w-12 h-12 rounded-full object-cover border border-amber-500/50 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0">
+                      IMG
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <label
+                      htmlFor="adminPhotoInput"
+                      className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer inline-block transition-all"
+                    >
+                      Choose Profile Photo
+                    </label>
+                    <input
+                      id="adminPhotoInput"
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        setCreateAdminProfileImage(file);
+                        if (createAdminProfileImagePreview) {
+                          URL.revokeObjectURL(createAdminProfileImagePreview);
+                        }
+                        setCreateAdminProfileImagePreview(
+                          file ? URL.createObjectURL(file) : null,
+                        );
+                      }}
+                      className="hidden"
+                    />
+                    {createAdminProfileImage ? (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+                        {createAdminProfileImage.name}
+                      </p>
+                    ) : null}
+                  </div>
+                  {createAdminProfileImage ? (
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
+                      onClick={() => {
+                        if (createAdminProfileImagePreview) {
+                          URL.revokeObjectURL(createAdminProfileImagePreview);
+                        }
+                        setCreateAdminProfileImage(null);
+                        setCreateAdminProfileImagePreview(null);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Row 4: Email Input */}
+              <div>
+                <label
+                  className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
+                  htmlFor="adminEmail"
+                >
+                  Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="email"
+                  id="adminEmail"
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   required
-                  placeholder="admin@pup-focus.local"
-                  className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                  placeholder="admin@pup.edu.ph"
+                  className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
                 />
               </div>
 
-              {error ? <p className="text-xs text-rose-600 dark:text-red-300">{error}</p> : null}
-              {success ? (
-                <p className="text-xs text-emerald-600 dark:text-emerald-300">{success}</p>
+              {error ? (
+                <p className="rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-300">
+                  {error}
+                </p>
               ) : null}
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-400 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={closeCreateAdminModal}
-                  className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 px-4 py-2 text-xs font-semibold transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
-                >
-                  {isSubmitting ? "Creating Admin..." : "Create Admin Account"}
-                </button>
-              </div>
+              {success ? (
+                <p className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300">
+                  {success}
+                </p>
+              ) : null}
+
+              {/* Full-Width Action Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-md mt-2 disabled:opacity-50 cursor-pointer text-sm tracking-wide"
+              >
+                {isSubmitting ? "Creating Admin..." : "Create Admin Account"}
+              </button>
             </form>
           </div>
         </div>
