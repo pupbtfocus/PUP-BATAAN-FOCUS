@@ -95,13 +95,17 @@ export function SidebarContent({
     activeSection === "terms" || activeSection === "academicTerms";
   const isWindowActive =
     activeSection === "window" || activeSection === "submissionWindow";
+  const isTemplatesActive =
+    activeSection === "templates" ||
+    activeSection === "requirementTemplates" ||
+    activeSection === "requirement-templates";
   const isAuditActive =
     activeSection === "audit" ||
     activeSection === "auditLogs" ||
     activeSection === "audit-logs";
   const isSettingsActive = activeSection === "settings";
 
-  const isAcademicCycleActive = isTermsActive || isWindowActive;
+  const isAcademicCycleActive = isTermsActive || isWindowActive || isTemplatesActive;
   const isUserManagementActive = isAccountsActive || isFacultyActive;
 
   const [isUserManagementOpen, setIsUserManagementOpen] =
@@ -275,6 +279,17 @@ export function SidebarContent({
                 }`}
               >
                 Submission Window
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelect(isSuperAdmin ? "templates" : "requirementTemplates")}
+                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
+                  isTemplatesActive
+                    ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
+                }`}
+              >
+                Requirement Templates
               </button>
             </div>
           )}

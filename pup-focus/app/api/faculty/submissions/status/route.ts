@@ -227,13 +227,55 @@ export async function GET(request: NextRequest) {
     const normActiveYear = normalizeAcademicYear(activeAcademicYear);
     const normActiveSem = normalizeSemester(activeSemester);
 
+    // 2.1 Fetch active requirement templates
+    let activeTemplateRows: Array<{
+      code: string;
+      title: string;
+      is_mandatory: boolean;
+      max_size_mb: number;
+      allowed_formats: string[];
+    }> = DEFAULT_REQUIREMENTS.map((code) => ({
+      code,
+      title: code,
+      is_mandatory: true,
+      max_size_mb: 10,
+      allowed_formats: ["PDF", "DOCX", "XLSX"],
+    }));
+
+    try {
+      const { data: dbTemplates } = await supabase
+        .from("requirement_templates")
+        .select("code, title, is_mandatory, max_size_mb, allowed_formats, is_active")
+        .eq("is_active", true)
+        .order("is_mandatory", { ascending: false })
+        .order("created_at", { ascending: true });
+
+      if (dbTemplates && dbTemplates.length > 0) {
+        activeTemplateRows = dbTemplates.map((t) => ({
+          code: t.code,
+          title: t.title,
+          is_mandatory: t.is_mandatory,
+          max_size_mb: t.max_size_mb || 5,
+          allowed_formats: t.allowed_formats || ["PDF"],
+        }));
+      }
+    } catch {
+      // Keep defaults
+    }
+
     function matchRequirementCode(
       inputCode?: string | null,
       inputReqId?: string | null,
-    ): RequirementCode | null {
+    ): string | null {
       const candidates = [inputCode, inputReqId].filter(Boolean) as string[];
       for (const raw of candidates) {
         const s = raw.toLowerCase().trim().replace(/[-_\s]+/g, "");
+        for (const tpl of activeTemplateRows) {
+          const tplClean = tpl.code.toLowerCase().trim().replace(/[-_\s]+/g, "");
+          if (s === tplClean || s === tpl.code.toLowerCase()) {
+            return tpl.code;
+          }
+        }
         if (s.includes("gradesheet") || s.includes("grade"))
           return REQUIREMENT_CODE.GRADE_SHEET;
         if (s.includes("syllabus") || s.includes("enhancedsyllabus"))
@@ -288,9 +330,9 @@ export async function GET(request: NextRequest) {
 
     const facultyIdList = Array.from(facultyIds);
 
-    const defaultRequirementStatuses: RequirementStatus[] = DEFAULT_REQUIREMENTS.map(
-      (code) => ({
-        code,
+    const defaultRequirementStatuses: RequirementStatus[] = activeTemplateRows.map(
+      (tpl) => ({
+        code: tpl.code,
         status: "Not Submitted" as const,
       }),
     );
@@ -650,6 +692,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       requirementStatuses,
+      requirementTemplates: activeTemplateRows,
       counts,
       academicYear: activeAcademicYear,
       semester: normalizedSemLabel,
