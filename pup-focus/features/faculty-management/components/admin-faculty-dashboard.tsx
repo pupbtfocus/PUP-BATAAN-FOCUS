@@ -11,6 +11,7 @@ import { Menu, X, CheckCircle2, Clock3, Users } from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { AdminSettings } from "@/features/admin-management/components/admin-settings";
@@ -496,15 +497,15 @@ export function AdminFacultyDashboard({
   }
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-950 text-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-200">
       {/* Consolidated Top Header (All Views) */}
-      <header className="w-full bg-slate-950/95 border-b border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 z-40 backdrop-blur">
+      <header className="w-full bg-white/90 border-b border-slate-200/80 dark:bg-slate-950/90 dark:border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 z-40 backdrop-blur-md transition-colors duration-200">
         {/* Left: Mobile Menu Trigger & Title */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(true)}
-            className="md:hidden p-2 text-amber-300 hover:bg-amber-500/10 rounded-xl transition-all"
+            className="md:hidden p-2 text-slate-700 dark:text-amber-300 hover:bg-slate-100 dark:hover:bg-amber-500/10 rounded-xl transition-all"
             aria-label="Open Navigation Menu"
           >
             <Menu className="w-5 h-5" />
@@ -512,7 +513,7 @@ export function AdminFacultyDashboard({
 
           <div className="flex items-center gap-2">
             <BrandMark size={28} className="shrink-0" />
-            <span className="font-bold text-slate-100 text-sm sm:text-base tracking-wide">
+            <span className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base tracking-wide">
               PUP FOCUS
             </span>
           </div>
@@ -520,6 +521,7 @@ export function AdminFacultyDashboard({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <ThemeToggle />
           <NotificationDrawer />
           <LogoutButton />
         </div>
@@ -528,7 +530,7 @@ export function AdminFacultyDashboard({
       {/* Body Wrapper */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex w-56 flex-col bg-slate-950 border-r border-slate-800 shrink-0 p-2.5">
+        <aside className="hidden md:flex w-56 flex-col bg-white border-r border-slate-200/90 dark:bg-slate-950 dark:border-slate-800 shrink-0 p-2.5 transition-colors duration-200">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={handleSetActiveSection}
@@ -545,13 +547,13 @@ export function AdminFacultyDashboard({
               className="fixed inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <aside className="relative w-64 max-w-[80%] bg-slate-950 h-full p-3 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Navigation</span>
+            <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-950 h-full p-3 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto transition-colors">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Navigation</span>
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition"
                   aria-label="Close navigation"
                 >
                   <X className="w-5 h-5" />
@@ -570,17 +572,17 @@ export function AdminFacultyDashboard({
         )}
 
         {/* Scrollable Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-950">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
           <div className="max-w-7xl mx-auto w-full">
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
                 {/* TIER 1: Welcome Banner */}
-                <section className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-r from-slate-900/90 via-slate-900/80 to-slate-950 p-6 sm:p-7 shadow-sm">
+                <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-r from-white via-slate-50 to-white dark:border-slate-800/80 dark:bg-gradient-to-r dark:from-slate-900/90 dark:via-slate-900/80 dark:to-slate-950 p-6 sm:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:shadow-none transition-colors">
                   <div className="relative z-10 space-y-1">
-                    <h1 className="text-xl font-semibold text-slate-100 tracking-tight">
+                    <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                       Welcome back, {extractFirstName(adminName, "Admin")}
                     </h1>
-                    <p className="text-xs text-slate-400 font-normal">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
                       Admin Dashboard • A.Y. 2026-2027 • 1st Semester
                     </p>
                   </div>
@@ -589,44 +591,44 @@ export function AdminFacultyDashboard({
                 {/* TIER 2: 3-Column Stat Grid */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Card 1: Faculty Submissions Verified */}
-                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400">Submissions Verified</span>
-                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Submissions Verified</span>
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {facultyAccounts.reduce((count, f) => count + (f.is_active ? 0 : 0), 0)} Verified
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">Faculty submissions reviewed and validated</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Faculty submissions reviewed and validated</p>
                     </div>
                   </div>
 
                   {/* Card 2: Pending Verification */}
-                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400">Pending Verification</span>
-                      <Clock3 className="h-4 w-4 text-amber-400" />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Pending Verification</span>
+                      <Clock3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         — Pending
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">Submissions awaiting admin review</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Submissions awaiting admin review</p>
                     </div>
                   </div>
 
                   {/* Card 3: Total Active Faculty */}
-                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400">Total Active Faculty</span>
-                      <Users className="h-4 w-4 text-blue-400" />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Total Active Faculty</span>
+                      <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {facultyAccounts.filter(f => f.is_active).length} Active
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {facultyAccounts.length} total faculty accounts
                       </p>
                     </div>
@@ -637,36 +639,36 @@ export function AdminFacultyDashboard({
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   {/* Left Column (2-Span) — Pending Verification Queue */}
                   <div className="lg:col-span-2 space-y-4">
-                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 sm:p-6 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
+                    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 sm:p-6 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200 dark:border-slate-800/80">
                         <div>
-                          <h2 className="text-sm font-semibold text-slate-100 tracking-normal">Pending Submissions Verification Queue</h2>
-                          <p className="text-xs text-slate-400 mt-0.5">Faculty submissions awaiting your review and validation.</p>
+                          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Pending Submissions Verification Queue</h2>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Faculty submissions awaiting your review and validation.</p>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleSetActiveSection("requirements")}
-                          className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium transition cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
                         >
                           <span>View all</span>
                           <span>→</span>
                         </button>
                       </div>
                       <div className="py-8 text-center">
-                        <p className="text-xs text-slate-500">Navigate to Requirements Verification to review pending submissions.</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Navigate to Requirements Verification to review pending submissions.</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Right Column (1-Span) — Recent Activity */}
                   <div className="space-y-4">
-                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm">
-                      <div className="pb-3 border-b border-slate-800/80">
-                        <h2 className="text-sm font-semibold text-slate-100">Recent Admin Actions</h2>
-                        <p className="text-xs text-slate-400 mt-0.5">Latest admin activity feed.</p>
+                    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
+                      <div className="pb-3 border-b border-slate-200 dark:border-slate-800/80">
+                        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Recent Admin Actions</h2>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Latest admin activity feed.</p>
                       </div>
                       <div className="py-6 text-center">
-                        <p className="text-xs text-slate-500">No recent activity to display.</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">No recent activity to display.</p>
                       </div>
                     </div>
                   </div>

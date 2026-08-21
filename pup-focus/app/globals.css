@@ -1,6 +1,18 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --muted: #64748b;
+  --accent: #f59e0b;
+  --accent-strong: #d97706;
+  --surface: #f1f5f9;
+}
+
+.dark {
   --background: #020617;
   --foreground: #f1f5f9;
   --card: #0f172a;
@@ -28,12 +40,11 @@ html {
 
 body {
   min-height: 100vh;
-  color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
   position: relative;
-  background-color: #020617;
   overflow-x: hidden;
 }
+
 
 /* Campus photo backgrounds — scoped to public/auth routes via .campus-bg class */
 body.campus-bg {

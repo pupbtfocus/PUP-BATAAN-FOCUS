@@ -341,29 +341,29 @@ export function FacultyRequirementsModule() {
       {/* Clean Header Progress & Status Counts */}
       <section className="space-y-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-          <span className="font-medium text-slate-300">
+          <span className="font-semibold text-slate-800 dark:text-slate-200">
             {summary.validated} of {summary.total} Completed ({Math.round((summary.validated / (summary.total || 1)) * 100)}%)
           </span>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
               <span>{summary.validated} Validated</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-blue-400" />
+              <span className="h-2 w-2 rounded-full bg-blue-500" />
               <span>{summary.pending} Pending</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
+              <span className="h-2 w-2 rounded-full bg-amber-500" />
               <span>{summary.rejected} Revision</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-slate-600" />
+              <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-600" />
               <span>{summary.notSubmitted} Not Submitted</span>
             </span>
           </div>
         </div>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
           <div
             className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
             style={{
@@ -374,26 +374,26 @@ export function FacultyRequirementsModule() {
       </section>
 
       <section className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800/80 pb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
           <div>
-            <h3 className="text-lg font-medium text-slate-100 tracking-tight">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
               Requirements Management
             </h3>
-            <p className="mt-0.5 text-xs text-slate-400 font-normal">
+            <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 font-normal">
               Current validation status for each required document.
             </p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
             <button
               type="button"
-              className="inline-flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
               onClick={openCalendarModal}
             >
               University Calendar
             </button>
             <button
               type="button"
-              className="inline-flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
               onClick={openModal}
             >
               Submit Requirements
@@ -403,27 +403,27 @@ export function FacultyRequirementsModule() {
               onClick={() => void refreshStatuses()}
               disabled={isLoading}
               title="Refresh status"
-              className="inline-flex items-center justify-center rounded-md border border-slate-800 bg-slate-900/60 p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer"
             >
-              <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-amber-400" : ""}`} />
+              <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-amber-500" : ""}`} />
               <span className="sr-only">Refresh</span>
             </button>
           </div>
         </div>
 
         {message ? (
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-200">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-500/5 px-4 py-3 text-xs text-amber-900 dark:text-amber-200">
             {message}
           </div>
         ) : null}
 
         {/* Single Unified Table/List Container */}
         {isLoading ? (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-xs text-slate-400 text-center">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 text-xs text-slate-500 dark:text-slate-400 text-center">
             Loading requirements status...
           </div>
         ) : (
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl divide-y divide-slate-800/60 overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-2xl divide-y divide-slate-200 dark:divide-slate-800/60 overflow-hidden shadow-sm shadow-slate-200/50 dark:shadow-none">
             {DEFAULT_REQUIREMENTS.map((code) => {
               const status = getStatus(code);
               const item = requirementStatuses.find(
@@ -433,21 +433,21 @@ export function FacultyRequirementsModule() {
               return (
                 <div
                   key={code}
-                  className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-800/30 transition-colors"
+                  className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-slate-200 truncate">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {REQUIREMENT_LABEL[code]}
                     </h4>
-                    <p className="mt-0.5 text-xs text-slate-500">
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                       {item?.submittedAt
                         ? `Submitted ${item.submittedAt}`
                         : "No submission has been recorded yet."}
                     </p>
                     {/* Inline Revision Note */}
                     {status === "Rejected" && (
-                      <p className="text-xs text-amber-300/90 flex items-center gap-1.5 mt-1 font-normal">
-                        <AlertCircle className="h-3.5 w-3.5 text-amber-400/90 shrink-0" />
+                      <p className="text-xs text-amber-800 dark:text-amber-300/90 flex items-center gap-1.5 mt-1 font-normal">
+                        <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
                         <span className="italic truncate">
                           &ldquo;{item?.adminRemarks || item?.admin_remarks || item?.feedback || "Revision requested. Please check and resubmit."}&rdquo;
                         </span>
@@ -468,7 +468,7 @@ export function FacultyRequirementsModule() {
                           setForm((curr) => ({ ...curr, requirementCode: code }));
                           openModal();
                         }}
-                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer"
                       >
                         <FileUp className="h-3.5 w-3.5" />
                         Submit
@@ -481,7 +481,7 @@ export function FacultyRequirementsModule() {
                           setForm((curr) => ({ ...curr, requirementCode: code }));
                           openModal();
                         }}
-                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer"
                       >
                         <FileUp className="h-3.5 w-3.5" />
                         Resubmit
@@ -501,22 +501,22 @@ export function FacultyRequirementsModule() {
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-3xl rounded-3xl border border-slate-700 bg-[#120b0b] shadow-2xl"
+            className="w-full max-w-3xl rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
+            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-5">
               <div>
-                <h3 className="text-xl font-semibold text-slate-100">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
                   Submit Requirements
                 </h3>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
                   Upload the file for the selected requirement.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeModal}
-                className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                className="rounded-full border border-slate-200 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 aria-label="Close modal"
               >
                 <X className="h-4 w-4" />
@@ -525,33 +525,33 @@ export function FacultyRequirementsModule() {
 
             <form className="space-y-5 px-6 py-6" onSubmit={handleSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2 text-sm text-slate-300">
-                  <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                <label className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                  <span className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-600 dark:text-slate-400">
                     School Year
                   </span>
-                  <p className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                  <p className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-800 dark:text-slate-100 font-medium">
                     {form.academicYear
                       ? `S.Y. ${form.academicYear}`
                       : "Loading current term..."}
                   </p>
                 </label>
 
-                <label className="space-y-2 text-sm text-slate-300">
-                  <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                <label className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                  <span className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-600 dark:text-slate-400">
                     Semester
                   </span>
-                  <p className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                  <p className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-800 dark:text-slate-100 font-medium">
                     {form.semester}
                   </p>
                 </label>
               </div>
 
-              <label className="space-y-2 text-sm text-slate-300">
-                <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+              <label className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                <span className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-600 dark:text-slate-400">
                   Requirement Type
                 </span>
                 <select
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-none focus:border-amber-400"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                   value={form.requirementCode}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -568,8 +568,8 @@ export function FacultyRequirementsModule() {
                 </select>
               </label>
 
-              <label className="space-y-2 text-sm text-slate-300">
-                <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+              <label className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                <span className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-600 dark:text-slate-400">
                   Document
                 </span>
                 <input
@@ -578,15 +578,15 @@ export function FacultyRequirementsModule() {
                   onChange={(event) =>
                     setSelectedFile(event.target.files?.[0] ?? null)
                   }
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-950 hover:file:bg-amber-400"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-3 text-sm text-slate-700 dark:text-slate-300 outline-none file:mr-4 file:rounded-xl file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-950 hover:file:bg-amber-400"
                 />
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   Accepted: PDF, DOC, DOCX, JPG, JPEG, PNG.
                 </span>
               </label>
 
-              <label className="space-y-2 text-sm text-slate-300">
-                <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+              <label className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                <span className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-600 dark:text-slate-400">
                   Remarks
                 </span>
                 <textarea
@@ -598,12 +598,12 @@ export function FacultyRequirementsModule() {
                       remarks: event.target.value,
                     }))
                   }
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-none focus:border-amber-400"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                   placeholder="Optional notes for the reviewer"
                 />
               </label>
 
-              <div className="flex flex-col-reverse gap-3 border-t border-slate-800 pt-4 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 dark:border-slate-800 pt-4 sm:flex-row sm:justify-end">
                 <Button
                   type="button"
                   variant="secondary"
@@ -630,33 +630,33 @@ export function FacultyRequirementsModule() {
           onClick={closeCalendarModal}
         >
           <div
-            className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+            className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between border-b border-slate-800 px-6 py-5">
+            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-5">
               <div>
-                <h3 className="text-xl font-semibold text-slate-100">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
                   University Calendar
                 </h3>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
                   View the official PUP academic calendar.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeCalendarModal}
-                className="rounded-full border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                className="rounded-full border border-slate-200 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 aria-label="Close calendar modal"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="min-h-0 flex-1 bg-slate-950">
+            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-4">
               <iframe
-                title="University Calendar"
+                title="PUP University Calendar"
                 src="https://www.pup.edu.ph/about/calendar"
-                className="h-full w-full border-0"
+                className="h-full w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white"
               />
             </div>
           </div>

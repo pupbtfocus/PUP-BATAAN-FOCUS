@@ -864,7 +864,7 @@ export function SuperAdminDashboard({
     return accounts.map((admin) => (
       <div
         key={admin.id}
-        className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4"
+        className="rounded-xl border border-slate-200/90 bg-white dark:border-slate-800/80 dark:bg-slate-900/60 p-4 shadow-sm transition-colors"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -887,22 +887,22 @@ export function SuperAdminDashboard({
                 </div>
               )}
               <div>
-                <p className="font-semibold text-slate-100">
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {admin.full_name}
                 </p>
-                <p className="text-sm text-slate-400">{admin.email}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{admin.email}</p>
               </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-300">
+            <span className="rounded-full border border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 px-3 py-1 text-xs">
               {ROLE_LABEL[admin.role]}
             </span>
             <span
               className={`rounded-full border px-3 py-1 text-xs ${
                 admin.is_active
-                  ? "border-emerald-700 bg-emerald-950/40 text-emerald-300"
-                  : "border-slate-800 bg-slate-900 text-slate-400"
+                  ? "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  : "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
               }`}
             >
               {admin.is_active ? "Active" : "Inactive"}
@@ -984,13 +984,13 @@ export function SuperAdminDashboard({
   }
 
   return (
-    <div className="relative flex min-h-full w-full items-stretch gap-0 bg-slate-950 text-slate-100">
+    <div className="relative flex min-h-full w-full items-stretch gap-0 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {/* Mobile Menu Button (visible only on small screens when drawer is closed) */}
       {!isMobileMenuOpen && (
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-amber-300 hover:bg-amber-500/10 rounded-xl transition-all"
+          className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-slate-700 dark:text-amber-300 hover:bg-slate-100 dark:hover:bg-amber-500/10 rounded-xl transition-all"
           aria-label="Open Navigation Menu"
         >
           <Menu className="w-5 h-5" />
@@ -998,39 +998,39 @@ export function SuperAdminDashboard({
       )}
 
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-2.5 shadow-lg">
-        <div className="my-1.5 rounded-xl bg-slate-900/60 p-2.5 flex flex-col items-center border border-slate-800/80 shadow-sm">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-950 p-2.5 shadow-sm transition-colors duration-200">
+        <div className="my-1.5 rounded-xl bg-slate-100/70 border border-slate-200/90 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm transition-colors">
           <div className="relative mb-2">
             {superAdminAvatarUrl && !isAvatarImageError ? (
               <img
                 src={superAdminAvatarUrl}
                 alt={adminName ?? "Super Admin"}
-                className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950 shadow-md ring-2 ring-slate-950"
+                className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950"
                 onError={() => setIsAvatarImageError(true)}
               />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 font-bold text-sm flex items-center justify-center shadow-md ring-2 ring-slate-950">
+              <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-sm flex items-center justify-center shadow-sm">
                 {getInitials(adminName, "SA")}
               </div>
             )}
             <span
-              className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900"
+              className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
               title="Active"
             />
           </div>
 
-          <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
+          <p className="mt-0.5 font-semibold text-slate-900 dark:text-white text-center text-xs sm:text-sm">
             {extractFirstName(adminName, "Super Admin")}
           </p>
 
-          <div className="my-1.5 h-px w-full bg-slate-800" />
+          <div className="my-1.5 h-px w-full bg-slate-200 dark:bg-slate-800" />
 
-          <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+          <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-purple-50 text-purple-800 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20">
             Super Admin
           </span>
         </div>
 
-        <nav className="mt-1.5 space-y-1">
+        <nav className="mt-1.5 space-y-0.5">
           <SidebarButton
             active={activeSection === "dashboard"}
             title="Dashboard"
@@ -1061,51 +1061,51 @@ export function SuperAdminDashboard({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-64 max-w-[80%] bg-slate-950 h-full p-3 border-r border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Navigation</span>
+          <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-950 h-full p-3 border-r border-slate-200 dark:border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Navigation</span>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition"
                 aria-label="Close navigation"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="my-2 rounded-xl bg-slate-900/60 p-2.5 flex flex-col items-center border border-slate-800/80 shadow-sm">
+            <div className="my-2 rounded-xl bg-slate-100/70 border border-slate-200/90 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm transition-colors">
               <div className="relative mb-2">
                 {superAdminAvatarUrl && !isAvatarImageError ? (
                   <img
                     src={superAdminAvatarUrl}
                     alt={adminName ?? "Super Admin"}
-                    className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950 shadow-md ring-2 ring-slate-950"
+                    className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950"
                     onError={() => setIsAvatarImageError(true)}
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 font-bold text-sm flex items-center justify-center shadow-md ring-2 ring-slate-950">
+                  <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-sm flex items-center justify-center shadow-sm">
                     {getInitials(adminName, "SA")}
                   </div>
                 )}
                 <span
-                  className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900"
+                  className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
                   title="Active"
                 />
               </div>
 
-              <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
+              <p className="mt-0.5 font-semibold text-slate-900 dark:text-white text-center text-xs sm:text-sm">
                 {extractFirstName(adminName, "Super Admin")}
               </p>
 
-              <div className="my-1.5 h-px w-full bg-slate-800" />
+              <div className="my-1.5 h-px w-full bg-slate-200 dark:bg-slate-800" />
 
-              <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-purple-50 text-purple-800 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20">
                 Super Admin
               </span>
             </div>
 
-            <nav className="mt-1.5 space-y-1 flex-1">
+            <nav className="mt-1.5 space-y-0.5 flex-1">
               <SidebarButton
                 active={activeSection === "dashboard"}
                 title="Dashboard"
@@ -1132,17 +1132,17 @@ export function SuperAdminDashboard({
       )}
 
       <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-800 bg-slate-950 shadow-lg">
-          <div className="min-h-0 flex-1 overflow-y-auto p-6 bg-slate-950">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm transition-colors duration-200">
+          <div className="min-h-0 flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
                 {/* TIER 1: Welcome Banner */}
-                <section className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-r from-slate-900/90 via-slate-900/80 to-slate-950 p-6 sm:p-7 shadow-sm">
+                <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-r from-white via-slate-50 to-white dark:border-slate-800/80 dark:bg-gradient-to-r dark:from-slate-900/90 dark:via-slate-900/80 dark:to-slate-950 p-6 sm:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:shadow-none transition-colors">
                   <div className="relative z-10 space-y-1">
-                    <h1 className="text-xl font-semibold text-slate-100 tracking-tight">
+                    <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                       Welcome back, {extractFirstName(adminName, "Super Admin")}
                     </h1>
-                    <p className="text-xs text-slate-400 font-normal">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
                       Super Admin Dashboard • A.Y. 2026-2027 • 1st Semester
                     </p>
                   </div>
@@ -1151,46 +1151,46 @@ export function SuperAdminDashboard({
                 {/* TIER 2: 3-Column Stat Grid */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Card 1: Active Admin Accounts */}
-                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400">Active Admin Accounts</span>
-                      <Shield className="h-4 w-4 text-purple-400" />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Active Admin Accounts</span>
+                      <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {adminAccounts.filter(a => a.is_active).length} Active
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {adminAccounts.length} total admin accounts
                       </p>
                     </div>
                   </div>
 
                   {/* Card 2: Audit Logs Today */}
-                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400">Audit Logs Today</span>
-                      <ScrollText className="h-4 w-4 text-amber-400" />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Audit Logs Today</span>
+                      <ScrollText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         —
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">View Audit Logs for details</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">View Audit Logs for details</p>
                     </div>
                   </div>
 
                   {/* Card 3: Academic Window Status */}
-                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                  <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-400">Academic Window</span>
-                      <Activity className="h-4 w-4 text-blue-400" />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Academic Window</span>
+                      <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         System Active
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">All subsystems operational</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">All subsystems operational</p>
                     </div>
                   </div>
                 </section>
@@ -1199,35 +1199,35 @@ export function SuperAdminDashboard({
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   {/* Left Column (2-Span) — Admin Accounts Overview */}
                   <div className="lg:col-span-2 space-y-4">
-                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 sm:p-6 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
+                    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 sm:p-6 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200 dark:border-slate-800/80">
                         <div>
-                          <h2 className="text-sm font-semibold text-slate-100 tracking-normal">Admin Accounts Management</h2>
-                          <p className="text-xs text-slate-400 mt-0.5">Overview of all admin and super admin accounts.</p>
+                          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Admin Accounts Management</h2>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Overview of all admin and super admin accounts.</p>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleSetActiveSection("accounts")}
-                          className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium transition cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
                         >
                           <span>View all</span>
                           <span>→</span>
                         </button>
                       </div>
                       {adminAccounts.length > 0 ? (
-                        <div className="divide-y divide-slate-800/60 mt-2">
+                        <div className="divide-y divide-slate-200/80 dark:divide-slate-800/60 mt-2">
                           {adminAccounts.slice(0, 5).map((admin) => (
                             <div key={admin.profile_id} className="flex items-center justify-between py-3">
                               <div className="flex items-center gap-3">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-400">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-slate-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 text-xs font-bold shadow-sm">
                                   {getInitials(admin.full_name, admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD")}
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-slate-200">{formatAdminName(admin)}</p>
-                                  <p className="text-xs text-slate-500">{admin.email}</p>
+                                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">{formatAdminName(admin)}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
                                 </div>
                               </div>
-                              <span className={`text-xs px-2 py-0.5 rounded-full border ${admin.is_active ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-slate-400 bg-slate-800 border-slate-700"}`}>
+                              <span className={`text-xs px-2 py-0.5 rounded-full border ${admin.is_active ? "text-emerald-800 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20" : "text-slate-600 bg-slate-100 border-slate-200 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700"}`}>
                                 {admin.is_active ? "Active" : "Inactive"}
                               </span>
                             </div>
@@ -1235,7 +1235,7 @@ export function SuperAdminDashboard({
                         </div>
                       ) : (
                         <div className="py-8 text-center">
-                          <p className="text-xs text-slate-500">No admin accounts found.</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">No admin accounts found.</p>
                         </div>
                       )}
                     </div>
@@ -1243,17 +1243,17 @@ export function SuperAdminDashboard({
 
                   {/* Right Column (1-Span) — System Audit Logs */}
                   <div className="space-y-4">
-                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm">
-                      <div className="pb-3 border-b border-slate-800/80">
-                        <h2 className="text-sm font-semibold text-slate-100">System Audit Logs</h2>
-                        <p className="text-xs text-slate-400 mt-0.5">Recent system activity.</p>
+                    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
+                      <div className="pb-3 border-b border-slate-200 dark:border-slate-800/80">
+                        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">System Audit Logs</h2>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Recent system activity.</p>
                       </div>
                       <div className="py-6 text-center">
-                        <p className="text-xs text-slate-500">Navigate to Audit Logs for full history.</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Navigate to Audit Logs for full history.</p>
                         <button
                           type="button"
                           onClick={() => handleSetActiveSection("auditLogs")}
-                          className="mt-3 inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium transition cursor-pointer"
+                          className="mt-3 inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
                         >
                           <span>View Audit Logs</span>
                           <span>→</span>
@@ -1303,10 +1303,10 @@ export function SuperAdminDashboard({
                   />
                 </div>
 
-                <div className="mt-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5">
+                <div className="mt-6 rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-100">
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                         Account Directory
                       </h3>
                     </div>
@@ -1320,7 +1320,7 @@ export function SuperAdminDashboard({
                             event.target.value as AccountViewRole,
                           )
                         }
-                        className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400"
+                        className="rounded-xl border border-slate-300 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 px-3 py-2 text-sm outline-none transition focus:border-amber-500"
                       >
                         <option value="all">All Accounts</option>
                         <option value={ROLE.ADMIN}>Admin Accounts</option>
@@ -1357,13 +1357,13 @@ export function SuperAdminDashboard({
                       visibleAccountGroups.map((group) => (
                         <section
                           key={group.key}
-                          className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"
+                          className="rounded-2xl border border-slate-200/90 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-950/40 p-4 transition-colors"
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <h4 className="text-base font-semibold text-slate-100">
+                            <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                               {group.title}
                             </h4>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
                               {group.accounts.length} account
                               {group.accounts.length === 1 ? "" : "s"}
                             </span>
@@ -1420,7 +1420,7 @@ export function SuperAdminDashboard({
                 </div>
 
                 <section className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]">
-                  <div className="space-y-2 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-3">
+                  <div className="space-y-2 rounded-2xl border border-slate-200/90 bg-slate-50/70 dark:border-slate-800/80 dark:bg-slate-900/60 p-3 transition-colors">
                     <SettingsOptionButton
                       active={activeSettingsOption === "profile"}
                       title="Account Profile"
@@ -1435,36 +1435,36 @@ export function SuperAdminDashboard({
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-6">
+                  <div className="rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-6 transition-colors">
                     {activeSettingsOption === "profile" ? (
                       isLoadingSettings ? (
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                           Loading account settings...
                         </p>
                       ) : (
                         <form className="space-y-4" onSubmit={onSettingsSubmit}>
-                          <div className="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                          <div className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 p-4 transition-colors">
                             {superAdminAvatarUrl && !isAvatarImageError ? (
                               <img
                                 src={superAdminAvatarUrl}
                                 alt={settingsFullName || "Super Admin"}
-                                className="w-16 h-16 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950 shadow-md ring-2 ring-slate-950"
+                                className="w-16 h-16 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950"
                                 onError={() => setIsAvatarImageError(true)}
                               />
                             ) : (
-                              <div className="w-16 h-16 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-400 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-slate-950">
+                              <div className="w-16 h-16 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-600 dark:text-amber-400 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950">
                                 {getInitials(settingsFullName || adminName, "SA")}
                               </div>
                             )}
                             <div>
-                              <h4 className="text-sm font-semibold text-slate-100">Super Admin Profile</h4>
-                              <p className="text-xs text-slate-400">Manage your system credentials and display identity</p>
+                              <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Super Admin Profile</h4>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">Manage your system credentials and display identity</p>
                             </div>
                           </div>
 
                           <div>
                             <label
-                              className="block text-sm font-medium text-slate-200"
+                              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
                               htmlFor="settingsFullName"
                             >
                               Username / Full Name
@@ -1478,13 +1478,13 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter full name"
-                              className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="mt-2 w-full rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 text-sm outline-none ring-amber-300/30 focus:ring transition-colors"
                             />
                           </div>
 
                           <div>
                             <label
-                              className="block text-sm font-medium text-slate-200"
+                              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
                               htmlFor="settingsEmail"
                             >
                               Email Address
@@ -1498,7 +1498,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter email address"
-                              className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="mt-2 w-full rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-3 text-sm outline-none ring-amber-300/30 focus:ring transition-colors"
                             />
                           </div>
 
@@ -1877,15 +1877,17 @@ function SidebarButton({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-lg border px-3 py-1.5 text-left transition ${
+      className={`w-full text-left px-3 py-2 text-xs transition ${
         active
-          ? "border-amber-400 bg-amber-400/10 text-amber-300 font-semibold"
-          : "border-slate-800 bg-[#070c18] hover:bg-[#0d152a] text-slate-300 hover:text-slate-100"
+          ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-900 dark:border-amber-400 dark:bg-amber-500/15 dark:text-amber-400 font-semibold rounded-r-lg"
+          : "rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
       }`}
     >
-      <p className="text-xs font-semibold">{title}</p>
+      <p className="text-xs">{title}</p>
       {description ? (
-        <p className="mt-0.5 text-[11px] text-slate-400">{description}</p>
+        <p className={`mt-0.5 text-[11px] font-normal ${active ? "text-amber-800/80 dark:text-amber-300/80" : "text-slate-500 dark:text-slate-400"}`}>
+          {description}
+        </p>
       ) : null}
     </button>
   );
@@ -1893,11 +1895,11 @@ function SidebarButton({
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm">
-      <p className="mt-0 text-xs font-medium text-slate-400">
+    <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
+      <p className="mt-0 text-xs font-medium text-slate-600 dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-semibold text-slate-100">{value}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">{value}</p>
     </div>
   );
 }
@@ -1919,12 +1921,12 @@ function SettingsOptionButton({
       onClick={onClick}
       className={`w-full rounded-xl border px-4 py-3 text-left transition ${
         active
-          ? "border-amber-400 bg-amber-400/10"
-          : "border-slate-800 bg-slate-900/60 hover:border-slate-600"
+          ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:border-amber-400 dark:bg-amber-400/10 dark:text-amber-300 font-semibold"
+          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-slate-600"
       }`}
     >
-      <p className="font-semibold text-slate-100">{title}</p>
-      <p className="mt-1 text-sm text-slate-400">{description}</p>
+      <p className="font-semibold text-slate-900 dark:text-slate-100">{title}</p>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
     </button>
   );
 }
