@@ -102,11 +102,20 @@ export function SidebarContent({
   const isSettingsActive = activeSection === "settings";
 
   const isAcademicCycleActive = isTermsActive || isWindowActive;
+  const isUserManagementActive = isAccountsActive || isFacultyActive;
 
+  const [isUserManagementOpen, setIsUserManagementOpen] =
+    useState<boolean>(isUserManagementActive);
   const [isAcademicCycleOpen, setIsAcademicCycleOpen] =
     useState<boolean>(isAcademicCycleActive);
 
-  // Automatically open accordion if currently active section matches either child view
+  // Automatically open accordions if currently active section matches either child view
+  useEffect(() => {
+    if (isUserManagementActive) {
+      setIsUserManagementOpen(true);
+    }
+  }, [isUserManagementActive]);
+
   useEffect(() => {
     if (isAcademicCycleActive) {
       setIsAcademicCycleOpen(true);
@@ -158,30 +167,70 @@ export function SidebarContent({
           onClick={() => handleSelect("dashboard")}
         />
 
-        {/* 2. Admin Management (Super Admin Exclusive) */}
-        {isSuperAdmin && (
+        {/* 2. User Management (Super Admin Dropdown) or Faculty Management (Standard Admin) */}
+        {isSuperAdmin ? (
+          <div className="space-y-0.5">
+            <button
+              type="button"
+              onClick={() => setIsUserManagementOpen((prev) => !prev)}
+              className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs transition cursor-pointer ${
+                isUserManagementActive
+                  ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-900 dark:border-amber-400 dark:bg-amber-500/15 dark:text-amber-400 font-semibold rounded-r-lg"
+                  : "rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+              }`}
+            >
+              <span className="text-xs font-medium">User Management</span>
+              {isUserManagementOpen ? (
+                <ChevronDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+              )}
+            </button>
+
+            {/* Child Sub-items (Indented with left border indicator) */}
+            {isUserManagementOpen && (
+              <div className="border-l border-slate-400 dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleSelect("accounts")}
+                  className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
+                    isAccountsActive
+                      ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
+                  }`}
+                >
+                  Admin Management
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelect("faculty")}
+                  className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
+                    isFacultyActive
+                      ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
+                  }`}
+                >
+                  Faculty Management
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
           <SidebarButton
-            active={isAccountsActive}
-            title="Admin Management"
-            onClick={() => handleSelect("accounts")}
+            active={isFacultyActive}
+            title="Faculty Management"
+            onClick={() => handleSelect("facultyManagement")}
           />
         )}
 
-        {/* 3. Faculty Management (Admin Module) */}
-        <SidebarButton
-          active={isFacultyActive}
-          title="Faculty Management"
-          onClick={() => handleSelect(isSuperAdmin ? "faculty" : "facultyManagement")}
-        />
-
-        {/* 4. Requirements Verification (Admin Module) */}
+        {/* 3. Requirements Verification (Admin Module) */}
         <SidebarButton
           active={isVerificationActive}
           title="Requirements Verification"
           onClick={() => handleSelect(isSuperAdmin ? "verification" : "requirements")}
         />
 
-        {/* 5. Collapsible Parent Item: Academic Cycle Management */}
+        {/* 4. Collapsible Parent Item: Academic Cycle Management */}
         <div className="space-y-0.5">
           <button
             type="button"
