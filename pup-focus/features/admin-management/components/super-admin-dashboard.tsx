@@ -8,14 +8,44 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
-import { Menu, X, Shield, ScrollText, Activity } from "lucide-react";
+import { Menu, X, Shield, ScrollText, Activity, CheckCircle2, Clock3, Users } from "lucide-react";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { extractFirstName } from "@/lib/faculty-profile";
+import { Sidebar, SidebarContent } from "@/components/sidebar";
+import { FacultyTable } from "@/features/faculty-management/components/faculty-table";
+import { RequirementsPanel } from "@/features/faculty-management/components/requirements-verification-panel";
+import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
+import { SubmissionWindowPanel } from "@/features/faculty-management/components/submission-window-panel";
+import { AddFacultyModal } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
+import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
+import { DeleteFacultyModal } from "@/features/faculty-management/components/faculty-modals/delete-faculty-modal";
+import { InviteStatusModal } from "@/features/faculty-management/components/faculty-modals/invite-status-modal";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  facultyAccountSchema,
+  type FacultyAccountFormInput,
+} from "@/features/faculty-management/schemas/faculty-account.schema";
+import type {
+  FacultyAccount,
+  PendingFacultyAction,
+  CreateFacultyResult,
+} from "@/features/faculty-management/types/faculty-dashboard.types";
 
 // Minimal local types to satisfy TypeScript in this component.
 type AccountViewRole = "all" | string;
 
 type SettingsOption = "profile" | "password";
+
+export type SuperAdminSection =
+  | "dashboard"
+  | "accounts"
+  | "faculty"
+  | "verification"
+  | "terms"
+  | "window"
+  | "audit"
+  | "settings";
 
 interface AdminAccount {
   id?: string;
@@ -122,13 +152,17 @@ function formatAdminName(admin: AdminAccount): string {
 
 function normalizeSuperAdminSection(
   raw?: string | null
-): "dashboard" | "accounts" | "settings" | "auditLogs" | null {
+): SuperAdminSection | null {
   if (!raw) return null;
   const val = raw.toLowerCase().trim();
   if (val === "dashboard") return "dashboard";
   if (val === "accounts" || val === "admin-accounts" || val === "admins") return "accounts";
-  if (val === "settings" || val === "super-admin-settings") return "settings";
-  if (val === "auditlogs" || val === "audit-logs" || val === "logs") return "auditLogs";
+  if (val === "faculty" || val === "facultymanagement" || val === "faculty-management") return "faculty";
+  if (val === "verification" || val === "requirements" || val === "requirements-verification") return "verification";
+  if (val === "terms" || val === "academicterms" || val === "academic-terms") return "terms";
+  if (val === "window" || val === "submissionwindow" || val === "submission-window") return "window";
+  if (val === "audit" || val === "auditlogs" || val === "audit-logs" || val === "logs") return "audit";
+  if (val === "settings" || val === "super-admin-settings" || val === "admin-settings") return "settings";
   return null;
 }
 
@@ -144,9 +178,7 @@ export function SuperAdminDashboard({
   const searchParams = useSearchParams();
 
   // Initialize active tab from SSR-safe parameters (identical on server and client)
-  const [activeSection, setActiveSection] = useState<
-    "dashboard" | "accounts" | "settings" | "auditLogs"
-  >(() => {
+  const [activeSection, setActiveSection] = useState<SuperAdminSection>(() => {
     const fromProp = normalizeSuperAdminSection(initialTab);
     if (fromProp) return fromProp;
 
@@ -230,9 +262,7 @@ export function SuperAdminDashboard({
     }
   }, [searchParams, activeSection]);
 
-  const handleSetActiveSection = (
-    section: "dashboard" | "accounts" | "settings" | "auditLogs"
-  ) => {
+  const handleSetActiveSection = (section: SuperAdminSection) => {
     setActiveSection(section);
     if (typeof window !== "undefined") {
       try {
@@ -244,6 +274,314 @@ export function SuperAdminDashboard({
       } catch {}
     }
   };
+
+  // Faculty Management State
+  const [facultyAccounts, setFacultyAccounts] = useState<FacultyAccount[]>([]);
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(null);
+  const [isLoadingFaculty, setIsLoadingFaculty] = useState(false);
+  const [loadingFacultyIds, setLoadingFacultyIds] = useState<Set<string>>(new Set());
+  const [deletingFacultyIds, setDeletingFacultyIds] = useState<Set<string>>(new Set());
+  const [pendingFacultyAction, setPendingFacultyAction] = useState<PendingFacultyAction | null>(null);
+  const [detailsFacultyModalOpen, setDetailsFacultyModalOpen] = useState(false);
+  const [detailsFacultyId, setDetailsFacultyId] = useState<string | null>(null);
+  const [deleteFacultyError, setDeleteFacultyError] = useState<string | null>(null);
+  const [deleteFacultySuccess, setDeleteFacultySuccess] = useState<string | null>(null);
+  const [facultyActionError, setFacultyActionError] = useState<string | null>(null);
+  const [verificationResetTrigger, setVerificationResetTrigger] = useState(0);
+
+  // Add Faculty Modal State
+  const [addFacultyModalOpen, setAddFacultyModalOpen] = useState(false);
+  const [isCreatingFaculty, setIsCreatingFaculty] = useState(false);
+  const [createFacultyError, setCreateFacultyError] = useState<string | null>(null);
+  const [createFacultySuccess, setCreateFacultySuccess] = useState<string | null>(null);
+  const [facultyProfileImageFile, setFacultyProfileImageFile] = useState<File | null>(null);
+  const [facultyProfileImageInputKey, setFacultyProfileImageInputKey] = useState(0);
+
+  // Faculty Invite Modal State
+  const [facultyInviteModalOpen, setFacultyInviteModalOpen] = useState(false);
+  const [facultyInviteModalMessage, setFacultyInviteModalMessage] = useState("");
+  const [facultyInviteWasSent, setFacultyInviteWasSent] = useState(false);
+
+  const facultyForm = useForm<FacultyAccountFormInput>({
+    resolver: zodResolver(facultyAccountSchema),
+    defaultValues: {
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      email: "",
+      programId: "",
+    },
+  });
+
+  const selectedFaculty = useMemo(
+    () => facultyAccounts.find((f) => f.id === selectedFacultyId) ?? null,
+    [facultyAccounts, selectedFacultyId]
+  );
+
+  const pendingFaculty = useMemo(
+    () =>
+      pendingFacultyAction
+        ? facultyAccounts.find((f) => f.id === pendingFacultyAction.facultyId) ?? null
+        : null,
+    [facultyAccounts, pendingFacultyAction]
+  );
+
+  async function loadFacultyFromDatabase() {
+    try {
+      setIsLoadingFaculty(true);
+      const response = await fetch("/api/admin/faculty/list");
+      if (response.ok) {
+        const data = await response.json();
+        setFacultyAccounts(data.faculty || []);
+      }
+    } catch {
+      // Error handled by UI state
+    } finally {
+      setIsLoadingFaculty(false);
+    }
+  }
+
+  async function onAddFaculty(input: FacultyAccountFormInput) {
+    setIsCreatingFaculty(true);
+    setCreateFacultyError(null);
+    setCreateFacultySuccess(null);
+
+    try {
+      const payload = new FormData();
+      payload.append("firstName", input.firstName);
+      payload.append("middleName", input.middleName);
+      payload.append("lastName", input.lastName);
+      payload.append("email", input.email);
+      payload.append("programId", input.programId);
+
+      if (facultyProfileImageFile) {
+        payload.append("profileImage", facultyProfileImageFile);
+      }
+
+      const response = await fetch("/api/admin/faculty/create", {
+        method: "POST",
+        body: payload,
+      });
+
+      const data = (await response.json()) as CreateFacultyResult;
+
+      if (!response.ok) {
+        setCreateFacultyError(data.error ?? "Failed to send faculty invite");
+        setIsCreatingFaculty(false);
+        return;
+      }
+
+      const invitedEmail = data.user?.email ?? input.email;
+      setFacultyInviteWasSent(Boolean(data.sent));
+      const inviteMessage = data.sent
+        ? `Invitation email sent to ${invitedEmail}. Please ask them to verify their email and check their inbox.`
+        : data.link
+          ? `Invite link generated for ${invitedEmail}. Email delivery failed: ${data.sendError ?? "SMTP is not available"}\n\n${data.link}`
+          : `Invite could not be sent for ${invitedEmail}.`;
+
+      setCreateFacultySuccess(inviteMessage);
+      setFacultyInviteModalMessage(inviteMessage);
+      setFacultyInviteModalOpen(true);
+      setAddFacultyModalOpen(false);
+      facultyForm.reset({
+        firstName: "",
+        middleName: "",
+        lastName: "",
+        email: "",
+        programId: "",
+      });
+      setFacultyProfileImageFile(null);
+      setFacultyProfileImageInputKey((value) => value + 1);
+
+      await loadFacultyFromDatabase();
+    } catch {
+      setCreateFacultyError("An error occurred while creating the faculty account");
+    } finally {
+      setIsCreatingFaculty(false);
+    }
+  }
+
+  function onDeleteFaculty(facultyId: string) {
+    setPendingFacultyAction({ kind: "delete", facultyId });
+  }
+
+  async function performDeleteFaculty(facultyId: string) {
+    setDeletingFacultyIds((prev) => new Set(prev).add(facultyId));
+    setDeleteFacultyError(null);
+    setDeleteFacultySuccess(null);
+
+    try {
+      const response = await fetch("/api/admin/faculty/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facultyProfileId: facultyId }),
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        if (response.ok) {
+          setFacultyAccounts((prev) =>
+            prev.filter((faculty) => faculty.id !== facultyId),
+          );
+          if (selectedFacultyId === facultyId) {
+            setSelectedFacultyId(null);
+          }
+          setDeleteFacultySuccess("Faculty account deleted successfully");
+          await loadFacultyFromDatabase();
+        } else {
+          setDeleteFacultyError(
+            `Failed to delete faculty account (HTTP ${response.status})`,
+          );
+        }
+        return;
+      }
+
+      if (response.ok) {
+        setFacultyAccounts((prev) =>
+          prev.filter((faculty) => faculty.id !== facultyId),
+        );
+        if (selectedFacultyId === facultyId) {
+          setSelectedFacultyId(null);
+        }
+        setDeleteFacultySuccess("Faculty account deleted successfully");
+        await loadFacultyFromDatabase();
+      } else {
+        setDeleteFacultyError(data.error || "Failed to delete faculty account");
+      }
+    } catch (error) {
+      setDeleteFacultyError(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while deleting the faculty account",
+      );
+    } finally {
+      setDeletingFacultyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(facultyId);
+        return next;
+      });
+    }
+  }
+
+  function onDeactivateFaculty(facultyId: string) {
+    setPendingFacultyAction({ kind: "deactivate", facultyId });
+  }
+
+  async function performDeactivateFaculty(facultyId: string) {
+    setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
+    setFacultyActionError(null);
+
+    try {
+      const response = await fetch("/api/admin/faculty/deactivate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facultyProfileId: facultyId }),
+      });
+
+      if (!response.ok) {
+        let message = `Failed to deactivate faculty account (HTTP ${response.status})`;
+        try {
+          const errorData = await response.json();
+          message = errorData.error || message;
+        } catch {
+          // Keep default message
+        }
+        setFacultyActionError(message);
+        return;
+      }
+
+      setFacultyAccounts((prev) =>
+        prev.map((faculty) =>
+          faculty.id === facultyId ? { ...faculty, is_active: false } : faculty,
+        ),
+      );
+      await loadFacultyFromDatabase();
+    } catch (error) {
+      setFacultyActionError(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while deactivating the faculty account",
+      );
+    } finally {
+      setLoadingFacultyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(facultyId);
+        return next;
+      });
+    }
+  }
+
+  function onActivateFaculty(facultyId: string) {
+    setPendingFacultyAction({ kind: "activate", facultyId });
+  }
+
+  async function performActivateFaculty(facultyId: string) {
+    setLoadingFacultyIds((prev) => new Set(prev).add(facultyId));
+    setFacultyActionError(null);
+
+    try {
+      const response = await fetch("/api/admin/faculty/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facultyProfileId: facultyId }),
+      });
+
+      if (!response.ok) {
+        let message = `Failed to activate faculty account (HTTP ${response.status})`;
+        try {
+          const errorData = await response.json();
+          message = errorData.error || message;
+        } catch {
+          // Keep default message
+        }
+        setFacultyActionError(message);
+        return;
+      }
+
+      setFacultyAccounts((prev) =>
+        prev.map((faculty) =>
+          faculty.id === facultyId ? { ...faculty, is_active: true } : faculty,
+        ),
+      );
+      await loadFacultyFromDatabase();
+    } catch (error) {
+      setFacultyActionError(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while activating the faculty account",
+      );
+    } finally {
+      setLoadingFacultyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(facultyId);
+        return next;
+      });
+    }
+  }
+
+  async function confirmPendingFacultyAction() {
+    if (!pendingFacultyAction) {
+      return;
+    }
+
+    const { kind, facultyId } = pendingFacultyAction;
+    setPendingFacultyAction(null);
+
+    if (kind === "delete") {
+      await performDeleteFaculty(facultyId);
+      return;
+    }
+
+    if (kind === "activate") {
+      await performActivateFaculty(facultyId);
+      return;
+    }
+
+    await performDeactivateFaculty(facultyId);
+  }
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -368,16 +706,18 @@ export function SuperAdminDashboard({
   async function refreshCurrentPanel() {
     if (activeSection === "accounts") {
       await loadAdminAccounts();
-      return;
-    }
-
-    if (activeSection === "settings") {
+    } else if (activeSection === "faculty" || activeSection === "verification") {
+      await loadFacultyFromDatabase();
+    } else if (activeSection === "settings") {
       await loadAccountSettings();
+    } else if (activeSection === "dashboard") {
+      await Promise.all([loadAdminAccounts(), loadFacultyFromDatabase()]);
     }
   }
 
   useEffect(() => {
     void loadAdminAccounts();
+    void loadFacultyFromDatabase();
   }, []);
 
   useEffect(() => {
@@ -985,7 +1325,7 @@ export function SuperAdminDashboard({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-slate-700 dark:text-amber-300 hover:bg-slate-100 dark:hover:bg-amber-500/10 rounded-xl transition-all"
+          className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-slate-700 dark:text-amber-300 hover:bg-slate-100 dark:hover:bg-amber-500/10 rounded-xl transition-all cursor-pointer"
           aria-label="Open Navigation Menu"
         >
           <Menu className="w-5 h-5" />
@@ -993,61 +1333,14 @@ export function SuperAdminDashboard({
       )}
 
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-2.5 shadow-sm transition-colors duration-200">
-        <div className="my-1.5 rounded-2xl bg-slate-100/70 border border-slate-400/80 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
-          <div className="relative mb-2">
-            {superAdminAvatarUrl && !isAvatarImageError ? (
-              <img
-                src={superAdminAvatarUrl}
-                alt={adminName ?? "Super Admin"}
-                className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950"
-                onError={() => setIsAvatarImageError(true)}
-              />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-800 border border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-sm flex items-center justify-center shadow-sm">
-                {getInitials(adminName, "SA")}
-              </div>
-            )}
-            <span
-              className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
-              title="Active"
-            />
-          </div>
-
-          <p className="mt-0.5 font-semibold text-slate-900 dark:text-white text-center text-xs sm:text-sm">
-            {extractFirstName(adminName, "Super Admin")}
-          </p>
-
-          <div className="my-1.5 h-px w-full bg-slate-400 dark:bg-slate-800" />
-
-          <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-purple-50 text-purple-800 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20">
-            Super Admin
-          </span>
-        </div>
-
-        <nav className="mt-1.5 space-y-0.5">
-          <SidebarButton
-            active={activeSection === "dashboard"}
-            title="Dashboard"
-            onClick={() => handleSetActiveSection("dashboard")}
-          />
-          <SidebarButton
-            active={activeSection === "accounts"}
-            title="Admin Accounts"
-            onClick={() => handleSetActiveSection("accounts")}
-          />
-          <SidebarButton
-            active={activeSection === "settings"}
-            title="Settings"
-            onClick={() => handleSetActiveSection("settings")}
-          />
-          <SidebarButton
-            active={activeSection === "auditLogs"}
-            title="Audit Logs"
-            onClick={() => handleSetActiveSection("auditLogs")}
-          />
-        </nav>
-      </aside>
+      <Sidebar
+        activeSection={activeSection}
+        setActiveSection={handleSetActiveSection}
+        adminName={adminName}
+        roleTitle="Super Admin"
+        isSuperAdmin={true}
+        profileImageUrl={superAdminAvatarUrl}
+      />
 
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
@@ -1062,66 +1355,22 @@ export function SuperAdminDashboard({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition cursor-pointer"
                 aria-label="Close navigation"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="my-2 rounded-2xl bg-slate-100/70 border border-slate-400/80 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
-              <div className="relative mb-2">
-                {superAdminAvatarUrl && !isAvatarImageError ? (
-                  <img
-                    src={superAdminAvatarUrl}
-                    alt={adminName ?? "Super Admin"}
-                    className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950"
-                    onError={() => setIsAvatarImageError(true)}
-                  />
-                ) : (
-                  <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-800 border border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-sm flex items-center justify-center shadow-sm">
-                    {getInitials(adminName, "SA")}
-                  </div>
-                )}
-                <span
-                  className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
-                  title="Active"
-                />
-              </div>
-
-              <p className="mt-0.5 font-semibold text-slate-900 dark:text-white text-center text-xs sm:text-sm">
-                {extractFirstName(adminName, "Super Admin")}
-              </p>
-
-              <div className="my-1.5 h-px w-full bg-slate-400 dark:bg-slate-800" />
-
-              <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-purple-50 text-purple-800 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20">
-                Super Admin
-              </span>
-            </div>
-
-            <nav className="mt-1.5 space-y-0.5 flex-1">
-              <SidebarButton
-                active={activeSection === "dashboard"}
-                title="Dashboard"
-                onClick={() => { handleSetActiveSection("dashboard"); setIsMobileMenuOpen(false); }}
-              />
-              <SidebarButton
-                active={activeSection === "accounts"}
-                title="Admin Accounts"
-                onClick={() => { handleSetActiveSection("accounts"); setIsMobileMenuOpen(false); }}
-              />
-              <SidebarButton
-                active={activeSection === "settings"}
-                title="Settings"
-                onClick={() => { handleSetActiveSection("settings"); setIsMobileMenuOpen(false); }}
-              />
-              <SidebarButton
-                active={activeSection === "auditLogs"}
-                title="Audit Logs"
-                onClick={() => { handleSetActiveSection("auditLogs"); setIsMobileMenuOpen(false); }}
-              />
-            </nav>
+            <SidebarContent
+              activeSection={activeSection}
+              setActiveSection={handleSetActiveSection}
+              adminName={adminName}
+              roleTitle="Super Admin"
+              isSuperAdmin={true}
+              profileImageUrl={superAdminAvatarUrl}
+              onNavigate={() => setIsMobileMenuOpen(false)}
+            />
           </aside>
         </div>
       )}
@@ -1138,7 +1387,7 @@ export function SuperAdminDashboard({
                       Welcome back, {extractFirstName(adminName, "Super Admin")}
                     </h1>
                     <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
-                      Super Admin Dashboard • A.Y. 2026-2027 • 1st Semester
+                      Super Admin Dashboard • Campus Management Overview
                     </p>
                   </div>
                 </section>
@@ -1148,44 +1397,48 @@ export function SuperAdminDashboard({
                   {/* Card 1: Active Admin Accounts */}
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Active Admin Accounts</span>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Admin Accounts</span>
                       <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {adminAccounts.filter(a => a.is_active).length} Active
+                        {adminAccounts.filter((a) => a.is_active).length} Active
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {adminAccounts.length} total admin accounts
+                        {adminAccounts.length} total administrative accounts
                       </p>
                     </div>
                   </div>
 
-                  {/* Card 2: Audit Logs Today */}
+                  {/* Card 2: Faculty Accounts */}
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Audit Logs Today</span>
-                      <ScrollText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Faculty Accounts</span>
+                      <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        —
+                        {facultyAccounts.filter((f) => f.is_active).length} Active
                       </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">View Audit Logs for details</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        {facultyAccounts.length} total faculty members
+                      </p>
                     </div>
                   </div>
 
-                  {/* Card 3: Academic Window Status */}
+                  {/* Card 3: Academic Window & Compliance */}
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Academic Window</span>
-                      <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Requirements & Cycle</span>
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        System Active
+                        Full Access
                       </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">All subsystems operational</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Review, verify, and configure terms
+                      </p>
                     </div>
                   </div>
                 </section>
@@ -1236,21 +1489,52 @@ export function SuperAdminDashboard({
                     </div>
                   </div>
 
-                  {/* Right Column (1-Span) — System Audit Logs */}
+                  {/* Right Column (1-Span) — Quick Module Access */}
                   <div className="space-y-4">
                     <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
                       <div className="pb-3 border-b border-slate-400 dark:border-slate-800">
-                        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">System Audit Logs</h2>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Recent system activity.</p>
+                        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Quick Navigation</h2>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Jump directly to any admin module.</p>
                       </div>
-                      <div className="py-6 text-center">
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Navigate to Audit Logs for full history.</p>
+                      <div className="space-y-2 pt-3">
                         <button
                           type="button"
-                          onClick={() => handleSetActiveSection("auditLogs")}
-                          className="mt-3 inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold transition cursor-pointer"
+                          onClick={() => handleSetActiveSection("faculty")}
+                          className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
-                          <span>View Audit Logs</span>
+                          <span>Faculty Management</span>
+                          <span>→</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSetActiveSection("verification")}
+                          className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
+                        >
+                          <span>Requirements Verification</span>
+                          <span>→</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSetActiveSection("terms")}
+                          className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
+                        >
+                          <span>Academic Terms</span>
+                          <span>→</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSetActiveSection("window")}
+                          className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
+                        >
+                          <span>Submission Window</span>
+                          <span>→</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSetActiveSection("audit")}
+                          className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
+                        >
+                          <span>Audit Logs</span>
                           <span>→</span>
                         </button>
                       </div>
@@ -1268,14 +1552,23 @@ export function SuperAdminDashboard({
                       Admin Accounts
                     </h1>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void refreshCurrentPanel()}
-                    disabled={isLoadingAccounts}
-                    className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
-                  >
-                    {isLoadingAccounts ? "Refreshing..." : "⟳ Refresh"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={openCreateAdminModal}
+                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-4 py-2 text-xs transition cursor-pointer"
+                    >
+                      + Create Admin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void refreshCurrentPanel()}
+                      disabled={isLoadingAccounts}
+                      className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {isLoadingAccounts ? "Refreshing..." : "⟳ Refresh"}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
@@ -1384,7 +1677,136 @@ export function SuperAdminDashboard({
               </article>
             ) : null}
 
-            {activeSection === "auditLogs" ? (
+            {activeSection === "faculty" ? (
+              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-6">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      Faculty Management
+                    </h1>
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreateFacultyError(null);
+                        setCreateFacultySuccess(null);
+                        setAddFacultyModalOpen(true);
+                      }}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition cursor-pointer shadow-sm shadow-amber-500/10"
+                    >
+                      + Add Faculty
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void refreshCurrentPanel()}
+                      disabled={isLoadingFaculty}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {isLoadingFaculty ? "Refreshing..." : "⟳ Refresh"}
+                    </button>
+                  </div>
+                </div>
+
+                <FacultyTable
+                  facultyAccounts={facultyAccounts}
+                  isLoading={isLoadingFaculty}
+                  onSelectFaculty={setSelectedFacultyId}
+                  onDeleteFaculty={onDeleteFaculty}
+                  onViewDetails={(facultyId) => {
+                    setDetailsFacultyId(facultyId);
+                    setDetailsFacultyModalOpen(true);
+                  }}
+                  onActivate={onActivateFaculty}
+                  onDeactivate={onDeactivateFaculty}
+                  loadingFacultyIds={loadingFacultyIds}
+                  deletingFacultyIds={deletingFacultyIds}
+                  deleteError={deleteFacultyError}
+                  deleteSuccess={deleteFacultySuccess}
+                  facultyActionError={facultyActionError}
+                  onClearDeleteMessages={() => {
+                    setDeleteFacultyError(null);
+                    setDeleteFacultySuccess(null);
+                    setFacultyActionError(null);
+                  }}
+                />
+              </article>
+            ) : null}
+
+            {activeSection === "verification" ? (
+              <article className="p-2 sm:p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      Requirements Verification
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void refreshCurrentPanel()}
+                    disabled={isLoadingFaculty}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {isLoadingFaculty ? "Refreshing..." : "⟳ Refresh"}
+                  </button>
+                </div>
+
+                <RequirementsPanel
+                  facultyAccounts={facultyAccounts}
+                  selectedFaculty={selectedFaculty}
+                  onSelectFaculty={setSelectedFacultyId}
+                  resetTrigger={verificationResetTrigger}
+                />
+              </article>
+            ) : null}
+
+            {activeSection === "terms" ? (
+              <article className="p-2 sm:p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      Academic Term Management
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void refreshCurrentPanel()}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                  >
+                    ⟳ Refresh
+                  </button>
+                </div>
+
+                <AdminAcademicTerms adminName={adminName ?? "Super Admin"} />
+              </article>
+            ) : null}
+
+            {activeSection === "window" ? (
+              <article className="p-2 sm:p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      Submission Window
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void refreshCurrentPanel()}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                  >
+                    ⟳ Refresh
+                  </button>
+                </div>
+
+                <SubmissionWindowPanel
+                  onWindowChange={() =>
+                    setVerificationResetTrigger((prev) => prev + 1)
+                  }
+                />
+              </article>
+            ) : null}
+
+            {activeSection === "audit" ? (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
                   <div>
@@ -1855,6 +2277,49 @@ export function SuperAdminDashboard({
           </div>
         </div>
       ) : null}
+
+      {/* Faculty Modals */}
+      {detailsFacultyModalOpen && detailsFacultyId ? (
+        <EditFacultyModal
+          facultyId={detailsFacultyId}
+          facultyAccounts={facultyAccounts}
+          onClose={() => setDetailsFacultyModalOpen(false)}
+          onSave={refreshCurrentPanel}
+        />
+      ) : null}
+
+      <DeleteFacultyModal
+        pendingFacultyAction={pendingFacultyAction}
+        pendingFaculty={pendingFaculty}
+        onCancel={() => setPendingFacultyAction(null)}
+        onConfirm={confirmPendingFacultyAction}
+      />
+
+      <InviteStatusModal
+        isOpen={facultyInviteModalOpen}
+        inviteWasSent={facultyInviteWasSent}
+        inviteModalMessage={facultyInviteModalMessage}
+        onClose={() => setFacultyInviteModalOpen(false)}
+      />
+
+      <AddFacultyModal
+        isOpen={addFacultyModalOpen}
+        onClose={() => {
+          setAddFacultyModalOpen(false);
+          setCreateFacultyError(null);
+          setCreateFacultySuccess(null);
+          setFacultyProfileImageFile(null);
+          setFacultyProfileImageInputKey((value) => value + 1);
+        }}
+        form={facultyForm}
+        onAddFaculty={onAddFaculty}
+        isCreating={isCreatingFaculty}
+        createError={createFacultyError}
+        createSuccess={createFacultySuccess}
+        profileImageFile={facultyProfileImageFile}
+        onProfileImageChange={setFacultyProfileImageFile}
+        profileImageInputKey={facultyProfileImageInputKey}
+      />
     </div>
   );
 }
