@@ -112,43 +112,92 @@ export async function POST(request: NextRequest) {
         ? `Backup_${academicYear.replace(/[^a-zA-Z0-9]/g, "_")}_${dateStr}`
         : `Full_System_Backup_${dateStr}`);
 
-    // Insert backup history record
-    const { data: backupRecord, error: insertError } = await supabase
+    // Resolve profile ID for created_by
+    let creatorProfileId: string | null = null;
+    try {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (prof?.id) {
+        creatorProfileId = prof.id;
+      }
+    } catch {
+      // ignore
+    }
+
+    // Insert backup history record to database before responding
+    let backupRecord = null;
+    let insertErrorMessage: string | null = null;
+
+    const backupPayload = {
+      backup_name: backupName,
+      academic_year: academicYear || null,
+      total_records: totalRecords,
+      file_size_kb: fileSizeKb,
+      status: "completed" as const,
+      created_by: creatorProfileId,
+      metadata: {
+        users_count: users.length,
+        terms_count: terms.length,
+        submissions_count: submissions.length,
+        templates_count: templates.length,
+        audit_logs_count: auditLogs.length,
+        snapshot: snapshotPayload,
+      },
+    };
+
+    const { data: inserted, error: insertError } = await supabase
       .from("system_backups")
-      .insert({
-        backup_name: backupName,
-        academic_year: academicYear || null,
-        total_records: totalRecords,
-        file_size_kb: fileSizeKb,
-        status: "completed",
-        created_by: user.id,
-        metadata: {
-          users_count: users.length,
-          terms_count: terms.length,
-          submissions_count: submissions.length,
-          templates_count: templates.length,
-          audit_logs_count: auditLogs.length,
-          snapshot: snapshotPayload,
-        },
-      })
+      .insert(backupPayload)
       .select()
       .single();
 
     if (insertError) {
-      console.warn("Failed to insert system_backup row:", insertError.message);
+      console.error("Failed to insert system_backup row:", insertError);
+      insertErrorMessage = insertError.message;
+
+      // Retry once without created_by in case of FK constraint mismatch
+      if (creatorProfileId) {
+        const { data: retryData, error: retryError } = await supabase
+          .from("system_backups")
+          .insert({
+            ...backupPayload,
+            created_by: null,
+          })
+          .select()
+          .single();
+
+        if (!retryError && retryData) {
+          backupRecord = retryData;
+          insertErrorMessage = null;
+        } else if (retryError) {
+          insertErrorMessage = retryError.message;
+        }
+      }
+    } else if (inserted) {
+      backupRecord = inserted;
+    }
+
+    if (!backupRecord) {
+      console.error("system_backups database error:", insertErrorMessage);
+      return NextResponse.json(
+        {
+          error:
+            "Failed to save backup history to database. Please ensure SQL migration 0021 was executed.",
+          details: insertErrorMessage,
+          snapshot: snapshotPayload,
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      backup: backupRecord || {
-        id: `mock-${Date.now()}`,
-        backup_name: backupName,
-        academic_year: academicYear,
-        total_records: totalRecords,
-        file_size_kb: fileSizeKb,
-        status: "completed",
-        created_at: new Date().toISOString(),
-      },
+      message: "Backup generated and saved successfully!",
+      backup: backupRecord,
       snapshot: snapshotPayload,
     });
   } catch (error) {
