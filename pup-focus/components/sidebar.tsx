@@ -9,6 +9,7 @@ export interface SidebarProps {
   setActiveSection: (section: any) => void;
   adminName?: string | null;
   roleTitle?: string;
+  isSuperAdmin?: boolean;
   profileImageUrl?: string | null;
   onNavigate?: () => void;
 }
@@ -25,13 +26,13 @@ function getRoleBadgeClasses(roleTitle?: string): string {
   return "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
 }
 
-function getSidebarInitials(name?: string | null): string {
-  if (!name || !name.trim()) return "AD";
+function getSidebarInitials(name?: string | null, fallback = "AD"): string {
+  if (!name || !name.trim()) return fallback;
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
   }
-  return parts[0].slice(0, 2).toUpperCase() || "AD";
+  return parts[0].slice(0, 2).toUpperCase() || fallback;
 }
 
 export function SidebarButton({
@@ -49,7 +50,7 @@ export function SidebarButton({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left px-3 py-2 text-xs transition ${
+      className={`w-full text-left px-3 py-2 text-xs transition cursor-pointer ${
         active
           ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-900 dark:border-amber-400 dark:bg-amber-500/15 dark:text-amber-400 font-semibold rounded-r-lg"
           : "rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
@@ -70,12 +71,37 @@ export function SidebarContent({
   setActiveSection,
   adminName = "Admin",
   roleTitle = "Admin",
+  isSuperAdmin: isSuperAdminProp,
   profileImageUrl,
   onNavigate,
 }: SidebarProps) {
   const [hasAvatarError, setHasAvatarError] = useState(false);
-  const isAcademicCycleActive =
-    activeSection === "academicTerms" || activeSection === "submissionWindow";
+
+  const isSuperAdmin =
+    isSuperAdminProp ??
+    Boolean((roleTitle || "").toLowerCase().includes("super"));
+
+  // Check active states supporting both short and legacy tokens
+  const isDashboardActive = activeSection === "dashboard";
+  const isAccountsActive =
+    activeSection === "accounts" || activeSection === "admin-accounts";
+  const isFacultyActive =
+    activeSection === "faculty" || activeSection === "facultyManagement";
+  const isVerificationActive =
+    activeSection === "verification" ||
+    activeSection === "requirements" ||
+    activeSection === "requirements-verification";
+  const isTermsActive =
+    activeSection === "terms" || activeSection === "academicTerms";
+  const isWindowActive =
+    activeSection === "window" || activeSection === "submissionWindow";
+  const isAuditActive =
+    activeSection === "audit" ||
+    activeSection === "auditLogs" ||
+    activeSection === "audit-logs";
+  const isSettingsActive = activeSection === "settings";
+
+  const isAcademicCycleActive = isTermsActive || isWindowActive;
 
   const [isAcademicCycleOpen, setIsAcademicCycleOpen] =
     useState<boolean>(isAcademicCycleActive);
@@ -107,7 +133,7 @@ export function SidebarContent({
             />
           ) : (
             <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-800 border border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-sm">
-              {getSidebarInitials(adminName)}
+              {getSidebarInitials(adminName, isSuperAdmin ? "SA" : "AD")}
             </div>
           )}
           <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="Active" />
@@ -125,34 +151,48 @@ export function SidebarContent({
       </div>
 
       <nav className="mt-1.5 space-y-0.5 flex-1 overflow-y-auto">
+        {/* 1. Dashboard */}
         <SidebarButton
-          active={activeSection === "dashboard"}
+          active={isDashboardActive}
           title="Dashboard"
           onClick={() => handleSelect("dashboard")}
         />
+
+        {/* 2. Admin Accounts (Super Admin Exclusive) */}
+        {isSuperAdmin && (
+          <SidebarButton
+            active={isAccountsActive}
+            title="Admin Accounts"
+            onClick={() => handleSelect("accounts")}
+          />
+        )}
+
+        {/* 3. Faculty Management (Admin Module) */}
         <SidebarButton
-          active={activeSection === "facultyManagement"}
+          active={isFacultyActive}
           title="Faculty Management"
-          onClick={() => handleSelect("facultyManagement")}
-        />
-        <SidebarButton
-          active={activeSection === "requirements"}
-          title="Requirements Verification"
-          onClick={() => handleSelect("requirements")}
+          onClick={() => handleSelect(isSuperAdmin ? "faculty" : "facultyManagement")}
         />
 
-        {/* Collapsible Parent Item: Academic Cycle Management */}
+        {/* 4. Requirements Verification (Admin Module) */}
+        <SidebarButton
+          active={isVerificationActive}
+          title="Requirements Verification"
+          onClick={() => handleSelect(isSuperAdmin ? "verification" : "requirements")}
+        />
+
+        {/* 5. Collapsible Parent Item: Academic Cycle Management */}
         <div className="space-y-0.5">
           <button
             type="button"
             onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
-            className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs transition ${
+            className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs transition cursor-pointer ${
               isAcademicCycleActive
                 ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-900 dark:border-amber-400 dark:bg-amber-500/15 dark:text-amber-400 font-semibold rounded-r-lg"
                 : "rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
             }`}
           >
-            <span className="text-xs">
+            <span className="text-xs font-medium">
               Academic Cycle Management
             </span>
             {isAcademicCycleOpen ? (
@@ -167,9 +207,9 @@ export function SidebarContent({
             <div className="border-l border-slate-400 dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
               <button
                 type="button"
-                onClick={() => handleSelect("academicTerms")}
-                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all ${
-                  activeSection === "academicTerms"
+                onClick={() => handleSelect(isSuperAdmin ? "terms" : "academicTerms")}
+                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
+                  isTermsActive
                     ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
                 }`}
@@ -178,9 +218,9 @@ export function SidebarContent({
               </button>
               <button
                 type="button"
-                onClick={() => handleSelect("submissionWindow")}
-                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all ${
-                  activeSection === "submissionWindow"
+                onClick={() => handleSelect(isSuperAdmin ? "window" : "submissionWindow")}
+                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
+                  isWindowActive
                     ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
                 }`}
@@ -191,8 +231,18 @@ export function SidebarContent({
           )}
         </div>
 
+        {/* 6. Audit Logs (Super Admin Exclusive) */}
+        {isSuperAdmin && (
+          <SidebarButton
+            active={isAuditActive}
+            title="Audit Logs"
+            onClick={() => handleSelect("audit")}
+          />
+        )}
+
+        {/* 7. Settings */}
         <SidebarButton
-          active={activeSection === "settings"}
+          active={isSettingsActive}
           title="Settings"
           onClick={() => handleSelect("settings")}
         />
