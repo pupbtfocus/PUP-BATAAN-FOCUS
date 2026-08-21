@@ -171,7 +171,7 @@ export function SubmissionWindowCountdown({
   // ── Loading skeleton ──
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/80 p-3 shadow-sm">
+      <div className="rounded-xl border border-slate-400 bg-white dark:border-slate-800 dark:bg-slate-950/80 p-3 shadow-sm">
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 animate-pulse rounded-full bg-slate-300 dark:bg-slate-600" />
           <div className="h-3 w-24 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
@@ -191,7 +191,7 @@ export function SubmissionWindowCountdown({
   // ── Not configured ──
   if (!windowState || !windowState.isConfigured) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/80 p-3 shadow-sm">
+      <div className="rounded-xl border border-slate-400 bg-white dark:border-slate-800 dark:bg-slate-950/80 p-3 shadow-sm">
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-3.5 w-3.5 text-slate-500" />
           <span className="text-[10px] uppercase tracking-[0.15em] text-slate-600 dark:text-slate-400 font-semibold">

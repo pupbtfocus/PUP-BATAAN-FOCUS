@@ -151,11 +151,11 @@ function MetadataModal({
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-2xl"
+        className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-400 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-700 px-6 py-4">
+        <div className="flex items-start justify-between border-b border-slate-400 dark:border-slate-700 px-6 py-4">
           <div className="flex items-center gap-3">
             {getActionIcon(entry.action)}
             <div>
@@ -170,7 +170,7 @@ function MetadataModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-slate-300 dark:border-slate-700 p-2 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="rounded-full border border-slate-400 dark:border-slate-700 p-2 text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -181,7 +181,7 @@ function MetadataModal({
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5 space-y-4">
           {/* Summary Grid */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
+            <div className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                 Timestamp
               </p>
@@ -189,7 +189,7 @@ function MetadataModal({
                 {formatTimestamp(entry.createdAt)}
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
+            <div className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                 Actor
               </p>
@@ -197,7 +197,7 @@ function MetadataModal({
                 {entry.actorName ?? truncateId(entry.actorId)}
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
+            <div className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                 Entity Type
               </p>
@@ -205,7 +205,7 @@ function MetadataModal({
                 {entry.entityType}
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
+            <div className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                 Entity ID
               </p>
@@ -216,7 +216,7 @@ function MetadataModal({
           </div>
 
           {/* Full Actor ID */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
+          <div className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
             <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
               Actor ID
             </p>
@@ -226,7 +226,7 @@ function MetadataModal({
           </div>
 
           {/* Metadata JSON */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
+          <div className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
             <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 mb-2">
               Metadata
             </p>
@@ -256,7 +256,7 @@ function MetadataModal({
           </div>
 
           {/* Log ID */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
+          <div className="rounded-xl border border-slate-400/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
             <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
               Log ID
             </p>
@@ -267,7 +267,7 @@ function MetadataModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-200 dark:border-slate-700 px-6 py-3 flex justify-end">
+        <div className="border-t border-slate-400 dark:border-slate-700 px-6 py-3 flex justify-end">
           <Button onClick={onClose} variant="secondary" size="sm">
             Close
           </Button>
@@ -346,7 +346,7 @@ export function AuditLogsPanel() {
   return (
     <div className="mt-4 space-y-4">
       {/* ── Filter Bar ── */}
-      <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-4 shadow-lg shadow-black/20">
+      <div className="rounded-2xl border border-slate-400/80 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-4 shadow-lg shadow-black/20">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           {/* Search */}
           <div className="relative flex-1">
@@ -356,7 +356,7 @@ export function AuditLogsPanel() {
               placeholder="Search actions, entity types…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-slate-800 dark:text-slate-100 outline-none placeholder-slate-400 focus:ring-2 focus:ring-amber-300/40 transition"
+              className="w-full rounded-xl border border-slate-400 bg-white dark:border-slate-600 dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-slate-800 dark:text-slate-100 outline-none placeholder-slate-400 focus:ring-2 focus:ring-amber-300/40 transition"
             />
           </div>
 
@@ -367,7 +367,7 @@ export function AuditLogsPanel() {
               <select
                 value={actionCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="appearance-none rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900 py-2.5 pl-10 pr-8 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-300/40 transition"
+                className="appearance-none rounded-xl border border-slate-400 bg-white dark:border-slate-600 dark:bg-slate-900 py-2.5 pl-10 pr-8 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-300/40 transition"
               >
                 {ACTION_CATEGORY_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -409,9 +409,9 @@ export function AuditLogsPanel() {
       ) : null}
 
       {/* ── Data Table ── */}
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950/80 shadow-lg shadow-black/20">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-400/80 dark:border-slate-800/80 bg-slate-950/80 shadow-lg shadow-black/20">
         {/* Table Header */}
-        <div className="hidden lg:grid lg:grid-cols-[160px_1fr_1.2fr_1fr_80px] gap-2 border-b border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 px-4 py-2.5">
+        <div className="hidden lg:grid lg:grid-cols-[160px_1fr_1.2fr_1fr_80px] gap-2 border-b border-slate-400 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 px-4 py-2.5">
           <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-500 dark:text-slate-400">
             Timestamp
           </p>
@@ -448,7 +448,7 @@ export function AuditLogsPanel() {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-200 dark:divide-slate-700/50">
+          <div className="divide-y divide-slate-400 dark:divide-slate-700/50">
             {logs.map((entry) => {
               const badge = getActionBadgeStyle(entry.action);
 
@@ -516,7 +516,7 @@ export function AuditLogsPanel() {
 
       {/* ── Pagination ── */}
       {totalPages > 1 ? (
-        <div className="flex items-center justify-between rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 px-4 py-3 shadow-lg shadow-black/20">
+        <div className="flex items-center justify-between rounded-2xl border border-slate-400/80 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 px-4 py-3 shadow-lg shadow-black/20">
           <Button
             type="button"
             variant="secondary"

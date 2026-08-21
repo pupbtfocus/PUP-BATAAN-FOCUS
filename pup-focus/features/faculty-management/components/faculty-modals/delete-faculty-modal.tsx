@@ -22,7 +22,7 @@ export function DeleteFacultyModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-3xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
+      <div className="w-full max-w-lg rounded-3xl border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
         <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
           {pendingFacultyAction.kind === "delete"
             ? "Confirm Delete"

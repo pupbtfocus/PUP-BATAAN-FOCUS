@@ -330,7 +330,7 @@ export function NotificationDrawer() {
         type="button"
         onClick={handleOpenDrawer}
         aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
-        className="relative flex items-center justify-center p-2 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-200/60 dark:bg-slate-900 border border-slate-300/80 dark:border-slate-800 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+        className="relative flex items-center justify-center p-2 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-200/60 dark:bg-slate-900 border border-slate-400 dark:border-slate-800 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
