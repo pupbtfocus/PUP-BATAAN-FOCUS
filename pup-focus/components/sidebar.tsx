@@ -158,11 +158,11 @@ export function SidebarContent({
           onClick={() => handleSelect("dashboard")}
         />
 
-        {/* 2. Admin Accounts (Super Admin Exclusive) */}
+        {/* 2. Admin Management (Super Admin Exclusive) */}
         {isSuperAdmin && (
           <SidebarButton
             active={isAccountsActive}
-            title="Admin Accounts"
+            title="Admin Management"
             onClick={() => handleSelect("accounts")}
           />
         )}
