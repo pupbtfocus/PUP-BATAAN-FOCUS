@@ -2,20 +2,15 @@
 
 import React, { FormEvent, useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Shield, ScrollText, Activity } from "lucide-react";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
-
-const DASHBOARD_IMAGES = [
-  "/images/attachments/IMG_9399.jpeg",
-  "/images/attachments/IMG_9402.jpeg",
-];
+import { extractFirstName } from "@/lib/faculty-profile";
 
 // Minimal local types to satisfy TypeScript in this component.
 type AccountViewRole = "all" | string;
@@ -869,7 +864,7 @@ export function SuperAdminDashboard({
     return accounts.map((admin) => (
       <div
         key={admin.id}
-        className="rounded-xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/80 p-4"
+        className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -892,29 +887,29 @@ export function SuperAdminDashboard({
                 </div>
               )}
               <div>
-                <p className="font-semibold text-slate-800 dark:text-slate-100">
+                <p className="font-semibold text-slate-100">
                   {admin.full_name}
                 </p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{admin.email}</p>
+                <p className="text-sm text-slate-400">{admin.email}</p>
               </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-3 py-1 text-xs text-slate-700 dark:text-slate-300">
+            <span className="rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-300">
               {ROLE_LABEL[admin.role]}
             </span>
             <span
               className={`rounded-full border px-3 py-1 text-xs ${
                 admin.is_active
                   ? "border-emerald-700 bg-emerald-950/40 text-emerald-300"
-                  : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 text-slate-500 dark:text-slate-400"
+                  : "border-slate-800 bg-slate-900 text-slate-400"
               }`}
             >
               {admin.is_active ? "Active" : "Inactive"}
             </span>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
+        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
           {admin.department ? (
             <span>Department: {admin.department}</span>
           ) : null}
@@ -930,7 +925,7 @@ export function SuperAdminDashboard({
                 size="sm"
                 onClick={() => onDeactivateAdmin(admin.profile_id)}
                 disabled={loadingAdminIds.has(admin.profile_id)}
-                className="text-[#7a0000] dark:text-amber-300 hover:text-amber-200"
+                className="text-[#7a0000] text-amber-300 hover:text-amber-200"
               >
                 {loadingAdminIds.has(admin.profile_id)
                   ? "Deactivating..."
@@ -989,7 +984,7 @@ export function SuperAdminDashboard({
   }
 
   return (
-    <div className="relative flex min-h-full w-full items-stretch gap-0">
+    <div className="relative flex min-h-full w-full items-stretch gap-0 bg-slate-950 text-slate-100">
       {/* Mobile Menu Button (visible only on small screens when drawer is closed) */}
       {!isMobileMenuOpen && (
         <button
@@ -1003,8 +998,8 @@ export function SuperAdminDashboard({
       )}
 
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-2.5 shadow-lg">
-        <div className="my-1.5 rounded-lg bg-[var(--card)] p-2.5 text-[var(--accent)] flex flex-col items-center border border-slate-700 dark:border-slate-800">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-2.5 shadow-lg">
+        <div className="my-1.5 rounded-xl bg-slate-900/60 p-2.5 flex flex-col items-center border border-slate-800/80 shadow-sm">
           <div className="relative mb-2">
             {superAdminAvatarUrl && !isAvatarImageError ? (
               <img
@@ -1025,14 +1020,14 @@ export function SuperAdminDashboard({
           </div>
 
           <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
-            {adminName ?? "Super Admin"}
+            {extractFirstName(adminName, "Super Admin")}
           </p>
 
-          <div className="my-1.5 h-px w-full bg-slate-700" />
+          <div className="my-1.5 h-px w-full bg-slate-800" />
 
-          <p className="mt-0 text-[10px] uppercase tracking-[0.12em] text-amber-400 text-center font-semibold">
+          <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
             Super Admin
-          </p>
+          </span>
         </div>
 
         <nav className="mt-1.5 space-y-1">
@@ -1066,20 +1061,20 @@ export function SuperAdminDashboard({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-900 h-full p-3 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10 shadow-2xl overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#7a0000] dark:text-amber-400">Navigation</span>
+          <aside className="relative w-64 max-w-[80%] bg-slate-950 h-full p-3 border-r border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Navigation</span>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
                 aria-label="Close navigation"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="my-2 rounded-lg bg-[var(--card)] p-2.5 text-[var(--accent)] flex flex-col items-center border border-slate-700 dark:border-slate-800">
+            <div className="my-2 rounded-xl bg-slate-900/60 p-2.5 flex flex-col items-center border border-slate-800/80 shadow-sm">
               <div className="relative mb-2">
                 {superAdminAvatarUrl && !isAvatarImageError ? (
                   <img
@@ -1100,14 +1095,14 @@ export function SuperAdminDashboard({
               </div>
 
               <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
-                {adminName ?? "Super Admin"}
+                {extractFirstName(adminName, "Super Admin")}
               </p>
 
-              <div className="my-1.5 h-px w-full bg-slate-700" />
+              <div className="my-1.5 h-px w-full bg-slate-800" />
 
-              <p className="mt-0 text-[10px] uppercase tracking-[0.12em] text-amber-400 text-center font-semibold">
+              <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
                 Super Admin
-              </p>
+              </span>
             </div>
 
             <nav className="mt-1.5 space-y-1 flex-1">
@@ -1137,47 +1132,144 @@ export function SuperAdminDashboard({
       )}
 
       <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 shadow-lg">
-          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-800 bg-slate-950 shadow-lg">
+          <div className="min-h-0 flex-1 overflow-y-auto p-6 bg-slate-950">
             {activeSection === "dashboard" ? (
-              <article className="relative -m-6 h-[calc(100vh-4rem)] w-[calc(100%+3rem)] overflow-hidden p-0">
-                <div className="relative h-full overflow-hidden bg-[#4d0000]/80">
-                  <Image
-                    src={DASHBOARD_IMAGES[0]}
-                    alt="PUP Bataan login background"
-                    fill
-                    sizes="100vw"
-                    className="object-cover"
-                    style={{ animation: "backgroundFadeA 16s infinite linear" }}
-                  />
-                  <Image
-                    src={DASHBOARD_IMAGES[1]}
-                    alt="PUP Bataan login background"
-                    fill
-                    sizes="100vw"
-                    className="object-cover"
-                    style={{ animation: "backgroundFadeB 16s infinite linear" }}
-                  />
-                  {/* removed red overlay */}
-
-                  <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
-                    <BrandMark size={90} className="rounded-full" />
-                    <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-                      Polytechnic University of the Philippines - Bataan Campus
+              <article className="space-y-6">
+                {/* TIER 1: Welcome Banner */}
+                <section className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-r from-slate-900/90 via-slate-900/80 to-slate-950 p-6 sm:p-7 shadow-sm">
+                  <div className="relative z-10 space-y-1">
+                    <h1 className="text-xl font-semibold text-slate-100 tracking-tight">
+                      Welcome back, {extractFirstName(adminName, "Super Admin")}
+                    </h1>
+                    <p className="text-xs text-slate-400 font-normal">
+                      Super Admin Dashboard • A.Y. 2026-2027 • 1st Semester
                     </p>
-                    <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#fff8e7]">
-                      ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
-                    </h3>
                   </div>
-                </div>
+                </section>
+
+                {/* TIER 2: 3-Column Stat Grid */}
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  {/* Card 1: Active Admin Accounts */}
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-400">Active Admin Accounts</span>
+                      <Shield className="h-4 w-4 text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        {adminAccounts.filter(a => a.is_active).length} Active
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {adminAccounts.length} total admin accounts
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Audit Logs Today */}
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-400">Audit Logs Today</span>
+                      <ScrollText className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        —
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">View Audit Logs for details</p>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Academic Window Status */}
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-400">Academic Window</span>
+                      <Activity className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        System Active
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">All subsystems operational</p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* TIER 3: 2-Column Main Body */}
+                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                  {/* Left Column (2-Span) — Admin Accounts Overview */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 sm:p-6 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
+                        <div>
+                          <h2 className="text-sm font-semibold text-slate-100 tracking-normal">Admin Accounts Management</h2>
+                          <p className="text-xs text-slate-400 mt-0.5">Overview of all admin and super admin accounts.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleSetActiveSection("accounts")}
+                          className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium transition cursor-pointer"
+                        >
+                          <span>View all</span>
+                          <span>→</span>
+                        </button>
+                      </div>
+                      {adminAccounts.length > 0 ? (
+                        <div className="divide-y divide-slate-800/60 mt-2">
+                          {adminAccounts.slice(0, 5).map((admin) => (
+                            <div key={admin.profile_id} className="flex items-center justify-between py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-400">
+                                  {getInitials(admin.full_name, admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD")}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-slate-200">{formatAdminName(admin)}</p>
+                                  <p className="text-xs text-slate-500">{admin.email}</p>
+                                </div>
+                              </div>
+                              <span className={`text-xs px-2 py-0.5 rounded-full border ${admin.is_active ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-slate-400 bg-slate-800 border-slate-700"}`}>
+                                {admin.is_active ? "Active" : "Inactive"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center">
+                          <p className="text-xs text-slate-500">No admin accounts found.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column (1-Span) — System Audit Logs */}
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm">
+                      <div className="pb-3 border-b border-slate-800/80">
+                        <h2 className="text-sm font-semibold text-slate-100">System Audit Logs</h2>
+                        <p className="text-xs text-slate-400 mt-0.5">Recent system activity.</p>
+                      </div>
+                      <div className="py-6 text-center">
+                        <p className="text-xs text-slate-500">Navigate to Audit Logs for full history.</p>
+                        <button
+                          type="button"
+                          onClick={() => handleSetActiveSection("auditLogs")}
+                          className="mt-3 inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium transition cursor-pointer"
+                        >
+                          <span>View Audit Logs</span>
+                          <span>→</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </article>
             ) : null}
 
             {activeSection === "accounts" ? (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
                       Admin Accounts
                     </h1>
                   </div>
@@ -1211,10 +1303,10 @@ export function SuperAdminDashboard({
                   />
                 </div>
 
-                <div className="mt-6 rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 p-5">
+                <div className="mt-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+                      <h3 className="text-lg font-semibold text-slate-100">
                         Account Directory
                       </h3>
                     </div>
@@ -1228,7 +1320,7 @@ export function SuperAdminDashboard({
                             event.target.value as AccountViewRole,
                           )
                         }
-                        className="rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none transition focus:border-amber-400"
+                        className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400"
                       >
                         <option value="all">All Accounts</option>
                         <option value={ROLE.ADMIN}>Admin Accounts</option>
@@ -1258,7 +1350,7 @@ export function SuperAdminDashboard({
 
                   <div className="mt-4 space-y-6">
                     {isLoadingAccounts ? (
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                      <p className="text-sm text-slate-400">
                         Loading account directory...
                       </p>
                     ) : (
@@ -1268,10 +1360,10 @@ export function SuperAdminDashboard({
                           className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <h4 className="text-base font-semibold text-slate-800 dark:text-slate-100">
+                            <h4 className="text-base font-semibold text-slate-100">
                               {group.title}
                             </h4>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                            <span className="text-xs text-slate-400">
                               {group.accounts.length} account
                               {group.accounts.length === 1 ? "" : "s"}
                             </span>
@@ -1281,7 +1373,7 @@ export function SuperAdminDashboard({
                             {group.accounts.length ? (
                               renderAccountCards(group.accounts)
                             ) : (
-                              <p className="text-sm text-slate-500 dark:text-slate-400">
+                              <p className="text-sm text-slate-400">
                                 {group.emptyMessage}
                               </p>
                             )}
@@ -1296,9 +1388,9 @@ export function SuperAdminDashboard({
 
             {activeSection === "auditLogs" ? (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
                       Audit Logs
                     </h1>
                   </div>
@@ -1310,9 +1402,9 @@ export function SuperAdminDashboard({
 
             {activeSection === "settings" ? (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
                       Settings
                     </h1>
                   </div>
@@ -1328,7 +1420,7 @@ export function SuperAdminDashboard({
                 </div>
 
                 <section className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]">
-                  <div className="space-y-2 rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 p-3">
+                  <div className="space-y-2 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-3">
                     <SettingsOptionButton
                       active={activeSettingsOption === "profile"}
                       title="Account Profile"
@@ -1343,10 +1435,10 @@ export function SuperAdminDashboard({
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 p-6">
+                  <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-6">
                     {activeSettingsOption === "profile" ? (
                       isLoadingSettings ? (
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                        <p className="text-sm text-slate-400">
                           Loading account settings...
                         </p>
                       ) : (
@@ -1386,7 +1478,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter full name"
-                              className="mt-2 w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                             />
                           </div>
 
@@ -1406,7 +1498,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter email address"
-                              className="mt-2 w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                             />
                           </div>
 
@@ -1453,7 +1545,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter current password"
-                              className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                             />
                             <PasswordToggleButton
                               shown={showOldPassword}
@@ -1480,7 +1572,7 @@ export function SuperAdminDashboard({
                               required
                               minLength={8}
                               placeholder="Minimum 8 characters"
-                              className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                             />
                             <PasswordToggleButton
                               shown={showNewPassword}
@@ -1507,7 +1599,7 @@ export function SuperAdminDashboard({
                               required
                               minLength={8}
                               placeholder="Retype new password"
-                              className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                             />
                             <PasswordToggleButton
                               shown={showConfirmPassword}
@@ -1785,19 +1877,15 @@ function SidebarButton({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+      className={`w-full rounded-lg border px-3 py-1.5 text-left transition ${
         active
-          ? "border-amber-400 bg-amber-400/10"
-          : "border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 hover:border-slate-500"
+          ? "border-amber-400 bg-amber-400/10 text-amber-300 font-semibold"
+          : "border-slate-800 bg-[#070c18] hover:bg-[#0d152a] text-slate-300 hover:text-slate-100"
       }`}
     >
-      <p
-        className={`font-semibold ${active ? "text-[#7a0000] dark:text-amber-300" : "text-slate-800 dark:text-slate-100"}`}
-      >
-        {title}
-      </p>
+      <p className="text-xs font-semibold">{title}</p>
       {description ? (
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+        <p className="mt-0.5 text-[11px] text-slate-400">{description}</p>
       ) : null}
     </button>
   );
@@ -1805,11 +1893,11 @@ function SidebarButton({
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/70 p-5">
-      <p className="mt-0 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
+    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm">
+      <p className="mt-0 text-xs font-medium text-slate-400">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-semibold text-slate-800 dark:text-slate-100">{value}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-100">{value}</p>
     </div>
   );
 }
@@ -1832,11 +1920,11 @@ function SettingsOptionButton({
       className={`w-full rounded-xl border px-4 py-3 text-left transition ${
         active
           ? "border-amber-400 bg-amber-400/10"
-          : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/60 hover:border-slate-500"
+          : "border-slate-800 bg-slate-900/60 hover:border-slate-600"
       }`}
     >
-      <p className="font-semibold text-slate-800 dark:text-slate-100">{title}</p>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+      <p className="font-semibold text-slate-100">{title}</p>
+      <p className="mt-1 text-sm text-slate-400">{description}</p>
     </button>
   );
 }
@@ -2044,22 +2132,22 @@ function AdminDetailsModal({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-6 shadow-2xl">
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+          <h3 className="text-lg font-semibold text-slate-100">
             {canEdit ? "Edit Admin Account" : "View Admin Account"}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md px-2 py-1 text-slate-700 dark:text-slate-300 hover:bg-slate-800"
+            className="rounded-md px-2 py-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800"
           >
             X
           </button>
         </div>
 
         {isLoading ? (
-          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading details...</p>
+          <p className="mt-4 text-sm text-slate-400">Loading details...</p>
         ) : details ? (
           <div className="space-y-4">
             <div className="mt-4 flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
@@ -2106,7 +2194,7 @@ function AdminDetailsModal({
                     onChange={(event) => setFullName(event.target.value)}
                     readOnly={!canEdit}
                     disabled={!canEdit}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                    className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                   />
                 </div>
 
@@ -2124,7 +2212,7 @@ function AdminDetailsModal({
                     onChange={(event) => setEmail(event.target.value)}
                     readOnly={!canEdit}
                     disabled={!canEdit}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                    className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                   />
                 </div>
               </div>
@@ -2145,7 +2233,7 @@ function AdminDetailsModal({
                     disabled={!canEdit}
                     minLength={8}
                     placeholder="Leave blank to keep current password"
-                    className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-800 dark:text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
+                    className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 pr-12 text-sm text-slate-100 outline-none ring-amber-300/30 placeholder:text-slate-500 focus:ring"
                   />
                   <PasswordToggleButton
                     shown={showPassword}
@@ -2154,7 +2242,7 @@ function AdminDetailsModal({
                 </div>
               </div>
 
-              <div className="grid gap-2 text-sm text-slate-500 dark:text-slate-400 md:grid-cols-2">
+              <div className="grid gap-2 text-sm text-slate-400 md:grid-cols-2">
                 <p>
                   <span className="text-slate-500">Role:</span>{" "}
                   {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
@@ -2211,7 +2299,7 @@ function AdminDetailsModal({
                   <p className="text-sm font-medium text-slate-200">
                     Full Name
                   </p>
-                  <p className="mt-2 text-sm text-slate-800 dark:text-slate-100">
+                  <p className="mt-2 text-sm text-slate-100">
                     {details.full_name}
                   </p>
                 </div>
@@ -2219,11 +2307,11 @@ function AdminDetailsModal({
                   <p className="text-sm font-medium text-slate-200">
                     Email Address
                   </p>
-                  <p className="mt-2 text-sm text-slate-800 dark:text-slate-100">{details.email}</p>
+                  <p className="mt-2 text-sm text-slate-100">{details.email}</p>
                 </div>
               </div>
 
-              <div className="grid gap-2 text-sm text-slate-500 dark:text-slate-400 md:grid-cols-2">
+              <div className="grid gap-2 text-sm text-slate-400 md:grid-cols-2">
                 <p>
                   <span className="text-slate-500">Role:</span>{" "}
                   {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
@@ -2280,7 +2368,7 @@ function AdminDetailsModal({
           )}
         </div>
       ) : (
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No details available.</p>
+        <p className="mt-4 text-sm text-slate-400">No details available.</p>
       )}
     </div>
   </div>

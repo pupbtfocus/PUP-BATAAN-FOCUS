@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { extractFirstName } from "@/lib/faculty-profile";
 
 export interface SidebarProps {
   activeSection: string;
@@ -10,6 +11,18 @@ export interface SidebarProps {
   roleTitle?: string;
   profileImageUrl?: string | null;
   onNavigate?: () => void;
+}
+
+function getRoleBadgeClasses(roleTitle?: string): string {
+  const role = (roleTitle || "").toLowerCase().trim();
+  if (role.includes("super")) {
+    return "bg-purple-500/10 text-purple-400 border border-purple-500/20";
+  }
+  if (role.includes("faculty")) {
+    return "bg-blue-500/10 text-blue-400 border border-blue-500/20";
+  }
+  // Default: Admin
+  return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
 }
 
 function getSidebarInitials(name?: string | null): string {
@@ -81,7 +94,7 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 rounded-lg bg-slate-900 border border-slate-800 p-2.5 flex flex-col items-center">
+      <div className="my-1.5 rounded-xl bg-slate-900/60 border border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm">
         <div className="relative mb-2">
           {profileImageUrl && !hasAvatarError ? (
             <img
@@ -99,14 +112,14 @@ export function SidebarContent({
         </div>
 
         <p className="font-semibold text-white text-center text-xs sm:text-sm">
-          {adminName ?? "Admin"}
+          {extractFirstName(adminName, roleTitle)}
         </p>
 
         <div className="my-1.5 h-px w-full bg-slate-800" />
 
-        <p className="mt-0 text-[10px] uppercase tracking-[0.12em] text-amber-400 text-center font-semibold">
+        <span className={`mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full ${getRoleBadgeClasses(roleTitle)}`}>
           {roleTitle}
-        </p>
+        </span>
       </div>
 
       <nav className="mt-1.5 space-y-1 flex-1 overflow-y-auto">
@@ -188,7 +201,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-4rem)] w-56 flex-col overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-2.5 shadow-lg z-30">
+    <aside className="hidden md:flex fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 flex-col overflow-y-auto rounded-none border-r border-l-0 border-slate-800 bg-slate-950 p-2.5 shadow-lg z-30">
       <SidebarContent {...props} />
     </aside>
   );

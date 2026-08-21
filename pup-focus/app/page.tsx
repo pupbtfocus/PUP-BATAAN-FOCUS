@@ -10,6 +10,7 @@ import {
   type AuthModalState,
 } from "@/components/auth/auth-feedback-modal";
 import { PupWebBadge } from "@/components/auth/pup-web-badge";
+import { CampusBackground } from "@/components/shared/campus-background";
 import { APP_CONFIG } from "@/config/app";
 import { getPublicEnvSafe } from "@/config/env";
 import { createClient } from "@/lib/supabase/client";
@@ -319,6 +320,7 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-8 text-[#fff8e7] overflow-x-hidden">
+      <CampusBackground />
       {/* Overlay with Blur on top of the global body background */}
       <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px]" />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />

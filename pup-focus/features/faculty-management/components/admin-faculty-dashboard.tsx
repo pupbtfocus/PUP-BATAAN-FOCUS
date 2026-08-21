@@ -2,16 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
-import { Menu, X } from "lucide-react";
+import { Menu, X, CheckCircle2, Clock3, Users } from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
+import { extractFirstName } from "@/lib/faculty-profile";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { AdminSettings } from "@/features/admin-management/components/admin-settings";
 import { createClient } from "@/lib/supabase/client";
@@ -33,10 +33,7 @@ import { InviteStatusModal } from "./faculty-modals/invite-status-modal";
 import { SubmissionWindowPanel } from "./submission-window-panel";
 import { RequirementsPanel } from "./requirements-verification-panel";
 
-const LOGIN_PAGE_IMAGES = [
-  "/images/attachments/IMG_9399.jpeg",
-  "/images/attachments/IMG_9402.jpeg",
-];
+
 
 function normalizeAdminSection(raw?: string | null): AdminSection | null {
   if (!raw) return null;
@@ -499,9 +496,9 @@ export function AdminFacultyDashboard({
   }
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#090d16] text-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-full bg-slate-950 text-slate-100 overflow-hidden font-sans">
       {/* Consolidated Top Header (All Views) */}
-      <header className="w-full bg-gradient-to-r from-[#400000] via-[#2a0000] to-[#1a0000] border-b border-amber-500/20 px-4 py-3 flex items-center justify-between shrink-0 z-40">
+      <header className="w-full bg-slate-950/95 border-b border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 z-40 backdrop-blur">
         {/* Left: Mobile Menu Trigger & Title */}
         <div className="flex items-center gap-3">
           <button
@@ -531,11 +528,12 @@ export function AdminFacultyDashboard({
       {/* Body Wrapper */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex w-56 flex-col bg-[#0d121f] border-r border-slate-800/80 shrink-0 p-2.5">
+        <aside className="hidden md:flex w-56 flex-col bg-slate-950 border-r border-slate-800 shrink-0 p-2.5">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={handleSetActiveSection}
             adminName={adminName}
+            roleTitle="Admin"
             profileImageUrl={adminAvatarUrl}
           />
         </aside>
@@ -547,7 +545,7 @@ export function AdminFacultyDashboard({
               className="fixed inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <aside className="relative w-64 max-w-[80%] bg-[#0d121f] h-full p-3 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto">
+            <aside className="relative w-64 max-w-[80%] bg-slate-950 h-full p-3 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Navigation</span>
                 <button
@@ -563,6 +561,7 @@ export function AdminFacultyDashboard({
                 activeSection={activeSection}
                 setActiveSection={handleSetActiveSection}
                 adminName={adminName}
+                roleTitle="Admin"
                 profileImageUrl={adminAvatarUrl}
                 onNavigate={() => setIsMobileMenuOpen(false)}
               />
@@ -571,21 +570,107 @@ export function AdminFacultyDashboard({
         )}
 
         {/* Scrollable Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#090d16]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-950">
           <div className="max-w-7xl mx-auto w-full">
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
-                <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur">
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <BrandMark size={90} className="rounded-full" />
-                    <p className="mt-4 text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-                      Polytechnic University of the Philippines - Bataan Campus
+                {/* TIER 1: Welcome Banner */}
+                <section className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-gradient-to-r from-slate-900/90 via-slate-900/80 to-slate-950 p-6 sm:p-7 shadow-sm">
+                  <div className="relative z-10 space-y-1">
+                    <h1 className="text-xl font-semibold text-slate-100 tracking-tight">
+                      Welcome back, {extractFirstName(adminName, "Admin")}
+                    </h1>
+                    <p className="text-xs text-slate-400 font-normal">
+                      Admin Dashboard • A.Y. 2026-2027 • 1st Semester
                     </p>
-                    <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#fff8e7]">
-                      PUP FOCUS Dashboard
-                    </h3>
                   </div>
-                </div>
+                </section>
+
+                {/* TIER 2: 3-Column Stat Grid */}
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  {/* Card 1: Faculty Submissions Verified */}
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-400">Submissions Verified</span>
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        {facultyAccounts.reduce((count, f) => count + (f.is_active ? 0 : 0), 0)} Verified
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">Faculty submissions reviewed and validated</p>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Pending Verification */}
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-400">Pending Verification</span>
+                      <Clock3 className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        — Pending
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">Submissions awaiting admin review</p>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Total Active Faculty */}
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-400">Total Active Faculty</span>
+                      <Users className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-100 tracking-tight">
+                        {facultyAccounts.filter(f => f.is_active).length} Active
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {facultyAccounts.length} total faculty accounts
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* TIER 3: 2-Column Main Body */}
+                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                  {/* Left Column (2-Span) — Pending Verification Queue */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 sm:p-6 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
+                        <div>
+                          <h2 className="text-sm font-semibold text-slate-100 tracking-normal">Pending Submissions Verification Queue</h2>
+                          <p className="text-xs text-slate-400 mt-0.5">Faculty submissions awaiting your review and validation.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleSetActiveSection("requirements")}
+                          className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium transition cursor-pointer"
+                        >
+                          <span>View all</span>
+                          <span>→</span>
+                        </button>
+                      </div>
+                      <div className="py-8 text-center">
+                        <p className="text-xs text-slate-500">Navigate to Requirements Verification to review pending submissions.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column (1-Span) — Recent Activity */}
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-sm">
+                      <div className="pb-3 border-b border-slate-800/80">
+                        <h2 className="text-sm font-semibold text-slate-100">Recent Admin Actions</h2>
+                        <p className="text-xs text-slate-400 mt-0.5">Latest admin activity feed.</p>
+                      </div>
+                      <div className="py-6 text-center">
+                        <p className="text-xs text-slate-500">No recent activity to display.</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </article>
             ) : null}
 
