@@ -39,7 +39,7 @@ function getAppBaseUrl() {
     .find(Boolean)
     ?.trim();
 
-  return (configuredBase || "https://pup-focus.local").replace(/\/$/, "");
+  return (configuredBase || "https://pupfocus.cjaayy.dev").replace(/\/$/, "");
 }
 
 function buildAppUrl(path: string) {

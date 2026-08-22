@@ -52,6 +52,6 @@ export function getPublicAppUrl(): string {
     return window.location.origin;
   }
 
-  return "http://localhost:3000";
+  return "https://pupfocus.cjaayy.dev";
 }
 

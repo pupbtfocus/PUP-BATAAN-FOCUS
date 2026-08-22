@@ -356,7 +356,7 @@ export async function PUT(request: NextRequest) {
         process.env.NEXT_PUBLIC_APP_URL ||
         process.env.SITE_URL ||
         process.env.URL ||
-        "https://pup-focus.local"
+        "https://pupfocus.cjaayy.dev"
       ).replace(/\/$/, "");
       const dashboardUrl = `${appUrl}/faculty/dashboard`;
       const notificationTimestamp = new Date().toISOString();
