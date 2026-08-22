@@ -45,7 +45,7 @@ async function main() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   console.log("Generating recovery link for", to);
-  const publicApp = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const publicApp = process.env.NEXT_PUBLIC_APP_URL || "https://pupfocus.cjaayy.dev";
   const redirectTo = `${publicApp.replace(/\/$/, "")}/auth/confirm?next=/super-admin/admin`;
   const { data, error } = await supabase.auth.admin.generateLink({
     type: "recovery",
