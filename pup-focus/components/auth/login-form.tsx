@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
 import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
-import { Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Clock, AlertCircle, CheckCircle2, Mail, Lock, Check } from "lucide-react";
 
 export interface NoticeBanner {
   type: "timeout" | "error" | "success" | "info";
@@ -40,6 +40,7 @@ export function LoginForm({
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const isLoading = isSubmitting || Boolean(isPending);
 
@@ -82,39 +83,34 @@ export function LoginForm({
 
         <div className="space-y-1.5">
           <label
-            className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/65"
+            className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/75"
             htmlFor="email"
           >
             Email Address
           </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            placeholder="faculty@pup.edu.ph"
-            className="w-full rounded-2xl border border-[rgba(255,215,0,0.2)] bg-black/20 px-4 py-3.5 text-sm text-white shadow-inner outline-none ring-amber-400/50 backdrop-blur-sm transition-all duration-300 placeholder:text-amber-200/20 hover:border-[rgba(255,215,0,0.4)] focus:bg-black/40 focus:ring-2"
-          />
+          <div className="relative">
+            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400/70 pointer-events-none" />
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              placeholder="faculty@pup.edu.ph"
+              className="w-full rounded-xl border border-amber-500/40 bg-[#2b0000]/90 pl-10 pr-4 py-3.5 text-sm text-amber-50 shadow-inner outline-none transition-all duration-200 placeholder:text-amber-200/30 hover:border-amber-400/60 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/40 [&:-webkit-autofill]:[box-shadow:0_0_0_1000px_#2b0000_inset!important] [&:-webkit-autofill]:[-webkit-text-fill-color:#fff7ed!important]"
+            />
+          </div>
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label
-              className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/65"
-              htmlFor="password"
-            >
-              Password
-            </label>
-            <button
-              type="button"
-              onClick={onOpenForgotPassword}
-              className="text-[10px] font-semibold text-amber-300/80 hover:text-amber-200 hover:underline transition-colors"
-            >
-              Forgot Password?
-            </button>
-          </div>
+          <label
+            className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/75"
+            htmlFor="password"
+          >
+            Password
+          </label>
           <div className="relative">
+            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400/70 pointer-events-none" />
             <input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -137,14 +133,14 @@ export function LoginForm({
               onBlur={() => setIsCapsLockOn(false)}
               required
               placeholder="Your password"
-              className="w-full rounded-2xl border border-[rgba(255,215,0,0.2)] bg-black/20 px-4 py-3.5 pr-12 text-sm text-white shadow-inner outline-none ring-amber-400/50 backdrop-blur-sm transition-all duration-300 placeholder:text-amber-200/20 hover:border-[rgba(255,215,0,0.4)] focus:bg-black/40 focus:ring-2"
+              className="w-full rounded-xl border border-amber-500/40 bg-[#2b0000]/90 pl-10 pr-12 py-3.5 text-sm text-amber-50 shadow-inner outline-none transition-all duration-200 placeholder:text-amber-200/30 hover:border-amber-400/60 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/40 [&:-webkit-autofill]:[box-shadow:0_0_0_1000px_#2b0000_inset!important] [&:-webkit-autofill]:[-webkit-text-fill-color:#fff7ed!important]"
             />
 
             <button
               type="button"
               aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword((s) => !s)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-white/5 p-2 text-amber-100/70 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg bg-white/5 p-1.5 text-amber-100/70 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white cursor-pointer"
             >
               {showPassword ? (
                 <svg
@@ -241,6 +237,41 @@ export function LoginForm({
               <span>Caps Lock is ON</span>
             </p>
           )}
+        </div>
+
+        {/* Remember me & Forgot password row */}
+        <div className="flex items-center justify-between mt-2 mb-6 text-xs">
+          <label className="flex items-center gap-2 cursor-pointer group select-none">
+            <div className="relative flex items-center justify-center">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="sr-only"
+              />
+              <div
+                className={`w-4 h-4 rounded border transition-all flex items-center justify-center shadow-xs ${
+                  rememberMe
+                    ? "bg-amber-500 border-amber-400"
+                    : "bg-[#2b0000] border-amber-500/50 group-hover:border-amber-400"
+                }`}
+              >
+                {rememberMe && (
+                  <Check className="w-3 h-3 text-[#2b0000] stroke-[3.5] transition-transform duration-150 scale-100" />
+                )}
+              </div>
+            </div>
+            <span className="text-amber-200/80 group-hover:text-amber-100 text-xs transition-colors">
+              Remember me
+            </span>
+          </label>
+          <button
+            type="button"
+            onClick={onOpenForgotPassword}
+            className="text-amber-400 hover:text-amber-300 font-medium transition-colors cursor-pointer"
+          >
+            Forgot Password?
+          </button>
         </div>
 
         <Button

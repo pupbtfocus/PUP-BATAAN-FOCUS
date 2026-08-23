@@ -283,7 +283,7 @@ function AuthConfirmContent() {
           <div className="relative">
             <svg
               viewBox="0 0 400 60"
-              className="w-full h-auto text-[#4d0000] fill-current stroke-[rgba(255,215,0,0.25)] stroke-[1] block -mb-0.5 pointer-events-none"
+              className="w-full h-auto text-[#4d0000] fill-current stroke-amber-400/80 dark:stroke-amber-500/80 stroke-[2] block -mb-0.5 pointer-events-none"
             >
               <path d="M 0,60 L 0,20 Q 0,0 20,0 L 130,0 C 150,0 155,45 200,45 C 245,45 250,0 270,0 L 380,0 Q 400,0 400,20 L 400,60 Z" />
             </svg>
@@ -295,7 +295,7 @@ function AuthConfirmContent() {
           </div>
 
           {/* Card Body */}
-          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x border-b border-[rgba(255,215,0,0.25)] bg-[#4d0000] p-6 pt-10 sm:p-8 sm:pt-10 backdrop-blur-md shadow-2xl">
+          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 dark:border-amber-500/80 bg-[#4d0000] p-6 pt-10 sm:p-8 sm:pt-10 backdrop-blur-md shadow-xl shadow-amber-500/10">
             {/* Header / Title Area */}
             <div className="mt-4 mb-5 text-center">
               <p className="text-[10px] sm:text-xs font-bold tracking-[0.25em] text-amber-300 uppercase mb-1 drop-shadow-[0_1px_4px_rgba(255,215,0,0.3)]">
