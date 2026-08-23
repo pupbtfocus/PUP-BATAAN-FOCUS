@@ -149,8 +149,6 @@ export function FacultySettingsPanel({
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -159,7 +157,7 @@ export function FacultySettingsPanel({
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [passwordModal, setPasswordModal] = useState<{
+  const [feedbackModal, setFeedbackModal] = useState<{
     isOpen: boolean;
     title: string;
     message: string;
@@ -296,7 +294,7 @@ export function FacultySettingsPanel({
     event.preventDefault();
 
     if (!oldPassword.trim()) {
-      setPasswordModal({
+      setFeedbackModal({
         isOpen: true,
         title: "Current Password Required",
         message: "Please enter your current password to continue.",
@@ -306,7 +304,7 @@ export function FacultySettingsPanel({
     }
 
     if (newPassword.length < 8) {
-      setPasswordModal({
+      setFeedbackModal({
         isOpen: true,
         title: "Password Too Short",
         message: "New password must be at least 8 characters long.",
@@ -316,7 +314,7 @@ export function FacultySettingsPanel({
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordModal({
+      setFeedbackModal({
         isOpen: true,
         title: "Passwords Do Not Match",
         message:
@@ -353,14 +351,14 @@ export function FacultySettingsPanel({
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setPasswordModal({
+      setFeedbackModal({
         isOpen: true,
-        title: "Password Changed Successfully!",
+        title: "Password Updated Successfully",
         message: "Your faculty account password has been updated securely.",
         type: "success",
       });
     } catch (err) {
-      setPasswordModal({
+      setFeedbackModal({
         isOpen: true,
         title: "Password Update Failed",
         message:
@@ -375,7 +373,6 @@ export function FacultySettingsPanel({
   async function refreshAccount() {
     try {
       setIsRefreshing(true);
-      setError(null);
       const response = await fetch("/api/faculty/account");
       if (!response.ok) {
         return;
@@ -404,8 +401,6 @@ export function FacultySettingsPanel({
   async function handleSaveName(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
-    setMessage(null);
-    setError(null);
 
     try {
       const formData = new FormData();
@@ -443,14 +438,23 @@ export function FacultySettingsPanel({
         lastName: updatedAccount.lastName,
       });
       setProfileImageFile(null);
-      setMessage("Profile updated successfully.");
+      setFeedbackModal({
+        isOpen: true,
+        title: "Profile Updated Successfully",
+        message: "Your profile information and changes have been saved.",
+        type: "success",
+      });
       router.refresh();
     } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Failed to update faculty account",
-      );
+      setFeedbackModal({
+        isOpen: true,
+        title: "Profile Update Failed",
+        message:
+          saveError instanceof Error
+            ? saveError.message
+            : "Failed to update faculty account",
+        type: "error",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -743,13 +747,6 @@ export function FacultySettingsPanel({
               </div>
             </div>
 
-            {message && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{message}</p>
-            )}
-            {error && (
-              <p className="text-xs text-red-600 dark:text-red-400 font-medium">{error}</p>
-            )}
-
             <div className="flex items-center justify-end gap-2.5 pt-2">
               {isProfileChanged && (
                 <button
@@ -953,54 +950,44 @@ export function FacultySettingsPanel({
         </article>
       </section>
 
-      {/* Password Status Modal Dialog */}
-      {passwordModal?.isOpen && (
+      {/* Feedback & Alert Modal Dialog */}
+      {feedbackModal?.isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
-          onClick={() => setPasswordModal(null)}
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          onClick={() => setFeedbackModal(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 transition-colors"
+            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-2xl rounded-2xl p-6 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start gap-4">
-              <div
-                className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
-                  passwordModal.type === "success"
-                    ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                    : "bg-red-500/10 text-red-500 border border-red-500/20"
-                }`}
-              >
-                {passwordModal.type === "success" ? (
-                  <CheckCircle2 className="h-5 w-5" />
-                ) : (
-                  <AlertCircle className="h-5 w-5" />
-                )}
+            {feedbackModal.type === "success" ? (
+              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center mb-3 shadow-xs">
+                <CheckCircle2 className="w-6 h-6" />
               </div>
-
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  {passwordModal.title}
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                  {passwordModal.message}
-                </p>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 flex items-center justify-center mb-3 shadow-xs">
+                <AlertCircle className="w-6 h-6" />
               </div>
-            </div>
+            )}
 
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setPasswordModal(null)}
-                className={`px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer ${
-                  passwordModal.type === "success"
-                    ? "bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm shadow-amber-500/10 active:scale-[0.98]"
-                    : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200"
-                }`}
-              >
-                {passwordModal.type === "success" ? "Done" : "Dismiss"}
-              </button>
-            </div>
+            <h3 className="text-slate-900 dark:text-slate-100 font-bold text-lg tracking-tight mb-1">
+              {feedbackModal.title}
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-5">
+              {feedbackModal.message}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setFeedbackModal(null)}
+              className={
+                feedbackModal.type === "success"
+                  ? "w-full bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium py-2.5 rounded-xl text-sm shadow-xs transition-colors cursor-pointer"
+                  : "w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-medium py-2.5 rounded-xl text-sm shadow-xs transition-colors cursor-pointer"
+              }
+            >
+              {feedbackModal.type === "success" ? "Done" : "Dismiss"}
+            </button>
           </div>
         </div>
       )}
