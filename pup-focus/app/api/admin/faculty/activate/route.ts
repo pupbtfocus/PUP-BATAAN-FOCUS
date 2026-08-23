@@ -104,64 +104,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: appUser, error: fetchError } = await supabase
-      .from("app_users")
-      .select("id, auth_user_id, profile_id, metadata, created_at")
-      .eq("profile_id", facultyProfileId)
-      .eq("role", "faculty")
-      .maybeSingle();
-
-    if (fetchError) {
-      console.error("Error fetching app_user before activation:", fetchError);
-      return NextResponse.json(
-        { error: "Failed to fetch faculty account" },
-        { status: 500 },
+    let existingMetadata: Record<string, unknown> = {};
+    if (profile.user_id) {
+      const { data: authUserData } = await supabase.auth.admin.getUserById(
+        profile.user_id,
       );
-    }
+      existingMetadata = (authUserData?.user?.user_metadata ??
+        {}) as Record<string, unknown>;
 
-    if (!appUser) {
-      // Legacy accounts may not have an app_users row yet; create one on first toggle.
-    }
+      if (
+        existingMetadata.created_via === "admin_faculty_panel" &&
+        requesterRole === ROLE.ADMIN &&
+        existingMetadata.created_by_admin_id !== user.id
+      ) {
+        return NextResponse.json(
+          { error: "You can only modify faculty accounts you created" },
+          { status: 403 },
+        );
+      }
 
-    if (
-      appUser?.metadata?.created_via === "admin_faculty_panel" &&
-      requesterRole === ROLE.ADMIN &&
-      appUser.metadata?.created_by_admin_id !== user.id
-    ) {
-      return NextResponse.json(
-        { error: "You can only modify faculty accounts you created" },
-        { status: 403 },
-      );
-    }
-
-    const existingMetadata = appUser?.metadata ?? {};
-    const updatedMetadata = { ...existingMetadata, is_active: true };
-
-    const payload = {
-      auth_user_id: appUser?.auth_user_id ?? profile.user_id,
-      profile_id: facultyProfileId,
-      full_name: profile.full_name,
-      email: profile.email,
-      role: "faculty",
-      metadata: updatedMetadata,
-      updated_at: new Date().toISOString(),
-    };
-
-    const updateResult = appUser
-      ? await supabase.from("app_users").update(payload).eq("id", appUser.id)
-      : await supabase.from("app_users").insert({
-          ...payload,
-          created_at: new Date().toISOString(),
+      const { error: authUpdateError } =
+        await supabase.auth.admin.updateUserById(profile.user_id, {
+          user_metadata: { ...existingMetadata, is_active: true },
         });
 
-    const updateError = updateResult.error;
-
-    if (updateError) {
-      console.error("Error updating app_users metadata:", updateError);
-      return NextResponse.json(
-        { error: "Failed to activate faculty account" },
-        { status: 500 },
-      );
+      if (authUpdateError) {
+        console.error(
+          "Error updating auth user metadata:",
+          authUpdateError,
+        );
+        return NextResponse.json(
+          { error: "Failed to activate faculty account" },
+          { status: 500 },
+        );
+      }
     }
 
     // Audit log – fire-and-forget; never blocks the activation response

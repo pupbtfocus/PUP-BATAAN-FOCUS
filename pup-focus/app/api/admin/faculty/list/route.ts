@@ -145,21 +145,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ faculty: [] });
     }
 
-    const [profilesResult, appUsersResult] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, user_id, full_name, email, created_at")
-        .in("id", profileIds),
-      supabase
-        .from("app_users")
-        .select("profile_id, auth_user_id, metadata, created_at, role")
-        .in("profile_id", profileIds),
-    ]);
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, user_id, full_name, email, department_id, created_at")
+      .in("id", profileIds);
 
-    const profiles = profilesResult.data;
-    const profilesError = profilesResult.error;
-    const appUsers = appUsersResult.data;
-    const queryError = profilesError ?? appUsersResult.error;
+    const queryError = profilesError;
 
     const { data: submissionRows, error: submissionsError } = await supabase
       .from("submissions")
@@ -286,7 +277,7 @@ export async function GET(request: NextRequest) {
         debug: true,
         facultyCount: profiles?.length ?? 0,
         profileIdsSample: profileIds.slice(0, 50),
-        appUsersSample: appUsers ?? [],
+        profilesSample: profiles ?? [],
         queryError: queryError ? queryError.message : null,
       });
     }
@@ -331,21 +322,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const appUserByProfileId = new Map(
-      (appUsers ?? []).map((item: any) => [item.profile_id, item]),
-    );
-
     const faculty = await Promise.all(
       (profiles ?? []).map(async (profile: any) => {
-        const appUser = appUserByProfileId.get(profile.id);
-        const authUserMetadata = appUser?.auth_user_id
-          ? ((await supabase.auth.admin.getUserById(appUser.auth_user_id)).data
+        const authUserMetadata = profile?.user_id
+          ? ((await supabase.auth.admin.getUserById(profile.user_id)).data
               .user?.user_metadata ?? {})
           : {};
-        const metadata = {
-          ...authUserMetadata,
-          ...(appUser?.metadata ?? {}),
-        };
+        const metadata = authUserMetadata as Record<string, unknown>;
 
         const firstName =
           typeof metadata.first_name === "string" ? metadata.first_name.trim() : "";
@@ -404,7 +387,7 @@ export async function GET(request: NextRequest) {
 
         return {
           id: profile.id,
-          user_id: appUser?.auth_user_id ?? profile.user_id ?? null,
+          user_id: profile.user_id ?? null,
           fullName: fullNameFromMetadata || profile.full_name || "Unknown",
           firstName: firstName || "",
           middleName: middleName || "",
@@ -415,11 +398,8 @@ export async function GET(request: NextRequest) {
           email: profile.email || "Unknown",
           profileImageUrl,
           program: resolvedProgram,
-          is_active: appUser?.metadata?.is_active ?? true,
-          created_at:
-            appUser?.created_at ||
-            profile.created_at ||
-            new Date().toISOString(),
+          is_active: (metadata.is_active as boolean | undefined) ?? true,
+          created_at: profile.created_at || new Date().toISOString(),
           requirementStatus,
         };
       }),

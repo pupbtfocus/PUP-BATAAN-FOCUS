@@ -45,21 +45,10 @@ async function loadFacultyAccount(
     throw new Error(authUserError.message);
   }
 
-  const { data: appUser, error: appUserError } = await supabase
-    .from("app_users")
-    .select("profile_id, email, full_name, metadata")
-    .eq("auth_user_id", authUserId)
-    .eq("role", ROLE.FACULTY)
-    .maybeSingle();
-
-  if (appUserError || !appUser?.profile_id) {
-    throw new Error("Faculty account not found");
-  }
-
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, full_name, email")
-    .eq("id", appUser.profile_id)
+    .eq("user_id", authUserId)
     .maybeSingle();
 
   if (profileError || !profile) {
@@ -91,23 +80,17 @@ async function loadFacultyAccount(
     string,
     unknown
   >;
-  const metadata = (appUser.metadata ?? {}) as Record<string, unknown>;
-  const mergedMetadata = {
-    ...authUserMetadata,
-    ...metadata,
-  };
-  const firstName = trimOrEmpty(mergedMetadata.first_name);
-  const middleName = trimOrEmpty(mergedMetadata.middle_name);
-  const lastName = trimOrEmpty(mergedMetadata.last_name);
+  const firstName = trimOrEmpty(authUserMetadata.first_name);
+  const middleName = trimOrEmpty(authUserMetadata.middle_name);
+  const lastName = trimOrEmpty(authUserMetadata.last_name);
   const fullName =
     buildFacultyFullName({ firstName, middleName, lastName }) ||
     trimOrEmpty(profile.full_name) ||
-    trimOrEmpty(appUser.full_name) ||
     "Faculty";
-  const email = trimOrEmpty(profile.email) || trimOrEmpty(appUser.email);
-  const profileImagePath = trimOrNull(mergedMetadata.profile_image_path);
+  const email = trimOrEmpty(profile.email);
+  const profileImagePath = trimOrNull(authUserMetadata.profile_image_path);
   const profileImageBucket =
-    trimOrEmpty(mergedMetadata.profile_image_bucket) ||
+    trimOrEmpty(authUserMetadata.profile_image_bucket) ||
     FACULTY_PROFILE_IMAGE_BUCKET;
 
   let profileImageUrl: string | null = null;
@@ -212,24 +195,10 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    const { data: appUser, error: appUserError } = await supabase
-      .from("app_users")
-      .select("id, profile_id, full_name, email, metadata")
-      .eq("auth_user_id", user.id)
-      .eq("role", ROLE.FACULTY)
-      .maybeSingle();
-
-    if (appUserError || !appUser?.profile_id) {
-      return NextResponse.json(
-        { error: "Faculty account not found" },
-        { status: 404 },
-      );
-    }
-
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id, full_name, email")
-      .eq("id", appUser.profile_id)
+      .eq("user_id", user.id)
       .maybeSingle();
 
     if (profileError || !profile) {
@@ -242,19 +211,11 @@ export async function PATCH(request: NextRequest) {
     const authUserResult = await supabase.auth.admin.getUserById(user.id);
     const previousAuthUserMetadata = (authUserResult.data.user?.user_metadata ??
       {}) as Record<string, unknown>;
-    const previousAppUserMetadata = (appUser.metadata ?? {}) as Record<
-      string,
-      unknown
-    >;
-    const previousMergedMetadata = {
-      ...previousAuthUserMetadata,
-      ...previousAppUserMetadata,
-    };
     const previousProfileImagePath = trimOrNull(
-      previousMergedMetadata.profile_image_path,
+      previousAuthUserMetadata.profile_image_path,
     );
     const previousProfileImageBucket =
-      trimOrEmpty(previousMergedMetadata.profile_image_bucket) ||
+      trimOrEmpty(previousAuthUserMetadata.profile_image_bucket) ||
       FACULTY_PROFILE_IMAGE_BUCKET;
 
     const updatedFullName = buildFacultyFullName({
@@ -264,10 +225,9 @@ export async function PATCH(request: NextRequest) {
     });
 
     const previousProfileName = profile.full_name;
-    const previousAppUserName = appUser.full_name ?? null;
 
     const updatedMetadata: Record<string, unknown> = {
-      ...previousAppUserMetadata,
+      ...previousAuthUserMetadata,
       first_name: firstName,
       middle_name: middleName || null,
       last_name: lastName,
@@ -322,23 +282,6 @@ export async function PATCH(request: NextRequest) {
       .eq("id", profile.id);
 
     if (profileUpdateError) {
-      return NextResponse.json(
-        { error: profileUpdateError.message },
-        { status: 400 },
-      );
-    }
-
-    const { error: appUsersUpdateError } = await supabase
-      .from("app_users")
-      .update({ full_name: updatedFullName, metadata: updatedMetadata })
-      .eq("profile_id", profile.id)
-      .eq("role", ROLE.FACULTY);
-
-    if (appUsersUpdateError) {
-      await supabase
-        .from("profiles")
-        .update({ full_name: previousProfileName })
-        .eq("id", profile.id);
       if (
         uploadedProfileImagePath &&
         uploadedProfileImagePath !== previousProfileImagePath
@@ -349,7 +292,7 @@ export async function PATCH(request: NextRequest) {
           .catch(() => null);
       }
       return NextResponse.json(
-        { error: appUsersUpdateError.message },
+        { error: profileUpdateError.message },
         { status: 400 },
       );
     }
@@ -364,6 +307,8 @@ export async function PATCH(request: NextRequest) {
           last_name: lastName,
           full_name: updatedFullName,
           role: ROLE.FACULTY,
+          profile_image_bucket: updatedMetadata.profile_image_bucket,
+          profile_image_path: updatedMetadata.profile_image_path,
         },
       },
     );
@@ -373,14 +318,6 @@ export async function PATCH(request: NextRequest) {
         .from("profiles")
         .update({ full_name: previousProfileName })
         .eq("id", profile.id);
-      await supabase
-        .from("app_users")
-        .update({
-          full_name: previousAppUserName,
-          metadata: previousAppUserMetadata,
-        })
-        .eq("profile_id", profile.id)
-        .eq("role", ROLE.FACULTY);
 
       if (
         uploadedProfileImagePath &&

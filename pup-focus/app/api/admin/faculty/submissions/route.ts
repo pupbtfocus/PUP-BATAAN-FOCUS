@@ -64,24 +64,24 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Get faculty profile ID. Accept either app_users.id or profile_id (frontend may pass profile id)
-    const { data: appUserRow, error: appUserError } = await supabase
-      .from("app_users")
-      .select("profile_id")
-      .or(`id.eq.${facultyId},profile_id.eq.${facultyId}`)
+    // Get faculty profile ID. Accept either profiles.id or profiles.user_id
+    const { data: profileRow, error: profileError } = await supabase
+      .from("profiles")
+      .select("id")
+      .or(`id.eq.${facultyId},user_id.eq.${facultyId}`)
       .maybeSingle();
 
-    if (appUserError || !appUserRow?.profile_id) {
+    if (profileError || !profileRow?.id) {
       return NextResponse.json(
         {
           error: "Faculty profile not found",
-          details: appUserError?.message || "No profile_id for this faculty",
+          details: profileError?.message || "No profile for this faculty",
         },
         { status: 404 },
       );
     }
 
-    const facultyProfileId = appUserRow.profile_id;
+    const facultyProfileId = profileRow.id;
 
     const requestedAcademicYear = url.searchParams.get("academicYear")?.trim();
     const requestedSemester = url.searchParams.get("semester")?.trim();

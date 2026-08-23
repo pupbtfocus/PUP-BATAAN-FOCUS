@@ -104,23 +104,9 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    const { data: appUser, error: appUserError } = await supabase
-      .from("app_users")
-      .select("id, auth_user_id, profile_id, full_name, metadata")
-      .eq("profile_id", facultyProfileId)
-      .eq("role", ROLE.FACULTY)
-      .maybeSingle();
-
-    if (appUserError || !appUser) {
-      return NextResponse.json(
-        { error: "Faculty account not found" },
-        { status: 404 },
-      );
-    }
-
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, email, full_name, department_id")
+      .select("id, user_id, email, full_name, department_id, user_roles(roles(code))")
       .eq("id", facultyProfileId)
       .maybeSingle();
 
@@ -131,13 +117,16 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const authUserId = appUser.auth_user_id ?? null;
+    const authUserId = profile.user_id ?? null;
     const previousProfileName = profile.full_name;
-    const previousAppUserName = appUser.full_name ?? null;
-    const previousAppUserMetadata = (appUser.metadata ?? {}) as Record<
-      string,
-      unknown
-    >;
+
+    let authUserResult = null;
+    if (authUserId) {
+      const res = await supabase.auth.admin.getUserById(authUserId);
+      authUserResult = res.data;
+    }
+    const previousAuthUserMetadata = (authUserResult?.user?.user_metadata ??
+      {}) as Record<string, unknown>;
 
     const updatedFullName = buildFacultyFullName({
       firstName,
@@ -176,7 +165,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updatedMetadata: Record<string, unknown> = {
-      ...previousAppUserMetadata,
+      ...previousAuthUserMetadata,
       first_name: firstName,
       middle_name: middleName || null,
       last_name: lastName,
@@ -185,10 +174,10 @@ export async function PATCH(request: NextRequest) {
     };
 
     let uploadedProfileImagePath = trimOrEmpty(
-      previousAppUserMetadata.profile_image_path,
+      previousAuthUserMetadata.profile_image_path,
     );
     let uploadedProfileImageBucket =
-      trimOrEmpty(previousAppUserMetadata.profile_image_bucket) ||
+      trimOrEmpty(previousAuthUserMetadata.profile_image_bucket) ||
       FACULTY_PROFILE_IMAGE_BUCKET;
 
     if (profileImage) {
@@ -243,6 +232,17 @@ export async function PATCH(request: NextRequest) {
       .eq("id", profile.id);
 
     if (profileUpdateError) {
+      if (
+        uploadedProfileImagePath &&
+        uploadedProfileImagePath !==
+          trimOrEmpty(previousAuthUserMetadata.profile_image_path)
+      ) {
+        await supabase.storage
+          .from(uploadedProfileImageBucket)
+          .remove([uploadedProfileImagePath])
+          .catch(() => null);
+      }
+
       return NextResponse.json(
         { error: profileUpdateError.message },
         { status: 400 },
@@ -280,45 +280,18 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const { error: appUsersUpdateError } = await supabase
-      .from("app_users")
-      .update({ full_name: updatedFullName, metadata: updatedMetadata })
-      .eq("profile_id", profile.id)
-      .eq("role", ROLE.FACULTY);
-
-    if (appUsersUpdateError) {
-      await supabase
-        .from("profiles")
-        .update({ full_name: previousProfileName })
-        .eq("id", profile.id);
-
-      if (
-        uploadedProfileImagePath &&
-        uploadedProfileImagePath !==
-          trimOrEmpty(previousAppUserMetadata.profile_image_path)
-      ) {
-        await supabase.storage
-          .from(uploadedProfileImageBucket)
-          .remove([uploadedProfileImagePath])
-          .catch(() => null);
-      }
-
-      return NextResponse.json(
-        { error: appUsersUpdateError.message },
-        { status: 400 },
-      );
-    }
-
     if (authUserId) {
       const { error: authUpdateError } =
         await supabase.auth.admin.updateUserById(authUserId, {
           user_metadata: {
-            ...(user.user_metadata ?? {}),
+            ...previousAuthUserMetadata,
             first_name: firstName,
             middle_name: middleName || null,
             last_name: lastName,
             full_name: updatedFullName,
             role: ROLE.FACULTY,
+            profile_image_bucket: updatedMetadata.profile_image_bucket,
+            profile_image_path: updatedMetadata.profile_image_path,
             ...(resolvedProgramId ? { program_id: resolvedProgramId } : {}),
           },
         });
@@ -328,19 +301,11 @@ export async function PATCH(request: NextRequest) {
           .from("profiles")
           .update({ full_name: previousProfileName })
           .eq("id", profile.id);
-        await supabase
-          .from("app_users")
-          .update({
-            full_name: previousAppUserName,
-            metadata: previousAppUserMetadata,
-          })
-          .eq("profile_id", profile.id)
-          .eq("role", ROLE.FACULTY);
 
         if (
           uploadedProfileImagePath &&
           uploadedProfileImagePath !==
-            trimOrEmpty(previousAppUserMetadata.profile_image_path)
+            trimOrEmpty(previousAuthUserMetadata.profile_image_path)
         ) {
           await supabase.storage
             .from(uploadedProfileImageBucket)
@@ -357,15 +322,15 @@ export async function PATCH(request: NextRequest) {
 
     if (
       uploadedProfileImagePath &&
-      trimOrEmpty(previousAppUserMetadata.profile_image_path) &&
-      previousAppUserMetadata.profile_image_path !== uploadedProfileImagePath
+      trimOrEmpty(previousAuthUserMetadata.profile_image_path) &&
+      previousAuthUserMetadata.profile_image_path !== uploadedProfileImagePath
     ) {
       await supabase.storage
         .from(
-          (previousAppUserMetadata.profile_image_bucket as string) ||
+          (previousAuthUserMetadata.profile_image_bucket as string) ||
             FACULTY_PROFILE_IMAGE_BUCKET,
         )
-        .remove([trimOrEmpty(previousAppUserMetadata.profile_image_path)])
+        .remove([trimOrEmpty(previousAuthUserMetadata.profile_image_path)])
         .catch(() => null);
     }
 

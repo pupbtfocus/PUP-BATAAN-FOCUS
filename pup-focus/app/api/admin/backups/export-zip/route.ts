@@ -198,20 +198,7 @@ export async function GET(request: NextRequest) {
       console.warn("profiles table query note:", profileErr);
     }
 
-    // 3c. Query app_users table
-    try {
-      const { data: appUsers } = await supabaseAdmin
-        .from("app_users")
-        .select("*");
 
-      if (appUsers && Array.isArray(appUsers)) {
-        for (const u of appUsers) {
-          recordProfile(u as Record<string, unknown>);
-        }
-      }
-    } catch (err) {
-      console.warn("app_users table query note:", err);
-    }
 
     // 4. Fetch Submissions
     const { data: submissions, error: subError } = await supabaseAdmin
@@ -296,7 +283,7 @@ export async function GET(request: NextRequest) {
 
       let matchedProfile = targetId ? profileMap.get(targetId) : null;
 
-      // Last-resort fallback: Direct query to faculty_profiles, profiles, or app_users
+      // Last-resort fallback: Direct query to faculty_profiles or profiles
       if (!matchedProfile && targetId) {
         try {
           const { data: directFp } = await supabaseAdmin

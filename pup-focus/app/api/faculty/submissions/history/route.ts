@@ -106,13 +106,13 @@ export async function GET() {
     const supabase = getServiceRoleClient();
 
     // 2. Resolve faculty profile_id
-    const { data: appUser, error: appUserError } = await supabase
-      .from("app_users")
-      .select("profile_id")
-      .eq("auth_user_id", user.id)
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", user.id)
       .maybeSingle();
 
-    if (appUserError || !appUser?.profile_id) {
+    if (profileError || !profile?.id) {
       logger.warn("history_faculty_profile_missing", { authUserId: user.id });
       return NextResponse.json(
         {
@@ -124,7 +124,7 @@ export async function GET() {
       );
     }
 
-    const facultyProfileId = appUser.profile_id;
+    const facultyProfileId = profile.id;
 
     // 3. Query ALL historical submission records for this faculty member
     let rawSubmissions: (SubmissionRow & { faculty_assignment_id?: string | null })[] = [];

@@ -73,20 +73,7 @@ async function diagnose() {
     console.log("user_roles:", JSON.stringify(userRoles, null, 2));
   }
 
-  // 3. Check app_users table
-  console.log("\n--- 3. App users table ---");
-  const { data: appUsers, error: auErr } = await supabase
-    .from("app_users")
-    .select("id, auth_user_id, profile_id, email, full_name, role, metadata")
-    .limit(50);
-  if (auErr) {
-    console.log("ERROR reading app_users:", auErr.message);
-  } else {
-    console.log(`app_users count: ${appUsers?.length ?? 0}`);
-    for (const au of appUsers ?? []) {
-      console.log(`  - ${au.email} | role=${au.role} | profile_id=${au.profile_id} | auth_user_id=${au.auth_user_id}`);
-    }
-  }
+
 
   // 4. Check profiles table
   console.log("\n--- 4. Profiles table ---");
@@ -150,8 +137,7 @@ async function diagnose() {
     }
   }
 
-  const facultyAppUsers = (appUsers ?? []).filter(au => au.role === "faculty");
-  console.log(`   app_users with role=faculty: ${facultyAppUsers.length}`);
+
   
   const facultyAuthUsers = (authData?.users ?? []).filter(u => u.user_metadata?.role === "faculty");
   console.log(`   auth users with role=faculty: ${facultyAuthUsers.length}`);

@@ -52,20 +52,6 @@ export async function bootstrapInvitedAdminAccount(user: {
 
   const serviceRoleClient = getServiceRoleClient();
 
-  const { data: existingAppUser, error: appUserError } = await serviceRoleClient
-    .from("app_users")
-    .select("id, profile_id")
-    .eq("auth_user_id", user.id)
-    .maybeSingle();
-
-  if (appUserError) {
-    throw new Error(appUserError.message);
-  }
-
-  if (existingAppUser) {
-    return;
-  }
-
   const { data: profile, error: profileError } = await serviceRoleClient
     .from("profiles")
     .upsert(
@@ -93,22 +79,6 @@ export async function bootstrapInvitedAdminAccount(user: {
     throw new Error("Admin role not found. Seed roles first.");
   }
 
-  const inviteMetadata = {
-    is_active: true,
-    created_via: "super_admin_admin_panel",
-    created_by_super_admin_id:
-      typeof metadata.created_by_super_admin_id === "string"
-        ? metadata.created_by_super_admin_id
-        : null,
-    invite_accepted_at: new Date().toISOString(),
-    first_name: firstName || null,
-    middle_name: middleName || null,
-    last_name: lastName || null,
-    full_name: fullName,
-    profile_image_bucket: profileImageBucket,
-    profile_image_path: profileImagePath,
-  };
-
   const { error: userRoleError } = await serviceRoleClient
     .from("user_roles")
     .upsert(
@@ -121,24 +91,6 @@ export async function bootstrapInvitedAdminAccount(user: {
 
   if (userRoleError) {
     throw new Error(userRoleError.message);
-  }
-
-  const { error: appUsersError } = await serviceRoleClient
-    .from("app_users")
-    .upsert(
-      {
-        auth_user_id: user.id,
-        profile_id: profile.id,
-        email,
-        full_name: fullName,
-        role: ROLE.ADMIN,
-        metadata: inviteMetadata,
-      },
-      { onConflict: "email" },
-    );
-
-  if (appUsersError) {
-    throw new Error(appUsersError.message);
   }
 
   const { error: adminTableError } = await serviceRoleClient

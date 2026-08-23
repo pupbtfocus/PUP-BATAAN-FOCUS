@@ -31,13 +31,13 @@ export async function POST(request: NextRequest) {
 
     // Get admin's profile ID
     const supabase = getServiceRoleClient();
-    const { data: adminAppUser } = await supabase
-      .from("app_users")
-      .select("profile_id")
-      .eq("auth_user_id", user.id)
+    const { data: adminProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!adminAppUser?.profile_id) {
+    if (!adminProfile?.id) {
       logger.error("admin_profile_not_found", { authUserId: user.id });
       return NextResponse.json(
         { error: "Admin profile not found" },
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       .from("review_decisions")
       .insert({
         submission_id: submissionId,
-        reviewer_profile_id: adminAppUser.profile_id,
+        reviewer_profile_id: adminProfile.id,
         decision,
         remarks: cleanRemarks,
       });
@@ -152,8 +152,8 @@ export async function POST(request: NextRequest) {
         status: decision,
         decision,
         remarks: cleanRemarks,
-        reviewed_by: adminAppUser.profile_id,
-        reviewer_profile_id: adminAppUser.profile_id,
+        reviewed_by: adminProfile.id,
+        reviewer_profile_id: adminProfile.id,
       });
     } catch {
       // verification_history is optional
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
     logger.info("submission_validated", {
       submissionId,
       decision,
-      reviewerProfileId: adminAppUser.profile_id,
+      reviewerProfileId: adminProfile.id,
     });
 
     return NextResponse.json({

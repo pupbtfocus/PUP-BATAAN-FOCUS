@@ -106,27 +106,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("Upserting app_users...");
-  const inviteMetadata = {
-    is_active: true,
-    created_via: "super_admin_admin_panel",
-    invite_accepted_at: new Date().toISOString(),
-  };
-  const { error: appUsersErr } = await supabase.from("app_users").upsert(
-    {
-      auth_user_id: userId,
-      profile_id: profile.id,
-      email: email,
-      full_name: fullName,
-      role: "admin",
-      metadata: inviteMetadata,
-    },
-    { onConflict: "email" },
-  );
-  if (appUsersErr) {
-    console.error("app_users upsert failed:", appUsersErr);
-    process.exit(1);
-  }
+
 
   console.log("Upserting admins table...");
   const { error: adminsErr } = await supabase

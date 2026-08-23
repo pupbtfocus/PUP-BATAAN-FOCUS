@@ -41,20 +41,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 async function find() {
-  const { data: appUsers } = await supabase
-    .from("app_users")
-    .select("id, profile_id, profiles(id, full_name, email)")
-    .eq("role", "faculty")
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, user_roles(roles(code))")
     .limit(200);
 
-  if (!appUsers) {
-    console.log("No faculty entries found");
+  if (!profiles) {
+    console.log("No profile entries found");
     return;
   }
 
-  const matches = (appUsers || []).filter((au) => {
-    const profile = Array.isArray(au.profiles) ? au.profiles[0] : au.profiles;
-    const name = (profile?.full_name || "").toLowerCase();
+  const matches = (profiles || []).filter((p) => {
+    const name = (p?.full_name || "").toLowerCase();
     return name.includes("christian") || name.includes("mandani");
   });
 

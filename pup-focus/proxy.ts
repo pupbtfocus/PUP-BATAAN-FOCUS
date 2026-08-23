@@ -29,7 +29,7 @@ function matchProtectedPrefix(pathname: string): string | null {
 
 /**
  * Safely resolves the user's role from user_metadata, app_metadata,
- * or database profile (`app_users` table), falling back to `ROLE.FACULTY`.
+ * or database profile (`profiles` + `user_roles`), falling back to `ROLE.FACULTY`.
  */
 async function getUserRole(
   user: User,
@@ -49,14 +49,17 @@ async function getUserRole(
 
   if (supabase) {
     try {
-      const { data: appUser } = await supabase
-        .from("app_users")
-        .select("role")
-        .eq("auth_user_id", user.id)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, user_roles(roles(code))")
+        .eq("user_id", user.id)
         .maybeSingle();
 
-      if (appUser?.role && validRoles.includes(appUser.role as AppRole)) {
-        return appUser.role as AppRole;
+      const userRoles = profile?.user_roles as Array<{ roles: { code: string } | null }> | undefined;
+      const roleCode = userRoles?.[0]?.roles?.code;
+
+      if (roleCode && validRoles.includes(roleCode as AppRole)) {
+        return roleCode as AppRole;
       }
     } catch {
       // Ignore database lookup errors and fall back to default

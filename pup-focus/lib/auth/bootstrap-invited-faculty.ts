@@ -57,40 +57,6 @@ export async function bootstrapInvitedFacultyAccount(user: {
 
   const serviceRoleClient = getServiceRoleClient();
 
-  const { data: existingAppUser, error: appUserError } = await serviceRoleClient
-    .from("app_users")
-    .select("id, profile_id")
-    .eq("auth_user_id", user.id)
-    .maybeSingle();
-
-  if (appUserError) {
-    throw new Error(appUserError.message);
-  }
-
-  if (existingAppUser) {
-    // app_users already exists, but ensure user_roles entry is present
-    // so the faculty list API can discover this user
-    const { data: facultyRoleForExisting } = await serviceRoleClient
-      .from("roles")
-      .select("id")
-      .eq("code", ROLE.FACULTY)
-      .maybeSingle();
-
-    if (facultyRoleForExisting?.id && existingAppUser.profile_id) {
-      await serviceRoleClient
-        .from("user_roles")
-        .upsert(
-          {
-            profile_id: existingAppUser.profile_id,
-            role_id: facultyRoleForExisting.id,
-          },
-          { onConflict: "profile_id,role_id" },
-        );
-    }
-
-    return;
-  }
-
   const { data: profile, error: profileError } = await serviceRoleClient
     .from("profiles")
     .upsert(
@@ -119,22 +85,6 @@ export async function bootstrapInvitedFacultyAccount(user: {
     throw new Error("Faculty role not found. Seed roles first.");
   }
 
-  const inviteMetadata = {
-    is_active: true,
-    created_via: "admin_faculty_panel",
-    created_by_admin_id:
-      typeof metadata.created_by_admin_id === "string"
-        ? metadata.created_by_admin_id
-        : null,
-    invite_accepted_at: new Date().toISOString(),
-    first_name: firstName || null,
-    middle_name: middleName || null,
-    last_name: lastName || null,
-    full_name: fullName,
-    profile_image_bucket: profileImageBucket,
-    profile_image_path: profileImagePath,
-  };
-
   const { error: userRoleError } = await serviceRoleClient
     .from("user_roles")
     .upsert(
@@ -147,24 +97,6 @@ export async function bootstrapInvitedFacultyAccount(user: {
 
   if (userRoleError) {
     throw new Error(userRoleError.message);
-  }
-
-  const { error: appUsersError } = await serviceRoleClient
-    .from("app_users")
-    .upsert(
-      {
-        auth_user_id: user.id,
-        profile_id: profile.id,
-        email,
-        full_name: fullName,
-        role: ROLE.FACULTY,
-        metadata: inviteMetadata,
-      },
-      { onConflict: "email" },
-    );
-
-  if (appUsersError) {
-    throw new Error(appUsersError.message);
   }
 
   // Ensure faculty program assignment is persisted

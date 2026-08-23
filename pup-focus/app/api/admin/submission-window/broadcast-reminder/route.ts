@@ -98,51 +98,16 @@ export async function POST(request: NextRequest) {
     // Retrieve active Faculty user IDs (auth.users.id)
     const facultyUserIds = new Set<string>();
 
-    const { data: appUsers, error: appUsersError } = await supabase
-      .from("app_users")
-      .select("id, auth_user_id, role")
-      .eq("role", "faculty");
+    const { data: facultyRoles } = await supabase
+      .from("user_roles")
+      .select("profiles(user_id), roles(code)")
+      .eq("roles.code", "faculty");
 
-    if (!appUsersError && appUsers) {
-      for (const userRow of appUsers) {
-        const targetId = userRow.auth_user_id || userRow.id;
-        if (targetId) {
-          facultyUserIds.add(targetId);
-        }
-      }
-    }
-
-    // Fallback search via roles/user_roles/profiles if app_users is empty
-    if (facultyUserIds.size === 0) {
-      const { data: facultyRole } = await supabase
-        .from("roles")
-        .select("id")
-        .eq("code", "faculty")
-        .maybeSingle();
-
-      if (facultyRole?.id) {
-        const { data: userRoles } = await supabase
-          .from("user_roles")
-          .select("profile_id")
-          .eq("role_id", facultyRole.id);
-
-        if (userRoles && userRoles.length > 0) {
-          const profileIds = userRoles
-            .map((ur) => ur.profile_id)
-            .filter((id): id is string => Boolean(id));
-
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("user_id")
-            .in("id", profileIds);
-
-          if (profiles) {
-            for (const profile of profiles) {
-              if (profile.user_id) {
-                facultyUserIds.add(profile.user_id);
-              }
-            }
-          }
+    if (facultyRoles) {
+      for (const row of facultyRoles) {
+        const p = row.profiles as any;
+        if (p?.user_id) {
+          facultyUserIds.add(p.user_id);
         }
       }
     }
