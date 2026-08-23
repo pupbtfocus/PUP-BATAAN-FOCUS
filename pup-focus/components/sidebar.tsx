@@ -17,13 +17,13 @@ export interface SidebarProps {
 function getRoleBadgeClasses(roleTitle?: string): string {
   const role = (roleTitle || "").toLowerCase().trim();
   if (role.includes("super")) {
-    return "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20";
+    return "bg-purple-100 dark:bg-purple-900/40 text-purple-900 dark:text-purple-300 border border-solid border-[#000000] dark:border-purple-500/30";
   }
   if (role.includes("faculty")) {
-    return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20";
+    return "bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-solid border-[#000000] dark:border-slate-700";
   }
   // Default: Admin
-  return "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
+  return "bg-amber-100 dark:bg-amber-900/40 text-amber-950 dark:text-amber-300 border border-solid border-[#000000] dark:border-amber-500/30";
 }
 
 function getSidebarInitials(name?: string | null, fallback = "AD"): string {
@@ -141,7 +141,7 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 rounded-2xl bg-slate-100/70 border border-slate-400/80 dark:bg-slate-900/60 dark:border-slate-800/80 p-2.5 flex flex-col items-center shadow-sm shadow-slate-200/60 transition-colors">
+      <div className="my-1.5 rounded-2xl bg-slate-200 dark:bg-slate-900 border-2 border-solid border-[#000000] dark:border dark:border-slate-800 p-2.5 flex flex-col items-center shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
         <div className="relative mb-2">
           {profileImageUrl && !hasAvatarError ? (
             <img
@@ -151,18 +151,18 @@ export function SidebarContent({
               onError={() => setHasAvatarError(true)}
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-800 border border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-sm">
+            <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-solid border-[#000000] dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-sm">
               {getSidebarInitials(adminName, isSuperAdmin ? "SA" : "AD")}
             </div>
           )}
           <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="Active" />
         </div>
 
-        <p className="font-semibold text-slate-900 dark:text-white text-center text-xs sm:text-sm">
+        <p className="font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
           {extractFirstName(adminName, roleTitle)}
         </p>
 
-        <div className="my-1.5 h-px w-full bg-slate-400 dark:bg-slate-800" />
+        <div className="my-1.5 h-px w-full bg-[#000000] dark:bg-slate-800" />
 
         <span className={`mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full border ${getRoleBadgeClasses(roleTitle)}`}>
           {roleTitle}
@@ -199,7 +199,7 @@ export function SidebarContent({
 
             {/* Child Sub-items (Indented with left border indicator) */}
             {isUserManagementOpen && (
-              <div className="border-l border-slate-400 dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
+              <div className="border-l border-[#000000] dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
                 <button
                   type="button"
                   onClick={() => handleSelect("accounts")}
@@ -263,7 +263,7 @@ export function SidebarContent({
 
           {/* Child Sub-items (Indented with left border indicator) */}
           {isAcademicCycleOpen && (
-            <div className="border-l border-slate-400 dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
+            <div className="border-l border-[#000000] dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
               <button
                 type="button"
                 onClick={() => handleSelect(isSuperAdmin ? "terms" : "academicTerms")}
@@ -306,22 +306,20 @@ export function SidebarContent({
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
                 }`}
               >
-                Backups & Archiving
+                Backups & Archive
               </button>
             </div>
           )}
         </div>
 
-        {/* 6. Audit Logs (Super Admin Exclusive) */}
-        {isSuperAdmin && (
-          <SidebarButton
-            active={isAuditActive}
-            title="Audit Logs"
-            onClick={() => handleSelect("audit")}
-          />
-        )}
+        {/* 5. Audit Trail & System Logs (Admin Module) */}
+        <SidebarButton
+          active={isAuditActive}
+          title="Audit Trail"
+          onClick={() => handleSelect(isSuperAdmin ? "audit" : "auditLogs")}
+        />
 
-        {/* 7. Settings */}
+        {/* 6. Settings */}
         <SidebarButton
           active={isSettingsActive}
           title="Settings"
@@ -334,7 +332,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 flex-col overflow-y-auto rounded-none border-r border-l-0 border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-2.5 shadow-sm z-30 transition-colors duration-200">
+    <aside className="hidden md:flex fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 flex-col overflow-y-auto rounded-none border-r border-l-0 border-[#000000] dark:border-slate-800 bg-white dark:bg-slate-950 p-2.5 shadow-sm z-30 transition-colors duration-200">
       <SidebarContent {...props} />
     </aside>
   );

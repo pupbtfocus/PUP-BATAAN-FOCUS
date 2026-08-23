@@ -269,7 +269,7 @@ export function FacultySettingsPanel() {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800/80 pb-4">
+      <div className="flex items-center justify-between border-b border-[#000000] dark:border-slate-800/80 pb-4">
         <div>
           <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
             Settings
@@ -283,7 +283,7 @@ export function FacultySettingsPanel() {
           onClick={() => void refreshAccount()}
           disabled={isLoading}
           title="Refresh account details"
-          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-sm shadow-slate-200/60 dark:shadow-none"
+          className="inline-flex items-center justify-center rounded-xl border border-solid border-[#000000] bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-sm shadow-slate-200/60 dark:shadow-none"
         >
           <RotateCw className={`h-4 w-4 ${isLoading ? "animate-spin text-amber-500" : ""}`} />
           <span className="sr-only">Refresh</span>
@@ -293,8 +293,8 @@ export function FacultySettingsPanel() {
       {/* Grid Layout */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Profile Details Card */}
-        <article className="rounded-2xl border-2 border-slate-300 bg-white shadow-sm shadow-slate-200/60 dark:border dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-6 transition-colors">
-          <div className="pb-4 border-b border-slate-200 dark:border-slate-800/80">
+        <article className="rounded-2xl border-2 border-solid border-[#000000] bg-slate-200 shadow-sm shadow-slate-200/60 dark:border dark:border-slate-800/80 dark:bg-slate-900 dark:shadow-none p-6 transition-colors">
+          <div className="pb-4 border-b border-[#000000] dark:border-slate-800/80">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
               Profile Details
             </h2>
@@ -312,7 +312,7 @@ export function FacultySettingsPanel() {
               {/* Profile Avatar Layout */}
               <div className="flex items-center gap-4">
                 <div className="relative group shrink-0">
-                  <div className="h-20 w-20 rounded-full border-2 border-slate-300 dark:border dark:border-slate-700/80 bg-slate-100 dark:bg-slate-950 overflow-hidden flex items-center justify-center text-lg font-semibold text-slate-800 dark:text-slate-200 shadow-sm">
+                  <div className="h-20 w-20 rounded-full border-2 border-solid border-[#000000] dark:border dark:border-slate-700/80 bg-slate-100 dark:bg-slate-950 overflow-hidden flex items-center justify-center text-lg font-semibold text-slate-800 dark:text-slate-200 shadow-sm">
                     {displayedProfileImage ? (
                       <img
                         src={displayedProfileImage}
@@ -374,7 +374,7 @@ export function FacultySettingsPanel() {
               </div>
 
               {profileImageFile && (
-                <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs text-amber-900 dark:text-amber-300 font-medium">
+                <div className="flex items-center justify-between rounded-xl border border-amber-600/50 bg-amber-500/10 px-3.5 py-2 text-xs text-amber-900 dark:text-amber-300 font-medium">
                   <span className="truncate">New image selected: {profileImageFile.name}</span>
                   <button
                     type="button"
@@ -398,7 +398,7 @@ export function FacultySettingsPanel() {
                     First Name
                   </label>
                   <input
-                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                    className="w-full bg-white dark:bg-slate-950 border border-solid border-[#000000] dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
                     value={form.firstName}
                     onChange={(e) =>
                       setForm((prev) => ({ ...prev, firstName: e.target.value }))
@@ -412,7 +412,7 @@ export function FacultySettingsPanel() {
                     Middle Name
                   </label>
                   <input
-                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                    className="w-full bg-white dark:bg-slate-950 border border-solid border-[#000000] dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
                     value={form.middleName}
                     onChange={(e) =>
                       setForm((prev) => ({ ...prev, middleName: e.target.value }))
@@ -426,7 +426,7 @@ export function FacultySettingsPanel() {
                     Last Name
                   </label>
                   <input
-                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                    className="w-full bg-white dark:bg-slate-950 border border-solid border-[#000000] dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
                     value={form.lastName}
                     onChange={(e) =>
                       setForm((prev) => ({ ...prev, lastName: e.target.value }))
@@ -440,7 +440,7 @@ export function FacultySettingsPanel() {
                     Email Address
                   </label>
                   <input
-                    className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
+                    className="w-full bg-slate-100 dark:bg-slate-900/50 border border-solid border-[#000000] dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
                     value={account.email}
                     disabled
                     readOnly
@@ -452,7 +452,7 @@ export function FacultySettingsPanel() {
                     Department / Program
                   </label>
                   <input
-                    className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
+                    className="w-full bg-slate-100 dark:bg-slate-900/50 border border-solid border-[#000000] dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
                     value={
                       account.program
                         ? `${account.program.code} — ${account.program.name}`
@@ -504,8 +504,8 @@ export function FacultySettingsPanel() {
         </article>
 
         {/* Change Password Card */}
-        <article className="rounded-2xl border-2 border-slate-300 bg-white shadow-sm shadow-slate-200/60 dark:border dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-6 transition-colors">
-          <div className="pb-4 border-b border-slate-200 dark:border-slate-800/80">
+        <article className="rounded-2xl border-2 border-solid border-[#000000] bg-slate-200 shadow-sm shadow-slate-200/60 dark:border dark:border-slate-800/80 dark:bg-slate-900 dark:shadow-none p-6 transition-colors">
+          <div className="pb-4 border-b border-[#000000] dark:border-slate-800/80">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
               Change Password
             </h2>
@@ -522,7 +522,7 @@ export function FacultySettingsPanel() {
               <div className="relative">
                 <input
                   type={showOldPassword ? "text" : "password"}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 pr-10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                  className="w-full bg-white dark:bg-slate-950 border border-solid border-[#000000] dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 pr-10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
                   placeholder="Enter current password"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
@@ -544,7 +544,7 @@ export function FacultySettingsPanel() {
               <div className="relative">
                 <input
                   type={showNewPassword ? "text" : "password"}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 pr-10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                  className="w-full bg-white dark:bg-slate-950 border border-solid border-[#000000] dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 pr-10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
                   placeholder="At least 8 characters"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -566,7 +566,7 @@ export function FacultySettingsPanel() {
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 pr-10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                  className="w-full bg-white dark:bg-slate-950 border border-solid border-[#000000] dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 pr-10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
                   placeholder="Confirm new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -620,10 +620,10 @@ export function FacultySettingsPanel() {
           }}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="w-full max-w-md rounded-2xl border-2 border-solid border-[#000000] bg-slate-200 dark:border-slate-800 dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-[#000000] dark:border-slate-800 px-6 py-4">
               <h3
                 id="profile-image-menu-title"
                 className="text-sm font-semibold text-slate-900 dark:text-slate-100"
@@ -646,7 +646,7 @@ export function FacultySettingsPanel() {
             <div className="p-6 space-y-3">
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-400 hover:bg-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+                className="flex w-full items-center justify-between rounded-xl border border-solid border-[#000000] bg-white dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-[#000000] hover:bg-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
                 onClick={() => {
                   setIsFullImageOpen(true);
                   setIsProfileImageMenuOpen(false);
@@ -663,7 +663,7 @@ export function FacultySettingsPanel() {
 
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-400 hover:bg-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+                className="flex w-full items-center justify-between rounded-xl border border-solid border-[#000000] bg-white dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-[#000000] hover:bg-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
                 onClick={() => {
                   profileImageInputRef.current?.click();
                   setIsProfileImageMenuOpen(false);
@@ -691,10 +691,10 @@ export function FacultySettingsPanel() {
           onClick={() => setIsFullImageOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="w-full max-w-lg rounded-2xl border-2 border-solid border-[#000000] bg-slate-200 dark:border-slate-800 dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-[#000000] dark:border-slate-800 px-6 py-4">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {account?.fullName ?? "Profile Photo"}
               </h3>
@@ -709,7 +709,7 @@ export function FacultySettingsPanel() {
             </div>
 
             <div className="p-6">
-              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60vh]">
+              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-solid border-[#000000] dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60vh]">
                 {displayedProfileImage ? (
                   <img
                     src={displayedProfileImage}

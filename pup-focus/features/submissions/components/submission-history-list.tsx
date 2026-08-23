@@ -56,7 +56,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 }: SubmissionHistoryListProps<T>) {
   if (submissions.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 px-4 py-12 text-center shadow-xs">
+      <div className="rounded-2xl border-2 border-dashed border-[#000000] dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 px-4 py-12 text-center shadow-xs">
         <FileText className="mx-auto h-8 w-8 text-slate-400 dark:text-slate-600 mb-2" />
         <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No Submissions Found</p>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{emptyMessage}</p>
@@ -67,9 +67,9 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
   return (
     <div className={cn("w-full space-y-4", className)}>
       {/* ─── Desktop Table View (Hidden on mobile, visible on md+) ─── */}
-      <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/70 shadow-xs transition-colors">
+      <div className="hidden md:block overflow-hidden rounded-2xl border-2 border-solid border-[#000000] dark:border-slate-800 bg-slate-200 dark:bg-slate-900 shadow-xs transition-colors">
         <table className="w-full text-left text-xs" aria-label="Submission history table">
-          <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 font-semibold">
+          <thead className="border-b border-[#000000] dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 font-semibold">
             <tr>
               <th scope="col" className="px-5 py-3.5">
                 Requirement
@@ -91,7 +91,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+          <tbody className="divide-y divide-[#000000] dark:divide-slate-800/60">
             {submissions.map((sub) => {
               const reqCode = sub.requirementCode as RequirementCode;
               const title = REQUIREMENT_LABEL[reqCode] || sub.requirementCode;
@@ -106,7 +106,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
               return (
                 <tr
                   key={sub.id}
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                  className="bg-white dark:bg-slate-950/60 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                 >
                   {/* Requirement Name */}
                   <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-slate-100 max-w-[220px]">
@@ -123,7 +123,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 
                   {/* Academic Term */}
                   <td className="px-4 py-3.5 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                    <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300">
+                    <span className="inline-flex items-center rounded-md border border-solid border-[#000000] bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300">
                       {sub.semester} • S.Y. {sub.academicYear}
                     </span>
                   </td>
@@ -155,7 +155,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                       type="button"
                       aria-label={`View submitted file for ${title}`}
                       onClick={() => onViewFile(sub)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-solid border-[#000000] dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                     >
                       <Eye className="h-3.5 w-3.5" />
                       View File
@@ -184,7 +184,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
           return (
             <article
               key={sub.id}
-              className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 space-y-3 shadow-xs transition hover:border-slate-400 dark:hover:border-slate-700"
+              className="rounded-2xl border-2 border-solid border-[#000000] dark:border-slate-800 bg-slate-200 dark:bg-slate-900 p-4 space-y-3 shadow-xs transition hover:border-[#000000] dark:hover:border-slate-700"
             >
               {/* Header: Title & Status Badge */}
               <div className="flex items-start justify-between gap-2">
@@ -200,7 +200,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                       {title}
                     </h4>
                   </div>
-                  <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300 mt-1">
+                  <span className="inline-flex items-center rounded-md border border-solid border-[#000000] bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300 mt-1">
                     {sub.semester} • S.Y. {sub.academicYear}
                   </span>
                 </div>
@@ -225,12 +225,12 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
               )}
 
               {/* Footer Actions */}
-              <div className="flex justify-end pt-1 border-t border-slate-100 dark:border-slate-800/60">
+              <div className="flex justify-end pt-1 border-t border-[#000000] dark:border-slate-800/60">
                 <button
                   type="button"
                   aria-label={`View submitted file for ${title}`}
                   onClick={() => onViewFile(sub)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-solid border-[#000000] dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                 >
                   <Eye className="h-3.5 w-3.5" />
                   View File
