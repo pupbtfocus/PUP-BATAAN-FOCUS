@@ -1,4 +1,5 @@
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { FACULTY_PROFILE_IMAGE_BUCKET } from "@/lib/faculty-profile";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_CODE,
@@ -90,6 +91,14 @@ export type FacultyInitialData = {
   pastSubmissions: PastSubmissionData[];
   hasActiveSchedule: boolean;
   isLocked: boolean;
+  department?: string | null;
+  program?: {
+    id: string;
+    code: string;
+    name: string;
+  } | null;
+  avatarUrl?: string | null;
+  profileImageUrl?: string | null;
 };
 
 function normalizeAcademicYear(ay?: string | null): string {
@@ -212,17 +221,35 @@ export async function getFacultyInitialData(
     }
   } catch {}
 
-  // 4. Faculty Profile IDs
+  // 4. Faculty Profile IDs & Avatar URL
   const facultyIds = new Set<string>([authUserId]);
+  let avatarUrl: string | null = null;
   try {
     const { data: profileRow } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, full_name")
       .eq("user_id", authUserId)
       .maybeSingle();
 
     if (profileRow?.id) {
       facultyIds.add(profileRow.id);
+    }
+
+    const { data: authUserResult } = await supabase.auth.admin.getUserById(authUserId);
+    const meta = (authUserResult?.user?.user_metadata || {}) as Record<string, unknown>;
+    const profileImagePath = (meta.profile_image_path as string) || null;
+    const profileImageBucket =
+      (meta.profile_image_bucket as string) || FACULTY_PROFILE_IMAGE_BUCKET;
+
+    if (profileImagePath) {
+      const { data: signed } = await supabase.storage
+        .from(profileImageBucket)
+        .createSignedUrl(profileImagePath, 60 * 60);
+      if (signed?.signedUrl) {
+        avatarUrl = signed.signedUrl;
+      }
+    } else if (meta.avatar_url || meta.profile_image_url) {
+      avatarUrl = (meta.avatar_url || meta.profile_image_url) as string;
     }
   } catch {}
 
@@ -230,14 +257,29 @@ export async function getFacultyInitialData(
 
   // 5. Program Assignments
   let assignmentRows: Array<{ id: string; academic_year?: string; term?: string }> = [];
+  let programInfo: { id: string; code: string; name: string } | null = null;
+  let departmentName: string | null = null;
   try {
     const { data } = await supabase
       .from("faculty_program_assignments")
-      .select("id, academic_year, term")
+      .select("id, academic_year, term, program_id, programs(id, code, name)")
       .in("faculty_profile_id", facultyIdList);
 
     if (Array.isArray(data)) {
       assignmentRows = data;
+      for (const row of data) {
+        const p = (row as any).programs;
+        const prog = Array.isArray(p) ? p[0] : p;
+        if (prog?.code && prog?.name) {
+          programInfo = {
+            id: prog.id,
+            code: prog.code,
+            name: prog.name,
+          };
+          departmentName = `${prog.code} — ${prog.name}`;
+          break;
+        }
+      }
     }
   } catch {}
 
@@ -430,5 +472,9 @@ export async function getFacultyInitialData(
     pastSubmissions,
     hasActiveSchedule: Boolean(submissionWindow.isConfigured && submissionWindow.isOpen),
     isLocked: !submissionWindow.isOpen || !submissionWindow.isConfigured,
+    department: departmentName,
+    program: programInfo,
+    avatarUrl,
+    profileImageUrl: avatarUrl,
   };
 }

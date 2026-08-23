@@ -20,6 +20,7 @@ export default async function FacultyHistoryPage() {
       >
         <FacultySubmissionPanel
           facultyName={user?.fullName ?? null}
+          facultyEmail={user?.email ?? null}
           initialData={initialData}
           initialView="history"
         />

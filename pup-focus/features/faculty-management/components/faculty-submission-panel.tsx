@@ -247,12 +247,16 @@ function getSubmissionPreviewUrl(submissionId: string) {
 
 export interface FacultySubmissionPanelProps {
   facultyName?: string | null;
+  facultyEmail?: string | null;
+  facultyAvatarUrl?: string | null;
   initialData?: FacultyInitialData | null;
   initialView?: PanelView;
 }
 
 function FacultySubmissionPanelContent({
   facultyName,
+  facultyEmail,
+  facultyAvatarUrl,
   initialData,
   initialView = "dashboard",
 }: FacultySubmissionPanelProps) {
@@ -262,6 +266,29 @@ function FacultySubmissionPanelContent({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const academicYears = useMemo(() => buildAcademicYearOptions(), []);
   const facultyFirstName = useMemo(() => extractFirstName(facultyName, "Faculty"), [facultyName]);
+  const departmentName = useMemo(() => {
+    if (initialData?.department) return initialData.department;
+    if (initialData?.program) {
+      return `${initialData.program.code} — ${initialData.program.name}`;
+    }
+    return "Unassigned";
+  }, [initialData?.department, initialData?.program]);
+  const avatarUrl = useMemo(() => {
+    return (
+      facultyAvatarUrl ??
+      initialData?.avatarUrl ??
+      initialData?.profileImageUrl ??
+      null
+    );
+  }, [facultyAvatarUrl, initialData?.avatarUrl, initialData?.profileImageUrl]);
+
+  useEffect(() => {
+    if (avatarUrl && typeof window !== "undefined") {
+      const img = new window.Image();
+      img.src = avatarUrl;
+    }
+  }, [avatarUrl]);
+
   const [isMounted, setIsMounted] = useState(false);
   const [activeView, setActiveView] = useState<PanelView>(initialView);
   const [form, setForm] = useState<SubmissionFormState>({
@@ -2645,7 +2672,12 @@ function FacultySubmissionPanelContent({
 
             {activeView === "settings" && (
               <article className="space-y-6">
-                <FacultySettingsPanel />
+                <FacultySettingsPanel
+                  initialFacultyName={facultyName}
+                  initialFacultyEmail={facultyEmail}
+                  initialDepartment={departmentName}
+                  initialAvatarUrl={avatarUrl}
+                />
               </article>
             )}
 

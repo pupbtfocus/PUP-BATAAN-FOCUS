@@ -3,6 +3,7 @@ import { ROLE } from "@/config/roles";
 import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
+  parseFullNameFallback,
 } from "@/lib/faculty-profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -38,56 +39,78 @@ async function loadFacultyAccount(
 ): Promise<FacultyAccountRecord> {
   const supabase = getServiceRoleClient();
 
-  const { data: authUserResult, error: authUserError } =
-    await supabase.auth.admin.getUserById(authUserId);
-
-  if (authUserError) {
-    throw new Error(authUserError.message);
+  let authUser: any = null;
+  try {
+    const { data: authUserResult } =
+      await supabase.auth.admin.getUserById(authUserId);
+    authUser = authUserResult?.user ?? null;
+  } catch {
+    // Continue with available data
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, full_name, email")
-    .eq("user_id", authUserId)
-    .maybeSingle();
-
-  if (profileError || !profile) {
-    throw new Error("Faculty profile not found");
+  let profile: any = null;
+  try {
+    const { data: profileResult } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .eq("user_id", authUserId)
+      .maybeSingle();
+    profile = profileResult ?? null;
+  } catch {
+    // Continue with fallback profile
   }
 
   let program: FacultyProgramInfo | null = null;
-  const { data: assignmentRow } = await supabase
-    .from("faculty_program_assignments")
-    .select("program_id, programs(id, code, name)")
-    .eq("faculty_profile_id", profile.id)
-    .limit(1)
-    .maybeSingle();
+  const profileId = profile?.id || authUserId;
 
-  if (assignmentRow?.programs) {
-    const prog = Array.isArray(assignmentRow.programs)
-      ? (assignmentRow.programs as any)[0]
-      : (assignmentRow.programs as any);
-    if (prog?.id && prog?.code && prog?.name) {
-      program = {
-        id: prog.id,
-        code: prog.code,
-        name: prog.name,
-      };
+  if (profile?.id) {
+    try {
+      const { data: assignmentRow } = await supabase
+        .from("faculty_program_assignments")
+        .select("program_id, programs(id, code, name)")
+        .eq("faculty_profile_id", profile.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (assignmentRow?.programs) {
+        const prog = Array.isArray(assignmentRow.programs)
+          ? (assignmentRow.programs as any)[0]
+          : (assignmentRow.programs as any);
+        if (prog?.id && prog?.code && prog?.name) {
+          program = {
+            id: prog.id,
+            code: prog.code,
+            name: prog.name,
+          };
+        }
+      }
+    } catch {
+      program = null;
     }
   }
 
-  const authUserMetadata = (authUserResult.user?.user_metadata ?? {}) as Record<
+  const authUserMetadata = (authUser?.user_metadata ?? {}) as Record<
     string,
     unknown
   >;
-  const firstName = trimOrEmpty(authUserMetadata.first_name);
-  const middleName = trimOrEmpty(authUserMetadata.middle_name);
-  const lastName = trimOrEmpty(authUserMetadata.last_name);
+  const rawFullName =
+    trimOrEmpty(profile?.full_name) ||
+    trimOrEmpty(authUserMetadata.full_name) ||
+    trimOrEmpty(authUserMetadata.name) ||
+    trimOrEmpty(authUser?.email?.split("@")[0]) ||
+    "Faculty";
+  const parsedFallback = parseFullNameFallback(rawFullName);
+
+  const firstName =
+    trimOrEmpty(authUserMetadata.first_name) || parsedFallback.firstName;
+  const middleName =
+    trimOrEmpty(authUserMetadata.middle_name) || parsedFallback.middleName;
+  const lastName =
+    trimOrEmpty(authUserMetadata.last_name) || parsedFallback.lastName;
   const fullName =
     buildFacultyFullName({ firstName, middleName, lastName }) ||
-    trimOrEmpty(profile.full_name) ||
-    "Faculty";
-  const email = trimOrEmpty(profile.email);
+    rawFullName;
+  const email = trimOrEmpty(profile?.email) || trimOrEmpty(authUser?.email);
   const profileImagePath = trimOrNull(authUserMetadata.profile_image_path);
   const profileImageBucket =
     trimOrEmpty(authUserMetadata.profile_image_bucket) ||
@@ -95,17 +118,21 @@ async function loadFacultyAccount(
 
   let profileImageUrl: string | null = null;
   if (profileImagePath) {
-    const { data: signed, error: signedError } = await supabase.storage
-      .from(profileImageBucket)
-      .createSignedUrl(profileImagePath, 60 * 60);
+    try {
+      const { data: signed, error: signedError } = await supabase.storage
+        .from(profileImageBucket)
+        .createSignedUrl(profileImagePath, 60 * 60);
 
-    if (!signedError) {
-      profileImageUrl = signed?.signedUrl ?? null;
+      if (!signedError) {
+        profileImageUrl = signed?.signedUrl ?? null;
+      }
+    } catch {
+      profileImageUrl = null;
     }
   }
 
   return {
-    profileId: profile.id,
+    profileId,
     firstName,
     middleName,
     lastName,
@@ -278,7 +305,12 @@ export async function PATCH(request: NextRequest) {
 
     const { error: profileUpdateError } = await supabase
       .from("profiles")
-      .update({ full_name: updatedFullName })
+      .update({
+        full_name: updatedFullName,
+        first_name: firstName,
+        middle_name: middleName || null,
+        last_name: lastName,
+      })
       .eq("id", profile.id);
 
     if (profileUpdateError) {

@@ -52,28 +52,30 @@ export function parseFullNameFallback(fullName?: string | null): {
     return { firstName: parts[0], middleName: "", lastName: parts[1] };
   }
 
-  // 3 or more words (e.g., "Christian Jay Cereza" or "Mary Ann S. Dela Cruz")
+  if (parts.length === 3) {
+    // When 3 words exist (e.g. ["Aienne", "Ramos", "Facun"])
+    return {
+      firstName: parts[0],
+      middleName: parts[1],
+      lastName: parts[2],
+    };
+  }
+
+  if (parts.length === 4) {
+    // When 4 words exist (e.g. ["Aienne", "Joy", "Ramos", "Facun"])
+    // first_name = "Aienne Joy", middle_name = "Ramos", last_name = "Facun"
+    return {
+      firstName: `${parts[0]} ${parts[1]}`,
+      middleName: parts[2],
+      lastName: parts[3],
+    };
+  }
+
+  // 5 or more words (e.g. ["Maria", "Clara", "De", "Ramos", "Facun"])
   const lastName = parts[parts.length - 1];
-  const penultimate = parts[parts.length - 2];
-
-  // If penultimate part is an explicit middle initial (e.g. "S.", "A", "C."):
-  if (parts.length >= 3 && (penultimate.length === 1 || penultimate.endsWith("."))) {
-    const firstName = parts.slice(0, -2).join(" ");
-    const middleName = penultimate.replace(/\.$/, "");
-    return { firstName, middleName, lastName };
-  }
-
-  // 4 or more words (e.g., "Christian Jay Cereza Mandani"):
-  // First Name: "Christian Jay", Middle Name: "Cereza", Last Name: "Mandani"
-  if (parts.length >= 4) {
-    const firstName = parts.slice(0, -2).join(" ");
-    const middleName = penultimate;
-    return { firstName, middleName, lastName };
-  }
-
-  // 3 words without middle initial (e.g., "Christian Jay Cereza"):
-  const firstName = parts.slice(0, -1).join(" ");
-  return { firstName, middleName: "", lastName };
+  const middleName = parts[parts.length - 2];
+  const firstName = parts.slice(0, -2).join(" ");
+  return { firstName, middleName, lastName };
 }
 
 /**

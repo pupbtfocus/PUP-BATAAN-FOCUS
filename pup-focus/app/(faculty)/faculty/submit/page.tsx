@@ -24,6 +24,7 @@ export default async function FacultySubmitPage() {
       >
         <FacultySubmissionPanel
           facultyName={user?.fullName ?? null}
+          facultyEmail={user?.email ?? null}
           initialData={initialData}
           initialView="submit"
         />
