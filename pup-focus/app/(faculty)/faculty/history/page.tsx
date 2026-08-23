@@ -1,14 +1,29 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/layout/app-shell";
+import { FacultySubmissionPanel } from "@/features/faculty-management/components/faculty-submission-panel";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getFacultyInitialData } from "@/features/submissions/services/faculty-data.service";
+import { SubmissionHistorySkeleton } from "@/features/submissions/components/submission-skeletons";
 
-export default function FacultyHistoryPage() {
+export default async function FacultyHistoryPage() {
+  const user = await getCurrentUser();
+  const initialData = user ? await getFacultyInitialData(user.id) : null;
+
   return (
-    <AppShell
-      title="Submission History"
-      nav={[{ href: "/faculty/dashboard", label: "Dashboard" }]}
-    >
-      <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 text-sm text-slate-300">
-        Historical submission versions and review trails appear here.
-      </div>
+    <AppShell title="Submission History" nav={[]} fullBleed>
+      <Suspense
+        fallback={
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 space-y-4">
+            <SubmissionHistorySkeleton count={6} />
+          </div>
+        }
+      >
+        <FacultySubmissionPanel
+          facultyName={user?.fullName ?? null}
+          initialData={initialData}
+          initialView="history"
+        />
+      </Suspense>
     </AppShell>
   );
 }

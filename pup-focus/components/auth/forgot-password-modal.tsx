@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import Lottie from "lottie-react";
+import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
@@ -111,7 +111,7 @@ export function ForgotPasswordModal({
         {resetSuccess ? (
           <div className="mt-6 flex flex-col items-center text-center gap-3">
             <div className="relative flex h-14 w-14 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-400/10">
-              <Lottie
+              <LazyLottie
                 animationData={successCheckAnimation}
                 loop={false}
                 autoplay
@@ -169,7 +169,7 @@ export function ForgotPasswordModal({
               >
                 {isSendingReset ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Lottie
+                    <LazyLottie
                       animationData={loadingAnimation}
                       loop={true}
                       autoplay
