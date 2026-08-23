@@ -461,7 +461,19 @@ export function FacultySettingsPanel({
           <form onSubmit={handleSaveName} className="mt-5 space-y-5">
             {/* Profile Avatar Layout */}
             <div className="flex items-center gap-4">
-              <div className="relative group shrink-0">
+              <div
+                className="relative group shrink-0 cursor-pointer"
+                onClick={() => setIsProfileImageMenuOpen(true)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setIsProfileImageMenuOpen(true);
+                  }
+                }}
+                aria-label="Profile photo options"
+              >
                 <div className="relative h-20 w-20 rounded-full border border-slate-300 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-950 overflow-hidden flex items-center justify-center text-lg font-semibold text-slate-800 dark:text-slate-200 shadow-xs">
                   {/* Clean initials rendered immediately */}
                   <span className="select-none font-semibold text-slate-700 dark:text-slate-300">
@@ -479,15 +491,22 @@ export function FacultySettingsPanel({
                     />
                   ) : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsProfileImageMenuOpen(true)}
-                  className="absolute inset-0 rounded-full bg-slate-950/60 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center cursor-pointer"
-                  aria-label="Change profile picture"
+                {/* Hover darken overlay */}
+                <div
+                  className="absolute inset-0 rounded-full bg-black/40 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center pointer-events-none"
+                  aria-hidden="true"
                 >
                   <Camera className="h-4 w-4 mb-0.5" />
                   <span>Change</span>
-                </button>
+                </div>
+
+                {/* Persistent Floating Camera Badge */}
+                <div
+                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900 transition-transform group-hover:scale-110 pointer-events-none"
+                  aria-hidden="true"
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                </div>
               </div>
 
               <div className="min-w-0 flex-1">
@@ -497,24 +516,6 @@ export function FacultySettingsPanel({
                 <p className="text-xs text-slate-600 dark:text-slate-400 truncate mt-0.5">
                   {account.email || "No email on record"}
                 </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => profileImageInputRef.current?.click()}
-                    className="text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition underline underline-offset-2 cursor-pointer font-medium"
-                  >
-                    Upload new image
-                  </button>
-                  {displayedProfileImage && (
-                    <button
-                      type="button"
-                      onClick={() => setIsFullImageOpen(true)}
-                      className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer"
-                    >
-                      • View full
-                    </button>
-                  )}
-                </div>
               </div>
 
               <input
