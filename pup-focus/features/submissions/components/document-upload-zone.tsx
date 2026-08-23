@@ -9,6 +9,7 @@ export interface DocumentUploadZoneProps {
   selectedFile: File | null;
   onFileSelect: (file: File | null) => void;
   isUploading?: boolean;
+  uploadProgress?: number;
   disabled?: boolean;
   maxSizeMb?: number;
   allowedFormats?: string[];
@@ -30,6 +31,7 @@ export function DocumentUploadZone({
   selectedFile,
   onFileSelect,
   isUploading = false,
+  uploadProgress = 100,
   disabled = false,
   maxSizeMb = 10,
   allowedFormats = ["PDF", "DOCX", "XLSX", "JPG", "PNG"],
@@ -44,6 +46,7 @@ export function DocumentUploadZone({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const maxSizeBytes = maxSizeMb * 1024 * 1024;
+  const acceptedFormatsText = allowedFormats.map((f) => f.replace(/^\./, "").toUpperCase()).join(", ");
 
   const validateAndSelectFile = useCallback(
     (file: File) => {
@@ -203,7 +206,7 @@ export function DocumentUploadZone({
             ? "border-amber-500 bg-amber-50/80 dark:bg-amber-500/10 scale-[1.01] shadow-md ring-2 ring-amber-400/40"
             : selectedFile
               ? "border-emerald-500 bg-emerald-50/40 dark:border-emerald-500/40 dark:bg-emerald-950/20"
-            : "border-[#000000] bg-white hover:border-amber-500 hover:bg-amber-50/30 dark:border-slate-700 dark:bg-slate-900/50 dark:hover:border-amber-400/60 dark:hover:bg-slate-900/80 shadow-xs",
+            : "border-slate-300 dark:border-slate-700 bg-slate-50/50 hover:border-amber-500 hover:bg-amber-50/30 dark:bg-slate-900/50 dark:hover:border-amber-400/60 dark:hover:bg-slate-900/80 shadow-xs",
           disabled && "opacity-50 cursor-not-allowed pointer-events-none",
         )}
       >
@@ -222,7 +225,7 @@ export function DocumentUploadZone({
         {selectedFile ? (
           <div className="flex w-full flex-col sm:flex-row items-center justify-between gap-3 p-1">
             <div className="flex items-center gap-3 min-w-0 text-left">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-solid border-[#000000] dark:border-emerald-500/30 bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
                 <FileText className="h-6 w-6" />
               </div>
               <div className="min-w-0 flex-1">
@@ -244,7 +247,7 @@ export function DocumentUploadZone({
                 type="button"
                 onClick={triggerFileInput}
                 disabled={isUploading}
-                className="rounded-xl border border-solid border-[#000000] dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                className="rounded-lg border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
               >
                 Change File
               </button>
@@ -253,7 +256,7 @@ export function DocumentUploadZone({
                 aria-label="Remove selected file"
                 onClick={removeFile}
                 disabled={isUploading}
-                className="flex h-8 w-8 items-center justify-center rounded-xl border border-solid border-[#000000] dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200/80 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -266,7 +269,7 @@ export function DocumentUploadZone({
                 "flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-200 shadow-2xs",
                 isDragOver
                   ? "border-amber-400 bg-amber-100 text-amber-600 dark:bg-amber-400/20 dark:text-amber-300 animate-bounce"
-                  : "border-solid border-[#000000] dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:border-amber-400/50 group-hover:text-amber-500",
+                  : "border border-slate-200/80 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:border-amber-400/50 group-hover:text-amber-500",
               )}
             >
               {isUploading ? (
@@ -278,26 +281,31 @@ export function DocumentUploadZone({
 
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {isDragOver ? (
-                  <span className="text-amber-600 dark:text-amber-300">Drop your file here</span>
-                ) : (
-                  <>
-                    <span className="text-amber-600 dark:text-amber-400 font-bold hover:underline">
-                      Click to browse
-                    </span>{" "}
-                    or drag & drop
-                  </>
-                )}
+                Click to upload or drag and drop
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Supported formats: {allowedFormats.map((f) => f.replace(/^\./, "").toUpperCase()).join(", ")}
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {acceptedFormatsText} (up to {maxSizeMb} MB)
               </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Validation error message */}
+      {isUploading && (
+        <div className="space-y-1.5" aria-label="Upload progress">
+          <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span>Uploading document…</span>
+            <span className="font-mono font-medium">{uploadProgress}%</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+            <div
+              className="h-full rounded-full bg-amber-500 transition-all duration-300 ease-out"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {validationError && (
         <div
           role="alert"
@@ -308,12 +316,11 @@ export function DocumentUploadZone({
         </div>
       )}
 
-      {/* File Size & Upload Guidance Note */}
-      <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
-        <div className="flex items-center gap-1">
-          <span className="font-medium text-slate-700 dark:text-slate-300">Max size:</span>{" "}
-          {maxSizeMb} MB
-        </div>
+      <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
+        <span className="flex items-center gap-1">
+          <FileText className="h-3 w-3" />
+          <span>Max {maxSizeMb}MB • PDF / Scanned Copy</span>
+        </span>
 
         <div className="relative">
           <button
@@ -332,7 +339,7 @@ export function DocumentUploadZone({
           {showTooltip && (
             <div
               role="tooltip"
-              className="absolute right-0 bottom-full mb-1.5 w-64 rounded-xl border-2 border-solid border-[#000000] dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-700 dark:text-slate-300 shadow-lg z-20"
+              className="absolute right-0 bottom-full mb-1.5 w-64 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-700 dark:text-slate-300 shadow-lg z-20"
             >
               <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
                 Document Submission Rules:
