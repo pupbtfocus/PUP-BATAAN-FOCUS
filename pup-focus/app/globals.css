@@ -102,10 +102,6 @@ a {
   color: inherit;
 }
 
-* {
-  border-color: rgb(51 65 85 / 0.5);
-}
-
 /* Prevent browser autofill from forcing a white background (stronger rules)
    - covers focused/hover states and forces text-fill and long transition to avoid flash */
 input:-webkit-autofill,
