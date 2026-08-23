@@ -12,6 +12,7 @@ import {
   Eye,
   EyeOff,
   RotateCw,
+  RotateCcw,
   X,
   Camera,
   Pencil,
@@ -85,6 +86,28 @@ export function FacultySettingsPanel({
         ref.current.setSelectionRange(length, length);
       }
     }, 0);
+  }
+
+  function handleCancelEdit(
+    fieldKey: "firstName" | "middleName" | "lastName",
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      [fieldKey]: account[fieldKey],
+    }));
+    setActiveField(null);
+  }
+
+  function handleResetForm() {
+    setForm({
+      firstName: account.firstName,
+      middleName: account.middleName,
+      lastName: account.lastName,
+    });
+    setProfileImageFile(null);
+    if (profileImageInputRef.current) {
+      profileImageInputRef.current.value = "";
+    }
   }
 
   function handleEnablePasswordEditing() {
@@ -632,7 +655,7 @@ export function FacultySettingsPanel({
                     id="faculty-first-name"
                     ref={firstNameInputRef}
                     readOnly={activeField !== "firstName"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-16 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "firstName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                         : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
@@ -644,16 +667,27 @@ export function FacultySettingsPanel({
                     onBlur={() => setActiveField(null)}
                     placeholder="First name"
                   />
-                  <button
-                    type="button"
-                    onClick={() => handleFocusField("firstName", firstNameInputRef)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-500 transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-                    title="Edit First Name"
-                    aria-label="Edit First Name"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    <span>Edit</span>
-                  </button>
+                  {activeField === "firstName" ? (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("firstName")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span>Cancel</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("firstName", firstNameInputRef)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Edit</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -669,7 +703,7 @@ export function FacultySettingsPanel({
                     id="faculty-middle-name"
                     ref={middleNameInputRef}
                     readOnly={activeField !== "middleName"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-16 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "middleName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                         : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
@@ -681,16 +715,27 @@ export function FacultySettingsPanel({
                     onBlur={() => setActiveField(null)}
                     placeholder="Middle name"
                   />
-                  <button
-                    type="button"
-                    onClick={() => handleFocusField("middleName", middleNameInputRef)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-500 transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-                    title="Edit Middle Name"
-                    aria-label="Edit Middle Name"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    <span>Edit</span>
-                  </button>
+                  {activeField === "middleName" ? (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("middleName")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span>Cancel</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("middleName", middleNameInputRef)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Edit</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -706,7 +751,7 @@ export function FacultySettingsPanel({
                     id="faculty-last-name"
                     ref={lastNameInputRef}
                     readOnly={activeField !== "lastName"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-16 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "lastName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                         : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
@@ -718,16 +763,27 @@ export function FacultySettingsPanel({
                     onBlur={() => setActiveField(null)}
                     placeholder="Last name"
                   />
-                  <button
-                    type="button"
-                    onClick={() => handleFocusField("lastName", lastNameInputRef)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-500 transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-                    title="Edit Last Name"
-                    aria-label="Edit Last Name"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    <span>Edit</span>
-                  </button>
+                  {activeField === "lastName" ? (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("lastName")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span>Cancel</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("lastName", lastNameInputRef)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Edit</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -763,29 +819,19 @@ export function FacultySettingsPanel({
             </div>
 
             <div className="flex items-center justify-end gap-2.5 pt-2">
-              {isProfileChanged && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setForm({
-                      firstName: account.firstName,
-                      middleName: account.middleName,
-                      lastName: account.lastName,
-                    });
-                    setProfileImageFile(null);
-                    if (profileImageInputRef.current) {
-                      profileImageInputRef.current.value = "";
-                    }
-                  }}
-                  className="text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 px-3 py-2 rounded-xl transition cursor-pointer font-medium"
-                >
-                  Reset
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleResetForm}
+                disabled={!isProfileChanged || isSaving}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800/80 cursor-pointer active:scale-[0.98]"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset</span>
+              </button>
               <button
                 type="submit"
                 disabled={isSaving || !isProfileChanged}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isSaving ? "Saving..." : "Save Profile Changes"}
               </button>
@@ -808,7 +854,7 @@ export function FacultySettingsPanel({
               <button
                 type="button"
                 onClick={handleEnablePasswordEditing}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 cursor-pointer shadow-2xs"
+                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="Change Password"
                 aria-label="Change Password"
               >
@@ -824,9 +870,12 @@ export function FacultySettingsPanel({
                   setNewPassword("");
                   setConfirmPassword("");
                 }}
-                className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-medium"
+                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                title="Cancel Change Password"
+                aria-label="Cancel Change Password"
               >
-                Cancel
+                <X className="h-3.5 w-3.5" />
+                <span>Cancel</span>
               </button>
             )}
           </div>
