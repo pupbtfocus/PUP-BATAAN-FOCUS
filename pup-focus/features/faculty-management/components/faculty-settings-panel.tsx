@@ -20,6 +20,9 @@ import {
   Check,
   Circle,
   Loader2,
+  ShieldAlert,
+  ShieldCheck,
+  LockKeyhole,
 } from "lucide-react";
 
 type FacultyAccountResponse = {
@@ -1012,16 +1015,34 @@ export function FacultySettingsPanel({
           onClick={() => setFeedbackModal(null)}
         >
           <div
-            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-2xl rounded-2xl p-6 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-2xl rounded-3xl p-7 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
             onClick={(event) => event.stopPropagation()}
           >
-            {feedbackModal.type === "success" ? (
-              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center mb-3 shadow-xs">
-                <CheckCircle2 className="w-6 h-6" />
+            {feedbackModal.type === "error" ? (
+              <div className="relative mb-5 flex items-center justify-center">
+                {/* Ambient Backdrop Glow */}
+                <div className="absolute inset-0 rounded-full bg-rose-500/20 blur-xl dark:bg-rose-500/30" />
+
+                {/* Outer Layer Ring */}
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 p-3 ring-8 ring-rose-500/5 dark:bg-rose-500/20 dark:ring-rose-500/10">
+                  {/* Inner Gradient Shield Icon */}
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-lg shadow-rose-500/30">
+                    <ShieldAlert className="h-6 w-6 stroke-[2.2]" />
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 flex items-center justify-center mb-3 shadow-xs">
-                <AlertCircle className="w-6 h-6" />
+              <div className="relative mb-5 flex items-center justify-center">
+                {/* Ambient Backdrop Glow */}
+                <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl dark:bg-emerald-500/30" />
+
+                {/* Outer Layer Ring */}
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 p-3 ring-8 ring-emerald-500/5 dark:bg-emerald-500/20 dark:ring-emerald-500/10">
+                  {/* Inner Gradient Shield Icon */}
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30">
+                    <ShieldCheck className="h-6 w-6 stroke-[2.2]" />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1037,8 +1058,8 @@ export function FacultySettingsPanel({
               onClick={() => setFeedbackModal(null)}
               className={
                 feedbackModal.type === "success"
-                  ? "w-full bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium py-2.5 rounded-xl text-sm shadow-xs transition-colors cursor-pointer"
-                  : "w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-medium py-2.5 rounded-xl text-sm shadow-xs transition-colors cursor-pointer"
+                  ? "w-full bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
+                  : "w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
               }
             >
               {feedbackModal.type === "success" ? "Done" : "Dismiss"}
