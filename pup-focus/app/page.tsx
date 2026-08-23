@@ -330,7 +330,7 @@ export default function Home() {
           <div className="relative">
             <svg
               viewBox="0 0 400 60"
-              className="w-full h-auto text-[#4d0000] fill-current stroke-[rgba(255,215,0,0.25)] stroke-[1] block -mb-0.5 pointer-events-none"
+              className="w-full h-auto text-[#580000] fill-current stroke-amber-400/80 dark:stroke-amber-500/80 stroke-[2] block -mb-0.5 pointer-events-none"
             >
               <path d="M 0,60 L 0,20 Q 0,0 20,0 L 130,0 C 150,0 155,45 200,45 C 245,45 250,0 270,0 L 380,0 Q 400,0 400,20 L 400,60 Z" />
             </svg>
@@ -342,13 +342,13 @@ export default function Home() {
           </div>
 
           {/* Card Body */}
-          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x border-b border-[rgba(255,215,0,0.25)] bg-[#4d0000] p-6 pt-10 sm:p-8 sm:pt-10 backdrop-blur-md">
+          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-6 pt-10 sm:p-8 sm:pt-10 backdrop-blur-md shadow-xl shadow-amber-500/10">
             <div className="mt-4 mb-6 sm:mb-8 text-center">
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-wider text-amber-200 drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)] uppercase mb-1">
                 Sign In
               </h2>
               <div className="mx-auto my-2.5 h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
-              <p className="text-[9px] sm:text-[10px] text-amber-200/90 font-bold tracking-widest uppercase mb-4 sm:mb-6">
+              <p className="text-amber-200/80 text-xs sm:text-sm font-medium tracking-wide mb-6">
                 Enter your institutional credentials to continue
               </p>
             </div>
