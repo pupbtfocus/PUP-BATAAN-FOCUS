@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Lottie from "lottie-react";
+import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
 import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
 import { Clock, AlertCircle, CheckCircle2 } from "lucide-react";
@@ -250,7 +250,7 @@ export function LoginForm({
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2 text-sm sm:text-base font-black">
-              <Lottie
+              <LazyLottie
                 animationData={loadingAnimation}
                 loop={true}
                 autoplay

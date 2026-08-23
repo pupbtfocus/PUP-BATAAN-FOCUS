@@ -3,25 +3,29 @@ import { AppShell } from "@/components/layout/app-shell";
 import { FacultySubmissionPanel } from "@/features/faculty-management/components/faculty-submission-panel";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getFacultyInitialData } from "@/features/submissions/services/faculty-data.service";
-import { SubmissionHistorySkeleton } from "@/features/submissions/components/submission-skeletons";
+import {
+  SubmissionWindowSkeleton,
+  ComplianceListSkeleton,
+} from "@/features/submissions/components/submission-skeletons";
 
-export default async function FacultyHistoryPage() {
+export default async function FacultySubmitPage() {
   const user = await getCurrentUser();
   const initialData = user ? await getFacultyInitialData(user.id) : null;
 
   return (
-    <AppShell title="Submission History" nav={[]} fullBleed>
+    <AppShell title="Submit Requirement" nav={[]} fullBleed>
       <Suspense
         fallback={
-          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 space-y-4">
-            <SubmissionHistorySkeleton count={6} />
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 space-y-6">
+            <SubmissionWindowSkeleton />
+            <ComplianceListSkeleton count={4} />
           </div>
         }
       >
         <FacultySubmissionPanel
           facultyName={user?.fullName ?? null}
           initialData={initialData}
-          initialView="history"
+          initialView="submit"
         />
       </Suspense>
     </AppShell>
