@@ -120,31 +120,15 @@ export async function GET(request: NextRequest) {
     if (actorIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", actorIds);
+        .select("id, user_id, full_name");
 
       if (profiles) {
         for (const profile of profiles) {
-          if (profile.user_id && profile.full_name) {
+          if (profile.user_id && profile.full_name && actorIds.includes(profile.user_id)) {
             actorMap[profile.user_id] = profile.full_name;
           }
-        }
-      }
-
-      // Also check app_users for names
-      const { data: appUsers } = await supabase
-        .from("app_users")
-        .select("auth_user_id, full_name")
-        .in("auth_user_id", actorIds);
-
-      if (appUsers) {
-        for (const appUser of appUsers) {
-          if (
-            appUser.auth_user_id &&
-            appUser.full_name &&
-            !actorMap[appUser.auth_user_id]
-          ) {
-            actorMap[appUser.auth_user_id] = appUser.full_name;
+          if (profile.id && profile.full_name && actorIds.includes(profile.id)) {
+            actorMap[profile.id] = profile.full_name;
           }
         }
       }

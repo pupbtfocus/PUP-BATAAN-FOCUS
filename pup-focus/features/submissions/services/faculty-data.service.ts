@@ -215,18 +215,6 @@ export async function getFacultyInitialData(
   // 4. Faculty Profile IDs
   const facultyIds = new Set<string>([authUserId]);
   try {
-    const { data: appUser } = await supabase
-      .from("app_users")
-      .select("profile_id")
-      .eq("auth_user_id", authUserId)
-      .maybeSingle();
-
-    if (appUser?.profile_id) {
-      facultyIds.add(appUser.profile_id);
-    }
-  } catch {}
-
-  try {
     const { data: profileRow } = await supabase
       .from("profiles")
       .select("id")

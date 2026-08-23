@@ -23,13 +23,13 @@ export async function GET() {
 
   try {
     const supabase = getServiceRoleClient();
-    const { data: appUser, error } = await supabase
-      .from("app_users")
-      .select("profile_id, full_name, email")
-      .eq("auth_user_id", user.id)
-      .single();
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if (error || !appUser) {
+    if (error || !profile) {
       return NextResponse.json(
         { error: "Failed to load account details" },
         { status: 400 },
@@ -38,18 +38,6 @@ export async function GET() {
 
     let avatarUrl: string | null =
       user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
-
-    try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", appUser.profile_id)
-        .maybeSingle();
-
-      if (profile?.full_name && !appUser.full_name) {
-        appUser.full_name = profile.full_name;
-      }
-    } catch {}
 
     if (avatarUrl && !avatarUrl.startsWith("http")) {
       let cleanPath = avatarUrl.replace(/^avatars\//, "");
@@ -66,10 +54,10 @@ export async function GET() {
       success: true,
       account: {
         fullName:
-          appUser.full_name ??
+          profile.full_name ??
           (user.user_metadata?.full_name as string | undefined) ??
           "",
-        email: appUser.email ?? user.email ?? "",
+        email: profile.email ?? user.email ?? "",
         avatar_url: avatarUrl,
         profileImageUrl: avatarUrl,
       },
@@ -184,23 +172,23 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    const { data: appUser, error: appUserError } = await supabase
-      .from("app_users")
-      .select("profile_id, email, full_name")
-      .eq("auth_user_id", user.id)
-      .single();
+    const { data: profile, error: profileFetchError } = await supabase
+      .from("profiles")
+      .select("id, email, full_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if (appUserError || !appUser?.profile_id) {
+    if (profileFetchError || !profile?.id) {
       return NextResponse.json(
         { error: "Unable to resolve account profile" },
         { status: 400 },
       );
     }
 
-    const profileId = appUser.profile_id;
-    const previousEmail = appUser.email ?? user.email ?? "";
+    const profileId = profile.id;
+    const previousEmail = profile.email ?? user.email ?? "";
     const previousFullName =
-      appUser.full_name ??
+      profile.full_name ??
       (user.user_metadata?.full_name as string | undefined) ??
       "";
 
@@ -273,28 +261,6 @@ export async function PATCH(request: NextRequest) {
 
       return NextResponse.json(
         { error: profileUpdateError.message },
-        { status: 400 },
-      );
-    }
-
-    const { error: appUsersUpdateError } = await supabase
-      .from("app_users")
-      .update({ full_name: fullName, email })
-      .eq("auth_user_id", user.id);
-
-    if (appUsersUpdateError) {
-      await supabase.auth.admin.updateUserById(user.id, {
-        email: previousEmail,
-        email_confirm: true,
-        user_metadata: {
-          ...(user.user_metadata ?? {}),
-          full_name: previousFullName,
-          role: requesterRole,
-        },
-      });
-
-      return NextResponse.json(
-        { error: appUsersUpdateError.message },
         { status: 400 },
       );
     }

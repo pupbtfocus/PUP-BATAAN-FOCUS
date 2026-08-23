@@ -298,35 +298,23 @@ export async function GET(request: NextRequest) {
 
     // 3. Multi-faculty ID lookup (Auth ID + Profile ID)
     const facultyIds = new Set<string>([user.id]);
-    let appUser: { profile_id: string | null } | null = null;
+    let profileRow: { id: string } | null = null;
     try {
-      const { data, error } = await supabase
-        .from("app_users")
-        .select("profile_id")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
-
-      if (!error && data?.profile_id) {
-        appUser = data;
-        facultyIds.add(data.profile_id);
-      }
-    } catch (userQueryErr) {
-      logger.error("app_user_query_exception", {
-        error: userQueryErr instanceof Error ? userQueryErr.message : String(userQueryErr),
-      });
-    }
-
-    try {
-      const { data: profileRow } = await supabase
+      const { data } = await supabase
         .from("profiles")
         .select("id")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (profileRow?.id) {
-        facultyIds.add(profileRow.id);
+      if (data?.id) {
+        profileRow = data;
+        facultyIds.add(data.id);
       }
-    } catch {}
+    } catch (userQueryErr) {
+      logger.error("profile_query_exception", {
+        error: userQueryErr instanceof Error ? userQueryErr.message : String(userQueryErr),
+      });
+    }
 
     const facultyIdList = Array.from(facultyIds);
 
@@ -699,7 +687,7 @@ export async function GET(request: NextRequest) {
       hasActiveSchedule: Boolean(windowState.isConfigured && windowState.isOpen),
       isLocked: !windowState.isOpen || !windowState.isConfigured,
       debug: {
-        profileId: appUser?.profile_id || facultyIdList[0] || null,
+        profileId: profileRow?.id || facultyIdList[0] || null,
         submissionsFound: submissions?.length || 0,
       },
     });

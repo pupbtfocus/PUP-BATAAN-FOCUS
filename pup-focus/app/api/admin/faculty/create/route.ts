@@ -184,20 +184,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: existingAppUser } = await supabase
-      .from("app_users")
-      .select("id")
-      .eq("email", normalizedEmail)
-      .maybeSingle();
 
-    if (existingAppUser) {
-      return NextResponse.json(
-        {
-          error: `Faculty account with email ${normalizedEmail} already exists`,
-        },
-        { status: 400 },
-      );
-    }
 
     const { data: authUsers, error: authUsersError } =
       await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -298,7 +285,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Pre-create profile, user_roles, app_users, and program assignment in DB
+    // Pre-create profile, user_roles, and program assignment in DB
     // so the faculty account appears immediately in the admin faculty list.
     const createdAuthUser = genData?.user;
     if (createdAuthUser) {
@@ -337,33 +324,7 @@ export async function POST(request: NextRequest) {
               );
           }
 
-          // Insert app_users so metadata (name, active status, etc.) is available
-          await supabase
-            .from("app_users")
-            .upsert(
-              {
-                auth_user_id: createdAuthUser.id,
-                profile_id: newProfile.id,
-                email: normalizedEmail,
-                full_name: fullName,
-                role: ROLE.FACULTY,
-                metadata: {
-                  is_active: true,
-                  created_via: "admin_faculty_panel",
-                  created_by_admin_id: user.id,
-                  first_name: firstName.trim(),
-                  middle_name: middleName.trim() || null,
-                  last_name: lastName.trim(),
-                  full_name: fullName,
-                  program_id: programRecord.id,
-                  program_code: programRecord.code,
-                  profile_image_bucket:
-                    profileImageMetadata.profile_image_bucket,
-                  profile_image_path: profileImageMetadata.profile_image_path,
-                },
-              },
-              { onConflict: "email" },
-            );
+
 
           // Insert program assignment
           const { data: activeTerm } = await supabase

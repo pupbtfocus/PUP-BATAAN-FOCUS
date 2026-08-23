@@ -203,33 +203,7 @@ export async function POST() {
       );
     }
 
-    const { data: existingAppUser } = await supabase
-      .from("app_users")
-      .select("id")
-      .eq("auth_user_id", authUserId)
-      .maybeSingle();
 
-    const appUsersPayload = {
-      auth_user_id: authUserId,
-      profile_id: profileId,
-      email: SUPER_ADMIN_EMAIL,
-      full_name: SUPER_ADMIN_FULL_NAME,
-      role: ROLE.SUPER_ADMIN,
-    };
-
-    const { error: appUsersError } = existingAppUser
-      ? await supabase
-          .from("app_users")
-          .update(appUsersPayload)
-          .eq("id", existingAppUser.id)
-      : await supabase.from("app_users").insert(appUsersPayload);
-
-    if (appUsersError) {
-      return NextResponse.json(
-        { error: appUsersError.message },
-        { status: 400 },
-      );
-    }
 
     const { data: existingAdmin } = await supabase
       .from("admins")

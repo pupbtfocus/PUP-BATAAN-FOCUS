@@ -62,31 +62,30 @@ async function fix() {
   }
   console.log(`Faculty role ID: ${facultyRole.id}`);
 
-  // 2. Find all app_users with role=faculty
-  const { data: facultyAppUsers, error: auErr } = await supabase
-    .from("app_users")
-    .select("id, profile_id, email, auth_user_id")
-    .eq("role", "faculty");
+  // 2. Find all profiles
+  const { data: facultyProfiles, error: pErr } = await supabase
+    .from("profiles")
+    .select("id, email, user_id, full_name");
 
-  if (auErr) {
-    console.error("Cannot query app_users:", auErr.message);
+  if (pErr) {
+    console.error("Cannot query profiles:", pErr.message);
     process.exit(1);
   }
 
-  if (!facultyAppUsers || facultyAppUsers.length === 0) {
-    console.log("No faculty app_users found. Nothing to fix.");
+  if (!facultyProfiles || facultyProfiles.length === 0) {
+    console.log("No profiles found. Nothing to fix.");
     return;
   }
 
-  console.log(`Found ${facultyAppUsers.length} faculty app_user(s)\n`);
+  console.log(`Found ${facultyProfiles.length} profile(s)\n`);
 
-  // 3. For each faculty app_user, ensure a user_roles entry with the correct faculty role exists
+  // 3. For each faculty profile, ensure a user_roles entry with the correct faculty role exists
   let fixed = 0;
   let skipped = 0;
 
-  for (const au of facultyAppUsers) {
-    if (!au.profile_id) {
-      console.log(`  SKIP: ${au.email} has no profile_id`);
+  for (const prof of facultyProfiles) {
+    if (!prof.id) {
+      console.log(`  SKIP: ${prof.email} has no id`);
       skipped++;
       continue;
     }
@@ -95,12 +94,12 @@ async function fix() {
     const { data: existing } = await supabase
       .from("user_roles")
       .select("id")
-      .eq("profile_id", au.profile_id)
+      .eq("profile_id", prof.id)
       .eq("role_id", facultyRole.id)
       .maybeSingle();
 
     if (existing) {
-      console.log(`  OK: ${au.email} already has correct faculty user_role`);
+      console.log(`  OK: ${prof.email} already has correct faculty user_role`);
       skipped++;
       continue;
     }

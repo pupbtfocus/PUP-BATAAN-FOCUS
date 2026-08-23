@@ -159,7 +159,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. Ensure profiles and app_users tables are updated/upserted with user's id, email, and full_name
+    // 4. Ensure profiles table is updated/upserted with user's id, email, and full_name
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .upsert(
@@ -178,37 +178,6 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: `Failed to upsert profiles table: ${profileError?.message || "Unknown error"}`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const userRole =
-      updatedUser.user_metadata?.role ||
-      authUser.user_metadata?.role ||
-      ROLE.ADMIN;
-
-    const { error: appUserError } = await supabaseAdmin.from("app_users").upsert(
-      {
-        auth_user_id: targetUserId,
-        profile_id: profile.id,
-        email: email,
-        full_name: fullNameToSet,
-        role: userRole,
-        updated_at: new Date().toISOString(),
-        metadata: {
-          ...(updatedUser.user_metadata || {}),
-          is_active: true,
-          invite_accepted_at: new Date().toISOString(),
-        },
-      },
-      { onConflict: "email" }
-    );
-
-    if (appUserError) {
-      return NextResponse.json(
-        {
-          error: `Failed to upsert app_users table: ${appUserError.message}`,
         },
         { status: 400 }
       );
@@ -239,6 +208,10 @@ export async function POST(req: Request) {
           emailErr instanceof Error ? emailErr.message : String(emailErr);
       }
     }
+
+    const userRole =
+      (updatedUser.user_metadata?.role as string | undefined) ??
+      ROLE.FACULTY;
 
     return NextResponse.json({
       success: true,

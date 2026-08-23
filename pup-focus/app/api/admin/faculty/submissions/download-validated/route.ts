@@ -162,23 +162,23 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    const { data: appUserRow, error: appUserError } = await supabase
-      .from("app_users")
-      .select("profile_id")
-      .or(`id.eq.${facultyId},profile_id.eq.${facultyId}`)
+    const { data: profileRow, error: profileError } = await supabase
+      .from("profiles")
+      .select("id")
+      .or(`id.eq.${facultyId},user_id.eq.${facultyId}`)
       .maybeSingle();
 
-    if (appUserError || !appUserRow?.profile_id) {
+    if (profileError || !profileRow?.id) {
       return NextResponse.json(
         {
           error: "Faculty profile not found",
-          details: appUserError?.message || "No profile_id for this faculty",
+          details: profileError?.message || "No profile for this faculty",
         },
         { status: 404 },
       );
     }
 
-    const facultyProfileId = appUserRow.profile_id;
+    const facultyProfileId = profileRow.id;
 
     const initialResult = await supabase
       .from("submissions")

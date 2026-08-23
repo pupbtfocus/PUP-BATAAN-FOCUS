@@ -43,16 +43,9 @@ export async function POST(request: NextRequest) {
       .eq("id", facultyProfileId)
       .maybeSingle();
 
-    // 2. Fetch app_users record (for auth_user_id or orphan handling)
-    const { data: appUser } = await supabase
-      .from("app_users")
-      .select("id, auth_user_id, profile_id, role")
-      .eq("profile_id", facultyProfileId)
-      .maybeSingle();
+    const authUserId = profile?.user_id ?? null;
 
-    const authUserId = profile?.user_id || appUser?.auth_user_id;
-
-    if (!profile && !appUser) {
+    if (!profile) {
       return NextResponse.json(
         { error: `Faculty account not found with ID: ${facultyProfileId}` },
         { status: 404 },
@@ -144,17 +137,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Step 8: Delete app_users record
-    try {
-      await supabase
-        .from("app_users")
-        .delete()
-        .or(
-          `profile_id.eq.${facultyProfileId}${authUserId ? `,auth_user_id.eq.${authUserId}` : ""}`,
-        );
-    } catch {
-      // Continue cleanup
-    }
+
 
     // Step 9: Delete profile record
     if (profile?.id) {

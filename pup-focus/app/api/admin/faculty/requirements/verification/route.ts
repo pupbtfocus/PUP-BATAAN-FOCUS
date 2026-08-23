@@ -252,24 +252,24 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Try to locate app_user row by either app_users.id or profile_id (front-end may pass profile id)
-    const { data: appUserRow, error: appUserError } = await supabase
-      .from("app_users")
-      .select("id, profile_id")
-      .or(`id.eq.${facultyId},profile_id.eq.${facultyId}`)
+    // Try to locate profile row by either profiles.id or user_id (front-end may pass profile id)
+    const { data: profileRow, error: profileError } = await supabase
+      .from("profiles")
+      .select("id")
+      .or(`id.eq.${facultyId},user_id.eq.${facultyId}`)
       .maybeSingle();
 
-    if (appUserError || !appUserRow?.profile_id) {
+    if (profileError || !profileRow?.id) {
       return NextResponse.json(
         {
           error: "Faculty profile not found",
-          details: appUserError?.message || "No profile_id for this faculty",
+          details: profileError?.message || "No profile for this faculty",
         },
         { status: 404 },
       );
     }
 
-    const facultyProfileId = appUserRow.profile_id;
+    const facultyProfileId = profileRow.id;
     const assignmentFacultyIds = Array.from(
       new Set([facultyId, facultyProfileId].filter(Boolean)),
     );

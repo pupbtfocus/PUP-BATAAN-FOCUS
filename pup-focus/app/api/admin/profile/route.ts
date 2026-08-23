@@ -134,32 +134,15 @@ export async function GET() {
       const { data: profile } = await supabaseAdmin
         .from("profiles")
         .select("full_name, email")
-        .eq("id", user.id)
+        .or(`user_id.eq.${user.id},id.eq.${user.id}`)
         .maybeSingle();
 
       if (profile?.full_name) fullName = profile.full_name;
       if (profile?.email) email = profile.email;
     } catch {}
 
-    // 2. Supplementary check from app_users table
-    let appUserAvatar: string | null = null;
-    try {
-      const { data: appUser } = await supabaseAdmin
-        .from("app_users")
-        .select("full_name, email, profile_id")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
-
-      if (appUser?.full_name && !metadata.full_name) {
-        fullName = appUser.full_name;
-      }
-      if (appUser?.email && !email) {
-        email = appUser.email;
-      }
-    } catch {}
-
     const rawAvatarUrl =
-      metadata.avatar_url || metadata.picture || appUserAvatar || null;
+      metadata.avatar_url || metadata.picture || null;
 
     const resolvedAvatarUrl = await resolveAvatarUrl(
       supabaseAdmin,

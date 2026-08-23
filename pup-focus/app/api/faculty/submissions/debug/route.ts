@@ -16,25 +16,29 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Get faculty profile ID
-    const { data: appUser } = await supabase
-      .from("app_users")
-      .select("profile_id, role")
-      .eq("auth_user_id", user.id)
-      .single();
+    // Get faculty profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, user_roles(roles(code))")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if (!appUser) {
+    if (!profile) {
       return NextResponse.json(
         { error: "Faculty profile not found" },
         { status: 404 },
       );
     }
 
+    const rolesList = ((profile.user_roles as any[]) || []).map(
+      (ur) => ur.roles?.code,
+    );
+
     // Get all submissions for this faculty
     const { data: submissions, error: submissionsError } = await supabase
       .from("submissions")
       .select("id, requirement_code, status, faculty_profile_id, submitted_at")
-      .eq("faculty_profile_id", appUser.profile_id);
+      .eq("faculty_profile_id", profile.id);
 
     // Get total submissions in database for debugging
     const { data: allSubmissions, error: allError } = await supabase
@@ -45,8 +49,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       currentUser: {
         authUserId: user.id,
-        profileId: appUser.profile_id,
-        role: appUser.role,
+        profileId: profile.id,
+        role: rolesList.join(", ") || "faculty",
         email: user.email,
       },
       facultySubmissions: {

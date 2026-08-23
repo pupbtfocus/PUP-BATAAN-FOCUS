@@ -187,14 +187,10 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const { data: actorAppUser } = await supabase
-      .from("app_users")
-      .select("full_name")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
-
     const extendedByName =
-      actorProfile?.full_name || actorAppUser?.full_name || "Admin";
+      actorProfile?.full_name ||
+      (user.user_metadata?.full_name as string | undefined) ||
+      "Admin";
 
     const oldEndDate = latestWindow?.end_date || null;
     const oldEndTime = latestWindow?.end_time

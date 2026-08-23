@@ -317,12 +317,16 @@ export async function PUT(request: NextRequest) {
       semester,
     });
 
-    const facultyResult = await supabase
-      .from("app_users")
-      .select("id, email, full_name, metadata")
-      .eq("role", "faculty");
+    const { data: facultyRoles } = await supabase
+      .from("user_roles")
+      .select("profiles(id, user_id, email, full_name), roles(code)")
+      .eq("roles.code", "faculty");
 
-    if (!facultyResult.error && facultyResult.data) {
+    const facultyProfiles = (facultyRoles ?? [])
+      .map((r: any) => r.profiles)
+      .filter((p: any) => Boolean(p && p.email));
+
+    if (facultyProfiles.length > 0) {
       const { error: recordTermError } = await supabase
         .from("submission_window_terms")
         .upsert(
@@ -362,11 +366,21 @@ export async function PUT(request: NextRequest) {
       const notificationTimestamp = new Date().toISOString();
 
       await Promise.all(
-        facultyResult.data.map(async (faculty) => {
+        facultyProfiles.map(async (faculty: any) => {
           try {
-            const hasBeenNotified = Boolean(
-              faculty.metadata?.submission_window_notification_sent_at,
-            );
+            let hasBeenNotified = false;
+            let userMeta: Record<string, unknown> = {};
+
+            if (faculty.user_id) {
+              const { data: authUserData } =
+                await supabase.auth.admin.getUserById(faculty.user_id);
+              userMeta = (authUserData?.user?.user_metadata ??
+                {}) as Record<string, unknown>;
+              hasBeenNotified = Boolean(
+                userMeta.submission_window_notification_sent_at,
+              );
+            }
+
             if (!faculty.email || hasBeenNotified) {
               return;
             }
@@ -381,18 +395,14 @@ export async function PUT(request: NextRequest) {
               actionHref: dashboardUrl,
             });
 
-            const nextMetadata = {
-              ...(faculty.metadata ?? {}),
-              submission_window_notification_sent_at: notificationTimestamp,
-            };
-
-            await supabase
-              .from("app_users")
-              .update({
-                metadata: nextMetadata,
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", faculty.id);
+            if (faculty.user_id) {
+              await supabase.auth.admin.updateUserById(faculty.user_id, {
+                user_metadata: {
+                  ...userMeta,
+                  submission_window_notification_sent_at: notificationTimestamp,
+                },
+              });
+            }
           } catch (emailError) {
             console.error(
               "Failed to send submission window notification to faculty",

@@ -233,17 +233,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Get faculty profile ID
-    const { data: appUser, error: appUserError } = await supabase
-      .from("app_users")
-      .select("profile_id, full_name")
-      .eq("auth_user_id", user.id)
-      .single();
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if (appUserError || !appUser || !appUser.profile_id) {
+    if (profileError || !profile || !profile.id) {
       logger.error("faculty_not_found", {
         authUserId: user.id,
-        error: appUserError?.message,
-        profileId: appUser?.profile_id ?? null,
+        error: profileError?.message,
+        profileId: profile?.id ?? null,
       });
       return NextResponse.json(
         { error: "Faculty profile not found" },
@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
     const { data: currentTermAssignment } = await supabase
       .from("faculty_program_assignments")
       .select("id, curriculum_id")
-      .eq("faculty_profile_id", appUser.profile_id)
+      .eq("faculty_profile_id", profile.id)
       .eq("academic_year", payload.academicYear)
       .ilike("term", `%${payload.semester}%`)
       .maybeSingle();
@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
     const { data: previousAssignment } = await supabase
       .from("faculty_program_assignments")
       .select("program_id, curriculum_id")
-      .eq("faculty_profile_id", appUser.profile_id)
+      .eq("faculty_profile_id", profile.id)
       .not("program_id", "is", null)
       .limit(1)
       .maybeSingle();
@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
       const { data: latestAssignment } = await supabase
         .from("faculty_program_assignments")
         .select("curriculum_id")
-        .eq("faculty_profile_id", appUser.profile_id)
+        .eq("faculty_profile_id", profile.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -312,7 +312,7 @@ export async function POST(request: NextRequest) {
 
         if (!curriculum) {
           logger.error("no_curriculum_available", {
-            facultyId: appUser.profile_id,
+            facultyId: profile.id,
           });
           return NextResponse.json(
             {
@@ -346,7 +346,7 @@ export async function POST(request: NextRequest) {
       }
 
       const insertPayload: Record<string, any> = {
-        faculty_profile_id: appUser.profile_id,
+        faculty_profile_id: profile.id,
         academic_year: payload.academicYear,
         term: payload.semester,
       };
@@ -366,7 +366,7 @@ export async function POST(request: NextRequest) {
         const { data: retryAssignment } = await supabase
           .from("faculty_program_assignments")
           .select("id")
-          .eq("faculty_profile_id", appUser.profile_id)
+          .eq("faculty_profile_id", profile.id)
           .eq("academic_year", payload.academicYear)
           .ilike("term", `%${payload.semester}%`)
           .maybeSingle();
@@ -375,7 +375,7 @@ export async function POST(request: NextRequest) {
           facultyAssignmentId = retryAssignment.id;
         } else if (createAssignmentError) {
           logger.warn("auto_create_faculty_assignment_failed", {
-            facultyId: appUser.profile_id,
+            facultyId: profile.id,
             academicYear: payload.academicYear,
             semester: payload.semester,
             error: createAssignmentError.message,
@@ -390,7 +390,7 @@ export async function POST(request: NextRequest) {
       const { data: existingInCurrentTerm } = await supabase
         .from("submissions")
         .select("id, status, requirement_code, faculty_assignment_id")
-        .eq("faculty_profile_id", appUser.profile_id)
+        .eq("faculty_profile_id", profile.id)
         .eq("faculty_assignment_id", facultyAssignmentId);
 
       if (existingInCurrentTerm && existingInCurrentTerm.length > 0) {
@@ -443,7 +443,7 @@ export async function POST(request: NextRequest) {
     const trimmedRemarks = payload.remarks?.trim();
     const submissionPayload: Record<string, any> = {
       id: submissionId,
-      faculty_profile_id: appUser.profile_id,
+      faculty_profile_id: profile.id,
       curriculum_id: curriculumId,
       faculty_assignment_id: facultyAssignmentId ?? null,
       requirement_code: payload.requirementCode,
@@ -461,7 +461,7 @@ export async function POST(request: NextRequest) {
     if (submissionError) {
       const fallbackPayload: Record<string, any> = {
         id: submissionId,
-        faculty_profile_id: appUser.profile_id,
+        faculty_profile_id: profile.id,
         curriculum_id: curriculumId,
         requirement_code: payload.requirementCode,
         status: "uploaded",
@@ -488,7 +488,7 @@ export async function POST(request: NextRequest) {
 
     if (submissionError) {
       logger.error("submission_creation_failed", {
-        facultyId: appUser.profile_id,
+        facultyId: profile.id,
         error: submissionError.message,
       });
       return NextResponse.json(
@@ -500,7 +500,7 @@ export async function POST(request: NextRequest) {
     // Prepare file for upload to Supabase Storage
     const fileName = file.name;
     const fileBuffer = await file.arrayBuffer();
-    const storagePath = `faculty-submissions/${appUser.profile_id}/${submissionId}/${fileName}`;
+    const storagePath = `faculty-submissions/${profile.id}/${submissionId}/${fileName}`;
 
     // Calculate SHA-256 checksum
     const hashBuffer = await crypto.subtle.digest("SHA-256", fileBuffer);
@@ -558,45 +558,28 @@ export async function POST(request: NextRequest) {
 
     logger.info("submission_created_successfully", {
       submissionId,
-      facultyId: appUser.profile_id,
+      facultyId: profile.id,
       requirementCode: payload.requirementCode,
     });
 
     // Non-critical background tasks: notifications and audit logging (executed asynchronously so endpoint returns fast)
     void (async () => {
       try {
-        const { data: facultyProfile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", appUser.profile_id)
-          .maybeSingle();
-
-        const facultyName =
-          facultyProfile?.full_name || appUser.full_name || "Faculty Member";
+        const facultyName = profile.full_name || "Faculty Member";
         const reqCode = payload.requirementCode as RequirementCode;
         const reqLabel = REQUIREMENT_LABEL[reqCode] || payload.requirementCode;
 
         const reviewerSet = new Set<string>();
 
-        const { data: reviewerAppUsers } = await supabase
-          .from("app_users")
-          .select("auth_user_id")
-          .in("role", ["program_head", "admin", "super_admin"]);
+        const { data: reviewerRoles } = await supabase
+          .from("user_roles")
+          .select("profiles(user_id), roles(code)")
+          .in("roles.code", ["program_head", "admin", "super_admin"]);
 
-        if (reviewerAppUsers) {
-          for (const r of reviewerAppUsers) {
-            if (r.auth_user_id) reviewerSet.add(r.auth_user_id);
-          }
-        }
-
-        const { data: reviewerProfiles } = await supabase
-          .from("profiles")
-          .select("user_id")
-          .in("role", ["program_head", "admin", "super_admin"]);
-
-        if (reviewerProfiles) {
-          for (const p of reviewerProfiles) {
-            if (p.user_id) reviewerSet.add(p.user_id);
+        if (reviewerRoles) {
+          for (const row of reviewerRoles) {
+            const p = row.profiles as any;
+            if (p?.user_id) reviewerSet.add(p.user_id);
           }
         }
 
@@ -633,7 +616,7 @@ export async function POST(request: NextRequest) {
             metadata: {
               submission_id: submissionId,
               submissionId,
-              faculty_profile_id: appUser.profile_id,
+              faculty_profile_id: profile.id,
               facultyName,
               requirement_code: payload.requirementCode,
               requirementCode: payload.requirementCode,
@@ -658,7 +641,7 @@ export async function POST(request: NextRequest) {
             file_name: fileName,
             academic_year: payload.academicYear,
             semester: payload.semester,
-            faculty_profile_id: appUser.profile_id,
+            faculty_profile_id: profile.id,
             document_version_id: documentVersion.id,
           },
         });

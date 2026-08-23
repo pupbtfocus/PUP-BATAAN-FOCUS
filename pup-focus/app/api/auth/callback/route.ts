@@ -75,15 +75,8 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (user) {
-    const serviceRoleClient = getServiceRoleClient();
-    const { data: appUser } = await serviceRoleClient
-      .from("app_users")
-      .select("id, auth_user_id, profile_id, metadata")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
-
-    // if metadata has explicit is_active === false, block sign-in
-    if (appUser && appUser.metadata && appUser.metadata.is_active === false) {
+    // If metadata has explicit is_active === false, block sign-in
+    if (user.user_metadata?.is_active === false) {
       await supabase.auth.signOut();
       return NextResponse.redirect(
         new URL(
@@ -96,7 +89,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!appUser) {
+    const serviceRoleClient = getServiceRoleClient();
+    const { data: profile } = await serviceRoleClient
+      .from("profiles")
+      .select("id, user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!profile) {
       try {
         await bootstrapInvitedAdminAccount(user);
         await bootstrapInvitedFacultyAccount(user);

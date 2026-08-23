@@ -34,33 +34,32 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Step 1: Look up app_user
-    const { data: appUserRow, error: appUserError } = await supabase
-      .from("app_users")
-      .select("id, profile_id, role")
-      .eq("id", facultyId)
+    // Step 1: Look up profile
+    const { data: profileRow, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, user_id, full_name, email, user_roles(roles(code))")
+      .or(`id.eq.${facultyId},user_id.eq.${facultyId}`)
       .maybeSingle();
 
-    console.log("Step 1 - App User Lookup:", {
+    console.log("Step 1 - Profile Lookup:", {
       facultyId,
-      found: !!appUserRow,
-      profile_id: appUserRow?.profile_id,
-      role: appUserRow?.role,
-      error: appUserError?.message,
+      found: !!profileRow,
+      profile_id: profileRow?.id,
+      error: profileError?.message,
     });
 
-    if (!appUserRow?.profile_id) {
+    if (!profileRow?.id) {
       return NextResponse.json({
         error: "Faculty profile not found",
         debug: {
           facultyId,
-          appUserRow,
-          appUserError,
+          profileRow,
+          profileError,
         },
       });
     }
 
-    const facultyProfileId = appUserRow.profile_id;
+    const facultyProfileId = profileRow.id;
 
     // Step 2: Query all submissions for this profile
     const { data: submissionRows, error: submissionsError } = await supabase
@@ -77,16 +76,14 @@ export async function GET(request: NextRequest) {
 
     // Step 3: Also query the faculty list to see what's being returned
     const { data: facultyList, error: listError } = await supabase
-      .from("app_users")
-      .select("id, role, profile_id")
-      .eq("role", "faculty")
+      .from("profiles")
+      .select("id, user_id, full_name, email, user_roles(roles(code))")
       .limit(10);
 
     console.log("Step 3 - Faculty List:", {
       count: facultyList?.length || 0,
       error: listError?.message,
-      roles: facultyList?.map((f: any) => f.role),
-      appUserIds: facultyList?.map((f: any) => f.id),
+      profiles: facultyList?.map((f: any) => f.id),
     });
 
     return NextResponse.json({
@@ -94,7 +91,7 @@ export async function GET(request: NextRequest) {
       debug: {
         facultyId,
         facultyProfileId,
-        appUser: appUserRow,
+        profile: profileRow,
         submissionCount: submissionRows?.length || 0,
         submissions: submissionRows || [],
         queryError: submissionsError?.message,

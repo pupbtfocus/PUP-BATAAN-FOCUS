@@ -45,13 +45,13 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    const { data: adminAppUser } = await supabase
-      .from("app_users")
-      .select("profile_id, full_name")
-      .eq("auth_user_id", user.id)
+    const { data: adminProfile } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!adminAppUser?.profile_id) {
+    if (!adminProfile?.id) {
       logger.error("admin_profile_not_found", { authUserId: user.id });
       return NextResponse.json(
         { error: "Admin profile not found" },
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       submissionId,
       decision,
       remarks,
-      reviewerProfileId: adminAppUser.profile_id,
+      reviewerProfileId: adminProfile.id,
     });
 
     // Fetch details of submission being reviewed to identify the target faculty member
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (updateError) {
-      console.error("Update error:", updateError);
+      console.error("Failed to update submission:", updateError);
       return NextResponse.json(
         { error: `Failed to update submission: ${updateError.message}` },
         { status: 400 },
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
       .from("review_decisions")
       .insert({
         submission_id: submissionId,
-        reviewer_profile_id: adminAppUser.profile_id,
+        reviewer_profile_id: adminProfile.id,
         decision: decision,
         remarks: cleanRemarks,
       });
@@ -162,8 +162,8 @@ export async function POST(request: NextRequest) {
         status: decision,
         decision,
         remarks: cleanRemarks,
-        reviewed_by: adminAppUser.profile_id,
-        reviewer_profile_id: adminAppUser.profile_id,
+        reviewed_by: adminProfile.id,
+        reviewer_profile_id: adminProfile.id,
       });
     } catch {
       // verification_history is optional
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
         .from("document_versions")
         .select("created_by")
         .eq("submission_id", submissionId)
-        .order("created_at", { ascending: true })
+        .order("version_number", { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -188,20 +188,7 @@ export async function POST(request: NextRequest) {
         targetAuthUserId = docVersion.created_by;
       }
 
-      // 2. Check app_users by faculty_profile_id
-      if (!targetAuthUserId && submission?.faculty_profile_id) {
-        const { data: facultyAppUser } = await supabase
-          .from("app_users")
-          .select("auth_user_id")
-          .eq("profile_id", submission.faculty_profile_id)
-          .maybeSingle();
-
-        if (facultyAppUser?.auth_user_id) {
-          targetAuthUserId = facultyAppUser.auth_user_id;
-        }
-      }
-
-      // 3. Check profiles by faculty_profile_id
+      // 2. Check profiles by faculty_profile_id
       if (!targetAuthUserId && submission?.faculty_profile_id) {
         const { data: profile } = await supabase
           .from("profiles")
@@ -218,28 +205,18 @@ export async function POST(request: NextRequest) {
         const reqCode = (submission?.requirement_code ?? "REQUIREMENT") as RequirementCode;
         const reqLabel = REQUIREMENT_LABEL[reqCode] || reqCode || "Requirement";
         const isApproved = decision === "validated";
-        const isRevision = !isApproved && Boolean(remarks?.toLowerCase().includes("revision"));
-
-        const notificationType = isApproved
-          ? "submission_approved"
-          : isRevision
-            ? "revision_requested"
-            : "submission_rejected";
-
         const title = isApproved
-          ? `Document Approved: ${reqLabel}`
-          : isRevision
-            ? `Revision Requested: ${reqLabel}`
-            : `Submission Rejected: ${reqLabel}`;
-
+          ? "✅ Submission Validated"
+          : "⚠️ Submission Rejected";
         const message = isApproved
-          ? `Your submission for ${reqLabel} has been validated and approved.`
-          : remarks
-            ? `Reviewer feedback: "${remarks}"`
-            : `Your submission for ${reqLabel} requires review/resubmission.`;
+          ? `Your submission for "${reqLabel}" has been validated${cleanRemarks ? `: "${cleanRemarks}"` : "."}`
+          : `Your submission for "${reqLabel}" was rejected${cleanRemarks ? `: "${cleanRemarks}"` : ". Please review and resubmit."}`;
+        const notificationType = isApproved
+          ? "submission_validated"
+          : "submission_rejected";
 
-        await createNotification({
-          userId: targetAuthUserId,
+        await supabase.from("notifications").insert({
+          user_id: targetAuthUserId,
           type: notificationType,
           title,
           message,
@@ -248,8 +225,8 @@ export async function POST(request: NextRequest) {
             submissionId,
             requirement_code: submission?.requirement_code,
             requirementCode: submission?.requirement_code,
-            reviewed_by: adminAppUser.profile_id,
-            reviewerName: adminAppUser.full_name || "Reviewer",
+            reviewed_by: adminProfile.id,
+            reviewerName: adminProfile.full_name || "Reviewer",
             decision,
             remarks: remarks || null,
           },
@@ -272,7 +249,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           review_decision: decision,
           remarks: remarks || null,
-          reviewer_profile_id: adminAppUser.profile_id,
+          reviewer_profile_id: adminProfile.id,
         },
       });
     } catch (auditError) {
