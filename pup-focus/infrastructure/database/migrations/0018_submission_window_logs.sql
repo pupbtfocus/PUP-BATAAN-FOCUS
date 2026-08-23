@@ -1,4 +1,4 @@
--- Track extensions granted to submission windows by admins/program heads.
+-- Track extensions granted to submission windows by admins.
 create table if not exists public.submission_window_logs (
   id uuid primary key default gen_random_uuid(),
   submission_window_id smallint references public.submission_windows(id) on delete cascade default 1,

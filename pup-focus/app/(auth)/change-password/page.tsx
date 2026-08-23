@@ -9,7 +9,6 @@ const ROUTE_BY_ROLE: Record<AppRole, string> = {
   [ROLE.SUPER_ADMIN]: "/super-admin/dashboard",
   [ROLE.ADMIN]: "/admin/dashboard",
   [ROLE.FACULTY]: "/faculty/dashboard",
-  [ROLE.PROGRAM_HEAD]: "/program-head/dashboard",
 };
 
 export default function ChangePasswordPage() {

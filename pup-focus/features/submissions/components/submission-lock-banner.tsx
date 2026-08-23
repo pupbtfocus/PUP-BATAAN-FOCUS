@@ -32,7 +32,7 @@ export function SubmissionLockBanner({
         </div>
         <p className="mt-1.5 text-sm leading-relaxed text-slate-300">
           {isConfigured
-            ? "Submission Window is currently closed. Document uploads are locked for this term. Please contact your Program Head or Admin for window extension requests."
+            ? "Submission Window is currently closed. Document uploads are locked for this term. Please contact your Admin for window extension requests."
             : "Submission dates have not been configured yet. Document uploads are locked until the admin opens a submission window."}
         </p>
       </div>

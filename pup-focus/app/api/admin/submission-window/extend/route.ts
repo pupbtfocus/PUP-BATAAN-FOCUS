@@ -96,12 +96,10 @@ export async function POST(request: NextRequest) {
 
     if (
       !user ||
-      (requesterRole !== ROLE.ADMIN &&
-        requesterRole !== ROLE.SUPER_ADMIN &&
-        requesterRole !== ROLE.PROGRAM_HEAD)
+      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
     ) {
       return NextResponse.json(
-        { error: "Forbidden - Administrator or Program Head access required" },
+        { error: "Forbidden - Administrator access required" },
         { status: 403 },
       );
     }

@@ -9,8 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test \"tests\\unit\\compliance-engine.test.ts\"",
-    "test:watch": "node --experimental-strip-types --test --watch \"tests\\unit\\compliance-engine.test.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:e2e": "playwright test"
   },
   "dependencies": {

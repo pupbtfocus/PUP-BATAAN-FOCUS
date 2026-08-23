@@ -103,7 +103,7 @@ export default function AboutPage() {
               Review & Verification
             </h3>
             <p className="text-xs text-slate-300/90 leading-relaxed">
-              Enables Program Heads and Academic Administrators to efficiently
+              Enables Academic Administrators to efficiently
               evaluate and approve faculty submission packages.
             </p>
           </div>
