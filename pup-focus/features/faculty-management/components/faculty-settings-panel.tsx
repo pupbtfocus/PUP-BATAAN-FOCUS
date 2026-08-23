@@ -63,10 +63,12 @@ export function FacultySettingsPanel({
   const firstNameInputRef = useRef<HTMLInputElement>(null);
   const middleNameInputRef = useRef<HTMLInputElement>(null);
   const lastNameInputRef = useRef<HTMLInputElement>(null);
+  const currentPasswordRef = useRef<HTMLInputElement>(null);
 
   const [activeField, setActiveField] = useState<
     "firstName" | "middleName" | "lastName" | null
   >(null);
+  const [isPasswordEditing, setIsPasswordEditing] = useState(false);
 
   function handleFocusField(
     fieldKey: "firstName" | "middleName" | "lastName",
@@ -78,6 +80,15 @@ export function FacultySettingsPanel({
         ref.current.focus();
         const length = ref.current.value.length;
         ref.current.setSelectionRange(length, length);
+      }
+    }, 0);
+  }
+
+  function handleEnablePasswordEditing() {
+    setIsPasswordEditing(true);
+    setTimeout(() => {
+      if (currentPasswordRef.current) {
+        currentPasswordRef.current.focus();
       }
     }, 0);
   }
@@ -351,6 +362,7 @@ export function FacultySettingsPanel({
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setIsPasswordEditing(false);
       setFeedbackModal({
         isOpen: true,
         title: "Password Updated Successfully",
@@ -780,13 +792,40 @@ export function FacultySettingsPanel({
 
         {/* Change Password Card */}
         <article className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white shadow-sm shadow-slate-300/50 dark:border dark:bg-slate-900 dark:shadow-none p-6 transition-colors">
-          <div className="pb-4 border-b border-slate-300 dark:border-slate-800">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
-              Change Password
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-normal">
-              Update your account password for security.
-            </p>
+          <div className="pb-4 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+                Change Password
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-normal">
+                Update your account password for security.
+              </p>
+            </div>
+            {!isPasswordEditing ? (
+              <button
+                type="button"
+                onClick={handleEnablePasswordEditing}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 cursor-pointer shadow-2xs"
+                title="Change Password"
+                aria-label="Change Password"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                <span>Edit</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPasswordEditing(false);
+                  setOldPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }}
+                className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-medium"
+              >
+                Cancel
+              </button>
+            )}
           </div>
 
           <form className="mt-5 space-y-4" onSubmit={handleChangePasswordSubmit}>
@@ -796,9 +835,15 @@ export function FacultySettingsPanel({
               </label>
               <div className="relative flex items-center">
                 <input
+                  ref={currentPasswordRef}
                   type={showOldPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  className="w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                  readOnly={!isPasswordEditing}
+                  className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
+                    !isPasswordEditing
+                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                  }`}
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
                   placeholder="Enter current password"
@@ -827,7 +872,12 @@ export function FacultySettingsPanel({
                 <input
                   type={showNewPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  className="w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                  readOnly={!isPasswordEditing}
+                  className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
+                    !isPasswordEditing
+                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                  }`}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Minimum 8 characters"
@@ -856,7 +906,12 @@ export function FacultySettingsPanel({
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  className="w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                  readOnly={!isPasswordEditing}
+                  className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
+                    !isPasswordEditing
+                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                  }`}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter new password"
@@ -933,7 +988,7 @@ export function FacultySettingsPanel({
             <div className="pt-2 flex justify-end">
               <button
                 type="submit"
-                disabled={!isPasswordFormValid || isChangingPassword}
+                disabled={!isPasswordEditing || !isPasswordFormValid || isChangingPassword}
                 className="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none cursor-pointer"
               >
                 {isChangingPassword ? (
