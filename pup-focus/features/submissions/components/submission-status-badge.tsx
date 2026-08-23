@@ -74,21 +74,16 @@ export function SubmissionStatusBadge({
     "Not Submitted": {
       label: "Not Submitted",
       containerClass:
-        "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-400 font-medium",
-      dotClass: "bg-slate-400 dark:bg-slate-500",
-      icon: (
-        <span
-          className="h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500 shrink-0"
-          aria-hidden="true"
-        />
-      ),
+        "border-slate-300 dark:border-slate-700 bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
+      dotClass: "bg-slate-400",
+      icon: null,
     },
   }[normalized];
 
   const sizeClasses = {
-    sm: "px-2 py-0.5 text-[11px] gap-1 [&>svg]:h-3 [&>svg]:w-3",
-    md: "px-2.5 py-1 text-xs gap-1.5 [&>svg]:h-3.5 [&>svg]:w-3.5",
-    lg: "px-3 py-1.5 text-sm gap-2 [&>svg]:h-4 [&>svg]:w-4 font-semibold",
+    sm: "px-2.5 py-0.5 text-[11px] gap-1.5 [&>svg]:h-3 [&>svg]:w-3",
+    md: "px-3 py-1 text-xs gap-1.5 [&>svg]:h-3.5 [&>svg]:w-3.5",
+    lg: "px-3.5 py-1.5 text-sm gap-2 [&>svg]:h-4 [&>svg]:w-4 font-semibold",
   }[size];
 
   return (
@@ -104,7 +99,7 @@ export function SubmissionStatusBadge({
     >
       {showDot && (
         <span
-          className={cn("h-1.5 w-1.5 rounded-full shrink-0", config.dotClass)}
+          className={cn("w-2 h-2 rounded-full shrink-0", config.dotClass)}
           aria-hidden="true"
         />
       )}

@@ -769,7 +769,7 @@ export function FacultyRequirementsModule({
                 <textarea
                   id="req-remarks"
                   rows={3}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 placeholder:text-slate-400"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 placeholder:text-slate-400 resize-none"
                   placeholder="Add notes, course section codes, or explanations for reviewer..."
                   value={form.remarks}
                   onChange={(event) =>
@@ -794,15 +794,15 @@ export function FacultyRequirementsModule({
                 <Button
                   type="submit"
                   disabled={isSubmitting || !selectedFile}
-                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs shadow-md shadow-amber-500/20"
+                  className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium px-5 py-2.5 rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Uploading Document...
+                      Uploading...
                     </span>
                   ) : (
-                    "Upload and Submit"
+                    "Submit File"
                   )}
                 </Button>
               </div>

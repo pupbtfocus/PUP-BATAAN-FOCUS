@@ -1770,7 +1770,7 @@ function FacultySubmissionPanelContent({
                       <textarea
                         id="remarks"
                         rows={4}
-                        className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                        className="mt-0 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
                         placeholder="Add short notes for the reviewer"
                         value={form.remarks}
                         onChange={(event) =>
@@ -2221,7 +2221,7 @@ function FacultySubmissionPanelContent({
                       <textarea
                         id="directUploadRemarks"
                         rows={3}
-                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
                         placeholder="Add optional notes or remarks for the reviewer..."
                         value={directUploadRemarks}
                         onChange={(e) => setDirectUploadRemarks(e.target.value)}
@@ -2245,14 +2245,14 @@ function FacultySubmissionPanelContent({
                         type="button"
                         onClick={closeDirectUploadModal}
                         disabled={isUploadingDirect}
-                        className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 font-medium"
+                        className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 font-medium cursor-pointer"
                       >
                         Cancel
                       </button>
                       <Button
                         type="submit"
                         disabled={isUploadingDirect || !directUploadFile}
-                        className="inline-flex items-center gap-2"
+                        className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium px-4 py-2 rounded-xl text-sm shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none"
                       >
                         {isUploadingDirect ? (
                           <>
