@@ -3,7 +3,6 @@ import { ROLE, type AppRole } from "./roles";
 export const ROUTE_BY_ROLE: Record<AppRole, string> = {
   [ROLE.SUPER_ADMIN]: "/super-admin/dashboard",
   [ROLE.FACULTY]: "/faculty/dashboard",
-  [ROLE.PROGRAM_HEAD]: "/program-head/dashboard",
   [ROLE.ADMIN]: "/admin/dashboard",
 };
 
@@ -22,7 +21,6 @@ export const AUTH_ROUTES = [
 export const ROLE_ROUTE_PREFIX: Record<string, AppRole[]> = {
   "/admin": [ROLE.ADMIN, ROLE.SUPER_ADMIN],
   "/faculty": [ROLE.FACULTY],
-  "/program-head": [ROLE.PROGRAM_HEAD],
   "/super-admin": [ROLE.SUPER_ADMIN],
 };
 

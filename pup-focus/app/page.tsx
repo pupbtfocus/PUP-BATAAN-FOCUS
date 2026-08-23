@@ -24,7 +24,6 @@ const PREFETCH_ROUTES = [
   "/faculty/dashboard",
   "/admin/dashboard",
   "/super-admin/dashboard",
-  "/program-head/dashboard",
 ] as const;
 
 export default function Home() {

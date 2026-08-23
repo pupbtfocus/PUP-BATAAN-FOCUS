@@ -574,7 +574,7 @@ export async function POST(request: NextRequest) {
         const { data: reviewerRoles } = await supabase
           .from("user_roles")
           .select("profiles(user_id), roles(code)")
-          .in("roles.code", ["program_head", "admin", "super_admin"]);
+          .in("roles.code", ["admin", "super_admin"]);
 
         if (reviewerRoles) {
           for (const row of reviewerRoles) {
