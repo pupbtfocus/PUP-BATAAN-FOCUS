@@ -22,7 +22,7 @@ export function StatusMetricsSkeleton({ className }: { className?: string }) {
 export function ComplianceListSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div
-      className="bg-slate-200 border-2 border-solid border-[#000000] dark:bg-slate-900 dark:border dark:border-slate-800 rounded-2xl divide-y divide-[#000000] dark:divide-slate-800/60 overflow-hidden shadow-xs"
+      className="bg-white border border-slate-200/80 dark:bg-slate-900 dark:border-slate-800 rounded-xl divide-y divide-slate-200/70 dark:divide-slate-800/60 overflow-hidden shadow-xs"
       aria-busy="true"
       aria-label="Loading requirements"
     >
@@ -49,15 +49,15 @@ export function SubmissionHistorySkeleton({ count = 5 }: { count?: number }) {
   return (
     <div className="space-y-3" aria-busy="true" aria-label="Loading submission history">
       {/* Desktop table skeleton */}
-      <div className="hidden md:block overflow-hidden rounded-2xl border-2 border-solid border-[#000000] dark:border dark:border-slate-800 bg-slate-200 dark:bg-slate-900 shadow-xs">
-        <div className="border-b border-[#000000] dark:border-slate-800 px-5 py-3.5 bg-slate-50 dark:bg-slate-900 flex justify-between">
+      <div className="hidden md:block overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+        <div className="border-b border-slate-200/80 dark:border-slate-800 px-5 py-3.5 bg-slate-50/80 dark:bg-slate-900 flex justify-between">
           <Skeleton className="h-4 w-28" />
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-4 w-20" />
         </div>
-        <div className="divide-y divide-[#000000] dark:divide-slate-800/60">
+        <div className="divide-y divide-slate-200/70 dark:divide-slate-800/60">
           {Array.from({ length: count }).map((_, idx) => (
             <div key={idx} className="px-5 py-4 flex items-center justify-between gap-4">
               <div className="space-y-1.5 w-1/4">
@@ -78,7 +78,7 @@ export function SubmissionHistorySkeleton({ count = 5 }: { count?: number }) {
         {Array.from({ length: count }).map((_, idx) => (
           <div
             key={idx}
-            className="rounded-2xl border-2 border-solid border-[#000000] dark:border dark:border-slate-800 bg-slate-200 dark:bg-slate-900 p-4 space-y-3 shadow-xs"
+            className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3 shadow-xs"
           >
             <div className="flex justify-between items-start">
               <div className="space-y-1.5">
@@ -88,7 +88,7 @@ export function SubmissionHistorySkeleton({ count = 5 }: { count?: number }) {
               <Skeleton className="h-6 w-20 rounded-full" />
             </div>
             <Skeleton className="h-3 w-48" />
-            <div className="flex justify-end pt-2 border-t border-[#000000] dark:border-slate-800/60">
+            <div className="flex justify-end pt-2 border-t border-slate-200/80 dark:border-slate-800/60">
               <Skeleton className="h-8 w-24 rounded-xl" />
             </div>
           </div>
@@ -101,7 +101,7 @@ export function SubmissionHistorySkeleton({ count = 5 }: { count?: number }) {
 export function SubmissionWindowSkeleton() {
   return (
     <div
-      className="rounded-2xl border-2 border-solid border-[#000000] dark:border dark:border-slate-800 bg-slate-200 dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3"
+      className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3"
       aria-busy="true"
       aria-label="Loading submission window"
     >
@@ -128,7 +128,7 @@ export function DashboardMetricsSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="rounded-2xl border-2 border-solid border-[#000000] dark:border dark:border-slate-800 bg-slate-200 dark:bg-slate-900 p-4 space-y-2 shadow-xs"
+          className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-2 shadow-xs"
         >
           <div className="flex items-center justify-between">
             <Skeleton className="h-3 w-16" />

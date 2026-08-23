@@ -141,7 +141,7 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 rounded-2xl bg-slate-200 dark:bg-slate-900 border-2 border-solid border-[#000000] dark:border dark:border-slate-800 p-2.5 flex flex-col items-center shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
+      <div className="my-1.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-2.5 flex flex-col items-center shadow-xs shadow-slate-200/50 dark:shadow-none transition-colors">
         <div className="relative mb-2">
           {profileImageUrl && !hasAvatarError ? (
             <img
@@ -151,7 +151,7 @@ export function SidebarContent({
               onError={() => setHasAvatarError(true)}
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-solid border-[#000000] dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-sm">
+            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-xs">
               {getSidebarInitials(adminName, isSuperAdmin ? "SA" : "AD")}
             </div>
           )}
@@ -162,7 +162,7 @@ export function SidebarContent({
           {extractFirstName(adminName, roleTitle)}
         </p>
 
-        <div className="my-1.5 h-px w-full bg-[#000000] dark:bg-slate-800" />
+        <div className="my-1.5 h-px w-full bg-slate-200/80 dark:bg-slate-800" />
 
         <span className={`mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full border ${getRoleBadgeClasses(roleTitle)}`}>
           {roleTitle}

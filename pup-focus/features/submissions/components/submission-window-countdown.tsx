@@ -171,16 +171,16 @@ export function SubmissionWindowCountdown({
   // ── Loading skeleton ──
   if (isLoading) {
     return (
-      <div className="rounded-xl border-2 border-solid border-[#000000] bg-slate-200 dark:border dark:border-slate-800 dark:bg-slate-900 p-3 shadow-sm shadow-slate-200/60 dark:shadow-none">
+      <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs shadow-slate-300/40 dark:shadow-none">
         <div className="flex items-center gap-2">
-          <div className="h-3 w-3 animate-pulse rounded-full bg-slate-300 dark:bg-slate-600" />
-          <div className="h-3 w-24 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+          <div className="h-3 w-3 animate-pulse rounded-full bg-slate-200 dark:bg-slate-700" />
+          <div className="h-3 w-24 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
         </div>
         <div className="mt-3 flex justify-center gap-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="flex flex-col items-center gap-1">
-              <div className="h-5 w-7 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
-              <div className="h-2 w-5 animate-pulse rounded bg-slate-300 dark:bg-slate-800" />
+              <div className="h-5 w-7 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
+              <div className="h-2 w-5 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
             </div>
           ))}
         </div>
@@ -191,7 +191,7 @@ export function SubmissionWindowCountdown({
   // ── Not configured ──
   if (!windowState || !windowState.isConfigured) {
     return (
-      <div className="rounded-xl border-2 border-solid border-[#000000] bg-slate-200 dark:border dark:border-slate-800 dark:bg-slate-900 p-3 shadow-sm shadow-slate-200/60 dark:shadow-none">
+      <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs shadow-slate-300/40 dark:shadow-none">
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-3.5 w-3.5 text-slate-500" />
           <span className="text-[10px] uppercase tracking-[0.15em] text-slate-600 dark:text-slate-400 font-semibold">
@@ -226,28 +226,28 @@ export function SubmissionWindowCountdown({
     Open: {
       label: "Window Open",
       icon: <Unlock className="h-3 w-3" />,
-      dotClass: "bg-emerald-600 dark:bg-emerald-400 pulse-dot",
-      borderClass: "border-emerald-600/80 dark:border-emerald-700/60",
-      bgClass: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-950",
-      textClass: "text-emerald-950 dark:text-emerald-400",
+      dotClass: "bg-emerald-500 pulse-dot",
+      borderClass: "border-emerald-200/80 dark:border-emerald-800/60",
+      bgClass: "bg-emerald-50/70 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300",
+      textClass: "text-emerald-800 dark:text-emerald-400",
       numberClass: "text-emerald-950 font-bold dark:text-emerald-300",
     },
     Closed: {
       label: "Window Closed",
       icon: <Lock className="h-3 w-3" />,
-      dotClass: "bg-red-600 dark:bg-red-400",
-      borderClass: "border-red-600/80 dark:border-red-700/60",
-      bgClass: "bg-red-50 dark:bg-red-950/30 text-red-950",
-      textClass: "text-red-950 dark:text-red-400",
-      numberClass: "text-red-950 font-bold dark:text-red-300",
+      dotClass: "bg-rose-500",
+      borderClass: "border-rose-200/80 dark:border-rose-800/60",
+      bgClass: "bg-rose-50/70 text-rose-900 dark:bg-rose-950/40 dark:text-rose-300",
+      textClass: "text-rose-800 dark:text-rose-400",
+      numberClass: "text-rose-950 font-bold dark:text-rose-300",
     },
     Upcoming: {
       label: "Opening Soon",
       icon: <Clock className="h-3 w-3" />,
-      dotClass: "bg-amber-600 dark:bg-amber-400",
-      borderClass: "border-amber-600/80 dark:border-amber-700/60",
-      bgClass: "bg-amber-50 dark:bg-amber-950/30 text-amber-950",
-      textClass: "text-amber-950 dark:text-amber-400",
+      dotClass: "bg-amber-500",
+      borderClass: "border-amber-200/80 dark:border-amber-800/60",
+      bgClass: "bg-amber-50/70 text-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
+      textClass: "text-amber-800 dark:text-amber-400",
       numberClass: "text-amber-950 font-bold dark:text-amber-300",
     },
   };
@@ -256,7 +256,7 @@ export function SubmissionWindowCountdown({
 
   return (
     <div
-      className={`rounded-xl border-2 ${badge.borderClass} ${badge.bgClass} p-3 transition-colors duration-500 shadow-sm shadow-slate-200/60 dark:border dark:shadow-none`}
+      className={`rounded-xl border ${badge.borderClass} ${badge.bgClass} p-3 transition-colors duration-500 shadow-xs shadow-slate-300/40 dark:shadow-none`}
     >
       {/* Status badge */}
       <div className="flex items-center justify-between gap-2">
