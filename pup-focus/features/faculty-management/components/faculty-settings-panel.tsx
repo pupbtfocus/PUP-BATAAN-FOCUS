@@ -8,7 +8,7 @@ import {
   parseFullNameFallback,
 } from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
-import { Eye, EyeOff, RotateCw, X, Camera } from "lucide-react";
+import { Eye, EyeOff, RotateCw, X, Camera, Pencil } from "lucide-react";
 
 type FacultyAccountResponse = {
   profileId: string;
@@ -48,6 +48,27 @@ export function FacultySettingsPanel({
 }: FacultySettingsPanelProps = {}) {
   const router = useRouter();
   const profileImageInputRef = useRef<HTMLInputElement>(null);
+  const firstNameInputRef = useRef<HTMLInputElement>(null);
+  const middleNameInputRef = useRef<HTMLInputElement>(null);
+  const lastNameInputRef = useRef<HTMLInputElement>(null);
+
+  const [activeField, setActiveField] = useState<
+    "firstName" | "middleName" | "lastName" | null
+  >(null);
+
+  function handleFocusField(
+    fieldKey: "firstName" | "middleName" | "lastName",
+    ref: React.RefObject<HTMLInputElement | null>,
+  ) {
+    setActiveField(fieldKey);
+    setTimeout(() => {
+      if (ref.current) {
+        ref.current.focus();
+        const length = ref.current.value.length;
+        ref.current.setSelectionRange(length, length);
+      }
+    }, 0);
+  }
 
   // Synchronous, non-blocking initial state from session props
   const [account, setAccount] = useState<FacultyAccountResponse>(() => {
@@ -529,45 +550,114 @@ export function FacultySettingsPanel({
             {/* Form Input Fields */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                <label
+                  htmlFor="faculty-first-name"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                >
                   First Name
                 </label>
-                <input
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
-                  value={form.firstName}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, firstName: e.target.value }))
-                  }
-                  placeholder="First name"
-                />
+                <div className="relative flex items-center">
+                  <input
+                    id="faculty-first-name"
+                    ref={firstNameInputRef}
+                    readOnly={activeField !== "firstName"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-16 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "firstName"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={form.firstName}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, firstName: e.target.value }))
+                    }
+                    onBlur={() => setActiveField(null)}
+                    placeholder="First name"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleFocusField("firstName", firstNameInputRef)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-500 transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                    title="Edit First Name"
+                    aria-label="Edit First Name"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span>Edit</span>
+                  </button>
+                </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                <label
+                  htmlFor="faculty-middle-name"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                >
                   Middle Name
                 </label>
-                <input
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
-                  value={form.middleName}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, middleName: e.target.value }))
-                  }
-                  placeholder="Middle name"
-                />
+                <div className="relative flex items-center">
+                  <input
+                    id="faculty-middle-name"
+                    ref={middleNameInputRef}
+                    readOnly={activeField !== "middleName"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-16 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "middleName"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={form.middleName}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, middleName: e.target.value }))
+                    }
+                    onBlur={() => setActiveField(null)}
+                    placeholder="Middle name"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleFocusField("middleName", middleNameInputRef)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-500 transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                    title="Edit Middle Name"
+                    aria-label="Edit Middle Name"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span>Edit</span>
+                  </button>
+                </div>
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                <label
+                  htmlFor="faculty-last-name"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                >
                   Last Name
                 </label>
-                <input
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
-                  value={form.lastName}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, lastName: e.target.value }))
-                  }
-                  placeholder="Last name"
-                />
+                <div className="relative flex items-center">
+                  <input
+                    id="faculty-last-name"
+                    ref={lastNameInputRef}
+                    readOnly={activeField !== "lastName"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-16 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "lastName"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={form.lastName}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, lastName: e.target.value }))
+                    }
+                    onBlur={() => setActiveField(null)}
+                    placeholder="Last name"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleFocusField("lastName", lastNameInputRef)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-500 transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                    title="Edit Last Name"
+                    aria-label="Edit Last Name"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span>Edit</span>
+                  </button>
+                </div>
               </div>
 
               <div className="sm:col-span-2">
