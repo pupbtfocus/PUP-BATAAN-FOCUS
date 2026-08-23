@@ -269,7 +269,7 @@ export function DocumentUploadZone({
                 "flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-200 shadow-2xs",
                 isDragOver
                   ? "border-amber-400 bg-amber-100 text-amber-600 dark:bg-amber-400/20 dark:text-amber-300 animate-bounce"
-                  : "border border-slate-200/80 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:border-amber-400/50 group-hover:text-amber-500",
+                  : "border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:border-amber-400/50 group-hover:text-amber-500",
               )}
             >
               {isUploading ? (

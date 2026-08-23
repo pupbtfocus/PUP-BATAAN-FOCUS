@@ -2244,29 +2244,29 @@ function FacultySubmissionPanelContent({
 
             {/* SUBMITTING & SUCCESS MODAL POPUPS */}
             {isMounted && isSubmittingModalOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
-                <div className="bg-gradient-to-b from-[#3a0000] to-[#1a0000] border border-amber-500/30 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
+                <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4">
                   {isUploadingDirect ? (
                     <>
-                      <Loader2 className="w-12 h-12 text-amber-400 mx-auto animate-spin" />
-                      <h3 className="text-lg font-bold text-amber-200">Submitting Document...</h3>
-                      <p className="text-xs text-amber-300/70">
+                      <Loader2 className="w-12 h-12 text-amber-500 dark:text-amber-400 mx-auto animate-spin" />
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Submitting Document...</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
                         Please wait while your file is being uploaded to the system.
                       </p>
                     </>
                   ) : isSubmitSuccess ? (
                     <>
-                      <div className="w-16 h-16 bg-green-500/20 border-2 border-green-500/50 rounded-full flex items-center justify-center mx-auto text-green-400 animate-in zoom-in">
+                      <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 animate-in zoom-in">
                         <CheckCircle2 className="w-10 h-10" />
                       </div>
-                      <h3 className="text-xl font-bold text-amber-200">Submitted Successfully!</h3>
-                      <p className="text-xs text-amber-300/80">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Submitted Successfully!</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
                         Your requirement has been uploaded and sent for validation.
                       </p>
                       <button
                         type="button"
                         onClick={handleCloseModalAndRefresh}
-                        className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold rounded-xl shadow-lg transition-all"
+                        className="w-full py-3 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium rounded-xl shadow-sm transition-colors"
                       >
                         Done
                       </button>
