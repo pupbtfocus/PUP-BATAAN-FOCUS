@@ -8,7 +8,19 @@ import {
   parseFullNameFallback,
 } from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
-import { Eye, EyeOff, RotateCw, X, Camera, Pencil } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  RotateCw,
+  X,
+  Camera,
+  Pencil,
+  CheckCircle2,
+  AlertCircle,
+  Check,
+  Circle,
+  Loader2,
+} from "lucide-react";
 
 type FacultyAccountResponse = {
   profileId: string;
@@ -147,8 +159,12 @@ export function FacultySettingsPanel({
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordModal, setPasswordModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "error" | "success";
+  } | null>(null);
 
   const displayedProfileImage =
     profileImagePreviewUrl ?? account.profileImageUrl ?? initialAvatarUrl ?? null;
@@ -278,21 +294,35 @@ export function FacultySettingsPanel({
     event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
-    setPasswordError(null);
-    setPasswordMessage(null);
 
     if (!oldPassword.trim()) {
-      setPasswordError("Current password is required.");
+      setPasswordModal({
+        isOpen: true,
+        title: "Current Password Required",
+        message: "Please enter your current password to continue.",
+        type: "error",
+      });
       return;
     }
 
     if (newPassword.length < 8) {
-      setPasswordError("New password must be at least 8 characters long.");
+      setPasswordModal({
+        isOpen: true,
+        title: "Password Too Short",
+        message: "New password must be at least 8 characters long.",
+        type: "error",
+      });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordError("New passwords do not match.");
+      setPasswordModal({
+        isOpen: true,
+        title: "Passwords Do Not Match",
+        message:
+          "The new password and confirmation password do not match. Please verify and try again.",
+        type: "error",
+      });
       return;
     }
 
@@ -307,7 +337,9 @@ export function FacultySettingsPanel({
       });
 
       if (signInError) {
-        throw new Error("Incorrect current password.");
+        throw new Error(
+          "Incorrect current password. Please check your credentials and try again.",
+        );
       }
 
       const { error: updateError } = await supabase.auth.updateUser({
@@ -318,14 +350,23 @@ export function FacultySettingsPanel({
         throw new Error(updateError.message);
       }
 
-      setPasswordMessage("Password updated successfully.");
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setPasswordModal({
+        isOpen: true,
+        title: "Password Changed Successfully!",
+        message: "Your faculty account password has been updated securely.",
+        type: "success",
+      });
     } catch (err) {
-      setPasswordError(
-        err instanceof Error ? err.message : "Failed to update password.",
-      );
+      setPasswordModal({
+        isOpen: true,
+        title: "Password Update Failed",
+        message:
+          err instanceof Error ? err.message : "Failed to update password.",
+        type: "error",
+      });
     } finally {
       setIsChangingPassword(false);
     }
@@ -420,6 +461,16 @@ export function FacultySettingsPanel({
     form.firstName !== account.firstName ||
     form.middleName !== account.middleName ||
     form.lastName !== account.lastName;
+
+  const isCurrentPasswordFilled = oldPassword.trim() !== "";
+  const isLengthValid = newPassword.length >= 8;
+  const isMatching =
+    newPassword.length > 0 &&
+    confirmPassword.length > 0 &&
+    newPassword === confirmPassword;
+
+  const isPasswordFormValid =
+    isCurrentPasswordFilled && isLengthValid && isMatching;
 
   return (
     <div className="space-y-6">
@@ -746,10 +797,11 @@ export function FacultySettingsPanel({
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 Current Password
               </label>
-              <div className="relative">
+              <div className="relative flex items-center">
                 <input
                   type={showOldPassword ? "text" : "password"}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 pr-10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                  autoComplete="current-password"
+                  className="w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
                   placeholder="Enter current password"
@@ -757,12 +809,14 @@ export function FacultySettingsPanel({
                 <button
                   type="button"
                   onClick={() => setShowOldPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10 flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer p-1"
+                  title={showOldPassword ? "Hide password" : "Show password"}
+                  aria-label={showOldPassword ? "Hide password" : "Show password"}
                 >
                   {showOldPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <Eye className="h-4 w-4 text-amber-500" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <EyeOff className="h-4 w-4 text-slate-400" />
                   )}
                 </button>
               </div>
@@ -772,10 +826,11 @@ export function FacultySettingsPanel({
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 New Password
               </label>
-              <div className="relative">
+              <div className="relative flex items-center">
                 <input
                   type={showNewPassword ? "text" : "password"}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 pr-10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                  autoComplete="new-password"
+                  className="w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Minimum 8 characters"
@@ -783,12 +838,14 @@ export function FacultySettingsPanel({
                 <button
                   type="button"
                   onClick={() => setShowNewPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10 flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer p-1"
+                  title={showNewPassword ? "Hide password" : "Show password"}
+                  aria-label={showNewPassword ? "Hide password" : "Show password"}
                 >
                   {showNewPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <Eye className="h-4 w-4 text-amber-500" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <EyeOff className="h-4 w-4 text-slate-400" />
                   )}
                 </button>
               </div>
@@ -798,10 +855,11 @@ export function FacultySettingsPanel({
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 Confirm New Password
               </label>
-              <div className="relative">
+              <div className="relative flex items-center">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 pr-10 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                  autoComplete="new-password"
+                  className="w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter new password"
@@ -809,36 +867,143 @@ export function FacultySettingsPanel({
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10 flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer p-1"
+                  title={showConfirmPassword ? "Hide password" : "Show password"}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <Eye className="h-4 w-4 text-amber-500" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <EyeOff className="h-4 w-4 text-slate-400" />
                   )}
                 </button>
               </div>
             </div>
 
-            {passwordMessage && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{passwordMessage}</p>
-            )}
-            {passwordError && (
-              <p className="text-xs text-red-600 dark:text-red-400 font-medium">{passwordError}</p>
-            )}
+            {/* Live Password Requirement Indicators */}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 p-3.5 space-y-2">
+              <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                Password Requirements
+              </p>
+              <ul className="space-y-1.5 text-xs">
+                <li
+                  className={`flex items-center gap-2 transition-colors ${
+                    isCurrentPasswordFilled
+                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                      : "text-slate-400 dark:text-slate-500"
+                  }`}
+                >
+                  {isCurrentPasswordFilled ? (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1" />
+                  )}
+                  <span>Current password required</span>
+                </li>
+
+                <li
+                  className={`flex items-center gap-2 transition-colors ${
+                    isLengthValid
+                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                      : "text-slate-400 dark:text-slate-500"
+                  }`}
+                >
+                  {isLengthValid ? (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1" />
+                  )}
+                  <span>At least 8 characters</span>
+                </li>
+
+                <li
+                  className={`flex items-center gap-2 transition-colors ${
+                    isMatching
+                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                      : "text-slate-400 dark:text-slate-500"
+                  }`}
+                >
+                  {isMatching ? (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1" />
+                  )}
+                  <span>Passwords match</span>
+                </li>
+              </ul>
+            </div>
 
             <div className="pt-2 flex justify-end">
               <button
                 type="submit"
-                disabled={isChangingPassword}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                disabled={!isPasswordFormValid || isChangingPassword}
+                className="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none cursor-pointer"
               >
-                {isChangingPassword ? "Updating..." : "Update Password"}
+                {isChangingPassword ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Updating Password...</span>
+                  </>
+                ) : (
+                  "Update Password"
+                )}
               </button>
             </div>
           </form>
         </article>
       </section>
+
+      {/* Password Status Modal Dialog */}
+      {passwordModal?.isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setPasswordModal(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 transition-colors"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start gap-4">
+              <div
+                className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                  passwordModal.type === "success"
+                    ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                    : "bg-red-500/10 text-red-500 border border-red-500/20"
+                }`}
+              >
+                {passwordModal.type === "success" ? (
+                  <CheckCircle2 className="h-5 w-5" />
+                ) : (
+                  <AlertCircle className="h-5 w-5" />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  {passwordModal.title}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                  {passwordModal.message}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPasswordModal(null)}
+                className={`px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer ${
+                  passwordModal.type === "success"
+                    ? "bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm shadow-amber-500/10 active:scale-[0.98]"
+                    : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200"
+                }`}
+              >
+                {passwordModal.type === "success" ? "Done" : "Dismiss"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Image Action Modal */}
       {isProfileImageMenuOpen && (
