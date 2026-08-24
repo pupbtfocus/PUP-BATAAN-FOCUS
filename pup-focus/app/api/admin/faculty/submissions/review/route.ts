@@ -204,22 +204,26 @@ export async function POST(request: NextRequest) {
       if (targetAuthUserId && targetAuthUserId !== user.id) {
         const reqCode = (submission?.requirement_code ?? "REQUIREMENT") as RequirementCode;
         const reqLabel = REQUIREMENT_LABEL[reqCode] || reqCode || "Requirement";
-        const isApproved = decision === "validated";
-        const title = isApproved
-          ? "✅ Submission Validated"
-          : "⚠️ Submission Rejected";
-        const message = isApproved
-          ? `Your submission for "${reqLabel}" has been validated${cleanRemarks ? `: "${cleanRemarks}"` : "."}`
-          : `Your submission for "${reqLabel}" was rejected${cleanRemarks ? `: "${cleanRemarks}"` : ". Please review and resubmit."}`;
-        const notificationType = isApproved
-          ? "submission_validated"
-          : "submission_rejected";
 
-        await supabase.from("notifications").insert({
-          user_id: targetAuthUserId,
-          type: notificationType,
-          title,
-          message,
+        let notifType = "SUBMISSION_APPROVED";
+        let notifTitle = "Submission Approved";
+        let notifMessage = `Your submission for "${reqLabel}" has been approved${cleanRemarks ? `: "${cleanRemarks}"` : "."}`;
+
+        if (decision === "rejected") {
+          notifType = "SUBMISSION_REJECTED";
+          notifTitle = "Submission Rejected";
+          notifMessage = `Your submission for "${reqLabel}" was rejected${cleanRemarks ? `: "${cleanRemarks}"` : ". Please review and resubmit."}`;
+        } else if ((decision as string) === "needs_revision" || (decision as string) === "revision_requested") {
+          notifType = "REVISION_REQUESTED";
+          notifTitle = "Revision Requested";
+          notifMessage = `Revision requested for "${reqLabel}"${cleanRemarks ? `: "${cleanRemarks}"` : ". Please update your submission."}`;
+        }
+
+        await createNotification({
+          userId: targetAuthUserId,
+          type: notifType,
+          title: notifTitle,
+          message: notifMessage,
           metadata: {
             submission_id: submissionId,
             submissionId,
@@ -228,7 +232,7 @@ export async function POST(request: NextRequest) {
             reviewed_by: adminProfile.id,
             reviewerName: adminProfile.full_name || "Reviewer",
             decision,
-            remarks: remarks || null,
+            remarks: cleanRemarks,
           },
         });
       }
