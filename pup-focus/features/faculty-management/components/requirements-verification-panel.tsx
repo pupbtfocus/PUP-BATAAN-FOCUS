@@ -3,7 +3,16 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import JSZip from "jszip";
-import { ExternalLink, ChevronDown, Loader2 } from "lucide-react";
+import {
+  ExternalLink,
+  ChevronDown,
+  Loader2,
+  FileSpreadsheet,
+  FileText,
+  Download,
+  File,
+  Archive,
+} from "lucide-react";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_CODE,
@@ -13,6 +22,76 @@ import {
 import {
   normalizeSemester,
 } from "@/features/submissions/services/submission-window.service";
+
+export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
+
+export function getFileType(fileNameOrUrl: string): {
+  type: DetectedFileType;
+  extension: string;
+  isPdf: boolean;
+  isImage: boolean;
+  isExcel: boolean;
+  isWord: boolean;
+} {
+  const cleanStr = (fileNameOrUrl || "").split("?")[0].split("#")[0].toLowerCase();
+  const match = cleanStr.match(/\.([a-z0-9]+)$/i);
+  const extension = match ? match[1].toLowerCase() : "";
+
+  const isPdf = extension === "pdf";
+  const isImage = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(extension);
+  const isExcel = ["xlsx", "xls", "csv"].includes(extension);
+  const isWord = ["docx", "doc"].includes(extension);
+
+  let type: DetectedFileType = "other";
+  if (isPdf) type = "pdf";
+  else if (isImage) type = "image";
+  else if (isExcel) type = "excel";
+  else if (isWord) type = "word";
+
+  return { type, extension, isPdf, isImage, isExcel, isWord };
+}
+
+export const getFileBrand = (extension: string, isExcel: boolean, isWord: boolean) => {
+  const ext = extension.toLowerCase();
+  if (isExcel || ext === "xlsx" || ext === "xls" || ext === "csv") {
+    return {
+      label: "Microsoft Excel Spreadsheet",
+      iconBg: "bg-[#107C41]/10 dark:bg-[#107C41]/20",
+      iconColor: "text-[#107C41] dark:text-[#22c55e]",
+      borderColor: "border-[#107C41]/30 dark:border-[#107C41]/40",
+      badgeBg: "bg-[#107C41] text-white",
+      Icon: FileSpreadsheet,
+    };
+  }
+  if (isWord || ext === "docx" || ext === "doc") {
+    return {
+      label: "Microsoft Word Document",
+      iconBg: "bg-[#185ABD]/10 dark:bg-[#185ABD]/20",
+      iconColor: "text-[#185ABD] dark:text-[#60a5fa]",
+      borderColor: "border-[#185ABD]/30 dark:border-[#185ABD]/40",
+      badgeBg: "bg-[#185ABD] text-white",
+      Icon: FileText,
+    };
+  }
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
+    return {
+      label: "Compressed Archive",
+      iconBg: "bg-purple-500/10 dark:bg-purple-500/20",
+      iconColor: "text-purple-600 dark:text-purple-400",
+      borderColor: "border-purple-500/30 dark:border-purple-500/40",
+      badgeBg: "bg-purple-600 text-white",
+      Icon: Archive,
+    };
+  }
+  return {
+    label: "Document File",
+    iconBg: "bg-amber-500/10 dark:bg-amber-500/20",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    borderColor: "border-amber-500/30 dark:border-amber-500/40",
+    badgeBg: "bg-amber-500 text-slate-950",
+    Icon: File,
+  };
+};
 
 function normalizeAcademicYear(value: string | null | undefined): string {
   if (!value) return "";
@@ -1360,29 +1439,99 @@ function FacultyVerificationDrawer({
                 </button>
               </div>
             </div>
-            <div className="relative flex-1 overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
-              {previewingDoc.mimeType?.startsWith("image/") ||
-              /\.(jpe?g|png|gif|bmp|webp)$/i.test(previewingDoc.name) ? (
-                <Image
-                  src={previewingDoc.url}
-                  alt={previewingDoc.name}
-                  width={1000}
-                  height={800}
-                  unoptimized
-                  className="h-full w-full object-contain"
-                />
-              ) : previewingDoc.mimeType === "application/pdf" ||
-              /\.pdf$/i.test(previewingDoc.name) ? (
-                <iframe
-                  title="PDF Preview"
-                  src={previewingDoc.url}
-                  className="h-full w-full border-0"
-                />
-              ) : (
-                <div className="p-4 text-xs text-slate-600 dark:text-slate-400">
-                  Preview not available for this file type. Please download the file.
-                </div>
-              )}
+            <div className="relative flex-1 overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center p-4">
+              {(() => {
+                const fileName = previewingDoc.name || "Document";
+                const fileUrl = previewingDoc.url;
+                const fileInfo = getFileType(fileName || fileUrl);
+                const fileExtension =
+                  fileInfo.extension ||
+                  (previewingDoc.mimeType?.includes("excel") ||
+                  previewingDoc.mimeType?.includes("spreadsheet")
+                    ? "xlsx"
+                    : previewingDoc.mimeType?.includes("word")
+                    ? "docx"
+                    : "file");
+                const isImage =
+                  fileInfo.isImage ||
+                  previewingDoc.mimeType?.startsWith("image/");
+                const isPdf =
+                  fileInfo.isPdf || previewingDoc.mimeType === "application/pdf";
+                const isExcel =
+                  fileInfo.isExcel ||
+                  Boolean(previewingDoc.mimeType?.includes("excel")) ||
+                  Boolean(previewingDoc.mimeType?.includes("spreadsheet"));
+                const isWord =
+                  fileInfo.isWord ||
+                  Boolean(previewingDoc.mimeType?.includes("word")) ||
+                  Boolean(previewingDoc.mimeType?.includes("document"));
+
+                if (isImage) {
+                  return (
+                    <img
+                      src={fileUrl}
+                      alt={fileName}
+                      className="max-h-full max-w-full object-contain rounded-xl mx-auto"
+                    />
+                  );
+                }
+
+                // Ensure Fallback Card Renders BEFORE Mounting iframe
+                if (isExcel || isWord || (!isPdf && !isImage)) {
+                  const brand = getFileBrand(fileExtension, isExcel, isWord);
+                  const BrandIcon = brand.Icon;
+
+                  return (
+                    <div
+                      className={`flex flex-col items-center justify-center h-full w-full p-8 text-center bg-slate-50/60 dark:bg-slate-900/80 rounded-2xl border ${brand.borderColor} shadow-xs backdrop-blur-xs transition-all`}
+                    >
+                      {/* File Brand Icon Badge */}
+                      <div
+                        className={`relative p-5 rounded-2xl ${brand.iconBg} ${brand.iconColor} mb-4 shadow-inner ring-1 ring-current/20`}
+                      >
+                        <BrandIcon className="w-12 h-12 stroke-[1.8]" />
+                        <span
+                          className={`absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider ${brand.badgeBg} shadow-sm`}
+                        >
+                          {fileExtension}
+                        </span>
+                      </div>
+
+                      <h4 className="text-base font-bold text-slate-900 dark:text-amber-100 mb-1 max-w-sm truncate">
+                        {fileName}
+                      </h4>
+
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 max-w-xs leading-relaxed">
+                        Direct browser preview is not supported for{" "}
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          {brand.label}
+                        </span>
+                        . You can download or open the file to view its
+                        contents.
+                      </p>
+
+                      <a
+                        href={fileUrl}
+                        download={fileName}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-amber-500/20 cursor-pointer"
+                      >
+                        <Download className="w-4 h-4 stroke-[2.2]" />
+                        Download & View File
+                      </a>
+                    </div>
+                  );
+                }
+
+                return (
+                  <iframe
+                    title="PDF Preview"
+                    src={fileUrl}
+                    className="w-full h-full rounded-xl border-0"
+                  />
+                );
+              })()}
             </div>
           </div>
         </div>

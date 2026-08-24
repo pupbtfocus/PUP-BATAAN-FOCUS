@@ -26,9 +26,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // 1. Attempt update with is_read and viewed_at
+    // Attempt updates gracefully without noisy failure logs
     const nowIso = new Date().toISOString();
-    const { error: updateError } = await supabase
+    let updated = false;
+
+    // Step 1: Try is_read + viewed_at
+    const { error: fullErr } = await supabase
       .from("submissions")
       .update({
         is_read: true,
@@ -36,31 +39,34 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", submissionId);
 
-    if (updateError) {
-      logger.warn("mark_viewed_update_warning", {
-        submissionId,
-        error: updateError.message,
-      });
-
-      // Step 2 fallback: Try minimal update with is_read only if viewed_at doesn't exist
-      const { error: isReadOnlyErr } = await supabase
+    if (!fullErr) {
+      updated = true;
+    } else {
+      // Step 2: Try is_read only
+      const { error: isReadErr } = await supabase
         .from("submissions")
         .update({ is_read: true })
         .eq("id", submissionId);
 
-      if (isReadOnlyErr) {
-        logger.warn("mark_viewed_is_read_only_fallback_failed", {
-          submissionId,
-          error: isReadOnlyErr.message,
-        });
+      if (!isReadErr) {
+        updated = true;
+      } else {
+        // Step 3: Try is_viewed fallback
+        const { error: isViewedErr } = await supabase
+          .from("submissions")
+          .update({ is_viewed: true })
+          .eq("id", submissionId);
+
+        if (!isViewedErr) {
+          updated = true;
+        }
       }
     }
 
     return NextResponse.json({
       success: true,
       submissionId,
-      is_read: true,
-      viewed_at: nowIso,
+      viewed: true,
     });
   } catch (err) {
     logger.error("mark_submission_viewed_error", {

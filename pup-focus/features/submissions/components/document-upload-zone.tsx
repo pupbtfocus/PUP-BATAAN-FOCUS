@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Info,
   Loader2,
+  Download,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { SubmissionStatusBadge } from "./submission-status-badge";
@@ -210,6 +211,48 @@ function getFileTypeDetails(fileName: string) {
     type: "Document",
   };
 }
+
+export const getFileBrand = (extension: string, isExcel: boolean, isWord: boolean) => {
+  const ext = extension.toLowerCase();
+  if (isExcel || ext === "xlsx" || ext === "xls" || ext === "csv") {
+    return {
+      label: "Microsoft Excel Spreadsheet",
+      iconBg: "bg-[#107C41]/10 dark:bg-[#107C41]/20",
+      iconColor: "text-[#107C41] dark:text-[#22c55e]",
+      borderColor: "border-[#107C41]/30 dark:border-[#107C41]/40",
+      badgeBg: "bg-[#107C41] text-white",
+      Icon: FileSpreadsheet,
+    };
+  }
+  if (isWord || ext === "docx" || ext === "doc") {
+    return {
+      label: "Microsoft Word Document",
+      iconBg: "bg-[#185ABD]/10 dark:bg-[#185ABD]/20",
+      iconColor: "text-[#185ABD] dark:text-[#60a5fa]",
+      borderColor: "border-[#185ABD]/30 dark:border-[#185ABD]/40",
+      badgeBg: "bg-[#185ABD] text-white",
+      Icon: FileText,
+    };
+  }
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
+    return {
+      label: "Compressed Archive",
+      iconBg: "bg-purple-500/10 dark:bg-purple-500/20",
+      iconColor: "text-purple-600 dark:text-purple-400",
+      borderColor: "border-purple-500/30 dark:border-purple-500/40",
+      badgeBg: "bg-purple-600 text-white",
+      Icon: Archive,
+    };
+  }
+  return {
+    label: "Document File",
+    iconBg: "bg-amber-500/10 dark:bg-amber-500/20",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    borderColor: "border-amber-500/30 dark:border-amber-500/40",
+    badgeBg: "bg-amber-500 text-slate-950",
+    Icon: File,
+  };
+};
 
 export function DocumentUploadZone({
   selectedFile,
@@ -579,23 +622,62 @@ export function DocumentUploadZone({
                   className="w-full h-[65vh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white shadow-inner"
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center text-center p-8 max-w-md">
-                  <div className="mb-4">{fileType?.icon}</div>
-                  <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
-                    {selectedFile.name}
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">
-                    Direct in-browser interactive preview is not supported for this file format ({fileType?.type}). You can open or download a local copy to inspect it.
-                  </p>
-                  <a
-                    href={fileObjectUrl}
-                    download={selectedFile.name}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs shadow-md shadow-amber-500/10 transition-all cursor-pointer"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    <span>Open / Download Copy</span>
-                  </a>
-                </div>
+                (() => {
+                  const ext = selectedFile.name.split(".").pop() || "file";
+                  const isExcel = Boolean(
+                    fileType?.type?.toLowerCase().includes("sheet") ||
+                      selectedFile.name.toLowerCase().endsWith(".xlsx") ||
+                      selectedFile.name.toLowerCase().endsWith(".xls") ||
+                      selectedFile.name.toLowerCase().endsWith(".csv"),
+                  );
+                  const isWord = Boolean(
+                    selectedFile.name.toLowerCase().endsWith(".docx") ||
+                      selectedFile.name.toLowerCase().endsWith(".doc"),
+                  );
+                  const brand = getFileBrand(ext, isExcel, isWord);
+                  const BrandIcon = brand.Icon;
+
+                  return (
+                    <div
+                      className={`flex flex-col items-center justify-center h-full w-full p-8 text-center bg-slate-50/60 dark:bg-slate-900/80 rounded-2xl border ${brand.borderColor} shadow-xs backdrop-blur-xs transition-all max-w-md`}
+                    >
+                      {/* File Brand Icon Badge */}
+                      <div
+                        className={`relative p-5 rounded-2xl ${brand.iconBg} ${brand.iconColor} mb-4 shadow-inner ring-1 ring-current/20`}
+                      >
+                        <BrandIcon className="w-12 h-12 stroke-[1.8]" />
+                        <span
+                          className={`absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider ${brand.badgeBg} shadow-sm`}
+                        >
+                          {ext}
+                        </span>
+                      </div>
+
+                      <h4 className="text-base font-bold text-slate-900 dark:text-amber-100 mb-1 max-w-sm truncate">
+                        {selectedFile.name}
+                      </h4>
+
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 max-w-xs leading-relaxed">
+                        Direct browser preview is not supported for{" "}
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          {brand.label}
+                        </span>
+                        . You can download or open the file to view its contents.
+                      </p>
+
+                      <a
+                        href={fileObjectUrl}
+                        download={selectedFile.name}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-amber-500/20 cursor-pointer"
+                      >
+                        <Download className="w-4 h-4 stroke-[2.2]" />
+                        Download & View File
+                      </a>
+                    </div>
+                  );
+                })()
               )}
             </div>
           </div>

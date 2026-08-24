@@ -31,9 +31,79 @@ import {
   DashboardMetricsSkeleton,
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
-import { Menu, X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, UploadCloud, CheckCircle2, Calendar, Loader2, Eye, RotateCw, Clock3, Download, ExternalLink, ArrowRight, Sparkles, FileSpreadsheet, FileCheck } from "lucide-react";
+import { Menu, X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, UploadCloud, CheckCircle2, Calendar, Loader2, Eye, RotateCw, Clock3, Download, ExternalLink, ArrowRight, Sparkles, FileSpreadsheet, FileCheck, File, Archive } from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
+
+export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
+
+export function getFileType(fileNameOrUrl: string): {
+  type: DetectedFileType;
+  extension: string;
+  isPdf: boolean;
+  isImage: boolean;
+  isExcel: boolean;
+  isWord: boolean;
+} {
+  const cleanStr = (fileNameOrUrl || "").split("?")[0].split("#")[0].toLowerCase();
+  const match = cleanStr.match(/\.([a-z0-9]+)$/i);
+  const extension = match ? match[1].toLowerCase() : "";
+
+  const isPdf = extension === "pdf";
+  const isImage = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(extension);
+  const isExcel = ["xlsx", "xls", "csv"].includes(extension);
+  const isWord = ["docx", "doc"].includes(extension);
+
+  let type: DetectedFileType = "other";
+  if (isPdf) type = "pdf";
+  else if (isImage) type = "image";
+  else if (isExcel) type = "excel";
+  else if (isWord) type = "word";
+
+  return { type, extension, isPdf, isImage, isExcel, isWord };
+}
+
+export const getFileBrand = (extension: string, isExcel: boolean, isWord: boolean) => {
+  const ext = extension.toLowerCase();
+  if (isExcel || ext === "xlsx" || ext === "xls" || ext === "csv") {
+    return {
+      label: "Microsoft Excel Spreadsheet",
+      iconBg: "bg-[#107C41]/10 dark:bg-[#107C41]/20",
+      iconColor: "text-[#107C41] dark:text-[#22c55e]",
+      borderColor: "border-[#107C41]/30 dark:border-[#107C41]/40",
+      badgeBg: "bg-[#107C41] text-white",
+      Icon: FileSpreadsheet,
+    };
+  }
+  if (isWord || ext === "docx" || ext === "doc") {
+    return {
+      label: "Microsoft Word Document",
+      iconBg: "bg-[#185ABD]/10 dark:bg-[#185ABD]/20",
+      iconColor: "text-[#185ABD] dark:text-[#60a5fa]",
+      borderColor: "border-[#185ABD]/30 dark:border-[#185ABD]/40",
+      badgeBg: "bg-[#185ABD] text-white",
+      Icon: FileText,
+    };
+  }
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
+    return {
+      label: "Compressed Archive",
+      iconBg: "bg-purple-500/10 dark:bg-purple-500/20",
+      iconColor: "text-purple-600 dark:text-purple-400",
+      borderColor: "border-purple-500/30 dark:border-purple-500/40",
+      badgeBg: "bg-purple-600 text-white",
+      Icon: Archive,
+    };
+  }
+  return {
+    label: "Document File",
+    iconBg: "bg-amber-500/10 dark:bg-amber-500/20",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    borderColor: "border-amber-500/30 dark:border-amber-500/40",
+    badgeBg: "bg-amber-500 text-slate-950",
+    Icon: File,
+  };
+};
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
 const REQUIREMENT_DESCRIPTIONS: Record<RequirementCode, string> = {
@@ -70,6 +140,8 @@ type RequirementStatus = {
   note?: string | null;
   submittedAt?: string;
   latestSubmissionId?: string;
+  fileName?: string;
+  storagePath?: string;
   is_read?: boolean;
   isViewed?: boolean;
   viewed_at?: string;
@@ -78,6 +150,8 @@ type RequirementStatus = {
 type SubmissionPreview = {
   code: RequirementCode;
   title: string;
+  fileName?: string;
+  storagePath?: string;
   submittedAt?: string;
   note?: string | null;
   feedback?: string;
@@ -94,6 +168,11 @@ type PastSubmission = {
   requirementCode: RequirementCode;
   status: HistorySubmissionStatus;
   submittedAt: string;
+  fileName?: string;
+  storagePath?: string;
+  file_name?: string;
+  file_path?: string;
+  original_name?: string;
   note?: string;
   remarks?: string;
   admin_remarks?: string;
@@ -1036,9 +1115,18 @@ function FacultySubmissionPanelContent({
       item.remarks ||
       null;
 
+    const fileName =
+      item.fileName ||
+      item.storagePath ||
+      (item as { file_name?: string }).file_name ||
+      (item as { original_name?: string }).original_name ||
+      undefined;
+
     setPreviewSubmission({
       code: item.code,
       title: REQUIREMENT_LABEL[item.code],
+      fileName,
+      storagePath: item.storagePath || undefined,
       submittedAt: item.submittedAt,
       note: item.note,
       feedback: adminRemarks || undefined,
@@ -1059,9 +1147,19 @@ function FacultySubmissionPanelContent({
       submission.remarks ||
       null;
 
+    const fileName =
+      submission.fileName ||
+      submission.storagePath ||
+      submission.file_name ||
+      submission.original_name ||
+      submission.file_path ||
+      undefined;
+
     setPreviewSubmission({
       code: submission.requirementCode,
       title: REQUIREMENT_LABEL[submission.requirementCode],
+      fileName,
+      storagePath: submission.storagePath || undefined,
       submittedAt: submission.submittedAt,
       note: submission.note,
       feedback: adminRemarks || undefined,
@@ -2498,14 +2596,93 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
-                    <div className="min-h-[60vh] overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 shadow-xs">
-                      <iframe
-                        title={`${previewSubmission.title} preview`}
-                        src={getSubmissionPreviewUrl(
+                    <div className="min-h-[60vh] overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 shadow-xs flex items-center justify-center p-4">
+                      {(() => {
+                        const fileUrl = getSubmissionPreviewUrl(
                           previewSubmission.latestSubmissionId,
-                        )}
-                        className="h-full min-h-[60vh] w-full border-0"
-                      />
+                        );
+                        const fileIdentifier =
+                          previewSubmission.fileName ||
+                          previewSubmission.storagePath ||
+                          previewSubmission.title;
+                        const { isPdf, isImage, isExcel, isWord, extension } =
+                          getFileType(fileIdentifier);
+                        const fileExtension = extension || "file";
+
+                        if (isImage) {
+                          return (
+                            <img
+                              src={fileUrl}
+                              alt={fileIdentifier}
+                              className="max-h-[60vh] max-w-full object-contain rounded-xl mx-auto shadow-md"
+                            />
+                          );
+                        }
+
+                        // Ensure Fallback Card Renders BEFORE Mounting iframe
+                        if (
+                          isExcel ||
+                          isWord ||
+                          (!isPdf && !isImage && fileIdentifier.includes("."))
+                        ) {
+                          const brand = getFileBrand(
+                            fileExtension,
+                            isExcel,
+                            isWord,
+                          );
+                          const BrandIcon = brand.Icon;
+
+                          return (
+                            <div
+                              className={`flex flex-col items-center justify-center h-full w-full min-h-[50vh] p-8 text-center bg-slate-50/60 dark:bg-slate-900/80 rounded-2xl border ${brand.borderColor} shadow-xs backdrop-blur-xs transition-all`}
+                            >
+                              {/* File Brand Icon Badge */}
+                              <div
+                                className={`relative p-5 rounded-2xl ${brand.iconBg} ${brand.iconColor} mb-4 shadow-inner ring-1 ring-current/20`}
+                              >
+                                <BrandIcon className="w-12 h-12 stroke-[1.8]" />
+                                <span
+                                  className={`absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider ${brand.badgeBg} shadow-sm`}
+                                >
+                                  {fileExtension}
+                                </span>
+                              </div>
+
+                              <h4 className="text-base font-bold text-slate-900 dark:text-amber-100 mb-1 max-w-sm truncate">
+                                {fileIdentifier}
+                              </h4>
+
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 max-w-xs leading-relaxed">
+                                Direct browser preview is not supported for{" "}
+                                <span className="font-bold text-slate-800 dark:text-slate-200">
+                                  {brand.label}
+                                </span>
+                                . You can download or open the file to view its
+                                contents.
+                              </p>
+
+                              <a
+                                href={fileUrl}
+                                download={fileIdentifier}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-amber-500/20 cursor-pointer"
+                              >
+                                <Download className="w-4 h-4 stroke-[2.2]" />
+                                Download & View File
+                              </a>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <iframe
+                            title={`${previewSubmission.title} preview`}
+                            src={fileUrl}
+                            className="h-full min-h-[60vh] w-full rounded-xl border-0"
+                          />
+                        );
+                      })()}
                     </div>
 
                     <div className="space-y-4">
