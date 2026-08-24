@@ -212,45 +212,51 @@ function getFileTypeDetails(fileName: string) {
   };
 }
 
-export const getFileBrand = (extension: string, isExcel: boolean, isWord: boolean) => {
+export const getFileBrand = (
+  extension: string,
+  isExcel: boolean,
+  isWord: boolean,
+) => {
   const ext = extension.toLowerCase();
-  if (isExcel || ext === "xlsx" || ext === "xls" || ext === "csv") {
+
+  if (isExcel || ["xlsx", "xls", "csv"].includes(ext)) {
     return {
       label: "Microsoft Excel Spreadsheet",
-      iconBg: "bg-[#107C41]/10 dark:bg-[#107C41]/20",
-      iconColor: "text-[#107C41] dark:text-[#22c55e]",
+      iconUrl: "https://api.iconify.design/vscode-icons:file-type-excel.svg",
       borderColor: "border-[#107C41]/30 dark:border-[#107C41]/40",
       badgeBg: "bg-[#107C41] text-white",
-      Icon: FileSpreadsheet,
     };
   }
-  if (isWord || ext === "docx" || ext === "doc") {
+  if (isWord || ["docx", "doc"].includes(ext)) {
     return {
       label: "Microsoft Word Document",
-      iconBg: "bg-[#185ABD]/10 dark:bg-[#185ABD]/20",
-      iconColor: "text-[#185ABD] dark:text-[#60a5fa]",
+      iconUrl: "https://api.iconify.design/vscode-icons:file-type-word.svg",
       borderColor: "border-[#185ABD]/30 dark:border-[#185ABD]/40",
       badgeBg: "bg-[#185ABD] text-white",
-      Icon: FileText,
+    };
+  }
+  if (["pptx", "ppt"].includes(ext)) {
+    return {
+      label: "Microsoft PowerPoint Presentation",
+      iconUrl:
+        "https://api.iconify.design/vscode-icons:file-type-powerpoint.svg",
+      borderColor: "border-[#C43E1C]/30 dark:border-[#C43E1C]/40",
+      badgeBg: "bg-[#C43E1C] text-white",
     };
   }
   if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
     return {
       label: "Compressed Archive",
-      iconBg: "bg-purple-500/10 dark:bg-purple-500/20",
-      iconColor: "text-purple-600 dark:text-purple-400",
+      iconUrl: "https://api.iconify.design/vscode-icons:file-type-zip.svg",
       borderColor: "border-purple-500/30 dark:border-purple-500/40",
       badgeBg: "bg-purple-600 text-white",
-      Icon: Archive,
     };
   }
   return {
     label: "Document File",
-    iconBg: "bg-amber-500/10 dark:bg-amber-500/20",
-    iconColor: "text-amber-600 dark:text-amber-400",
+    iconUrl: "https://api.iconify.design/vscode-icons:file-type-text.svg",
     borderColor: "border-amber-500/30 dark:border-amber-500/40",
     badgeBg: "bg-amber-500 text-slate-950",
-    Icon: File,
   };
 };
 
@@ -635,17 +641,19 @@ export function DocumentUploadZone({
                       selectedFile.name.toLowerCase().endsWith(".doc"),
                   );
                   const brand = getFileBrand(ext, isExcel, isWord);
-                  const BrandIcon = brand.Icon;
 
                   return (
                     <div
                       className={`flex flex-col items-center justify-center h-full w-full p-8 text-center bg-slate-50/60 dark:bg-slate-900/80 rounded-2xl border ${brand.borderColor} shadow-xs backdrop-blur-xs transition-all max-w-md`}
                     >
                       {/* File Brand Icon Badge */}
-                      <div
-                        className={`relative p-5 rounded-2xl ${brand.iconBg} ${brand.iconColor} mb-4 shadow-inner ring-1 ring-current/20`}
-                      >
-                        <BrandIcon className="w-12 h-12 stroke-[1.8]" />
+                      <div className="relative p-4 rounded-2xl bg-white/80 dark:bg-slate-800/80 mb-4 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700/60 flex items-center justify-center">
+                        <img
+                          src={brand.iconUrl}
+                          alt={brand.label}
+                          className="w-12 h-12 object-contain select-none"
+                          loading="lazy"
+                        />
                         <span
                           className={`absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider ${brand.badgeBg} shadow-sm`}
                         >
