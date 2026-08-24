@@ -72,6 +72,10 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (profileError || !profileRow?.id) {
+      console.error(
+        "Faculty profile not found in /api/admin/faculty/submissions:",
+        profileError || `No profile for facultyId: ${facultyId}`,
+      );
       return NextResponse.json(
         {
           error: "Faculty profile not found",
@@ -89,11 +93,18 @@ export async function GET(request: NextRequest) {
     let targetAcademicYear = requestedAcademicYear;
     let targetSemester = requestedSemester;
 
-    const { data: activeTermRow } = await supabase
+    const { data: activeTermRow, error: termError } = await supabase
       .from("academic_terms")
       .select("academic_year, semester, created_at")
       .eq("status", "Current")
       .maybeSingle();
+
+    if (termError) {
+      console.error(
+        "Failed to fetch active academic term in /api/admin/faculty/submissions:",
+        termError,
+      );
+    }
 
     if (!targetAcademicYear || !targetSemester) {
       if (activeTermRow) {
@@ -106,12 +117,19 @@ export async function GET(request: NextRequest) {
     targetSemester = targetSemester || "2nd Semester";
 
     // Fetch target assignment IDs for this faculty & requested term
-    const { data: targetAssignments } = await supabase
+    const { data: targetAssignments, error: targetAssignmentsError } = await supabase
       .from("faculty_program_assignments")
       .select("id")
       .eq("faculty_profile_id", facultyProfileId)
       .eq("academic_year", targetAcademicYear)
       .ilike("term", `%${targetSemester}%`);
+
+    if (targetAssignmentsError) {
+      console.error(
+        "Failed to fetch target assignments in /api/admin/faculty/submissions:",
+        targetAssignmentsError,
+      );
+    }
 
     const targetAssignmentIds = (targetAssignments || []).map((a) => a.id);
 
@@ -126,12 +144,19 @@ export async function GET(request: NextRequest) {
     }> = [];
 
     if (targetAssignmentIds.length > 0) {
-      const { data: subData } = await supabase
+      const { data: subData, error: subError } = await supabase
         .from("submissions")
         .select("id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id")
         .eq("faculty_profile_id", facultyProfileId)
         .in("faculty_assignment_id", targetAssignmentIds)
         .order("submitted_at", { ascending: false });
+
+      if (subError) {
+        console.error(
+          "Failed to fetch submissions in /api/admin/faculty/submissions:",
+          subError,
+        );
+      }
 
       if (subData) {
         rawSubmissions = subData as typeof rawSubmissions;
@@ -145,11 +170,18 @@ export async function GET(request: NextRequest) {
     const reviewDecisionsMap = new Map<string, Array<any>>();
 
     if (submissionIds.length > 0) {
-      const { data: docVersions } = await supabase
+      const { data: docVersions, error: docVersionsError } = await supabase
         .from("document_versions")
         .select("id, submission_id, version_number, storage_path, mime_type, size_bytes, created_at")
         .in("submission_id", submissionIds)
         .order("version_number", { ascending: false });
+
+      if (docVersionsError) {
+        console.error(
+          "Failed to fetch document_versions in /api/admin/faculty/submissions:",
+          docVersionsError,
+        );
+      }
 
       if (docVersions) {
         for (const doc of docVersions) {
@@ -159,11 +191,18 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      const { data: reviews } = await supabase
+      const { data: reviews, error: reviewsError } = await supabase
         .from("review_decisions")
         .select("submission_id, decision, remarks, created_at")
         .in("submission_id", submissionIds)
         .order("created_at", { ascending: false });
+
+      if (reviewsError) {
+        console.error(
+          "Failed to fetch review_decisions in /api/admin/faculty/submissions:",
+          reviewsError,
+        );
+      }
 
       if (reviews) {
         for (const rev of reviews) {
@@ -185,6 +224,7 @@ export async function GET(request: NextRequest) {
       total: submissions.length,
     });
   } catch (error) {
+    console.error("Unhandled error in /api/admin/faculty/submissions:", error);
     return NextResponse.json(
       {
         error: "Internal server error",

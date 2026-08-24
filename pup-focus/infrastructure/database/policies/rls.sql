@@ -11,10 +11,9 @@ AS $$
     (auth.jwt() -> 'user_metadata' ->> 'role') IN ('admin', 'super_admin'),
     FALSE
   )
-  OR EXISTS (
-    SELECT 1 FROM public.app_users
-    WHERE (auth_user_id = auth.uid() OR profile_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()))
-      AND role IN ('admin', 'super_admin')
+  OR COALESCE(
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'super_admin'),
+    FALSE
   )
   OR EXISTS (
     SELECT 1 FROM public.user_roles ur
@@ -28,7 +27,6 @@ $$;
 -- Enable RLS on core tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.app_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.faculty_program_assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.document_versions ENABLE ROW LEVEL SECURITY;
@@ -56,21 +54,6 @@ CREATE POLICY "Users can view their own roles"
 
 CREATE POLICY "Admins can manage user roles"
   ON public.user_roles FOR ALL TO authenticated
-  USING (public.is_admin_or_super_admin())
-  WITH CHECK (public.is_admin_or_super_admin());
-
--- APP_USERS
-CREATE POLICY "Users can view their own app_user record"
-  ON public.app_users FOR SELECT TO authenticated
-  USING (auth_user_id = auth.uid() OR id = auth.uid() OR profile_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid() OR id = auth.uid()) OR public.is_admin_or_super_admin());
-
-CREATE POLICY "Users can update their own app_user record"
-  ON public.app_users FOR UPDATE TO authenticated
-  USING (auth_user_id = auth.uid() OR id = auth.uid() OR public.is_admin_or_super_admin())
-  WITH CHECK (auth_user_id = auth.uid() OR id = auth.uid() OR public.is_admin_or_super_admin());
-
-CREATE POLICY "Admins can manage app_users"
-  ON public.app_users FOR ALL TO authenticated
   USING (public.is_admin_or_super_admin())
   WITH CHECK (public.is_admin_or_super_admin());
 

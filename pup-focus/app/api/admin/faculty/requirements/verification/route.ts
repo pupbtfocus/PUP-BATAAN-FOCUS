@@ -260,6 +260,10 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (profileError || !profileRow?.id) {
+      console.error(
+        "Faculty profile not found in /api/admin/faculty/requirements/verification:",
+        profileError || `No profile for facultyId: ${facultyId}`,
+      );
       return NextResponse.json(
         {
           error: "Faculty profile not found",
@@ -281,6 +285,10 @@ export async function GET(request: NextRequest) {
       .limit(500);
 
     if (assignmentError) {
+      console.error(
+        "Failed to load faculty assignments in /api/admin/faculty/requirements/verification:",
+        assignmentError,
+      );
       return NextResponse.json(
         {
           error: "Failed to load faculty assignments",
@@ -395,6 +403,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (submissionsError) {
+      console.error(
+        "Failed to load faculty requirements in /api/admin/faculty/requirements/verification:",
+        submissionsError,
+      );
       return NextResponse.json(
         {
           error: "Failed to load faculty requirements",
@@ -444,6 +456,10 @@ export async function GET(request: NextRequest) {
       requirementStatus,
     });
   } catch (error) {
+    console.error(
+      "Unhandled error in /api/admin/faculty/requirements/verification:",
+      error,
+    );
     return NextResponse.json(
       { error: "Failed to load requirements", details: String(error) },
       { status: 500 },
