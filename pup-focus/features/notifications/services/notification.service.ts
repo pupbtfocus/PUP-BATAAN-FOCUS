@@ -39,10 +39,21 @@ export async function createNotification(
 ): Promise<AppNotification | null> {
   const notificationId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
-  const safeUserId = ensureValidUuid(payload.userId);
+  let safeUserId = ensureValidUuid(payload.userId);
 
   try {
     const supabase = getServiceRoleClient();
+
+    // If safeUserId is a profile ID rather than an auth user ID, resolve to auth user_id
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("id", safeUserId)
+      .maybeSingle();
+
+    if (profileRow?.user_id) {
+      safeUserId = profileRow.user_id;
+    }
 
     const insertData: Record<string, any> = {
       id: notificationId,
@@ -68,6 +79,12 @@ export async function createNotification(
     }
 
     if (error) {
+      console.error("[NOTIF_DISPATCH_ERROR]", {
+        error: error.message,
+        recipient: safeUserId,
+        title: payload.title,
+        type: payload.type,
+      });
       logger.error("notification_insert_failed", {
         error: error.message,
         userId: payload.userId,
@@ -75,9 +92,17 @@ export async function createNotification(
       return null;
     }
 
+    console.log("[NOTIF_DISPATCH]", {
+      notificationId,
+      recipient: safeUserId,
+      title: payload.title,
+      type: payload.type,
+      inserted: true,
+    });
+
     return {
       id: notificationId,
-      userId: payload.userId,
+      userId: safeUserId,
       title: payload.title,
       message: payload.message,
       type: payload.type,
@@ -86,6 +111,11 @@ export async function createNotification(
       metadata: payload.metadata,
     };
   } catch (err) {
+    console.error("[NOTIF_DISPATCH_EXCEPTION]", {
+      error: err instanceof Error ? err.message : String(err),
+      recipient: safeUserId,
+      title: payload.title,
+    });
     logger.error("notification_insert_exception", {
       error: err instanceof Error ? err.message : String(err),
       userId: payload.userId,
@@ -110,39 +140,94 @@ export async function queueNotification(payload: NotificationPayload) {
   };
 }
 
+export type NotificationFilterOptions = {
+  excludeTypes?: string[];
+  allowedTypes?: string[];
+  role?: "faculty" | "admin" | "super_admin";
+};
+
 /**
  * Fetches notifications for a given user from Supabase, ordered by newest first.
  */
 export async function getUserNotifications(
   userId: string,
   limit = 50,
+  options?: NotificationFilterOptions,
 ): Promise<AppNotification[]> {
   try {
     const supabase = getServiceRoleClient();
     const safeUserId = ensureValidUuid(userId);
 
-    const { data, error } = await supabase
+    // Look up profile for this user to ensure all matching IDs (user_id and profile_id) are queried
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, user_id")
+      .or(`user_id.eq.${safeUserId},id.eq.${safeUserId}`)
+      .maybeSingle();
+
+    const authUserId = profile?.user_id || safeUserId;
+    const profileId = profile?.id;
+    const targetUserIds = Array.from(
+      new Set([safeUserId, authUserId, profileId].filter(Boolean) as string[]),
+    );
+
+    let query = supabase
       .from("notifications")
       .select("*")
-      .eq("user_id", safeUserId)
+      .in("user_id", targetUserIds)
       .order("created_at", { ascending: false })
       .limit(limit);
 
+    if (options?.excludeTypes && options.excludeTypes.length > 0) {
+      const formattedExclude = `(${options.excludeTypes.map((t) => `"${t}"`).join(",")})`;
+      query = query.not("type", "in", formattedExclude);
+    }
+
+    if (options?.allowedTypes && options.allowedTypes.length > 0) {
+      query = query.in("type", options.allowedTypes);
+    }
+
+    const { data, error } = await query;
+
     if (error) {
+      console.error("[NOTIF_FETCH_ERROR]", {
+        error: error.message,
+        userId,
+        targetUserIds,
+      });
       logger.error("get_user_notifications_failed", { error: error.message, userId });
       return [];
     }
 
-    return (data || []).map((row: any) => ({
-      id: row.id,
-      userId: row.user_id,
-      title: row.title,
-      message: row.message,
-      type: row.type ?? undefined,
-      isRead: Boolean(row.is_read),
-      createdAt: row.created_at,
-      metadata: row.metadata ?? undefined,
-    }));
+    const excludeSet = new Set(
+      (options?.excludeTypes ?? []).map((t) => t.toLowerCase()),
+    );
+
+    const results = (data || [])
+      .filter((row: any) => {
+        if (row.type && excludeSet.has(String(row.type).toLowerCase())) {
+          return false;
+        }
+        return true;
+      })
+      .map((row: any) => ({
+        id: row.id,
+        userId: row.user_id,
+        title: row.title,
+        message: row.message,
+        type: row.type ?? undefined,
+        isRead: Boolean(row.is_read),
+        createdAt: row.created_at,
+        metadata: row.metadata ?? undefined,
+      }));
+
+    console.log("[NOTIF_FETCH_SERVICE]", {
+      userId,
+      targetUserIds,
+      count: results.length,
+    });
+
+    return results;
   } catch (err) {
     logger.error("get_user_notifications_exception", {
       error: err instanceof Error ? err.message : String(err),

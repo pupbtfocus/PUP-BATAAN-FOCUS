@@ -571,21 +571,52 @@ export async function POST(request: NextRequest) {
 
         const reviewerSet = new Set<string>();
 
-        const { data: reviewerRoles } = await supabase
+        // 1. Get role IDs for 'admin' and 'super_admin'
+        const { data: roles } = await supabase
+          .from("roles")
+          .select("id, code")
+          .in("code", ["admin", "super_admin"]);
+
+        const roleIds = (roles || []).map((r) => r.id);
+
+        // 2. Get profile IDs assigned to those roles
+        const { data: userRoles } = await supabase
           .from("user_roles")
-          .select("profiles(user_id), roles(code)")
-          .in("roles.code", ["admin", "super_admin"]);
+          .select("profile_id")
+          .in("role_id", roleIds);
 
-        if (reviewerRoles) {
-          for (const row of reviewerRoles) {
-            const p = row.profiles as any;
-            if (p?.user_id) reviewerSet.add(p.user_id);
-          }
-        }
+        const profileIds = Array.from(
+          new Set((userRoles || []).map((ur) => ur.profile_id).filter(Boolean))
+        );
 
-        const uniqueAuthUserIds = Array.from(reviewerSet);
+        // 3. Get corresponding auth user_ids from profiles
+        const { data: adminProfiles } = await supabase
+          .from("profiles")
+          .select("id, user_id")
+          .in("id", profileIds);
 
-        for (const reviewerAuthUserId of uniqueAuthUserIds) {
+        const adminUserIds = Array.from(
+          new Set(
+            (adminProfiles || [])
+              .map((p) => p.user_id)
+              .filter(
+                (id): id is string =>
+                  Boolean(id) && id !== user.id && id !== profile.id,
+              ),
+          ),
+        );
+
+        console.log("[NOTIF_ADMIN_TARGETS_FOUND]", {
+          roleIds,
+          profileIdsCount: profileIds.length,
+          adminUserIdsCount: adminUserIds.length,
+          adminUserIds,
+        });
+
+        let insertedCount = 0;
+
+        for (const reviewerAuthUserId of adminUserIds) {
+          // Double defense: never send submission alert to submitting faculty
           if (reviewerAuthUserId === user.id) continue;
 
           // Check if the administrator/reviewer has enabled new submission alerts (default to true if undefined)
@@ -602,15 +633,16 @@ export async function POST(request: NextRequest) {
                 : true;
 
             if (!isAlertEnabled) {
+              console.log("[NOTIF_ADMIN_ALERT_DISABLED]", { reviewerAuthUserId });
               continue;
             }
           } catch (prefErr) {
             // Default to sending notification if preference check fails
           }
 
-          await createNotification({
+          const created = await createNotification({
             userId: reviewerAuthUserId,
-            type: "submission_uploaded",
+            type: "NEW_SUBMISSION",
             title: `New Submission from ${facultyName}`,
             message: `Uploaded ${reqLabel} for ${payload.academicYear} ${payload.semester}.`,
             metadata: {
@@ -620,9 +652,21 @@ export async function POST(request: NextRequest) {
               facultyName,
               requirement_code: payload.requirementCode,
               requirementCode: payload.requirementCode,
+              recipient_role: "admin",
             },
           });
+
+          if (created) {
+            insertedCount++;
+          }
         }
+
+        console.log("[NOTIF_DISPATCH]", {
+          recipients: adminUserIds,
+          title: `New Submission from ${facultyName}`,
+          type: "NEW_SUBMISSION",
+          insertedCount,
+        });
       } catch (notifErr) {
         logger.error("notification_creation_failed_on_upload", {
           submissionId,

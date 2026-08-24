@@ -3,6 +3,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { logger } from "@/lib/observability/logger";
+import { createNotification } from "@/features/notifications/services/notification.service";
+import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 
 type ValidationRequest = {
   submissionId: string;
@@ -169,6 +171,85 @@ export async function POST(request: NextRequest) {
       });
     } catch {
       // verification_history is optional
+    }
+
+    // Dispatch notification to submitting faculty member
+    try {
+      const { data: submission } = await supabase
+        .from("submissions")
+        .select("id, faculty_profile_id, requirement_code, academic_year, semester")
+        .eq("id", submissionId)
+        .maybeSingle();
+
+      let targetAuthUserId: string | null = null;
+
+      // 1. Check uploader from document_versions
+      const { data: docVersion } = await supabase
+        .from("document_versions")
+        .select("created_by")
+        .eq("submission_id", submissionId)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (docVersion?.created_by) {
+        targetAuthUserId = docVersion.created_by;
+      }
+
+      // 2. Check profile by faculty_profile_id
+      if (!targetAuthUserId && submission?.faculty_profile_id) {
+        const { data: facultyProfile } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("id", submission.faculty_profile_id)
+          .maybeSingle();
+
+        if (facultyProfile?.user_id) {
+          targetAuthUserId = facultyProfile.user_id;
+        }
+      }
+
+      if (targetAuthUserId && targetAuthUserId !== user.id) {
+        const reqCode = (submission?.requirement_code ?? "REQUIREMENT") as RequirementCode;
+        const reqLabel = REQUIREMENT_LABEL[reqCode] || reqCode || "Requirement";
+
+        let notifType = "SUBMISSION_APPROVED";
+        let notifTitle = "Submission Approved";
+        let notifMessage = `Your submission for "${reqLabel}" has been approved${cleanRemarks ? `: "${cleanRemarks}"` : "."}`;
+
+        if (decision === "rejected") {
+          notifType = "SUBMISSION_REJECTED";
+          notifTitle = "Submission Rejected";
+          notifMessage = `Your submission for "${reqLabel}" was rejected${cleanRemarks ? `: "${cleanRemarks}"` : ". Please review and resubmit."}`;
+        } else if ((decision as string) === "needs_revision" || (decision as string) === "revision_requested") {
+          notifType = "REVISION_REQUESTED";
+          notifTitle = "Revision Requested";
+          notifMessage = `Revision requested for "${reqLabel}"${cleanRemarks ? `: "${cleanRemarks}"` : ". Please update your submission."}`;
+        }
+
+        await createNotification({
+          userId: targetAuthUserId,
+          type: notifType,
+          title: notifTitle,
+          message: notifMessage,
+          metadata: {
+            submission_id: submissionId,
+            submissionId,
+            requirement_code: submission?.requirement_code,
+            requirementCode: submission?.requirement_code,
+            decision,
+            remarks: cleanRemarks,
+            reviewer_profile_id: adminProfile.id,
+            reviewer_user_id: user.id,
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.error("Failed to send verification notification to faculty in validate route:", notifErr);
+      logger.error("faculty_verification_notification_failed", {
+        submissionId,
+        error: notifErr instanceof Error ? notifErr.message : String(notifErr),
+      });
     }
 
     logger.info("submission_validated", {
