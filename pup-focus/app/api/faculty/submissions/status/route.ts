@@ -27,6 +27,8 @@ type RequirementStatus = {
   remarks?: string;
   submittedAt?: string;
   latestSubmissionId?: string;
+  storagePath?: string;
+  fileName?: string;
   is_read?: boolean;
   isViewed?: boolean;
   viewed_at?: string;
@@ -423,17 +425,25 @@ export async function GET(request: NextRequest) {
     const submissionIds = rawSubmissions.map((s) => s.id);
 
     // Fetch document_versions separately
-    const docVersionsMap = new Map<string, Array<{ id: string }>>();
+    const docVersionsMap = new Map<
+      string,
+      Array<{ id: string; storage_path?: string; mime_type?: string }>
+    >();
     if (submissionIds.length > 0) {
       const { data: docVersions } = await supabase
         .from("document_versions")
-        .select("id, submission_id")
-        .in("submission_id", submissionIds);
+        .select("id, submission_id, storage_path, mime_type")
+        .in("submission_id", submissionIds)
+        .order("version_number", { ascending: false });
 
       if (docVersions) {
         for (const doc of docVersions) {
           const list = docVersionsMap.get(doc.submission_id) || [];
-          list.push({ id: doc.id });
+          list.push({
+            id: doc.id,
+            storage_path: doc.storage_path,
+            mime_type: doc.mime_type,
+          });
           docVersionsMap.set(doc.submission_id, list);
         }
       }
@@ -643,6 +653,11 @@ export async function GET(request: NextRequest) {
         (submission as { admin_remarks?: string }).admin_remarks?.trim() ||
         undefined;
 
+      const docList = docVersionsMap.get(submission.id) || [];
+      const primaryDoc = docList[0];
+      const storagePath = primaryDoc?.storage_path;
+      const fileName = storagePath ? storagePath.split("/").pop() : undefined;
+
       statusMap.set(matchedCode, {
         code: matchedCode,
         status,
@@ -656,6 +671,8 @@ export async function GET(request: NextRequest) {
         remarks: adminFeedback,
         submittedAt: submission.submitted_at || undefined,
         latestSubmissionId: submission.id,
+        storagePath: storagePath || undefined,
+        fileName: fileName || undefined,
         is_read: Boolean(submission.is_read),
         isViewed: Boolean(submission.is_read),
         viewed_at: submission.viewed_at || undefined,

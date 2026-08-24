@@ -166,9 +166,27 @@ export async function GET() {
 
     const submissionIds = rawSubmissions.map((s) => s.id);
 
-    // 4. Query matching review_decisions separately
+    // 4. Query matching review_decisions and document_versions separately
+    const docVersionsMap = new Map<string, { storage_path?: string; mime_type?: string }>();
     const reviewDecisionsMap = new Map<string, ReviewDecision[]>();
     if (submissionIds.length > 0) {
+      const { data: docVersions } = await supabase
+        .from("document_versions")
+        .select("submission_id, storage_path, mime_type")
+        .in("submission_id", submissionIds)
+        .order("version_number", { ascending: false });
+
+      if (docVersions) {
+        for (const doc of docVersions) {
+          if (!docVersionsMap.has(doc.submission_id)) {
+            docVersionsMap.set(doc.submission_id, {
+              storage_path: doc.storage_path,
+              mime_type: doc.mime_type,
+            });
+          }
+        }
+      }
+
       const { data: decisions } = await supabase
         .from("review_decisions")
         .select("submission_id, decision, remarks, created_at")
@@ -252,6 +270,10 @@ export async function GET() {
         (row as { admin_remarks?: string }).admin_remarks?.trim() ||
         undefined;
 
+      const doc = docVersionsMap.get(row.id);
+      const storagePath = doc?.storage_path;
+      const fileName = storagePath ? storagePath.split("/").pop() : undefined;
+
       history.push({
         id: row.id,
         academicYear: term.academicYear,
@@ -265,13 +287,15 @@ export async function GET() {
         admin_remarks: adminFeedback,
         adminRemarks: adminFeedback,
         feedback: adminFeedback,
+        fileName: fileName || undefined,
+        storagePath: storagePath || undefined,
         reviewedAt: (latestReviewWithRemarks || latestReview)?.created_at
           ? new Date((latestReviewWithRemarks || latestReview)!.created_at!).toISOString().split("T")[0]
           : undefined,
         is_read: Boolean(row.is_read),
         isViewed: Boolean(row.is_read),
         viewed_at: row.viewed_at || undefined,
-      });
+      } as HistorySubmission);
     }
 
     return NextResponse.json({
