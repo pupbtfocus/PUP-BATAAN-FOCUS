@@ -29,19 +29,6 @@ CREATE TABLE public.admins (
   CONSTRAINT admins_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
 );
 
-CREATE TABLE public.app_users (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  auth_user_id uuid,
-  profile_id uuid,
-  email text NOT NULL UNIQUE,
-  full_name text,
-  role text NOT NULL CHECK (role = ANY (ARRAY['super_admin'::text, 'admin'::text, 'faculty'::text])),
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  metadata jsonb DEFAULT '{}'::jsonb,
-  CONSTRAINT app_users_pkey PRIMARY KEY (id),
-  CONSTRAINT app_users_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
-);
 
 CREATE TABLE public.audit_logs (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

@@ -297,7 +297,6 @@ export async function POST(request: NextRequest) {
               user_id: createdAuthUser.id,
               full_name: fullName,
               email: normalizedEmail,
-              department_id: programRecord.id,
             },
             { onConflict: "user_id" },
           )

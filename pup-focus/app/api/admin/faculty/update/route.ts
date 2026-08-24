@@ -106,7 +106,7 @@ export async function PATCH(request: NextRequest) {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, user_id, email, full_name, department_id, user_roles(roles(code))")
+      .select("id, user_id, email, full_name, user_roles(roles(code))")
       .eq("id", facultyProfileId)
       .maybeSingle();
 
@@ -222,9 +222,6 @@ export async function PATCH(request: NextRequest) {
     const profileUpdatePayload: Record<string, unknown> = {
       full_name: updatedFullName,
     };
-    if (resolvedProgramId) {
-      profileUpdatePayload.department_id = resolvedProgramId;
-    }
 
     const { error: profileUpdateError } = await supabase
       .from("profiles")

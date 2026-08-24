@@ -38,6 +38,10 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (!adminProfile?.id) {
+      console.error(
+        "Admin profile not found in /api/admin/faculty/submissions/validate for auth user:",
+        user.id,
+      );
       logger.error("admin_profile_not_found", { authUserId: user.id });
       return NextResponse.json(
         { error: "Admin profile not found" },
@@ -119,6 +123,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (updateError) {
+      console.error(
+        "Failed to update submission in /api/admin/faculty/submissions/validate:",
+        updateError,
+      );
       logger.error("submission_update_failed", {
         submissionId,
         error: updateError.message,
@@ -140,6 +148,10 @@ export async function POST(request: NextRequest) {
       });
 
     if (reviewError) {
+      console.error(
+        "Failed to create review decision in /api/admin/faculty/submissions/validate:",
+        reviewError,
+      );
       logger.error("review_decision_creation_failed", {
         submissionId,
         error: reviewError.message,
@@ -173,6 +185,10 @@ export async function POST(request: NextRequest) {
       remarks: cleanRemarks,
     });
   } catch (error) {
+    console.error(
+      "Unhandled error in /api/admin/faculty/submissions/validate:",
+      error,
+    );
     logger.error("validation_endpoint_error", {
       error: error instanceof Error ? error.message : "Unknown error",
     });

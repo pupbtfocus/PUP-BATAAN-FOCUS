@@ -97,6 +97,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (roleError) {
+      console.error("Failed to fetch faculty role in /api/admin/faculty/list:", roleError);
       return NextResponse.json(
         { error: "Failed to fetch faculty role", details: roleError.message },
         { status: 500 },
@@ -114,6 +115,7 @@ export async function GET(request: NextRequest) {
       .limit(500);
 
     if (userRolesError) {
+      console.error("Failed to fetch user_roles in /api/admin/faculty/list:", userRolesError);
       return NextResponse.json(
         {
           error: "Failed to fetch faculty accounts",
@@ -137,7 +139,7 @@ export async function GET(request: NextRequest) {
           debug: true,
           facultyCount: 0,
           profileIdsSample: [],
-          appUsersSample: [],
+          profilesSample: [],
           queryError: null,
         });
       }
@@ -147,10 +149,13 @@ export async function GET(request: NextRequest) {
 
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, user_id, full_name, email, department_id, created_at")
+      .select("id, user_id, full_name, email, created_at")
       .in("id", profileIds);
 
     const queryError = profilesError;
+    if (profilesError) {
+      console.error("Failed to fetch profiles in /api/admin/faculty/list:", profilesError);
+    }
 
     const { data: submissionRows, error: submissionsError } = await supabase
       .from("submissions")
@@ -162,6 +167,7 @@ export async function GET(request: NextRequest) {
       .limit(5000);
 
     if (submissionsError) {
+      console.error("Failed to fetch submissions in /api/admin/faculty/list:", submissionsError);
       return NextResponse.json(
         {
           error: "Failed to fetch faculty submissions",
@@ -289,14 +295,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const [{ data: programAssignments }, { data: allPrograms }] =
-      await Promise.all([
-        supabase
-          .from("faculty_program_assignments")
-          .select("faculty_profile_id, program_id, programs(id, code, name)")
-          .in("faculty_profile_id", profileIds),
-        supabase.from("programs").select("id, code, name"),
-      ]);
+    const [
+      { data: programAssignments, error: assignmentsError },
+      { data: allPrograms, error: programsError },
+    ] = await Promise.all([
+      supabase
+        .from("faculty_program_assignments")
+        .select("faculty_profile_id, program_id, programs(id, code, name)")
+        .in("faculty_profile_id", profileIds),
+      supabase.from("programs").select("id, code, name"),
+    ]);
+
+    if (assignmentsError) {
+      console.error(
+        "Failed to fetch faculty program assignments in /api/admin/faculty/list:",
+        assignmentsError,
+      );
+    }
+    if (programsError) {
+      console.error(
+        "Failed to fetch programs in /api/admin/faculty/list:",
+        programsError,
+      );
+    }
 
     const programByProfileId = new Map<
       string,
@@ -343,18 +364,17 @@ export async function GET(request: NextRequest) {
           lastName,
         });
 
-        // Resolve assigned program: 1) from assignments table, 2) from profile.department_id, 3) from metadata.program_id
+        // Resolve assigned program: 1) from faculty_program_assignments, 2) fallback to auth metadata
         let resolvedProgram = programByProfileId.get(profile.id) ?? null;
-        if (!resolvedProgram && profile.department_id) {
-          resolvedProgram =
-            programsLookup.get(String(profile.department_id).toLowerCase()) ??
-            programsLookup.get(String(profile.department_id).toUpperCase()) ??
-            null;
-        }
         if (!resolvedProgram && metadata.program_id) {
           resolvedProgram =
             programsLookup.get(String(metadata.program_id).toLowerCase()) ??
             programsLookup.get(String(metadata.program_id).toUpperCase()) ??
+            null;
+        }
+        if (!resolvedProgram && metadata.program_code) {
+          resolvedProgram =
+            programsLookup.get(String(metadata.program_code).toUpperCase()) ??
             null;
         }
 
@@ -409,6 +429,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ faculty });
   } catch (error) {
+    console.error("Unhandled error in /api/admin/faculty/list:", error);
     return NextResponse.json(
       { error: "Failed to fetch faculty", details: String(error) },
       { status: 500 },
