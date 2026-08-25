@@ -331,8 +331,60 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check for Existing Submission Record (Always Reuse Existing ID)
-    let existingSubmission: {
+    // 1. Flexible Submission Lookup: query by faculty_profile_id, user_id, or faculty_assignment_id
+    const facultyProfileIds = Array.from(new Set([profile.id, user.id]));
+    const { data: allFacultySubmissions } = await supabaseAdmin
+      .from("submissions")
+      .select(
+        "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks, notes",
+      )
+      .in("faculty_profile_id", facultyProfileIds)
+      .order("created_at", { ascending: true });
+
+    const combinedSubs = allFacultySubmissions ? [...allFacultySubmissions] : [];
+
+    if (facultyAssignmentId) {
+      const { data: assignSubs } = await supabaseAdmin
+        .from("submissions")
+        .select(
+          "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks, notes",
+        )
+        .eq("faculty_assignment_id", facultyAssignmentId)
+        .order("created_at", { ascending: true });
+
+      if (assignSubs && assignSubs.length > 0) {
+        const existingIds = new Set(combinedSubs.map((s) => s.id));
+        for (const s of assignSubs) {
+          if (!existingIds.has(s.id)) {
+            combinedSubs.push(s);
+          }
+        }
+      }
+    }
+
+    const normalize = (str: string) =>
+      (str || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const targetCodeNormalized = normalize(payload.requirementCode);
+    const targetMatchedCode = matchRequirementCode(payload.requirementCode);
+
+    const matchingSubmissions = combinedSubs.filter((sub) => {
+      const subCodeNormalized = normalize(sub.requirement_code || "");
+      const matched = matchRequirementCode(sub.requirement_code);
+
+      return (
+        sub.requirement_code === payload.requirementCode ||
+        subCodeNormalized === targetCodeNormalized ||
+        (Boolean(targetCodeNormalized) &&
+          Boolean(subCodeNormalized) &&
+          (targetCodeNormalized.includes(subCodeNormalized) ||
+            subCodeNormalized.includes(targetCodeNormalized))) ||
+        (Boolean(matched) &&
+          Boolean(targetMatchedCode) &&
+          matched === targetMatchedCode)
+      );
+    });
+
+    const existingSubmission: {
       id: string;
       status: string | null;
       requirement_code: string;
@@ -342,40 +394,7 @@ export async function POST(request: NextRequest) {
       created_at?: string | null;
       remarks?: string | null;
       notes?: string | null;
-    } | null = null;
-
-    // Query submissions strictly by faculty_profile_id and requirement_code
-    const { data: existingSubmissions } = await supabaseAdmin
-      .from("submissions")
-      .select(
-        "id, status, requirement_code, curriculum_id, faculty_assignment_id, submitted_at, created_at, remarks, notes",
-      )
-      .eq("faculty_profile_id", profile.id)
-      .eq("requirement_code", payload.requirementCode)
-      .order("created_at", { ascending: true });
-
-    if (existingSubmissions && existingSubmissions.length > 0) {
-      existingSubmission = existingSubmissions[0];
-    } else {
-      const { data: allFacultySubmissions } = await supabaseAdmin
-        .from("submissions")
-        .select(
-          "id, status, requirement_code, curriculum_id, faculty_assignment_id, submitted_at, created_at, remarks, notes",
-        )
-        .eq("faculty_profile_id", profile.id)
-        .order("created_at", { ascending: true });
-
-      if (allFacultySubmissions && allFacultySubmissions.length > 0) {
-        existingSubmission =
-          allFacultySubmissions.find((sub) => {
-            return (
-              sub.requirement_code === payload.requirementCode ||
-              matchRequirementCode(sub.requirement_code) ===
-                payload.requirementCode
-            );
-          }) || null;
-      }
-    }
+    } | null = matchingSubmissions.length > 0 ? matchingSubmissions[0] : null;
 
     if (existingSubmission) {
       const { data: decisions } = await supabaseAdmin
@@ -427,16 +446,19 @@ export async function POST(request: NextRequest) {
     if (existingSubmission) {
       // REUSE EXISTING SUBMISSION ROW - DO NOT INSERT DUPLICATE
       targetSubmissionId = existingSubmission.id;
+      const allRelatedSubmissionIds = Array.from(
+        new Set([targetSubmissionId, ...matchingSubmissions.map((s) => s.id)]),
+      );
 
-      // 1. Query existing rows in document_versions for this submission
+      // 1. Query existing rows in document_versions for all matching submission IDs
       const { data: existingVersions, error: fetchVerError } =
         await supabaseAdmin
           .from("document_versions")
           .select(
             "id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_at",
           )
-          .eq("submission_id", targetSubmissionId)
-          .order("version_number", { ascending: true });
+          .in("submission_id", allRelatedSubmissionIds)
+          .order("created_at", { ascending: true });
 
       console.log("[RESUBMIT_DEBUG] Target Submission ID:", targetSubmissionId);
       console.log(
