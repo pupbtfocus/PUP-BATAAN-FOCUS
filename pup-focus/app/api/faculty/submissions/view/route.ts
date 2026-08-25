@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     let submissionQuery = supabase
       .from("submissions")
-      .select("id, file_name, storage_path, file_path")
+      .select("id, storage_path, file_path")
       .eq("id", submissionId);
 
     if (!isAdmin) {
@@ -71,14 +71,13 @@ export async function GET(request: NextRequest) {
     }
 
     let storagePath: string | null = null;
-    const targetFileName = filename || submission.file_name || undefined;
+    const targetFileName = filename || undefined;
 
     if (versionId) {
       const { data: versionData } = await supabase
         .from("document_versions")
         .select("storage_path, version_number")
         .eq("id", versionId)
-        .eq("submission_id", submissionId)
         .maybeSingle();
 
       if (versionData?.storage_path) {
