@@ -192,8 +192,10 @@ export function VersionHistoryModal({
   );
 
   useEffect(() => {
-    void fetchVersions(hasValidCachedVersions);
-  }, [fetchVersions, hasValidCachedVersions]);
+    // Invalidate client cache on modal open to guarantee fresh version rows
+    versionHistoryCache.delete(submissionId);
+    void fetchVersions(false);
+  }, [fetchVersions, submissionId]);
 
   // Close on Escape key
   useEffect(() => {

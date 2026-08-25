@@ -82,10 +82,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = getServiceRoleClient();
+    const supabaseAdmin = getServiceRoleClient();
 
     // Validate if submissions are currently open.
-    const submissionWindow = await getSubmissionWindow(supabase);
+    const submissionWindow = await getSubmissionWindow(supabaseAdmin);
     const windowState = evaluateSubmissionWindow(submissionWindow);
     if (!windowState.isOpen) {
       const startTimeLabel = windowState.startTime
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Query current active term directly from database
-    const { data: dbCurrentTerm } = await supabase
+    const { data: dbCurrentTerm } = await supabaseAdmin
       .from("academic_terms")
       .select("id, academic_year, semester")
       .eq("status", "Current")
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get faculty profile ID
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name")
       .eq("user_id", user.id)
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
     let programId: string | null = null;
     let curriculumId: string | null = null;
 
-    const { data: assignments } = await supabase
+    const { data: assignments } = await supabaseAdmin
       .from("faculty_program_assignments")
       .select("id, program_id, curriculum_id")
       .eq("faculty_profile_id", profile.id)
@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!curriculumId) {
-      const { data: latestAssignment } = await supabase
+      const { data: latestAssignment } = await supabaseAdmin
         .from("faculty_program_assignments")
         .select("curriculum_id")
         .eq("faculty_profile_id", profile.id)
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
       if (latestAssignment?.curriculum_id) {
         curriculumId = latestAssignment.curriculum_id;
       } else {
-        const { data: curriculum } = await supabase
+        const { data: curriculum } = await supabaseAdmin
           .from("curricula")
           .select("id")
           .limit(1)
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
 
     if (!facultyAssignmentId) {
       if (!programId) {
-        const { data: firstProgram } = await supabase
+        const { data: firstProgram } = await supabaseAdmin
           .from("programs")
           .select("id")
           .limit(1)
@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (!curriculumId) {
-        const { data: firstCurriculum } = await supabase
+        const { data: firstCurriculum } = await supabaseAdmin
           .from("curricula")
           .select("id")
           .limit(1)
@@ -301,7 +301,7 @@ export async function POST(request: NextRequest) {
       if (curriculumId) insertPayload.curriculum_id = curriculumId;
 
       const { data: createdAssignment, error: createAssignmentError } =
-        await supabase
+        await supabaseAdmin
           .from("faculty_program_assignments")
           .insert(insertPayload)
           .select("id")
@@ -310,7 +310,7 @@ export async function POST(request: NextRequest) {
       if (createdAssignment?.id) {
         facultyAssignmentId = createdAssignment.id;
       } else {
-        const { data: retryAssignment } = await supabase
+        const { data: retryAssignment } = await supabaseAdmin
           .from("faculty_program_assignments")
           .select("id")
           .eq("faculty_profile_id", profile.id)
@@ -346,13 +346,14 @@ export async function POST(request: NextRequest) {
       submitted_at?: string | null;
       created_at?: string | null;
       remarks?: string | null;
+      notes?: string | null;
     } | null = null;
 
     if (facultyAssignmentId) {
-      const { data: existingInCurrentTerm } = await supabase
+      const { data: existingInCurrentTerm } = await supabaseAdmin
         .from("submissions")
         .select(
-          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, checksum_sha256, submitted_at, created_at, remarks",
+          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, checksum_sha256, submitted_at, created_at, remarks, notes",
         )
         .eq("faculty_profile_id", profile.id)
         .eq("faculty_assignment_id", facultyAssignmentId);
@@ -376,10 +377,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!existingSubmission) {
-      const { data: existingByProfile } = await supabase
+      const { data: existingByProfile } = await supabaseAdmin
         .from("submissions")
         .select(
-          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, checksum_sha256, submitted_at, created_at, remarks",
+          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, checksum_sha256, submitted_at, created_at, remarks, notes",
         )
         .eq("faculty_profile_id", profile.id)
         .or(
@@ -395,7 +396,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (existingSubmission) {
-      const { data: decisions } = await supabase
+      const { data: decisions } = await supabaseAdmin
         .from("review_decisions")
         .select("decision")
         .eq("submission_id", existingSubmission.id)
@@ -444,15 +445,27 @@ export async function POST(request: NextRequest) {
     if (existingSubmission) {
       targetSubmissionId = existingSubmission.id;
 
-      // 1. Fetch existing document_versions
-      const { data: existingVersions } = await supabase
-        .from("document_versions")
-        .select("id, version_number, storage_path, created_at")
-        .eq("submission_id", targetSubmissionId)
-        .order("version_number", { ascending: true });
+      // 1. Step 2: Query all existing rows in document_versions
+      const { data: existingVersions, error: fetchVerError } =
+        await supabaseAdmin
+          .from("document_versions")
+          .select(
+            "id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_at",
+          )
+          .eq("submission_id", targetSubmissionId)
+          .order("version_number", { ascending: true });
 
-      // 2. Step B (Archive Old Version): If Version 1 is not recorded in document_versions yet, archive previous file as Version 1
-      const hasVersion1 = existingVersions && existingVersions.some((v) => v.version_number === 1);
+      if (fetchVerError) {
+        console.error(
+          "[CRITICAL] Failed to query existing document_versions:",
+          fetchVerError,
+        );
+      }
+
+      // 2. Step 3: If document_versions has NO rows or missing Version 1, archive the OLD record as Version 1
+      const hasVersion1 =
+        existingVersions &&
+        existingVersions.some((v) => v.version_number === 1);
 
       if (!hasVersion1) {
         const oldStoragePath =
@@ -460,23 +473,50 @@ export async function POST(request: NextRequest) {
           existingSubmission.file_path ||
           `faculty-submissions/${profile.id}/${targetSubmissionId}/${existingSubmission.file_name || "v1_submission"}`;
 
-        await supabase.from("document_versions").insert({
-          submission_id: targetSubmissionId,
-          version_number: 1,
-          storage_path: oldStoragePath,
-          mime_type:
-            existingSubmission.mime_type || "application/octet-stream",
-          size_bytes: existingSubmission.size_bytes || 0,
-          checksum_sha256: existingSubmission.checksum_sha256 || "",
-          created_by: user.id,
-          created_at:
-            existingSubmission.submitted_at ||
-            existingSubmission.created_at ||
-            new Date().toISOString(),
-        });
+        const oldSizeBytes =
+          typeof existingSubmission.size_bytes === "number" &&
+          existingSubmission.size_bytes > 0
+            ? existingSubmission.size_bytes
+            : 0;
+
+        const oldMimeType =
+          existingSubmission.mime_type || "application/octet-stream";
+
+        const oldChecksum =
+          existingSubmission.checksum_sha256 || "archived_v1_checksum";
+
+        const oldCreatedAt =
+          existingSubmission.submitted_at ||
+          existingSubmission.created_at ||
+          new Date().toISOString();
+
+        const { error: v1InsertError } = await supabaseAdmin
+          .from("document_versions")
+          .insert({
+            submission_id: targetSubmissionId,
+            version_number: 1,
+            storage_path: oldStoragePath,
+            mime_type: oldMimeType,
+            size_bytes: oldSizeBytes,
+            checksum_sha256: oldChecksum,
+            created_by: user.id,
+            created_at: oldCreatedAt,
+          });
+
+        if (v1InsertError) {
+          console.error(
+            "[CRITICAL] Failed to insert Version 1 into document_versions:",
+            v1InsertError,
+          );
+        } else {
+          console.log("[DOCUMENT_VERSION_1_ARCHIVED]", {
+            submissionId: targetSubmissionId,
+            oldStoragePath,
+          });
+        }
       }
 
-      // 3. Determine next version number (at least 2 on resubmission)
+      // 3. Step 4: Calculate Next Version Number (e.g. Version 2)
       let nextVersionNumber = 2;
       if (existingVersions && existingVersions.length > 0) {
         const maxVersion = Math.max(
@@ -488,7 +528,7 @@ export async function POST(request: NextRequest) {
       const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v${nextVersionNumber}_${fileName}`;
 
       // Upload new file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from("faculty-submissions")
         .upload(storagePath, file, {
           contentType: file.type,
@@ -501,13 +541,13 @@ export async function POST(request: NextRequest) {
           error: uploadError.message,
         });
         return NextResponse.json(
-          { error: "Failed to upload file" },
+          { error: "Failed to upload file to storage" },
           { status: 500 },
         );
       }
 
-      // Insert new version record into document_versions
-      const { data: newDocVer, error: docVersionError } = await supabase
+      // Insert NEW version record into document_versions using supabaseAdmin
+      const { data: newDocVer, error: docVersionError } = await supabaseAdmin
         .from("document_versions")
         .insert({
           submission_id: targetSubmissionId,
@@ -523,19 +563,23 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (docVersionError) {
+        console.error(
+          "[CRITICAL] Failed to insert new document version into document_versions:",
+          docVersionError,
+        );
         logger.error("document_version_increment_failed", {
           submissionId: targetSubmissionId,
           error: docVersionError.message,
         });
         return NextResponse.json(
-          { error: "Failed to record document version" },
+          { error: `Failed to record document version: ${docVersionError.message}` },
           { status: 500 },
         );
       }
 
       documentVersion = newDocVer;
 
-      // Update main submissions record with new file details and faculty notes
+      // 4. Step 5: Update main submissions record with new file details and faculty notes
       const updatePayload: Record<string, any> = {
         status: "uploaded",
         submitted_at: new Date().toISOString(),
@@ -555,13 +599,40 @@ export async function POST(request: NextRequest) {
       if (facultyAssignmentId)
         updatePayload.faculty_assignment_id = facultyAssignmentId;
 
-      await supabase
+      const { error: updateSubError } = await supabaseAdmin
         .from("submissions")
         .update(updatePayload)
         .eq("id", targetSubmissionId);
+
+      if (updateSubError) {
+        console.error(
+          "[CRITICAL] Failed to update submissions table on resubmit:",
+          updateSubError,
+        );
+      }
     } else {
-      // Brand New Initial Submission
+      // Brand New Initial Submission (Version 1)
       targetSubmissionId = crypto.randomUUID();
+
+      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v1_${fileName}`;
+
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from("faculty-submissions")
+        .upload(storagePath, file, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        logger.error("file_upload_failed", {
+          submissionId: targetSubmissionId,
+          error: uploadError.message,
+        });
+        return NextResponse.json(
+          { error: "Failed to upload file to storage" },
+          { status: 500 },
+        );
+      }
 
       const submissionPayload: Record<string, any> = {
         id: targetSubmissionId,
@@ -571,10 +642,18 @@ export async function POST(request: NextRequest) {
         requirement_code: payload.requirementCode,
         status: "uploaded",
         submitted_at: new Date().toISOString(),
-        ...(trimmedRemarks ? { remarks: trimmedRemarks } : {}),
+        storage_path: storagePath,
+        file_path: storagePath,
+        file_name: fileName,
+        mime_type: file.type || "application/octet-stream",
+        size_bytes: fileBuffer.byteLength,
+        checksum_sha256: checksumSha256,
+        is_read: false,
+        notes: trimmedRemarks || null,
+        remarks: trimmedRemarks || null,
       };
 
-      let { data: newSub, error: submissionError } = await supabase
+      let { data: newSub, error: submissionError } = await supabaseAdmin
         .from("submissions")
         .insert(submissionPayload)
         .select()
@@ -588,10 +667,18 @@ export async function POST(request: NextRequest) {
           requirement_code: payload.requirementCode,
           status: "uploaded",
           submitted_at: submissionPayload.submitted_at,
+          storage_path: storagePath,
+          file_path: storagePath,
+          file_name: fileName,
+          mime_type: file.type || "application/octet-stream",
+          size_bytes: fileBuffer.byteLength,
+          checksum_sha256: checksumSha256,
+          is_read: false,
         };
 
         if (!isMissingRemarksColumnError(submissionError) && trimmedRemarks) {
           fallbackPayload.remarks = trimmedRemarks;
+          fallbackPayload.notes = trimmedRemarks;
         }
 
         if (
@@ -601,7 +688,7 @@ export async function POST(request: NextRequest) {
           fallbackPayload.faculty_assignment_id = facultyAssignmentId;
         }
 
-        ({ data: newSub, error: submissionError } = await supabase
+        ({ data: newSub, error: submissionError } = await supabaseAdmin
           .from("submissions")
           .insert(fallbackPayload)
           .select()
@@ -609,6 +696,10 @@ export async function POST(request: NextRequest) {
       }
 
       if (submissionError) {
+        console.error(
+          "[CRITICAL] Failed to create submission record in submissions table:",
+          submissionError,
+        );
         logger.error("submission_creation_failed", {
           facultyId: profile.id,
           error: submissionError.message,
@@ -619,31 +710,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("faculty-submissions")
-        .upload(storagePath, file, {
-          contentType: file.type,
-          upsert: false,
-        });
-
-      if (uploadError) {
-        logger.error("file_upload_failed", {
-          submissionId: targetSubmissionId,
-          error: uploadError.message,
-        });
-        await supabase
-          .from("submissions")
-          .delete()
-          .eq("id", targetSubmissionId);
-        return NextResponse.json(
-          { error: "Failed to upload file" },
-          { status: 500 },
-        );
-      }
-
-      const { data: newDocVer, error: docVersionError } = await supabase
+      const { data: newDocVer, error: docVersionError } = await supabaseAdmin
         .from("document_versions")
         .insert({
           submission_id: targetSubmissionId,
@@ -653,38 +720,27 @@ export async function POST(request: NextRequest) {
           size_bytes: fileBuffer.byteLength,
           checksum_sha256: checksumSha256,
           created_by: user.id,
+          created_at: new Date().toISOString(),
         })
         .select()
         .single();
 
       if (docVersionError) {
+        console.error(
+          "[CRITICAL] Failed to record document version into document_versions:",
+          docVersionError,
+        );
         logger.error("document_version_creation_failed", {
           submissionId: targetSubmissionId,
           error: docVersionError.message,
         });
         return NextResponse.json(
-          { error: "Failed to record document version" },
+          { error: `Failed to record document version: ${docVersionError.message}` },
           { status: 500 },
         );
       }
 
       documentVersion = newDocVer;
-
-      try {
-        await supabase
-          .from("submissions")
-          .update({
-            storage_path: storagePath,
-            file_path: storagePath,
-            file_name: fileName,
-            mime_type: file.type || "application/octet-stream",
-            size_bytes: fileBuffer.byteLength,
-            checksum_sha256: checksumSha256,
-          })
-          .eq("id", targetSubmissionId);
-      } catch {
-        // Non-blocking
-      }
     }
 
     logger.info("submission_processed_successfully", {
@@ -702,7 +758,7 @@ export async function POST(request: NextRequest) {
         const reqLabel = REQUIREMENT_LABEL[reqCode] || payload.requirementCode;
 
         // 1. Get role IDs for 'admin' and 'super_admin'
-        const { data: roles } = await supabase
+        const { data: roles } = await supabaseAdmin
           .from("roles")
           .select("id, code")
           .in("code", ["admin", "super_admin"]);
@@ -710,7 +766,7 @@ export async function POST(request: NextRequest) {
         const roleIds = (roles || []).map((r) => r.id);
 
         // 2. Get profile IDs assigned to those roles
-        const { data: userRoles } = await supabase
+        const { data: userRoles } = await supabaseAdmin
           .from("user_roles")
           .select("profile_id")
           .in("role_id", roleIds);
@@ -722,7 +778,7 @@ export async function POST(request: NextRequest) {
         );
 
         // 3. Get corresponding auth user_ids from profiles
-        const { data: adminProfiles } = await supabase
+        const { data: adminProfiles } = await supabaseAdmin
           .from("profiles")
           .select("id, user_id")
           .in("id", profileIds);
@@ -745,7 +801,7 @@ export async function POST(request: NextRequest) {
 
           try {
             const { data: authUserData } =
-              await supabase.auth.admin.getUserById(reviewerAuthUserId);
+              await supabaseAdmin.auth.admin.getUserById(reviewerAuthUserId);
             const userMeta = authUserData?.user?.user_metadata || {};
             const isAlertEnabled =
               typeof userMeta.new_submission_alerts === "boolean"
