@@ -31,7 +31,6 @@ type SubmissionRow = {
   created_at?: string | null;
   storage_path?: string | null;
   file_path?: string | null;
-  file_url?: string | null;
   file_name?: string | null;
   mime_type?: string | null;
   size_bytes?: number | null;
@@ -39,7 +38,7 @@ type SubmissionRow = {
   checksum_sha256?: string | null;
   notes?: string | null;
   remarks?: string | null;
-  review_decisions?: ReviewDecision[] | null;
+  admin_remarks?: string | null;
 };
 
 function extractFileName(storagePath: string): string {
@@ -68,7 +67,7 @@ export async function GET(
       );
     }
 
-    // Authenticate faculty user
+    // Authenticate user
     const sessionClient = await createServerSupabaseClient();
     const {
       data: { user },
@@ -101,45 +100,55 @@ export async function GET(
       );
     }
 
-    // 1. Flexible Submission Lookup
-    // Query main submission record using .maybeSingle()
+    const facultyIdList = Array.from(new Set([user.id, profile.id]));
+
+    // 1. Flexible Submission Lookup: query by id = submissionId, requirement_code, or requirement_id
     let { data: rawSubmission } = await supabase
       .from("submissions")
-      .select("*")
+      .select(
+        "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks",
+      )
       .eq("id", submissionId)
       .maybeSingle();
 
-    // Fallback lookup if not found by ID: match requirement_type or requirement_code for the logged-in user
+    // Fallback lookup if not found by direct ID: match user/profile + requirement identifier
     if (!rawSubmission) {
-      const { data: fallbackByProfile } = await supabase
+      const { data: byProfile } = await supabase
         .from("submissions")
-        .select("*")
-        .eq("faculty_profile_id", profile.id)
-        .or(`requirement_type.eq.${submissionId},requirement_code.eq.${submissionId}`)
+        .select(
+          "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks",
+        )
+        .in("faculty_profile_id", facultyIdList)
+        .or(`requirement_code.eq.${submissionId},id.eq.${submissionId}`)
+        .order("submitted_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (fallbackByProfile) {
-        rawSubmission = fallbackByProfile;
+      if (byProfile) {
+        rawSubmission = byProfile;
       } else {
-        const { data: fallbackByUserId } = await supabase
+        const { data: byFallbackUser } = await supabase
           .from("submissions")
-          .select("*")
-          .eq("user_id", profile.id)
-          .or(`requirement_type.eq.${submissionId},requirement_code.eq.${submissionId}`)
+          .select(
+            "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks",
+          )
+          .or(`user_id.in.(${facultyIdList.join(",")}),faculty_id.in.(${facultyIdList.join(",")})`)
+          .or(`requirement_code.eq.${submissionId},id.eq.${submissionId}`)
+          .order("submitted_at", { ascending: false, nullsFirst: false })
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        rawSubmission = fallbackByUserId ?? null;
+        rawSubmission = byFallbackUser ?? null;
       }
     }
 
-    // If still no submission is found, return 200 OK with empty versions array instead of 404
+    // If still no submission is found, return 200 OK with empty versions array
     if (!rawSubmission) {
       return NextResponse.json({
         success: true,
+        submissionId,
         versions: [],
         submission: null,
         message: "No previous versions found",
@@ -149,7 +158,7 @@ export async function GET(
     const submission = rawSubmission as unknown as SubmissionRow;
     const targetSubmissionId = submission.id;
 
-    // 2. Fetch version rows from document_versions table matching submission_id = targetSubmissionId
+    // 2. Fetch version rows from document_versions table
     const { data: versions, error: versionsError } = await supabase
       .from("document_versions")
       .select(
@@ -171,129 +180,126 @@ export async function GET(
 
     const typedVersions = (versions ?? []) as DocumentVersionRow[];
 
-    // Fetch review decisions separately
-    let reviewDecisions: ReviewDecision[] = [];
+    // 3. Fetch latest review decision
+    let latestReview: ReviewDecision | null = null;
     try {
       const { data: reviewsData } = await supabase
         .from("review_decisions")
         .select("decision, remarks, created_at")
         .eq("submission_id", targetSubmissionId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (reviewsData) {
-        reviewDecisions = reviewsData as ReviewDecision[];
+        latestReview = reviewsData as ReviewDecision;
       }
     } catch (reviewErr) {
       logger.error("review_decisions_fetch_exception", {
         submissionId: targetSubmissionId,
-        error: reviewErr instanceof Error ? reviewErr.message : String(reviewErr),
+        error:
+          reviewErr instanceof Error ? reviewErr.message : String(reviewErr),
       });
     }
 
-    const latestReview = reviewDecisions.length > 0 ? reviewDecisions[0] : null;
     const reqCode =
       submission.requirement_code ||
       submission.requirement_type ||
       submissionId;
 
-    // 3. Fallback Initial Version (v1) if document_versions is EMPTY
-    if (typedVersions.length === 0) {
-      const path =
+    // 4. Map existing document_versions rows
+    const versionDetails = typedVersions.map((version) => {
+      const fileName = extractFileName(version.storage_path);
+      const sizeBytes = version.size_bytes ?? 0;
+      const downloadUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(targetSubmissionId)}&versionId=${encodeURIComponent(version.id)}&download=true&filename=${encodeURIComponent(fileName)}`;
+
+      return {
+        id: version.id,
+        versionNumber: version.version_number,
+        version_number: version.version_number,
+        storagePath: version.storage_path,
+        file_path: version.storage_path,
+        fileName,
+        file_name: fileName,
+        mimeType: version.mime_type ?? "application/octet-stream",
+        sizeBytes,
+        size_bytes: sizeBytes,
+        sizeFormatted: formatFileSize(sizeBytes),
+        size_formatted: formatFileSize(sizeBytes),
+        checksumSha256: version.checksum_sha256 ?? "",
+        createdAt: version.created_at ?? new Date().toISOString(),
+        created_at: version.created_at ?? new Date().toISOString(),
+        status: submission.status ?? "uploaded",
+        remarks: submission.remarks ?? submission.admin_remarks ?? submission.notes ?? null,
+        downloadUrl,
+        download_url: downloadUrl,
+      };
+    });
+
+    // 5. Fallback Logic: If document_versions is empty OR does not contain Version 1, construct Version 1 from submissions table
+    const hasVersion1 = versionDetails.some(
+      (v) => (v.versionNumber === 1 || v.version_number === 1),
+    );
+
+    if (!hasVersion1) {
+      const initialPath =
         submission.storage_path ||
         submission.file_path ||
-        submission.file_url ||
         "";
-
-      let downloadUrl = "";
-      if (path) {
-        if (path.startsWith("http://") || path.startsWith("https://")) {
-          downloadUrl = path;
-        } else {
-          const { data: signed } = await supabase.storage
-            .from("faculty-submissions")
-            .createSignedUrl(path, 60 * 60);
-          downloadUrl = signed?.signedUrl ?? "";
-        }
-      }
-
-      const fileName =
+      const initialFileName =
         submission.file_name ||
-        (path ? extractFileName(path) : "") ||
-        "Uploaded Document";
-      const sizeBytes = submission.size_bytes || submission.file_size || 0;
-      const createdAt =
-        submission.created_at ||
+        (initialPath ? extractFileName(initialPath) : "") ||
+        `${reqCode || "submission"}_v1`;
+      const initialSizeBytes =
+        submission.size_bytes || submission.file_size || 0;
+      const initialCreatedAt =
         submission.submitted_at ||
+        submission.created_at ||
         new Date().toISOString();
+      const initialDownloadUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(targetSubmissionId)}&download=true&filename=${encodeURIComponent(initialFileName)}`;
 
       const initialVersion = {
-        id: submission.id,
+        id: `${submission.id}-v1`,
         versionNumber: 1,
-        storagePath: path,
-        fileName,
+        version_number: 1,
+        storagePath: initialPath,
+        file_path: initialPath,
+        fileName: initialFileName,
+        file_name: initialFileName,
         mimeType: submission.mime_type ?? "application/octet-stream",
-        sizeBytes,
-        sizeFormatted: formatFileSize(sizeBytes),
+        sizeBytes: initialSizeBytes,
+        size_bytes: initialSizeBytes,
+        sizeFormatted: formatFileSize(initialSizeBytes),
+        size_formatted: formatFileSize(initialSizeBytes),
         checksumSha256: submission.checksum_sha256 ?? "",
-        createdAt,
-        downloadUrl,
+        createdAt: initialCreatedAt,
+        created_at: initialCreatedAt,
+        status: submission.status ?? "uploaded",
+        remarks: submission.remarks ?? submission.admin_remarks ?? submission.notes ?? null,
+        downloadUrl: initialDownloadUrl,
+        download_url: initialDownloadUrl,
       };
 
-      return NextResponse.json({
-        success: true,
-        versions: [initialVersion],
-        submission: {
-          id: submission.id,
-          requirementCode: reqCode,
-          status: submission.status ?? "uploaded",
-          feedback: latestReview?.remarks ?? undefined,
-          admin_remarks: latestReview?.remarks ?? undefined,
-          notes: submission.remarks ?? submission.notes ?? undefined,
-          reviewedAt: latestReview?.created_at
-            ? new Date(latestReview.created_at).toISOString().split("T")[0]
-            : undefined,
-        },
-        message: "No document_versions found; returned initial Version 1 from submission record.",
-      });
+      versionDetails.push(initialVersion);
     }
 
-    // 4. Multiple Versions Exist in document_versions table
-    const versionDetails = await Promise.all(
-      typedVersions.map(async (version) => {
-        let downloadUrl = "";
-
-        if (version.storage_path) {
-          const { data: signed } = await supabase.storage
-            .from("faculty-submissions")
-            .createSignedUrl(version.storage_path, 60 * 60); // 1-hour expiry
-
-          downloadUrl = signed?.signedUrl ?? "";
-        }
-
-        return {
-          id: version.id,
-          versionNumber: version.version_number,
-          storagePath: version.storage_path,
-          fileName: extractFileName(version.storage_path),
-          mimeType: version.mime_type ?? "application/octet-stream",
-          sizeBytes: version.size_bytes ?? 0,
-          sizeFormatted: formatFileSize(version.size_bytes),
-          checksumSha256: version.checksum_sha256 ?? "",
-          createdAt: version.created_at ?? new Date().toISOString(),
-          downloadUrl,
-        };
-      }),
+    // 6. Sort all versions by version_number descending (e.g. Version 3 -> Version 2 -> Version 1)
+    versionDetails.sort(
+      (a, b) =>
+        (b.versionNumber ?? b.version_number ?? 0) -
+        (a.versionNumber ?? a.version_number ?? 0),
     );
 
     return NextResponse.json({
       success: true,
+      submissionId: targetSubmissionId,
       versions: versionDetails,
       submission: {
         id: submission.id,
         requirementCode: reqCode,
         status: submission.status ?? "uploaded",
-        feedback: latestReview?.remarks ?? undefined,
-        admin_remarks: latestReview?.remarks ?? undefined,
+        feedback: latestReview?.remarks ?? submission.admin_remarks ?? undefined,
+        admin_remarks: latestReview?.remarks ?? submission.admin_remarks ?? undefined,
         notes: submission.remarks ?? submission.notes ?? undefined,
         reviewedAt: latestReview?.created_at
           ? new Date(latestReview.created_at).toISOString().split("T")[0]
