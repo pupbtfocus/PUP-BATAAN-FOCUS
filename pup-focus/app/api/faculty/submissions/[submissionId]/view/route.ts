@@ -237,7 +237,10 @@ async function discoverAndSignFile(
   return null;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ submissionId: string }> },
+) {
   try {
     const sessionClient = await createServerSupabaseClient();
     const {
@@ -248,8 +251,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const resolvedParams = await params;
+    const submissionId = resolvedParams.submissionId;
+
     const url = new URL(request.url);
-    const submissionId = url.searchParams.get("submissionId");
     const versionId = url.searchParams.get("versionId");
     const download = url.searchParams.get("download");
     const filename = url.searchParams.get("filename");
