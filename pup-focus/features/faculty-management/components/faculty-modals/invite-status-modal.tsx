@@ -46,10 +46,10 @@ export function InviteStatusModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
       <div className="w-full max-w-md rounded-2xl border border-[rgba(255,215,0,0.18)] bg-[#4d0000]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur">
         <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700]">
-          Faculty Account Created
+          {inviteWasSent ? "Invitation Sent" : "Invite Link Generated"}
         </p>
         <h3 className="mt-2 text-xl font-semibold text-[#fff8e7]">
-          {inviteWasSent ? "Credentials Sent via Email" : "Temporary Credentials Ready"}
+          {inviteWasSent ? "Email Sent Successfully" : "Email Delivery Failed"}
         </h3>
         <p className="mt-2 whitespace-pre-wrap text-sm text-[#f3d9b3]">
           {inviteModalMessage}

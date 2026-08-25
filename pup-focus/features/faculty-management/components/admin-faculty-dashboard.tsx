@@ -305,15 +305,12 @@ export function AdminFacultyDashboard({
       }
 
       const invitedEmail = data.user?.email ?? input.email;
-      const tempPassword = data.tempPassword ?? null;
-      setCreatedFacultyEmail(invitedEmail);
-      setCreatedTempPassword(tempPassword);
       setInviteWasSent(Boolean(data.sent));
       const inviteMessage = data.sent
-        ? `Faculty account created. Temporary credentials have been emailed to ${invitedEmail}.`
-        : tempPassword
-          ? `Faculty account created. Email delivery failed: ${data.sendError ?? "SMTP not configured"}. Please copy and share the temporary credentials below with the faculty member.`
-          : `Faculty account created for ${invitedEmail}.`;
+        ? `Invitation email sent to ${invitedEmail}. Please ask them to check their email and click the verification link to activate their account.`
+        : data.link
+          ? `Invite link generated for ${invitedEmail}. Email delivery failed: ${data.sendError ?? "SMTP is not configured"}.\n\nInvite link:\n${data.link}`
+          : `Invite could not be sent for ${invitedEmail}.`;
 
       setCreateSuccess(inviteMessage);
       setInviteModalMessage(inviteMessage);
