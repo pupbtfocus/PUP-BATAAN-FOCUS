@@ -565,7 +565,6 @@ export async function POST(request: NextRequest) {
         status: "uploaded",
         submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        is_read: false,
         remarks: trimmedRemarks || null,
       };
 
@@ -577,10 +576,28 @@ export async function POST(request: NextRequest) {
       if (facultyAssignmentId)
         updatePayload.faculty_assignment_id = facultyAssignmentId;
 
-      const { error: updateSubError } = await supabaseAdmin
+      let { error: updateSubError } = await supabaseAdmin
         .from("submissions")
         .update(updatePayload)
         .eq("id", targetSubmissionId);
+
+      if (updateSubError && updatePayload.notes) {
+        delete updatePayload.notes;
+        const retryRes = await supabaseAdmin
+          .from("submissions")
+          .update(updatePayload)
+          .eq("id", targetSubmissionId);
+        updateSubError = retryRes.error;
+      }
+
+      if (updateSubError && updatePayload.updated_at) {
+        delete updatePayload.updated_at;
+        const retryRes = await supabaseAdmin
+          .from("submissions")
+          .update(updatePayload)
+          .eq("id", targetSubmissionId);
+        updateSubError = retryRes.error;
+      }
 
       if (updateSubError) {
         console.error(
@@ -620,7 +637,6 @@ export async function POST(request: NextRequest) {
         requirement_code: payload.requirementCode,
         status: "uploaded",
         submitted_at: new Date().toISOString(),
-        is_read: false,
         remarks: trimmedRemarks || null,
       };
 
@@ -642,7 +658,6 @@ export async function POST(request: NextRequest) {
           requirement_code: payload.requirementCode,
           status: "uploaded",
           submitted_at: submissionPayload.submitted_at,
-          is_read: false,
         };
 
         if (!isMissingRemarksColumnError(submissionError) && trimmedRemarks) {
