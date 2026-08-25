@@ -132,6 +132,8 @@ interface FacultyRequirementSubmission {
   submitted_at?: string | null;
   created_at?: string | null;
   remarks?: string | null;
+  notes?: string | null;
+  admin_remarks?: string | null;
   document_versions?: Array<{
     id: string;
     version_number?: number | null;
@@ -1050,13 +1052,13 @@ function FacultyVerificationDrawer({
 
                     {matchingSubmission ? (
                       <div className="mt-3 space-y-3">
-                        {matchingSubmission.remarks ? (
+                        {matchingSubmission.notes || matchingSubmission.remarks ? (
                           <div className="text-xs">
                             <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
                               Faculty Remarks:
                             </span>
                             <p className="mt-0.5 text-slate-800 dark:text-slate-300 italic">
-                              "{matchingSubmission.remarks}"
+                              "{matchingSubmission.notes || matchingSubmission.remarks}"
                             </p>
                           </div>
                         ) : null}
@@ -1099,14 +1101,14 @@ function FacultyVerificationDrawer({
                           </p>
                         )}
 
-                        {/* Admin Feedback / Remarks if already validated */}
-                        {!isValidated && (matchingSubmission.remarks || matchingSubmission.review_decisions?.[0]?.remarks) ? (
+                        {/* Admin Feedback / Remarks */}
+                        {matchingSubmission.review_decisions?.[0]?.remarks || matchingSubmission.admin_remarks ? (
                           <div className="rounded-xl border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/20 p-2.5 text-xs">
                             <span className="text-[10px] uppercase tracking-wider text-emerald-800 dark:text-emerald-400/90 font-semibold">
                               Admin Feedback / Remarks:
                             </span>
                             <p className="mt-1 text-emerald-900 dark:text-emerald-200/90 italic">
-                              "{matchingSubmission.review_decisions?.[0]?.remarks || matchingSubmission.remarks}"
+                              "{matchingSubmission.review_decisions?.[0]?.remarks || matchingSubmission.admin_remarks}"
                             </p>
                           </div>
                         ) : null}

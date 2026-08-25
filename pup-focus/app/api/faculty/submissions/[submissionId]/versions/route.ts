@@ -418,10 +418,30 @@ export async function GET(
         id: submission.id,
         requirementCode: targetReqCode,
         status: submission.status ?? "uploaded",
-        feedback: latestReview?.remarks ?? undefined,
-        admin_remarks: latestReview?.remarks ?? undefined,
-        notes: (submission.notes || (!latestReview?.remarks ? submission.remarks : undefined)) || undefined,
-        faculty_notes: (submission.notes || (!latestReview?.remarks ? submission.remarks : undefined)) || undefined,
+        feedback:
+          latestReview?.remarks ??
+          (submission as any).admin_remarks ??
+          undefined,
+        admin_remarks:
+          latestReview?.remarks ??
+          (submission as any).admin_remarks ??
+          undefined,
+        notes:
+          submission.notes ||
+          (submission.remarks &&
+          submission.remarks !==
+            (latestReview?.remarks ?? (submission as any).admin_remarks)
+            ? submission.remarks
+            : undefined) ||
+          undefined,
+        faculty_notes:
+          submission.notes ||
+          (submission.remarks &&
+          submission.remarks !==
+            (latestReview?.remarks ?? (submission as any).admin_remarks)
+            ? submission.remarks
+            : undefined) ||
+          undefined,
         reviewedAt: latestReview?.created_at
           ? new Date(latestReview.created_at).toISOString().split("T")[0]
           : undefined,
