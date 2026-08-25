@@ -331,7 +331,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check for Existing Submission Record (Guarantee Single Row per Requirement)
+    // Check for Existing Submission Record (Always Reuse Existing ID)
     let existingSubmission: {
       id: string;
       status: string | null;
@@ -353,7 +353,7 @@ export async function POST(request: NextRequest) {
       .order("created_at", { ascending: false });
 
     if (allFacultySubmissions && allFacultySubmissions.length > 0) {
-      // 1. Try to find match with exact assignment or curriculum
+      // 1. Try to find match with exact requirement code and assignment/curriculum
       const exactMatch = allFacultySubmissions.find((sub) => {
         const matchesCode =
           sub.requirement_code === payload.requirementCode ||
@@ -371,7 +371,7 @@ export async function POST(request: NextRequest) {
       if (exactMatch) {
         existingSubmission = exactMatch;
       } else {
-        // 2. Fallback: match by requirement_code on this faculty profile
+        // 2. Match by requirement code on this faculty profile
         const codeMatch = allFacultySubmissions.find((sub) => {
           return (
             sub.requirement_code === payload.requirementCode ||
@@ -446,6 +446,13 @@ export async function POST(request: NextRequest) {
           .eq("submission_id", targetSubmissionId)
           .order("version_number", { ascending: true });
 
+      console.log("[RESUBMIT_DEBUG] Target Submission ID:", targetSubmissionId);
+      console.log(
+        "[RESUBMIT_DEBUG] Existing Versions Count:",
+        existingVersions?.length || 0,
+      );
+      console.log("[RESUBMIT_DEBUG] Existing Versions Data:", existingVersions);
+
       if (fetchVerError) {
         console.error(
           "[CRITICAL] Failed to query existing document_versions:",
@@ -453,13 +460,49 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 2. Determine Next Version Number (Pure Append-Only)
-      const hasExistingVersions = Boolean(
-        existingVersions && existingVersions.length > 0,
+      // 2. Determine Next Version Number & Archive Version 1 if missing
+      let nextVersionNumber = 1;
+
+      if (!existingVersions || existingVersions.length === 0) {
+        // Version 1 was missing in document_versions! Archive prior submission file as Version 1
+        const oldStoragePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v1_${payload.requirementCode}`;
+        const oldCreatedAt =
+          existingSubmission.submitted_at ||
+          existingSubmission.created_at ||
+          new Date().toISOString();
+
+        const { error: v1ArchiveErr } = await supabaseAdmin
+          .from("document_versions")
+          .insert({
+            submission_id: targetSubmissionId,
+            version_number: 1,
+            storage_path: oldStoragePath,
+            mime_type: "application/octet-stream",
+            size_bytes: 0,
+            checksum_sha256: "archived_v1_checksum",
+            created_by: user.id,
+            created_at: oldCreatedAt,
+          });
+
+        if (v1ArchiveErr) {
+          console.warn(
+            "[RESUBMIT_DEBUG] Version 1 archive note:",
+            v1ArchiveErr.message,
+          );
+        }
+
+        nextVersionNumber = 2;
+      } else {
+        const maxVer = Math.max(
+          ...existingVersions.map((v) => v.version_number || 1),
+        );
+        nextVersionNumber = Math.max(maxVer + 1, 2);
+      }
+
+      console.log(
+        "[RESUBMIT_DEBUG] Calculated Next Version Number:",
+        nextVersionNumber,
       );
-      const nextVersionNumber = hasExistingVersions
-        ? Math.max(...existingVersions!.map((v) => v.version_number || 1)) + 1
-        : 1;
 
       const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v${nextVersionNumber}_${fileName}`;
 
@@ -500,7 +543,7 @@ export async function POST(request: NextRequest) {
 
       if (docVersionError) {
         console.error(
-          "[CRITICAL] Failed to insert new document version into document_versions:",
+          "[CRITICAL_DOC_VER_ERR] Failed to insert new document version into document_versions:",
           docVersionError,
         );
         logger.error("document_version_increment_failed", {
@@ -508,7 +551,10 @@ export async function POST(request: NextRequest) {
           error: docVersionError.message,
         });
         return NextResponse.json(
-          { error: `Failed to record document version: ${docVersionError.message}` },
+          {
+            error: `Failed to record document version: ${docVersionError.message}`,
+            details: docVersionError,
+          },
           { status: 500 },
         );
       }
@@ -663,7 +709,7 @@ export async function POST(request: NextRequest) {
 
       if (docVersionError) {
         console.error(
-          "[CRITICAL] Failed to record document version into document_versions:",
+          "[CRITICAL_DOC_VER_ERR] Failed to record document version into document_versions:",
           docVersionError,
         );
         logger.error("document_version_creation_failed", {
@@ -671,7 +717,10 @@ export async function POST(request: NextRequest) {
           error: docVersionError.message,
         });
         return NextResponse.json(
-          { error: `Failed to record document version: ${docVersionError.message}` },
+          {
+            error: `Failed to record document version: ${docVersionError.message}`,
+            details: docVersionError,
+          },
           { status: 500 },
         );
       }
