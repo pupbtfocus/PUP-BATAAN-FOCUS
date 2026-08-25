@@ -242,10 +242,11 @@ export async function POST(request: NextRequest) {
       profileImageMetadata.profile_image_path = storagePath;
     }
 
-    const publicAppOrigin =
-      process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
-    const callbackUrl = new URL("/auth/confirm", publicAppOrigin);
-    callbackUrl.searchParams.set("next", "/faculty/dashboard");
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (request.url ? new URL(request.url).origin : "https://pupfocus.cjaayy.dev");
+    const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/callback`;
 
     const { data: genData, error: genError } =
       await supabase.auth.admin.generateLink({
@@ -265,7 +266,7 @@ export async function POST(request: NextRequest) {
             created_via: "admin_faculty_panel",
             created_by_admin_id: user.id,
           },
-          redirectTo: callbackUrl.toString(),
+          redirectTo: callbackUrl,
         },
       });
 
