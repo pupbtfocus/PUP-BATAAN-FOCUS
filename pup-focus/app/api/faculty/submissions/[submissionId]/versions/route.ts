@@ -69,6 +69,9 @@ function extractFileName(storagePath: string): string {
   if (!storagePath) return "document";
   const parts = storagePath.split("/");
   let fileName = parts[parts.length - 1] ?? storagePath;
+  if (/^v\d+_\d+_/i.test(fileName)) {
+    return fileName.replace(/^v\d+_\d+_/i, "");
+  }
   if (/^v\d+_/i.test(fileName)) {
     return fileName.replace(/^v\d+_/i, "");
   }
@@ -243,14 +246,26 @@ export async function GET(
       .eq("faculty_profile_id", facultyProfileId)
       .order("created_at", { ascending: true });
 
+    const normalize = (str: string) =>
+      (str || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    const targetCodeNormalized = normalize(targetReqCode);
+
     const matchingSubmissions = (allRelatedSubmissions || []).filter((sub) => {
+      const subCodeNormalized = normalize(sub.requirement_code || "");
       const matched = matchRequirementCode(sub.requirement_code);
+      const targetMatched = matchRequirementCode(targetReqCode);
+
       return (
         sub.id === targetSubmissionId ||
         sub.id === submissionId ||
         sub.requirement_code === targetReqCode ||
-        matched === targetReqCode ||
-        matchRequirementCode(targetReqCode) === matched
+        subCodeNormalized === targetCodeNormalized ||
+        (Boolean(targetCodeNormalized) &&
+          Boolean(subCodeNormalized) &&
+          (targetCodeNormalized.includes(subCodeNormalized) ||
+            subCodeNormalized.includes(targetCodeNormalized))) ||
+        (Boolean(matched) && Boolean(targetMatched) && matched === targetMatched)
       );
     });
 

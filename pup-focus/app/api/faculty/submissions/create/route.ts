@@ -344,44 +344,36 @@ export async function POST(request: NextRequest) {
       notes?: string | null;
     } | null = null;
 
-    const { data: allFacultySubmissions } = await supabaseAdmin
+    // Query submissions strictly by faculty_profile_id and requirement_code
+    const { data: existingSubmissions } = await supabaseAdmin
       .from("submissions")
       .select(
         "id, status, requirement_code, curriculum_id, faculty_assignment_id, submitted_at, created_at, remarks, notes",
       )
       .eq("faculty_profile_id", profile.id)
-      .order("created_at", { ascending: false });
+      .eq("requirement_code", payload.requirementCode)
+      .order("created_at", { ascending: true });
 
-    if (allFacultySubmissions && allFacultySubmissions.length > 0) {
-      // 1. Try to find match with exact requirement code and assignment/curriculum
-      const exactMatch = allFacultySubmissions.find((sub) => {
-        const matchesCode =
-          sub.requirement_code === payload.requirementCode ||
-          matchRequirementCode(sub.requirement_code) === payload.requirementCode;
+    if (existingSubmissions && existingSubmissions.length > 0) {
+      existingSubmission = existingSubmissions[0];
+    } else {
+      const { data: allFacultySubmissions } = await supabaseAdmin
+        .from("submissions")
+        .select(
+          "id, status, requirement_code, curriculum_id, faculty_assignment_id, submitted_at, created_at, remarks, notes",
+        )
+        .eq("faculty_profile_id", profile.id)
+        .order("created_at", { ascending: true });
 
-        const matchesAssignment =
-          facultyAssignmentId && sub.faculty_assignment_id === facultyAssignmentId;
-
-        const matchesCurriculum =
-          curriculumId && sub.curriculum_id === curriculumId;
-
-        return matchesCode && (matchesAssignment || matchesCurriculum);
-      });
-
-      if (exactMatch) {
-        existingSubmission = exactMatch;
-      } else {
-        // 2. Match by requirement code on this faculty profile
-        const codeMatch = allFacultySubmissions.find((sub) => {
-          return (
-            sub.requirement_code === payload.requirementCode ||
-            matchRequirementCode(sub.requirement_code) === payload.requirementCode
-          );
-        });
-
-        if (codeMatch) {
-          existingSubmission = codeMatch;
-        }
+      if (allFacultySubmissions && allFacultySubmissions.length > 0) {
+        existingSubmission =
+          allFacultySubmissions.find((sub) => {
+            return (
+              sub.requirement_code === payload.requirementCode ||
+              matchRequirementCode(sub.requirement_code) ===
+                payload.requirementCode
+            );
+          }) || null;
       }
     }
 
@@ -511,7 +503,8 @@ export async function POST(request: NextRequest) {
         nextVersionNumber,
       );
 
-      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v${nextVersionNumber}_${fileName}`;
+      const timestamp = Date.now();
+      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v${nextVersionNumber}_${timestamp}_${fileName}`;
 
       // Upload new file to Supabase Storage
       const { error: uploadError } = await supabaseAdmin.storage
@@ -616,7 +609,8 @@ export async function POST(request: NextRequest) {
       // BRAND NEW SUBMISSION - INSERT ONLY ONCE
       targetSubmissionId = crypto.randomUUID();
 
-      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v1_${fileName}`;
+      const timestamp = Date.now();
+      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v1_${timestamp}_${fileName}`;
 
       const { error: uploadError } = await supabaseAdmin.storage
         .from("faculty-submissions")
