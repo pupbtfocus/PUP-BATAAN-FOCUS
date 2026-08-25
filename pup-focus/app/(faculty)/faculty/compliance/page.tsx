@@ -13,7 +13,7 @@ export default async function FacultyCompliancePage() {
       subtitle="Submit documents and track validation status in one place"
       nav={[
         { href: "/faculty/dashboard", label: "Dashboard" },
-        { href: "/faculty/history", label: "History" },
+        { href: "/faculty/history", label: "Validation History" },
       ]}
     >
       <FacultyRequirementsModule

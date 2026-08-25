@@ -19,6 +19,8 @@ type HistorySubmission = {
   requirementCode: RequirementCode | string;
   status: HistoryStatus;
   submittedAt: string;
+  updatedAt?: string;
+  dateValidated?: string;
   note?: string;
   remarks?: string;
   admin_remarks?: string;
@@ -43,6 +45,7 @@ type SubmissionRow = {
   requirement_code: string;
   status: string | null;
   submitted_at?: string | null;
+  updated_at?: string | null;
   created_at?: string | null;
   remarks?: string | null;
   admin_remarks?: string | null;
@@ -151,18 +154,19 @@ export async function GET() {
 
     const facultyIds = Array.from(new Set([user.id, profile.id]));
 
-    // 3. Query ALL historical submission records for this faculty member across all roles & tables
+    // 3. Query ONLY validated/approved submission records for this faculty member
     let rawSubmissions: SubmissionRow[] = [];
     try {
       const { data: subData, error: subError } = await supabase
         .from("submissions")
         .select(
-          "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, storage_path, file_path",
+          "id, requirement_code, status, remarks, admin_remarks, submitted_at, updated_at, created_at, is_read, viewed_at, faculty_assignment_id, storage_path, file_path",
         )
         .or(
           `faculty_profile_id.in.(${facultyIds.join(",")}),user_id.in.(${facultyIds.join(",")}),created_by.in.(${facultyIds.join(",")})`,
         )
-        .order("created_at", { ascending: false });
+        .in("status", ["validated", "approved"])
+        .order("updated_at", { ascending: false });
 
       if (!subError && subData) {
         rawSubmissions = subData as SubmissionRow[];
@@ -170,10 +174,11 @@ export async function GET() {
         const { data: fallbackData } = await supabase
           .from("submissions")
           .select(
-            "id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id",
+            "id, requirement_code, status, remarks, admin_remarks, submitted_at, updated_at, created_at, faculty_assignment_id",
           )
           .in("faculty_profile_id", facultyIds)
-          .order("created_at", { ascending: false });
+          .in("status", ["validated", "approved"])
+          .order("updated_at", { ascending: false });
         if (fallbackData) {
           rawSubmissions = fallbackData as SubmissionRow[];
         }
@@ -337,14 +342,23 @@ export async function GET() {
       const storagePath = doc?.storage_path || row.storage_path || row.file_path;
       const fileName = storagePath ? storagePath.split("/").pop() : undefined;
 
+      const dateValidated =
+        (latestReviewWithRemarks || latestReview)?.created_at ||
+        row.updated_at ||
+        row.submitted_at ||
+        row.created_at ||
+        new Date().toISOString();
+
       history.push({
         id: row.id,
         academicYear: term.academicYear,
         semester: term.semester,
         requirementCode: normCode,
-        status: toHistoryStatus(row.status, latestReview),
+        status: "Validated",
         submittedAt:
           row.submitted_at || row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || undefined,
+        dateValidated: dateValidated,
         note: facultyNote,
         remarks: adminFeedback,
         admin_remarks: adminFeedback,
