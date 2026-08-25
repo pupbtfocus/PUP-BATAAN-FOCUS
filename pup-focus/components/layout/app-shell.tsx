@@ -40,9 +40,13 @@ export function AppShell({
               className="shrink-0 rounded-full ring-2 ring-amber-500/40"
             />
             <div>
-              <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-wide text-slate-900 dark:text-slate-100 whitespace-nowrap">{title}</h1>
+              <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-wide text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                {title}
+              </h1>
               {subtitle ? (
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">{subtitle}</p>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                  {subtitle}
+                </p>
               ) : null}
             </div>
           </div>
@@ -68,4 +72,3 @@ export function AppShell({
     </div>
   );
 }
-
