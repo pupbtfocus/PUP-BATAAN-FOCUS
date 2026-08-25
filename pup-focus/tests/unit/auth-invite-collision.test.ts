@@ -65,6 +65,12 @@ describe("Auth Invite Link Collision Fixes", () => {
     ).toBe(false);
   });
 
+  it("includes /auth/set-password and /reset-password in AUTH_ROUTES", () => {
+    expect(AUTH_ROUTES).toContain("/auth/set-password");
+    expect(AUTH_ROUTES).toContain("/reset-password");
+    expect(AUTH_ROUTES).toContain("/auth/change-password");
+  });
+
   it("detects invite flow to trigger force signOut prior to exchangeCodeForSession", () => {
     function isInviteOrAuthAction(code: string | null, tokenHash: string | null, type: string | null) {
       return type === "invite" || Boolean(code) || Boolean(tokenHash);
@@ -75,4 +81,27 @@ describe("Auth Invite Link Collision Fixes", () => {
     expect(isInviteOrAuthAction(null, null, "invite")).toBe(true);
     expect(isInviteOrAuthAction(null, null, null)).toBe(false);
   });
+
+  it("handles password setup redirect for invited faculty/admin users", () => {
+    function shouldRedirectToPasswordSetup(userMetadata: Record<string, any>, type: string | null) {
+      const isInvite =
+        type === "invite" ||
+        userMetadata?.must_change_password === true ||
+        userMetadata?.force_password_change === true ||
+        userMetadata?.created_via === "admin_faculty_panel" ||
+        userMetadata?.created_via === "superadmin_admin_panel";
+
+      const isRecovery = type === "recovery";
+
+      return isInvite || isRecovery;
+    }
+
+    expect(shouldRedirectToPasswordSetup({ must_change_password: true }, null)).toBe(true);
+    expect(shouldRedirectToPasswordSetup({ force_password_change: true }, null)).toBe(true);
+    expect(shouldRedirectToPasswordSetup({ created_via: "admin_faculty_panel" }, null)).toBe(true);
+    expect(shouldRedirectToPasswordSetup({}, "invite")).toBe(true);
+    expect(shouldRedirectToPasswordSetup({}, "recovery")).toBe(true);
+    expect(shouldRedirectToPasswordSetup({}, null)).toBe(false);
+  });
 });
+

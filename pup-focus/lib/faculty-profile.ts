@@ -52,18 +52,32 @@ export function parseFullNameFallback(fullName?: string | null): {
     return { firstName: parts[0], middleName: "", lastName: parts[1] };
   }
 
+  // Check if any word between first and last is an explicit middle initial (e.g., "S." or "S")
+  const initialRelativeIndex = parts
+    .slice(1, -1)
+    .findIndex((p) => /^[a-zA-Z]\.?$/.test(p));
+
+  if (initialRelativeIndex !== -1) {
+    const actualIndex = initialRelativeIndex + 1;
+    const initialRaw = parts[actualIndex];
+    const middleName = initialRaw.replace(/\.$/, "");
+    const firstName = parts.slice(0, actualIndex).join(" ");
+    const lastName = parts.slice(actualIndex + 1).join(" ");
+    return { firstName, middleName, lastName };
+  }
+
   if (parts.length === 3) {
-    // When 3 words exist (e.g. ["Aienne", "Ramos", "Facun"])
+    // Multi-word first name without middle name (e.g. "Christian Jay Cereza")
     return {
-      firstName: parts[0],
-      middleName: parts[1],
+      firstName: `${parts[0]} ${parts[1]}`,
+      middleName: "",
       lastName: parts[2],
     };
   }
 
   if (parts.length === 4) {
-    // When 4 words exist (e.g. ["Aienne", "Joy", "Ramos", "Facun"])
-    // first_name = "Aienne Joy", middle_name = "Ramos", last_name = "Facun"
+    // When 4 words exist (e.g. ["Christian", "Jay", "Cereza", "Mandani"])
+    // first_name = "Christian Jay", middle_name = "Cereza", last_name = "Mandani"
     return {
       firstName: `${parts[0]} ${parts[1]}`,
       middleName: parts[2],
