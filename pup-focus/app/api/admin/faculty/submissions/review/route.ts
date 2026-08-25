@@ -164,17 +164,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { error: reviewError } = await supabaseAdmin
-      .from("review_decisions")
-      .insert({
-        submission_id: submissionId,
-        reviewer_profile_id: adminProfile.id,
-        decision: cleanDecision,
-        remarks: cleanRemarks,
-      });
+    try {
+      const { error: reviewErr } = await supabaseAdmin
+        .from("review_decisions")
+        .insert({
+          submission_id: submissionId,
+          reviewer_profile_id: adminProfile.id,
+          decision: cleanDecision,
+          remarks: cleanRemarks || null,
+        });
 
-    if (reviewError) {
-      console.error("Failed to create review decision:", reviewError);
+      if (reviewErr) {
+        console.warn(
+          "[ADMIN_REVIEW_WARN] Could not record review decision log (non-critical):",
+          reviewErr.message,
+        );
+      }
+    } catch (err) {
+      console.warn(
+        "[ADMIN_REVIEW_WARN] review_decisions table missing, continuing review flow cleanly.",
+      );
     }
 
     try {
