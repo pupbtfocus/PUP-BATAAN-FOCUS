@@ -485,9 +485,16 @@ export async function POST(request: NextRequest) {
           });
 
         if (v1ArchiveErr) {
-          console.warn(
-            "[RESUBMIT_DEBUG] Version 1 archive note:",
-            v1ArchiveErr.message,
+          console.error(
+            "[CRITICAL] Failed to archive Version 1:",
+            v1ArchiveErr,
+          );
+          return NextResponse.json(
+            {
+              error: `Archive Version 1 failed: ${v1ArchiveErr.message}`,
+              details: v1ArchiveErr,
+            },
+            { status: 500 },
           );
         }
 
