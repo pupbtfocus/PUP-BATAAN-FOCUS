@@ -19,13 +19,23 @@ export interface SubmissionDocumentVersion {
 export interface DocumentVersionDetail {
   id: string;
   versionNumber: number;
+  version_number?: number;
   storagePath: string;
+  file_path?: string;
   fileName: string;
-  mimeType: string;
+  file_name?: string;
+  mimeType?: string;
   sizeBytes: number;
-  checksumSha256: string;
+  size_bytes?: number;
+  sizeFormatted?: string;
+  size_formatted?: string;
+  checksumSha256?: string;
   createdAt: string;
+  created_at?: string;
   downloadUrl: string;
+  download_url?: string;
+  status?: string | null;
+  remarks?: string | null;
 }
 
 export interface VersionHistoryResponse {

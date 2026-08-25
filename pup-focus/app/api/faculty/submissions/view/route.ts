@@ -15,6 +15,10 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url);
     const submissionId = url.searchParams.get("submissionId");
+    const versionId = url.searchParams.get("versionId");
+    const download = url.searchParams.get("download");
+    const filename = url.searchParams.get("filename");
+    const asJson = url.searchParams.get("json") === "true";
 
     if (!submissionId) {
       return NextResponse.json(
@@ -38,12 +42,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data: submission, error: submissionError } = await supabase
+    // Check user role: faculty owner or admin/super_admin
+    const requesterRole =
+      (user?.user_metadata?.role as string | undefined) ??
+      (user?.app_metadata?.role as string | undefined);
+    const isAdmin =
+      requesterRole === "admin" || requesterRole === "super_admin";
+
+    let submissionQuery = supabase
       .from("submissions")
-      .select("id")
-      .eq("id", submissionId)
-      .eq("faculty_profile_id", profile.id)
-      .maybeSingle();
+      .select("id, file_name, storage_path, file_path")
+      .eq("id", submissionId);
+
+    if (!isAdmin) {
+      submissionQuery = submissionQuery.or(
+        `faculty_profile_id.eq.${profile.id},user_id.eq.${profile.id}`,
+      );
+    }
+
+    const { data: submission, error: submissionError } =
+      await submissionQuery.maybeSingle();
 
     if (submissionError || !submission) {
       return NextResponse.json(
@@ -52,37 +70,66 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data: versions, error: versionsError } = await supabase
-      .from("document_versions")
-      .select("storage_path, version_number")
-      .eq("submission_id", submissionId)
-      .order("version_number", { ascending: false })
-      .limit(1);
+    let storagePath: string | null = null;
+    const targetFileName = filename || submission.file_name || undefined;
 
-    if (versionsError || !versions || versions.length === 0) {
+    if (versionId) {
+      const { data: versionData } = await supabase
+        .from("document_versions")
+        .select("storage_path, version_number")
+        .eq("id", versionId)
+        .eq("submission_id", submissionId)
+        .maybeSingle();
+
+      if (versionData?.storage_path) {
+        storagePath = versionData.storage_path;
+      }
+    }
+
+    if (!storagePath) {
+      const { data: versions } = await supabase
+        .from("document_versions")
+        .select("storage_path, version_number")
+        .eq("submission_id", submissionId)
+        .order("version_number", { ascending: false })
+        .limit(1);
+
+      if (versions && versions.length > 0 && versions[0]?.storage_path) {
+        storagePath = versions[0].storage_path;
+      } else {
+        storagePath = submission.storage_path || submission.file_path || null;
+      }
+    }
+
+    if (!storagePath) {
       return NextResponse.json(
         { error: "No file found for this submission" },
         { status: 404 },
       );
     }
 
-    const storagePath = versions[0]?.storage_path;
-    if (!storagePath) {
-      return NextResponse.json(
-        { error: "No file path found for this submission" },
-        { status: 404 },
-      );
-    }
+    const downloadOptions =
+      download === "true" || filename
+        ? { download: targetFileName || storagePath.split("/").pop() || true }
+        : undefined;
 
     const { data: signed, error: signedError } = await supabase.storage
       .from("faculty-submissions")
-      .createSignedUrl(storagePath, 60 * 60);
+      .createSignedUrl(storagePath, 60 * 60, downloadOptions);
 
     if (signedError || !signed?.signedUrl) {
       return NextResponse.json(
         { error: "Failed to generate file link" },
         { status: 500 },
       );
+    }
+
+    if (asJson) {
+      return NextResponse.json({
+        success: true,
+        downloadUrl: signed.signedUrl,
+        storagePath,
+      });
     }
 
     return NextResponse.redirect(signed.signedUrl);
