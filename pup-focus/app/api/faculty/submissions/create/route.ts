@@ -337,11 +337,6 @@ export async function POST(request: NextRequest) {
       status: string | null;
       requirement_code: string;
       faculty_assignment_id?: string | null;
-      storage_path?: string | null;
-      file_path?: string | null;
-      file_name?: string | null;
-      mime_type?: string | null;
-      size_bytes?: number | null;
       submitted_at?: string | null;
       created_at?: string | null;
       remarks?: string | null;
@@ -352,7 +347,7 @@ export async function POST(request: NextRequest) {
       const { data: existingInCurrentTerm } = await supabaseAdmin
         .from("submissions")
         .select(
-          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, submitted_at, created_at, remarks, notes",
+          "id, status, requirement_code, faculty_assignment_id, submitted_at, created_at, remarks, notes",
         )
         .eq("faculty_profile_id", profile.id)
         .eq("faculty_assignment_id", facultyAssignmentId);
@@ -379,7 +374,7 @@ export async function POST(request: NextRequest) {
       const { data: existingByProfile } = await supabaseAdmin
         .from("submissions")
         .select(
-          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, submitted_at, created_at, remarks, notes",
+          "id, status, requirement_code, faculty_assignment_id, submitted_at, created_at, remarks, notes",
         )
         .eq("faculty_profile_id", profile.id)
         .or(
@@ -468,18 +463,8 @@ export async function POST(request: NextRequest) {
 
       if (!hasVersion1) {
         const oldStoragePath =
-          existingSubmission.storage_path ||
-          existingSubmission.file_path ||
-          `faculty-submissions/${profile.id}/${targetSubmissionId}/${existingSubmission.file_name || "v1_submission"}`;
-
-        const oldSizeBytes =
-          typeof existingSubmission.size_bytes === "number" &&
-          existingSubmission.size_bytes > 0
-            ? existingSubmission.size_bytes
-            : 0;
-
-        const oldMimeType =
-          existingSubmission.mime_type || "application/octet-stream";
+          (existingVersions && existingVersions[0]?.storage_path) ||
+          `faculty-submissions/${profile.id}/${targetSubmissionId}/v1_${fileName}`;
 
         const oldCreatedAt =
           existingSubmission.submitted_at ||
@@ -492,8 +477,8 @@ export async function POST(request: NextRequest) {
             submission_id: targetSubmissionId,
             version_number: 1,
             storage_path: oldStoragePath,
-            mime_type: oldMimeType,
-            size_bytes: oldSizeBytes,
+            mime_type: "application/octet-stream",
+            size_bytes: 0,
             checksum_sha256: "archived_v1_checksum",
             created_by: user.id,
             created_at: oldCreatedAt,
@@ -575,20 +560,18 @@ export async function POST(request: NextRequest) {
 
       documentVersion = newDocVer;
 
-      // 4. Step 5: Update main submissions record with only valid submissions columns
+      // 4. Step 5: Update main submissions record with only valid submissions schema columns
       const updatePayload: Record<string, any> = {
         status: "uploaded",
         submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        storage_path: storagePath,
-        file_path: storagePath,
-        file_name: fileName,
-        mime_type: file.type || "application/octet-stream",
-        size_bytes: fileBuffer.byteLength,
         is_read: false,
-        notes: trimmedRemarks || null,
         remarks: trimmedRemarks || null,
       };
+
+      if (trimmedRemarks) {
+        updatePayload.notes = trimmedRemarks;
+      }
 
       if (curriculumId) updatePayload.curriculum_id = curriculumId;
       if (facultyAssignmentId)
@@ -637,15 +620,13 @@ export async function POST(request: NextRequest) {
         requirement_code: payload.requirementCode,
         status: "uploaded",
         submitted_at: new Date().toISOString(),
-        storage_path: storagePath,
-        file_path: storagePath,
-        file_name: fileName,
-        mime_type: file.type || "application/octet-stream",
-        size_bytes: fileBuffer.byteLength,
         is_read: false,
-        notes: trimmedRemarks || null,
         remarks: trimmedRemarks || null,
       };
+
+      if (trimmedRemarks) {
+        submissionPayload.notes = trimmedRemarks;
+      }
 
       let { data: newSub, error: submissionError } = await supabaseAdmin
         .from("submissions")
@@ -661,17 +642,11 @@ export async function POST(request: NextRequest) {
           requirement_code: payload.requirementCode,
           status: "uploaded",
           submitted_at: submissionPayload.submitted_at,
-          storage_path: storagePath,
-          file_path: storagePath,
-          file_name: fileName,
-          mime_type: file.type || "application/octet-stream",
-          size_bytes: fileBuffer.byteLength,
           is_read: false,
         };
 
         if (!isMissingRemarksColumnError(submissionError) && trimmedRemarks) {
           fallbackPayload.remarks = trimmedRemarks;
-          fallbackPayload.notes = trimmedRemarks;
         }
 
         if (
