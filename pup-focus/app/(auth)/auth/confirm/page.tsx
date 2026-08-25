@@ -178,10 +178,15 @@ function AuthConfirmContent() {
           setStatusMessage(formatInviteError(verifyError.message));
           return;
         }
-      } else if (!accessToken || !refreshToken) {
-        setStatus("error");
-        setStatusMessage("Missing invitation token. Please check your invitation email link.");
-        return;
+      } else {
+        const { data: userCheck } = await supabase.auth.getUser();
+        if (!userCheck?.user) {
+          setStatus("error");
+          setStatusMessage(
+            "Missing invitation token. Please check your invitation email link.",
+          );
+          return;
+        }
       }
 
       if (cancelled) return;

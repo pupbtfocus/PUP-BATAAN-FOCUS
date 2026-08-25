@@ -101,7 +101,7 @@ export default function Home() {
           .then(({ data, error: setSessionErr }: { data: any; error: any }) => {
             if (!setSessionErr && data?.session) {
               window.history.replaceState(null, "", window.location.pathname);
-              router.replace("/auth/set-password");
+              router.replace("/auth/confirm");
             }
           });
 
@@ -110,7 +110,7 @@ export default function Home() {
         } = supabase.auth.onAuthStateChange((_event: unknown, session: unknown) => {
           if (session) {
             window.history.replaceState(null, "", window.location.pathname);
-            router.replace("/auth/set-password");
+            router.replace("/auth/confirm");
           }
         });
 
