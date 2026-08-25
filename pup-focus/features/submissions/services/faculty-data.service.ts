@@ -70,6 +70,8 @@ export type PastSubmissionData = {
   requirementCode: RequirementCode | string;
   status: "Pending" | "Validated" | "Rejected";
   submittedAt: string;
+  updatedAt?: string;
+  dateValidated?: string;
   note?: string;
   remarks?: string;
   admin_remarks?: string;
@@ -418,21 +420,22 @@ export async function getFacultyInitialData(
     notSubmitted: requirementStatuses.filter((r) => r.status === "Not Submitted").length,
   };
 
-  // 9. Historical Submissions
+  // 9. Historical Submissions (Validated / Approved only)
   const pastSubmissions: PastSubmissionData[] = [];
   for (const row of rawSubmissions) {
     if (!row || !row.requirement_code) continue;
 
+    const rawSt = (row.status || "").toLowerCase().trim();
     const reviews = reviewDecisionsMap.get(row.id) || [];
     const latestReview = reviews[0];
     const latestReviewWithRemarks = reviews.find((r) => r.remarks && r.remarks.trim() !== "");
 
-    let historyStatus: "Pending" | "Validated" | "Rejected" = "Pending";
-    const rawSt = (row.status || "").toLowerCase().trim();
-    if (latestReview?.decision === "validated" || rawSt === "validated" || rawSt === "approved") {
-      historyStatus = "Validated";
-    } else if (latestReview?.decision === "rejected" || rawSt === "rejected") {
-      historyStatus = "Rejected";
+    if (
+      latestReview?.decision !== "validated" &&
+      rawSt !== "validated" &&
+      rawSt !== "approved"
+    ) {
+      continue;
     }
 
     const adminFeedback =
@@ -441,13 +444,22 @@ export async function getFacultyInitialData(
       row.admin_remarks?.trim() ||
       undefined;
 
+    const dateValidated =
+      (latestReviewWithRemarks || latestReview)?.created_at ||
+      (row as any).updated_at ||
+      row.submitted_at ||
+      row.created_at ||
+      new Date().toISOString();
+
     pastSubmissions.push({
       id: row.id,
       academicYear: activeAcademicYear,
       semester: activeSemester,
       requirementCode: row.requirement_code,
-      status: historyStatus,
+      status: "Validated",
       submittedAt: row.submitted_at || row.created_at || new Date().toISOString(),
+      updatedAt: (row as any).updated_at || undefined,
+      dateValidated,
       note: row.remarks?.trim() || undefined,
       remarks: adminFeedback,
       admin_remarks: adminFeedback,

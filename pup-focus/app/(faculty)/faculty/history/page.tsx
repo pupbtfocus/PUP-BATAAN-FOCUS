@@ -10,7 +10,7 @@ export default async function FacultyHistoryPage() {
   const initialData = user ? await getFacultyInitialData(user.id) : null;
 
   return (
-    <AppShell title="Activity Log" nav={[]} fullBleed>
+    <AppShell title="Validation History" nav={[]} fullBleed>
       <Suspense
         fallback={
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 space-y-4">

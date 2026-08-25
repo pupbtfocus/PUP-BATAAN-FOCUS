@@ -23,7 +23,11 @@ import {
 import type { FacultyInitialData } from "@/features/submissions/services/faculty-data.service";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import { DocumentUploadZone } from "@/features/submissions/components/document-upload-zone";
-import { SubmissionHistoryList } from "@/features/submissions/components/submission-history-list";
+import JSZip from "jszip";
+import {
+  SubmissionHistoryList,
+  getFriendlyRequirementName,
+} from "@/features/submissions/components/submission-history-list";
 import {
   StatusMetricsSkeleton,
   ComplianceListSkeleton,
@@ -190,6 +194,8 @@ type PastSubmission = {
   requirementCode: RequirementCode;
   status: HistorySubmissionStatus;
   submittedAt: string;
+  updatedAt?: string;
+  dateValidated?: string;
   fileName?: string;
   storagePath?: string;
   file_name?: string;
@@ -414,6 +420,8 @@ function FacultySubmissionPanelContent({
   );
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
+  const [bulkDownloadProgressText, setBulkDownloadProgressText] = useState("");
   const [requirementStatuses, setRequirementStatuses] = useState<
     RequirementStatus[]
   >(() => (initialData?.requirementStatuses as RequirementStatus[]) || []);
@@ -581,6 +589,55 @@ function FacultySubmissionPanelContent({
       setHistoryError("Error loading submission history");
     } finally {
       setIsLoadingHistory(false);
+    }
+  }
+
+  async function handleBulkDownload() {
+    if (filteredPastSubmissions.length === 0 || isBulkDownloading) return;
+
+    try {
+      setIsBulkDownloading(true);
+      setBulkDownloadProgressText("Preparing...");
+
+      const zip = new JSZip();
+      let processed = 0;
+      const total = filteredPastSubmissions.length;
+
+      for (const sub of filteredPastSubmissions) {
+        processed++;
+        setBulkDownloadProgressText(`Downloading ${processed}/${total}...`);
+
+        const downloadUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(sub.id)}&download=true`;
+        try {
+          const fileRes = await fetch(downloadUrl);
+          if (fileRes.ok) {
+            const fileBlob = await fileRes.blob();
+            const reqTitle = getFriendlyRequirementName(sub.requirementCode).replace(/[^a-zA-Z0-9_-]/g, "_");
+            const ext = sub.fileName?.match(/\.[^.]+$/)?.[0] || sub.storagePath?.match(/\.[^.]+$/)?.[0] || ".pdf";
+            const fileName = `${reqTitle}_${sub.academicYear}_${sub.semester}${ext}`.replace(/[\s/]+/g, "_");
+            zip.file(fileName, fileBlob);
+          }
+        } catch (fetchErr) {
+          console.error("Failed to fetch file for ZIP:", sub.id, fetchErr);
+        }
+      }
+
+      setBulkDownloadProgressText("Generating ZIP...");
+      const zipContent = await zip.generateAsync({ type: "blob" });
+      const url = window.URL.createObjectURL(zipContent);
+      const link = document.createElement("a");
+      const sanitizedName = (facultyName || "Faculty").replace(/[^a-zA-Z0-9_-]/g, "_");
+      link.href = url;
+      link.download = `${sanitizedName}_Validated_Requirements_${historyAcademicYear}_${historySemester}.zip`.replace(/[\s/]+/g, "_");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Bulk download failed:", err);
+    } finally {
+      setIsBulkDownloading(false);
+      setBulkDownloadProgressText("");
     }
   }
 
@@ -2091,10 +2148,10 @@ function FacultySubmissionPanelContent({
                       type="button"
                       onClick={openHistoryModal}
                       className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
-                      title="View semester activity timeline"
+                      title="View validated documents history"
                     >
-                      <Activity className="h-3.5 w-3.5" />
-                      Activity Log
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      Validation History
                     </button>
                     <button
                       type="button"
@@ -2478,7 +2535,7 @@ function FacultySubmissionPanelContent({
                 onClick={closeHistoryModal}
               >
                 <div
-                  className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl"
+                  className="flex max-h-[85vh] w-full max-w-6xl flex-col rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
@@ -2486,7 +2543,7 @@ function FacultySubmissionPanelContent({
                       id="submission-history-title"
                       className="text-xl font-semibold text-slate-900 dark:text-slate-100"
                     >
-                      Activity Log
+                      Validation History
                     </h3>
                     <button
                       type="button"
@@ -2551,15 +2608,33 @@ function FacultySubmissionPanelContent({
                       </div>
                     </div>
 
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => void fetchHistory()}
-                      disabled={isLoadingHistory}
-                    >
-                      {isLoadingHistory ? "Refreshing..." : "Refresh"}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleBulkDownload}
+                        disabled={isBulkDownloading || filteredPastSubmissions.length === 0}
+                        className="inline-flex items-center gap-1.5 border-emerald-300/80 dark:border-emerald-600/50 bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-semibold"
+                        title="Download all validated requirements in current view as ZIP"
+                      >
+                        {isBulkDownloading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                        <span>{isBulkDownloading ? bulkDownloadProgressText : "Download All"}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => void fetchHistory()}
+                        disabled={isLoadingHistory || isBulkDownloading}
+                      >
+                        {isLoadingHistory ? "Refreshing..." : "Refresh"}
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-6">
@@ -2572,7 +2647,7 @@ function FacultySubmissionPanelContent({
                         submissions={filteredPastSubmissions}
                         onViewFile={openHistorySubmissionPreview}
                         viewedSubmissionIds={viewedSubmissionIds}
-                        emptyMessage="No past submissions found for the selected school year and semester."
+                        emptyMessage="No validated documents found for the selected academic term."
                       />
                     )}
                   </div>
