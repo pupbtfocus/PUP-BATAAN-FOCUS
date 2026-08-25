@@ -206,10 +206,15 @@ export function VersionHistoryModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const remarksText =
+  const reviewerFeedback =
     submissionInfo?.feedback ||
-    (submissionInfo as { admin_remarks?: string })?.admin_remarks ||
-    versions[0]?.remarks;
+    submissionInfo?.admin_remarks;
+
+  const facultyNotes =
+    submissionInfo?.faculty_notes ||
+    (submissionInfo?.notes && submissionInfo.notes !== reviewerFeedback
+      ? submissionInfo.notes
+      : undefined);
 
   const statusValue = submissionInfo?.status || versions[0]?.status;
   const statusConfig = getStatusConfig(statusValue);
@@ -256,9 +261,9 @@ export function VersionHistoryModal({
         {/* Content */}
         <div className="max-h-[65vh] overflow-y-auto px-6 py-5">
           {/* Dynamic Reviewer Remarks Banner */}
-          {remarksText && (
+          {reviewerFeedback && (
             <div
-              className={`p-4 rounded-2xl border ${statusConfig.containerBg} shadow-xs backdrop-blur-xs flex items-start gap-3.5 transition-all mb-5`}
+              className={`p-4 rounded-2xl border ${statusConfig.containerBg} shadow-xs backdrop-blur-xs flex items-start gap-3.5 transition-all mb-4`}
             >
               <div
                 className={`p-2 rounded-xl border ${statusConfig.iconBoxBg} ${statusConfig.iconColor} shrink-0 shadow-2xs`}
@@ -276,13 +281,30 @@ export function VersionHistoryModal({
                 <p
                   className={`text-sm font-medium leading-relaxed ${statusConfig.textColor}`}
                 >
-                  &ldquo;{remarksText}&rdquo;
+                  &ldquo;{reviewerFeedback}&rdquo;
                 </p>
                 {submissionInfo?.reviewedAt && (
                   <p className={`text-xs ${statusConfig.subtextColor}`}>
                     Reviewed on {submissionInfo.reviewedAt}
                   </p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Faculty Submission Notes Banner */}
+          {facultyNotes && (
+            <div className="mb-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-4 shadow-xs flex items-start gap-3.5">
+              <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 shrink-0 shadow-2xs">
+                <FileText className="w-5 h-5 stroke-[1.8]" />
+              </div>
+              <div className="space-y-1 text-left min-w-0 flex-1">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  Faculty Submission Notes
+                </span>
+                <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed italic">
+                  &ldquo;{facultyNotes}&rdquo;
+                </p>
               </div>
             </div>
           )}

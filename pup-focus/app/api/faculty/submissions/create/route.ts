@@ -17,7 +17,6 @@ import {
   isValidAcademicYear,
   isValidSemester,
   normalizeSemester,
-  normalizeTime24Hour,
 } from "@/features/submissions/services/submission-window.service";
 import crypto from "crypto";
 
@@ -48,13 +47,6 @@ function matchRequirementCode(
   return null;
 }
 
-type SubmissionPayload = {
-  academicYear: string;
-  semester: string;
-  requirementCode: string;
-  remarks?: string;
-};
-
 function isMissingRemarksColumnError(
   error: { message?: string } | null,
 ): boolean {
@@ -73,29 +65,6 @@ function isMissingFacultyAssignmentIdError(
       message.includes("does not exist") ||
       message.includes("column"))
   );
-}
-
-function normalizeAcademicYear(value: string | null | undefined): string {
-  if (!value) return "";
-  return value.trim();
-}
-
-function toAcademicYearAndSemester(dateInput: string | null | undefined): {
-  academicYear: string;
-  semester: "1st Semester" | "2nd Semester";
-} {
-  const sourceDate = dateInput ? new Date(dateInput) : new Date();
-  const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
-  const startsSchoolYear = month >= 6;
-
-  return {
-    academicYear: startsSchoolYear
-      ? `${year}-${year + 1}`
-      : `${year - 1}-${year}`,
-    semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
-  };
 }
 
 export async function POST(request: NextRequest) {
@@ -168,7 +137,7 @@ export async function POST(request: NextRequest) {
       (formData.get("semester") as string) ||
       submissionWindow?.semester ||
       dbCurrentTerm?.semester ||
-      "2nd Semester"
+      "2nd Semester",
     );
 
     const payload = {
@@ -251,45 +220,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get faculty's assigned curriculum and assignment record for the selected term,
-    // or create/bind the assignment record for the current active term.
-    let curriculumId: string | null = null;
+    // Program Assignment and Curriculum lookup
     let facultyAssignmentId: string | null = null;
+    let programId: string | null = null;
+    let curriculumId: string | null = null;
 
-    const { data: currentTermAssignment } = await supabase
+    const { data: assignments } = await supabase
       .from("faculty_program_assignments")
-      .select("id, curriculum_id")
+      .select("id, program_id, curriculum_id")
       .eq("faculty_profile_id", profile.id)
       .eq("academic_year", payload.academicYear)
-      .ilike("term", `%${payload.semester}%`)
-      .maybeSingle();
+      .ilike("term", `%${payload.semester}%`);
 
-    if (currentTermAssignment?.id) {
-      facultyAssignmentId = currentTermAssignment.id;
-      curriculumId = currentTermAssignment.curriculum_id ?? null;
-    }
-
-    let programId: string | null = null;
-    const { data: previousAssignment } = await supabase
-      .from("faculty_program_assignments")
-      .select("program_id, curriculum_id")
-      .eq("faculty_profile_id", profile.id)
-      .not("program_id", "is", null)
-      .limit(1)
-      .maybeSingle();
-
-    if (previousAssignment?.program_id) {
-      programId = previousAssignment.program_id;
-      if (!curriculumId) curriculumId = previousAssignment.curriculum_id ?? null;
-    } else {
-      const { data: firstProgram } = await supabase
-        .from("programs")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
-      if (firstProgram?.id) {
-        programId = firstProgram.id;
-      }
+    if (assignments && assignments.length > 0) {
+      facultyAssignmentId = assignments[0].id;
+      programId = assignments[0].program_id;
+      curriculumId = assignments[0].curriculum_id;
     }
 
     if (!curriculumId) {
@@ -297,6 +243,7 @@ export async function POST(request: NextRequest) {
         .from("faculty_program_assignments")
         .select("curriculum_id")
         .eq("faculty_profile_id", profile.id)
+        .not("curriculum_id", "is", null)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -384,12 +331,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Backend Guard Against Duplicate Submissions
-    // Check if an existing submission for this requirement_code & faculty_profile_id is already uploaded, pending, or validated FOR THIS SPECIFIC TERM ASSIGNMENT.
+    // Check for Existing Submission Record
+    let existingSubmission: {
+      id: string;
+      status: string | null;
+      requirement_code: string;
+      faculty_assignment_id?: string | null;
+      storage_path?: string | null;
+      file_path?: string | null;
+      file_name?: string | null;
+      mime_type?: string | null;
+      size_bytes?: number | null;
+      checksum_sha256?: string | null;
+      submitted_at?: string | null;
+      created_at?: string | null;
+      remarks?: string | null;
+    } | null = null;
+
     if (facultyAssignmentId) {
       const { data: existingInCurrentTerm } = await supabase
         .from("submissions")
-        .select("id, status, requirement_code, faculty_assignment_id")
+        .select(
+          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, checksum_sha256, submitted_at, created_at, remarks",
+        )
         .eq("faculty_profile_id", profile.id)
         .eq("faculty_assignment_id", facultyAssignmentId);
 
@@ -406,158 +370,326 @@ export async function POST(request: NextRequest) {
         });
 
         if (activeTermSubmissions.length > 0) {
-          const latestSub = activeTermSubmissions[0];
-          const { data: decisions } = await supabase
-            .from("review_decisions")
-            .select("decision")
-            .eq("submission_id", latestSub.id)
-            .order("created_at", { ascending: false })
-            .limit(1);
-
-          const latestDecision = decisions?.[0]?.decision;
-          const isRejected =
-            latestSub.status === "rejected" || latestDecision === "rejected";
-
-          if (
-            !isRejected &&
-            (latestSub.status === "uploaded" ||
-              latestSub.status === "pending" ||
-              latestSub.status === "submitted" ||
-              latestSub.status === "validated" ||
-              latestDecision === "validated")
-          ) {
-            return NextResponse.json(
-              {
-                error:
-                  "This requirement has already been submitted for the current academic term.",
-              },
-              { status: 400 },
-            );
-          }
+          existingSubmission = activeTermSubmissions[0];
         }
       }
     }
 
-    // Create submission record
-    const submissionId = crypto.randomUUID();
-    const trimmedRemarks = payload.remarks?.trim();
-    const submissionPayload: Record<string, any> = {
-      id: submissionId,
-      faculty_profile_id: profile.id,
-      curriculum_id: curriculumId,
-      faculty_assignment_id: facultyAssignmentId ?? null,
-      requirement_code: payload.requirementCode,
-      status: "uploaded",
-      submitted_at: new Date().toISOString(),
-      ...(trimmedRemarks ? { remarks: trimmedRemarks } : {}),
-    };
-
-    let { data: submission, error: submissionError } = await supabase
-      .from("submissions")
-      .insert(submissionPayload)
-      .select()
-      .single();
-
-    if (submissionError) {
-      const fallbackPayload: Record<string, any> = {
-        id: submissionId,
-        faculty_profile_id: profile.id,
-        curriculum_id: curriculumId,
-        requirement_code: payload.requirementCode,
-        status: "uploaded",
-        submitted_at: submissionPayload.submitted_at,
-      };
-
-      if (!isMissingRemarksColumnError(submissionError) && trimmedRemarks) {
-        fallbackPayload.remarks = trimmedRemarks;
-      }
-
-      if (
-        !isMissingFacultyAssignmentIdError(submissionError) &&
-        facultyAssignmentId
-      ) {
-        fallbackPayload.faculty_assignment_id = facultyAssignmentId;
-      }
-
-      ({ data: submission, error: submissionError } = await supabase
+    if (!existingSubmission) {
+      const { data: existingByProfile } = await supabase
         .from("submissions")
-        .insert(fallbackPayload)
-        .select()
-        .single());
+        .select(
+          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, checksum_sha256, submitted_at, created_at, remarks",
+        )
+        .eq("faculty_profile_id", profile.id)
+        .or(
+          `requirement_code.eq.${payload.requirementCode},requirement_type.eq.${payload.requirementCode}`,
+        )
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingByProfile) {
+        existingSubmission = existingByProfile;
+      }
     }
 
-    if (submissionError) {
-      logger.error("submission_creation_failed", {
-        facultyId: profile.id,
-        error: submissionError.message,
-      });
-      return NextResponse.json(
-        { error: "Failed to create submission record" },
-        { status: 500 },
-      );
+    if (existingSubmission) {
+      const { data: decisions } = await supabase
+        .from("review_decisions")
+        .select("decision")
+        .eq("submission_id", existingSubmission.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const latestDecision = decisions?.[0]?.decision;
+      const isRejected =
+        existingSubmission.status === "rejected" ||
+        existingSubmission.status === "returned" ||
+        existingSubmission.status === "needs_revision" ||
+        existingSubmission.status === "revision_required" ||
+        latestDecision === "rejected";
+
+      // If already validated, block duplicate
+      if (
+        !isRejected &&
+        (existingSubmission.status === "validated" ||
+          latestDecision === "validated")
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "This requirement has already been validated for the current academic term.",
+          },
+          { status: 400 },
+        );
+      }
     }
 
-    // Prepare file for upload to Supabase Storage
+    // Prepare File & Hash Checksum
     const fileName = file.name;
     const fileBuffer = await file.arrayBuffer();
-    const storagePath = `faculty-submissions/${profile.id}/${submissionId}/${fileName}`;
 
-    // Calculate SHA-256 checksum
     const hashBuffer = await crypto.subtle.digest("SHA-256", fileBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const checksumSha256 = hashArray
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // Upload file to storage
-    const { error: uploadError } = await supabase.storage
-      .from("faculty-submissions")
-      .upload(storagePath, file, {
-        contentType: file.type,
-        upsert: false,
-      });
+    const trimmedRemarks = payload.remarks?.trim();
 
-    if (uploadError) {
-      logger.error("file_upload_failed", {
-        submissionId,
-        error: uploadError.message,
-      });
-      // Delete submission record if file upload fails
-      await supabase.from("submissions").delete().eq("id", submissionId);
-      return NextResponse.json(
-        { error: "Failed to upload file" },
-        { status: 500 },
-      );
-    }
+    let targetSubmissionId: string;
+    let documentVersion: { id: string; version_number: number; storage_path: string };
 
-    // Create document version record
-    const { data: documentVersion, error: docVersionError } = await supabase
-      .from("document_versions")
-      .insert({
-        submission_id: submissionId,
-        version_number: 1,
+    if (existingSubmission) {
+      targetSubmissionId = existingSubmission.id;
+
+      // 1. Fetch existing document_versions
+      const { data: existingVersions } = await supabase
+        .from("document_versions")
+        .select("id, version_number, storage_path, created_at")
+        .eq("submission_id", targetSubmissionId)
+        .order("version_number", { ascending: true });
+
+      // 2. Step B (Archive Old Version): If Version 1 is not recorded in document_versions yet, archive previous file as Version 1
+      const hasVersion1 = existingVersions && existingVersions.some((v) => v.version_number === 1);
+
+      if (!hasVersion1) {
+        const oldStoragePath =
+          existingSubmission.storage_path ||
+          existingSubmission.file_path ||
+          `faculty-submissions/${profile.id}/${targetSubmissionId}/${existingSubmission.file_name || "v1_submission"}`;
+
+        await supabase.from("document_versions").insert({
+          submission_id: targetSubmissionId,
+          version_number: 1,
+          storage_path: oldStoragePath,
+          mime_type:
+            existingSubmission.mime_type || "application/octet-stream",
+          size_bytes: existingSubmission.size_bytes || 0,
+          checksum_sha256: existingSubmission.checksum_sha256 || "",
+          created_by: user.id,
+          created_at:
+            existingSubmission.submitted_at ||
+            existingSubmission.created_at ||
+            new Date().toISOString(),
+        });
+      }
+
+      // 3. Determine next version number (at least 2 on resubmission)
+      let nextVersionNumber = 2;
+      if (existingVersions && existingVersions.length > 0) {
+        const maxVersion = Math.max(
+          ...existingVersions.map((v) => v.version_number || 1),
+        );
+        nextVersionNumber = Math.max(maxVersion + 1, 2);
+      }
+
+      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v${nextVersionNumber}_${fileName}`;
+
+      // Upload new file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("faculty-submissions")
+        .upload(storagePath, file, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        logger.error("file_resubmit_upload_failed", {
+          submissionId: targetSubmissionId,
+          error: uploadError.message,
+        });
+        return NextResponse.json(
+          { error: "Failed to upload file" },
+          { status: 500 },
+        );
+      }
+
+      // Insert new version record into document_versions
+      const { data: newDocVer, error: docVersionError } = await supabase
+        .from("document_versions")
+        .insert({
+          submission_id: targetSubmissionId,
+          version_number: nextVersionNumber,
+          storage_path: storagePath,
+          mime_type: file.type || "application/octet-stream",
+          size_bytes: fileBuffer.byteLength,
+          checksum_sha256: checksumSha256,
+          created_by: user.id,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (docVersionError) {
+        logger.error("document_version_increment_failed", {
+          submissionId: targetSubmissionId,
+          error: docVersionError.message,
+        });
+        return NextResponse.json(
+          { error: "Failed to record document version" },
+          { status: 500 },
+        );
+      }
+
+      documentVersion = newDocVer;
+
+      // Update main submissions record with new file details and faculty notes
+      const updatePayload: Record<string, any> = {
+        status: "uploaded",
+        submitted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         storage_path: storagePath,
+        file_path: storagePath,
+        file_name: fileName,
         mime_type: file.type || "application/octet-stream",
         size_bytes: fileBuffer.byteLength,
         checksum_sha256: checksumSha256,
-        created_by: user.id,
-      })
-      .select()
-      .single();
+        is_read: false,
+        notes: trimmedRemarks || null,
+        remarks: trimmedRemarks || null,
+      };
 
-    if (docVersionError) {
-      logger.error("document_version_creation_failed", {
-        submissionId,
-        error: docVersionError.message,
-      });
-      return NextResponse.json(
-        { error: "Failed to record document version" },
-        { status: 500 },
-      );
+      if (curriculumId) updatePayload.curriculum_id = curriculumId;
+      if (facultyAssignmentId)
+        updatePayload.faculty_assignment_id = facultyAssignmentId;
+
+      await supabase
+        .from("submissions")
+        .update(updatePayload)
+        .eq("id", targetSubmissionId);
+    } else {
+      // Brand New Initial Submission
+      targetSubmissionId = crypto.randomUUID();
+
+      const submissionPayload: Record<string, any> = {
+        id: targetSubmissionId,
+        faculty_profile_id: profile.id,
+        curriculum_id: curriculumId,
+        faculty_assignment_id: facultyAssignmentId ?? null,
+        requirement_code: payload.requirementCode,
+        status: "uploaded",
+        submitted_at: new Date().toISOString(),
+        ...(trimmedRemarks ? { remarks: trimmedRemarks } : {}),
+      };
+
+      let { data: newSub, error: submissionError } = await supabase
+        .from("submissions")
+        .insert(submissionPayload)
+        .select()
+        .single();
+
+      if (submissionError) {
+        const fallbackPayload: Record<string, any> = {
+          id: targetSubmissionId,
+          faculty_profile_id: profile.id,
+          curriculum_id: curriculumId,
+          requirement_code: payload.requirementCode,
+          status: "uploaded",
+          submitted_at: submissionPayload.submitted_at,
+        };
+
+        if (!isMissingRemarksColumnError(submissionError) && trimmedRemarks) {
+          fallbackPayload.remarks = trimmedRemarks;
+        }
+
+        if (
+          !isMissingFacultyAssignmentIdError(submissionError) &&
+          facultyAssignmentId
+        ) {
+          fallbackPayload.faculty_assignment_id = facultyAssignmentId;
+        }
+
+        ({ data: newSub, error: submissionError } = await supabase
+          .from("submissions")
+          .insert(fallbackPayload)
+          .select()
+          .single());
+      }
+
+      if (submissionError) {
+        logger.error("submission_creation_failed", {
+          facultyId: profile.id,
+          error: submissionError.message,
+        });
+        return NextResponse.json(
+          { error: "Failed to create submission record" },
+          { status: 500 },
+        );
+      }
+
+      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("faculty-submissions")
+        .upload(storagePath, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        logger.error("file_upload_failed", {
+          submissionId: targetSubmissionId,
+          error: uploadError.message,
+        });
+        await supabase
+          .from("submissions")
+          .delete()
+          .eq("id", targetSubmissionId);
+        return NextResponse.json(
+          { error: "Failed to upload file" },
+          { status: 500 },
+        );
+      }
+
+      const { data: newDocVer, error: docVersionError } = await supabase
+        .from("document_versions")
+        .insert({
+          submission_id: targetSubmissionId,
+          version_number: 1,
+          storage_path: storagePath,
+          mime_type: file.type || "application/octet-stream",
+          size_bytes: fileBuffer.byteLength,
+          checksum_sha256: checksumSha256,
+          created_by: user.id,
+        })
+        .select()
+        .single();
+
+      if (docVersionError) {
+        logger.error("document_version_creation_failed", {
+          submissionId: targetSubmissionId,
+          error: docVersionError.message,
+        });
+        return NextResponse.json(
+          { error: "Failed to record document version" },
+          { status: 500 },
+        );
+      }
+
+      documentVersion = newDocVer;
+
+      try {
+        await supabase
+          .from("submissions")
+          .update({
+            storage_path: storagePath,
+            file_path: storagePath,
+            file_name: fileName,
+            mime_type: file.type || "application/octet-stream",
+            size_bytes: fileBuffer.byteLength,
+            checksum_sha256: checksumSha256,
+          })
+          .eq("id", targetSubmissionId);
+      } catch {
+        // Non-blocking
+      }
     }
 
-    logger.info("submission_created_successfully", {
-      submissionId,
+    logger.info("submission_processed_successfully", {
+      submissionId: targetSubmissionId,
+      versionNumber: documentVersion.version_number,
       facultyId: profile.id,
       requirementCode: payload.requirementCode,
     });
@@ -568,8 +700,6 @@ export async function POST(request: NextRequest) {
         const facultyName = profile.full_name || "Faculty Member";
         const reqCode = payload.requirementCode as RequirementCode;
         const reqLabel = REQUIREMENT_LABEL[reqCode] || payload.requirementCode;
-
-        const reviewerSet = new Set<string>();
 
         // 1. Get role IDs for 'admin' and 'super_admin'
         const { data: roles } = await supabase
@@ -586,7 +716,9 @@ export async function POST(request: NextRequest) {
           .in("role_id", roleIds);
 
         const profileIds = Array.from(
-          new Set((userRoles || []).map((ur) => ur.profile_id).filter(Boolean))
+          new Set(
+            (userRoles || []).map((ur) => ur.profile_id).filter(Boolean),
+          ),
         );
 
         // 3. Get corresponding auth user_ids from profiles
@@ -606,48 +738,44 @@ export async function POST(request: NextRequest) {
           ),
         );
 
-        console.log("[NOTIF_ADMIN_TARGETS_FOUND]", {
-          roleIds,
-          profileIdsCount: profileIds.length,
-          adminUserIdsCount: adminUserIds.length,
-          adminUserIds,
-        });
-
         let insertedCount = 0;
 
         for (const reviewerAuthUserId of adminUserIds) {
-          // Double defense: never send submission alert to submitting faculty
           if (reviewerAuthUserId === user.id) continue;
 
-          // Check if the administrator/reviewer has enabled new submission alerts (default to true if undefined)
           try {
-            const { data: authUserData } = await supabase.auth.admin.getUserById(
-              reviewerAuthUserId
-            );
+            const { data: authUserData } =
+              await supabase.auth.admin.getUserById(reviewerAuthUserId);
             const userMeta = authUserData?.user?.user_metadata || {};
             const isAlertEnabled =
               typeof userMeta.new_submission_alerts === "boolean"
                 ? userMeta.new_submission_alerts
                 : typeof userMeta.submission_alerts === "boolean"
-                ? userMeta.submission_alerts
-                : true;
+                  ? userMeta.submission_alerts
+                  : true;
 
-            if (!isAlertEnabled) {
-              console.log("[NOTIF_ADMIN_ALERT_DISABLED]", { reviewerAuthUserId });
-              continue;
-            }
-          } catch (prefErr) {
-            // Default to sending notification if preference check fails
+            if (!isAlertEnabled) continue;
+          } catch {
+            // Default to sending notification
           }
+
+          const isResubmit = documentVersion.version_number > 1;
+          const notifTitle = isResubmit
+            ? `Resubmission (v${documentVersion.version_number}) from ${facultyName}`
+            : `New Submission from ${facultyName}`;
+          const notifMessage = isResubmit
+            ? `Resubmitted ${reqLabel} (Version ${documentVersion.version_number}) for ${payload.academicYear} ${payload.semester}.`
+            : `Uploaded ${reqLabel} for ${payload.academicYear} ${payload.semester}.`;
 
           const created = await createNotification({
             userId: reviewerAuthUserId,
             type: "NEW_SUBMISSION",
-            title: `New Submission from ${facultyName}`,
-            message: `Uploaded ${reqLabel} for ${payload.academicYear} ${payload.semester}.`,
+            title: notifTitle,
+            message: notifMessage,
             metadata: {
-              submission_id: submissionId,
-              submissionId,
+              submission_id: targetSubmissionId,
+              submissionId: targetSubmissionId,
+              version_number: documentVersion.version_number,
               faculty_profile_id: profile.id,
               facultyName,
               requirement_code: payload.requirementCode,
@@ -660,29 +788,27 @@ export async function POST(request: NextRequest) {
             insertedCount++;
           }
         }
-
-        console.log("[NOTIF_DISPATCH]", {
-          recipients: adminUserIds,
-          title: `New Submission from ${facultyName}`,
-          type: "NEW_SUBMISSION",
-          insertedCount,
-        });
       } catch (notifErr) {
         logger.error("notification_creation_failed_on_upload", {
-          submissionId,
-          error: notifErr instanceof Error ? notifErr.message : String(notifErr),
+          submissionId: targetSubmissionId,
+          error:
+            notifErr instanceof Error ? notifErr.message : String(notifErr),
         });
       }
 
       try {
         await logAuditEvent({
           actorId: user.id,
-          action: "submission.upload",
+          action:
+            documentVersion.version_number > 1
+              ? "submission.resubmit"
+              : "submission.upload",
           entityType: "submission",
-          entityId: submissionId,
+          entityId: targetSubmissionId,
           metadata: {
             requirement_code: payload.requirementCode,
             file_name: fileName,
+            version_number: documentVersion.version_number,
             academic_year: payload.academicYear,
             semester: payload.semester,
             faculty_profile_id: profile.id,
@@ -691,8 +817,11 @@ export async function POST(request: NextRequest) {
         });
       } catch (auditError) {
         logger.error("audit_log_submission_upload_failed", {
-          submissionId,
-          error: auditError instanceof Error ? auditError.message : String(auditError),
+          submissionId: targetSubmissionId,
+          error:
+            auditError instanceof Error
+              ? auditError.message
+              : String(auditError),
         });
       }
     })();
@@ -700,7 +829,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        submissionId,
+        submissionId: targetSubmissionId,
         versionNumber: documentVersion.version_number,
         fileName,
         academicYear: payload.academicYear,
