@@ -180,6 +180,8 @@ type SubmissionPreview = {
   storagePath?: string;
   submittedAt?: string;
   note?: string | null;
+  notes?: string | null;
+  remarks?: string | null;
   feedback?: string;
   admin_remarks?: string;
   adminRemarks?: string | null;
@@ -1187,11 +1189,16 @@ function FacultySubmissionPanelContent({
 
     markSubmissionViewed(item.latestSubmissionId);
 
+    const userNote =
+      item.remarks ||
+      (item as { notes?: string }).notes ||
+      item.note ||
+      null;
+
     const adminRemarks =
       item.adminRemarks ||
       item.admin_remarks ||
       item.feedback ||
-      item.remarks ||
       null;
 
     const fileName =
@@ -1207,7 +1214,9 @@ function FacultySubmissionPanelContent({
       fileName,
       storagePath: item.storagePath || undefined,
       submittedAt: item.submittedAt,
-      note: item.note,
+      note: userNote,
+      notes: userNote,
+      remarks: userNote,
       feedback: adminRemarks || undefined,
       admin_remarks: adminRemarks || undefined,
       adminRemarks: adminRemarks,
@@ -1219,11 +1228,16 @@ function FacultySubmissionPanelContent({
   function openHistorySubmissionPreview(submission: PastSubmission) {
     markSubmissionViewed(submission.id);
 
+    const userNote =
+      submission.remarks ||
+      (submission as { notes?: string }).notes ||
+      submission.note ||
+      null;
+
     const adminRemarks =
       submission.adminRemarks ||
       submission.admin_remarks ||
       submission.feedback ||
-      submission.remarks ||
       null;
 
     const fileName =
@@ -1240,7 +1254,9 @@ function FacultySubmissionPanelContent({
       fileName,
       storagePath: submission.storagePath || undefined,
       submittedAt: submission.submittedAt,
-      note: submission.note,
+      note: userNote,
+      notes: userNote,
+      remarks: userNote,
       feedback: adminRemarks || undefined,
       admin_remarks: adminRemarks || undefined,
       adminRemarks: adminRemarks,
@@ -2788,12 +2804,24 @@ function FacultySubmissionPanelContent({
 
                     <div className="space-y-4">
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 p-4">
-                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                          My Note
-                        </p>
-                        <p className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
-                          {previewSubmission.note || "No note was added."}
-                        </p>
+                        <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                          MY NOTE
+                        </div>
+                        <div className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
+                          {previewSubmission.remarks ||
+                          previewSubmission.notes ||
+                          previewSubmission.note ? (
+                            <span>
+                              &ldquo;{previewSubmission.remarks ||
+                                previewSubmission.notes ||
+                                previewSubmission.note}&rdquo;
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 not-italic">
+                              No note was added.
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {previewSubmission.reviewedAt ||
