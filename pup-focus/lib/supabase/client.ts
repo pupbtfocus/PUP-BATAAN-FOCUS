@@ -57,6 +57,20 @@ function createMissingSupabaseClient() {
           error: new Error(SUPABASE_ENV_WARNING),
         };
       },
+      async getSession() {
+        return { data: { session: null }, error: null };
+      },
+      onAuthStateChange(_callback: (...args: any[]) => void) {
+        return {
+          data: {
+            subscription: {
+              id: "mock-subscription",
+              callback: _callback,
+              unsubscribe: () => {},
+            },
+          },
+        };
+      },
       async verifyOtp() {
         return {
           data: { session: null },

@@ -174,10 +174,11 @@ export async function POST(request: NextRequest) {
       profileImageMetadata.profile_image_path = storagePath;
     }
 
-    const publicAppOrigin =
-      process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
-    const callbackUrl = new URL("/auth/confirm", publicAppOrigin);
-    callbackUrl.searchParams.set("next", "/super-admin/dashboard");
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (request.url ? new URL(request.url).origin : "https://pupfocus.cjaayy.dev");
+    const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/callback`;
 
     const { data: genData, error: genError } =
       await supabase.auth.admin.generateLink({
@@ -197,7 +198,7 @@ export async function POST(request: NextRequest) {
             must_change_password: true,
             force_password_change: true,
           },
-          redirectTo: callbackUrl.toString(),
+          redirectTo: callbackUrl,
         },
       });
 

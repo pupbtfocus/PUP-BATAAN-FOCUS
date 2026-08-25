@@ -76,74 +76,53 @@ export default function Home() {
       ? window.location.hash.slice(1)
       : window.location.hash;
     const hashParams = new URLSearchParams(hash);
-    const hasAuthCallback =
-      hashParams.has("access_token") ||
-      hashParams.has("token") ||
-      hashParams.has("token_type") ||
-      hashParams.has("type") ||
-      hashParams.has("error");
 
-    if (!hasAuthCallback) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function handleAuthCallback() {
+    // 1. Safety net for implicit hash fragments (e.g. #access_token=... or #type=invite/recovery)
+    if (
+      window.location.hash.includes("access_token") ||
+      hashParams.get("type") === "invite" ||
+      hashParams.get("type") === "recovery"
+    ) {
       const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
 
-      if (cancelled) {
-        return;
-      }
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event: unknown, session: unknown) => {
+        if (session) {
+          router.replace("/auth/set-password");
+        }
+      });
 
-      const user = data.user;
+      supabase.auth.getSession().then((res: { data: { session: unknown } }) => {
+        if (res.data?.session) {
+          router.replace("/auth/set-password");
+        }
+      });
 
-      if (!user) {
-        const errorDescription =
-          hashParams.get("error_description") ??
-          hashParams.get("error") ??
-          "Unable to complete sign in.";
-        setError(decodeURIComponent(errorDescription));
-        return;
-      }
-
-      const mustChange =
-        (user.user_metadata as any)?.must_change_password === true ||
-        (user.user_metadata as any)?.force_password_change === true;
-      if (mustChange) {
-        window.history.replaceState(
-          null,
-          "",
-          `${window.location.pathname}${window.location.search}`,
-        );
-        window.location.assign("/auth/change-password");
-        return;
-      }
-
-      const signedInRole =
-        (user.user_metadata?.role as AppRole | undefined) ??
-        (user.app_metadata?.role as AppRole | undefined) ??
-        ROLE.FACULTY;
-      const nextTarget = ROUTE_BY_ROLE[signedInRole];
-
-      window.history.replaceState(
-        null,
-        "",
-        `${window.location.pathname}${window.location.search}`,
-      );
-
-      window.location.href = nextTarget;
+      return () => {
+        subscription.unsubscribe();
+      };
     }
 
-    void handleAuthCallback();
-
-    return () => {
-      cancelled = true;
-    };
+    // 2. Handle explicit error from hash without access token (e.g. #error=access_denied&error_description=...)
+    if (hashParams.has("error") || hashParams.has("error_description")) {
+      const errorDescription =
+        hashParams.get("error_description") ??
+        hashParams.get("error");
+      if (errorDescription) {
+        setError(decodeURIComponent(errorDescription));
+      }
+    }
   }, [router]);
 
   useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.location.hash.includes("access_token")
+    ) {
+      return;
+    }
+
     let cancelled = false;
 
     async function redirectIfAlreadySignedIn() {
@@ -163,7 +142,7 @@ export default function Home() {
         (user.user_metadata as any)?.must_change_password === true ||
         (user.user_metadata as any)?.force_password_change === true;
       if (mustChange) {
-        window.location.assign("/auth/change-password");
+        window.location.assign("/auth/set-password");
         return;
       }
 

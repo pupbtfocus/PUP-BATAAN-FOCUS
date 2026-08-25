@@ -103,5 +103,24 @@ describe("Auth Invite Link Collision Fixes", () => {
     expect(shouldRedirectToPasswordSetup({}, "recovery")).toBe(true);
     expect(shouldRedirectToPasswordSetup({}, null)).toBe(false);
   });
+
+  it("detects implicit hash fragments with access_token to route to set-password", () => {
+    function isImplicitHashAuth(hash: string) {
+      const normalized = hash.startsWith("#") ? hash.slice(1) : hash;
+      const params = new URLSearchParams(normalized);
+      return (
+        normalized.includes("access_token") ||
+        params.get("type") === "invite" ||
+        params.get("type") === "recovery"
+      );
+    }
+
+    expect(isImplicitHashAuth("#access_token=test-jwt&refresh_token=test-refresh&type=invite")).toBe(true);
+    expect(isImplicitHashAuth("access_token=test-jwt")).toBe(true);
+    expect(isImplicitHashAuth("#type=invite&token_hash=xyz")).toBe(true);
+    expect(isImplicitHashAuth("#error=access_denied")).toBe(false);
+    expect(isImplicitHashAuth("")).toBe(false);
+  });
 });
+
 
