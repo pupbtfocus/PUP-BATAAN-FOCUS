@@ -331,11 +331,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check for Existing Submission Record
+    // Check for Existing Submission Record (Guarantee Single Row per Requirement)
     let existingSubmission: {
       id: string;
       status: string | null;
       requirement_code: string;
+      curriculum_id?: string | null;
       faculty_assignment_id?: string | null;
       submitted_at?: string | null;
       created_at?: string | null;
@@ -343,49 +344,44 @@ export async function POST(request: NextRequest) {
       notes?: string | null;
     } | null = null;
 
-    if (facultyAssignmentId) {
-      const { data: existingInCurrentTerm } = await supabaseAdmin
-        .from("submissions")
-        .select(
-          "id, status, requirement_code, faculty_assignment_id, submitted_at, created_at, remarks, notes",
-        )
-        .eq("faculty_profile_id", profile.id)
-        .eq("faculty_assignment_id", facultyAssignmentId);
+    const { data: allFacultySubmissions } = await supabaseAdmin
+      .from("submissions")
+      .select(
+        "id, status, requirement_code, curriculum_id, faculty_assignment_id, submitted_at, created_at, remarks, notes",
+      )
+      .eq("faculty_profile_id", profile.id)
+      .order("created_at", { ascending: false });
 
-      if (existingInCurrentTerm && existingInCurrentTerm.length > 0) {
-        const activeTermSubmissions = existingInCurrentTerm.filter((sub) => {
-          const matched = matchRequirementCode(
-            sub.requirement_code,
-            (sub as { requirement_id?: string }).requirement_id,
-          );
+    if (allFacultySubmissions && allFacultySubmissions.length > 0) {
+      // 1. Try to find match with exact assignment or curriculum
+      const exactMatch = allFacultySubmissions.find((sub) => {
+        const matchesCode =
+          sub.requirement_code === payload.requirementCode ||
+          matchRequirementCode(sub.requirement_code) === payload.requirementCode;
+
+        const matchesAssignment =
+          facultyAssignmentId && sub.faculty_assignment_id === facultyAssignmentId;
+
+        const matchesCurriculum =
+          curriculumId && sub.curriculum_id === curriculumId;
+
+        return matchesCode && (matchesAssignment || matchesCurriculum);
+      });
+
+      if (exactMatch) {
+        existingSubmission = exactMatch;
+      } else {
+        // 2. Fallback: match by requirement_code on this faculty profile
+        const codeMatch = allFacultySubmissions.find((sub) => {
           return (
-            matched === payload.requirementCode ||
-            sub.requirement_code === payload.requirementCode
+            sub.requirement_code === payload.requirementCode ||
+            matchRequirementCode(sub.requirement_code) === payload.requirementCode
           );
         });
 
-        if (activeTermSubmissions.length > 0) {
-          existingSubmission = activeTermSubmissions[0];
+        if (codeMatch) {
+          existingSubmission = codeMatch;
         }
-      }
-    }
-
-    if (!existingSubmission) {
-      const { data: existingByProfile } = await supabaseAdmin
-        .from("submissions")
-        .select(
-          "id, status, requirement_code, faculty_assignment_id, submitted_at, created_at, remarks, notes",
-        )
-        .eq("faculty_profile_id", profile.id)
-        .or(
-          `requirement_code.eq.${payload.requirementCode},requirement_type.eq.${payload.requirementCode}`,
-        )
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (existingByProfile) {
-        existingSubmission = existingByProfile;
       }
     }
 
@@ -437,9 +433,10 @@ export async function POST(request: NextRequest) {
     let documentVersion: { id: string; version_number: number; storage_path: string };
 
     if (existingSubmission) {
+      // REUSE EXISTING SUBMISSION ROW - DO NOT INSERT DUPLICATE
       targetSubmissionId = existingSubmission.id;
 
-      // 1. Step 2: Query all existing rows in document_versions
+      // 1. Query existing rows in document_versions for this submission
       const { data: existingVersions, error: fetchVerError } =
         await supabaseAdmin
           .from("document_versions")
@@ -456,7 +453,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 2. Step 3: If document_versions has NO rows or missing Version 1, archive the OLD record as Version 1
+      // 2. If document_versions has NO Version 1 row, archive previous file as Version 1
       const hasVersion1 =
         existingVersions &&
         existingVersions.some((v) => v.version_number === 1);
@@ -497,7 +494,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 3. Step 4: Calculate Next Version Number (e.g. Version 2)
+      // 3. Calculate Next Version Number (e.g. Version 2, 3, etc.)
       let nextVersionNumber = 2;
       if (existingVersions && existingVersions.length > 0) {
         const maxVersion = Math.max(
@@ -560,7 +557,7 @@ export async function POST(request: NextRequest) {
 
       documentVersion = newDocVer;
 
-      // 4. Step 5: Update main submissions record with only valid submissions schema columns
+      // 4. Update the existing submissions row
       const updatePayload: Record<string, any> = {
         status: "uploaded",
         submitted_at: new Date().toISOString(),
@@ -606,7 +603,7 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      // Brand New Initial Submission (Version 1)
+      // BRAND NEW SUBMISSION - INSERT ONLY ONCE
       targetSubmissionId = crypto.randomUUID();
 
       const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v1_${fileName}`;
