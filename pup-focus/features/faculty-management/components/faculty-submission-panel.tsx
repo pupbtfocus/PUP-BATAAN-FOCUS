@@ -2551,7 +2551,7 @@ function FacultySubmissionPanelContent({
                 onClick={closeHistoryModal}
               >
                 <div
-                  className="flex max-h-[85vh] w-full max-w-6xl flex-col rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl"
+                  className="relative w-full max-w-7xl mx-auto flex max-h-[90vh] flex-col rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
