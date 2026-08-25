@@ -26,26 +26,42 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { submissionId, decision, remarks } = body;
+    const { submissionId, decision, status, remarks, adminRemarks, admin_remarks } = body;
 
     // Validate input
-    if (!submissionId || !decision) {
+    if (!submissionId) {
       return NextResponse.json(
-        { error: "submissionId and decision are required" },
+        { error: "submissionId is required" },
         { status: 400 },
       );
     }
 
-    if (!["validated", "rejected"].includes(decision)) {
+    const rawDecision = decision || status || "";
+    const normDecision = String(rawDecision).toLowerCase().trim();
+    let cleanDecision: "validated" | "rejected";
+
+    if (["validated", "approved", "accept"].includes(normDecision)) {
+      cleanDecision = "validated";
+    } else if (
+      [
+        "rejected",
+        "needs_revision",
+        "returned",
+        "revision",
+        "revision_requested",
+      ].includes(normDecision)
+    ) {
+      cleanDecision = "rejected";
+    } else {
       return NextResponse.json(
         { error: "decision must be 'validated' or 'rejected'" },
         { status: 400 },
       );
     }
 
-    const supabase = getServiceRoleClient();
+    const supabaseAdmin = getServiceRoleClient();
 
-    const { data: adminProfile } = await supabase
+    const { data: adminProfile } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name")
       .eq("user_id", user.id)
@@ -59,75 +75,80 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("Processing review:", {
+    const rawRemarks = remarks || adminRemarks || admin_remarks || "";
+    const cleanRemarks =
+      typeof rawRemarks === "string" && rawRemarks.trim()
+        ? rawRemarks.trim()
+        : null;
+
+    logger.info("processing_admin_review", {
       submissionId,
-      decision,
-      remarks,
+      decision: cleanDecision,
+      remarks: cleanRemarks,
       reviewerProfileId: adminProfile.id,
     });
 
     // Fetch details of submission being reviewed to identify the target faculty member
-    const { data: submission } = await supabase
+    const { data: submission } = await supabaseAdmin
       .from("submissions")
       .select("id, faculty_profile_id, requirement_code, academic_year, semester")
       .eq("id", submissionId)
       .maybeSingle();
 
-    const cleanRemarks =
-      remarks && typeof remarks === "string" && remarks.trim()
-        ? remarks.trim()
-        : null;
-
     // Update the submission status and admin_remarks (gracefully handling missing columns)
     let updateError: { message: string } | null = null;
 
-    // Step 1: Attempt update with status, admin_remarks, and updated_at
+    // Step 1: Attempt update with status, admin_remarks, remarks, and updated_at
     const fullPayload: Record<string, unknown> = {
-      status: decision,
+      status: cleanDecision,
       updated_at: new Date().toISOString(),
     };
     if (cleanRemarks) {
       fullPayload.admin_remarks = cleanRemarks;
+      fullPayload.remarks = cleanRemarks;
     }
 
-    const { error: firstErr } = await supabase
+    const { error: firstErr } = await supabaseAdmin
       .from("submissions")
       .update(fullPayload)
       .eq("id", submissionId);
 
     if (firstErr) {
-      console.warn("Full submission update failed, trying fallback without updated_at:", firstErr.message);
+      console.warn("Full submission update failed, trying fallback without remarks:", firstErr.message);
 
-      // Step 2: Fallback without updated_at (if updated_at column missing / PGRST204)
-      const payloadNoUpdatedAt: Record<string, unknown> = { status: decision };
+      // Step 2: Fallback with status and admin_remarks only
+      const payloadAdminRemarksOnly: Record<string, unknown> = {
+        status: cleanDecision,
+        updated_at: new Date().toISOString(),
+      };
       if (cleanRemarks) {
-        payloadNoUpdatedAt.admin_remarks = cleanRemarks;
+        payloadAdminRemarksOnly.admin_remarks = cleanRemarks;
       }
 
-      const { error: secondErr } = await supabase
+      const { error: secondErr } = await supabaseAdmin
         .from("submissions")
-        .update(payloadNoUpdatedAt)
+        .update(payloadAdminRemarksOnly)
         .eq("id", submissionId);
 
       if (secondErr) {
-        console.warn("Fallback without updated_at failed, trying fallback with updated_at but without admin_remarks:", secondErr.message);
+        console.warn("Fallback with admin_remarks failed, trying fallback with status and updated_at:", secondErr.message);
 
         // Step 3: Fallback without admin_remarks (if admin_remarks column missing)
-        const { error: thirdErr } = await supabase
+        const { error: thirdErr } = await supabaseAdmin
           .from("submissions")
           .update({
-            status: decision,
+            status: cleanDecision,
             updated_at: new Date().toISOString(),
           })
           .eq("id", submissionId);
 
         if (thirdErr) {
-          console.warn("Fallback without admin_remarks failed, trying minimal update:", thirdErr.message);
+          console.warn("Fallback with updated_at failed, trying minimal update (status only):", thirdErr.message);
 
           // Step 4: Minimal update (status only)
-          const { error: minimalErr } = await supabase
+          const { error: minimalErr } = await supabaseAdmin
             .from("submissions")
-            .update({ status: decision })
+            .update({ status: cleanDecision })
             .eq("id", submissionId);
 
           updateError = minimalErr;
@@ -143,12 +164,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { error: reviewError } = await supabase
+    const { error: reviewError } = await supabaseAdmin
       .from("review_decisions")
       .insert({
         submission_id: submissionId,
         reviewer_profile_id: adminProfile.id,
-        decision: decision,
+        decision: cleanDecision,
         remarks: cleanRemarks,
       });
 
@@ -157,10 +178,10 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      await supabase.from("verification_history").insert({
+      await supabaseAdmin.from("verification_history").insert({
         submission_id: submissionId,
-        status: decision,
-        decision,
+        status: cleanDecision,
+        decision: cleanDecision,
         remarks: cleanRemarks,
         reviewed_by: adminProfile.id,
         reviewer_profile_id: adminProfile.id,
@@ -169,14 +190,12 @@ export async function POST(request: NextRequest) {
       // verification_history is optional
     }
 
-    console.log("Review processed successfully");
-
     // Notification – send notification to the faculty member who submitted
     try {
       let targetAuthUserId: string | null = null;
 
       // 1. Check uploader from document_versions
-      const { data: docVersion } = await supabase
+      const { data: docVersion } = await supabaseAdmin
         .from("document_versions")
         .select("created_by")
         .eq("submission_id", submissionId)
@@ -190,7 +209,7 @@ export async function POST(request: NextRequest) {
 
       // 2. Check profiles by faculty_profile_id
       if (!targetAuthUserId && submission?.faculty_profile_id) {
-        const { data: profile } = await supabase
+        const { data: profile } = await supabaseAdmin
           .from("profiles")
           .select("user_id")
           .eq("id", submission.faculty_profile_id)
@@ -209,14 +228,10 @@ export async function POST(request: NextRequest) {
         let notifTitle = "Submission Approved";
         let notifMessage = `Your submission for "${reqLabel}" has been approved${cleanRemarks ? `: "${cleanRemarks}"` : "."}`;
 
-        if (decision === "rejected") {
+        if (cleanDecision === "rejected") {
           notifType = "SUBMISSION_REJECTED";
-          notifTitle = "Submission Rejected";
-          notifMessage = `Your submission for "${reqLabel}" was rejected${cleanRemarks ? `: "${cleanRemarks}"` : ". Please review and resubmit."}`;
-        } else if ((decision as string) === "needs_revision" || (decision as string) === "revision_requested") {
-          notifType = "REVISION_REQUESTED";
           notifTitle = "Revision Requested";
-          notifMessage = `Revision requested for "${reqLabel}"${cleanRemarks ? `: "${cleanRemarks}"` : ". Please update your submission."}`;
+          notifMessage = `Revision requested for "${reqLabel}"${cleanRemarks ? `: "${cleanRemarks}"` : ". Please review and resubmit."}`;
         }
 
         await createNotification({
@@ -231,7 +246,7 @@ export async function POST(request: NextRequest) {
             requirementCode: submission?.requirement_code,
             reviewed_by: adminProfile.id,
             reviewerName: adminProfile.full_name || "Reviewer",
-            decision,
+            decision: cleanDecision,
             remarks: cleanRemarks,
           },
         });
@@ -247,12 +262,12 @@ export async function POST(request: NextRequest) {
     try {
       await logAuditEvent({
         actorId: user.id,
-        action: decision === "validated" ? "submission.approve" : "submission.reject",
+        action: cleanDecision === "validated" ? "submission.approve" : "submission.reject",
         entityType: "submission",
         entityId: submissionId,
         metadata: {
-          review_decision: decision,
-          remarks: remarks || null,
+          review_decision: cleanDecision,
+          remarks: cleanRemarks,
           reviewer_profile_id: adminProfile.id,
         },
       });
@@ -266,9 +281,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       submissionId,
-      status: decision,
+      status: cleanDecision,
+      decision: cleanDecision,
       remarks: cleanRemarks,
-      message: `Submission ${decision} successfully`,
+      message: `Submission ${cleanDecision} successfully`,
     });
   } catch (error) {
     console.error("Review submission error:", error);
