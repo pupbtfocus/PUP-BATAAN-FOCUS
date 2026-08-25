@@ -120,7 +120,9 @@ export async function proxy(request: NextRequest) {
   // an auth callback or confirmation flow (e.g. invite links, token verification).
   const isAuthCallbackOrConfirm =
     pathname === "/auth/confirm" ||
+    pathname.startsWith("/auth/confirm") ||
     pathname === "/auth/callback" ||
+    pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/api/auth/callback");
 
   const hasInviteOrAuthParams =

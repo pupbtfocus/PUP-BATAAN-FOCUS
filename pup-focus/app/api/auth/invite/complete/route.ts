@@ -6,14 +6,16 @@ import { bootstrapInvitedFacultyAccount } from "@/lib/auth/bootstrap-invited-fac
 import { sendTempPasswordEmail } from "@/lib/email/send-invite";
 import { ROLE } from "@/config/roles";
 
-function generateTempPassword(len = 12) {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+";
-  let out = "";
+function generateTempPassword(len = 10) {
+  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  const numbers = "23456789";
+  const specials = "!@#$%&*";
+  let randomPart = "";
   for (let i = 0; i < len; i++) {
-    out += chars[Math.floor(Math.random() * chars.length)];
+    const chars = letters + numbers + specials;
+    randomPart += chars[Math.floor(Math.random() * chars.length)];
   }
-  return out;
+  return `PUPFocus!${randomPart}`;
 }
 
 export async function POST(req: Request) {
