@@ -557,12 +557,11 @@ export async function POST(request: NextRequest) {
 
       documentVersion = newDocVer;
 
-      // 4. Update the existing submissions row
+      // 4. Update the existing submissions row (strictly preserving admin_remarks)
       const updatePayload: Record<string, any> = {
         status: "uploaded",
         submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        remarks: trimmedRemarks || null,
       };
 
       if (trimmedRemarks) {
@@ -634,7 +633,6 @@ export async function POST(request: NextRequest) {
         requirement_code: payload.requirementCode,
         status: "uploaded",
         submitted_at: new Date().toISOString(),
-        remarks: trimmedRemarks || null,
       };
 
       if (trimmedRemarks) {
