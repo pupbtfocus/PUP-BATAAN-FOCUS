@@ -2,12 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { logger } from "@/lib/observability/logger";
+import { REQUIREMENT_CODE } from "@/config/compliance";
+import type { RequirementCode } from "@/config/compliance";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type DocumentVersionRow = {
   id: string;
+  submission_id?: string;
   version_number: number;
   storage_path: string;
   mime_type: string | null;
@@ -24,26 +27,52 @@ type ReviewDecision = {
 
 type SubmissionRow = {
   id: string;
+  faculty_profile_id?: string | null;
   requirement_code?: string | null;
   requirement_type?: string | null;
   status: string | null;
   submitted_at?: string | null;
   created_at?: string | null;
-  storage_path?: string | null;
-  file_path?: string | null;
-  file_name?: string | null;
-  mime_type?: string | null;
-  size_bytes?: number | null;
-  file_size?: number | null;
-  checksum_sha256?: string | null;
   notes?: string | null;
   remarks?: string | null;
   admin_remarks?: string | null;
 };
 
+function matchRequirementCode(
+  inputCode?: string | null,
+  inputReqId?: string | null,
+): RequirementCode | null {
+  const candidates = [inputCode, inputReqId].filter(Boolean) as string[];
+  for (const raw of candidates) {
+    const s = raw.toLowerCase().trim().replace(/[-_\s]+/g, "");
+    if (s.includes("gradesheet") || s.includes("grade"))
+      return REQUIREMENT_CODE.GRADE_SHEET;
+    if (s.includes("syllabus") || s.includes("enhancedsyllabus"))
+      return REQUIREMENT_CODE.ENHANCED_SYLLABUS;
+    if (s.includes("orientation") || s.includes("classorientation"))
+      return REQUIREMENT_CODE.CLASS_ORIENTATION;
+    if (s.includes("midterm") || s.includes("midtermpackage"))
+      return REQUIREMENT_CODE.MIDTERM_PACKAGE;
+    if (s.includes("final") || s.includes("finalpackage"))
+      return REQUIREMENT_CODE.FINAL_PACKAGE;
+    if (
+      s.includes("classrecord") ||
+      s.includes("records") ||
+      s.includes("classrecords")
+    )
+      return REQUIREMENT_CODE.CLASS_RECORDS;
+  }
+  return null;
+}
+
 function extractFileName(storagePath: string): string {
+  if (!storagePath) return "document";
   const parts = storagePath.split("/");
-  return parts[parts.length - 1] ?? storagePath;
+  let fileName = parts[parts.length - 1] ?? storagePath;
+  if (/^v\d+_/i.test(fileName)) {
+    return fileName.replace(/^v\d+_/i, "");
+  }
+  return fileName;
 }
 
 function formatFileSize(bytes: number | null): string {
@@ -80,10 +109,10 @@ export async function GET(
       );
     }
 
-    const supabase = getServiceRoleClient();
+    const supabaseAdmin = getServiceRoleClient();
 
     // Resolve faculty profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("id")
       .eq("user_id", user.id)
@@ -100,52 +129,95 @@ export async function GET(
       );
     }
 
+    const facultyProfileId = profile.id;
     const facultyIdList = Array.from(new Set([user.id, profile.id]));
 
-    // 1. Flexible Submission Lookup: query by id = submissionId, requirement_code, or requirement_id
-    let { data: rawSubmission } = await supabase
+    // 1. Flexible Root Submission Lookup: query by id = submissionId or requirement code
+    let { data: rawSubmission } = await supabaseAdmin
       .from("submissions")
       .select(
-        "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks",
+        "id, faculty_profile_id, requirement_code, status, submitted_at, created_at, remarks, notes",
       )
       .eq("id", submissionId)
       .maybeSingle();
 
-    // Fallback lookup if not found by direct ID: match user/profile + requirement identifier
     if (!rawSubmission) {
-      const { data: byProfile } = await supabase
+      const { data: allProfileSubs } = await supabaseAdmin
         .from("submissions")
         .select(
-          "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks",
+          "id, faculty_profile_id, requirement_code, status, submitted_at, created_at, remarks, notes",
         )
         .in("faculty_profile_id", facultyIdList)
-        .or(`requirement_code.eq.${submissionId},id.eq.${submissionId}`)
         .order("submitted_at", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
 
-      if (byProfile) {
-        rawSubmission = byProfile;
-      } else {
-        const { data: byFallbackUser } = await supabase
-          .from("submissions")
-          .select(
-            "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks",
-          )
-          .or(`user_id.in.(${facultyIdList.join(",")}),faculty_id.in.(${facultyIdList.join(",")})`)
-          .or(`requirement_code.eq.${submissionId},id.eq.${submissionId}`)
-          .order("submitted_at", { ascending: false, nullsFirst: false })
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+      const matchedReq = matchRequirementCode(submissionId);
+      const found = (allProfileSubs || []).find((s) => {
+        return (
+          s.id === submissionId ||
+          s.requirement_code === submissionId ||
+          (matchedReq && matchRequirementCode(s.requirement_code) === matchedReq)
+        );
+      });
 
-        rawSubmission = byFallbackUser ?? null;
+      if (found) {
+        rawSubmission = found;
       }
     }
 
-    // If still no submission is found, return 200 OK with empty versions array
+    // If still no submission row is found, check if document_versions has records directly for submissionId
     if (!rawSubmission) {
+      const { data: directDocVers } = await supabaseAdmin
+        .from("document_versions")
+        .select(
+          "id, submission_id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_at",
+        )
+        .eq("submission_id", submissionId)
+        .order("created_at", { ascending: true });
+
+      if (directDocVers && directDocVers.length > 0) {
+        const reindexed = directDocVers.map((v, i) => {
+          const vNum = i + 1;
+          const fileName = extractFileName(v.storage_path);
+          const sizeBytes = v.size_bytes ?? 0;
+          const downloadUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(submissionId)}&versionId=${encodeURIComponent(v.id)}&download=true&filename=${encodeURIComponent(fileName)}`;
+          return {
+            id: v.id,
+            versionNumber: vNum,
+            version_number: vNum,
+            storagePath: v.storage_path,
+            file_path: v.storage_path,
+            fileName,
+            file_name: fileName,
+            mimeType: v.mime_type ?? "application/octet-stream",
+            sizeBytes,
+            size_bytes: sizeBytes,
+            sizeFormatted: formatFileSize(sizeBytes),
+            size_formatted: formatFileSize(sizeBytes),
+            checksumSha256: v.checksum_sha256 ?? "",
+            createdAt: v.created_at ?? new Date().toISOString(),
+            created_at: v.created_at ?? new Date().toISOString(),
+            status: "uploaded",
+            remarks: null,
+            downloadUrl,
+            download_url: downloadUrl,
+          };
+        });
+
+        reindexed.sort((a, b) => b.versionNumber - a.versionNumber);
+
+        return NextResponse.json({
+          success: true,
+          submissionId,
+          versions: reindexed,
+          submission: {
+            id: submissionId,
+            requirementCode: submissionId,
+            status: "uploaded",
+          },
+        });
+      }
+
       return NextResponse.json({
         success: true,
         submissionId,
@@ -157,66 +229,108 @@ export async function GET(
 
     const submission = rawSubmission as unknown as SubmissionRow;
     const targetSubmissionId = submission.id;
-
-    // 2. Fetch version rows from document_versions table
-    const { data: versions, error: versionsError } = await supabase
-      .from("document_versions")
-      .select(
-        "id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_at",
-      )
-      .eq("submission_id", targetSubmissionId)
-      .order("version_number", { ascending: false });
-
-    if (versionsError) {
-      logger.error("document_versions_fetch_failed", {
-        submissionId: targetSubmissionId,
-        error: versionsError.message,
-      });
-      return NextResponse.json(
-        { error: "Failed to load document versions" },
-        { status: 500 },
-      );
-    }
-
-    const typedVersions = (versions ?? []) as DocumentVersionRow[];
-
-    // 3. Fetch latest review decision
-    let latestReview: ReviewDecision | null = null;
-    try {
-      const { data: reviewsData } = await supabase
-        .from("review_decisions")
-        .select("decision, remarks, created_at")
-        .eq("submission_id", targetSubmissionId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (reviewsData) {
-        latestReview = reviewsData as ReviewDecision;
-      }
-    } catch (reviewErr) {
-      logger.error("review_decisions_fetch_exception", {
-        submissionId: targetSubmissionId,
-        error:
-          reviewErr instanceof Error ? reviewErr.message : String(reviewErr),
-      });
-    }
-
-    const reqCode =
+    const targetReqCode =
       submission.requirement_code ||
       submission.requirement_type ||
       submissionId;
 
-    // 4. Map existing document_versions rows
-    const versionDetails = typedVersions.map((version) => {
+    // 2. Aggregate ALL Submission Records for this Faculty & Requirement
+    const { data: allRelatedSubmissions } = await supabaseAdmin
+      .from("submissions")
+      .select(
+        "id, faculty_profile_id, requirement_code, status, submitted_at, created_at, remarks, notes",
+      )
+      .eq("faculty_profile_id", facultyProfileId)
+      .order("created_at", { ascending: true });
+
+    const matchingSubmissions = (allRelatedSubmissions || []).filter((sub) => {
+      const matched = matchRequirementCode(sub.requirement_code);
+      return (
+        sub.id === targetSubmissionId ||
+        sub.id === submissionId ||
+        sub.requirement_code === targetReqCode ||
+        matched === targetReqCode ||
+        matchRequirementCode(targetReqCode) === matched
+      );
+    });
+
+    const allSubmissionIds = Array.from(
+      new Set(
+        [
+          targetSubmissionId,
+          submissionId,
+          ...matchingSubmissions.map((s) => s.id),
+        ].filter(Boolean),
+      ),
+    );
+
+    // 3. Query document_versions across ALL matching submission IDs
+    const { data: rawVersions, error: versionsError } = await supabaseAdmin
+      .from("document_versions")
+      .select(
+        "id, submission_id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_at",
+      )
+      .in("submission_id", allSubmissionIds)
+      .order("created_at", { ascending: true });
+
+    if (versionsError) {
+      logger.error("document_versions_fetch_failed", {
+        submissionIds: allSubmissionIds,
+        error: versionsError.message,
+      });
+    }
+
+    const fetchedVersions = (rawVersions || []) as DocumentVersionRow[];
+
+    // 4. Legacy Fallback: check if any matching submission has no rows in document_versions
+    const versionStoragePaths = new Set(
+      fetchedVersions.map((v) => v.storage_path),
+    );
+
+    const aggregatedVersionRows: DocumentVersionRow[] = [...fetchedVersions];
+
+    for (const sub of matchingSubmissions) {
+      const hasVersionInDocVer = fetchedVersions.some(
+        (v) => v.submission_id === sub.id,
+      );
+
+      if (!hasVersionInDocVer) {
+        const fallbackPath = `faculty-submissions/${facultyProfileId}/${sub.id}/v1_${targetReqCode}`;
+        if (!versionStoragePaths.has(fallbackPath)) {
+          versionStoragePaths.add(fallbackPath);
+          aggregatedVersionRows.push({
+            id: `${sub.id}-v1`,
+            submission_id: sub.id,
+            version_number: 1,
+            storage_path: fallbackPath,
+            mime_type: "application/octet-stream",
+            size_bytes: 0,
+            checksum_sha256: "",
+            created_at: sub.submitted_at || sub.created_at || new Date().toISOString(),
+          });
+        }
+      }
+    }
+
+    // 5. Sort all aggregated versions chronologically (ascending)
+    aggregatedVersionRows.sort((a, b) => {
+      const timeA = new Date(a.created_at || 0).getTime();
+      const timeB = new Date(b.created_at || 0).getTime();
+      return timeA - timeB;
+    });
+
+    // 6. Deduplicate & Re-index sequentially (v1, v2, v3, ...)
+    const reindexedVersions = aggregatedVersionRows.map((version, index) => {
+      const versionNumber = index + 1;
       const fileName = extractFileName(version.storage_path);
       const sizeBytes = version.size_bytes ?? 0;
-      const downloadUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(targetSubmissionId)}&versionId=${encodeURIComponent(version.id)}&download=true&filename=${encodeURIComponent(fileName)}`;
+      const subIdForDownload = version.submission_id || targetSubmissionId;
+      const downloadUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(subIdForDownload)}&versionId=${encodeURIComponent(version.id)}&download=true&filename=${encodeURIComponent(fileName)}`;
 
       return {
         id: version.id,
-        versionNumber: version.version_number,
-        version_number: version.version_number,
+        versionNumber,
+        version_number: versionNumber,
         storagePath: version.storage_path,
         file_path: version.storage_path,
         fileName,
@@ -230,78 +344,84 @@ export async function GET(
         createdAt: version.created_at ?? new Date().toISOString(),
         created_at: version.created_at ?? new Date().toISOString(),
         status: submission.status ?? "uploaded",
-        remarks: submission.remarks ?? submission.admin_remarks ?? submission.notes ?? null,
+        remarks: null,
         downloadUrl,
         download_url: downloadUrl,
       };
     });
 
-    // 5. Fallback Logic: If document_versions is empty OR does not contain Version 1, construct Version 1 from submissions table
-    const hasVersion1 = versionDetails.some(
-      (v) => (v.versionNumber === 1 || v.version_number === 1),
-    );
-
-    if (!hasVersion1) {
-      const initialPath =
-        submission.storage_path ||
-        submission.file_path ||
-        "";
-      const initialFileName =
-        submission.file_name ||
-        (initialPath ? extractFileName(initialPath) : "") ||
-        `${reqCode || "submission"}_v1`;
-      const initialSizeBytes =
-        submission.size_bytes || submission.file_size || 0;
+    // If still empty, add default Version 1 from current submission
+    if (reindexedVersions.length === 0) {
+      const initialPath = `faculty-submissions/${facultyProfileId}/${targetSubmissionId}/v1_${targetReqCode}`;
+      const initialFileName = `${targetReqCode}_v1`;
       const initialCreatedAt =
         submission.submitted_at ||
         submission.created_at ||
         new Date().toISOString();
       const initialDownloadUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(targetSubmissionId)}&download=true&filename=${encodeURIComponent(initialFileName)}`;
 
-      const initialVersion = {
-        id: `${submission.id}-v1`,
+      reindexedVersions.push({
+        id: `${targetSubmissionId}-v1`,
         versionNumber: 1,
         version_number: 1,
         storagePath: initialPath,
         file_path: initialPath,
         fileName: initialFileName,
         file_name: initialFileName,
-        mimeType: submission.mime_type ?? "application/octet-stream",
-        sizeBytes: initialSizeBytes,
-        size_bytes: initialSizeBytes,
-        sizeFormatted: formatFileSize(initialSizeBytes),
-        size_formatted: formatFileSize(initialSizeBytes),
-        checksumSha256: submission.checksum_sha256 ?? "",
+        mimeType: "application/octet-stream",
+        sizeBytes: 0,
+        size_bytes: 0,
+        sizeFormatted: formatFileSize(0),
+        size_formatted: formatFileSize(0),
+        checksumSha256: "",
         createdAt: initialCreatedAt,
         created_at: initialCreatedAt,
         status: submission.status ?? "uploaded",
-        remarks: submission.remarks ?? submission.admin_remarks ?? submission.notes ?? null,
+        remarks: null,
         downloadUrl: initialDownloadUrl,
         download_url: initialDownloadUrl,
-      };
-
-      versionDetails.push(initialVersion);
+      });
     }
 
-    // 6. Sort all versions by version_number descending (e.g. Version 3 -> Version 2 -> Version 1)
-    versionDetails.sort(
-      (a, b) =>
-        (b.versionNumber ?? b.version_number ?? 0) -
-        (a.versionNumber ?? a.version_number ?? 0),
+    // 7. Sort descending (e.g. Version N CURRENT at top, Version 1 at bottom)
+    reindexedVersions.sort(
+      (a, b) => b.versionNumber - a.versionNumber,
     );
+
+    // 8. Fetch latest reviewer decision across all matching submission IDs
+    let latestReview: ReviewDecision | null = null;
+    try {
+      const { data: reviewsData } = await supabaseAdmin
+        .from("review_decisions")
+        .select("decision, remarks, created_at")
+        .in("submission_id", allSubmissionIds)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (reviewsData) {
+        latestReview = reviewsData as ReviewDecision;
+      }
+    } catch (reviewErr) {
+      logger.error("review_decisions_fetch_exception", {
+        submissionIds: allSubmissionIds,
+        error:
+          reviewErr instanceof Error ? reviewErr.message : String(reviewErr),
+      });
+    }
 
     return NextResponse.json({
       success: true,
       submissionId: targetSubmissionId,
-      versions: versionDetails,
+      versions: reindexedVersions,
       submission: {
         id: submission.id,
-        requirementCode: reqCode,
+        requirementCode: targetReqCode,
         status: submission.status ?? "uploaded",
-        feedback: latestReview?.remarks ?? submission.admin_remarks ?? undefined,
-        admin_remarks: latestReview?.remarks ?? submission.admin_remarks ?? undefined,
-        notes: (submission.notes || (!latestReview?.remarks && !submission.admin_remarks ? submission.remarks : undefined)) || undefined,
-        faculty_notes: (submission.notes || (!latestReview?.remarks && !submission.admin_remarks ? submission.remarks : undefined)) || undefined,
+        feedback: latestReview?.remarks ?? undefined,
+        admin_remarks: latestReview?.remarks ?? undefined,
+        notes: (submission.notes || (!latestReview?.remarks ? submission.remarks : undefined)) || undefined,
+        faculty_notes: (submission.notes || (!latestReview?.remarks ? submission.remarks : undefined)) || undefined,
         reviewedAt: latestReview?.created_at
           ? new Date(latestReview.created_at).toISOString().split("T")[0]
           : undefined,
