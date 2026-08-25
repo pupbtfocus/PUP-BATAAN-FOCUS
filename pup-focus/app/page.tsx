@@ -43,26 +43,33 @@ export default function Home() {
     });
 
     if (typeof window !== "undefined") {
-      const searchParams = new URLSearchParams(window.location.search);
-      const reason = searchParams.get("reason");
-      const urlError = searchParams.get("error");
-      const urlMessage = searchParams.get("message");
+      const hasInviteHash =
+        window.location.hash.includes("access_token") ||
+        window.location.hash.includes("type=invite") ||
+        window.location.hash.includes("type=recovery");
 
-      if (reason === "timeout") {
-        setNotice({
-          type: "timeout",
-          message: "Your session has expired due to inactivity. Please sign in again.",
-        });
-      } else if (urlError) {
-        setNotice({
-          type: "error",
-          message: decodeURIComponent(urlError),
-        });
-      } else if (urlMessage) {
-        setNotice({
-          type: "success",
-          message: decodeURIComponent(urlMessage),
-        });
+      if (!hasInviteHash) {
+        const searchParams = new URLSearchParams(window.location.search);
+        const reason = searchParams.get("reason");
+        const urlError = searchParams.get("error");
+        const urlMessage = searchParams.get("message");
+
+        if (reason === "timeout") {
+          setNotice({
+            type: "timeout",
+            message: "Your session has expired due to inactivity. Please sign in again.",
+          });
+        } else if (urlError) {
+          setNotice({
+            type: "error",
+            message: decodeURIComponent(urlError),
+          });
+        } else if (urlMessage) {
+          setNotice({
+            type: "success",
+            message: decodeURIComponent(urlMessage),
+          });
+        }
       }
     }
   }, [router]);
@@ -72,37 +79,51 @@ export default function Home() {
       return;
     }
 
+    // 1. Manual hash token parsing when arriving with #access_token
+    if (window.location.hash.includes("access_token")) {
+      // Immediately clear/suppress error states and modal alerts
+      setError(null);
+      setNotice(null);
+      setAuthModal(null);
+
+      // Parse hash params
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const supabase = createClient();
+        supabase.auth
+          .setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          .then(({ data, error: setSessionErr }: { data: any; error: any }) => {
+            if (!setSessionErr && data?.session) {
+              window.history.replaceState(null, "", window.location.pathname);
+              router.replace("/auth/set-password");
+            }
+          });
+
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event: unknown, session: unknown) => {
+          if (session) {
+            window.history.replaceState(null, "", window.location.pathname);
+            router.replace("/auth/set-password");
+          }
+        });
+
+        return () => {
+          subscription.unsubscribe();
+        };
+      }
+    }
+
     const hash = window.location.hash.startsWith("#")
       ? window.location.hash.slice(1)
       : window.location.hash;
     const hashParams = new URLSearchParams(hash);
-
-    // 1. Safety net for implicit hash fragments (e.g. #access_token=... or #type=invite/recovery)
-    if (
-      window.location.hash.includes("access_token") ||
-      hashParams.get("type") === "invite" ||
-      hashParams.get("type") === "recovery"
-    ) {
-      const supabase = createClient();
-
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event: unknown, session: unknown) => {
-        if (session) {
-          router.replace("/auth/set-password");
-        }
-      });
-
-      supabase.auth.getSession().then((res: { data: { session: unknown } }) => {
-        if (res.data?.session) {
-          router.replace("/auth/set-password");
-        }
-      });
-
-      return () => {
-        subscription.unsubscribe();
-      };
-    }
 
     // 2. Handle explicit error from hash without access token (e.g. #error=access_denied&error_description=...)
     if (hashParams.has("error") || hashParams.has("error_description")) {
@@ -118,7 +139,9 @@ export default function Home() {
   useEffect(() => {
     if (
       typeof window !== "undefined" &&
-      window.location.hash.includes("access_token")
+      (window.location.hash.includes("access_token") ||
+        window.location.hash.includes("type=invite") ||
+        window.location.hash.includes("type=recovery"))
     ) {
       return;
     }
