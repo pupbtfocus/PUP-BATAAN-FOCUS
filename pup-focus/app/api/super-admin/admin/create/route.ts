@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SITE_URL ||
       process.env.NEXT_PUBLIC_APP_URL ||
       (request.url ? new URL(request.url).origin : "https://pupfocus.cjaayy.dev");
-    const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/callback`;
+    const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/confirm`;
 
     const { data: genData, error: genError } =
       await supabase.auth.admin.generateLink({
@@ -216,6 +216,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const createdAuthUser = genData?.user;
+    if (createdAuthUser) {
+      try {
+        const { data: newProfile } = await supabase
+          .from("profiles")
+          .upsert(
+            {
+              user_id: createdAuthUser.id,
+              full_name: fullName,
+              email: normalizedEmail,
+            },
+            { onConflict: "user_id" },
+          )
+          .select("id")
+          .single();
+
+        if (newProfile?.id) {
+          const { data: adminRoleRow } = await supabase
+            .from("roles")
+            .select("id")
+            .eq("code", ROLE.ADMIN)
+            .maybeSingle();
+
+          if (adminRoleRow?.id) {
+            await supabase
+              .from("user_roles")
+              .upsert(
+                {
+                  profile_id: newProfile.id,
+                  role_id: adminRoleRow.id,
+                },
+                { onConflict: "profile_id,role_id" },
+              );
+          }
+        }
+      } catch (assignError) {
+        console.error("admin_preinsert_failed", assignError);
+      }
+    }
+
     const actionLink = genData?.properties?.action_link ?? null;
 
     let sent = false;
@@ -226,7 +266,7 @@ export async function POST(request: NextRequest) {
         await sendInviteEmail({
           to: normalizedEmail,
           link: actionLink,
-          firstName: firstName.trim(),
+          firstName: trimmedFirstName,
           fullName,
           invitedRole: ROLE.ADMIN,
         });
@@ -247,8 +287,10 @@ export async function POST(request: NextRequest) {
       invited: true,
       sent,
       sendError,
+      message: "Invitation sent successfully",
       link: actionLink,
       user: {
+        id: createdAuthUser?.id,
         email: normalizedEmail,
         fullName,
       },
