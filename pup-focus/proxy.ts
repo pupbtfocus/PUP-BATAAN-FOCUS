@@ -146,7 +146,10 @@ export async function proxy(request: NextRequest) {
       user.user_metadata?.force_password_change === true;
 
     const isChangePasswordPage =
-      pathname === "/auth/change-password" || pathname === "/change-password";
+      pathname === "/auth/change-password" ||
+      pathname === "/change-password" ||
+      pathname === "/auth/set-password" ||
+      pathname === "/reset-password";
 
     if (
       mustChangePassword &&
