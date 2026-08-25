@@ -45,7 +45,6 @@ body {
   overflow-x: hidden;
 }
 
-
 /* Campus photo backgrounds — scoped to public/auth routes via .campus-bg class */
 body.campus-bg {
   background-color: #5f0000;
@@ -145,8 +144,8 @@ input:-webkit-autofill::first-line {
   display: none;
 }
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 /* Pulsing dot for live submission window indicator */
@@ -155,7 +154,8 @@ input:-webkit-autofill::first-line {
 }
 
 @keyframes pulseDot {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -186,4 +186,3 @@ input:-webkit-autofill:active {
   caret-color: #f8fafc !important;
   transition: background-color 5000s ease-in-out 0s !important;
 }
-

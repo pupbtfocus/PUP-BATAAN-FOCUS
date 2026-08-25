@@ -138,12 +138,12 @@ export function FacultyRequirementsModule({
   const router = useRouter();
   const academicYears = useMemo(() => buildAcademicYears(), []);
 
-  const [requirementStatuses, setRequirementStatuses] = useState<RequirementStatusItem[]>(
-    () => initialStatuses || [],
-  );
-  const [requirementTemplates, setRequirementTemplates] = useState<RequirementTemplateItem[]>(
-    () => initialTemplates || [],
-  );
+  const [requirementStatuses, setRequirementStatuses] = useState<
+    RequirementStatusItem[]
+  >(() => initialStatuses || []);
+  const [requirementTemplates, setRequirementTemplates] = useState<
+    RequirementTemplateItem[]
+  >(() => initialTemplates || []);
   const [counts, setCounts] = useState<StatusResponse["counts"] | null>(
     () => initialCounts || null,
   );
@@ -152,17 +152,16 @@ export function FacultyRequirementsModule({
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [submissionWindow, setSubmissionWindow] = useState<SubmissionWindowState | null>(
-    () => initialSubmissionWindow || null,
-  );
+  const [submissionWindow, setSubmissionWindow] =
+    useState<SubmissionWindowState | null>(
+      () => initialSubmissionWindow || null,
+    );
 
   const initialFormState: RequirementFormState = {
     academicYear:
       initialSubmissionWindow?.academicYear || academicYears[0] || "2026-2027",
-    semester:
-      initialSubmissionWindow?.semester || SEMESTER_OPTIONS[0],
-    requirementCode:
-      initialTemplates?.[0]?.code || DEFAULT_REQUIREMENTS[0],
+    semester: initialSubmissionWindow?.semester || SEMESTER_OPTIONS[0],
+    requirementCode: initialTemplates?.[0]?.code || DEFAULT_REQUIREMENTS[0],
     remarks: "",
   };
 
@@ -191,9 +190,15 @@ export function FacultyRequirementsModule({
       return counts;
     }
     const total = activeRequirementItems.length;
-    const validated = requirementStatuses.filter((s) => s.status === "Validated").length;
-    const rejected = requirementStatuses.filter((s) => s.status === "Rejected").length;
-    const pending = requirementStatuses.filter((s) => s.status === "Pending").length;
+    const validated = requirementStatuses.filter(
+      (s) => s.status === "Validated",
+    ).length;
+    const rejected = requirementStatuses.filter(
+      (s) => s.status === "Rejected",
+    ).length;
+    const pending = requirementStatuses.filter(
+      (s) => s.status === "Pending",
+    ).length;
     const notSubmitted = Math.max(0, total - (validated + rejected + pending));
 
     return { total, validated, rejected, pending, notSubmitted };
@@ -211,7 +216,10 @@ export function FacultyRequirementsModule({
 
       const data = (await response.json()) as StatusResponse;
       setRequirementStatuses(data.requirementStatuses || []);
-      if (Array.isArray(data.requirementTemplates) && data.requirementTemplates.length > 0) {
+      if (
+        Array.isArray(data.requirementTemplates) &&
+        data.requirementTemplates.length > 0
+      ) {
         setRequirementTemplates(data.requirementTemplates);
       }
       setCounts(data.counts || null);
@@ -443,7 +451,9 @@ export function FacultyRequirementsModule({
               aria-label="Refresh requirement statuses"
               className="inline-flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             >
-              <RotateCw className={`h-4 w-4 ${isLoading ? "animate-spin text-amber-500" : ""}`} />
+              <RotateCw
+                className={`h-4 w-4 ${isLoading ? "animate-spin text-amber-500" : ""}`}
+              />
             </button>
           </div>
         </div>
@@ -465,7 +475,10 @@ export function FacultyRequirementsModule({
           <div className="w-full space-y-4">
             {/* Desktop Table View (Hidden on mobile, visible on md+) */}
             <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/70 shadow-xs">
-              <table className="w-full text-left text-xs" aria-label="Requirements compliance list">
+              <table
+                className="w-full text-left text-xs"
+                aria-label="Requirements compliance list"
+              >
                 <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 font-semibold">
                   <tr>
                     <th scope="col" className="px-5 py-3.5">
@@ -489,9 +502,13 @@ export function FacultyRequirementsModule({
                   {activeRequirementItems.map((req) => {
                     const code = req.code;
                     const status = getStatus(code);
-                    const item = requirementStatuses.find((entry) => entry.code === code);
+                    const item = requirementStatuses.find(
+                      (entry) => entry.code === code,
+                    );
                     const adminRemarks =
-                      item?.adminRemarks || item?.admin_remarks || item?.feedback;
+                      item?.adminRemarks ||
+                      item?.admin_remarks ||
+                      item?.feedback;
 
                     return (
                       <tr
@@ -503,7 +520,8 @@ export function FacultyRequirementsModule({
                         <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-slate-100 max-w-[240px]">
                           <p className="truncate font-semibold">{req.title}</p>
                           <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                            Max {req.maxSizeMb} MB • {req.allowedFormats.join(", ")}
+                            Max {req.maxSizeMb} MB •{" "}
+                            {req.allowedFormats.join(", ")}
                           </span>
                         </td>
 
@@ -522,11 +540,16 @@ export function FacultyRequirementsModule({
                         {/* Admin Remarks */}
                         <td className="px-4 py-3.5 text-slate-600 dark:text-slate-400 max-w-[200px]">
                           {adminRemarks ? (
-                            <p className="truncate italic text-slate-800 dark:text-slate-200" title={adminRemarks}>
+                            <p
+                              className="truncate italic text-slate-800 dark:text-slate-200"
+                              title={adminRemarks}
+                            >
                               &ldquo;{adminRemarks}&rdquo;
                             </p>
                           ) : (
-                            <span className="text-slate-400 dark:text-slate-500">—</span>
+                            <span className="text-slate-400 dark:text-slate-500">
+                              —
+                            </span>
                           )}
                         </td>
 
@@ -554,18 +577,19 @@ export function FacultyRequirementsModule({
                               Resubmit
                             </button>
                           )}
-                          {(status === "Pending" || status === "Validated") && item?.latestSubmissionId && (
-                            <a
-                              href={`/api/faculty/submissions/view?submissionId=${encodeURIComponent(item.latestSubmissionId)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label={`View submitted file for ${req.title}`}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              View
-                            </a>
-                          )}
+                          {(status === "Pending" || status === "Validated") &&
+                            item?.latestSubmissionId && (
+                              <a
+                                href={`/api/faculty/submissions/view?submissionId=${encodeURIComponent(item.latestSubmissionId)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`View submitted file for ${req.title}`}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                View
+                              </a>
+                            )}
                         </td>
                       </tr>
                     );
@@ -575,11 +599,17 @@ export function FacultyRequirementsModule({
             </div>
 
             {/* Mobile Stacked Card View (Visible on mobile, hidden on md+) */}
-            <div className="space-y-3 block md:hidden" role="feed" aria-label="Requirements card list">
+            <div
+              className="space-y-3 block md:hidden"
+              role="feed"
+              aria-label="Requirements card list"
+            >
               {activeRequirementItems.map((req) => {
                 const code = req.code;
                 const status = getStatus(code);
-                const item = requirementStatuses.find((entry) => entry.code === code);
+                const item = requirementStatuses.find(
+                  (entry) => entry.code === code,
+                );
                 const adminRemarks =
                   item?.adminRemarks || item?.admin_remarks || item?.feedback;
 
@@ -594,7 +624,8 @@ export function FacultyRequirementsModule({
                           {req.title}
                         </h3>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                          Max {req.maxSizeMb} MB • {req.allowedFormats.join(", ")}
+                          Max {req.maxSizeMb} MB •{" "}
+                          {req.allowedFormats.join(", ")}
                         </p>
                       </div>
                       <SubmissionStatusBadge status={status} size="sm" />
@@ -614,7 +645,9 @@ export function FacultyRequirementsModule({
                         <span className="font-semibold block uppercase tracking-wider text-[10px] text-amber-800 dark:text-amber-300 mb-0.5">
                           Admin Remarks:
                         </span>
-                        <p className="italic leading-relaxed">&ldquo;{adminRemarks}&rdquo;</p>
+                        <p className="italic leading-relaxed">
+                          &ldquo;{adminRemarks}&rdquo;
+                        </p>
                       </div>
                     )}
 
@@ -641,18 +674,19 @@ export function FacultyRequirementsModule({
                           Resubmit Revision
                         </button>
                       )}
-                      {(status === "Pending" || status === "Validated") && item?.latestSubmissionId && (
-                        <a
-                          href={`/api/faculty/submissions/view?submissionId=${encodeURIComponent(item.latestSubmissionId)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`View uploaded file for ${req.title}`}
-                          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          View Uploaded File
-                        </a>
-                      )}
+                      {(status === "Pending" || status === "Validated") &&
+                        item?.latestSubmissionId && (
+                          <a
+                            href={`/api/faculty/submissions/view?submissionId=${encodeURIComponent(item.latestSubmissionId)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`View uploaded file for ${req.title}`}
+                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            View Uploaded File
+                          </a>
+                        )}
                     </div>
                   </article>
                 );
@@ -677,7 +711,10 @@ export function FacultyRequirementsModule({
           >
             <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
               <div>
-                <h3 id="submit-modal-title" className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                <h3
+                  id="submit-modal-title"
+                  className="text-xl font-bold text-slate-900 dark:text-slate-100"
+                >
                   Submit Requirement Document
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
@@ -748,7 +785,9 @@ export function FacultyRequirementsModule({
                 selectedFile={selectedFile}
                 onFileSelect={setSelectedFile}
                 maxSizeMb={selectedTemplate?.maxSizeMb || 10}
-                allowedFormats={selectedTemplate?.allowedFormats || ["PDF", "DOCX", "XLSX"]}
+                allowedFormats={
+                  selectedTemplate?.allowedFormats || ["PDF", "DOCX", "XLSX"]
+                }
                 currentStatus={selectedReqStatus?.status}
                 reviewerFeedback={
                   selectedReqStatus?.adminRemarks ||
@@ -826,7 +865,10 @@ export function FacultyRequirementsModule({
           >
             <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div>
-                <h3 id="calendar-modal-title" className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <h3
+                  id="calendar-modal-title"
+                  className="text-lg font-bold text-slate-900 dark:text-slate-100"
+                >
                   University Academic Calendar
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
@@ -850,17 +892,33 @@ export function FacultyRequirementsModule({
                 </p>
                 {submissionWindow?.isConfigured ? (
                   <ul className="space-y-1 list-disc list-inside text-slate-600 dark:text-slate-400">
-                    <li>Period: {submissionWindow.startDate} to {submissionWindow.endDate}</li>
-                    <li>Hours: {submissionWindow.startTime ?? "09:00"} – {submissionWindow.endTime ?? "17:00"} (Asia/Manila)</li>
-                    <li>Status: <span className="font-semibold text-amber-600 dark:text-amber-400">{submissionWindow.isOpen ? "Open for Submissions" : "Closed"}</span></li>
+                    <li>
+                      Period: {submissionWindow.startDate} to{" "}
+                      {submissionWindow.endDate}
+                    </li>
+                    <li>
+                      Hours: {submissionWindow.startTime ?? "09:00"} –{" "}
+                      {submissionWindow.endTime ?? "17:00"} (Asia/Manila)
+                    </li>
+                    <li>
+                      Status:{" "}
+                      <span className="font-semibold text-amber-600 dark:text-amber-400">
+                        {submissionWindow.isOpen
+                          ? "Open for Submissions"
+                          : "Closed"}
+                      </span>
+                    </li>
                   </ul>
                 ) : (
-                  <p className="italic text-slate-500">No submission window active at this time.</p>
+                  <p className="italic text-slate-500">
+                    No submission window active at this time.
+                  </p>
                 )}
               </div>
 
               <p className="text-[11px] text-slate-500">
-                For complete university schedules, visit the official PUP Academic Calendar portal.
+                For complete university schedules, visit the official PUP
+                Academic Calendar portal.
               </p>
             </div>
 
@@ -873,7 +931,12 @@ export function FacultyRequirementsModule({
               >
                 Open PUP Portal &rarr;
               </a>
-              <Button type="button" variant="secondary" size="sm" onClick={closeCalendarModal}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={closeCalendarModal}
+              >
                 Close
               </Button>
             </div>

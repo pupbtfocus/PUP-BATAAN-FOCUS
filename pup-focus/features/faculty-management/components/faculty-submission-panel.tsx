@@ -1,6 +1,13 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -35,7 +42,33 @@ import {
   DashboardMetricsSkeleton,
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
-import { Menu, X, LayoutDashboard, ClipboardList, History, Activity, Settings, FileText, AlertCircle, Upload, UploadCloud, CheckCircle2, Calendar, Loader2, Eye, RotateCw, Clock3, Download, ExternalLink, ArrowRight, Sparkles, FileSpreadsheet, FileCheck, File, Archive } from "lucide-react";
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  ClipboardList,
+  History,
+  Activity,
+  Settings,
+  FileText,
+  AlertCircle,
+  Upload,
+  UploadCloud,
+  CheckCircle2,
+  Calendar,
+  Loader2,
+  Eye,
+  RotateCw,
+  Clock3,
+  Download,
+  ExternalLink,
+  ArrowRight,
+  Sparkles,
+  FileSpreadsheet,
+  FileCheck,
+  File,
+  Archive,
+} from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 
@@ -49,12 +82,17 @@ export function getFileType(fileNameOrUrl: string): {
   isExcel: boolean;
   isWord: boolean;
 } {
-  const cleanStr = (fileNameOrUrl || "").split("?")[0].split("#")[0].toLowerCase();
+  const cleanStr = (fileNameOrUrl || "")
+    .split("?")[0]
+    .split("#")[0]
+    .toLowerCase();
   const match = cleanStr.match(/\.([a-z0-9]+)$/i);
   const extension = match ? match[1].toLowerCase() : "";
 
   const isPdf = extension === "pdf";
-  const isImage = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(extension);
+  const isImage = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(
+    extension,
+  );
   const isExcel = ["xlsx", "xls", "csv"].includes(extension);
   const isWord = ["docx", "doc"].includes(extension);
 
@@ -134,11 +172,14 @@ export const getFileBrand = (
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
 const REQUIREMENT_DESCRIPTIONS: Record<RequirementCode, string> = {
   grade_sheet: "Official signed grade sheets for assigned course sections.",
-  enhanced_syllabus: "Course syllabus adhering to outcome-based education standards.",
-  class_orientation: "Photos and narrative report documenting initial class orientation.",
+  enhanced_syllabus:
+    "Course syllabus adhering to outcome-based education standards.",
+  class_orientation:
+    "Photos and narrative report documenting initial class orientation.",
   midterm_package: "Copy of Midterm Examinations with TOS and Answer Key.",
   final_package: "Copy of Final Examinations with TOS and Answer Key.",
-  class_records: "Class Records including midterm and final grade computations.",
+  class_records:
+    "Class Records including midterm and final grade computations.",
 };
 const PANEL_VIEWS = [
   "dashboard",
@@ -268,15 +309,27 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined) {
 function normalizeSemester(sem?: string | null): string {
   if (!sem) return "";
   const s = sem.toLowerCase().trim();
-  if (s.includes("1") || s.includes("first") || s.includes("1st")) return "1st semester";
-  if (s.includes("2") || s.includes("second") || s.includes("2nd")) return "2nd semester";
-  if (s.includes("3") || s.includes("third") || s.includes("3rd") || s.includes("summer")) return "3rd semester";
+  if (s.includes("1") || s.includes("first") || s.includes("1st"))
+    return "1st semester";
+  if (s.includes("2") || s.includes("second") || s.includes("2nd"))
+    return "2nd semester";
+  if (
+    s.includes("3") ||
+    s.includes("third") ||
+    s.includes("3rd") ||
+    s.includes("summer")
+  )
+    return "3rd semester";
   return s;
 }
 
 function normalizeAcademicYear(ay?: string | null): string {
   if (!ay) return "";
-  return ay.toLowerCase().trim().replace(/^s\.?y\.?\s*/i, "").replace(/^a\.?y\.?\s*/i, "");
+  return ay
+    .toLowerCase()
+    .trim()
+    .replace(/^s\.?y\.?\s*/i, "")
+    .replace(/^a\.?y\.?\s*/i, "");
 }
 
 function getStatusDotColor(
@@ -374,7 +427,10 @@ function FacultySubmissionPanelContent({
   const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const academicYears = useMemo(() => buildAcademicYearOptions(), []);
-  const facultyFirstName = useMemo(() => extractFirstName(facultyName, "Faculty"), [facultyName]);
+  const facultyFirstName = useMemo(
+    () => extractFirstName(facultyName, "Faculty"),
+    [facultyName],
+  );
   const departmentName = useMemo(() => {
     if (initialData?.department) return initialData.department;
     if (initialData?.program) {
@@ -402,7 +458,9 @@ function FacultySubmissionPanelContent({
   const [activeView, setActiveView] = useState<PanelView>(initialView);
   const [form, setForm] = useState<SubmissionFormState>({
     academicYear: initialData?.academicYear || academicYears[0] || "",
-    semester: (initialData?.semester as (typeof SEMESTER_OPTIONS)[number]) || "1st Semester",
+    semester:
+      (initialData?.semester as (typeof SEMESTER_OPTIONS)[number]) ||
+      "1st Semester",
     requirementCode: REQUIREMENT_CODE.MIDTERM_PACKAGE as RequirementCode,
     fileName: "",
     remarks: "",
@@ -456,8 +514,9 @@ function FacultySubmissionPanelContent({
   );
   const [isLoadingSubmissionWindow, setIsLoadingSubmissionWindow] =
     useState(!initialData);
-  const [versionHistorySubmissionId, setVersionHistorySubmissionId] =
-    useState<string | null>(null);
+  const [versionHistorySubmissionId, setVersionHistorySubmissionId] = useState<
+    string | null
+  >(null);
   const [versionHistoryLabel, setVersionHistoryLabel] = useState("");
   const [versionHistoryCode, setVersionHistoryCode] = useState("");
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -479,11 +538,11 @@ function FacultySubmissionPanelContent({
     }
   }, [initialData]);
 
-  const [selectedAcademicYear, setSelectedAcademicYear] =
-    useState<string>(academicYears[0] ?? "");
-  const [selectedSemester, setSelectedSemester] = useState<
-    (typeof SEMESTER_OPTIONS)[number]
-  >("1st Semester");
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>(
+    academicYears[0] ?? "",
+  );
+  const [selectedSemester, setSelectedSemester] =
+    useState<(typeof SEMESTER_OPTIONS)[number]>("1st Semester");
 
   const [selectedRequirementForUpload, setSelectedRequirementForUpload] =
     useState<RequirementCode | null>(null);
@@ -614,9 +673,18 @@ function FacultySubmissionPanelContent({
           const fileRes = await fetch(downloadUrl);
           if (fileRes.ok) {
             const fileBlob = await fileRes.blob();
-            const reqTitle = getFriendlyRequirementName(sub.requirementCode).replace(/[^a-zA-Z0-9_-]/g, "_");
-            const ext = sub.fileName?.match(/\.[^.]+$/)?.[0] || sub.storagePath?.match(/\.[^.]+$/)?.[0] || ".pdf";
-            const fileName = `${reqTitle}_${sub.academicYear}_${sub.semester}${ext}`.replace(/[\s/]+/g, "_");
+            const reqTitle = getFriendlyRequirementName(
+              sub.requirementCode,
+            ).replace(/[^a-zA-Z0-9_-]/g, "_");
+            const ext =
+              sub.fileName?.match(/\.[^.]+$/)?.[0] ||
+              sub.storagePath?.match(/\.[^.]+$/)?.[0] ||
+              ".pdf";
+            const fileName =
+              `${reqTitle}_${sub.academicYear}_${sub.semester}${ext}`.replace(
+                /[\s/]+/g,
+                "_",
+              );
             zip.file(fileName, fileBlob);
           }
         } catch (fetchErr) {
@@ -628,9 +696,16 @@ function FacultySubmissionPanelContent({
       const zipContent = await zip.generateAsync({ type: "blob" });
       const url = window.URL.createObjectURL(zipContent);
       const link = document.createElement("a");
-      const sanitizedName = (facultyName || "Faculty").replace(/[^a-zA-Z0-9_-]/g, "_");
+      const sanitizedName = (facultyName || "Faculty").replace(
+        /[^a-zA-Z0-9_-]/g,
+        "_",
+      );
       link.href = url;
-      link.download = `${sanitizedName}_Validated_Requirements_${historyAcademicYear}_${historySemester}.zip`.replace(/[\s/]+/g, "_");
+      link.download =
+        `${sanitizedName}_Validated_Requirements_${historyAcademicYear}_${historySemester}.zip`.replace(
+          /[\s/]+/g,
+          "_",
+        );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -654,10 +729,13 @@ function FacultySubmissionPanelContent({
         params.set("semester", sem);
       }
 
-      const response = await fetch(`/api/faculty/submissions/status?${params.toString()}`, {
-        cache: "no-store",
-        headers: { "Cache-Control": "no-cache" },
-      });
+      const response = await fetch(
+        `/api/faculty/submissions/status?${params.toString()}`,
+        {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        },
+      );
       if (response.ok) {
         const data = await response.json();
         const statuses: RequirementStatus[] = data.requirementStatuses || [];
@@ -672,7 +750,9 @@ function FacultySubmissionPanelContent({
         setViewedSubmissionIds((current) => {
           const next = new Set(current);
           try {
-            const cached = localStorage.getItem("pup_focus_viewed_submission_ids");
+            const cached = localStorage.getItem(
+              "pup_focus_viewed_submission_ids",
+            );
             if (cached) {
               const parsed = JSON.parse(cached);
               if (Array.isArray(parsed)) {
@@ -739,7 +819,10 @@ function FacultySubmissionPanelContent({
         params.get("highlight") || params.get("requirement");
       const historyParam = params.get("history");
 
-      if (view === "history" || (view === "status" && historyParam === "true")) {
+      if (
+        view === "history" ||
+        (view === "status" && historyParam === "true")
+      ) {
         setActiveView("status");
         setIsHistoryModalOpen(true);
       } else if (highlightParam) {
@@ -754,7 +837,10 @@ function FacultySubmissionPanelContent({
             document.getElementById(`requirement-${highlightParam}`) ||
             document.getElementById(highlightParam);
           if (targetElement) {
-            targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+            targetElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
             targetElement.classList.add(
               "ring-2",
               "ring-amber-400",
@@ -778,7 +864,10 @@ function FacultySubmissionPanelContent({
 
   useEffect(() => {
     if (submissionWindow?.academicYear && submissionWindow?.semester) {
-      void fetchStatuses(submissionWindow.academicYear, submissionWindow.semester);
+      void fetchStatuses(
+        submissionWindow.academicYear,
+        submissionWindow.semester,
+      );
     }
   }, [submissionWindow]);
 
@@ -877,7 +966,8 @@ function FacultySubmissionPanelContent({
   const filteredPastSubmissions = useMemo(() => {
     return pastSubmissions.filter((submission) => {
       const matchesYear =
-        historyAcademicYear === "All" || submission.academicYear === historyAcademicYear;
+        historyAcademicYear === "All" ||
+        submission.academicYear === historyAcademicYear;
       const matchesSemester =
         historySemester === "All" || submission.semester === historySemester;
       return matchesYear && matchesSemester;
@@ -900,8 +990,10 @@ function FacultySubmissionPanelContent({
     return list;
   }, [pastSubmissions]);
 
-  const activeAY = submissionWindow?.academicYear || selectedAcademicYear || form.academicYear;
-  const activeSem = submissionWindow?.semester || selectedSemester || form.semester;
+  const activeAY =
+    submissionWindow?.academicYear || selectedAcademicYear || form.academicYear;
+  const activeSem =
+    submissionWindow?.semester || selectedSemester || form.semester;
 
   const displayedRequirementStatuses = useMemo<RequirementStatus[]>(() => {
     if (!hasActiveSchedule) {
@@ -974,7 +1066,13 @@ function FacultySubmissionPanelContent({
         status: "Not Submitted" as const,
       };
     });
-  }, [hasActiveSchedule, activeAY, activeSem, pastSubmissions, requirementStatuses]);
+  }, [
+    hasActiveSchedule,
+    activeAY,
+    activeSem,
+    pastSubmissions,
+    requirementStatuses,
+  ]);
 
   const displayedStatusCounts = useMemo(() => {
     const total = DEFAULT_REQUIREMENTS.length;
@@ -993,13 +1091,17 @@ function FacultySubmissionPanelContent({
     return { total, validated, rejected, pending, notSubmitted };
   }, [displayedRequirementStatuses]);
 
-  const totalRequirements = displayedStatusCounts?.total ?? DEFAULT_REQUIREMENTS.length;
+  const totalRequirements =
+    displayedStatusCounts?.total ?? DEFAULT_REQUIREMENTS.length;
   const validatedCount = displayedStatusCounts?.validated ?? 0;
-  const isAllValidated = totalRequirements > 0 && validatedCount === totalRequirements;
+  const isAllValidated =
+    totalRequirements > 0 && validatedCount === totalRequirements;
 
   const windowDeadlineDisplay = useMemo(() => {
     if (!submissionWindow?.endDate) return null;
-    const parsed = new Date(`${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}`);
+    const parsed = new Date(
+      `${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}`,
+    );
     if (Number.isNaN(parsed.getTime())) return submissionWindow.endDate;
     return parsed.toLocaleDateString("en-PH", {
       month: "short",
@@ -1010,7 +1112,9 @@ function FacultySubmissionPanelContent({
 
   const windowDaysRemaining = useMemo(() => {
     if (!submissionWindow?.endDate) return null;
-    const targetMs = new Date(`${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}`).getTime();
+    const targetMs = new Date(
+      `${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}`,
+    ).getTime();
     if (Number.isNaN(targetMs)) return null;
     const diffMs = targetMs - Date.now();
     if (diffMs <= 0) return 0;
@@ -1023,7 +1127,7 @@ function FacultySubmissionPanelContent({
     !hasSeenIncompleteRequirementsModal &&
     Boolean(submissionWindow?.isConfigured && submissionWindow?.isOpen) &&
     displayedStatusCounts !== null &&
-    (displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected > 0);
+    displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected > 0;
 
   function openDirectUploadModal(code: RequirementCode) {
     setSelectedRequirementForUpload(code);
@@ -1061,9 +1165,15 @@ function FacultySubmissionPanelContent({
 
     try {
       const activeAY =
-        submissionWindow?.academicYear || selectedAcademicYear || form.academicYear || "2025-2026";
+        submissionWindow?.academicYear ||
+        selectedAcademicYear ||
+        form.academicYear ||
+        "2025-2026";
       const activeSem =
-        submissionWindow?.semester || selectedSemester || form.semester || "1st Semester";
+        submissionWindow?.semester ||
+        selectedSemester ||
+        form.semester ||
+        "1st Semester";
 
       const formData = new FormData();
       formData.append("file", directUploadFile);
@@ -1102,7 +1212,9 @@ function FacultySubmissionPanelContent({
 
       // Optimistically update status badge to Pending immediately
       setRequirementStatuses((prev) => {
-        const exists = prev.some((r) => r.code === selectedRequirementForUpload);
+        const exists = prev.some(
+          (r) => r.code === selectedRequirementForUpload,
+        );
         if (exists) {
           return prev.map((r) =>
             r.code === selectedRequirementForUpload
@@ -1190,16 +1302,10 @@ function FacultySubmissionPanelContent({
     markSubmissionViewed(item.latestSubmissionId);
 
     const userNote =
-      item.remarks ||
-      (item as { notes?: string }).notes ||
-      item.note ||
-      null;
+      item.remarks || (item as { notes?: string }).notes || item.note || null;
 
     const adminRemarks =
-      item.adminRemarks ||
-      item.admin_remarks ||
-      item.feedback ||
-      null;
+      item.adminRemarks || item.admin_remarks || item.feedback || null;
 
     const fileName =
       item.fileName ||
@@ -1508,7 +1614,11 @@ function FacultySubmissionPanelContent({
         <nav className="mt-1.5 space-y-1">
           {[
             { key: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
-            { key: "status", label: "Requirements Management", Icon: ClipboardList },
+            {
+              key: "status",
+              label: "Requirements Management",
+              Icon: ClipboardList,
+            },
             { key: "settings", label: "Settings", Icon: Settings },
           ].map(({ key, label, Icon }) => {
             const isActive = activeView === key;
@@ -1523,7 +1633,14 @@ function FacultySubmissionPanelContent({
                     : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                 }`}
               >
-                <Icon size={16} className={isActive ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"} />
+                <Icon
+                  size={16}
+                  className={
+                    isActive
+                      ? "text-amber-700 dark:text-amber-300"
+                      : "text-slate-500 dark:text-slate-400"
+                  }
+                />
                 <span>{label}</span>
               </button>
             );
@@ -1542,7 +1659,9 @@ function FacultySubmissionPanelContent({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800 mb-2">
-              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">Faculty Menu</span>
+              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                Faculty Menu
+              </span>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -1575,7 +1694,11 @@ function FacultySubmissionPanelContent({
             <nav className="mt-1.5 space-y-1 flex-1">
               {[
                 { key: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
-                { key: "status", label: "Requirements Management", Icon: ClipboardList },
+                {
+                  key: "status",
+                  label: "Requirements Management",
+                  Icon: ClipboardList,
+                },
                 { key: "settings", label: "Settings", Icon: Settings },
               ].map(({ key, label, Icon }) => {
                 const isActive = activeView === key;
@@ -1590,7 +1713,14 @@ function FacultySubmissionPanelContent({
                         : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                     }`}
                   >
-                    <Icon size={16} className={isActive ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"} />
+                    <Icon
+                      size={16}
+                      className={
+                        isActive
+                          ? "text-amber-700 dark:text-amber-300"
+                          : "text-slate-500 dark:text-slate-400"
+                      }
+                    />
                     <span>{label}</span>
                   </button>
                 );
@@ -1646,14 +1776,22 @@ function FacultySubmissionPanelContent({
                   {/* Card 1: Overall Progress */}
                   <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Overall Progress</span>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Overall Progress
+                      </span>
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20 px-2 py-0.5 rounded-full">
-                        {Math.round(((displayedStatusCounts?.validated ?? 0) / (displayedStatusCounts?.total || 6)) * 100)}%
+                        {Math.round(
+                          ((displayedStatusCounts?.validated ?? 0) /
+                            (displayedStatusCounts?.total || 6)) *
+                            100,
+                        )}
+                        %
                       </span>
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {displayedStatusCounts?.validated ?? 0} of {displayedStatusCounts?.total ?? 6} Validated
+                        {displayedStatusCounts?.validated ?? 0} of{" "}
+                        {displayedStatusCounts?.total ?? 6} Validated
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {isAllValidated
@@ -1674,7 +1812,9 @@ function FacultySubmissionPanelContent({
                   {/* Card 2: Submission Window Status */}
                   <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Window Status</span>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Window Status
+                      </span>
                       <span
                         className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
                           hasActiveSchedule && !isWindowClosed
@@ -1682,7 +1822,9 @@ function FacultySubmissionPanelContent({
                             : "text-amber-800 bg-amber-50 border border-amber-200/80 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20"
                         }`}
                       >
-                        {hasActiveSchedule && !isWindowClosed ? "Open" : "Closed"}
+                        {hasActiveSchedule && !isWindowClosed
+                          ? "Open"
+                          : "Closed"}
                       </span>
                     </div>
                     <div>
@@ -1709,14 +1851,19 @@ function FacultySubmissionPanelContent({
                   {/* Card 3: Action Required */}
                   <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Action Required</span>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Action Required
+                      </span>
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {(displayedStatusCounts?.notSubmitted ?? 0) + (displayedStatusCounts?.rejected ?? 0)} Items
+                        {(displayedStatusCounts?.notSubmitted ?? 0) +
+                          (displayedStatusCounts?.rejected ?? 0)}{" "}
+                        Items
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {displayedStatusCounts?.notSubmitted ?? 0} Not Submitted • {displayedStatusCounts?.rejected ?? 0} Needs Revision
+                        {displayedStatusCounts?.notSubmitted ?? 0} Not Submitted
+                        • {displayedStatusCounts?.rejected ?? 0} Needs Revision
                       </p>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -1738,7 +1885,8 @@ function FacultySubmissionPanelContent({
                             Pending Requirements
                           </h2>
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                            Documents awaiting your submission or revision for this semester.
+                            Documents awaiting your submission or revision for
+                            this semester.
                           </p>
                         </div>
                         <button
@@ -1752,11 +1900,15 @@ function FacultySubmissionPanelContent({
                       </div>
 
                       {isLoadingStatuses ? (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 py-6 text-center">Loading requirements...</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 py-6 text-center">
+                          Loading requirements...
+                        </p>
                       ) : (
                         <div className="mt-4">
                           {displayedRequirementStatuses.filter(
-                            (req) => req.status === "Not Submitted" || req.status === "Rejected"
+                            (req) =>
+                              req.status === "Not Submitted" ||
+                              req.status === "Rejected",
                           ).length === 0 ? (
                             <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/5 p-6 text-center space-y-2">
                               <CheckCircle2 className="h-8 w-8 text-emerald-500 dark:text-emerald-400 mx-auto" />
@@ -1764,7 +1916,8 @@ function FacultySubmissionPanelContent({
                                 Great job! No pending requirements.
                               </h3>
                               <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
-                                All 6 required faculty documents have been submitted or validated for this semester.
+                                All 6 required faculty documents have been
+                                submitted or validated for this semester.
                               </p>
                               <button
                                 type="button"
@@ -1777,24 +1930,36 @@ function FacultySubmissionPanelContent({
                           ) : (
                             <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl divide-y divide-slate-300 dark:divide-slate-800/60 overflow-hidden shadow-xs">
                               {displayedRequirementStatuses
-                                .filter((req) => req.status === "Not Submitted" || req.status === "Rejected")
+                                .filter(
+                                  (req) =>
+                                    req.status === "Not Submitted" ||
+                                    req.status === "Rejected",
+                                )
                                 .map((req) => (
-                                   <div
-                                     key={req.code}
-                                     className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 transition-colors"
-                                   >
+                                  <div
+                                    key={req.code}
+                                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 transition-colors"
+                                  >
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2">
                                         <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate">
                                           {REQUIREMENT_LABEL[req.code]}
                                         </h4>
-                                        <SubmissionStatusBadge status={req.status} size="sm" />
+                                        <SubmissionStatusBadge
+                                          status={req.status}
+                                          size="sm"
+                                        />
                                       </div>
                                       {req.status === "Rejected" && (
                                         <p className="text-xs text-amber-700 dark:text-amber-300/90 flex items-center gap-1.5 mt-1.5 font-normal">
                                           <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
                                           <span className="italic truncate">
-                                            &ldquo;{req.adminRemarks || req.admin_remarks || req.feedback || "Revision requested. Please check and resubmit."}&rdquo;
+                                            &ldquo;
+                                            {req.adminRemarks ||
+                                              req.admin_remarks ||
+                                              req.feedback ||
+                                              "Revision requested. Please check and resubmit."}
+                                            &rdquo;
                                           </span>
                                         </p>
                                       )}
@@ -1803,12 +1968,20 @@ function FacultySubmissionPanelContent({
                                     <div className="shrink-0">
                                       <button
                                         type="button"
-                                        onClick={() => openDirectUploadModal(req.code)}
-                                        disabled={!hasActiveSchedule || isWindowClosed}
+                                        onClick={() =>
+                                          openDirectUploadModal(req.code)
+                                        }
+                                        disabled={
+                                          !hasActiveSchedule || isWindowClosed
+                                        }
                                         className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                                       >
                                         <Upload className="h-3.5 w-3.5" />
-                                        <span>{req.status === "Rejected" ? "Resubmit" : "Submit Now"}</span>
+                                        <span>
+                                          {req.status === "Rejected"
+                                            ? "Resubmit"
+                                            : "Submit Now"}
+                                        </span>
                                       </button>
                                     </div>
                                   </div>
@@ -1845,17 +2018,25 @@ function FacultySubmissionPanelContent({
                               className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 border border-slate-300 dark:border-slate-800/80 transition-colors"
                             >
                               <div className="mt-0.5 shrink-0">
-                                <span className={`h-2 w-2 rounded-full block ${getStatusDotColor(sub.status)}`} />
+                                <span
+                                  className={`h-2 w-2 rounded-full block ${getStatusDotColor(sub.status)}`}
+                                />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium text-slate-900 dark:text-slate-200 truncate">
                                   {REQUIREMENT_LABEL[sub.requirementCode]}
                                 </p>
                                 <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                                  Status: <span className={getStatusTextColor(sub.status)}>{getStatusText(sub.status)}</span>
+                                  Status:{" "}
+                                  <span
+                                    className={getStatusTextColor(sub.status)}
+                                  >
+                                    {getStatusText(sub.status)}
+                                  </span>
                                 </p>
                                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                  {formatSubmittedDateTime(sub.submittedAt) ?? sub.submittedAt}
+                                  {formatSubmittedDateTime(sub.submittedAt) ??
+                                    sub.submittedAt}
                                 </p>
                               </div>
                             </div>
@@ -1940,11 +2121,16 @@ function FacultySubmissionPanelContent({
                         }}
                         maxSizeMb={10}
                         allowedFormats={["PDF", "DOCX", "XLSX", "JPG", "PNG"]}
-                        currentStatus={getRequirementStatus(form.requirementCode)}
+                        currentStatus={getRequirementStatus(
+                          form.requirementCode,
+                        )}
                         reviewerFeedback={
-                          getRequirementStatusItem(form.requirementCode)?.adminRemarks ||
-                          getRequirementStatusItem(form.requirementCode)?.admin_remarks ||
-                          getRequirementStatusItem(form.requirementCode)?.feedback
+                          getRequirementStatusItem(form.requirementCode)
+                            ?.adminRemarks ||
+                          getRequirementStatusItem(form.requirementCode)
+                            ?.admin_remarks ||
+                          getRequirementStatusItem(form.requirementCode)
+                            ?.feedback
                         }
                         disabled={(() => {
                           const s = getRequirementStatus(form.requirementCode);
@@ -2150,10 +2336,18 @@ function FacultySubmissionPanelContent({
                         "No Active Academic Schedule"
                       ) : (
                         <>
-                          A.Y. {statusAcademicYear || submissionWindow?.academicYear || "2027-2028"} •{" "}
-                          {statusSemester || submissionWindow?.semester || "1st Semester"}
+                          A.Y.{" "}
+                          {statusAcademicYear ||
+                            submissionWindow?.academicYear ||
+                            "2027-2028"}{" "}
+                          •{" "}
+                          {statusSemester ||
+                            submissionWindow?.semester ||
+                            "1st Semester"}
                           {isAllValidated && (
-                            <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold">• Validated</span>
+                            <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold">
+                              • Validated
+                            </span>
                           )}
                         </>
                       )}
@@ -2190,7 +2384,9 @@ function FacultySubmissionPanelContent({
                       title="Refresh status"
                       className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                     >
-                      <RotateCw className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin text-amber-500" : ""}`} />
+                      <RotateCw
+                        className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin text-amber-500" : ""}`}
+                      />
                       <span className="sr-only">Refresh</span>
                     </button>
                   </div>
@@ -2201,16 +2397,28 @@ function FacultySubmissionPanelContent({
                   <div className="space-y-2.5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {displayedStatusCounts.validated} of {displayedStatusCounts.total} Completed ({Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100)}%)
+                        {displayedStatusCounts.validated} of{" "}
+                        {displayedStatusCounts.total} Completed (
+                        {Math.round(
+                          (displayedStatusCounts.validated /
+                            (displayedStatusCounts.total || 1)) *
+                            100,
+                        )}
+                        %)
                       </span>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
                         <span className="flex items-center gap-1.5">
                           <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                          <span>{displayedStatusCounts.validated} Validated</span>
+                          <span>
+                            {displayedStatusCounts.validated} Validated
+                          </span>
                         </span>
                         <span className="flex items-center gap-1.5">
                           <span className="h-2 w-2 rounded-full bg-blue-500" />
-                          <span>{isAllValidated ? 0 : displayedStatusCounts.pending} Pending</span>
+                          <span>
+                            {isAllValidated ? 0 : displayedStatusCounts.pending}{" "}
+                            Pending
+                          </span>
                         </span>
                         <span className="flex items-center gap-1.5">
                           <span className="h-2 w-2 rounded-full bg-amber-500" />
@@ -2218,7 +2426,12 @@ function FacultySubmissionPanelContent({
                         </span>
                         <span className="flex items-center gap-1.5">
                           <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-600" />
-                          <span>{isAllValidated ? 0 : displayedStatusCounts.notSubmitted} Not Submitted</span>
+                          <span>
+                            {isAllValidated
+                              ? 0
+                              : displayedStatusCounts.notSubmitted}{" "}
+                            Not Submitted
+                          </span>
                         </span>
                       </div>
                     </div>
@@ -2250,7 +2463,9 @@ function FacultySubmissionPanelContent({
                     Loading requirement statuses...
                   </p>
                 ) : statusError ? (
-                  <p className="text-sm text-red-500 dark:text-red-400 py-4">{statusError}</p>
+                  <p className="text-sm text-red-500 dark:text-red-400 py-4">
+                    {statusError}
+                  </p>
                 ) : (
                   <div className="bg-white border border-slate-300 shadow-sm shadow-slate-300/50 dark:bg-slate-900 dark:border dark:border-slate-800 dark:shadow-none rounded-xl divide-y divide-slate-300 dark:divide-slate-800/60 overflow-hidden transition-colors">
                     {displayedRequirementStatuses.map((req) => (
@@ -2264,8 +2479,12 @@ function FacultySubmissionPanelContent({
                             {REQUIREMENT_LABEL[req.code]}
                           </h4>
                           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
-                            {req.submittedAt && formatSubmittedDateTime(req.submittedAt) ? (
-                              <span>Submitted: {formatSubmittedDateTime(req.submittedAt)}</span>
+                            {req.submittedAt &&
+                            formatSubmittedDateTime(req.submittedAt) ? (
+                              <span>
+                                Submitted:{" "}
+                                {formatSubmittedDateTime(req.submittedAt)}
+                              </span>
                             ) : (
                               <span>No submission recorded yet</span>
                             )}
@@ -2278,14 +2497,22 @@ function FacultySubmissionPanelContent({
                             <p className="text-xs text-amber-800 dark:text-amber-300/90 flex items-center gap-1.5 mt-1 font-normal">
                               <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
                               <span className="italic truncate">
-                                &ldquo;{req.adminRemarks || req.admin_remarks || req.feedback || "Revision requested. Please check and resubmit."}&rdquo;
+                                &ldquo;
+                                {req.adminRemarks ||
+                                  req.admin_remarks ||
+                                  req.feedback ||
+                                  "Revision requested. Please check and resubmit."}
+                                &rdquo;
                               </span>
                             </p>
                           )}
                         </div>
 
                         <div className="flex shrink-0 flex-wrap items-center gap-3">
-                          <SubmissionStatusBadge status={req.status} size="sm" />
+                          <SubmissionStatusBadge
+                            status={req.status}
+                            size="sm"
+                          />
 
                           {/* Action Buttons */}
                           <div className="flex items-center gap-1.5">
@@ -2316,7 +2543,8 @@ function FacultySubmissionPanelContent({
                             )}
 
                             {/* View File & History Buttons */}
-                            {req.status !== "Not Submitted" && req.latestSubmissionId ? (
+                            {req.status !== "Not Submitted" &&
+                            req.latestSubmissionId ? (
                               <>
                                 <button
                                   type="button"
@@ -2325,8 +2553,10 @@ function FacultySubmissionPanelContent({
                                 >
                                   {Boolean(
                                     req.feedback &&
-                                    !viewedSubmissionIds.has(req.latestSubmissionId) &&
-                                    req.is_read !== true
+                                    !viewedSubmissionIds.has(
+                                      req.latestSubmissionId,
+                                    ) &&
+                                    req.is_read !== true,
                                   ) ? (
                                     <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
                                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
@@ -2387,7 +2617,10 @@ function FacultySubmissionPanelContent({
                     </button>
                   </div>
 
-                  <form onSubmit={handleDirectUploadSubmit} className="p-6 space-y-5">
+                  <form
+                    onSubmit={handleDirectUploadSubmit}
+                    className="p-6 space-y-5"
+                  >
                     <div>
                       <DocumentUploadZone
                         selectedFile={directUploadFile}
@@ -2395,12 +2628,22 @@ function FacultySubmissionPanelContent({
                         isUploading={isUploadingDirect}
                         maxSizeMb={10}
                         allowedFormats={["PDF", "DOCX", "XLSX", "JPG", "PNG"]}
-                        currentStatus={selectedRequirementForUpload ? getRequirementStatus(selectedRequirementForUpload) : null}
+                        currentStatus={
+                          selectedRequirementForUpload
+                            ? getRequirementStatus(selectedRequirementForUpload)
+                            : null
+                        }
                         reviewerFeedback={
                           selectedRequirementForUpload
-                            ? getRequirementStatusItem(selectedRequirementForUpload)?.adminRemarks ||
-                              getRequirementStatusItem(selectedRequirementForUpload)?.admin_remarks ||
-                              getRequirementStatusItem(selectedRequirementForUpload)?.feedback
+                            ? getRequirementStatusItem(
+                                selectedRequirementForUpload,
+                              )?.adminRemarks ||
+                              getRequirementStatusItem(
+                                selectedRequirementForUpload,
+                              )?.admin_remarks ||
+                              getRequirementStatusItem(
+                                selectedRequirementForUpload,
+                              )?.feedback
                             : null
                         }
                       />
@@ -2471,9 +2714,12 @@ function FacultySubmissionPanelContent({
                   {isUploadingDirect ? (
                     <>
                       <Loader2 className="w-12 h-12 text-amber-500 dark:text-amber-400 mx-auto animate-spin" />
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Submitting Document...</h3>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                        Submitting Document...
+                      </h3>
                       <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Please wait while your file is being uploaded to the system.
+                        Please wait while your file is being uploaded to the
+                        system.
                       </p>
                     </>
                   ) : isSubmitSuccess ? (
@@ -2481,9 +2727,12 @@ function FacultySubmissionPanelContent({
                       <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 animate-in zoom-in">
                         <CheckCircle2 className="w-10 h-10" />
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Submitted Successfully!</h3>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                        Submitted Successfully!
+                      </h3>
                       <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Your requirement has been uploaded and sent for validation.
+                        Your requirement has been uploaded and sent for
+                        validation.
                       </p>
                       <button
                         type="button"
@@ -2590,7 +2839,9 @@ function FacultySubmissionPanelContent({
                         >
                           {historyAcademicYears.map((year) => (
                             <option key={year} value={year}>
-                              {year === "All" ? "All Academic Years" : `S.Y. ${year}`}
+                              {year === "All"
+                                ? "All Academic Years"
+                                : `S.Y. ${year}`}
                             </option>
                           ))}
                         </select>
@@ -2630,7 +2881,10 @@ function FacultySubmissionPanelContent({
                         variant="secondary"
                         size="sm"
                         onClick={handleBulkDownload}
-                        disabled={isBulkDownloading || filteredPastSubmissions.length === 0}
+                        disabled={
+                          isBulkDownloading ||
+                          filteredPastSubmissions.length === 0
+                        }
                         className="inline-flex items-center gap-1.5 border-emerald-300/80 dark:border-emerald-600/50 bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-semibold"
                         title="Download all validated requirements in current view as ZIP"
                       >
@@ -2639,7 +2893,11 @@ function FacultySubmissionPanelContent({
                         ) : (
                           <Download className="h-3.5 w-3.5" />
                         )}
-                        <span>{isBulkDownloading ? bulkDownloadProgressText : "Download All"}</span>
+                        <span>
+                          {isBulkDownloading
+                            ? bulkDownloadProgressText
+                            : "Download All"}
+                        </span>
                       </Button>
                       <Button
                         type="button"
@@ -2657,7 +2915,9 @@ function FacultySubmissionPanelContent({
                     {isLoadingHistory ? (
                       <SubmissionHistorySkeleton count={4} />
                     ) : historyError ? (
-                      <p className="text-sm text-red-500 dark:text-red-400">{historyError}</p>
+                      <p className="text-sm text-red-500 dark:text-red-400">
+                        {historyError}
+                      </p>
                     ) : (
                       <SubmissionHistoryList
                         submissions={filteredPastSubmissions}
@@ -2812,9 +3072,11 @@ function FacultySubmissionPanelContent({
                           previewSubmission.notes ||
                           previewSubmission.note ? (
                             <span>
-                              &ldquo;{previewSubmission.remarks ||
+                              &ldquo;
+                              {previewSubmission.remarks ||
                                 previewSubmission.notes ||
-                                previewSubmission.note}&rdquo;
+                                previewSubmission.note}
+                              &rdquo;
                             </span>
                           ) : (
                             <span className="text-slate-500 not-italic">
@@ -2927,7 +3189,9 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    You have documents awaiting submission or revision for this semester. Please submit the missing requirements before the deadline.
+                    You have documents awaiting submission or revision for this
+                    semester. Please submit the missing requirements before the
+                    deadline.
                   </p>
 
                   {/* Inner Stats Container */}
@@ -2935,12 +3199,17 @@ function FacultySubmissionPanelContent({
                     <div className="flex items-center gap-3">
                       <span className="flex items-center gap-1.5">
                         <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-500" />
-                        <span>{displayedStatusCounts?.notSubmitted ?? 0} Not Submitted</span>
+                        <span>
+                          {displayedStatusCounts?.notSubmitted ?? 0} Not
+                          Submitted
+                        </span>
                       </span>
                       {(displayedStatusCounts?.rejected ?? 0) > 0 && (
                         <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-semibold">
                           <span className="h-2 w-2 rounded-full bg-amber-500" />
-                          <span>{displayedStatusCounts?.rejected} Revision</span>
+                          <span>
+                            {displayedStatusCounts?.rejected} Revision
+                          </span>
                         </span>
                       )}
                     </div>
@@ -2973,8 +3242,6 @@ function FacultySubmissionPanelContent({
                 </div>
               </div>
             ) : null}
-
-
 
             {activeView === "settings" && (
               <article className="space-y-6">

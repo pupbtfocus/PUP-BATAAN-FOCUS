@@ -58,7 +58,9 @@ export function SidebarButton({
     >
       <p className="text-xs">{title}</p>
       {description ? (
-        <p className={`mt-0.5 text-[11px] font-normal ${active ? "text-amber-800/80 dark:text-amber-300/80" : "text-slate-500 dark:text-slate-400"}`}>
+        <p
+          className={`mt-0.5 text-[11px] font-normal ${active ? "text-amber-800/80 dark:text-amber-300/80" : "text-slate-500 dark:text-slate-400"}`}
+        >
           {description}
         </p>
       ) : null}
@@ -114,10 +116,12 @@ export function SidebarContent({
     isTermsActive || isWindowActive || isTemplatesActive || isBackupsActive;
   const isUserManagementActive = isAccountsActive || isFacultyActive;
 
-  const [isUserManagementOpen, setIsUserManagementOpen] =
-    useState<boolean>(isUserManagementActive);
-  const [isAcademicCycleOpen, setIsAcademicCycleOpen] =
-    useState<boolean>(isAcademicCycleActive);
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState<boolean>(
+    isUserManagementActive,
+  );
+  const [isAcademicCycleOpen, setIsAcademicCycleOpen] = useState<boolean>(
+    isAcademicCycleActive,
+  );
 
   // Automatically open accordions if currently active section matches either child view
   useEffect(() => {
@@ -155,7 +159,10 @@ export function SidebarContent({
               {getSidebarInitials(adminName, isSuperAdmin ? "SA" : "AD")}
             </div>
           )}
-          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="Active" />
+          <span
+            className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
+            title="Active"
+          />
         </div>
 
         <p className="font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
@@ -164,7 +171,9 @@ export function SidebarContent({
 
         <div className="my-1.5 h-px w-full bg-slate-200/80 dark:bg-slate-800" />
 
-        <span className={`mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full border ${getRoleBadgeClasses(roleTitle)}`}>
+        <span
+          className={`mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full border ${getRoleBadgeClasses(roleTitle)}`}
+        >
           {roleTitle}
         </span>
       </div>
@@ -237,7 +246,9 @@ export function SidebarContent({
         <SidebarButton
           active={isVerificationActive}
           title="Requirements Verification"
-          onClick={() => handleSelect(isSuperAdmin ? "verification" : "requirements")}
+          onClick={() =>
+            handleSelect(isSuperAdmin ? "verification" : "requirements")
+          }
         />
 
         {/* 4. Collapsible Parent Item: Academic Cycle Management */}
@@ -266,7 +277,9 @@ export function SidebarContent({
             <div className="border-l border-[#000000] dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
               <button
                 type="button"
-                onClick={() => handleSelect(isSuperAdmin ? "terms" : "academicTerms")}
+                onClick={() =>
+                  handleSelect(isSuperAdmin ? "terms" : "academicTerms")
+                }
                 className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
                   isTermsActive
                     ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
@@ -277,7 +290,9 @@ export function SidebarContent({
               </button>
               <button
                 type="button"
-                onClick={() => handleSelect(isSuperAdmin ? "window" : "submissionWindow")}
+                onClick={() =>
+                  handleSelect(isSuperAdmin ? "window" : "submissionWindow")
+                }
                 className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
                   isWindowActive
                     ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
@@ -288,7 +303,11 @@ export function SidebarContent({
               </button>
               <button
                 type="button"
-                onClick={() => handleSelect(isSuperAdmin ? "templates" : "requirementTemplates")}
+                onClick={() =>
+                  handleSelect(
+                    isSuperAdmin ? "templates" : "requirementTemplates",
+                  )
+                }
                 className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
                   isTemplatesActive
                     ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
@@ -299,7 +318,9 @@ export function SidebarContent({
               </button>
               <button
                 type="button"
-                onClick={() => handleSelect(isSuperAdmin ? "backups" : "backupArchive")}
+                onClick={() =>
+                  handleSelect(isSuperAdmin ? "backups" : "backupArchive")
+                }
                 className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
                   isBackupsActive
                     ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"

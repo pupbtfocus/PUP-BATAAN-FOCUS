@@ -59,13 +59,15 @@ export function DocumentPreviewModal({
 
   const title =
     submission.title ||
-    (submission.code ? REQUIREMENT_LABEL[submission.code as RequirementCode] : null) ||
+    (submission.code
+      ? REQUIREMENT_LABEL[submission.code as RequirementCode]
+      : null) ||
     "Document Preview";
 
   const fileUrl = getPreviewUrl(submission.latestSubmissionId);
-  const fileIdentifier =
-    submission.fileName || submission.storagePath || title;
-  const { isPdf, isImage, isExcel, isWord, extension } = getFileType(fileIdentifier);
+  const fileIdentifier = submission.fileName || submission.storagePath || title;
+  const { isPdf, isImage, isExcel, isWord, extension } =
+    getFileType(fileIdentifier);
   const fileExtension = extension || "file";
 
   const userNote =
@@ -135,7 +137,8 @@ export function DocumentPreviewModal({
                   <span className="font-semibold uppercase text-slate-700 dark:text-slate-300">
                     .{fileExtension}
                   </span>{" "}
-                  format. You can download the file to view its complete contents.
+                  format. You can download the file to view its complete
+                  contents.
                 </p>
                 <a
                   href={`${fileUrl}&download=true`}
