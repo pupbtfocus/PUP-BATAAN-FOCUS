@@ -18,6 +18,8 @@ export type PastSubmissionItem = {
   admin_remarks?: string;
   adminRemarks?: string | null;
   feedback?: string;
+  fileName?: string;
+  storagePath?: string;
   reviewedAt?: string;
   is_read?: boolean;
   isViewed?: boolean;
@@ -30,6 +32,41 @@ export interface SubmissionHistoryListProps<T extends PastSubmissionItem = PastS
   viewedSubmissionIds?: Set<string>;
   emptyMessage?: string;
   className?: string;
+}
+
+export const REQUIREMENT_NAME_MAP: Record<string, string> = {
+  grade_sheet: "Grade Sheets",
+  grade_sheets: "Grade Sheets",
+  gradesheet: "Grade Sheets",
+  gradesheets: "Grade Sheets",
+  enhanced_syllabus: "Enhanced Course Syllabus",
+  syllabus: "Enhanced Course Syllabus",
+  class_orientation: "Class Orientation Documentation",
+  orientation: "Class Orientation Documentation",
+  midterm_package: "Copy of Midterm Examinations with TOS and Answer Key",
+  midterm: "Copy of Midterm Examinations with TOS and Answer Key",
+  final_package: "Copy of Final Examinations with TOS and Answer Key",
+  final: "Copy of Final Examinations with TOS and Answer Key",
+  class_records: "Class Records",
+  classrecords: "Class Records",
+};
+
+export function getFriendlyRequirementName(code?: string): string {
+  if (!code) return "Requirement Document";
+  if (REQUIREMENT_LABEL[code as RequirementCode]) {
+    return REQUIREMENT_LABEL[code as RequirementCode];
+  }
+  const clean = code.toLowerCase().trim().replace(/[-_\s]+/g, "");
+  for (const [key, label] of Object.entries(REQUIREMENT_NAME_MAP)) {
+    const cleanKey = key.toLowerCase().replace(/[-_\s]+/g, "");
+    if (clean === cleanKey || clean.includes(cleanKey)) {
+      return label;
+    }
+  }
+  return code
+    .split(/[_-]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 function formatDateTime(value?: string): string {
@@ -93,8 +130,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
           </thead>
           <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/60">
             {submissions.map((sub) => {
-              const reqCode = sub.requirementCode as RequirementCode;
-              const title = REQUIREMENT_LABEL[reqCode] || sub.requirementCode;
+              const title = getFriendlyRequirementName(sub.requirementCode);
               const adminFeedback =
                 sub.adminRemarks || sub.admin_remarks || sub.feedback || sub.remarks;
               const isUnread = Boolean(
@@ -171,8 +207,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
       {/* ─── Mobile Stacked Card View (Visible on mobile, hidden on md+) ─── */}
       <div className="space-y-3 block md:hidden" role="feed" aria-label="Submission history list">
         {submissions.map((sub) => {
-          const reqCode = sub.requirementCode as RequirementCode;
-          const title = REQUIREMENT_LABEL[reqCode] || sub.requirementCode;
+          const title = getFriendlyRequirementName(sub.requirementCode);
           const adminFeedback =
             sub.adminRemarks || sub.admin_remarks || sub.feedback || sub.remarks;
           const isUnread = Boolean(

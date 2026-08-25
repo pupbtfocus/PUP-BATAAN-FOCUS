@@ -2486,7 +2486,7 @@ function FacultySubmissionPanelContent({
                       id="submission-history-title"
                       className="text-xl font-semibold text-slate-900 dark:text-slate-100"
                     >
-                      Submission History
+                      Activity Log
                     </h3>
                     <button
                       type="button"

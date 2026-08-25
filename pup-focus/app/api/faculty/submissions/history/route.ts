@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import {
-  DEFAULT_REQUIREMENTS,
+  REQUIREMENT_CODE,
   type RequirementCode,
 } from "@/config/compliance";
 import { logger } from "@/lib/observability/logger";
@@ -16,7 +16,7 @@ type HistorySubmission = {
   id: string;
   academicYear: string;
   semester: "1st Semester" | "2nd Semester";
-  requirementCode: RequirementCode;
+  requirementCode: RequirementCode | string;
   status: HistoryStatus;
   submittedAt: string;
   note?: string;
@@ -24,6 +24,8 @@ type HistorySubmission = {
   admin_remarks?: string;
   adminRemarks?: string;
   feedback?: string;
+  fileName?: string;
+  storagePath?: string;
   reviewedAt?: string;
   is_read?: boolean;
   isViewed?: boolean;
@@ -44,9 +46,26 @@ type SubmissionRow = {
   created_at?: string | null;
   remarks?: string | null;
   admin_remarks?: string | null;
+  notes?: string | null;
   is_read?: boolean | null;
   viewed_at?: string | null;
+  file_name?: string | null;
+  storage_path?: string | null;
+  file_path?: string | null;
+  faculty_assignment_id?: string | null;
 };
+
+function normalizeRequirementCode(rawCode?: string | null): RequirementCode | string {
+  if (!rawCode) return "document";
+  const s = rawCode.toLowerCase().trim().replace(/[-_\s]+/g, "");
+  if (s.includes("gradesheet") || s.includes("grade")) return REQUIREMENT_CODE.GRADE_SHEET;
+  if (s.includes("syllabus") || s.includes("enhancedsyllabus")) return REQUIREMENT_CODE.ENHANCED_SYLLABUS;
+  if (s.includes("orientation") || s.includes("classorientation")) return REQUIREMENT_CODE.CLASS_ORIENTATION;
+  if (s.includes("midterm") || s.includes("midtermpackage")) return REQUIREMENT_CODE.MIDTERM_PACKAGE;
+  if (s.includes("final") || s.includes("finalpackage")) return REQUIREMENT_CODE.FINAL_PACKAGE;
+  if (s.includes("classrecord") || s.includes("records") || s.includes("classrecords")) return REQUIREMENT_CODE.CLASS_RECORDS;
+  return rawCode;
+}
 
 function toAcademicYearAndSemester(dateInput: string | null | undefined): {
   academicYear: string;
@@ -71,16 +90,22 @@ function toHistoryStatus(
   submissionStatus: string | null,
   latestReview?: ReviewDecision,
 ): HistoryStatus {
+  const norm = (submissionStatus || "").toLowerCase();
   if (
     latestReview?.decision === "validated" ||
-    submissionStatus === "validated"
+    norm === "validated" ||
+    norm === "approved" ||
+    norm === "compliant"
   ) {
     return "Validated";
   }
 
   if (
     latestReview?.decision === "rejected" ||
-    submissionStatus === "rejected"
+    norm === "rejected" ||
+    norm === "returned" ||
+    norm === "needs_revision" ||
+    norm === "revision_required"
   ) {
     return "Rejected";
   }
@@ -124,41 +149,59 @@ export async function GET() {
       );
     }
 
-    const facultyProfileId = profile.id;
+    const facultyIds = Array.from(new Set([user.id, profile.id]));
 
-    // 3. Query ALL historical submission records for this faculty member
-    let rawSubmissions: (SubmissionRow & { faculty_assignment_id?: string | null })[] = [];
-    const { data: subData, error: subError } = await supabase
-      .from("submissions")
-      .select("id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id")
-      .or(`faculty_profile_id.eq.${facultyProfileId},user_id.eq.${facultyProfileId},created_by.eq.${user.id}`)
-      .order("created_at", { ascending: false });
-
-    if (!subError && subData) {
-      rawSubmissions = subData as (SubmissionRow & { faculty_assignment_id?: string | null })[];
-    } else {
-      const { data: fallbackData } = await supabase
+    // 3. Query ALL historical submission records for this faculty member across all roles & tables
+    let rawSubmissions: SubmissionRow[] = [];
+    try {
+      const { data: subData, error: subError } = await supabase
         .from("submissions")
-        .select("id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id")
-        .eq("faculty_profile_id", facultyProfileId)
+        .select(
+          "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, storage_path, file_path",
+        )
+        .or(
+          `faculty_profile_id.in.(${facultyIds.join(",")}),user_id.in.(${facultyIds.join(",")}),created_by.in.(${facultyIds.join(",")})`,
+        )
         .order("created_at", { ascending: false });
-      if (fallbackData) {
-        rawSubmissions = fallbackData as (SubmissionRow & { faculty_assignment_id?: string | null })[];
+
+      if (!subError && subData) {
+        rawSubmissions = subData as SubmissionRow[];
+      } else {
+        const { data: fallbackData } = await supabase
+          .from("submissions")
+          .select(
+            "id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id",
+          )
+          .in("faculty_profile_id", facultyIds)
+          .order("created_at", { ascending: false });
+        if (fallbackData) {
+          rawSubmissions = fallbackData as SubmissionRow[];
+        }
       }
+    } catch (queryErr) {
+      logger.error("history_submissions_query_failed", {
+        error: queryErr instanceof Error ? queryErr.message : String(queryErr),
+      });
     }
 
+    // Program assignments term mapping
     const { data: assignments } = await supabase
       .from("faculty_program_assignments")
       .select("id, academic_year, term")
-      .eq("faculty_profile_id", facultyProfileId);
+      .in("faculty_profile_id", facultyIds);
 
-    const assignmentMap = new Map<string, { academicYear: string; semester: "1st Semester" | "2nd Semester" }>();
+    const assignmentMap = new Map<
+      string,
+      { academicYear: string; semester: "1st Semester" | "2nd Semester" }
+    >();
     if (assignments) {
       for (const a of assignments) {
         if (a.id) {
           assignmentMap.set(a.id, {
             academicYear: a.academic_year,
-            semester: (a.term?.toLowerCase().includes("2nd") ? "2nd Semester" : "1st Semester") as "1st Semester" | "2nd Semester",
+            semester: (a.term?.toLowerCase().includes("2nd")
+              ? "2nd Semester"
+              : "1st Semester") as "1st Semester" | "2nd Semester",
           });
         }
       }
@@ -166,9 +209,13 @@ export async function GET() {
 
     const submissionIds = rawSubmissions.map((s) => s.id);
 
-    // 4. Query matching review_decisions and document_versions separately
-    const docVersionsMap = new Map<string, { storage_path?: string; mime_type?: string }>();
+    // 4. Query matching review_decisions and document_versions
+    const docVersionsMap = new Map<
+      string,
+      { storage_path?: string; mime_type?: string }
+    >();
     const reviewDecisionsMap = new Map<string, ReviewDecision[]>();
+
     if (submissionIds.length > 0) {
       const { data: docVersions } = await supabase
         .from("document_versions")
@@ -215,7 +262,9 @@ export async function GET() {
         if (vHistory) {
           for (const v of vHistory) {
             const list = reviewDecisionsMap.get(v.submission_id) || [];
-            const dec = (v.decision || v.status || "validated").toLowerCase() as "validated" | "rejected";
+            const dec = (v.decision || v.status || "validated").toLowerCase() as
+              | "validated"
+              | "rejected";
             list.push({
               decision: dec === "rejected" ? "rejected" : "validated",
               remarks: v.remarks,
@@ -225,7 +274,7 @@ export async function GET() {
           }
         }
       } catch {
-        // verification_history optional
+        // verification_history is optional
       }
     }
 
@@ -233,6 +282,8 @@ export async function GET() {
     const history: HistorySubmission[] = [];
     for (const row of rawSubmissions) {
       if (!row || !row.requirement_code) continue;
+
+      const normCode = normalizeRequirementCode(row.requirement_code);
 
       const reviews = reviewDecisionsMap.get(row.id) || [];
       const sortedReviews = [...reviews].sort((a, b) => {
@@ -248,8 +299,12 @@ export async function GET() {
       let term = assignmentMap.get(row.faculty_assignment_id || "");
 
       if (!term && (row.submitted_at || row.created_at)) {
-        const subTime = new Date(row.submitted_at || row.created_at || "").getTime();
-        const winStartFallback = new Date("2026-08-05T00:00:00+08:00").getTime();
+        const subTime = new Date(
+          row.submitted_at || row.created_at || "",
+        ).getTime();
+        const winStartFallback = new Date(
+          "2026-08-05T00:00:00+08:00",
+        ).getTime();
         if (!isNaN(subTime) && subTime >= winStartFallback) {
           term = { academicYear: "2026-2027", semester: "2nd Semester" };
         }
@@ -259,26 +314,34 @@ export async function GET() {
         term = toAcademicYearAndSemester(row.submitted_at || row.created_at);
       }
 
-      // Faculty's own note attached during submission
-      const facultyNote =
-        typeof row.remarks === "string" && row.remarks.trim() ? row.remarks.trim() : undefined;
-
-      // Admin's review remarks from the latest review_decisions entry with non-empty remarks or latest review
+      // Review feedback resolution from decisions or submission records
       const adminFeedback =
         latestReviewWithRemarks?.remarks?.trim() ||
         latestReview?.remarks?.trim() ||
-        (row as { admin_remarks?: string }).admin_remarks?.trim() ||
+        row.admin_remarks?.trim() ||
+        (row.status === "validated" ||
+        row.status === "approved" ||
+        row.status === "rejected" ||
+        row.status === "returned" ||
+        row.status === "needs_revision"
+          ? row.remarks?.trim()
+          : undefined) ||
         undefined;
 
+      const facultyNote =
+        !adminFeedback && typeof row.remarks === "string" && row.remarks.trim()
+          ? row.remarks.trim()
+          : undefined;
+
       const doc = docVersionsMap.get(row.id);
-      const storagePath = doc?.storage_path;
+      const storagePath = doc?.storage_path || row.storage_path || row.file_path;
       const fileName = storagePath ? storagePath.split("/").pop() : undefined;
 
       history.push({
         id: row.id,
         academicYear: term.academicYear,
         semester: term.semester,
-        requirementCode: row.requirement_code as RequirementCode,
+        requirementCode: normCode,
         status: toHistoryStatus(row.status, latestReview),
         submittedAt:
           row.submitted_at || row.created_at || new Date().toISOString(),
@@ -290,12 +353,14 @@ export async function GET() {
         fileName: fileName || undefined,
         storagePath: storagePath || undefined,
         reviewedAt: (latestReviewWithRemarks || latestReview)?.created_at
-          ? new Date((latestReviewWithRemarks || latestReview)!.created_at!).toISOString().split("T")[0]
+          ? new Date((latestReviewWithRemarks || latestReview)!.created_at!)
+              .toISOString()
+              .split("T")[0]
           : undefined,
         is_read: Boolean(row.is_read),
         isViewed: Boolean(row.is_read),
         viewed_at: row.viewed_at || undefined,
-      } as HistorySubmission);
+      });
     }
 
     return NextResponse.json({
