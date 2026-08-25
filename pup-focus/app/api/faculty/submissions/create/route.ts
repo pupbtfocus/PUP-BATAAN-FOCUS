@@ -342,7 +342,6 @@ export async function POST(request: NextRequest) {
       file_name?: string | null;
       mime_type?: string | null;
       size_bytes?: number | null;
-      checksum_sha256?: string | null;
       submitted_at?: string | null;
       created_at?: string | null;
       remarks?: string | null;
@@ -353,7 +352,7 @@ export async function POST(request: NextRequest) {
       const { data: existingInCurrentTerm } = await supabaseAdmin
         .from("submissions")
         .select(
-          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, checksum_sha256, submitted_at, created_at, remarks, notes",
+          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, submitted_at, created_at, remarks, notes",
         )
         .eq("faculty_profile_id", profile.id)
         .eq("faculty_assignment_id", facultyAssignmentId);
@@ -380,7 +379,7 @@ export async function POST(request: NextRequest) {
       const { data: existingByProfile } = await supabaseAdmin
         .from("submissions")
         .select(
-          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, checksum_sha256, submitted_at, created_at, remarks, notes",
+          "id, status, requirement_code, faculty_assignment_id, storage_path, file_path, file_name, mime_type, size_bytes, submitted_at, created_at, remarks, notes",
         )
         .eq("faculty_profile_id", profile.id)
         .or(
@@ -427,7 +426,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Prepare File & Hash Checksum
+    // Prepare File & Hash Checksum for document_versions table
     const fileName = file.name;
     const fileBuffer = await file.arrayBuffer();
 
@@ -482,9 +481,6 @@ export async function POST(request: NextRequest) {
         const oldMimeType =
           existingSubmission.mime_type || "application/octet-stream";
 
-        const oldChecksum =
-          existingSubmission.checksum_sha256 || "archived_v1_checksum";
-
         const oldCreatedAt =
           existingSubmission.submitted_at ||
           existingSubmission.created_at ||
@@ -498,7 +494,7 @@ export async function POST(request: NextRequest) {
             storage_path: oldStoragePath,
             mime_type: oldMimeType,
             size_bytes: oldSizeBytes,
-            checksum_sha256: oldChecksum,
+            checksum_sha256: "archived_v1_checksum",
             created_by: user.id,
             created_at: oldCreatedAt,
           });
@@ -579,7 +575,7 @@ export async function POST(request: NextRequest) {
 
       documentVersion = newDocVer;
 
-      // 4. Step 5: Update main submissions record with new file details and faculty notes
+      // 4. Step 5: Update main submissions record with only valid submissions columns
       const updatePayload: Record<string, any> = {
         status: "uploaded",
         submitted_at: new Date().toISOString(),
@@ -589,7 +585,6 @@ export async function POST(request: NextRequest) {
         file_name: fileName,
         mime_type: file.type || "application/octet-stream",
         size_bytes: fileBuffer.byteLength,
-        checksum_sha256: checksumSha256,
         is_read: false,
         notes: trimmedRemarks || null,
         remarks: trimmedRemarks || null,
@@ -647,7 +642,6 @@ export async function POST(request: NextRequest) {
         file_name: fileName,
         mime_type: file.type || "application/octet-stream",
         size_bytes: fileBuffer.byteLength,
-        checksum_sha256: checksumSha256,
         is_read: false,
         notes: trimmedRemarks || null,
         remarks: trimmedRemarks || null,
@@ -672,7 +666,6 @@ export async function POST(request: NextRequest) {
           file_name: fileName,
           mime_type: file.type || "application/octet-stream",
           size_bytes: fileBuffer.byteLength,
-          checksum_sha256: checksumSha256,
           is_read: false,
         };
 
