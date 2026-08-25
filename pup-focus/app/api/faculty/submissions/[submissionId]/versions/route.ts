@@ -300,7 +300,8 @@ export async function GET(
         status: submission.status ?? "uploaded",
         feedback: latestReview?.remarks ?? submission.admin_remarks ?? undefined,
         admin_remarks: latestReview?.remarks ?? submission.admin_remarks ?? undefined,
-        notes: submission.remarks ?? submission.notes ?? undefined,
+        notes: (submission.notes || (!latestReview?.remarks && !submission.admin_remarks ? submission.remarks : undefined)) || undefined,
+        faculty_notes: (submission.notes || (!latestReview?.remarks && !submission.admin_remarks ? submission.remarks : undefined)) || undefined,
         reviewedAt: latestReview?.created_at
           ? new Date(latestReview.created_at).toISOString().split("T")[0]
           : undefined,

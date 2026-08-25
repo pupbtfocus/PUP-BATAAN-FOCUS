@@ -45,6 +45,9 @@ export interface VersionHistoryResponse {
     requirementCode: string;
     status: string;
     feedback?: string;
+    admin_remarks?: string;
+    notes?: string;
+    faculty_notes?: string;
     reviewedAt?: string;
-  };
+  } | null;
 }
