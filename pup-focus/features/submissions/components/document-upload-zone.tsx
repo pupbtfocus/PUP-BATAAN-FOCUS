@@ -214,11 +214,19 @@ function getFileTypeDetails(fileName: string) {
 
 export const getFileBrand = (
   extension: string,
-  isExcel: boolean,
-  isWord: boolean,
+  isExcel?: boolean,
+  isWord?: boolean,
 ) => {
-  const ext = extension.toLowerCase();
+  const ext = (extension || "").toLowerCase().trim();
 
+  if (ext === "pdf") {
+    return {
+      label: "Adobe PDF Document",
+      iconUrl: "https://api.iconify.design/vscode-icons:file-type-pdf2.svg",
+      borderColor: "border-[#E5252A]/30 dark:border-[#E5252A]/40",
+      badgeBg: "bg-[#E5252A] text-white",
+    };
+  }
   if (isExcel || ["xlsx", "xls", "csv"].includes(ext)) {
     return {
       label: "Microsoft Excel Spreadsheet",
@@ -250,6 +258,14 @@ export const getFileBrand = (
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-zip.svg",
       borderColor: "border-purple-500/30 dark:border-purple-500/40",
       badgeBg: "bg-purple-600 text-white",
+    };
+  }
+  if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(ext)) {
+    return {
+      label: "Image File",
+      iconUrl: "https://api.iconify.design/vscode-icons:file-type-image.svg",
+      borderColor: "border-amber-500/30 dark:border-amber-500/40",
+      badgeBg: "bg-amber-500 text-slate-950",
     };
   }
   return {
@@ -453,68 +469,92 @@ export function DocumentUploadZone({
 
       {/* File Attachment Card or Drop Zone Box */}
       {selectedFile && fileType ? (
-        <div className="bg-slate-50 dark:bg-slate-800/80 border border-emerald-500/40 dark:border-emerald-500/30 rounded-2xl p-4 shadow-xs flex items-center justify-between transition-all">
-          <div className="flex items-center gap-3.5 min-w-0 text-left">
-            {isImage && fileObjectUrl ? (
-              <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-amber-500/40 shadow-xs bg-slate-900/10">
-                <img
-                  src={fileObjectUrl}
-                  alt="File Preview"
-                  className="h-full w-full object-cover"
-                />
+        (() => {
+          const ext = selectedFile.name.split(".").pop() || "file";
+          const isExcel = Boolean(
+            fileType?.type?.toLowerCase().includes("sheet") ||
+              selectedFile.name.toLowerCase().endsWith(".xlsx") ||
+              selectedFile.name.toLowerCase().endsWith(".xls") ||
+              selectedFile.name.toLowerCase().endsWith(".csv"),
+          );
+          const isWord = Boolean(
+            selectedFile.name.toLowerCase().endsWith(".docx") ||
+              selectedFile.name.toLowerCase().endsWith(".doc"),
+          );
+          const brand = getFileBrand(ext, isExcel, isWord);
+
+          return (
+            <div
+              className={`bg-white dark:bg-slate-900 border ${brand.borderColor} rounded-2xl p-4 shadow-xs flex items-center justify-between transition-all`}
+            >
+              <div className="flex items-center gap-3.5 min-w-0 text-left">
+                {isImage && fileObjectUrl ? (
+                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-amber-500/40 shadow-xs bg-slate-900/10">
+                    <img
+                      src={fileObjectUrl}
+                      alt="File Preview"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-shrink-0 w-10 h-10 p-1.5 rounded-xl bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700/60 flex items-center justify-center shadow-sm">
+                    <img
+                      src={brand.iconUrl}
+                      alt={brand.label}
+                      className="w-7 h-7 object-contain select-none"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="text-slate-900 dark:text-slate-100 font-bold text-sm truncate max-w-[240px] sm:max-w-[280px]"
+                    title={selectedFile.name}
+                  >
+                    {selectedFile.name}
+                  </p>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
+                    <span>{formatBytes(selectedFile.size)}</span>
+                    <span>•</span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
+                      <CheckCircle2 className="h-3 w-3" /> Ready to submit
+                    </span>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="relative shrink-0 flex items-center justify-center">
-                {fileType.icon}
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p
-                className="text-slate-900 dark:text-slate-100 font-bold text-sm truncate max-w-[240px] sm:max-w-[280px]"
-                title={selectedFile.name}
-              >
-                {selectedFile.name}
-              </p>
-              <div className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
-                <span>{formatBytes(selectedFile.size)}</span>
-                <span>•</span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
-                  <CheckCircle2 className="h-3 w-3" /> Ready to submit
-                </span>
+
+              <div className="flex items-center gap-2 shrink-0 ml-3">
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all cursor-pointer shadow-2xs active:scale-95"
+                  title="Preview Document"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  <span>Preview</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={triggerFileInput}
+                  disabled={isUploading}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all cursor-pointer shadow-2xs active:scale-95"
+                >
+                  Replace
+                </button>
+                <button
+                  type="button"
+                  aria-label="Remove selected file"
+                  onClick={removeFile}
+                  disabled={isUploading}
+                  className="p-2 text-xs font-semibold rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-2xs active:scale-95"
+                  title="Remove File"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 ml-3">
-            <button
-              type="button"
-              onClick={() => setIsPreviewOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all cursor-pointer shadow-2xs active:scale-95"
-              title="Preview Document"
-            >
-              <Eye className="h-3.5 w-3.5" />
-              <span>Preview</span>
-            </button>
-            <button
-              type="button"
-              onClick={triggerFileInput}
-              disabled={isUploading}
-              className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all cursor-pointer shadow-2xs active:scale-95"
-            >
-              Replace
-            </button>
-            <button
-              type="button"
-              aria-label="Remove selected file"
-              onClick={removeFile}
-              disabled={isUploading}
-              className="p-2 text-xs font-semibold rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-2xs active:scale-95"
-              title="Remove File"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+          );
+        })()
       ) : (
         <div
           role="button"

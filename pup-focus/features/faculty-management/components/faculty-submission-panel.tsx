@@ -65,11 +65,19 @@ export function getFileType(fileNameOrUrl: string): {
 
 export const getFileBrand = (
   extension: string,
-  isExcel: boolean,
-  isWord: boolean,
+  isExcel?: boolean,
+  isWord?: boolean,
 ) => {
-  const ext = extension.toLowerCase();
+  const ext = (extension || "").toLowerCase().trim();
 
+  if (ext === "pdf") {
+    return {
+      label: "Adobe PDF Document",
+      iconUrl: "https://api.iconify.design/vscode-icons:file-type-pdf2.svg",
+      borderColor: "border-[#E5252A]/30 dark:border-[#E5252A]/40",
+      badgeBg: "bg-[#E5252A] text-white",
+    };
+  }
   if (isExcel || ["xlsx", "xls", "csv"].includes(ext)) {
     return {
       label: "Microsoft Excel Spreadsheet",
@@ -101,6 +109,14 @@ export const getFileBrand = (
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-zip.svg",
       borderColor: "border-purple-500/30 dark:border-purple-500/40",
       badgeBg: "bg-purple-600 text-white",
+    };
+  }
+  if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(ext)) {
+    return {
+      label: "Image File",
+      iconUrl: "https://api.iconify.design/vscode-icons:file-type-image.svg",
+      borderColor: "border-amber-500/30 dark:border-amber-500/40",
+      badgeBg: "bg-amber-500 text-slate-950",
     };
   }
   return {
