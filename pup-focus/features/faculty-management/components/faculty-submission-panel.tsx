@@ -31,7 +31,7 @@ import {
   DashboardMetricsSkeleton,
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
-import { Menu, X, LayoutDashboard, ClipboardList, History, Settings, FileText, AlertCircle, Upload, UploadCloud, CheckCircle2, Calendar, Loader2, Eye, RotateCw, Clock3, Download, ExternalLink, ArrowRight, Sparkles, FileSpreadsheet, FileCheck, File, Archive } from "lucide-react";
+import { Menu, X, LayoutDashboard, ClipboardList, History, Activity, Settings, FileText, AlertCircle, Upload, UploadCloud, CheckCircle2, Calendar, Loader2, Eye, RotateCw, Clock3, Download, ExternalLink, ArrowRight, Sparkles, FileSpreadsheet, FileCheck, File, Archive } from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 
@@ -2091,9 +2091,10 @@ function FacultySubmissionPanelContent({
                       type="button"
                       onClick={openHistoryModal}
                       className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
+                      title="View semester activity timeline"
                     >
-                      <History className="h-3.5 w-3.5" />
-                      Submission History
+                      <Activity className="h-3.5 w-3.5" />
+                      Activity Log
                     </button>
                     <button
                       type="button"
@@ -2267,9 +2268,10 @@ function FacultySubmissionPanelContent({
                                   type="button"
                                   onClick={() => openVersionHistory(req)}
                                   className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+                                  title="View file versions"
                                 >
                                   <History className="h-3.5 w-3.5" />
-                                  History
+                                  Versions
                                 </button>
                               </>
                             ) : null}
