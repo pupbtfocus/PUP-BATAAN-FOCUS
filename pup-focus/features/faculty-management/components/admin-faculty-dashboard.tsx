@@ -150,6 +150,8 @@ export function AdminFacultyDashboard({
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteModalMessage, setInviteModalMessage] = useState("");
   const [inviteWasSent, setInviteWasSent] = useState(false);
+  const [createdFacultyEmail, setCreatedFacultyEmail] = useState<string | null>(null);
+  const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingFacultyIds, setLoadingFacultyIds] = useState<Set<string>>(
     new Set(),
@@ -303,12 +305,15 @@ export function AdminFacultyDashboard({
       }
 
       const invitedEmail = data.user?.email ?? input.email;
+      const tempPassword = data.tempPassword ?? null;
+      setCreatedFacultyEmail(invitedEmail);
+      setCreatedTempPassword(tempPassword);
       setInviteWasSent(Boolean(data.sent));
       const inviteMessage = data.sent
-        ? `Invitation email sent to ${invitedEmail}. Please ask them to verify their email and check their inbox.`
-        : data.link
-          ? `Invite link generated for ${invitedEmail}. Email delivery failed: ${data.sendError ?? "SMTP is not available"}\n\n${data.link}`
-          : `Invite could not be sent for ${invitedEmail}.`;
+        ? `Faculty account created. Temporary credentials have been emailed to ${invitedEmail}.`
+        : tempPassword
+          ? `Faculty account created. Email delivery failed: ${data.sendError ?? "SMTP not configured"}. Please copy and share the temporary credentials below with the faculty member.`
+          : `Faculty account created for ${invitedEmail}.`;
 
       setCreateSuccess(inviteMessage);
       setInviteModalMessage(inviteMessage);
@@ -840,7 +845,13 @@ export function AdminFacultyDashboard({
         isOpen={inviteModalOpen}
         inviteWasSent={inviteWasSent}
         inviteModalMessage={inviteModalMessage}
-        onClose={() => setInviteModalOpen(false)}
+        email={createdFacultyEmail}
+        tempPassword={createdTempPassword}
+        onClose={() => {
+          setInviteModalOpen(false);
+          setCreatedFacultyEmail(null);
+          setCreatedTempPassword(null);
+        }}
       />
 
       <AddFacultyModal
