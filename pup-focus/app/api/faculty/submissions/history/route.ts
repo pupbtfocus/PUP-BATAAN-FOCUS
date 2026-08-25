@@ -334,9 +334,8 @@ export async function GET() {
         undefined;
 
       const facultyNote =
-        !adminFeedback && typeof row.remarks === "string" && row.remarks.trim()
-          ? row.remarks.trim()
-          : undefined;
+        (row as { notes?: string }).notes?.trim() ||
+        (typeof row.remarks === "string" && row.remarks.trim() ? row.remarks.trim() : undefined);
 
       const doc = docVersionsMap.get(row.id);
       const storagePath = doc?.storage_path || row.storage_path || row.file_path;
@@ -360,7 +359,7 @@ export async function GET() {
         updatedAt: row.updated_at || undefined,
         dateValidated: dateValidated,
         note: facultyNote,
-        remarks: adminFeedback,
+        remarks: facultyNote || adminFeedback,
         admin_remarks: adminFeedback,
         adminRemarks: adminFeedback,
         feedback: adminFeedback,
