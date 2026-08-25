@@ -3,7 +3,7 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ROLE } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
-import { sendInviteEmail } from "@/lib/email/send-invite";
+import { sendTempPasswordEmail } from "@/lib/email/send-invite";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { logger } from "@/lib/observability/logger";
 import {
@@ -242,35 +242,43 @@ export async function POST(request: NextRequest) {
       profileImageMetadata.profile_image_path = storagePath;
     }
 
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (request.url ? new URL(request.url).origin : "https://pupfocus.cjaayy.dev");
-    const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/callback`;
+    function generateTempPassword(len = 8): string {
+      const letters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+      const numbers = "23456789";
+      const specials = "!@#$%&*";
+      let randomPart = "";
+      for (let i = 0; i < len; i++) {
+        const chars = letters + numbers + specials;
+        randomPart += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return `PUPFocus!${randomPart}`;
+    }
 
-    const { data: genData, error: genError } =
-      await supabase.auth.admin.generateLink({
-        type: "invite",
+    const tempPassword = generateTempPassword(8);
+
+    const { data: authData, error: authError } =
+      await supabase.auth.admin.createUser({
         email: normalizedEmail,
-        options: {
-          data: {
-            first_name: firstName.trim(),
-            middle_name: middleName.trim() || null,
-            last_name: lastName.trim(),
-            full_name: fullName,
-            program_id: programRecord.id,
-            program_code: programRecord.code,
-            profile_image_bucket: profileImageMetadata.profile_image_bucket,
-            profile_image_path: profileImageMetadata.profile_image_path,
-            role: ROLE.FACULTY,
-            created_via: "admin_faculty_panel",
-            created_by_admin_id: user.id,
-          },
-          redirectTo: callbackUrl,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          first_name: firstName.trim(),
+          middle_name: middleName.trim() || null,
+          last_name: lastName.trim(),
+          full_name: fullName,
+          program_id: programRecord.id,
+          program_code: programRecord.code,
+          profile_image_bucket: profileImageMetadata.profile_image_bucket,
+          profile_image_path: profileImageMetadata.profile_image_path,
+          role: ROLE.FACULTY,
+          created_via: "admin_faculty_panel",
+          created_by_admin_id: user.id,
+          force_password_change: true,
+          must_change_password: true,
         },
       });
 
-    if (genError) {
+    if (authError || !authData.user) {
       if (profileImageMetadata.profile_image_path) {
         await supabase.storage
           .from(FACULTY_PROFILE_IMAGE_BUCKET)
@@ -280,7 +288,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         {
-          error: genError?.message ?? "Failed to generate faculty invite link",
+          error: authError?.message ?? "Failed to create faculty account",
         },
         { status: 400 },
       );
@@ -288,7 +296,7 @@ export async function POST(request: NextRequest) {
 
     // Pre-create profile, user_roles, and program assignment in DB
     // so the faculty account appears immediately in the admin faculty list.
-    const createdAuthUser = genData?.user;
+    const createdAuthUser = authData.user;
     if (createdAuthUser) {
       try {
         const { data: newProfile, error: profileErr } = await supabase
@@ -324,8 +332,6 @@ export async function POST(request: NextRequest) {
               );
           }
 
-
-
           // Insert program assignment
           const { data: activeTerm } = await supabase
             .from("academic_terms")
@@ -353,46 +359,40 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const actionLink = genData?.properties?.action_link ?? null;
-
     let sent = false;
     let sendError: string | null = null;
 
-    if (actionLink) {
-      try {
-        await sendInviteEmail({
-          to: normalizedEmail,
-          link: actionLink,
-          firstName: firstName.trim(),
-          fullName,
-          invitedRole: ROLE.FACULTY,
-        });
-        sent = true;
-      } catch (e) {
-        sendError =
-          e instanceof Error ? e.message : String(e ?? "unknown error");
-        console.error("Failed to send faculty invite email", {
-          email: normalizedEmail,
-          fullName,
-          sendError,
-        });
-      }
+    try {
+      await sendTempPasswordEmail({
+        to: normalizedEmail,
+        tempPassword,
+        fullName,
+      });
+      sent = true;
+    } catch (e) {
+      sendError =
+        e instanceof Error ? e.message : String(e ?? "unknown error");
+      console.error("Failed to send faculty temp password email", {
+        email: normalizedEmail,
+        fullName,
+        sendError,
+      });
     }
 
-    // Audit log – fire-and-forget; never blocks the invite response
+    // Audit log – fire-and-forget; never blocks the response
     try {
       await logAuditEvent({
         actorId: user.id,
         action: "faculty.create",
         entityType: "faculty",
-        entityId: user.id,
+        entityId: createdAuthUser.id,
         metadata: {
           target_email: normalizedEmail,
           target_full_name: fullName,
           program_id: programId,
           program_code: programRecord.code,
           program_name: programRecord.name,
-          invite_sent: sent,
+          email_sent: sent,
           send_error: sendError,
         },
       });
@@ -405,11 +405,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      invited: true,
+      tempPassword,
       sent,
       sendError,
-      link: actionLink,
       user: {
+        id: createdAuthUser.id,
         email: normalizedEmail,
         fullName,
         program: {

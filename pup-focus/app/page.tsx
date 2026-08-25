@@ -165,7 +165,7 @@ export default function Home() {
         (user.user_metadata as any)?.must_change_password === true ||
         (user.user_metadata as any)?.force_password_change === true;
       if (mustChange) {
-        window.location.assign("/auth/set-password");
+        window.location.assign("/auth/change-password");
         return;
       }
 

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { AuthHashListener } from "@/components/providers/auth-hash-listener";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -54,7 +53,6 @@ export default function RootLayout({
           defaultTheme="dark"
           enableSystem={false}
         >
-          <AuthHashListener />
           {children}
         </ThemeProvider>
       </body>

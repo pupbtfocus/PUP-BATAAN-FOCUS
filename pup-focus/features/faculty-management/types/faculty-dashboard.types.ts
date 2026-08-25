@@ -47,6 +47,7 @@ export type CreateFacultyResult = {
   sent?: boolean;
   sendError?: string | null;
   link?: string | null;
+  tempPassword?: string | null;
   user?: {
     email: string;
     fullName: string;
