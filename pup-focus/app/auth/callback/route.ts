@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
 
     if (isInvite || isRecovery) {
       return NextResponse.redirect(
-        new URL("/auth/change-password", request.url),
+        new URL("/auth/set-password", request.url),
       );
     }
   }
