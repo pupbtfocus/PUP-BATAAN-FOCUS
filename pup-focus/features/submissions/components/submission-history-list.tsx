@@ -124,25 +124,25 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
       {/* ─── Desktop Table View with Horizontal Scroll Container ─── */}
       <div className="hidden md:block overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs transition-colors">
         <div className="w-full overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left text-xs min-w-[840px]" aria-label="Validation history table">
+          <table className="w-full text-left text-xs min-w-[880px]" aria-label="Validation history table">
             <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 font-semibold">
               <tr>
-                <th scope="col" className="px-5 py-3.5 min-w-[220px]">
+                <th scope="col" className="w-[34%] px-6 py-4">
                   Requirement
                 </th>
-                <th scope="col" className="px-4 py-3.5 min-w-[140px] whitespace-nowrap">
+                <th scope="col" className="w-[18%] px-5 py-4 whitespace-nowrap">
                   Academic Term
                 </th>
-                <th scope="col" className="px-4 py-3.5 min-w-[150px] whitespace-nowrap">
+                <th scope="col" className="w-[16%] px-5 py-4 whitespace-nowrap">
                   Date Validated
                 </th>
-                <th scope="col" className="px-4 py-3.5 min-w-[120px] whitespace-nowrap">
+                <th scope="col" className="w-[12%] px-4 py-4 whitespace-nowrap">
                   Status
                 </th>
-                <th scope="col" className="px-4 py-3.5 min-w-[200px]">
+                <th scope="col" className="w-[10%] px-4 py-4">
                   Reviewer Remarks
                 </th>
-                <th scope="col" className="px-5 py-3.5 text-right min-w-[180px] whitespace-nowrap">
+                <th scope="col" className="w-[10%] px-6 py-4 text-right whitespace-nowrap">
                   Action
                 </th>
               </tr>
@@ -166,7 +166,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                     className="bg-white dark:bg-slate-900 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                   >
                     {/* Requirement Name */}
-                    <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-slate-100 min-w-[220px]">
+                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
                       <div className="flex items-center gap-2">
                         {isUnread && (
                           <span className="relative flex h-2 w-2 shrink-0" title="New feedback">
@@ -174,29 +174,31 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
                           </span>
                         )}
-                        <span className="font-semibold text-slate-900 dark:text-slate-100">{title}</span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 leading-snug">
+                          {title}
+                        </span>
                       </div>
                     </td>
 
                     {/* Academic Term */}
-                    <td className="px-4 py-3.5 text-slate-600 dark:text-slate-400 whitespace-nowrap min-w-[140px]">
+                    <td className="px-5 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                       <span className="inline-flex items-center rounded-md border border-slate-200/80 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300">
                         {sub.semester} • S.Y. {sub.academicYear}
                       </span>
                     </td>
 
                     {/* Date Validated */}
-                    <td className="px-4 py-3.5 text-slate-600 dark:text-slate-400 whitespace-nowrap min-w-[150px]">
+                    <td className="px-5 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                       {formatDateTime(dateValidated)}
                     </td>
 
                     {/* Status Badge (Emerald Validated) */}
-                    <td className="px-4 py-3.5 whitespace-nowrap min-w-[120px]">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <SubmissionStatusBadge status="validated" size="sm" />
                     </td>
 
                     {/* Reviewer Remarks */}
-                    <td className="px-4 py-3.5 text-slate-600 dark:text-slate-400 min-w-[200px]">
+                    <td className="px-4 py-4 text-slate-600 dark:text-slate-400">
                       {adminFeedback ? (
                         <p className="italic text-slate-700 dark:text-slate-300 leading-snug" title={adminFeedback}>
                           &ldquo;{adminFeedback}&rdquo;
@@ -207,13 +209,13 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                     </td>
 
                     {/* Action Column */}
-                    <td className="px-5 py-3.5 text-right whitespace-nowrap min-w-[180px]">
+                    <td className="px-6 py-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
                           aria-label={`View submitted file for ${title}`}
                           onClick={() => onViewFile(sub)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                           title="Preview Document"
                         >
                           <Eye className="h-3.5 w-3.5 text-slate-500" />
@@ -223,7 +225,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                           type="button"
                           aria-label={`Download file for ${title}`}
                           onClick={() => handleDownload(sub)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300/80 dark:border-emerald-600/50 bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300/80 dark:border-emerald-600/50 bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                           title="Download File"
                         >
                           <Download className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
