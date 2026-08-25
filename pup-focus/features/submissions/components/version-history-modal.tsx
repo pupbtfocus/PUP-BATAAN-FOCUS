@@ -8,6 +8,8 @@ import {
   Clock,
   X,
   AlertCircle,
+  ShieldCheck,
+  MessageSquareQuote,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,10 @@ interface VersionHistoryModalProps {
 
 // In-memory client cache for instantaneous modal opening (< 0ms rendering)
 const versionHistoryCache = new Map<string, VersionHistoryResponse>();
+
+export function clearVersionHistoryCache() {
+  versionHistoryCache.clear();
+}
 
 function formatTimestamp(value: string): string {
   const parsed = new Date(value);
@@ -47,6 +53,72 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+const getStatusConfig = (status?: string | null) => {
+  const norm = (status || "").toLowerCase().trim();
+
+  if (
+    [
+      "approved",
+      "validated",
+      "accepted",
+      "compliant",
+      "passed",
+    ].some((s) => norm.includes(s))
+  ) {
+    return {
+      label: "VALIDATED REVIEWER FEEDBACK",
+      Icon: ShieldCheck,
+      containerBg:
+        "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-500/30 text-emerald-900 dark:text-emerald-200",
+      badgeBg:
+        "bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 ring-emerald-500/30",
+      iconBoxBg:
+        "bg-emerald-100 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-700/40",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      textColor: "text-emerald-950 dark:text-emerald-100",
+      subtextColor: "text-emerald-700/80 dark:text-emerald-400/70",
+    };
+  }
+
+  if (
+    [
+      "rejected",
+      "returned",
+      "needs_revision",
+      "revision_required",
+      "revision",
+    ].some((s) => norm.includes(s))
+  ) {
+    return {
+      label: "REVISION REQUESTED",
+      Icon: AlertCircle,
+      containerBg:
+        "bg-rose-50/80 dark:bg-rose-950/40 border-rose-500/30 text-rose-900 dark:text-rose-200",
+      badgeBg:
+        "bg-rose-500/10 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 ring-rose-500/30",
+      iconBoxBg:
+        "bg-rose-100 dark:bg-rose-900/40 border-rose-200 dark:border-rose-700/40",
+      iconColor: "text-rose-600 dark:text-rose-400",
+      textColor: "text-rose-950 dark:text-rose-100",
+      subtextColor: "text-rose-700/80 dark:text-rose-400/70",
+    };
+  }
+
+  return {
+    label: "REVIEWER REMARKS",
+    Icon: MessageSquareQuote,
+    containerBg:
+      "bg-amber-50/80 dark:bg-amber-950/40 border-amber-500/30 text-amber-900 dark:text-amber-200",
+    badgeBg:
+      "bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 ring-amber-500/30",
+    iconBoxBg:
+      "bg-amber-100 dark:bg-amber-900/40 border-amber-200 dark:border-amber-700/40",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    textColor: "text-amber-950 dark:text-amber-100",
+    subtextColor: "text-amber-700/80 dark:text-amber-400/70",
+  };
+};
 
 export function VersionHistoryModal({
   submissionId,
@@ -134,6 +206,15 @@ export function VersionHistoryModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  const remarksText =
+    submissionInfo?.feedback ||
+    (submissionInfo as { admin_remarks?: string })?.admin_remarks ||
+    versions[0]?.remarks;
+
+  const statusValue = submissionInfo?.status || versions[0]?.status;
+  const statusConfig = getStatusConfig(statusValue);
+  const StatusIcon = statusConfig.Icon;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
@@ -174,24 +255,34 @@ export function VersionHistoryModal({
 
         {/* Content */}
         <div className="max-h-[65vh] overflow-y-auto px-6 py-5">
-          {/* Review feedback banner */}
-          {submissionInfo?.feedback && (
-            <div className="mb-5 rounded-xl border border-red-500/30 bg-red-50 dark:bg-red-950/30 p-4">
-              <div className="flex items-start gap-2.5">
-                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-red-700 dark:text-red-400 font-semibold">
-                    Reviewer Remarks
-                  </p>
-                  <p className="mt-1.5 text-sm text-red-950 dark:text-red-200 leading-6">
-                    {submissionInfo.feedback}
-                  </p>
-                  {submissionInfo.reviewedAt && (
-                    <p className="mt-2 text-xs text-red-700/70 dark:text-red-400/60">
-                      Reviewed on {submissionInfo.reviewedAt}
-                    </p>
-                  )}
+          {/* Dynamic Reviewer Remarks Banner */}
+          {remarksText && (
+            <div
+              className={`p-4 rounded-2xl border ${statusConfig.containerBg} shadow-xs backdrop-blur-xs flex items-start gap-3.5 transition-all mb-5`}
+            >
+              <div
+                className={`p-2 rounded-xl border ${statusConfig.iconBoxBg} ${statusConfig.iconColor} shrink-0 shadow-2xs`}
+              >
+                <StatusIcon className="w-5 h-5 stroke-[2]" />
+              </div>
+              <div className="space-y-1.5 text-left min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ring-1 ${statusConfig.badgeBg}`}
+                  >
+                    {statusConfig.label}
+                  </span>
                 </div>
+                <p
+                  className={`text-sm font-medium leading-relaxed ${statusConfig.textColor}`}
+                >
+                  &ldquo;{remarksText}&rdquo;
+                </p>
+                {submissionInfo?.reviewedAt && (
+                  <p className={`text-xs ${statusConfig.subtextColor}`}>
+                    Reviewed on {submissionInfo.reviewedAt}
+                  </p>
+                )}
               </div>
             </div>
           )}
