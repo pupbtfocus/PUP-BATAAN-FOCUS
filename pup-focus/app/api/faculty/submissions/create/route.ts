@@ -453,55 +453,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 2. If document_versions has NO Version 1 row, archive previous file as Version 1
-      const hasVersion1 =
-        existingVersions &&
-        existingVersions.some((v) => v.version_number === 1);
-
-      if (!hasVersion1) {
-        const oldStoragePath =
-          (existingVersions && existingVersions[0]?.storage_path) ||
-          `faculty-submissions/${profile.id}/${targetSubmissionId}/v1_${fileName}`;
-
-        const oldCreatedAt =
-          existingSubmission.submitted_at ||
-          existingSubmission.created_at ||
-          new Date().toISOString();
-
-        const { error: v1InsertError } = await supabaseAdmin
-          .from("document_versions")
-          .insert({
-            submission_id: targetSubmissionId,
-            version_number: 1,
-            storage_path: oldStoragePath,
-            mime_type: "application/octet-stream",
-            size_bytes: 0,
-            checksum_sha256: "archived_v1_checksum",
-            created_by: user.id,
-            created_at: oldCreatedAt,
-          });
-
-        if (v1InsertError) {
-          console.error(
-            "[CRITICAL] Failed to insert Version 1 into document_versions:",
-            v1InsertError,
-          );
-        } else {
-          console.log("[DOCUMENT_VERSION_1_ARCHIVED]", {
-            submissionId: targetSubmissionId,
-            oldStoragePath,
-          });
-        }
-      }
-
-      // 3. Calculate Next Version Number (e.g. Version 2, 3, etc.)
-      let nextVersionNumber = 2;
-      if (existingVersions && existingVersions.length > 0) {
-        const maxVersion = Math.max(
-          ...existingVersions.map((v) => v.version_number || 1),
-        );
-        nextVersionNumber = Math.max(maxVersion + 1, 2);
-      }
+      // 2. Determine Next Version Number (Pure Append-Only)
+      const hasExistingVersions = Boolean(
+        existingVersions && existingVersions.length > 0,
+      );
+      const nextVersionNumber = hasExistingVersions
+        ? Math.max(...existingVersions!.map((v) => v.version_number || 1)) + 1
+        : 1;
 
       const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v${nextVersionNumber}_${fileName}`;
 
@@ -524,7 +482,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Insert NEW version record into document_versions using supabaseAdmin
+      // Insert NEW version record into document_versions using supabaseAdmin (Strictly Append-Only)
       const { data: newDocVer, error: docVersionError } = await supabaseAdmin
         .from("document_versions")
         .insert({

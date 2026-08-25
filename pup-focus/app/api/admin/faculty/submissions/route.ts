@@ -16,6 +16,8 @@ type SubmissionRow = {
   submitted_at?: string | null;
   created_at?: string | null;
   remarks?: string | null;
+  notes?: string | null;
+  admin_remarks?: string | null;
   document_versions?: Array<{
     id: string;
     storage_path: string;
@@ -141,15 +143,36 @@ export async function GET(request: NextRequest) {
       submitted_at?: string | null;
       created_at?: string | null;
       remarks?: string | null;
+      notes?: string | null;
+      admin_remarks?: string | null;
     }> = [];
 
     if (targetAssignmentIds.length > 0) {
-      const { data: subData, error: subError } = await supabase
+      const primaryRes = await supabase
         .from("submissions")
-        .select("id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id")
+        .select(
+          "id, requirement_code, status, submitted_at, created_at, remarks, notes, admin_remarks, faculty_assignment_id",
+        )
         .eq("faculty_profile_id", facultyProfileId)
         .in("faculty_assignment_id", targetAssignmentIds)
         .order("submitted_at", { ascending: false });
+
+      let subData: any[] | null = primaryRes.data;
+      let subError = primaryRes.error;
+
+      if (subError) {
+        const fallbackRes = await supabase
+          .from("submissions")
+          .select(
+            "id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id",
+          )
+          .eq("faculty_profile_id", facultyProfileId)
+          .in("faculty_assignment_id", targetAssignmentIds)
+          .order("submitted_at", { ascending: false });
+
+        subData = fallbackRes.data;
+        subError = fallbackRes.error;
+      }
 
       if (subError) {
         console.error(
@@ -159,7 +182,7 @@ export async function GET(request: NextRequest) {
       }
 
       if (subData) {
-        rawSubmissions = subData as typeof rawSubmissions;
+        rawSubmissions = subData;
       }
     } else {
       rawSubmissions = [];
