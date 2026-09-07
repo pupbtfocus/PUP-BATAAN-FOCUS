@@ -16,6 +16,8 @@ interface LoginFormProps {
   setEmail: (email: string) => void;
   password: string;
   setPassword: (password: string) => void;
+  rememberMe?: boolean;
+  setRememberMe?: (remember: boolean) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onOpenForgotPassword: () => void;
   isSubmitting: boolean;
@@ -30,6 +32,8 @@ export function LoginForm({
   setEmail,
   password,
   setPassword,
+  rememberMe = false,
+  setRememberMe,
   onSubmit,
   onOpenForgotPassword,
   isSubmitting,
@@ -40,7 +44,16 @@ export function LoginForm({
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [internalRememberMe, setInternalRememberMe] = useState(false);
+
+  const activeRememberMe = setRememberMe ? rememberMe : internalRememberMe;
+  const handleToggleRememberMe = (checked: boolean) => {
+    if (setRememberMe) {
+      setRememberMe(checked);
+    } else {
+      setInternalRememberMe(checked);
+    }
+  };
 
   const isLoading = isSubmitting || Boolean(isPending);
 
@@ -236,18 +249,20 @@ export function LoginForm({
             <div className="relative flex items-center justify-center">
               <input
                 type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
+                id="remember-me"
+                name="remember-me"
+                checked={activeRememberMe}
+                onChange={(e) => handleToggleRememberMe(e.target.checked)}
                 className="sr-only"
               />
               <div
                 className={`w-4 h-4 rounded border transition-all flex items-center justify-center shadow-xs ${
-                  rememberMe
+                  activeRememberMe
                     ? "bg-amber-500 border-amber-400"
                     : "bg-[#2b0000] border-amber-500/50 group-hover:border-amber-400"
                 }`}
               >
-                {rememberMe && (
+                {activeRememberMe && (
                   <Check className="w-3 h-3 text-[#2b0000] stroke-[3.5] transition-transform duration-150 scale-100" />
                 )}
               </div>
