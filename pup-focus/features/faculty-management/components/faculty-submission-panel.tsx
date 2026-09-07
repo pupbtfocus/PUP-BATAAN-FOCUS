@@ -16,7 +16,8 @@ import { FacultySettingsPanel } from "@/features/faculty-management/components/f
 import { SubmissionWindowCountdown } from "@/features/submissions/components/submission-window-countdown";
 import { SubmissionLockBanner } from "@/features/submissions/components/submission-lock-banner";
 import { VersionHistoryModal } from "@/features/submissions/components/version-history-modal";
-import { extractFirstName } from "@/lib/faculty-profile";
+import { extractFirstName, buildFacultyInitials } from "@/lib/faculty-profile";
+import { createClient } from "@/lib/supabase/client";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -427,9 +428,8 @@ function FacultySubmissionPanelContent({
   const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const academicYears = useMemo(() => buildAcademicYearOptions(), []);
-  const facultyFirstName = useMemo(
-    () => extractFirstName(facultyName, "Faculty"),
-    [facultyName],
+  const [currentFacultyName, setCurrentFacultyName] = useState<string | null>(
+    facultyName ?? null,
   );
   const departmentName = useMemo(() => {
     if (initialData?.department) return initialData.department;
@@ -447,12 +447,76 @@ function FacultySubmissionPanelContent({
     );
   }, [facultyAvatarUrl, initialData?.avatarUrl, initialData?.profileImageUrl]);
 
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(avatarUrl);
+  const [hasAvatarError, setHasAvatarError] = useState(false);
+
   useEffect(() => {
-    if (avatarUrl && typeof window !== "undefined") {
-      const img = new window.Image();
-      img.src = avatarUrl;
-    }
+    setCurrentAvatarUrl(avatarUrl);
+    setHasAvatarError(false);
   }, [avatarUrl]);
+
+  useEffect(() => {
+    if (facultyName) {
+      setCurrentFacultyName(facultyName);
+    }
+  }, [facultyName]);
+
+  // Fallback client session check for profile image and name if initial data didn't have it
+  useEffect(() => {
+    if (!avatarUrl || !currentFacultyName) {
+      try {
+        const supabase = createClient();
+        supabase.auth.getUser().then((result: any) => {
+          const meta = result?.data?.user?.user_metadata as
+            | Record<string, unknown>
+            | undefined;
+          if (meta) {
+            if (!avatarUrl && (meta.profile_image_url || meta.avatar_url)) {
+              setCurrentAvatarUrl(
+                (meta.profile_image_url || meta.avatar_url) as string,
+              );
+              setHasAvatarError(false);
+            }
+            if (meta.full_name && !currentFacultyName) {
+              setCurrentFacultyName(meta.full_name as string);
+            }
+          }
+        });
+      } catch {
+        // safe fallback
+      }
+    }
+  }, [avatarUrl, currentFacultyName]);
+
+  const handleProfileUpdated = useCallback(
+    (updated: { fullName?: string; avatarUrl?: string | null }) => {
+      if (updated.fullName) {
+        setCurrentFacultyName(updated.fullName);
+      }
+      if (updated.avatarUrl !== undefined) {
+        setCurrentAvatarUrl(updated.avatarUrl);
+        setHasAvatarError(false);
+      }
+    },
+    [],
+  );
+
+  const facultyFirstName = useMemo(
+    () => extractFirstName(currentFacultyName, "Faculty"),
+    [currentFacultyName],
+  );
+
+  const facultyInitials = useMemo(
+    () => buildFacultyInitials(currentFacultyName || "Faculty"),
+    [currentFacultyName],
+  );
+
+  useEffect(() => {
+    if (currentAvatarUrl && typeof window !== "undefined") {
+      const img = new window.Image();
+      img.src = currentAvatarUrl;
+    }
+  }, [currentAvatarUrl]);
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -1645,6 +1709,30 @@ function FacultySubmissionPanelContent({
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-300 dark:border-slate-800 bg-[#F6F8FC] dark:bg-slate-950 p-2.5 shadow-sm transition-colors duration-200">
         <div className="my-1.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 p-2.5 flex flex-col items-center shadow-xs shadow-slate-300/40 dark:shadow-none transition-colors">
+          <button
+            type="button"
+            onClick={() => navigateToView("settings")}
+            className="relative mb-2 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
+            title="Manage Profile & Settings"
+          >
+            {currentAvatarUrl && !hasAvatarError ? (
+              <img
+                src={currentAvatarUrl}
+                alt={currentFacultyName || "Faculty Profile"}
+                className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500 transition-colors"
+                onError={() => setHasAvatarError(true)}
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500/60 transition-colors">
+                {facultyInitials}
+              </div>
+            )}
+            <span
+              className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
+              title="Active"
+            />
+          </button>
+
           <p className="mt-0.5 font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
             {facultyFirstName}
           </p>
@@ -1725,6 +1813,30 @@ function FacultySubmissionPanelContent({
             </div>
 
             <div className="my-1.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 p-2.5 flex flex-col items-center shadow-xs shadow-slate-300/40 dark:shadow-none transition-colors">
+              <button
+                type="button"
+                onClick={() => navigateToView("settings")}
+                className="relative mb-2 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
+                title="Manage Profile & Settings"
+              >
+                {currentAvatarUrl && !hasAvatarError ? (
+                  <img
+                    src={currentAvatarUrl}
+                    alt={currentFacultyName || "Faculty Profile"}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500 transition-colors"
+                    onError={() => setHasAvatarError(true)}
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500/60 transition-colors">
+                    {facultyInitials}
+                  </div>
+                )}
+                <span
+                  className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
+                  title="Active"
+                />
+              </button>
+
               <p className="mt-0.5 font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
                 {facultyFirstName}
               </p>
@@ -3299,10 +3411,11 @@ function FacultySubmissionPanelContent({
             {activeView === "settings" && (
               <article className="space-y-6">
                 <FacultySettingsPanel
-                  initialFacultyName={facultyName}
+                  initialFacultyName={currentFacultyName || facultyName}
                   initialFacultyEmail={facultyEmail}
                   initialDepartment={departmentName}
-                  initialAvatarUrl={avatarUrl}
+                  initialAvatarUrl={currentAvatarUrl || avatarUrl}
+                  onProfileUpdated={handleProfileUpdated}
                 />
               </article>
             )}
