@@ -47,21 +47,71 @@ export function LoginForm({
   return (
     <>
       <style>{`
-        input::placeholder,
-        input::-webkit-input-placeholder {
-          color: rgba(253, 230, 138, 0.35) !important;
-          -webkit-text-fill-color: rgba(253, 230, 138, 0.35) !important;
+        .pup-login-input {
+          background-color: #2b0000 !important;
+          color: #fff7ed !important;
+          -webkit-text-fill-color: #fff7ed !important;
+          caret-color: #f59e0b !important;
+          color-scheme: dark;
+        }
+
+        .pup-login-input::placeholder,
+        .pup-login-input::-webkit-input-placeholder {
+          color: rgba(253, 230, 138, 0.4) !important;
+          -webkit-text-fill-color: rgba(253, 230, 138, 0.4) !important;
           opacity: 1 !important;
         }
 
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        input:-webkit-autofill:active {
+        .pup-login-input::selection {
+          background-color: #780000 !important;
+          color: #fef3c7 !important;
+          -webkit-text-fill-color: #fef3c7 !important;
+        }
+
+        .pup-login-input::-ms-reveal,
+        .pup-login-input::-ms-clear {
+          display: none !important;
+        }
+
+        .pup-login-input:-webkit-autofill,
+        .pup-login-input:-webkit-autofill:hover,
+        .pup-login-input:-webkit-autofill:focus,
+        .pup-login-input:-webkit-autofill:active,
+        .dark .pup-login-input:-webkit-autofill,
+        .dark .pup-login-input:-webkit-autofill:hover,
+        .dark .pup-login-input:-webkit-autofill:focus,
+        .dark .pup-login-input:-webkit-autofill:active,
+        .pup-login-input:autofill,
+        .pup-login-input:autofill:hover,
+        .pup-login-input:autofill:focus,
+        .pup-login-input:autofill:active,
+        .dark .pup-login-input:autofill,
+        .dark .pup-login-input:autofill:hover,
+        .dark .pup-login-input:autofill:focus,
+        .dark .pup-login-input:autofill:active {
           -webkit-box-shadow: 0 0 0 1000px #2b0000 inset !important;
+          box-shadow: 0 0 0 1000px #2b0000 inset !important;
           -webkit-text-fill-color: #fff7ed !important;
           caret-color: #f59e0b !important;
+          color: #fff7ed !important;
+          background-color: #2b0000 !important;
           transition: background-color 999999s ease-in-out 0s !important;
+        }
+
+        .pup-login-input:-webkit-autofill::first-line,
+        .dark .pup-login-input:-webkit-autofill::first-line {
+          color: #fff7ed !important;
+          -webkit-text-fill-color: #fff7ed !important;
+        }
+
+        .pup-login-input:-moz-autofill,
+        .pup-login-input:-moz-autofill:focus,
+        .dark .pup-login-input:-moz-autofill,
+        .dark .pup-login-input:-moz-autofill:focus {
+          box-shadow: 0 0 0 1000px #2b0000 inset !important;
+          background-color: #2b0000 !important;
+          color: #fff7ed !important;
+          -webkit-text-fill-color: #fff7ed !important;
         }
       `}</style>
 
@@ -112,11 +162,13 @@ export function LoginForm({
             <input
               id="email"
               type="email"
+              name="email"
+              autoComplete="username"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
               placeholder="faculty@pup.edu.ph"
-              className="w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-10 pr-4 py-3.5 text-sm !text-amber-50 shadow-inner outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/60 focus:!border-amber-400 focus:!ring-2 focus:!ring-amber-400/40"
+              className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-10 pr-4 py-3.5 text-sm !text-amber-50 shadow-inner outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/60 focus:!border-amber-400 focus:!ring-2 focus:!ring-amber-400/40"
             />
           </div>
         </div>
@@ -133,6 +185,8 @@ export function LoginForm({
             <input
               id="password"
               type={showPassword ? "text" : "password"}
+              name="password"
+              autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               onKeyDown={(event) =>
@@ -152,7 +206,7 @@ export function LoginForm({
               onBlur={() => setIsCapsLockOn(false)}
               required
               placeholder="Your password"
-              className="w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-10 pr-12 py-3.5 text-sm !text-amber-50 shadow-inner outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/60 focus:!border-amber-400 focus:!ring-2 focus:!ring-amber-400/40"
+              className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-10 pr-12 py-3.5 text-sm !text-amber-50 shadow-inner outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/60 focus:!border-amber-400 focus:!ring-2 focus:!ring-amber-400/40"
             />
 
             <button
