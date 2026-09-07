@@ -57,7 +57,7 @@ export function PupWebBadge() {
           onClick={() => setIsAboutOpen(false)}
         >
           <div
-            className="relative w-full max-w-md rounded-3xl border-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-6 sm:p-7 text-[#fff8e7] shadow-2xl shadow-amber-500/15 backdrop-blur-xl animate-in zoom-in-95 duration-200"
+            className="relative w-full max-w-sm rounded-3xl border-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-6 sm:p-7 text-[#fff8e7] shadow-2xl shadow-amber-500/15 backdrop-blur-xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
@@ -81,13 +81,8 @@ export function PupWebBadge() {
               <div className="mx-auto mt-2.5 h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
             </div>
 
-            {/* Concise description */}
-            <p className="text-center text-xs sm:text-sm text-amber-200/80 font-medium leading-relaxed px-2 mt-2">
-              Faculty Online Compliance and Uploading System centralizes requirement submissions, document reviews, and curriculum monitoring for the Polytechnic University of the Philippines.
-            </p>
-
             {/* Action Links */}
-            <div className="mt-6 flex items-center gap-2.5 pt-4 border-t border-amber-400/30">
+            <div className="mt-4 flex items-center gap-2.5 pt-4 border-t border-amber-400/30">
               <Link
                 href="/about"
                 onClick={() => setIsAboutOpen(false)}
