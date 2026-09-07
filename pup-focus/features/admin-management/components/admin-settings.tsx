@@ -725,7 +725,7 @@ export function AdminSettings({
       {/* --------------------------------------------------------------------- */}
       {/* Header Bar & Top Action                                               */}
       {/* --------------------------------------------------------------------- */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800 pb-5">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Admin System Settings
@@ -761,15 +761,15 @@ export function AdminSettings({
         {/* ------------------------------------------------------------------- */}
         {/* Card 1: Profile & Credentials Section                               */}
         {/* ------------------------------------------------------------------- */}
-        <section className="overflow-hidden rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <div className="flex items-center gap-2.5 border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+        <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none transition-colors">
+          <div className="flex items-center gap-2.5 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             <User className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             <span>Profile & Credentials</span>
           </div>
 
           <div className="space-y-6 p-6">
             {/* Avatar Upload & Instant Preview Card */}
-            <div className="rounded-2xl border border-slate-400/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-900/40 p-5">
+            <div className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 p-5">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                 <div className="relative group shrink-0">
                   {!hasImageError && avatarPreviewUrl && !isAvatarRemoved ? (
@@ -888,7 +888,7 @@ export function AdminSettings({
             </div>
 
             {/* Password Credentials Card */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-slate-400/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-900/40 p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 p-4">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -908,7 +908,7 @@ export function AdminSettings({
                   setPasswordSuccess(null);
                   setIsPasswordModalOpen(true);
                 }}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all focus:outline-none cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all focus:outline-none cursor-pointer shadow-2xs"
               >
                 <KeyRound className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                 <span>Change Password</span>
@@ -920,13 +920,13 @@ export function AdminSettings({
         {/* ------------------------------------------------------------------- */}
         {/* Card 2: Notification Preferences Section                            */}
         {/* ------------------------------------------------------------------- */}
-        <section className="overflow-hidden rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <div className="flex items-center gap-2.5 border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+        <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none transition-colors">
+          <div className="flex items-center gap-2.5 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             <span>Notification Preferences</span>
           </div>
 
-          <div className="divide-y divide-slate-400 dark:divide-slate-800/70">
+          <div className="divide-y divide-slate-300 dark:divide-slate-800/70">
             {/* Toggle 1: Automated Email Reminders */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50">
               <div className="space-y-1">
@@ -953,7 +953,7 @@ export function AdminSettings({
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
                   emailReminders
                     ? "bg-amber-500 border border-amber-400"
-                    : "bg-slate-300 dark:bg-slate-800 border border-slate-400 dark:border-slate-700"
+                    : "bg-slate-300 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
                 }`}
               >
                 <span
@@ -992,7 +992,7 @@ export function AdminSettings({
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
                   submissionAlerts
                     ? "bg-amber-500 border border-amber-400"
-                    : "bg-slate-300 dark:bg-slate-800 border border-slate-400 dark:border-slate-700"
+                    : "bg-slate-300 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
                 }`}
               >
                 <span
@@ -1010,8 +1010,8 @@ export function AdminSettings({
         {/* ------------------------------------------------------------------- */}
         {/* Card 3: Security & Session Controls Section                         */}
         {/* ------------------------------------------------------------------- */}
-        <section className="overflow-hidden rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <div className="flex items-center gap-2.5 border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+        <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none transition-colors">
+          <div className="flex items-center gap-2.5 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             <span>Security & Session Controls</span>
           </div>
@@ -1034,7 +1034,7 @@ export function AdminSettings({
                 <select
                   value={sessionTimeout}
                   onChange={(e) => setSessionTimeout(e.target.value)}
-                  className="w-full sm:w-48 rounded-xl border border-slate-400 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 px-4 py-2.5 text-xs font-medium focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 cursor-pointer transition"
+                  className="w-full sm:w-48 rounded-xl border border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 px-4 py-2.5 text-xs font-medium focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 cursor-pointer transition"
                 >
                   <option value="15">15 minutes</option>
                   <option value="30">30 minutes</option>

@@ -1,7 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  UserCheck,
+  ClipboardCheck,
+  Calendar,
+  Clock,
+  Hourglass,
+  FileText,
+  Archive,
+  Activity,
+  Settings,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { extractFirstName } from "@/lib/faculty-profile";
 
 export interface SidebarProps {
@@ -17,13 +31,13 @@ export interface SidebarProps {
 function getRoleBadgeClasses(roleTitle?: string): string {
   const role = (roleTitle || "").toLowerCase().trim();
   if (role.includes("super")) {
-    return "bg-purple-100 dark:bg-purple-900/40 text-purple-900 dark:text-purple-300 border border-solid border-[#000000] dark:border-purple-500/30";
+    return "bg-purple-100 dark:bg-purple-900/40 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-700";
   }
   if (role.includes("faculty")) {
-    return "bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-solid border-[#000000] dark:border-slate-700";
+    return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700";
   }
   // Default: Admin
-  return "bg-amber-100 dark:bg-amber-900/40 text-amber-950 dark:text-amber-300 border border-solid border-[#000000] dark:border-amber-500/30";
+  return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700";
 }
 
 function getSidebarInitials(name?: string | null, fallback = "AD"): string {
@@ -39,31 +53,49 @@ export function SidebarButton({
   active,
   title,
   description,
+  Icon,
   onClick,
 }: {
   active: boolean;
   title: string;
   description?: string;
+  Icon?: React.ComponentType<{ size?: number; className?: string }>;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left px-3 py-2 text-xs transition cursor-pointer ${
+      className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs transition-all cursor-pointer ${
         active
-          ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-900 dark:border-amber-400 dark:bg-amber-500/15 dark:text-amber-400 font-semibold rounded-r-lg"
-          : "rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+          ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+          : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
       }`}
     >
-      <p className="text-xs">{title}</p>
-      {description ? (
-        <p
-          className={`mt-0.5 text-[11px] font-normal ${active ? "text-amber-800/80 dark:text-amber-300/80" : "text-slate-500 dark:text-slate-400"}`}
-        >
-          {description}
-        </p>
-      ) : null}
+      {Icon && (
+        <Icon
+          size={16}
+          className={
+            active
+              ? "text-amber-700 dark:text-amber-300 shrink-0"
+              : "text-slate-500 dark:text-slate-400 shrink-0"
+          }
+        />
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate">{title}</p>
+        {description ? (
+          <p
+            className={`mt-0.5 text-[10px] font-normal truncate ${
+              active
+                ? "text-amber-800/80 dark:text-amber-300/80"
+                : "text-slate-500 dark:text-slate-400"
+            }`}
+          >
+            {description}
+          </p>
+        ) : null}
+      </div>
     </button>
   );
 }
@@ -78,6 +110,10 @@ export function SidebarContent({
   onNavigate,
 }: SidebarProps) {
   const [hasAvatarError, setHasAvatarError] = useState(false);
+
+  useEffect(() => {
+    setHasAvatarError(false);
+  }, [profileImageUrl]);
 
   const isSuperAdmin =
     isSuperAdminProp ??
@@ -145,17 +181,22 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-2.5 flex flex-col items-center shadow-xs shadow-slate-200/50 dark:shadow-none transition-colors">
-        <div className="relative mb-2">
+      <div className="my-1.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 p-2.5 flex flex-col items-center shadow-xs shadow-slate-300/40 dark:shadow-none transition-colors">
+        <button
+          type="button"
+          onClick={() => handleSelect("settings")}
+          className="relative mb-2 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
+          title="Manage Profile & Settings"
+        >
           {profileImageUrl && !hasAvatarError ? (
             <img
               src={profileImageUrl}
               alt={adminName ?? "User"}
-              className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950"
+              className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500 transition-colors"
               onError={() => setHasAvatarError(true)}
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500/60 transition-colors">
               {getSidebarInitials(adminName, isSuperAdmin ? "SA" : "AD")}
             </div>
           )}
@@ -163,13 +204,13 @@ export function SidebarContent({
             className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
             title="Active"
           />
-        </div>
+        </button>
 
-        <p className="font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
+        <p className="mt-0.5 font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
           {extractFirstName(adminName, roleTitle)}
         </p>
 
-        <div className="my-1.5 h-px w-full bg-slate-200/80 dark:bg-slate-800" />
+        <div className="my-1.5 h-px w-full bg-slate-300 dark:bg-slate-800" />
 
         <span
           className={`mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full border ${getRoleBadgeClasses(roleTitle)}`}
@@ -178,27 +219,38 @@ export function SidebarContent({
         </span>
       </div>
 
-      <nav className="mt-1.5 space-y-0.5 flex-1 overflow-y-auto">
+      <nav className="mt-1.5 space-y-1 flex-1 overflow-y-auto">
         {/* 1. Dashboard */}
         <SidebarButton
           active={isDashboardActive}
           title="Dashboard"
+          Icon={LayoutDashboard}
           onClick={() => handleSelect("dashboard")}
         />
 
         {/* 2. User Management (Super Admin Dropdown) or Faculty Management (Standard Admin) */}
         {isSuperAdmin ? (
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <button
               type="button"
               onClick={() => setIsUserManagementOpen((prev) => !prev)}
-              className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs transition cursor-pointer ${
+              className={`flex w-full items-center justify-between gap-2.5 px-4 py-2.5 text-left text-xs transition-all cursor-pointer ${
                 isUserManagementActive
-                  ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-900 dark:border-amber-400 dark:bg-amber-500/15 dark:text-amber-400 font-semibold rounded-r-lg"
-                  : "rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                  ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                  : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
               }`}
             >
-              <span className="text-xs font-medium">User Management</span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Users
+                  size={16}
+                  className={
+                    isUserManagementActive
+                      ? "text-amber-700 dark:text-amber-300 shrink-0"
+                      : "text-slate-500 dark:text-slate-400 shrink-0"
+                  }
+                />
+                <span className="truncate">User Management</span>
+              </div>
               {isUserManagementOpen ? (
                 <ChevronDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
               ) : (
@@ -208,28 +260,44 @@ export function SidebarContent({
 
             {/* Child Sub-items (Indented with left border indicator) */}
             {isUserManagementOpen && (
-              <div className="border-l border-[#000000] dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
+              <div className="ml-4 pl-2 border-l border-slate-300 dark:border-slate-800 flex flex-col gap-1 mt-1">
                 <button
                   type="button"
                   onClick={() => handleSelect("accounts")}
-                  className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
+                  className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
                     isAccountsActive
-                      ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
+                      ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                      : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                   }`}
                 >
-                  Admin Management
+                  <UserCheck
+                    size={14}
+                    className={
+                      isAccountsActive
+                        ? "text-amber-700 dark:text-amber-300 shrink-0"
+                        : "text-slate-500 dark:text-slate-400 shrink-0"
+                    }
+                  />
+                  <span>Admin Management</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSelect("faculty")}
-                  className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
+                  className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
                     isFacultyActive
-                      ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
+                      ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                      : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                   }`}
                 >
-                  Faculty Management
+                  <Users
+                    size={14}
+                    className={
+                      isFacultyActive
+                        ? "text-amber-700 dark:text-amber-300 shrink-0"
+                        : "text-slate-500 dark:text-slate-400 shrink-0"
+                    }
+                  />
+                  <span>Faculty Management</span>
                 </button>
               </div>
             )}
@@ -238,6 +306,7 @@ export function SidebarContent({
           <SidebarButton
             active={isFacultyActive}
             title="Faculty Management"
+            Icon={Users}
             onClick={() => handleSelect("facultyManagement")}
           />
         )}
@@ -246,25 +315,34 @@ export function SidebarContent({
         <SidebarButton
           active={isVerificationActive}
           title="Requirements Verification"
+          Icon={ClipboardCheck}
           onClick={() =>
             handleSelect(isSuperAdmin ? "verification" : "requirements")
           }
         />
 
         {/* 4. Collapsible Parent Item: Academic Cycle Management */}
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           <button
             type="button"
             onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
-            className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs transition cursor-pointer ${
+            className={`flex w-full items-center justify-between gap-2.5 px-4 py-2.5 text-left text-xs transition-all cursor-pointer ${
               isAcademicCycleActive
-                ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-900 dark:border-amber-400 dark:bg-amber-500/15 dark:text-amber-400 font-semibold rounded-r-lg"
-                : "rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
             }`}
           >
-            <span className="text-xs font-medium">
-              Academic Cycle Management
-            </span>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Calendar
+                size={16}
+                className={
+                  isAcademicCycleActive
+                    ? "text-amber-700 dark:text-amber-300 shrink-0"
+                    : "text-slate-500 dark:text-slate-400 shrink-0"
+                }
+              />
+              <span className="truncate">Academic Cycle</span>
+            </div>
             {isAcademicCycleOpen ? (
               <ChevronDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
             ) : (
@@ -274,76 +352,110 @@ export function SidebarContent({
 
           {/* Child Sub-items (Indented with left border indicator) */}
           {isAcademicCycleOpen && (
-            <div className="border-l border-[#000000] dark:border-slate-800 ml-3 pl-2 flex flex-col gap-0.5 mt-0.5">
+            <div className="ml-4 pl-2 border-l border-slate-300 dark:border-slate-800 flex flex-col gap-1 mt-1">
               <button
                 type="button"
                 onClick={() =>
                   handleSelect(isSuperAdmin ? "terms" : "academicTerms")
                 }
-                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
+                className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
                   isTermsActive
-                    ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
+                    ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                    : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                 }`}
               >
-                Academic Terms
+                <Clock
+                  size={14}
+                  className={
+                    isTermsActive
+                      ? "text-amber-700 dark:text-amber-300 shrink-0"
+                      : "text-slate-500 dark:text-slate-400 shrink-0"
+                  }
+                />
+                <span>Academic Terms</span>
               </button>
               <button
                 type="button"
                 onClick={() =>
                   handleSelect(isSuperAdmin ? "window" : "submissionWindow")
                 }
-                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
+                className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
                   isWindowActive
-                    ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
+                    ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                    : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                 }`}
               >
-                Submission Window
+                <Hourglass
+                  size={14}
+                  className={
+                    isWindowActive
+                      ? "text-amber-700 dark:text-amber-300 shrink-0"
+                      : "text-slate-500 dark:text-slate-400 shrink-0"
+                  }
+                />
+                <span>Submission Window</span>
               </button>
-              <button
-                type="button"
-                onClick={() =>
-                  handleSelect(
-                    isSuperAdmin ? "templates" : "requirementTemplates",
-                  )
-                }
-                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
-                  isTemplatesActive
-                    ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
-                }`}
-              >
-                Requirement Templates
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  handleSelect(isSuperAdmin ? "backups" : "backupArchive")
-                }
-                className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all cursor-pointer ${
-                  isBackupsActive
-                    ? "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/40"
-                }`}
-              >
-                Backups & Archive
-              </button>
+              {isSuperAdmin && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleSelect("templates")}
+                    className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
+                      isTemplatesActive
+                        ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                        : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                    }`}
+                  >
+                    <FileText
+                      size={14}
+                      className={
+                        isTemplatesActive
+                          ? "text-amber-700 dark:text-amber-300 shrink-0"
+                          : "text-slate-500 dark:text-slate-400 shrink-0"
+                      }
+                    />
+                    <span>Requirement Templates</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelect("backups")}
+                    className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
+                      isBackupsActive
+                        ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
+                        : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                    }`}
+                  >
+                    <Archive
+                      size={14}
+                      className={
+                        isBackupsActive
+                          ? "text-amber-700 dark:text-amber-300 shrink-0"
+                          : "text-slate-500 dark:text-slate-400 shrink-0"
+                      }
+                    />
+                    <span>Backups & Archive</span>
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
 
         {/* 5. Audit Trail & System Logs (Admin Module) */}
-        <SidebarButton
-          active={isAuditActive}
-          title="Audit Trail"
-          onClick={() => handleSelect(isSuperAdmin ? "audit" : "auditLogs")}
-        />
+        {isSuperAdmin && (
+          <SidebarButton
+            active={isAuditActive}
+            title="Audit Trail"
+            Icon={Activity}
+            onClick={() => handleSelect("audit")}
+          />
+        )}
 
         {/* 6. Settings */}
         <SidebarButton
           active={isSettingsActive}
           title="Settings"
+          Icon={Settings}
           onClick={() => handleSelect("settings")}
         />
       </nav>
@@ -353,7 +465,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 flex-col overflow-y-auto rounded-none border-r border-l-0 border-[#000000] dark:border-slate-800 bg-white dark:bg-slate-950 p-2.5 shadow-sm z-30 transition-colors duration-200">
+    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-300 dark:border-slate-800 bg-[#F6F8FC] dark:bg-slate-950 p-2.5 shadow-sm z-30 transition-colors duration-200">
       <SidebarContent {...props} />
     </aside>
   );

@@ -513,9 +513,9 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       : "Not configured";
 
   return (
-    <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-6">
+    <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm shadow-slate-300/50 dark:shadow-none space-y-6 transition-colors">
       {/* 1. Header & Status Section */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-400 dark:border-slate-800 pb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-300 dark:border-slate-800 pb-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
@@ -529,12 +529,12 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       </div>
 
       {/* Real-time Status Banner */}
-      <div className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl shadow-sm transition-colors ${
+      <div className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl shadow-sm transition-colors ${
         isWindowOpen
           ? "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-300"
           : isUpcoming
           ? "bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-300"
-          : "bg-slate-100 dark:bg-slate-900/60 border border-slate-400 dark:border-slate-800 text-slate-900 dark:text-slate-300"
+          : "bg-slate-100 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-300"
       }`}>
         <div className="flex items-center gap-3">
           {/* Live Pulsing Badge */}
@@ -727,7 +727,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
         </div>
 
         {/* 3. Structured Footer Action Toolbar — Zone-Separated Split Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-400 dark:border-slate-800/80 pt-5 mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-300 dark:border-slate-800 pt-5 mt-6">
           {/* LEFT: Operational & Destructive Triggers */}
           <div className="flex items-center gap-2.5">
             <button
@@ -736,7 +736,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 setShowLogsModal(true);
                 refetchLogs();
               }}
-              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all cursor-pointer"
+              className="flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
             >
               <History className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
               <span>Extension Logs ({extensionLogs.length})</span>

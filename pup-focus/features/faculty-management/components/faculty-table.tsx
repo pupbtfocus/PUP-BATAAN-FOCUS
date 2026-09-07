@@ -156,9 +156,9 @@ export function FacultyTable({
         programs={programs}
       />
 
-      <div className="w-full overflow-x-auto rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-200/60 dark:shadow-none">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[600px]">
-            <thead className="border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-700 dark:text-slate-400">
+            <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-700 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-2.5 font-semibold">Faculty Member</th>
                 <th className="px-4 py-2.5 font-semibold">Program</th>
@@ -168,7 +168,7 @@ export function FacultyTable({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-400 dark:divide-slate-800/60">
+            <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60">
               {isLoading ? (
                 <tr>
                   <td
@@ -197,7 +197,7 @@ export function FacultyTable({
                   return (
                     <tr
                       key={faculty.id}
-                      className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-400 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
+                      className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                     >
                       <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-slate-200">
                         <div
@@ -238,7 +238,7 @@ export function FacultyTable({
                             Active
                           </span>
                         ) : (
-                          <span className="text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 border border-slate-400 dark:border-slate-700/50 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
+                          <span className="text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700/50 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
                             Inactive
                           </span>
                         )}
@@ -248,7 +248,7 @@ export function FacultyTable({
                           <button
                             type="button"
                             onClick={() => onViewDetails(faculty.id)}
-                            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer"
+                            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer"
                           >
                             Edit
                           </button>
