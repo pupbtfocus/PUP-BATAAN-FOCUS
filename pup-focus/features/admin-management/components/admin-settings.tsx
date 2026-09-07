@@ -92,6 +92,7 @@ export function AdminSettings({
     "firstName" | "middleName" | "lastName" | null
   >(null);
   const [isPasswordEditing, setIsPasswordEditing] = useState(false);
+  const isUserDirty = useRef(false);
 
   function handleFocusField(
     fieldKey: "firstName" | "middleName" | "lastName",
@@ -116,6 +117,8 @@ export function AdminSettings({
   }
 
   function handleResetForm() {
+    setAccount(account);
+    isUserDirty.current = false;
     setForm({
       firstName: account.firstName,
       middleName: account.middleName,
@@ -302,12 +305,13 @@ export function AdminSettings({
 
         setAccount((prev) => {
           return {
+            ...prev,
             profileId: prev.profileId || user.id,
             id: prev.id || user.id,
-            firstName: prev.firstName || metaFirst,
-            middleName: prev.middleName || metaMiddle,
-            lastName: prev.lastName || metaLast,
-            fullName: prev.fullName || metaFull,
+            firstName: metaFirst || prev.firstName,
+            middleName: typeof meta.middle_name === "string" ? metaMiddle : prev.middleName,
+            lastName: metaLast || prev.lastName,
+            fullName: metaFull || prev.fullName,
             email: prev.email || user.email || "",
             profileImageUrl:
               prev.profileImageUrl ||
@@ -323,7 +327,7 @@ export function AdminSettings({
         });
 
         setForm((prev) => {
-          if (prev.firstName || prev.lastName) return prev;
+          if (isUserDirty.current) return prev;
           return {
             firstName: metaFirst,
             middleName: metaMiddle,
@@ -371,9 +375,7 @@ export function AdminSettings({
         }
 
         setForm((prev) => {
-          const hasUserEdited =
-            prev.firstName !== "" && prev.firstName !== fetchedFirstName;
-          if (hasUserEdited) return prev;
+          if (isUserDirty.current) return prev;
 
           return {
             firstName: fetchedFirstName,
@@ -450,9 +452,7 @@ export function AdminSettings({
       }
 
       setForm((prev) => {
-        const hasUserEdited =
-          prev.firstName !== "" && prev.firstName !== fetchedFirstName;
-        if (hasUserEdited) return prev;
+        if (isUserDirty.current) return prev;
 
         return {
           firstName: fetchedFirstName,
@@ -538,6 +538,7 @@ export function AdminSettings({
 
       setProfileImageFile(null);
       setIsAvatarMarkedForRemoval(false);
+      isUserDirty.current = false;
 
       if (onProfileImageChange) {
         onProfileImageChange(null);
@@ -890,9 +891,10 @@ export function AdminSettings({
                         : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.firstName}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, firstName: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      isUserDirty.current = true;
+                      setForm((prev) => ({ ...prev, firstName: e.target.value }));
+                    }}
                     onBlur={() => setActiveField(null)}
                     placeholder="First name"
                   />
@@ -938,9 +940,10 @@ export function AdminSettings({
                         : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.middleName}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, middleName: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      isUserDirty.current = true;
+                      setForm((prev) => ({ ...prev, middleName: e.target.value }));
+                    }}
                     onBlur={() => setActiveField(null)}
                     placeholder="Middle name"
                   />
@@ -986,9 +989,10 @@ export function AdminSettings({
                         : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.lastName}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, lastName: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      isUserDirty.current = true;
+                      setForm((prev) => ({ ...prev, lastName: e.target.value }));
+                    }}
                     onBlur={() => setActiveField(null)}
                     placeholder="Last name"
                   />

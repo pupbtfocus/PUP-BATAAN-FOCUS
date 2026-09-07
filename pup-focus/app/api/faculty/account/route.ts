@@ -100,13 +100,20 @@ async function loadFacultyAccount(
     trimOrEmpty(authUser?.email?.split("@")[0]) ||
     "Faculty";
   const parsedFallback = parseFullNameFallback(rawFullName);
+  const hasMetaName =
+    (typeof authUserMetadata.first_name === "string" && authUserMetadata.first_name.trim() !== "") ||
+    (typeof authUserMetadata.last_name === "string" && authUserMetadata.last_name.trim() !== "");
 
   const firstName =
-    trimOrEmpty(authUserMetadata.first_name) || parsedFallback.firstName;
+    trimOrEmpty(authUserMetadata.first_name) ||
+    (!hasMetaName ? parsedFallback.firstName : "");
   const middleName =
-    trimOrEmpty(authUserMetadata.middle_name) || parsedFallback.middleName;
+    typeof authUserMetadata.middle_name === "string"
+      ? authUserMetadata.middle_name.trim()
+      : (!hasMetaName ? parsedFallback.middleName : "");
   const lastName =
-    trimOrEmpty(authUserMetadata.last_name) || parsedFallback.lastName;
+    trimOrEmpty(authUserMetadata.last_name) ||
+    (!hasMetaName ? parsedFallback.lastName : "");
   const fullName =
     buildFacultyFullName({ firstName, middleName, lastName }) ||
     rawFullName;

@@ -18,7 +18,10 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
   return {
     id: user.id,
     email: user.email ?? "",
-    fullName: (user.user_metadata.full_name as string | undefined) ?? "Unnamed",
+    fullName: (user.user_metadata?.full_name as string | undefined) ?? "Unnamed",
+    firstName: (user.user_metadata?.first_name as string | undefined) ?? "",
+    middleName: (user.user_metadata?.middle_name as string | undefined) ?? "",
+    lastName: (user.user_metadata?.last_name as string | undefined) ?? "",
     role,
   };
 });

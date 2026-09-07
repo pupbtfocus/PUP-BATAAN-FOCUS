@@ -30,6 +30,13 @@ describe("Faculty Name Parsing & Full Name Helpers", () => {
     expect(parsed.lastName).toBe("Cereza");
   });
 
+  it("parseFullNameFallback parses standard 3-word names into first, middle, and last name", () => {
+    const parsed = parseFullNameFallback("Leomar Capinding Manseña");
+    expect(parsed.firstName).toBe("Leomar");
+    expect(parsed.middleName).toBe("Capinding");
+    expect(parsed.lastName).toBe("Manseña");
+  });
+
   it("parseFullNameFallback parses 2-word names correctly", () => {
     const parsed = parseFullNameFallback("Juan DelaCruz");
     expect(parsed.firstName).toBe("Juan");
