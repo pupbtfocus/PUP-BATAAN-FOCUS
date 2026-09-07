@@ -12,11 +12,58 @@ const ADMIN_ONLY_NOTIFICATION_TYPES = [
   "NEW_SUBMISSION",
   "SUBMISSION_CREATED",
   "FACULTY_SUBMITTED",
+  "SUBMISSION_UPLOADED",
+  "SUBMISSION_RESUBMITTED",
   "submission_uploaded",
   "new_submission",
   "submission_created",
   "faculty_submitted",
 ];
+
+function isReviewerSubmissionAlert(notif: {
+  type?: string | null;
+  title?: string | null;
+  message?: string | null;
+  metadata?: Record<string, any> | null;
+}): boolean {
+  const type = (notif.type ?? "").toUpperCase().trim();
+  const title = (notif.title ?? "").toLowerCase().trim();
+  const message = (notif.message ?? "").toLowerCase().trim();
+  const recipientRole = String(notif.metadata?.recipient_role ?? "").toLowerCase();
+
+  if (recipientRole === "admin" || recipientRole === "super_admin") {
+    return true;
+  }
+
+  if (
+    type === "NEW_SUBMISSION" ||
+    type === "SUBMISSION_CREATED" ||
+    type === "FACULTY_SUBMITTED" ||
+    type === "SUBMISSION_UPLOADED" ||
+    type === "SUBMISSION_RESUBMITTED" ||
+    type === "NEW_SUBMISSION_ALERT"
+  ) {
+    return true;
+  }
+
+  if (
+    title.includes("submission from") ||
+    title.includes("resubmission from") ||
+    title.startsWith("new submission") ||
+    title.startsWith("resubmission")
+  ) {
+    return true;
+  }
+
+  if (
+    message.startsWith("uploaded ") ||
+    message.startsWith("resubmitted ")
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 export async function GET() {
   try {
@@ -60,16 +107,8 @@ export async function GET() {
     );
 
     const filteredNotifications = notifications.filter((notif) => {
-      const isSubmissionAlert =
-        notif.type === "NEW_SUBMISSION" ||
-        notif.type === "SUBMISSION_CREATED" ||
-        notif.type === "FACULTY_SUBMITTED" ||
-        notif.type === "SUBMISSION_UPLOADED" ||
-        (Boolean(notif.title) &&
-          notif.title.toLowerCase().startsWith("new submission from"));
-
-      // If user is non-admin/faculty, strictly reject submission alerts
-      if (!isAdmin && isSubmissionAlert) {
+      // If user is non-admin/faculty, strictly reject reviewer submission alerts
+      if (!isAdmin && isReviewerSubmissionAlert(notif)) {
         return false;
       }
       return true;
@@ -166,15 +205,7 @@ export async function PATCH(request: NextRequest) {
     );
 
     const filteredNotifications = notifications.filter((notif) => {
-      const isSubmissionAlert =
-        notif.type === "NEW_SUBMISSION" ||
-        notif.type === "SUBMISSION_CREATED" ||
-        notif.type === "FACULTY_SUBMITTED" ||
-        notif.type === "SUBMISSION_UPLOADED" ||
-        (Boolean(notif.title) &&
-          notif.title.toLowerCase().startsWith("new submission from"));
-
-      if (!isAdmin && isSubmissionAlert) {
+      if (!isAdmin && isReviewerSubmissionAlert(notif)) {
         return false;
       }
       return true;

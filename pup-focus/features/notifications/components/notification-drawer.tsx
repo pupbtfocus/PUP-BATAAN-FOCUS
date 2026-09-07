@@ -139,6 +139,46 @@ function extractRequirementCode(notification: AppNotification): RequirementCode 
   return null;
 }
 
+function isReviewerSubmissionAlert(notif: AppNotification): boolean {
+  const type = (notif.type ?? "").toUpperCase().trim();
+  const title = (notif.title ?? "").toLowerCase().trim();
+  const message = (notif.message ?? "").toLowerCase().trim();
+  const recipientRole = String(notif.metadata?.recipient_role ?? "").toLowerCase();
+
+  if (recipientRole === "admin" || recipientRole === "super_admin") {
+    return true;
+  }
+
+  if (
+    type === "NEW_SUBMISSION" ||
+    type === "SUBMISSION_CREATED" ||
+    type === "FACULTY_SUBMITTED" ||
+    type === "SUBMISSION_UPLOADED" ||
+    type === "SUBMISSION_RESUBMITTED" ||
+    type === "NEW_SUBMISSION_ALERT"
+  ) {
+    return true;
+  }
+
+  if (
+    title.includes("submission from") ||
+    title.includes("resubmission from") ||
+    title.startsWith("new submission") ||
+    title.startsWith("resubmission")
+  ) {
+    return true;
+  }
+
+  if (
+    message.startsWith("uploaded ") ||
+    message.startsWith("resubmitted ")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export function NotificationDrawer() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -156,11 +196,12 @@ export function NotificationDrawer() {
 
       const data = await response.json();
       if (data.notifications && Array.isArray(data.notifications)) {
-        setNotifications(data.notifications);
+        const cleanList = (data.notifications as AppNotification[]).filter(
+          (n) => !isReviewerSubmissionAlert(n)
+        );
+        setNotifications(cleanList);
         setUnreadCount(
-          typeof data.unreadCount === "number"
-            ? data.unreadCount
-            : data.notifications.filter((n: AppNotification) => !n.isRead).length,
+          cleanList.filter((n: AppNotification) => !n.isRead).length,
         );
       }
     } catch {

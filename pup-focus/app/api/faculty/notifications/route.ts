@@ -12,11 +12,66 @@ const ADMIN_ONLY_NOTIFICATION_TYPES = [
   "NEW_SUBMISSION",
   "SUBMISSION_CREATED",
   "FACULTY_SUBMITTED",
+  "SUBMISSION_UPLOADED",
+  "SUBMISSION_RESUBMITTED",
   "submission_uploaded",
   "new_submission",
   "submission_created",
   "faculty_submitted",
 ];
+
+/**
+ * Checks if a notification is an administrative submission alert intended solely for reviewers.
+ * Faculty members should NEVER see alerts about other faculty members' document submissions.
+ */
+function isReviewerSubmissionAlert(notif: {
+  type?: string | null;
+  title?: string | null;
+  message?: string | null;
+  metadata?: Record<string, any> | null;
+}): boolean {
+  const type = (notif.type ?? "").toUpperCase().trim();
+  const title = (notif.title ?? "").toLowerCase().trim();
+  const message = (notif.message ?? "").toLowerCase().trim();
+  const recipientRole = String(notif.metadata?.recipient_role ?? "").toLowerCase();
+
+  // Explicit admin recipient role tag
+  if (recipientRole === "admin" || recipientRole === "super_admin") {
+    return true;
+  }
+
+  // Known admin-only submission notification types
+  if (
+    type === "NEW_SUBMISSION" ||
+    type === "SUBMISSION_CREATED" ||
+    type === "FACULTY_SUBMITTED" ||
+    type === "SUBMISSION_UPLOADED" ||
+    type === "SUBMISSION_RESUBMITTED" ||
+    type === "NEW_SUBMISSION_ALERT"
+  ) {
+    return true;
+  }
+
+  // Titles indicating a submission from another faculty member
+  if (
+    title.includes("submission from") ||
+    title.includes("resubmission from") ||
+    title.startsWith("new submission") ||
+    title.startsWith("resubmission")
+  ) {
+    return true;
+  }
+
+  // Upload/resubmission activity messages
+  if (
+    message.startsWith("uploaded ") ||
+    message.startsWith("resubmitted ")
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 export async function GET() {
   try {
@@ -29,67 +84,34 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const metadataRole =
-      (user.user_metadata?.role as string | undefined) ??
-      (user.app_metadata?.role as string | undefined);
-
-    let isAdmin = metadataRole === "admin" || metadataRole === "super_admin";
-
-    if (!isAdmin) {
-      const supabase = getServiceRoleClient();
-      const { data: userRoleRows } = await supabase
-        .from("user_roles")
-        .select("roles(code), profiles!inner(user_id)")
-        .eq("profiles.user_id", user.id);
-
-      if (userRoleRows) {
-        for (const r of userRoleRows) {
-          const roleCode = Array.isArray(r.roles) ? r.roles[0]?.code : (r.roles as any)?.code;
-          if (roleCode === "admin" || roleCode === "super_admin") {
-            isAdmin = true;
-            break;
-          }
-        }
+    // Proactively clean up any errant submission alert notifications that were delivered to this faculty user
+    void (async () => {
+      try {
+        const supabase = getServiceRoleClient();
+        await supabase
+          .from("notifications")
+          .delete()
+          .eq("user_id", user.id)
+          .or(
+            "type.in.(NEW_SUBMISSION,SUBMISSION_CREATED,FACULTY_SUBMITTED,SUBMISSION_UPLOADED,SUBMISSION_RESUBMITTED,submission_uploaded,new_submission,submission_created,faculty_submitted),title.ilike.New Submission from%,title.ilike.Resubmission%from%,title.ilike.%submission from%"
+          );
+      } catch {
+        // Non-critical background cleanup
       }
-    }
+    })();
 
     const notifications = await getUserNotifications(
       user.id,
       50,
-      isAdmin ? undefined : { excludeTypes: ADMIN_ONLY_NOTIFICATION_TYPES },
+      { excludeTypes: ADMIN_ONLY_NOTIFICATION_TYPES },
     );
 
-    // Filter in-memory for non-admins (faculty)
-    const filteredNotifications = notifications.filter((notif) => {
-      const isSubmissionAlert =
-        notif.type === "NEW_SUBMISSION" ||
-        notif.type === "SUBMISSION_CREATED" ||
-        notif.type === "FACULTY_SUBMITTED" ||
-        notif.type === "SUBMISSION_UPLOADED" ||
-        (Boolean(notif.title) &&
-          notif.title.toLowerCase().startsWith("new submission from"));
-
-      // If user is non-admin/faculty, strictly reject submission alerts
-      if (!isAdmin && isSubmissionAlert) {
-        return false;
-      }
-      return true;
-    });
+    // Strictly filter out any reviewer submission alerts
+    const filteredNotifications = notifications.filter(
+      (notif) => !isReviewerSubmissionAlert(notif)
+    );
 
     const unreadCount = filteredNotifications.filter((item) => !item.isRead).length;
-
-    console.log("[NOTIF_FETCH]", {
-      currentUserId: user.id,
-      isAdmin,
-      count: filteredNotifications.length,
-      unreadCount,
-      data: filteredNotifications.map((n) => ({
-        id: n.id,
-        type: n.type,
-        title: n.title,
-        isRead: n.isRead,
-      })),
-    });
 
     return NextResponse.json({
       notifications: filteredNotifications,
@@ -137,49 +159,14 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const metadataRole =
-      (user.user_metadata?.role as string | undefined) ??
-      (user.app_metadata?.role as string | undefined);
-
-    let isAdmin = metadataRole === "admin" || metadataRole === "super_admin";
-
-    if (!isAdmin) {
-      const supabase = getServiceRoleClient();
-      const { data: userRoleRows } = await supabase
-        .from("user_roles")
-        .select("roles(code), profiles!inner(user_id)")
-        .eq("profiles.user_id", user.id);
-
-      if (userRoleRows) {
-        for (const r of userRoleRows) {
-          const roleCode = Array.isArray(r.roles) ? r.roles[0]?.code : (r.roles as any)?.code;
-          if (roleCode === "admin" || roleCode === "super_admin") {
-            isAdmin = true;
-            break;
-          }
-        }
-      }
-    }
-
     const notifications = await getUserNotifications(
       user.id,
       50,
-      isAdmin ? undefined : { excludeTypes: ADMIN_ONLY_NOTIFICATION_TYPES },
+      { excludeTypes: ADMIN_ONLY_NOTIFICATION_TYPES },
     );
-    const filteredNotifications = notifications.filter((notif) => {
-      const isSubmissionAlert =
-        notif.type === "NEW_SUBMISSION" ||
-        notif.type === "SUBMISSION_CREATED" ||
-        notif.type === "FACULTY_SUBMITTED" ||
-        notif.type === "SUBMISSION_UPLOADED" ||
-        (Boolean(notif.title) &&
-          notif.title.toLowerCase().startsWith("new submission from"));
-
-      if (!isAdmin && isSubmissionAlert) {
-        return false;
-      }
-      return true;
-    });
+    const filteredNotifications = notifications.filter(
+      (notif) => !isReviewerSubmissionAlert(notif)
+    );
     const unreadCount = filteredNotifications.filter((item) => !item.isRead).length;
 
     return NextResponse.json({
@@ -237,4 +224,3 @@ export async function DELETE() {
     );
   }
 }
-
