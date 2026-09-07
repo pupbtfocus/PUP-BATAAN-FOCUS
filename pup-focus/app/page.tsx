@@ -31,11 +31,38 @@ export default function Home() {
   const [isPending, startTransition] = useTransition();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeBanner | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authModal, setAuthModal] = useState<AuthModalState | null>(null);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+
+  // Load remembered credentials from localStorage
+  useEffect(() => {
+    try {
+      const savedRemember = localStorage.getItem("pup_focus_remember_me");
+      const savedEmail = localStorage.getItem("pup_focus_remembered_email");
+      if (savedRemember === "true" && savedEmail) {
+        setEmail(savedEmail);
+        setRememberMe(true);
+      }
+    } catch {
+      // Ignore storage access errors
+    }
+  }, []);
+
+  const handleRememberMeChange = (checked: boolean) => {
+    setRememberMe(checked);
+    if (!checked) {
+      try {
+        localStorage.removeItem("pup_focus_remember_me");
+        localStorage.removeItem("pup_focus_remembered_email");
+      } catch {
+        // Ignore storage access errors
+      }
+    }
+  };
 
   useEffect(() => {
     PREFETCH_ROUTES.forEach((route) => {
@@ -309,6 +336,19 @@ export default function Home() {
       ROLE.FACULTY;
     const nextTarget = ROUTE_BY_ROLE[signedInRole];
 
+    // Save or clear Remember Me credentials safely in localStorage
+    try {
+      if (rememberMe) {
+        localStorage.setItem("pup_focus_remember_me", "true");
+        localStorage.setItem("pup_focus_remembered_email", normalizedEmail);
+      } else {
+        localStorage.removeItem("pup_focus_remember_me");
+        localStorage.removeItem("pup_focus_remembered_email");
+      }
+    } catch {
+      // Ignore storage access errors
+    }
+
     setIsSubmitting(false);
     setAuthModal({
       title: "Welcome back",
@@ -360,6 +400,8 @@ export default function Home() {
               setEmail={setEmail}
               password={password}
               setPassword={setPassword}
+              rememberMe={rememberMe}
+              setRememberMe={handleRememberMeChange}
               onSubmit={onSubmit}
               onOpenForgotPassword={() => setIsForgotModalOpen(true)}
               isSubmitting={isSubmitting}
