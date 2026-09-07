@@ -428,9 +428,9 @@ export function AdminAcademicTerms({
       ) : null}
 
       {/* Adaptive Table Container */}
-      <div className="w-full overflow-x-auto rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-200/60 dark:shadow-none">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
         <table className="w-full text-left border-collapse min-w-[600px]">
-            <thead className="border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
+            <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-4">Academic Year</th>
                 <th className="py-3 px-4">Semester</th>
@@ -438,7 +438,7 @@ export function AdminAcademicTerms({
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-400 dark:divide-slate-800/60">
+            <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60">
               {isLoading ? (
                 <tr className="bg-white dark:bg-slate-900/40 py-2.5 px-4 text-xs">
                   <td colSpan={4} className="py-6 text-center text-slate-500 dark:text-slate-400">
@@ -455,7 +455,7 @@ export function AdminAcademicTerms({
                 terms.map((term) => (
                   <tr
                     key={`${term.academicYear}-${term.semester}`}
-                    className="bg-white dark:bg-slate-900/60 border-b border-slate-400 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors py-2.5 px-4 text-xs"
+                    className="bg-white dark:bg-slate-900/60 border-b border-slate-300 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors py-2.5 px-4 text-xs"
                   >
                     <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
                       {term.academicYear}

@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
-import { Menu, X, CheckCircle2, Clock3, Users } from "lucide-react";
+import { Menu, X, CheckCircle2, Clock3, Users, ArrowRight } from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
@@ -500,39 +501,42 @@ export function AdminFacultyDashboard({
 
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-200">
-      {/* Consolidated Top Header (All Views) */}
-      <header className="w-full bg-white/90 border-b border-slate-400 dark:bg-slate-950/90 dark:border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 z-40 backdrop-blur-md transition-colors duration-200">
-        {/* Left: Mobile Menu Trigger & Title */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="md:hidden p-2 text-slate-700 dark:text-amber-300 hover:bg-slate-100 dark:hover:bg-amber-500/10 rounded-xl transition-all"
-            aria-label="Open Navigation Menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+      {/* Consolidated Top Header (All Views) - Fixed 56px matching Faculty AppShell */}
+      <header className="fixed inset-x-0 top-0 h-14 z-50 border-b border-slate-300 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex items-center transition-colors duration-200">
+        <div className="flex w-full items-center justify-between pl-4 pr-3 sm:pr-6">
+          {/* Left: Mobile Menu Trigger & Title */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-1.5 text-slate-700 dark:text-amber-300 hover:bg-slate-100 dark:hover:bg-amber-500/10 rounded-xl transition-all"
+              aria-label="Open Navigation Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
 
-          <div className="flex items-center gap-2">
-            <BrandMark size={28} className="shrink-0" />
-            <span className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base tracking-wide">
+            <BrandMark
+              size={32}
+              className="shrink-0 rounded-full ring-2 ring-amber-500/40"
+            />
+            <span className="text-base sm:text-lg md:text-xl font-bold tracking-wide text-slate-900 dark:text-slate-100 whitespace-nowrap">
               PUP FOCUS
             </span>
           </div>
-        </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <ThemeToggle />
-          <NotificationDrawer />
-          <LogoutButton />
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
+            <NotificationDrawer />
+            <LogoutButton />
+          </div>
         </div>
       </header>
 
       {/* Body Wrapper */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 h-screen pt-14 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex w-56 flex-col bg-white border-r border-slate-400 dark:bg-slate-950 dark:border-slate-800 shrink-0 p-2.5 transition-colors duration-200">
+        <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-300 dark:border-slate-800 bg-[#F6F8FC] dark:bg-slate-950 p-2.5 shadow-sm transition-colors duration-200">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={handleSetActiveSection}
@@ -544,21 +548,25 @@ export function AdminFacultyDashboard({
 
         {/* Mobile Navigation Drawer / Sheet */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-[60] md:hidden flex">
-            <div
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-950 h-full p-3 border-r border-slate-400 dark:border-slate-800 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto transition-colors">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-400 dark:border-slate-800">
-                <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Navigation</span>
+          <div
+            className="fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-sm md:hidden flex"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <aside
+              className="relative flex flex-col h-full w-64 bg-[#F6F8FC] dark:bg-slate-950 border-r border-slate-300 dark:border-slate-800 p-4 shadow-2xl overflow-y-auto transition-colors duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800 mb-2">
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                  Admin Menu
+                </span>
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition"
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
                   aria-label="Close navigation"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
               <SidebarContent
@@ -574,113 +582,134 @@ export function AdminFacultyDashboard({
         )}
 
         {/* Scrollable Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
-          <div className="max-w-7xl mx-auto w-full">
-            {activeSection === "dashboard" ? (
-              <article className="space-y-6">
-                {/* TIER 1: Welcome Banner */}
-                <section className="relative overflow-hidden rounded-2xl border border-slate-400/80 bg-gradient-to-r from-white via-slate-50 to-white dark:border-slate-800/80 dark:bg-gradient-to-r dark:from-slate-900/90 dark:via-slate-900/80 dark:to-slate-950 p-6 sm:p-7 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
-                  <div className="relative z-10 space-y-1">
-                    <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
-                      Welcome back, {extractFirstName(adminName, "Admin")}
-                    </h1>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
-                      Admin Dashboard • A.Y. 2026-2027 • 1st Semester
-                    </p>
-                  </div>
-                </section>
+        <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
+            <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+              <div className="max-w-7xl mx-auto w-full">
+                {activeSection === "dashboard" ? (
+                  <article className="space-y-6">
+                    {/* TIER 1: Welcome Banner with subtle campus artwork backdrop */}
+                    <section className="relative overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-sm shadow-slate-300/50 dark:shadow-none transition-colors">
+                      {/* Subtle Campus Photo Backdrop Overlay */}
+                      <div className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.14] mix-blend-luminosity overflow-hidden">
+                        <Image
+                          src="/images/attachments/IMG_9402.jpeg"
+                          alt="PUP Bataan campus backdrop"
+                          fill
+                          sizes="100vw"
+                          className="object-cover object-center"
+                          priority
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/50 to-white/90 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950/90" />
+                      </div>
 
-                {/* TIER 2: 3-Column Stat Grid */}
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  {/* Card 1: Faculty Submissions Verified */}
-                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Submissions Verified</span>
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {facultyAccounts.reduce((count, f) => count + (f.is_active ? 0 : 0), 0)} Verified
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Faculty submissions reviewed and validated</p>
-                    </div>
-                  </div>
+                      <div className="relative z-10 space-y-1">
+                        <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+                          Welcome back, {extractFirstName(adminName, "Admin")}
+                        </h1>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
+                          Admin Dashboard • A.Y. 2026-2027 • 1st Semester
+                        </p>
+                      </div>
+                    </section>
 
-                  {/* Card 2: Pending Verification */}
-                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Pending Verification</span>
-                      <Clock3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        — Pending
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Submissions awaiting admin review</p>
-                    </div>
-                  </div>
-
-                  {/* Card 3: Total Active Faculty */}
-                  <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 space-y-3 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Total Active Faculty</span>
-                      <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {facultyAccounts.filter(f => f.is_active).length} Active
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {facultyAccounts.length} total faculty accounts
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
-                {/* TIER 3: 2-Column Main Body */}
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                  {/* Left Column (2-Span) — Pending Verification Queue */}
-                  <div className="lg:col-span-2 space-y-4">
-                    <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 sm:p-6 transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-400 dark:border-slate-800/80">
-                        <div>
-                          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Pending Submissions Verification Queue</h2>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Faculty submissions awaiting your review and validation.</p>
+                    {/* TIER 2: 3-Column Stat Grid */}
+                    <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      {/* Card 1: Faculty Submissions Verified */}
+                      <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Submissions Verified</span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20 px-2 py-0.5 rounded-full">
+                            Verified
+                          </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleSetActiveSection("requirements")}
-                          className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
-                        >
-                          <span>View all</span>
-                          <span>→</span>
-                        </button>
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                            {facultyAccounts.reduce((count, f) => count + (f.is_active ? 0 : 0), 0)} Verified
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Faculty submissions reviewed and validated</p>
+                        </div>
                       </div>
-                      <div className="py-8 text-center">
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Navigate to Requirements Verification to review pending submissions.</p>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Right Column (1-Span) — Recent Activity */}
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-slate-400/80 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none p-5 transition-colors">
-                      <div className="pb-3 border-b border-slate-400 dark:border-slate-800/80">
-                        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Recent Admin Actions</h2>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Latest admin activity feed.</p>
+                      {/* Card 2: Pending Verification */}
+                      <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Pending Verification</span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20 px-2 py-0.5 rounded-full">
+                            Pending
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                            — Pending
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Submissions awaiting admin review</p>
+                        </div>
                       </div>
-                      <div className="py-6 text-center">
-                        <p className="text-xs text-slate-500 dark:text-slate-400">No recent activity to display.</p>
+
+                      {/* Card 3: Total Active Faculty */}
+                      <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Total Active Faculty</span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-800 bg-blue-50 border border-blue-200/80 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20 px-2 py-0.5 rounded-full">
+                            Faculty
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                            {facultyAccounts.filter(f => f.is_active).length} Active
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            {facultyAccounts.length} total faculty accounts
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </section>
-              </article>
-            ) : null}
+                    </section>
+
+                    {/* TIER 3: 2-Column Main Body */}
+                    <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                      {/* Left Column (2-Span) — Pending Verification Queue */}
+                      <div className="lg:col-span-2 space-y-4">
+                        <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 sm:p-6 transition-colors">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-300 dark:border-slate-800">
+                            <div>
+                              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Pending Submissions Verification Queue</h2>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Faculty submissions awaiting your review and validation.</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleSetActiveSection("requirements")}
+                              className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
+                            >
+                              <span>View all</span>
+                              <ArrowRight className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <div className="py-8 text-center">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Navigate to Requirements Verification to review pending submissions.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column (1-Span) — Recent Activity */}
+                      <div className="space-y-4">
+                        <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 transition-colors">
+                          <div className="pb-3 border-b border-slate-300 dark:border-slate-800">
+                            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Recent Admin Actions</h2>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Latest admin activity feed.</p>
+                          </div>
+                          <div className="py-6 text-center">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">No recent activity to display.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </article>
+                ) : null}
 
                 {activeSection === "facultyManagement" ? (
                   <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800 pb-4 mb-6">
                       <div>
                         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           Faculty Management
@@ -694,7 +723,7 @@ export function AdminFacultyDashboard({
                             setCreateSuccess(null);
                             setAddFacultyModalOpen(true);
                           }}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition cursor-pointer shadow-sm shadow-amber-500/10"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-sm shadow-amber-500/10 active:scale-[0.98] transition cursor-pointer"
                         >
                           + Add Faculty
                         </button>
@@ -702,7 +731,7 @@ export function AdminFacultyDashboard({
                           type="button"
                           onClick={() => void refreshCurrentPanel()}
                           disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                         >
                           {isLoading ? "Refreshing..." : "⟳ Refresh"}
                         </button>
@@ -736,7 +765,7 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "requirements" ? (
                   <article className="p-4 md:p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 dark:border-slate-800 pb-4 mb-4">
                       <div>
                         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           Requirements Verification
@@ -746,7 +775,7 @@ export function AdminFacultyDashboard({
                         type="button"
                         onClick={() => void refreshCurrentPanel()}
                         disabled={isLoading}
-                        className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                       >
                         {isLoading ? "Refreshing..." : "⟳ Refresh"}
                       </button>
@@ -763,7 +792,7 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "submissionWindow" ? (
                   <article className="p-4 md:p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 dark:border-slate-800 pb-4 mb-4">
                       <div>
                         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           Submission Window
@@ -773,7 +802,7 @@ export function AdminFacultyDashboard({
                         type="button"
                         onClick={() => void refreshCurrentPanel()}
                         disabled={isLoading}
-                        className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                       >
                         {isLoading ? "Refreshing..." : "⟳ Refresh"}
                       </button>
@@ -789,7 +818,7 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "academicTerms" ? (
                   <article className="p-4 md:p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 dark:border-slate-800 pb-4 mb-4">
                       <div>
                         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           Academic Term Management
@@ -799,7 +828,7 @@ export function AdminFacultyDashboard({
                         type="button"
                         onClick={() => void refreshCurrentPanel()}
                         disabled={isLoading}
-                        className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                       >
                         {isLoading ? "Refreshing..." : "⟳ Refresh"}
                       </button>
@@ -818,8 +847,10 @@ export function AdminFacultyDashboard({
                     />
                   </article>
                 ) : null}
+              </div>
+            </main>
           </div>
-        </main>
+        </div>
       </div>
 
       {detailsModalOpen && detailsFacultyId ? (
