@@ -811,6 +811,12 @@ export async function POST(request: NextRequest) {
             const { data: authUserData } =
               await supabaseAdmin.auth.admin.getUserById(reviewerAuthUserId);
             const userMeta = authUserData?.user?.user_metadata || {};
+            const appMeta = authUserData?.user?.app_metadata || {};
+            const userRole = userMeta.role || appMeta.role;
+
+            // Never dispatch administrative submission alerts to faculty members
+            if (userRole === "faculty") continue;
+
             const isAlertEnabled =
               typeof userMeta.new_submission_alerts === "boolean"
                 ? userMeta.new_submission_alerts
