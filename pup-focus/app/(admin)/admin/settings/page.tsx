@@ -3,88 +3,9 @@ import {
   AdminSettings,
   type AdminSettingsInitialData,
 } from "@/features/admin-management/components/admin-settings";
+import { resolveAdminAvatarUrl } from "@/lib/admin-profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-
-async function resolveAvatarUrl(
-  supabaseAdmin: any,
-  email?: string | null,
-  userId?: string | null,
-  rawAvatarUrl?: string | null
-): Promise<string | null> {
-  // 1. Full HTTP/HTTPS URL
-  if (rawAvatarUrl && rawAvatarUrl.startsWith("http")) {
-    return rawAvatarUrl;
-  }
-
-  // 2. Storage relative path
-  if (rawAvatarUrl) {
-    let storagePath = rawAvatarUrl.trim();
-    while (storagePath.startsWith("/")) {
-      storagePath = storagePath.substring(1);
-    }
-    if (storagePath.startsWith("avatars/")) {
-      storagePath = storagePath.replace(/^avatars\//, "");
-    } else if (storagePath.includes("/avatars/")) {
-      storagePath = storagePath.split("/avatars/")[1].split("?")[0];
-    } else if (storagePath.includes("/compliance-private/")) {
-      storagePath = storagePath.split("/compliance-private/")[1].split("?")[0];
-    }
-
-    const { data: publicData } = supabaseAdmin.storage
-      .from("avatars")
-      .getPublicUrl(storagePath);
-    if (publicData?.publicUrl) {
-      return publicData.publicUrl;
-    }
-  }
-
-  // 3. Search avatars bucket under admin/${email}
-  if (email) {
-    try {
-      const folderPath = `admin/${email}`;
-      const { data: files } = await supabaseAdmin.storage
-        .from("avatars")
-        .list(folderPath, { limit: 10, sortBy: { column: "created_at", order: "desc" } });
-
-      if (files && files.length > 0) {
-        const latestFile = files[0];
-        const filePath = `${folderPath}/${latestFile.name}`;
-        const { data: publicData } = supabaseAdmin.storage
-          .from("avatars")
-          .getPublicUrl(filePath);
-
-        if (publicData?.publicUrl) {
-          return publicData.publicUrl;
-        }
-      }
-    } catch {}
-  }
-
-  // 4. Search avatars bucket under admin/${userId}
-  if (userId) {
-    try {
-      const folderPath = `admin/${userId}`;
-      const { data: files } = await supabaseAdmin.storage
-        .from("avatars")
-        .list(folderPath, { limit: 10, sortBy: { column: "created_at", order: "desc" } });
-
-      if (files && files.length > 0) {
-        const latestFile = files[0];
-        const filePath = `${folderPath}/${latestFile.name}`;
-        const { data: publicData } = supabaseAdmin.storage
-          .from("avatars")
-          .getPublicUrl(filePath);
-
-        if (publicData?.publicUrl) {
-          return publicData.publicUrl;
-        }
-      }
-    } catch {}
-  }
-
-  return null;
-}
 
 export default async function AdminSettingsPage() {
   const sessionClient = await createServerSupabaseClient();
@@ -119,15 +40,11 @@ export default async function AdminSettingsPage() {
       if (profile?.email) email = profile.email;
     } catch {}
 
-    const rawAvatarUrl =
-      metadata.avatar_url || metadata.picture || null;
-
-    const resolvedAvatarUrl = await resolveAvatarUrl(
-      supabaseAdmin,
+    const resolvedAvatarUrl = await resolveAdminAvatarUrl(supabaseAdmin, {
+      id: user.id,
       email,
-      user.id,
-      rawAvatarUrl
-    );
+      user_metadata: metadata,
+    });
 
     const autoEmailReminders =
       typeof metadata.auto_email_reminders === "boolean"

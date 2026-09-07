@@ -1,26 +1,46 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  KeyRound,
-  Bell,
-  Shield,
-  User,
-  Save,
-  CheckCircle,
-  AlertCircle,
-  Lock,
-  Camera,
-  Trash2,
+  buildFacultyFullName,
+  buildFacultyInitials,
+  parseFullNameFallback,
+} from "@/lib/faculty-profile";
+import { createClient } from "@/lib/supabase/client";
+import {
   Eye,
   EyeOff,
-  Loader2,
+  RotateCw,
+  RotateCcw,
   X,
+  Camera,
+  Pencil,
+  Check,
+  Circle,
+  Loader2,
+  ShieldAlert,
+  ShieldCheck,
+  Bell,
   Clock,
-  Mail,
-  Sparkles,
+  Trash2,
+  Save,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+
+export interface AdminAccountResponse {
+  id?: string;
+  profileId?: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  profileImageUrl: string | null;
+  avatar_url?: string | null;
+  autoEmailReminders?: boolean;
+  newSubmissionAlerts?: boolean;
+  sessionTimeoutMinutes?: string;
+}
 
 export interface AdminSettingsInitialData {
   fullName?: string | null;
@@ -30,6 +50,9 @@ export interface AdminSettingsInitialData {
   newSubmissionAlerts?: boolean;
   sessionTimeout?: string;
   userId?: string | null;
+  firstName?: string | null;
+  middleName?: string | null;
+  lastName?: string | null;
 }
 
 export interface AdminSettingsProps {
@@ -38,117 +61,17 @@ export interface AdminSettingsProps {
   profileImageUrl?: string | null;
   initialData?: AdminSettingsInitialData | null;
   onProfileImageChange?: (file: File | null) => void;
+  onProfileUpdated?: (updated: {
+    fullName?: string;
+    avatarUrl?: string | null;
+  }) => void;
 }
 
-interface ToastNotification {
-  id: string;
-  type: "success" | "error" | "info";
-  message: string;
-}
-
-function getInitials(name?: string | null): string {
-  if (!name || !name.trim()) return "AD";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-  }
-  return parts[0].slice(0, 2).toUpperCase() || "AD";
-}
-
-function resolveAvatarPublicUrl(
-  supabase: any,
-  rawUrl?: string | null
-): string | null {
-  if (!rawUrl || typeof rawUrl !== "string" || !rawUrl.trim()) return null;
-  let trimmed = rawUrl.trim();
-
-  // If already a full HTTP/HTTPS URL
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    return trimmed;
-  }
-
-  // Remove any leading slashes
-  while (trimmed.startsWith("/")) {
-    trimmed = trimmed.substring(1);
-  }
-
-  // Fix double bucket name issue: clean prefix before getPublicUrl()
-  let cleanPath = trimmed.replace(/^avatars\//, "");
-  let bucket = "avatars";
-
-  if (cleanPath.startsWith("compliance-private/")) {
-    cleanPath = cleanPath.replace(/^compliance-private\//, "");
-    bucket = "compliance-private";
-  } else if (cleanPath.includes("/avatars/")) {
-    cleanPath = cleanPath.split("/avatars/")[1].split("?")[0];
-    bucket = "avatars";
-  } else if (cleanPath.includes("/compliance-private/")) {
-    cleanPath = cleanPath.split("/compliance-private/")[1].split("?")[0];
-    bucket = "compliance-private";
-  }
-
-  const { data } = supabase.storage.from(bucket).getPublicUrl(cleanPath);
-  return data?.publicUrl || trimmed;
-}
-
-async function fetchAdminAvatarUrl(
-  supabase: any,
-  email?: string | null,
-  userId?: string | null,
-  rawAvatarUrl?: string | null
-): Promise<string | null> {
-  // 1. Check rawAvatarUrl if present
-  if (rawAvatarUrl && typeof rawAvatarUrl === "string" && rawAvatarUrl.trim()) {
-    const resolved = resolveAvatarPublicUrl(supabase, rawAvatarUrl);
-    if (resolved) return resolved;
-  }
-
-  // 2. Search 'avatars' bucket under admin/${email} (matching Superadmin admin list logic)
-  if (email) {
-    try {
-      const folderPath = `admin/${email}`;
-      const { data: files } = await supabase.storage
-        .from("avatars")
-        .list(folderPath, { limit: 10, sortBy: { column: "created_at", order: "desc" } });
-
-      if (files && files.length > 0) {
-        const latestFile = files[0];
-        const filePath = `${folderPath}/${latestFile.name}`;
-        const { data: publicData } = supabase.storage
-          .from("avatars")
-          .getPublicUrl(filePath);
-
-        if (publicData?.publicUrl) {
-          return publicData.publicUrl;
-        }
-      }
-    } catch {}
-  }
-
-  // 3. Search 'avatars' bucket under admin/${userId}
-  if (userId) {
-    try {
-      const folderPath = `admin/${userId}`;
-      const { data: files } = await supabase.storage
-        .from("avatars")
-        .list(folderPath, { limit: 10, sortBy: { column: "created_at", order: "desc" } });
-
-      if (files && files.length > 0) {
-        const latestFile = files[0];
-        const filePath = `${folderPath}/${latestFile.name}`;
-        const { data: publicData } = supabase.storage
-          .from("avatars")
-          .getPublicUrl(filePath);
-
-        if (publicData?.publicUrl) {
-          return publicData.publicUrl;
-        }
-      }
-    } catch {}
-  }
-
-  return null;
-}
+type NameFormState = {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+};
 
 export function AdminSettings({
   adminName,
@@ -156,477 +79,531 @@ export function AdminSettings({
   profileImageUrl,
   initialData,
   onProfileImageChange,
-}: AdminSettingsProps) {
-  // ---------------------------------------------------------------------------
-  // Profile Information State (Hydrated from initialData)
-  // ---------------------------------------------------------------------------
-  const [fullName, setFullName] = useState<string>(
-    initialData?.fullName || adminName || "Admin User"
-  );
-  const [userEmail, setUserEmail] = useState<string>(
-    initialData?.email || adminEmail || ""
-  );
-  const [userId, setUserId] = useState<string | null>(
-    initialData?.userId || null
-  );
+  onProfileUpdated,
+}: AdminSettingsProps = {}) {
+  const router = useRouter();
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
+  const firstNameInputRef = useRef<HTMLInputElement>(null);
+  const middleNameInputRef = useRef<HTMLInputElement>(null);
+  const lastNameInputRef = useRef<HTMLInputElement>(null);
+  const currentPasswordRef = useRef<HTMLInputElement>(null);
 
-  // ---------------------------------------------------------------------------
-  // Avatar State & Instant Preview
-  // ---------------------------------------------------------------------------
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(
-    initialData?.avatarUrl || profileImageUrl || null
-  );
-  const [hasImageError, setHasImageError] = useState<boolean>(false);
-  const [isAvatarRemoved, setIsAvatarRemoved] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeField, setActiveField] = useState<
+    "firstName" | "middleName" | "lastName" | null
+  >(null);
+  const [isPasswordEditing, setIsPasswordEditing] = useState(false);
 
-  // Clean up object URLs to avoid memory leaks
-  useEffect(() => {
-    if (!avatarFile) return;
+  function handleFocusField(
+    fieldKey: "firstName" | "middleName" | "lastName",
+    ref: React.RefObject<HTMLInputElement | null>,
+  ) {
+    setActiveField(fieldKey);
+    setTimeout(() => {
+      if (ref.current) {
+        ref.current.focus();
+        const length = ref.current.value.length;
+        ref.current.setSelectionRange(length, length);
+      }
+    }, 0);
+  }
 
-    const objectUrl = URL.createObjectURL(avatarFile);
-    setAvatarPreviewUrl(objectUrl);
-    setHasImageError(false);
+  function handleCancelEdit(fieldKey: "firstName" | "middleName" | "lastName") {
+    setForm((prev) => ({
+      ...prev,
+      [fieldKey]: account[fieldKey],
+    }));
+    setActiveField(null);
+  }
 
-    return () => {
-      URL.revokeObjectURL(objectUrl);
+  function handleResetForm() {
+    setForm({
+      firstName: account.firstName,
+      middleName: account.middleName,
+      lastName: account.lastName,
+    });
+    setProfileImageFile(null);
+    setIsAvatarMarkedForRemoval(false);
+    if (profileImageInputRef.current) {
+      profileImageInputRef.current.value = "";
+    }
+  }
+
+  function handleEnablePasswordEditing() {
+    setIsPasswordEditing(true);
+    setTimeout(() => {
+      if (currentPasswordRef.current) {
+        currentPasswordRef.current.focus();
+      }
+    }, 0);
+  }
+
+  // Synchronous, non-blocking initial state from session props
+  const [account, setAccount] = useState<AdminAccountResponse>(() => {
+    const rawName =
+      initialData?.fullName ?? adminName ?? "Admin User";
+    const parsed = parseFullNameFallback(rawName);
+
+    const firstName =
+      initialData?.firstName || parsed.firstName || "Admin";
+    const middleName =
+      initialData?.middleName || parsed.middleName || "";
+    const lastName =
+      initialData?.lastName || parsed.lastName || "User";
+    const fullName =
+      initialData?.fullName ??
+      adminName ??
+      buildFacultyFullName({ firstName, middleName, lastName }) ??
+      "Admin User";
+    const email = initialData?.email ?? adminEmail ?? "";
+    const resolvedAvatar =
+      initialData?.avatarUrl ?? profileImageUrl ?? null;
+
+    return {
+      profileId: initialData?.userId ?? "",
+      id: initialData?.userId ?? "",
+      firstName,
+      middleName,
+      lastName,
+      fullName,
+      email,
+      profileImageUrl: resolvedAvatar,
+      avatar_url: resolvedAvatar,
     };
-  }, [avatarFile]);
+  });
 
-  // ---------------------------------------------------------------------------
-  // System & Notification Preferences (Hydrated from initialData)
-  // ---------------------------------------------------------------------------
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
+    string | null
+  >(null);
+  const [isProfileImageMenuOpen, setIsProfileImageMenuOpen] = useState(false);
+  const [isFullImageOpen, setIsFullImageOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isAvatarMarkedForRemoval, setIsAvatarMarkedForRemoval] = useState(false);
+
+  const [form, setForm] = useState<NameFormState>(() => {
+    const rawName =
+      initialData?.fullName ?? adminName ?? "Admin User";
+    const parsed = parseFullNameFallback(rawName);
+
+    return {
+      firstName: initialData?.firstName || parsed.firstName || "Admin",
+      middleName: initialData?.middleName || parsed.middleName || "",
+      lastName: initialData?.lastName || parsed.lastName || "User",
+    };
+  });
+
+  // System and notification preferences
   const [emailReminders, setEmailReminders] = useState<boolean>(
     initialData?.autoEmailReminders ?? true
   );
   const [submissionAlerts, setSubmissionAlerts] = useState<boolean>(
     initialData?.newSubmissionAlerts ?? true
   );
-
-  // ---------------------------------------------------------------------------
-  // Security & Session Controls (Hydrated from initialData)
-  // ---------------------------------------------------------------------------
   const [sessionTimeout, setSessionTimeout] = useState<string>(
     initialData?.sessionTimeout || "60"
   );
 
-  // ---------------------------------------------------------------------------
-  // Password Change Modal State
-  // ---------------------------------------------------------------------------
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
-  const [currentPassword, setCurrentPassword] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
-  const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
-  const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
+  const [initialPreferences, setInitialPreferences] = useState({
+    emailReminders: initialData?.autoEmailReminders ?? true,
+    submissionAlerts: initialData?.newSubmissionAlerts ?? true,
+    sessionTimeout: initialData?.sessionTimeout || "60",
+  });
 
-  // ---------------------------------------------------------------------------
-  // Save & Toast Feedback State
-  // ---------------------------------------------------------------------------
-  const [isSavingSettings, setIsSavingSettings] = useState<boolean>(false);
-  const [isLoadingProfile, setIsLoadingProfile] = useState<boolean>(
-    !initialData
-  );
-  const [toasts, setToasts] = useState<ToastNotification[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
 
-  const addToast = (type: "success" | "error" | "info", message: string) => {
-    const id = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    setToasts((prev) => [...prev, { id, type, message }]);
+  // Password state
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-    // Auto-dismiss toast after 4 seconds
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
-  };
+  // Modal feedback state
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "error" | "success";
+  } | null>(null);
 
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
+  const displayedProfileImage = isAvatarMarkedForRemoval
+    ? null
+    : profileImagePreviewUrl ??
+      account.profileImageUrl ??
+      account.avatar_url ??
+      profileImageUrl ??
+      null;
 
-  // Helper to normalize timeout minutes
-  const normalizeTimeoutVal = (raw: any): string => {
-    if (raw === undefined || raw === null) return "60";
-    const str = String(raw).trim();
-    if (str === "15" || str === "15 mins") return "15";
-    if (str === "30" || str === "30 mins") return "30";
-    if (str === "60" || str === "1 hour") return "60";
-    if (str === "120" || str === "2 hours") return "120";
-    if (str === "0" || str === "Never") return "0";
-    return !isNaN(parseInt(str, 10)) ? str : "60";
-  };
+  useEffect(() => {
+    if (!profileImageFile) {
+      setProfileImagePreviewUrl(null);
+      return;
+    }
 
-  // ---------------------------------------------------------------------------
-  // Initial Data Fetching & User Metadata Loading
-  // ---------------------------------------------------------------------------
+    const previewUrl = URL.createObjectURL(profileImageFile);
+    setProfileImagePreviewUrl(previewUrl);
+
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [profileImageFile]);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [displayedProfileImage]);
+
+  // Synchronize when external profileImageUrl changes
+  useEffect(() => {
+    if (profileImageUrl && !profileImageFile && !isAvatarMarkedForRemoval) {
+      setAccount((prev) => ({
+        ...prev,
+        profileImageUrl,
+        avatar_url: profileImageUrl,
+      }));
+      setImageError(false);
+    }
+  }, [profileImageUrl, profileImageFile, isAvatarMarkedForRemoval]);
+
   useEffect(() => {
     let isMounted = true;
 
-    async function loadAdminProfile() {
+    // Fast client-side session hydration
+    async function hydrateLocalSession() {
       try {
-        setIsLoadingProfile(true);
-
-        // 1. Fetch profile and resolved avatar from dedicated server API route
-        try {
-          const res = await fetch("/api/admin/profile");
-          if (res.ok) {
-            const data = await res.json();
-            if (isMounted && data) {
-              if (data.id) setUserId(data.id);
-              if (data.email) setUserEmail(data.email);
-              if (data.full_name) setFullName(data.full_name);
-              if (data.avatar_url) {
-                setAvatarPreviewUrl(data.avatar_url);
-                setHasImageError(false);
-                setIsAvatarRemoved(false);
-              }
-              if (typeof data.auto_email_reminders === "boolean") {
-                setEmailReminders(data.auto_email_reminders);
-              } else if (typeof data.email_reminders === "boolean") {
-                setEmailReminders(data.email_reminders);
-              }
-              if (typeof data.new_submission_alerts === "boolean") {
-                setSubmissionAlerts(data.new_submission_alerts);
-              } else if (typeof data.submission_alerts === "boolean") {
-                setSubmissionAlerts(data.submission_alerts);
-              }
-              const timeout = data.session_timeout_minutes ?? data.session_timeout;
-              if (timeout !== undefined) {
-                setSessionTimeout(normalizeTimeoutVal(timeout));
-              }
-              console.log("[AdminSettings Avatar Debug from /api/admin/profile]", data);
-              return;
-            }
-          }
-        } catch (apiErr) {
-          console.warn("[AdminSettings] API profile fetch fallback note:", apiErr);
-        }
-
-        // 2. Safe fallback to client session without throwing DB 400 errors
         const supabase = createClient();
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser();
+        const result = await supabase.auth.getUser();
+        const user = result.data?.user;
+        if (!isMounted || !user) return;
+        const meta = (user.user_metadata || {}) as Record<string, unknown>;
 
-        if (authError || !user) {
-          if (adminEmail) setUserEmail(adminEmail);
-          if (adminName) setFullName(adminName);
-          if (profileImageUrl) {
-            const resolved = resolveAvatarPublicUrl(supabase, profileImageUrl);
-            if (resolved) {
-              setAvatarPreviewUrl(resolved);
-              setHasImageError(false);
-              setIsAvatarRemoved(false);
-            }
-          }
-          return;
-        }
-
-        if (!isMounted) return;
-
-        setUserId(user.id);
-        const metadata = user.user_metadata || {};
-        const userEmail = user.email || adminEmail || "";
-        const userFullName =
-          metadata.full_name ||
-          metadata.name ||
-          (metadata.first_name
-            ? `${metadata.first_name} ${metadata.last_name || ""}`.trim()
-            : null) ||
+        const rawFullName =
+          (meta.full_name as string) ||
+          (user.user_metadata?.name as string) ||
           adminName ||
-          "Admin User";
+          "";
+        const parsedFallback = parseFullNameFallback(rawFullName);
+        const metaFirst =
+          (meta.first_name as string) || parsedFallback.firstName;
+        const metaMiddle =
+          (meta.middle_name as string) || parsedFallback.middleName;
+        const metaLast =
+          (meta.last_name as string) || parsedFallback.lastName;
+        const metaFull =
+          (meta.full_name as string) ||
+          buildFacultyFullName({
+            firstName: metaFirst,
+            middleName: metaMiddle,
+            lastName: metaLast,
+          }) ||
+          user.email ||
+          "Admin";
 
-        setUserEmail(userEmail);
-        setFullName(userFullName);
-        if (typeof metadata.auto_email_reminders === "boolean") {
-          setEmailReminders(metadata.auto_email_reminders);
-        } else if (typeof metadata.email_reminders === "boolean") {
-          setEmailReminders(metadata.email_reminders);
-        }
-        if (typeof metadata.new_submission_alerts === "boolean") {
-          setSubmissionAlerts(metadata.new_submission_alerts);
-        } else if (typeof metadata.submission_alerts === "boolean") {
-          setSubmissionAlerts(metadata.submission_alerts);
-        }
-        const timeout = metadata.session_timeout_minutes ?? metadata.session_timeout;
-        if (timeout !== undefined) {
-          setSessionTimeout(normalizeTimeoutVal(timeout));
-        }
+        setAccount((prev) => {
+          return {
+            profileId: prev.profileId || user.id,
+            id: prev.id || user.id,
+            firstName: prev.firstName || metaFirst,
+            middleName: prev.middleName || metaMiddle,
+            lastName: prev.lastName || metaLast,
+            fullName: prev.fullName || metaFull,
+            email: prev.email || user.email || "",
+            profileImageUrl:
+              prev.profileImageUrl ||
+              (meta.avatar_url as string) ||
+              (meta.picture as string) ||
+              null,
+            avatar_url:
+              prev.avatar_url ||
+              (meta.avatar_url as string) ||
+              (meta.picture as string) ||
+              null,
+          };
+        });
 
-        const rawAvatar: string | null =
-          metadata.avatar_url ||
-          metadata.picture ||
-          profileImageUrl ||
-          null;
-
-        const finalUrl = await fetchAdminAvatarUrl(
-          supabase,
-          userEmail,
-          user.id,
-          rawAvatar
-        );
-
-        console.log("[AdminSettings Avatar Debug]", { rawAvatar, finalUrl });
-
-        if (isMounted && finalUrl) {
-          setAvatarPreviewUrl(finalUrl);
-          setHasImageError(false);
-          setIsAvatarRemoved(false);
-        }
-      } catch (err) {
-        console.error("Failed to load admin settings profile:", err);
-      } finally {
-        if (isMounted) {
-          setIsLoadingProfile(false);
-        }
+        setForm((prev) => {
+          if (prev.firstName || prev.lastName) return prev;
+          return {
+            firstName: metaFirst,
+            middleName: metaMiddle,
+            lastName: metaLast,
+          };
+        });
+      } catch {
+        // Ignore client supabase error
       }
     }
 
-    void loadAdminProfile();
+    void hydrateLocalSession();
+
+    // Authoritative background fetch from /api/admin/profile
+    async function loadAccount() {
+      try {
+        const response = await fetch("/api/admin/profile");
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!isMounted || !data.success) return;
+
+        const rawFullName = data.full_name || data.fullName || "Admin";
+        const parsedFallback = parseFullNameFallback(rawFullName);
+        const fetchedFirstName = data.firstName || data.first_name || parsedFallback.firstName;
+        const fetchedMiddleName = data.middleName || data.middle_name || parsedFallback.middleName;
+        const fetchedLastName = data.lastName || data.last_name || parsedFallback.lastName;
+        const profileImg = data.avatar_url || data.profileImageUrl || null;
+
+        setAccount((prev) => ({
+          ...prev,
+          id: data.id || prev.id,
+          profileId: data.profileId || data.id || prev.profileId,
+          firstName: fetchedFirstName,
+          middleName: fetchedMiddleName,
+          lastName: fetchedLastName,
+          fullName: rawFullName,
+          email: data.email || prev.email || "",
+          profileImageUrl: profileImg,
+          avatar_url: profileImg,
+        }));
+
+        if (profileImg) {
+          setImageError(false);
+        }
+
+        setForm((prev) => {
+          const hasUserEdited =
+            prev.firstName !== "" && prev.firstName !== fetchedFirstName;
+          if (hasUserEdited) return prev;
+
+          return {
+            firstName: fetchedFirstName,
+            middleName: fetchedMiddleName,
+            lastName: fetchedLastName,
+          };
+        });
+
+        if (typeof data.auto_email_reminders === "boolean") {
+          setEmailReminders(data.auto_email_reminders);
+        }
+        if (typeof data.new_submission_alerts === "boolean") {
+          setSubmissionAlerts(data.new_submission_alerts);
+        }
+        if (data.session_timeout_minutes !== undefined) {
+          setSessionTimeout(String(data.session_timeout_minutes));
+        }
+
+        setInitialPreferences({
+          emailReminders:
+            typeof data.auto_email_reminders === "boolean"
+              ? data.auto_email_reminders
+              : true,
+          submissionAlerts:
+            typeof data.new_submission_alerts === "boolean"
+              ? data.new_submission_alerts
+              : true,
+          sessionTimeout: String(data.session_timeout_minutes ?? "60"),
+        });
+      } catch {
+        // Silent background fetch
+      }
+    }
+
+    void loadAccount();
 
     return () => {
       isMounted = false;
     };
-  }, [adminEmail, adminName, profileImageUrl]);
+  }, [adminName]);
 
-  // Synchronize when external profileImageUrl changes
-  useEffect(() => {
-    if (profileImageUrl && !avatarFile && !isAvatarRemoved) {
-      const supabase = createClient();
-      const resolved = resolveAvatarPublicUrl(supabase, profileImageUrl);
-      console.log("[AdminSettings] Prop Resolved Avatar URL:", resolved);
-      if (resolved) {
-        setAvatarPreviewUrl(resolved);
-        setHasImageError(false);
-      }
-    }
-  }, [profileImageUrl, avatarFile, isAvatarRemoved]);
-
-  // ---------------------------------------------------------------------------
-  // Avatar Selection & Removal Handlers
-  // ---------------------------------------------------------------------------
-  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      const validTypes = ["image/jpeg", "image/png", "image/webp"];
-      if (!validTypes.includes(file.type)) {
-        addToast(
-          "error",
-          "Invalid file type. Please upload a JPG, PNG, or WebP image."
-        );
-        return;
-      }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        addToast("error", "Image is too large. Maximum allowed size is 5MB.");
-        return;
-      }
-
-      setAvatarFile(file);
-      setIsAvatarRemoved(false);
-      setHasImageError(false);
-
-      if (onProfileImageChange) {
-        onProfileImageChange(file);
-      }
-
-      addToast("info", "New avatar image selected. Click 'Save Settings' to upload.");
-    }
-  };
-
-  const handleRemoveAvatar = () => {
-    setAvatarFile(null);
-    setAvatarPreviewUrl(null);
-    setIsAvatarRemoved(true);
-    setHasImageError(false);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-    if (onProfileImageChange) {
-      onProfileImageChange(null);
-    }
-
-    addToast("info", "Avatar marked for removal. Click 'Save Settings' to apply.");
-  };
-
-  // ---------------------------------------------------------------------------
-  // Top-Level Save Settings Handler
-  // ---------------------------------------------------------------------------
-  const handleSaveSettings = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setIsSavingSettings(true);
-
+  async function refreshAccount() {
     try {
-      const supabase = createClient();
-      let updatedAvatarUrl: string | null = avatarPreviewUrl;
+      setIsRefreshing(true);
+      const response = await fetch("/api/admin/profile");
+      if (!response.ok) return;
 
-      // 1. Upload Avatar to Supabase Storage bucket ('avatars') if a new file is chosen
-      if (avatarFile) {
-        const fileExt = avatarFile.name.split(".").pop()?.toLowerCase() || "webp";
-        const sanitizedName = avatarFile.name
-          .replace(/[^a-zA-Z0-9.-]/g, "_")
-          .replace(/\s+/g, "_");
-        const uniqueId = userId || userEmail || "admin";
-        const storagePath = `admin/${uniqueId}/${Date.now()}-${sanitizedName}`;
+      const data = await response.json();
+      if (!data.success) return;
 
-        // Attempt upload to 'avatars' bucket
-        const { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(storagePath, avatarFile, {
-            contentType: avatarFile.type || `image/${fileExt}`,
-            upsert: true,
-          });
+      const rawFullName = data.full_name || data.fullName || "Admin";
+      const parsedFallback = parseFullNameFallback(rawFullName);
+      const fetchedFirstName = data.firstName || data.first_name || parsedFallback.firstName;
+      const fetchedMiddleName = data.middleName || data.middle_name || parsedFallback.middleName;
+      const fetchedLastName = data.lastName || data.last_name || parsedFallback.lastName;
 
-        if (!uploadError) {
-          const { data: publicUrlData } = supabase.storage
-            .from("avatars")
-            .getPublicUrl(storagePath);
+      const profileImg = data.avatar_url || data.profileImageUrl || null;
 
-          if (publicUrlData?.publicUrl) {
-            updatedAvatarUrl = publicUrlData.publicUrl;
-            setAvatarPreviewUrl(updatedAvatarUrl);
-            setHasImageError(false);
-            setAvatarFile(null);
-            setIsAvatarRemoved(false);
-          }
-        } else {
-          // Fallback check if 'avatars' bucket was unavailable, try 'compliance-private' or user metadata
-          console.warn("Storage upload to 'avatars' bucket warning:", uploadError.message);
-          const { error: fallbackError } = await supabase.storage
-            .from("compliance-private")
-            .upload(`admin-avatars/${uniqueId}/${Date.now()}-${sanitizedName}`, avatarFile, {
-              upsert: true,
-            });
+      setAccount((prev) => ({
+        ...prev,
+        id: data.id || prev.id,
+        profileId: data.profileId || data.id || prev.profileId,
+        firstName: fetchedFirstName,
+        middleName: fetchedMiddleName,
+        lastName: fetchedLastName,
+        fullName: rawFullName,
+        email: data.email || prev.email || "",
+        profileImageUrl: profileImg,
+        avatar_url: profileImg,
+      }));
 
-          if (!fallbackError) {
-            const { data: fallbackUrlData } = supabase.storage
-              .from("compliance-private")
-              .getPublicUrl(`admin-avatars/${uniqueId}/${Date.now()}-${sanitizedName}`);
-
-            if (fallbackUrlData?.publicUrl) {
-              updatedAvatarUrl = fallbackUrlData.publicUrl;
-              setAvatarPreviewUrl(updatedAvatarUrl);
-              setHasImageError(false);
-              setAvatarFile(null);
-              setIsAvatarRemoved(false);
-            }
-          }
-        }
-      } else if (isAvatarRemoved) {
-        updatedAvatarUrl = null;
+      if (profileImg) {
+        setImageError(false);
       }
 
-      // 2. Update Supabase Auth User Metadata
-      const metadataPayload: Record<string, any> = {
-        full_name: fullName.trim() || adminName || "Admin User",
-        avatar_url: updatedAvatarUrl,
-        auto_email_reminders: emailReminders,
-        new_submission_alerts: submissionAlerts,
-        email_reminders: emailReminders,
-        submission_alerts: submissionAlerts,
-        session_timeout_minutes: sessionTimeout,
-        session_timeout: sessionTimeout,
-        system_settings: {
-          auto_email_reminders: emailReminders,
-          new_submission_alerts: submissionAlerts,
-          email_reminders: emailReminders,
-          submission_alerts: submissionAlerts,
-          session_timeout_minutes: sessionTimeout,
-          session_timeout: sessionTimeout,
-          updated_at: new Date().toISOString(),
-        },
-      };
+      setForm((prev) => {
+        const hasUserEdited =
+          prev.firstName !== "" && prev.firstName !== fetchedFirstName;
+        if (hasUserEdited) return prev;
 
-      const { error: authUpdateError } = await supabase.auth.updateUser({
-        data: metadataPayload,
+        return {
+          firstName: fetchedFirstName,
+          middleName: fetchedMiddleName,
+          lastName: fetchedLastName,
+        };
       });
 
-      if (authUpdateError) {
-        console.warn("User metadata update note:", authUpdateError.message);
+      if (typeof data.auto_email_reminders === "boolean") {
+        setEmailReminders(data.auto_email_reminders);
+      }
+      if (typeof data.new_submission_alerts === "boolean") {
+        setSubmissionAlerts(data.new_submission_alerts);
+      }
+      if (data.session_timeout_minutes !== undefined) {
+        setSessionTimeout(String(data.session_timeout_minutes));
       }
 
-      // 3. Update Profiles Table in Database
-      if (userId) {
-        try {
-          await supabase
-            .from("profiles")
-            .update({
-              full_name: fullName.trim(),
-            })
-            .eq("id", userId);
-        } catch (dbErr) {
-          console.warn("Profile table update note:", dbErr);
-        }
+      setInitialPreferences({
+        emailReminders:
+          typeof data.auto_email_reminders === "boolean"
+            ? data.auto_email_reminders
+            : true,
+        submissionAlerts:
+          typeof data.new_submission_alerts === "boolean"
+            ? data.new_submission_alerts
+            : true,
+        sessionTimeout: String(data.session_timeout_minutes ?? "60"),
+      });
+    } catch {
+      // Retain existing state silently
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
-        // Also update admins table if existing
-        try {
-          await supabase
-            .from("admins")
-            .update({
-              full_name: fullName.trim(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq("profile_id", userId);
-        } catch {
-          // Admins table is optional
-        }
+  async function handleSaveName(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSaving(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("firstName", form.firstName.trim());
+      formData.append("middleName", form.middleName.trim());
+      formData.append("lastName", form.lastName.trim());
+
+      if (isAvatarMarkedForRemoval) {
+        formData.append("removeAvatar", "true");
+      } else if (profileImageFile) {
+        formData.append("profileImage", profileImageFile);
       }
 
-      // 4. Refresh local component state
-      setAvatarPreviewUrl(updatedAvatarUrl);
-      setAvatarFile(null);
-      setIsAvatarRemoved(false);
-      setHasImageError(false);
+      const response = await fetch("/api/admin/profile", {
+        method: "PATCH",
+        body: formData,
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || "Failed to update administrator profile");
+      }
+
+      const updatedFullName =
+        payload.full_name ||
+        buildFacultyFullName({
+          firstName: form.firstName,
+          middleName: form.middleName,
+          lastName: form.lastName,
+        });
+
+      const updatedAvatar = payload.avatar_url ?? null;
+
+      setAccount((prev) => ({
+        ...prev,
+        firstName: form.firstName,
+        middleName: form.middleName,
+        lastName: form.lastName,
+        fullName: updatedFullName,
+        profileImageUrl: updatedAvatar,
+        avatar_url: updatedAvatar,
+      }));
+
+      setProfileImageFile(null);
+      setIsAvatarMarkedForRemoval(false);
 
       if (onProfileImageChange) {
         onProfileImageChange(null);
       }
 
-      addToast("success", "Admin settings and system preferences saved successfully.");
-    } catch (err) {
-      console.error("Save settings error:", err);
-      addToast(
-        "error",
-        err instanceof Error ? err.message : "Failed to save admin settings."
-      );
+      setFeedbackModal({
+        isOpen: true,
+        title: "Profile Updated Successfully",
+        message: "Your profile information and changes have been saved.",
+        type: "success",
+      });
+
+      onProfileUpdated?.({
+        fullName: updatedFullName,
+        avatarUrl: updatedAvatar,
+      });
+
+      router.refresh();
+    } catch (saveError) {
+      setFeedbackModal({
+        isOpen: true,
+        title: "Profile Update Failed",
+        message:
+          saveError instanceof Error
+            ? saveError.message
+            : "Failed to update administrator profile",
+        type: "error",
+      });
     } finally {
-      setIsSavingSettings(false);
+      setIsSaving(false);
     }
-  };
+  }
 
-  // ---------------------------------------------------------------------------
-  // Interactive Password Change Handler
-  // ---------------------------------------------------------------------------
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-    setPasswordSuccess(null);
+  async function handleChangePasswordSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
 
-    if (!currentPassword.trim()) {
-      setPasswordError("Current password is required.");
+    if (!oldPassword.trim()) {
+      setFeedbackModal({
+        isOpen: true,
+        title: "Current Password Required",
+        message: "Please enter your current password to continue.",
+        type: "error",
+      });
       return;
     }
 
     if (newPassword.length < 8) {
-      setPasswordError("New password must be at least 8 characters long.");
+      setFeedbackModal({
+        isOpen: true,
+        title: "Password Too Short",
+        message: "New password must be at least 8 characters long.",
+        type: "error",
+      });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordError("New password and confirmation do not match.");
-      return;
-    }
-
-    if (currentPassword === newPassword) {
-      setPasswordError("New password cannot be the same as the current password.");
+      setFeedbackModal({
+        isOpen: true,
+        title: "Passwords Do Not Match",
+        message:
+          "The new password and confirmation password do not match. Please verify and try again.",
+        type: "error",
+      });
       return;
     }
 
@@ -635,22 +612,17 @@ export function AdminSettings({
     try {
       const supabase = createClient();
 
-      // Verify current password by attempting authentication
-      const emailToAuth = userEmail || adminEmail;
-      if (emailToAuth) {
-        const { error: verifyError } = await supabase.auth.signInWithPassword({
-          email: emailToAuth,
-          password: currentPassword,
-        });
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: account.email,
+        password: oldPassword,
+      });
 
-        if (verifyError) {
-          setPasswordError("Current password verification failed. Please check your password.");
-          setIsChangingPassword(false);
-          return;
-        }
+      if (signInError) {
+        throw new Error(
+          "Incorrect current password. Please check your credentials and try again.",
+        );
       }
 
-      // Update password via Supabase Auth
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -659,563 +631,978 @@ export function AdminSettings({
         throw new Error(updateError.message);
       }
 
-      setPasswordSuccess("Authentication password updated successfully.");
-      addToast("success", "Password updated successfully.");
-
-      // Reset form and close modal after slight delay
-      setTimeout(() => {
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setIsPasswordModalOpen(false);
-        setPasswordSuccess(null);
-        setPasswordError(null);
-      }, 1400);
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setIsPasswordEditing(false);
+      setFeedbackModal({
+        isOpen: true,
+        title: "Password Updated Successfully",
+        message: "Your administrator account password has been updated securely.",
+        type: "success",
+      });
     } catch (err) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Failed to update authentication password.";
-      setPasswordError(errorMsg);
-      addToast("error", errorMsg);
+      setFeedbackModal({
+        isOpen: true,
+        title: "Password Update Failed",
+        message:
+          err instanceof Error ? err.message : "Failed to update password.",
+        type: "error",
+      });
     } finally {
       setIsChangingPassword(false);
     }
-  };
+  }
+
+  async function handleSavePreferences() {
+    setIsSavingPreferences(true);
+
+    try {
+      const response = await fetch("/api/admin/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          autoEmailReminders: emailReminders,
+          newSubmissionAlerts: submissionAlerts,
+          sessionTimeoutMinutes: sessionTimeout,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || "Failed to update system preferences");
+      }
+
+      setInitialPreferences({
+        emailReminders,
+        submissionAlerts,
+        sessionTimeout,
+      });
+
+      setFeedbackModal({
+        isOpen: true,
+        title: "Preferences Saved",
+        message: "Your notification and session lifecycle preferences have been updated.",
+        type: "success",
+      });
+    } catch (err) {
+      setFeedbackModal({
+        isOpen: true,
+        title: "Preferences Update Failed",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to update system preferences.",
+        type: "error",
+      });
+    } finally {
+      setIsSavingPreferences(false);
+    }
+  }
+
+  const isProfileChanged =
+    Boolean(profileImageFile) ||
+    isAvatarMarkedForRemoval ||
+    form.firstName.trim() !== account.firstName.trim() ||
+    form.middleName.trim() !== account.middleName.trim() ||
+    form.lastName.trim() !== account.lastName.trim();
+
+  const isPreferencesChanged =
+    emailReminders !== initialPreferences.emailReminders ||
+    submissionAlerts !== initialPreferences.submissionAlerts ||
+    sessionTimeout !== initialPreferences.sessionTimeout;
+
+  const isCurrentPasswordFilled = oldPassword.trim() !== "";
+  const isLengthValid = newPassword.length >= 8;
+  const isMatching =
+    newPassword.length > 0 &&
+    confirmPassword.length > 0 &&
+    newPassword === confirmPassword;
+
+  const isPasswordFormValid =
+    isCurrentPasswordFilled && isLengthValid && isMatching;
 
   return (
-    <div className="w-full space-y-6">
-      {/* --------------------------------------------------------------------- */}
-      {/* Toast Notification Container (Floating Top-Right)                      */}
-      {/* --------------------------------------------------------------------- */}
-      {toasts.length > 0 && (
-        <div className="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
-          {toasts.map((toast) => (
-            <div
-              key={toast.id}
-              className={`pointer-events-auto flex items-start gap-3 rounded-xl border p-3.5 shadow-2xl backdrop-blur-md transition-all animate-in fade-in slide-in-from-top-4 duration-300 ${
-                toast.type === "success"
-                  ? "bg-emerald-950/90 border-emerald-500/40 text-emerald-200"
-                  : toast.type === "error"
-                  ? "bg-rose-950/90 border-rose-500/40 text-rose-200"
-                  : "bg-slate-900/90 border-amber-500/40 text-amber-200"
-              }`}
-            >
-              {toast.type === "success" ? (
-                <CheckCircle className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
-              ) : toast.type === "error" ? (
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
-              ) : (
-                <Sparkles className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
-              )}
-              <div className="flex-1 text-xs font-medium leading-relaxed">
-                {toast.message}
-              </div>
-              <button
-                type="button"
-                onClick={() => removeToast(toast.id)}
-                className="text-slate-400 hover:text-white transition-colors"
-                aria-label="Dismiss toast"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* --------------------------------------------------------------------- */}
-      {/* Header Bar & Top Action                                               */}
-      {/* --------------------------------------------------------------------- */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800 pb-5">
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 pb-4">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Admin System Settings
-          </h2>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-            Manage your administrator profile, security credentials, notification rules, and session lifecycle.
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+            Settings
+          </h1>
+          <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 font-normal">
+            Manage your administrator account details, security settings, and system preferences.
           </p>
         </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => handleSaveSettings()}
-            disabled={isSavingSettings || isLoadingProfile}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-5 py-2 text-xs font-semibold text-slate-950 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-          >
-            {isSavingSettings ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
-                <span>Saving Changes...</span>
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 text-slate-950" />
-                <span>Save Changes</span>
-              </>
-            )}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => void refreshAccount()}
+          disabled={isRefreshing}
+          title="Refresh account details"
+          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-sm shadow-slate-300/50 dark:shadow-none"
+        >
+          <RotateCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-amber-500" : ""}`} />
+          <span className="sr-only">Refresh</span>
+        </button>
       </div>
 
-      <div className="space-y-6">
-        {/* ------------------------------------------------------------------- */}
-        {/* Card 1: Profile & Credentials Section                               */}
-        {/* ------------------------------------------------------------------- */}
-        <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none transition-colors">
-          <div className="flex items-center gap-2.5 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-            <User className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <span>Profile & Credentials</span>
+      {/* Grid Layout (2-Column) */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Profile Details Card */}
+        <article className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white shadow-sm shadow-slate-300/50 dark:border dark:bg-slate-900 dark:shadow-none p-6 transition-colors">
+          <div className="pb-4 border-b border-slate-300 dark:border-slate-800">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+              Profile Details
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-normal">
+              View and update your administrator credentials and identity.
+            </p>
           </div>
 
-          <div className="space-y-6 p-6">
-            {/* Avatar Upload & Instant Preview Card */}
-            <div className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 p-5">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-                <div className="relative group shrink-0">
-                  {!hasImageError && avatarPreviewUrl && !isAvatarRemoved ? (
-                    <img
-                      src={avatarPreviewUrl}
-                      alt={fullName || "Admin Avatar"}
-                      className="h-20 w-20 rounded-full border-2 border-amber-500/40 object-cover bg-slate-100 dark:bg-slate-900 shadow-md ring-4 ring-white dark:ring-slate-950 transition group-hover:border-amber-400"
-                      onError={(e) => {
-                        console.warn("[AdminSettings] Avatar image failed to load from URL:", avatarPreviewUrl, e);
-                        setHasImageError(true);
-                      }}
-                    />
-                  ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-amber-500/40 bg-amber-500/10 text-xl font-bold text-amber-800 dark:text-amber-300 shadow-md ring-4 ring-white dark:ring-slate-950">
-                      {getInitials(fullName)}
-                    </div>
-                  )}
+          <form onSubmit={handleSaveName} className="mt-5 space-y-5">
+            {/* Profile Avatar Layout */}
+            <div className="flex items-center gap-4">
+              <div
+                className="relative group shrink-0 cursor-pointer"
+                onClick={() => setIsProfileImageMenuOpen(true)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setIsProfileImageMenuOpen(true);
+                  }
+                }}
+                aria-label="Profile photo options"
+              >
+                <div className="relative h-20 w-20 rounded-full border border-slate-300 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-950 overflow-hidden flex items-center justify-center text-lg font-semibold text-slate-800 dark:text-slate-200 shadow-xs">
+                  {/* Clean initials rendered immediately */}
+                  <span className="select-none font-semibold text-slate-700 dark:text-slate-300">
+                    {buildFacultyInitials(account.fullName || "Admin User")}
+                  </span>
 
-                  {/* Camera overlay indicator */}
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-0 flex items-center justify-center rounded-full bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity text-amber-300 cursor-pointer"
-                    title="Change Avatar"
-                  >
-                    <Camera className="h-5 w-5" />
-                  </button>
+                  {displayedProfileImage && !imageError ? (
+                    <img
+                      src={displayedProfileImage}
+                      alt={account.fullName || "Administrator"}
+                      loading="eager"
+                      fetchPriority="high"
+                      onError={() => setImageError(true)}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : null}
+                </div>
+                {/* Hover darken overlay */}
+                <div
+                  className="absolute inset-0 rounded-full bg-black/40 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center pointer-events-none"
+                  aria-hidden="true"
+                >
+                  <Camera className="h-4 w-4 mb-0.5" />
+                  <span>Change</span>
                 </div>
 
-                <div className="flex-1 space-y-2">
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      Administrator Avatar
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      JPG, PNG, or WebP (Max 5MB)
-                    </p>
-                  </div>
+                {/* Persistent Floating Camera Badge */}
+                <div
+                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900 transition-transform group-hover:scale-110 pointer-events-none"
+                  aria-hidden="true"
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                </div>
+              </div>
 
-                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                      className="hidden"
-                      onChange={handleAvatarFileSelect}
-                    />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                  {account.fullName || "Administrator"}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 truncate mt-0.5">
+                  {account.email || "No email on record"}
+                </p>
+              </div>
 
+              <input
+                ref={profileImageInputRef}
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setProfileImageFile(file);
+                  setIsAvatarMarkedForRemoval(false);
+                  setIsProfileImageMenuOpen(false);
+                  if (onProfileImageChange) {
+                    onProfileImageChange(file);
+                  }
+                }}
+              />
+            </div>
+
+            {profileImageFile && (
+              <div className="flex items-center justify-between rounded-xl border border-amber-600/50 bg-amber-500/10 px-3.5 py-2 text-xs text-amber-900 dark:text-amber-300 font-medium">
+                <span className="truncate">New image selected: {profileImageFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileImageFile(null);
+                    if (profileImageInputRef.current) {
+                      profileImageInputRef.current.value = "";
+                    }
+                    if (onProfileImageChange) {
+                      onProfileImageChange(null);
+                    }
+                  }}
+                  className="ml-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 shrink-0 cursor-pointer"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+
+            {isAvatarMarkedForRemoval && (
+              <div className="flex items-center justify-between rounded-xl border border-rose-500/40 bg-rose-50 dark:bg-rose-950/30 px-3.5 py-2 text-xs text-rose-800 dark:text-rose-300 font-medium">
+                <span className="truncate">Avatar marked for removal upon saving</span>
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarMarkedForRemoval(false)}
+                  className="ml-2 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-200 shrink-0 cursor-pointer"
+                >
+                  Undo
+                </button>
+              </div>
+            )}
+
+            {/* Form Input Fields */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="admin-first-name"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                >
+                  First Name
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="admin-first-name"
+                    ref={firstNameInputRef}
+                    readOnly={activeField !== "firstName"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "firstName"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={form.firstName}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, firstName: e.target.value }))
+                    }
+                    onBlur={() => setActiveField(null)}
+                    placeholder="First name"
+                  />
+                  {activeField === "firstName" ? (
                     <button
                       type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 transition-all hover:bg-amber-500/20 cursor-pointer"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("firstName")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <Camera className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                      <span>Upload Photo</span>
+                      <X className="h-3.5 w-3.5" />
+                      <span>Cancel</span>
                     </button>
-
-                    {(avatarPreviewUrl || avatarFile) && !isAvatarRemoved && (
-                      <button
-                        type="button"
-                        onClick={handleRemoveAvatar}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-50 dark:bg-rose-950/20 px-3.5 py-1.5 text-xs font-medium text-rose-800 dark:text-rose-300 transition-all hover:bg-rose-100 dark:hover:bg-rose-950/40 cursor-pointer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-                        <span>Remove Photo</span>
-                      </button>
-                    )}
-
-                    {avatarFile && (
-                      <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1">
-                        <Sparkles className="h-3 w-3" />
-                        Selected: {avatarFile.name}
-                      </span>
-                    )}
-                  </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("firstName", firstNameInputRef)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Edit</span>
+                    </button>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Profile Info Form Inputs */}
-            <div className="grid gap-5 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5 block">
-                  Admin Full Name <span className="text-amber-500">*</span>
+              <div>
+                <label
+                  htmlFor="admin-middle-name"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                >
+                  Middle Name
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="admin-middle-name"
+                    ref={middleNameInputRef}
+                    readOnly={activeField !== "middleName"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "middleName"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={form.middleName}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, middleName: e.target.value }))
+                    }
+                    onBlur={() => setActiveField(null)}
+                    placeholder="Middle name"
+                  />
+                  {activeField === "middleName" ? (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("middleName")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span>Cancel</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("middleName", middleNameInputRef)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Edit</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="admin-last-name"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                >
+                  Last Name
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="admin-last-name"
+                    ref={lastNameInputRef}
+                    readOnly={activeField !== "lastName"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "lastName"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={form.lastName}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, lastName: e.target.value }))
+                    }
+                    onBlur={() => setActiveField(null)}
+                    placeholder="Last name"
+                  />
+                  {activeField === "lastName" ? (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("lastName")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span>Cancel</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("lastName", lastNameInputRef)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Edit</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Email Address
                 </label>
                 <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g., Prof. Juan Dela Cruz"
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs font-medium outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
+                  value={account.email || ""}
+                  disabled
+                  readOnly
                 />
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Displayed on audit logs, reports, and review workflows.
-                </p>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5 block">
-                  Admin Email Address
+              <div className="sm:col-span-2">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Role / Campus Office
                 </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    value={userEmail}
-                    readOnly
-                    placeholder="admin@pup.edu.ph"
-                    className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-400 dark:border-slate-800 text-slate-600 dark:text-slate-400 rounded-xl px-4 py-2.5 pl-9 text-xs font-medium cursor-not-allowed outline-none"
-                  />
-                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Primary login email associated with your administrator account.
-                </p>
+                <input
+                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
+                  value="Administrator — Office of Academic Affairs"
+                  disabled
+                  readOnly
+                />
               </div>
             </div>
 
-            {/* Password Credentials Card */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 p-4">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-                    Authentication Password
-                  </h4>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Keep your account secure with regular password updates.
-                </p>
-              </div>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={handleResetForm}
+                disabled={!isProfileChanged || isSaving}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800/80 cursor-pointer active:scale-[0.98]"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset</span>
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving || !isProfileChanged}
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isSaving ? "Saving..." : "Save Profile Changes"}
+              </button>
+            </div>
+          </form>
+        </article>
 
+        {/* Change Password Card */}
+        <article className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white shadow-sm shadow-slate-300/50 dark:border dark:bg-slate-900 dark:shadow-none p-6 transition-colors">
+          <div className="pb-4 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+                Change Password
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-normal">
+                Update your account password for security.
+              </p>
+            </div>
+            {!isPasswordEditing ? (
+              <button
+                type="button"
+                onClick={handleEnablePasswordEditing}
+                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                title="Change Password"
+                aria-label="Change Password"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                <span>Edit</span>
+              </button>
+            ) : (
               <button
                 type="button"
                 onClick={() => {
-                  setPasswordError(null);
-                  setPasswordSuccess(null);
-                  setIsPasswordModalOpen(true);
+                  setIsPasswordEditing(false);
+                  setOldPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
                 }}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all focus:outline-none cursor-pointer shadow-2xs"
+                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                title="Cancel Change Password"
+                aria-label="Cancel Change Password"
               >
-                <KeyRound className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <span>Change Password</span>
+                <X className="h-3.5 w-3.5" />
+                <span>Cancel</span>
               </button>
-            </div>
-          </div>
-        </section>
-
-        {/* ------------------------------------------------------------------- */}
-        {/* Card 2: Notification Preferences Section                            */}
-        {/* ------------------------------------------------------------------- */}
-        <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none transition-colors">
-          <div className="flex items-center gap-2.5 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-            <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <span>Notification Preferences</span>
+            )}
           </div>
 
-          <div className="divide-y divide-slate-300 dark:divide-slate-800/70">
-            {/* Toggle 1: Automated Email Reminders */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-                    Automated Email Reminders on Submission Windows
-                  </p>
-                  {emailReminders && (
-                    <span className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-medium dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                      Active
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
-                  Send automated deadline and window reminders to faculty.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                role="switch"
-                aria-checked={emailReminders}
-                onClick={() => setEmailReminders((prev) => !prev)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
-                  emailReminders
-                    ? "bg-amber-500 border border-amber-400"
-                    : "bg-slate-300 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out my-auto ${
-                    emailReminders
-                      ? "translate-x-5.5 bg-slate-950"
-                      : "translate-x-1 bg-white dark:bg-slate-400"
+          <form className="mt-5 space-y-4" onSubmit={handleChangePasswordSubmit}>
+            <div>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                Current Password
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  ref={currentPasswordRef}
+                  type={showOldPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  readOnly={!isPasswordEditing}
+                  className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
+                    !isPasswordEditing
+                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   }`}
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="Enter current password"
                 />
-              </button>
-            </div>
-
-            {/* Toggle 2: New Submission Alert Notifications */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-                    New Submission Alert Notifications
-                  </p>
-                  {submissionAlerts && (
-                    <span className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-medium dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                      Active
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
-                  Receive notifications when faculty members submit compliance documents.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                role="switch"
-                aria-checked={submissionAlerts}
-                onClick={() => setSubmissionAlerts((prev) => !prev)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
-                  submissionAlerts
-                    ? "bg-amber-500 border border-amber-400"
-                    : "bg-slate-300 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out my-auto ${
-                    submissionAlerts
-                      ? "translate-x-5.5 bg-slate-950"
-                      : "translate-x-1 bg-white dark:bg-slate-400"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* ------------------------------------------------------------------- */}
-        {/* Card 3: Security & Session Controls Section                         */}
-        {/* ------------------------------------------------------------------- */}
-        <section className="overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none transition-colors">
-          <div className="flex items-center gap-2.5 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-            <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <span>Security & Session Controls</span>
-          </div>
-
-          <div className="p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-                    Session Timeout Duration
-                  </p>
-                </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
-                  Automatically log out after inactivity for security.
-                </p>
-              </div>
-
-              <div className="shrink-0">
-                <select
-                  value={sessionTimeout}
-                  onChange={(e) => setSessionTimeout(e.target.value)}
-                  className="w-full sm:w-48 rounded-xl border border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 px-4 py-2.5 text-xs font-medium focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 cursor-pointer transition"
+                <button
+                  type="button"
+                  onClick={() => setShowOldPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10 flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer p-1"
+                  title={showOldPassword ? "Hide password" : "Show password"}
+                  aria-label={showOldPassword ? "Hide password" : "Show password"}
                 >
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour (Recommended)</option>
-                  <option value="120">2 hours</option>
-                  <option value="0">Never (Persistent Session)</option>
-                </select>
+                  {showOldPassword ? (
+                    <Eye className="h-4 w-4 text-amber-500" />
+                  ) : (
+                    <EyeOff className="h-4 w-4 text-slate-400" />
+                  )}
+                </button>
               </div>
             </div>
-          </div>
-        </section>
-      </div>
 
-      {/* --------------------------------------------------------------------- */}
-      {/* Interactive Change Password Modal                                     */}
-      {/* --------------------------------------------------------------------- */}
-      {isPasswordModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-3xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-200">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-400 dark:border-slate-800 pb-4 mb-5">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400">
-                  <Lock className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    Change Password
-                  </h3>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                    Update your account credentials
-                  </p>
+            <div>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                New Password
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  readOnly={!isPasswordEditing}
+                  className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
+                    !isPasswordEditing
+                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                  }`}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10 flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer p-1"
+                  title={showNewPassword ? "Hide password" : "Show password"}
+                  aria-label={showNewPassword ? "Hide password" : "Show password"}
+                >
+                  {showNewPassword ? (
+                    <Eye className="h-4 w-4 text-amber-500" />
+                  ) : (
+                    <EyeOff className="h-4 w-4 text-slate-400" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                Confirm New Password
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  readOnly={!isPasswordEditing}
+                  className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
+                    !isPasswordEditing
+                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                  }`}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 z-10 flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer p-1"
+                  title={showConfirmPassword ? "Hide password" : "Show password"}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? (
+                    <Eye className="h-4 w-4 text-amber-500" />
+                  ) : (
+                    <EyeOff className="h-4 w-4 text-slate-400" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Live Password Requirement Indicators */}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 p-3.5 space-y-2">
+              <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                Password Requirements
+              </p>
+              <ul className="space-y-1.5 text-xs">
+                <li
+                  className={`flex items-center gap-2 transition-colors ${
+                    isCurrentPasswordFilled
+                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                      : "text-slate-400 dark:text-slate-500"
+                  }`}
+                >
+                  {isCurrentPasswordFilled ? (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1" />
+                  )}
+                  <span>Current password required</span>
+                </li>
+
+                <li
+                  className={`flex items-center gap-2 transition-colors ${
+                    isLengthValid
+                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                      : "text-slate-400 dark:text-slate-500"
+                  }`}
+                >
+                  {isLengthValid ? (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1" />
+                  )}
+                  <span>At least 8 characters</span>
+                </li>
+
+                <li
+                  className={`flex items-center gap-2 transition-colors ${
+                    isMatching
+                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                      : "text-slate-400 dark:text-slate-500"
+                  }`}
+                >
+                  {isMatching ? (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1" />
+                  )}
+                  <span>Passwords match</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={!isPasswordEditing || !isPasswordFormValid || isChangingPassword}
+                className="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none cursor-pointer"
+              >
+                {isChangingPassword ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Updating Password...</span>
+                  </>
+                ) : (
+                  "Update Password"
+                )}
+              </button>
+            </div>
+          </form>
+        </article>
+      </section>
+
+      {/* System Preferences & Session Duration Section */}
+      <article className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white shadow-sm shadow-slate-300/50 dark:border dark:bg-slate-900 dark:shadow-none p-6 transition-colors">
+        <div className="pb-4 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+              System Preferences & Session Controls
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-normal">
+              Configure automated reminders, compliance notifications, and inactivity timeout.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-5">
+          {/* Notification Rule 1: Automated Email Reminders */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 p-4 transition-colors">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4 text-amber-500" />
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
+                  Automated Email Reminders on Submission Windows
+                </span>
+                {emailReminders && (
+                  <span className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-medium dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                    Active
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+                Send automatic notifications and deadline alerts to faculty regarding document submissions.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={emailReminders}
+              onClick={() => setEmailReminders((prev) => !prev)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
+                emailReminders
+                  ? "bg-amber-500 border border-amber-400"
+                  : "bg-slate-300 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out my-auto ${
+                  emailReminders
+                    ? "translate-x-5.5 bg-slate-950"
+                    : "translate-x-1 bg-white dark:bg-slate-400"
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Notification Rule 2: New Submission Alerts */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 p-4 transition-colors">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4 text-amber-500" />
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
+                  New Submission Alert Notifications
+                </span>
+                {submissionAlerts && (
+                  <span className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-medium dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                    Active
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+                Receive dashboard alerts when faculty upload new curriculum and syllabi files.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={submissionAlerts}
+              onClick={() => setSubmissionAlerts((prev) => !prev)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
+                submissionAlerts
+                  ? "bg-amber-500 border border-amber-400"
+                  : "bg-slate-300 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out my-auto ${
+                  submissionAlerts
+                    ? "translate-x-5.5 bg-slate-950"
+                    : "translate-x-1 bg-white dark:bg-slate-400"
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Session Duration Control */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 p-4 transition-colors">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-amber-500" />
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
+                  Session Timeout Duration
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+                Automatically invalidate session and log out user after continuous inactivity.
+              </p>
+            </div>
+
+            <div className="shrink-0">
+              <select
+                value={sessionTimeout}
+                onChange={(e) => setSessionTimeout(e.target.value)}
+                className="w-full sm:w-48 rounded-xl border border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 px-4 py-2.5 text-xs font-medium focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 cursor-pointer transition"
+              >
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="60">1 hour (Recommended)</option>
+                <option value="120">2 hours</option>
+                <option value="0">Never (Persistent Session)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 pt-2">
+            <button
+              type="button"
+              onClick={handleSavePreferences}
+              disabled={isSavingPreferences || !isPreferencesChanged}
+              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+            >
+              {isSavingPreferences ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Saving Preferences...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Save System Preferences</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </article>
+
+      {/* Feedback & Alert Modal Dialog */}
+      {feedbackModal?.isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          onClick={() => setFeedbackModal(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-2xl rounded-3xl p-7 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {feedbackModal.type === "error" ? (
+              <div className="relative mb-5 flex items-center justify-center">
+                {/* Ambient Backdrop Glow */}
+                <div className="absolute inset-0 rounded-full bg-rose-500/20 blur-xl dark:bg-rose-500/30" />
+
+                {/* Outer Layer Ring */}
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 p-3 ring-8 ring-rose-500/5 dark:bg-rose-500/20 dark:ring-rose-500/10">
+                  {/* Inner Gradient Shield Icon */}
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-lg shadow-rose-500/30">
+                    <ShieldAlert className="h-6 w-6 stroke-[2.2]" />
+                  </div>
                 </div>
               </div>
+            ) : (
+              <div className="relative mb-5 flex items-center justify-center">
+                {/* Ambient Backdrop Glow */}
+                <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl dark:bg-emerald-500/30" />
 
+                {/* Outer Layer Ring */}
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 p-3 ring-8 ring-emerald-500/5 dark:bg-emerald-500/20 dark:ring-emerald-500/10">
+                  {/* Inner Gradient Shield Icon */}
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30">
+                    <ShieldCheck className="h-6 w-6 stroke-[2.2]" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <h3 className="text-slate-900 dark:text-slate-100 font-bold text-lg tracking-tight mb-1">
+              {feedbackModal.title}
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-5">
+              {feedbackModal.message}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setFeedbackModal(null)}
+              className={
+                feedbackModal.type === "success"
+                  ? "w-full bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
+                  : "w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
+              }
+            >
+              {feedbackModal.type === "success" ? "Done" : "Dismiss"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Image Action Modal */}
+      {isProfileImageMenuOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsProfileImageMenuOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-4">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Profile Photo Options
+              </h3>
               <button
                 type="button"
-                onClick={() => setIsPasswordModalOpen(false)}
-                className="rounded-full border border-slate-400 dark:border-slate-800 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
-                aria-label="Close modal"
+                onClick={() => setIsProfileImageMenuOpen(false)}
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-
-            {/* Error & Success Feedback in Modal */}
-            {passwordError && (
-              <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-50 dark:bg-rose-950/50 p-3.5 text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2.5">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
-                <div className="flex-1">{passwordError}</div>
-              </div>
-            )}
-
-            {passwordSuccess && (
-              <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/50 p-3.5 text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-2.5">
-                <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
-                <div className="flex-1">{passwordSuccess}</div>
-              </div>
-            )}
-
-            {/* Password Form */}
-            <form onSubmit={handleChangePassword} className="space-y-4">
-              <div className="space-y-3.5 rounded-2xl border border-slate-400 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/40 p-4">
-                {/* Current Password Field */}
+            <div className="p-6 space-y-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProfileImageMenuOpen(false);
+                  profileImageInputRef.current?.click();
+                }}
+                className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+              >
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5 block">
-                    Current Password <span className="text-amber-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showCurrentPassword ? "text" : "password"}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Enter your current password"
-                      required
-                      className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-2.5 pr-10 text-xs font-medium outline-none transition"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPassword((prev) => !prev)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                    >
-                      {showCurrentPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
+                  <p className="text-xs font-semibold">Upload Photo</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+                    Select a new image file from your device
+                  </p>
                 </div>
+                <Camera className="h-4 w-4 text-slate-400" />
+              </button>
 
-                {/* New Password Field */}
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5 block">
-                    New Password <span className="text-amber-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showNewPassword ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="At least 8 characters"
-                      required
-                      minLength={8}
-                      className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-2.5 pr-10 text-xs font-medium outline-none transition"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword((prev) => !prev)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                    >
-                      {showNewPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Confirm Password Field */}
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5 block">
-                    Confirm New Password <span className="text-amber-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Re-enter your new password"
-                      required
-                      minLength={8}
-                      className="w-full rounded-xl border border-slate-400 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 px-4 py-2.5 pr-10 text-xs font-medium outline-none transition"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-3 pt-2">
+              {displayedProfileImage && (
                 <button
                   type="button"
-                  onClick={() => setIsPasswordModalOpen(false)}
-                  disabled={isChangingPassword}
-                  className="rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-white transition disabled:opacity-50 cursor-pointer"
+                  onClick={() => {
+                    setIsProfileImageMenuOpen(false);
+                    setIsFullImageOpen(true);
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
                 >
-                  Cancel
+                  <div>
+                    <p className="text-xs font-semibold">View Full Image</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+                      Preview your current profile picture in full size
+                    </p>
+                  </div>
+                  <Eye className="h-4 w-4 text-slate-400" />
                 </button>
+              )}
+
+              {displayedProfileImage && (
                 <button
-                  type="submit"
-                  disabled={
-                    isChangingPassword ||
-                    !currentPassword.trim() ||
-                    newPassword.length < 8 ||
-                    newPassword !== confirmPassword
-                  }
-                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-5 py-2 text-xs font-semibold text-slate-950 transition-all shadow-sm disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  type="button"
+                  onClick={() => {
+                    setIsProfileImageMenuOpen(false);
+                    setProfileImageFile(null);
+                    setIsAvatarMarkedForRemoval(true);
+                    if (profileImageInputRef.current) {
+                      profileImageInputRef.current.value = "";
+                    }
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/60 dark:border-rose-900/40 dark:bg-rose-950/20 px-4 py-3.5 text-left text-rose-700 dark:text-rose-300 transition cursor-pointer"
                 >
-                  {isChangingPassword ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-950" />
-                      <span>Updating...</span>
-                    </>
-                  ) : (
-                    <span>Update Password</span>
-                  )}
+                  <div>
+                    <p className="text-xs font-semibold">Remove Photo</p>
+                    <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5 font-normal">
+                      Remove current photo and restore fallback initials
+                    </p>
+                  </div>
+                  <Trash2 className="h-4 w-4 text-rose-500" />
                 </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Image Preview Modal */}
+      {isFullImageOpen && displayedProfileImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsFullImageOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-4">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                {account.fullName || "Profile Photo"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsFullImageOpen(false)}
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-6 flex items-center justify-center">
+              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60vh]">
+                <img
+                  src={displayedProfileImage}
+                  alt={account.fullName || "Administrator"}
+                  className="max-h-[60vh] max-w-full object-contain"
+                />
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

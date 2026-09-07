@@ -94,6 +94,16 @@ export function AdminFacultyDashboard({
     return "facultyManagement";
   });
 
+  const [currentAdminName, setCurrentAdminName] = useState<string>(
+    adminName ?? "Admin",
+  );
+
+  useEffect(() => {
+    if (adminName) {
+      setCurrentAdminName(adminName);
+    }
+  }, [adminName]);
+
   const [facultyAccounts, setFacultyAccounts] = useState<FacultyAccount[]>([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     null,
@@ -177,30 +187,18 @@ export function AdminFacultyDashboard({
 
     async function loadAdminAvatar() {
       try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const activeAvatar =
-          user.user_metadata?.avatar_url ||
-          user.user_metadata?.picture ||
-          null;
-
-        if (activeAvatar) {
-          if (!activeAvatar.startsWith("http")) {
-            const cleanPath = activeAvatar.replace(/^avatars\//, "");
-            const { data: pub } = supabase.storage
-              .from("avatars")
-              .getPublicUrl(cleanPath);
-            setAdminAvatarUrl(pub?.publicUrl || activeAvatar);
-          } else {
-            setAdminAvatarUrl(activeAvatar);
+        const res = await fetch("/api/admin/profile");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.avatar_url || data.profileImageUrl) {
+            setAdminAvatarUrl(data.avatar_url || data.profileImageUrl);
+          }
+          if (data.full_name || data.fullName) {
+            setCurrentAdminName(data.full_name || data.fullName);
           }
         }
       } catch (e) {
-        console.warn("Failed to load admin avatar:", e);
+        console.warn("Failed to load admin profile:", e);
       }
     }
 
@@ -540,7 +538,7 @@ export function AdminFacultyDashboard({
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={handleSetActiveSection}
-            adminName={adminName}
+            adminName={currentAdminName || adminName}
             roleTitle="Admin"
             profileImageUrl={adminAvatarUrl}
           />
@@ -572,7 +570,7 @@ export function AdminFacultyDashboard({
               <SidebarContent
                 activeSection={activeSection}
                 setActiveSection={handleSetActiveSection}
-                adminName={adminName}
+                adminName={currentAdminName || adminName}
                 roleTitle="Admin"
                 profileImageUrl={adminAvatarUrl}
                 onNavigate={() => setIsMobileMenuOpen(false)}
@@ -605,7 +603,7 @@ export function AdminFacultyDashboard({
 
                       <div className="relative z-10 space-y-1">
                         <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
-                          Welcome back, {extractFirstName(adminName, "Admin")}
+                          Welcome back, {extractFirstName(currentAdminName || adminName, "Admin")}
                         </h1>
                         <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
                           Admin Dashboard • A.Y. 2026-2027 • 1st Semester
@@ -834,16 +832,20 @@ export function AdminFacultyDashboard({
                       </button>
                     </div>
 
-                    <AdminAcademicTerms adminName={adminName ?? "Admin"} />
+                    <AdminAcademicTerms adminName={(currentAdminName || adminName) ?? "Admin"} />
                   </article>
                 ) : null}
 
                 {activeSection === "settings" ? (
                   <article className="p-4 md:p-5">
                     <AdminSettings
-                      adminName={adminName ?? "Admin"}
+                      adminName={(currentAdminName || adminName) ?? "Admin"}
                       adminEmail={adminEmail ?? null}
                       profileImageUrl={adminAvatarUrl}
+                      onProfileUpdated={({ fullName, avatarUrl }) => {
+                        if (fullName) setCurrentAdminName(fullName);
+                        if (avatarUrl !== undefined) setAdminAvatarUrl(avatarUrl);
+                      }}
                     />
                   </article>
                 ) : null}
