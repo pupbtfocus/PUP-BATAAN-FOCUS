@@ -324,18 +324,16 @@ export async function GET() {
         latestReviewWithRemarks?.remarks?.trim() ||
         latestReview?.remarks?.trim() ||
         row.admin_remarks?.trim() ||
-        (row.status === "validated" ||
-        row.status === "approved" ||
-        row.status === "rejected" ||
-        row.status === "returned" ||
-        row.status === "needs_revision"
-          ? row.remarks?.trim()
-          : undefined) ||
         undefined;
 
-      const facultyNote =
+      const rawFacultyNote =
         (row as { notes?: string }).notes?.trim() ||
         (typeof row.remarks === "string" && row.remarks.trim() ? row.remarks.trim() : undefined);
+
+      const facultyNote =
+        rawFacultyNote && rawFacultyNote !== adminFeedback?.trim()
+          ? rawFacultyNote
+          : undefined;
 
       const doc = docVersionsMap.get(row.id);
       const storagePath = doc?.storage_path || row.storage_path || row.file_path;
@@ -359,7 +357,7 @@ export async function GET() {
         updatedAt: row.updated_at || undefined,
         dateValidated: dateValidated,
         note: facultyNote,
-        remarks: facultyNote || adminFeedback,
+        remarks: facultyNote,
         admin_remarks: adminFeedback,
         adminRemarks: adminFeedback,
         feedback: adminFeedback,

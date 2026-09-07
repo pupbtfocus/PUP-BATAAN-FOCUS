@@ -17,6 +17,11 @@ echo =========================================
 echo [INFO] Working Directory: !TARGET_DIR!
 echo.
 
+echo [INFO] Freeing port 3001 if in use...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3001" ^| findstr "LISTENING"') do (
+    taskkill /f /pid %%a >nul 2>&1
+)
+
 echo [INFO] Clearing Next.js build and cache...
 if exist .next rmdir /s /q .next
 if exist node_modules\.cache rmdir /s /q node_modules\.cache

@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
       const primaryRes = await supabase
         .from("submissions")
         .select(
-          "id, requirement_code, status, submitted_at, created_at, remarks, notes, admin_remarks, faculty_assignment_id",
+          "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, faculty_assignment_id",
         )
         .eq("faculty_profile_id", facultyProfileId)
         .in("faculty_assignment_id", targetAssignmentIds)
@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
         const fallbackRes = await supabase
           .from("submissions")
           .select(
-            "id, requirement_code, status, submitted_at, created_at, remarks, faculty_assignment_id",
+            "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, faculty_assignment_id",
           )
           .eq("faculty_profile_id", facultyProfileId)
           .in("faculty_assignment_id", targetAssignmentIds)

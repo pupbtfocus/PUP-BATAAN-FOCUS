@@ -1141,7 +1141,17 @@ function FacultySubmissionPanelContent({
           match.adminRemarks ||
           match.admin_remarks ||
           match.feedback ||
-          match.remarks ||
+          null;
+
+        const matchUserNote =
+          (match.note && match.note !== adminRemarks ? match.note : null) ||
+          ((match as { notes?: string }).notes &&
+          (match as { notes?: string }).notes !== adminRemarks
+            ? (match as { notes?: string }).notes
+            : null) ||
+          (match.remarks && match.remarks !== adminRemarks
+            ? match.remarks
+            : null) ||
           null;
 
         return {
@@ -1154,7 +1164,8 @@ function FacultySubmissionPanelContent({
                 : "Pending",
           submittedAt: match.submittedAt,
           reviewedAt: match.reviewedAt,
-          note: match.note || null,
+          note: matchUserNote,
+          remarks: matchUserNote || undefined,
           latestSubmissionId: match.id,
           adminRemarks: adminRemarks,
           admin_remarks: adminRemarks || undefined,
@@ -1167,11 +1178,23 @@ function FacultySubmissionPanelContent({
           live.adminRemarks ||
           live.admin_remarks ||
           live.feedback ||
-          live.remarks ||
+          null;
+
+        const liveUserNote =
+          (live.note && live.note !== liveAdminRemarks ? live.note : null) ||
+          ((live as { notes?: string }).notes &&
+          (live as { notes?: string }).notes !== liveAdminRemarks
+            ? (live as { notes?: string }).notes
+            : null) ||
+          (live.remarks && live.remarks !== liveAdminRemarks
+            ? live.remarks
+            : null) ||
           null;
 
         return {
           ...live,
+          note: liveUserNote,
+          remarks: liveUserNote || undefined,
           adminRemarks: liveAdminRemarks,
           admin_remarks: liveAdminRemarks || undefined,
           feedback: liveAdminRemarks || undefined,
@@ -1418,11 +1441,17 @@ function FacultySubmissionPanelContent({
 
     markSubmissionViewed(item.latestSubmissionId);
 
-    const userNote =
-      item.remarks || (item as { notes?: string }).notes || item.note || null;
-
     const adminRemarks =
       item.adminRemarks || item.admin_remarks || item.feedback || null;
+
+    const userNote =
+      (item.note && item.note !== adminRemarks ? item.note : null) ||
+      ((item as { notes?: string }).notes &&
+      (item as { notes?: string }).notes !== adminRemarks
+        ? (item as { notes?: string }).notes
+        : null) ||
+      (item.remarks && item.remarks !== adminRemarks ? item.remarks : null) ||
+      null;
 
     const fileName =
       item.fileName ||
@@ -1451,16 +1480,23 @@ function FacultySubmissionPanelContent({
   function openHistorySubmissionPreview(submission: PastSubmission) {
     markSubmissionViewed(submission.id);
 
-    const userNote =
-      submission.remarks ||
-      (submission as { notes?: string }).notes ||
-      submission.note ||
-      null;
-
     const adminRemarks =
       submission.adminRemarks ||
       submission.admin_remarks ||
       submission.feedback ||
+      null;
+
+    const userNote =
+      (submission.note && submission.note !== adminRemarks
+        ? submission.note
+        : null) ||
+      ((submission as { notes?: string }).notes &&
+      (submission as { notes?: string }).notes !== adminRemarks
+        ? (submission as { notes?: string }).notes
+        : null) ||
+      (submission.remarks && submission.remarks !== adminRemarks
+        ? submission.remarks
+        : null) ||
       null;
 
     const fileName =
@@ -3233,14 +3269,10 @@ function FacultySubmissionPanelContent({
                           MY NOTE
                         </div>
                         <div className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
-                          {previewSubmission.remarks ||
-                          previewSubmission.notes ||
-                          previewSubmission.note ? (
+                          {previewSubmission.note ? (
                             <span>
                               &ldquo;
-                              {previewSubmission.remarks ||
-                                previewSubmission.notes ||
-                                previewSubmission.note}
+                              {previewSubmission.note}
                               &rdquo;
                             </span>
                           ) : (

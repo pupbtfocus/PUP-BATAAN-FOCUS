@@ -151,7 +151,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
               {submissions.map((sub) => {
                 const title = getFriendlyRequirementName(sub.requirementCode);
                 const adminFeedback =
-                  sub.adminRemarks || sub.admin_remarks || sub.feedback || sub.remarks;
+                  sub.adminRemarks || sub.admin_remarks || sub.feedback;
                 const isUnread = Boolean(
                   adminFeedback &&
                     !viewedSubmissionIds.has(sub.id) &&
@@ -246,7 +246,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
         {submissions.map((sub) => {
           const title = getFriendlyRequirementName(sub.requirementCode);
           const adminFeedback =
-            sub.adminRemarks || sub.admin_remarks || sub.feedback || sub.remarks;
+            sub.adminRemarks || sub.admin_remarks || sub.feedback;
           const isUnread = Boolean(
             adminFeedback &&
               !viewedSubmissionIds.has(sub.id) &&
