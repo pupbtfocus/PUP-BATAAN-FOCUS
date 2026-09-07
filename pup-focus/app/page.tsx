@@ -283,8 +283,8 @@ export default function Home() {
       const isInvalidCredentials = errorMessage === "Invalid login credentials";
 
       setAuthModal({
-        title: "Invalid email address or password",
-        message: "Invalid email address or password",
+        title: "Invalid Credentials",
+        message: "The email address or password you entered is incorrect. Please try again.",
         actionLabel: "Try again",
         variant: "error",
       });
