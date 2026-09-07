@@ -6,12 +6,12 @@ interface LogoProps {
   className?: string;
 }
 
-export function Logo({ size = 145, className = "" }: LogoProps) {
+export function Logo({ size = 115, className = "" }: LogoProps) {
   const brandMarkSize = Math.round(size * 0.58);
 
   return (
     <div
-      className={`flex items-center justify-center mx-auto text-center w-full mb-4 ${className}`}
+      className={`relative inline-flex items-center justify-center shrink-0 ${className}`}
     >
       <div
         className="relative flex items-center justify-center rounded-full bg-[#4d0000] p-1.5 shadow-xl border-2 border-[#FBBF24] shrink-0"

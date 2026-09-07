@@ -326,7 +326,7 @@ export default function Home() {
       <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px]" />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-      <div className="relative z-10 w-full max-w-[390px] sm:max-w-md mx-auto my-auto pt-8 sm:pt-12 pb-16 sm:pb-8">
+      <div className="relative z-10 w-full max-w-[390px] sm:max-w-md mx-auto my-auto pt-6 sm:pt-10 pb-14 sm:pb-8">
         <div className="relative w-full mx-auto">
           {/* Curved Card Top Header SVG */}
           <div className="relative">
@@ -334,18 +334,18 @@ export default function Home() {
               viewBox="0 0 400 60"
               className="w-full h-auto text-[#580000] fill-current stroke-amber-400/80 dark:stroke-amber-500/80 stroke-[2] block -mb-0.5 pointer-events-none"
             >
-              <path d="M 0,60 L 0,20 Q 0,0 20,0 L 130,0 C 150,0 155,45 200,45 C 245,45 250,0 270,0 L 380,0 Q 400,0 400,20 L 400,60 Z" />
+              <path d="M 0,60 L 0,20 Q 0,0 20,0 L 142,0 C 158,0 162,37 200,37 C 238,37 242,0 258,0 L 380,0 Q 400,0 400,20 L 400,60 Z" />
             </svg>
 
             {/* Logo positioned precisely inside the arch */}
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-20">
-              <Logo size={145} className="mb-0" />
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
+              <Logo size={115} className="mb-0" />
             </div>
           </div>
 
           {/* Card Body */}
-          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-6 pt-10 sm:p-8 sm:pt-10 backdrop-blur-md shadow-xl shadow-amber-500/10">
-            <div className="mt-4 mb-6 sm:mb-8 text-center">
+          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-md shadow-xl shadow-amber-500/10">
+            <div className="mt-2 mb-6 sm:mb-7 text-center">
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-wider text-amber-200 drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)] uppercase mb-1">
                 Sign In
               </h2>
