@@ -96,17 +96,15 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     // Update the submission status and admin_remarks (gracefully handling missing columns)
+    // Note: Do NOT overwrite `remarks` column, as it contains the faculty member's original submission note.
     let updateError: { message: string } | null = null;
 
-    // Step 1: Attempt update with status, admin_remarks, remarks, and updated_at
+    // Step 1: Attempt update with status, admin_remarks, and updated_at
     const fullPayload: Record<string, unknown> = {
       status: cleanDecision,
       updated_at: new Date().toISOString(),
+      admin_remarks: cleanRemarks,
     };
-    if (cleanRemarks) {
-      fullPayload.admin_remarks = cleanRemarks;
-      fullPayload.remarks = cleanRemarks;
-    }
 
     const { error: firstErr } = await supabaseAdmin
       .from("submissions")
@@ -114,16 +112,13 @@ export async function POST(request: NextRequest) {
       .eq("id", submissionId);
 
     if (firstErr) {
-      console.warn("Full submission update failed, trying fallback without remarks:", firstErr.message);
+      console.warn("Full submission update failed, trying fallback without updated_at:", firstErr.message);
 
       // Step 2: Fallback with status and admin_remarks only
       const payloadAdminRemarksOnly: Record<string, unknown> = {
         status: cleanDecision,
-        updated_at: new Date().toISOString(),
+        admin_remarks: cleanRemarks,
       };
-      if (cleanRemarks) {
-        payloadAdminRemarksOnly.admin_remarks = cleanRemarks;
-      }
 
       const { error: secondErr } = await supabaseAdmin
         .from("submissions")

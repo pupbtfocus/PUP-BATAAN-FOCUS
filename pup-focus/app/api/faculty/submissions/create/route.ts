@@ -336,7 +336,7 @@ export async function POST(request: NextRequest) {
     const { data: allFacultySubmissions } = await supabaseAdmin
       .from("submissions")
       .select(
-        "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks, notes",
+        "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks",
       )
       .in("faculty_profile_id", facultyProfileIds)
       .order("created_at", { ascending: true });
@@ -347,7 +347,7 @@ export async function POST(request: NextRequest) {
       const { data: assignSubs } = await supabaseAdmin
         .from("submissions")
         .select(
-          "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks, notes",
+          "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks",
         )
         .eq("faculty_assignment_id", facultyAssignmentId)
         .order("created_at", { ascending: true });
@@ -591,7 +591,7 @@ export async function POST(request: NextRequest) {
       };
 
       if (trimmedRemarks) {
-        updatePayload.notes = trimmedRemarks;
+        updatePayload.remarks = trimmedRemarks;
       }
 
       if (curriculumId) updatePayload.curriculum_id = curriculumId;
@@ -603,8 +603,8 @@ export async function POST(request: NextRequest) {
         .update(updatePayload)
         .eq("id", targetSubmissionId);
 
-      if (updateSubError && updatePayload.notes) {
-        delete updatePayload.notes;
+      if (updateSubError && updatePayload.remarks) {
+        delete updatePayload.remarks;
         const retryRes = await supabaseAdmin
           .from("submissions")
           .update(updatePayload)
@@ -663,7 +663,7 @@ export async function POST(request: NextRequest) {
       };
 
       if (trimmedRemarks) {
-        submissionPayload.notes = trimmedRemarks;
+        submissionPayload.remarks = trimmedRemarks;
       }
 
       let { data: newSub, error: submissionError } = await supabaseAdmin

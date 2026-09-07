@@ -392,6 +392,11 @@ export async function getFacultyInitialData(
       sub.admin_remarks?.trim() ||
       undefined;
 
+    const facultyNote =
+      sub.remarks && sub.remarks.trim() !== adminFeedback?.trim()
+        ? sub.remarks.trim()
+        : undefined;
+
     statusMap.set(matchedCode, {
       code: matchedCode,
       status,
@@ -401,8 +406,8 @@ export async function getFacultyInitialData(
       feedback: adminFeedback,
       admin_remarks: adminFeedback,
       adminRemarks: adminFeedback,
-      note: sub.remarks || undefined,
-      remarks: adminFeedback,
+      note: facultyNote,
+      remarks: facultyNote,
       submittedAt: sub.submitted_at || sub.created_at || undefined,
       latestSubmissionId: sub.id,
       is_read: Boolean(sub.is_read),
@@ -451,6 +456,11 @@ export async function getFacultyInitialData(
       row.created_at ||
       new Date().toISOString();
 
+    const facultyNote =
+      row.remarks && row.remarks.trim() !== adminFeedback?.trim()
+        ? row.remarks.trim()
+        : undefined;
+
     pastSubmissions.push({
       id: row.id,
       academicYear: activeAcademicYear,
@@ -460,8 +470,8 @@ export async function getFacultyInitialData(
       submittedAt: row.submitted_at || row.created_at || new Date().toISOString(),
       updatedAt: (row as any).updated_at || undefined,
       dateValidated,
-      note: row.remarks?.trim() || undefined,
-      remarks: adminFeedback,
+      note: facultyNote,
+      remarks: facultyNote,
       admin_remarks: adminFeedback,
       adminRemarks: adminFeedback,
       feedback: adminFeedback,

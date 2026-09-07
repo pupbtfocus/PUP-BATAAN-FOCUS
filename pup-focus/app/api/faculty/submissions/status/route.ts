@@ -640,18 +640,23 @@ export async function GET(request: NextRequest) {
         status = "Pending";
       }
 
-      // Faculty's own note attached during submission
-      const facultyNote =
-        "remarks" in submission && typeof submission.remarks === "string" && submission.remarks.trim()
-          ? submission.remarks.trim()
-          : undefined;
-
       // Admin's review remarks from the latest review_decisions entry with non-empty remarks or latest review
       const adminFeedback =
         latestReviewWithRemarks?.remarks?.trim() ||
         latestReview?.remarks?.trim() ||
         (submission as { admin_remarks?: string }).admin_remarks?.trim() ||
         undefined;
+
+      // Faculty's own note attached during submission
+      const rawFacultyNote =
+        "remarks" in submission && typeof submission.remarks === "string" && submission.remarks.trim()
+          ? submission.remarks.trim()
+          : undefined;
+
+      const facultyNote =
+        rawFacultyNote && rawFacultyNote !== adminFeedback?.trim()
+          ? rawFacultyNote
+          : undefined;
 
       const docList = docVersionsMap.get(submission.id) || [];
       const primaryDoc = docList[0];
@@ -668,7 +673,7 @@ export async function GET(request: NextRequest) {
         admin_remarks: adminFeedback,
         adminRemarks: adminFeedback,
         note: facultyNote,
-        remarks: adminFeedback,
+        remarks: facultyNote,
         submittedAt: submission.submitted_at || undefined,
         latestSubmissionId: submission.id,
         storagePath: storagePath || undefined,

@@ -1052,16 +1052,29 @@ function FacultyVerificationDrawer({
 
                     {matchingSubmission ? (
                       <div className="mt-3 space-y-3">
-                        {matchingSubmission.notes || matchingSubmission.remarks ? (
-                          <div className="text-xs">
-                            <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                              Faculty Remarks:
-                            </span>
-                            <p className="mt-0.5 text-slate-800 dark:text-slate-300 italic">
-                              "{matchingSubmission.notes || matchingSubmission.remarks}"
-                            </p>
-                          </div>
-                        ) : null}
+                        {(() => {
+                          const adminNote =
+                            matchingSubmission.review_decisions?.[0]?.remarks ||
+                            matchingSubmission.admin_remarks;
+                          const rawFacultyNote =
+                            matchingSubmission.notes ||
+                            matchingSubmission.remarks;
+                          const facultyNote =
+                            rawFacultyNote && rawFacultyNote !== adminNote
+                              ? rawFacultyNote
+                              : null;
+                          if (!facultyNote) return null;
+                          return (
+                            <div className="text-xs">
+                              <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                Faculty Remarks:
+                              </span>
+                              <p className="mt-0.5 text-slate-800 dark:text-slate-300 italic">
+                                "{facultyNote}"
+                              </p>
+                            </div>
+                          );
+                        })()}
 
                         {/* File Preview Links */}
                         {fileDownloadUrl ? (
@@ -1375,16 +1388,25 @@ function FacultyVerificationDrawer({
                       )}
 
                       {/* Faculty Remarks */}
-                      {matchingSub.remarks ? (
-                        <div className="rounded-xl border border-slate-400 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 p-2.5 text-xs">
-                          <span className="text-[10px] uppercase tracking-wider text-slate-600 dark:text-slate-400 font-semibold">
-                            Faculty Remarks:
-                          </span>
-                          <p className="mt-1 text-slate-800 dark:text-slate-300 italic">
-                            "{matchingSub.remarks}"
-                          </p>
-                        </div>
-                      ) : null}
+                      {(() => {
+                        const adminNote =
+                          latestReview?.remarks || matchingSub.admin_remarks;
+                        const facultyNote =
+                          matchingSub.remarks && matchingSub.remarks !== adminNote
+                            ? matchingSub.remarks
+                            : null;
+                        if (!facultyNote) return null;
+                        return (
+                          <div className="rounded-xl border border-slate-400 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 p-2.5 text-xs">
+                            <span className="text-[10px] uppercase tracking-wider text-slate-600 dark:text-slate-400 font-semibold">
+                              Faculty Remarks:
+                            </span>
+                            <p className="mt-1 text-slate-800 dark:text-slate-300 italic">
+                              "{facultyNote}"
+                            </p>
+                          </div>
+                        );
+                      })()}
 
                       {/* Admin Feedback */}
                       {latestReview?.remarks ? (

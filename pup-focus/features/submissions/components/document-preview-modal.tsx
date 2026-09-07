@@ -70,12 +70,22 @@ export function DocumentPreviewModal({
     getFileType(fileIdentifier);
   const fileExtension = extension || "file";
 
-  const userNote =
-    submission.remarks || submission.notes || submission.note || null;
   const adminFeedback =
     submission.adminRemarks ||
     submission.admin_remarks ||
     submission.feedback ||
+    null;
+
+  const userNote =
+    (submission.note && submission.note !== adminFeedback
+      ? submission.note
+      : null) ||
+    (submission.notes && submission.notes !== adminFeedback
+      ? submission.notes
+      : null) ||
+    (submission.remarks && submission.remarks !== adminFeedback
+      ? submission.remarks
+      : null) ||
     null;
 
   return (
