@@ -141,11 +141,13 @@ export function ForgotPasswordModal({
               <input
                 id="reset-email"
                 type="email"
+                name="email"
+                autoComplete="email"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 required
                 placeholder="faculty@pup.edu.ph"
-                className="w-full rounded-2xl border border-[rgba(255,215,0,0.2)] bg-black/20 px-4 py-3.5 text-sm text-white shadow-inner outline-none ring-amber-400/50 backdrop-blur-sm transition-all duration-300 placeholder:text-amber-200/20 hover:border-[rgba(255,215,0,0.4)] focus:bg-black/40 focus:ring-2"
+                className="pup-login-input w-full rounded-2xl border border-[rgba(255,215,0,0.2)] bg-black/20 px-4 py-3.5 text-sm text-white shadow-inner outline-none ring-amber-400/50 backdrop-blur-sm transition-all duration-300 placeholder:text-amber-200/20 hover:border-[rgba(255,215,0,0.4)] focus:bg-black/40 focus:ring-2"
               />
             </div>
 
