@@ -67,10 +67,36 @@ export function parseFullNameFallback(fullName?: string | null): {
   }
 
   if (parts.length === 3) {
-    // Multi-word first name without middle name (e.g. "Christian Jay Cereza")
+    const candidateCompound = `${parts[0]} ${parts[1]}`.toLowerCase();
+    const commonCompoundFirstNames = new Set([
+      "christian jay",
+      "john paul",
+      "mary ann",
+      "mary grace",
+      "mary jane",
+      "mark anthony",
+      "mark joseph",
+      "juan carlos",
+      "anna marie",
+      "maria clara",
+      "ma. clara",
+      "ma. elena",
+      "ma. christina",
+    ]);
+
+    if (commonCompoundFirstNames.has(candidateCompound)) {
+      return {
+        firstName: `${parts[0]} ${parts[1]}`,
+        middleName: "",
+        lastName: parts[2],
+      };
+    }
+
+    // Standard Filipino/general naming convention: [First] [Middle] [Last]
+    // e.g. "Leomar Capinding Manseña" -> First: "Leomar", Middle: "Capinding", Last: "Manseña"
     return {
-      firstName: `${parts[0]} ${parts[1]}`,
-      middleName: "",
+      firstName: parts[0],
+      middleName: parts[1],
       lastName: parts[2],
     };
   }

@@ -60,6 +60,9 @@ export default async function FacultyDashboardPage(props: PageProps) {
           facultyName={user?.fullName ?? null}
           facultyEmail={user?.email ?? null}
           facultyAvatarUrl={initialData?.avatarUrl ?? null}
+          initialFirstName={user?.firstName ?? null}
+          initialMiddleName={user?.middleName ?? null}
+          initialLastName={user?.lastName ?? null}
           initialData={initialData}
           initialView={initialView}
         />

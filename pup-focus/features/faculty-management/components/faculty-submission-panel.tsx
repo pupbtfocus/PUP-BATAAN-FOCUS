@@ -412,6 +412,12 @@ export interface FacultySubmissionPanelProps {
   facultyName?: string | null;
   facultyEmail?: string | null;
   facultyAvatarUrl?: string | null;
+  initialFirstName?: string | null;
+  initialMiddleName?: string | null;
+  initialLastName?: string | null;
+  facultyFirstName?: string | null;
+  facultyMiddleName?: string | null;
+  facultyLastName?: string | null;
   initialData?: FacultyInitialData | null;
   initialView?: PanelView;
 }
@@ -420,6 +426,12 @@ function FacultySubmissionPanelContent({
   facultyName,
   facultyEmail,
   facultyAvatarUrl,
+  initialFirstName,
+  initialMiddleName,
+  initialLastName,
+  facultyFirstName: propFacultyFirstName,
+  facultyMiddleName: propFacultyMiddleName,
+  facultyLastName: propFacultyLastName,
   initialData,
   initialView = "dashboard",
 }: FacultySubmissionPanelProps) {
@@ -431,6 +443,10 @@ function FacultySubmissionPanelContent({
   const [currentFacultyName, setCurrentFacultyName] = useState<string | null>(
     facultyName ?? null,
   );
+
+  const resolvedFirstName = initialFirstName ?? propFacultyFirstName ?? null;
+  const resolvedMiddleName = initialMiddleName ?? propFacultyMiddleName ?? null;
+  const resolvedLastName = initialLastName ?? propFacultyLastName ?? null;
   const departmentName = useMemo(() => {
     if (initialData?.department) return initialData.department;
     if (initialData?.program) {
@@ -3447,6 +3463,20 @@ function FacultySubmissionPanelContent({
                   initialFacultyEmail={facultyEmail}
                   initialDepartment={departmentName}
                   initialAvatarUrl={currentAvatarUrl || avatarUrl}
+                  initialAccount={
+                    resolvedFirstName || resolvedLastName
+                      ? {
+                          profileId: "",
+                          firstName: resolvedFirstName || "",
+                          middleName: resolvedMiddleName || "",
+                          lastName: resolvedLastName || "",
+                          fullName: currentFacultyName || facultyName || "",
+                          email: facultyEmail || "",
+                          profileImageUrl: currentAvatarUrl || avatarUrl || null,
+                          program: initialData?.program || null,
+                        }
+                      : null
+                  }
                   onProfileUpdated={handleProfileUpdated}
                 />
               </article>

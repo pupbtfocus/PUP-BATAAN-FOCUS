@@ -78,6 +78,7 @@ export function FacultySettingsPanel({
     "firstName" | "middleName" | "lastName" | null
   >(null);
   const [isPasswordEditing, setIsPasswordEditing] = useState(false);
+  const isUserDirty = useRef(false);
 
   function handleFocusField(
     fieldKey: "firstName" | "middleName" | "lastName",
@@ -104,6 +105,7 @@ export function FacultySettingsPanel({
   }
 
   function handleResetForm() {
+    isUserDirty.current = false;
     setForm({
       firstName: account.firstName,
       middleName: account.middleName,
@@ -130,9 +132,18 @@ export function FacultySettingsPanel({
       initialAccount?.fullName ?? initialFacultyName ?? "";
     const parsed = parseFullNameFallback(rawName);
 
-    const firstName = initialAccount?.firstName || parsed.firstName;
-    const middleName = initialAccount?.middleName || parsed.middleName;
-    const lastName = initialAccount?.lastName || parsed.lastName;
+    const hasInitialExplicitNames = Boolean(
+      initialAccount?.firstName || initialAccount?.lastName,
+    );
+    const firstName = hasInitialExplicitNames
+      ? (initialAccount?.firstName ?? "")
+      : (initialAccount?.firstName || parsed.firstName);
+    const middleName = hasInitialExplicitNames
+      ? (initialAccount?.middleName ?? "")
+      : (initialAccount?.middleName || parsed.middleName);
+    const lastName = hasInitialExplicitNames
+      ? (initialAccount?.lastName ?? "")
+      : (initialAccount?.lastName || parsed.lastName);
     const fullName =
       initialAccount?.fullName ??
       initialFacultyName ??
@@ -182,10 +193,19 @@ export function FacultySettingsPanel({
       initialAccount?.fullName ?? initialFacultyName ?? "";
     const parsed = parseFullNameFallback(rawName);
 
+    const hasInitialExplicitNames = Boolean(
+      initialAccount?.firstName || initialAccount?.lastName,
+    );
     return {
-      firstName: initialAccount?.firstName || parsed.firstName,
-      middleName: initialAccount?.middleName || parsed.middleName,
-      lastName: initialAccount?.lastName || parsed.lastName,
+      firstName: hasInitialExplicitNames
+        ? (initialAccount?.firstName ?? "")
+        : (initialAccount?.firstName || parsed.firstName),
+      middleName: hasInitialExplicitNames
+        ? (initialAccount?.middleName ?? "")
+        : (initialAccount?.middleName || parsed.middleName),
+      lastName: hasInitialExplicitNames
+        ? (initialAccount?.lastName ?? "")
+        : (initialAccount?.lastName || parsed.lastName),
     };
   });
 
@@ -244,12 +264,22 @@ export function FacultySettingsPanel({
           (user.user_metadata?.name as string) ||
           "";
         const parsedFallback = parseFullNameFallback(rawFullName);
+        const hasMetaName =
+          (typeof meta.first_name === "string" && meta.first_name.trim() !== "") ||
+          (typeof meta.last_name === "string" && meta.last_name.trim() !== "");
+
         const metaFirst =
-          (meta.first_name as string) || parsedFallback.firstName;
+          typeof meta.first_name === "string" && meta.first_name.trim() !== ""
+            ? meta.first_name.trim()
+            : (!hasMetaName ? parsedFallback.firstName : "");
         const metaMiddle =
-          (meta.middle_name as string) || parsedFallback.middleName;
+          typeof meta.middle_name === "string"
+            ? meta.middle_name.trim()
+            : (!hasMetaName ? parsedFallback.middleName : "");
         const metaLast =
-          (meta.last_name as string) || parsedFallback.lastName;
+          typeof meta.last_name === "string" && meta.last_name.trim() !== ""
+            ? meta.last_name.trim()
+            : (!hasMetaName ? parsedFallback.lastName : "");
         const metaFull =
           (meta.full_name as string) ||
           buildFacultyFullName({
@@ -260,25 +290,23 @@ export function FacultySettingsPanel({
           user.email ||
           "Faculty";
 
-        setAccount((prev) => {
-          if (prev.email && prev.firstName && prev.lastName) return prev;
-          return {
-            profileId: prev.profileId || user.id,
-            firstName: prev.firstName || metaFirst,
-            middleName: prev.middleName || metaMiddle,
-            lastName: prev.lastName || metaLast,
-            fullName: prev.fullName || metaFull,
-            email: prev.email || user.email || "",
-            profileImageUrl:
-              prev.profileImageUrl ||
-              (meta.profile_image_url as string) ||
-              null,
-            program: prev.program || null,
-          };
-        });
+        setAccount((prev) => ({
+          ...prev,
+          profileId: prev.profileId || user.id,
+          firstName: metaFirst || prev.firstName,
+          middleName: typeof meta.middle_name === "string" ? metaMiddle : prev.middleName,
+          lastName: metaLast || prev.lastName,
+          fullName: metaFull || prev.fullName,
+          email: user.email || prev.email,
+          profileImageUrl:
+            prev.profileImageUrl ||
+            (meta.profile_image_url as string) ||
+            null,
+          program: prev.program || null,
+        }));
 
         setForm((prev) => {
-          if (prev.firstName || prev.lastName) return prev;
+          if (isUserDirty.current) return prev;
           return {
             firstName: metaFirst,
             middleName: metaMiddle,
@@ -307,10 +335,7 @@ export function FacultySettingsPanel({
 
         setAccount(data);
         setForm((prev) => {
-          // If user hasn't edited the fields yet, sync with authoritative server data
-          const hasUserEdited =
-            prev.firstName !== "" && prev.firstName !== data.firstName;
-          if (hasUserEdited) return prev;
+          if (isUserDirty.current) return prev;
 
           return {
             firstName: data.firstName,
@@ -474,6 +499,7 @@ export function FacultySettingsPanel({
       }
 
       const updatedAccount = payload as FacultyAccountResponse;
+      isUserDirty.current = false;
       setAccount(updatedAccount);
       setForm({
         firstName: updatedAccount.firstName,
@@ -674,9 +700,10 @@ export function FacultySettingsPanel({
                         : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.firstName}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, firstName: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      isUserDirty.current = true;
+                      setForm((prev) => ({ ...prev, firstName: e.target.value }));
+                    }}
                     onBlur={() => setActiveField(null)}
                     placeholder="First name"
                   />
@@ -722,9 +749,10 @@ export function FacultySettingsPanel({
                         : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.middleName}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, middleName: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      isUserDirty.current = true;
+                      setForm((prev) => ({ ...prev, middleName: e.target.value }));
+                    }}
                     onBlur={() => setActiveField(null)}
                     placeholder="Middle name"
                   />
@@ -770,9 +798,10 @@ export function FacultySettingsPanel({
                         : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.lastName}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, lastName: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      isUserDirty.current = true;
+                      setForm((prev) => ({ ...prev, lastName: e.target.value }));
+                    }}
                     onBlur={() => setActiveField(null)}
                     placeholder="Last name"
                   />
