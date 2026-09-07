@@ -307,9 +307,6 @@ export async function PATCH(request: NextRequest) {
       .from("profiles")
       .update({
         full_name: updatedFullName,
-        first_name: firstName,
-        middle_name: middleName || null,
-        last_name: lastName,
       })
       .eq("id", profile.id);
 
@@ -333,14 +330,15 @@ export async function PATCH(request: NextRequest) {
       user.id,
       {
         user_metadata: {
+          ...(previousAuthUserMetadata ?? {}),
           ...(user.user_metadata ?? {}),
           first_name: firstName,
           middle_name: middleName || null,
           last_name: lastName,
           full_name: updatedFullName,
           role: ROLE.FACULTY,
-          profile_image_bucket: updatedMetadata.profile_image_bucket,
-          profile_image_path: updatedMetadata.profile_image_path,
+          profile_image_bucket: uploadedProfileImageBucket,
+          profile_image_path: uploadedProfileImagePath,
         },
       },
     );

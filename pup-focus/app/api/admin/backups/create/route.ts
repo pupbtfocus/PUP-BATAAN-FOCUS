@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     // 1. Collect Users
     const { data: usersData } = await supabase
       .from("profiles")
-      .select("id, full_name, first_name, last_name, email, role, is_active, department, created_at");
+      .select("*");
 
     // 2. Collect Academic Terms
     const { data: termsData } = await supabase
