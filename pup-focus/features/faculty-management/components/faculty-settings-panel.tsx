@@ -53,6 +53,10 @@ export interface FacultySettingsPanelProps {
   initialDepartment?: string | null;
   initialAvatarUrl?: string | null;
   initialAccount?: Partial<FacultyAccountResponse> | null;
+  onProfileUpdated?: (updated: {
+    fullName?: string;
+    avatarUrl?: string | null;
+  }) => void;
 }
 
 export function FacultySettingsPanel({
@@ -61,6 +65,7 @@ export function FacultySettingsPanel({
   initialDepartment,
   initialAvatarUrl,
   initialAccount,
+  onProfileUpdated,
 }: FacultySettingsPanelProps = {}) {
   const router = useRouter();
   const profileImageInputRef = useRef<HTMLInputElement>(null);
@@ -481,6 +486,14 @@ export function FacultySettingsPanel({
         title: "Profile Updated Successfully",
         message: "Your profile information and changes have been saved.",
         type: "success",
+      });
+      onProfileUpdated?.({
+        fullName: buildFacultyFullName({
+          firstName: updatedAccount.firstName,
+          middleName: updatedAccount.middleName,
+          lastName: updatedAccount.lastName,
+        }),
+        avatarUrl: updatedAccount.profileImageUrl ?? null,
       });
       router.refresh();
     } catch (saveError) {
