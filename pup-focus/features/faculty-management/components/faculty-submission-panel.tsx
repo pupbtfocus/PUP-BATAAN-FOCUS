@@ -181,7 +181,7 @@ const REQUIREMENT_DESCRIPTIONS: Record<RequirementCode, string> = {
   class_records:
     "Class Records including midterm and final grade computations.",
 };
-const PANEL_VIEWS = [
+export const PANEL_VIEWS = [
   "dashboard",
   "submit",
   "history",
@@ -193,7 +193,7 @@ const LOGIN_PAGE_IMAGES = [
   "/images/attachments/IMG_9402.jpeg",
 ];
 
-type PanelView = (typeof PANEL_VIEWS)[number];
+export type PanelView = (typeof PANEL_VIEWS)[number];
 type HistorySubmissionStatus = "Pending" | "Validated" | "Rejected";
 
 type RequirementStatus = {
@@ -455,7 +455,40 @@ function FacultySubmissionPanelContent({
   }, [avatarUrl]);
 
   const [isMounted, setIsMounted] = useState(false);
-  const [activeView, setActiveView] = useState<PanelView>(initialView);
+
+  // Synchronously compute initial active view without flashing Dashboard
+  const resolvedInitialView = useMemo<PanelView>(() => {
+    if (initialView && initialView !== "dashboard") {
+      return initialView;
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const v = urlParams.get("view");
+        const highlight = urlParams.get("highlight") || urlParams.get("requirement");
+        const hist = urlParams.get("history");
+
+        if (v === "history" || (v === "status" && hist === "true") || highlight) {
+          return "status";
+        }
+        if (v && (PANEL_VIEWS as readonly string[]).includes(v)) {
+          return v as PanelView;
+        }
+
+        const savedView = sessionStorage.getItem("pup_focus_faculty_active_view");
+        if (savedView && (PANEL_VIEWS as readonly string[]).includes(savedView)) {
+          return savedView as PanelView;
+        }
+      } catch {
+        // safe fallback
+      }
+    }
+
+    return initialView || "dashboard";
+  }, [initialView]);
+
+  const [activeView, setActiveView] = useState<PanelView>(resolvedInitialView);
   const [form, setForm] = useState<SubmissionFormState>({
     academicYear: initialData?.academicYear || academicYears[0] || "",
     semester:
@@ -519,7 +552,26 @@ function FacultySubmissionPanelContent({
   >(null);
   const [versionHistoryLabel, setVersionHistoryLabel] = useState("");
   const [versionHistoryCode, setVersionHistoryCode] = useState("");
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(() => {
+    if (initialView === "history") return true;
+    if (typeof window !== "undefined") {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get("history") === "true" || urlParams.get("view") === "history";
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("pup_focus_faculty_active_view", activeView);
+    } catch {
+      // safe
+    }
+  }, [activeView]);
   const [successModalData, setSuccessModalData] = useState<{
     isOpen: boolean;
     requirementTitle: string;
@@ -823,12 +875,12 @@ function FacultySubmissionPanelContent({
         view === "history" ||
         (view === "status" && historyParam === "true")
       ) {
-        setActiveView("status");
+        setActiveView((prev) => (prev !== "status" ? "status" : prev));
         setIsHistoryModalOpen(true);
       } else if (highlightParam) {
-        setActiveView("status");
+        setActiveView((prev) => (prev !== "status" ? "status" : prev));
       } else if (view && (PANEL_VIEWS as readonly string[]).includes(view)) {
-        setActiveView(view as PanelView);
+        setActiveView((prev) => (prev !== view ? (view as PanelView) : prev));
       }
 
       if (highlightParam) {
@@ -929,7 +981,7 @@ function FacultySubmissionPanelContent({
       const params = new URLSearchParams(searchParams?.toString() ?? "");
       params.set("view", "status");
       params.delete("history");
-      router.replace(`${pathname}?${params.toString()}`);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     } catch {
       // fallback
     }
@@ -949,6 +1001,7 @@ function FacultySubmissionPanelContent({
     setIsMobileMenuOpen(false);
 
     try {
+      sessionStorage.setItem("pup_focus_faculty_active_view", targetView);
       const params = new URLSearchParams(searchParams?.toString() ?? "");
       params.set("view", targetView);
       if (targetView === "status" && openHistory) {
@@ -956,10 +1009,10 @@ function FacultySubmissionPanelContent({
       } else {
         params.delete("history");
       }
-      router.replace(`${pathname}?${params.toString()}`);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     } catch {
       // fallback
-      router.replace(pathname);
+      router.replace(pathname, { scroll: false });
     }
   }
 
