@@ -317,8 +317,8 @@ export function FacultyDetailsModal({
                       </span>
 
                       {status === "validated" ? (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-                          <CheckCircle className="h-3 w-3" />
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#08412a] bg-[#0b5336] px-2 py-0.5 text-[10px] font-semibold text-white shadow-2xs">
+                          <CheckCircle className="h-3 w-3 text-white" />
                           Validated
                         </span>
                       ) : status === "uploaded" ? (
