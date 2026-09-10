@@ -1762,6 +1762,7 @@ export function SuperAdminDashboard({
                 </div>
 
                 <SubmissionWindowPanel
+                  isSuperAdmin={true}
                   onWindowChange={() =>
                     setVerificationResetTrigger((prev) => prev + 1)
                   }
