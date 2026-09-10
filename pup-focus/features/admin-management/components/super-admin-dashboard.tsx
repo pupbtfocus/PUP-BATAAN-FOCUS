@@ -1279,10 +1279,10 @@ export function SuperAdminDashboard({
               {ROLE_LABEL[admin.role]}
             </span>
             <span
-              className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+              className={`rounded-full border px-3 py-0.5 text-xs font-semibold shadow-2xs ${
                 admin.is_active
-                  ? "border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  : "border-slate-400 bg-slate-100 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+                  ? "border-[#08412a] bg-[#0b5336] text-white"
+                  : "border-[#5e0000] bg-[#780000] text-white"
               }`}
             >
               {admin.is_active ? "Active" : "Inactive"}
@@ -1519,10 +1519,10 @@ export function SuperAdminDashboard({
                                   <p className="text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
                                 </div>
                               </div>
-                              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${
+                              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
                                 admin.is_active
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60"
-                                  : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                                  ? "bg-[#0b5336] text-white border-[#08412a]"
+                                  : "bg-[#780000] text-white border-[#5e0000]"
                               }`}>
                                 {admin.is_active ? "Active" : "Inactive"}
                               </span>
@@ -2640,9 +2640,15 @@ function AdminDetailsModal({
                     <span className="font-semibold text-slate-700 dark:text-slate-300">Role:</span>{" "}
                     {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
                   </p>
-                  <p>
+                  <p className="flex items-center gap-2">
                     <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span>{" "}
-                    {details.is_active ? "Active" : "Inactive"}
+                    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
+                      details.is_active
+                        ? "bg-[#0b5336] text-white border-[#08412a]"
+                        : "bg-[#780000] text-white border-[#5e0000]"
+                    }`}>
+                      {details.is_active ? "Active" : "Inactive"}
+                    </span>
                   </p>
                   {details.department ? (
                     <p>
@@ -2729,9 +2735,15 @@ function AdminDetailsModal({
                     <span className="font-semibold text-slate-700 dark:text-slate-300">Role:</span>{" "}
                     {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
                   </p>
-                  <p>
+                  <p className="flex items-center gap-2">
                     <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span>{" "}
-                    {details.is_active ? "Active" : "Inactive"}
+                    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
+                      details.is_active
+                        ? "bg-[#0b5336] text-white border-[#08412a]"
+                        : "bg-[#780000] text-white border-[#5e0000]"
+                    }`}>
+                      {details.is_active ? "Active" : "Inactive"}
+                    </span>
                   </p>
                   {details.department ? (
                     <p>

@@ -1663,9 +1663,9 @@ function FacultyVerificationDrawer({
                                           reqLabel
                                         )
                                       }
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs hover:border-slate-300 dark:hover:border-slate-600"
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
                                     >
-                                      <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                      <Check className="h-3.5 w-3.5 text-white/90" />
                                       <span>Validate</span>
                                     </button>
                                     <button
@@ -1683,9 +1683,9 @@ function FacultyVerificationDrawer({
                                           reqLabel
                                         )
                                       }
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs hover:border-slate-300 dark:hover:border-slate-600"
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
                                     >
-                                      <WarningCircle className="h-3.5 w-3.5 text-rose-500 dark:text-rose-400" />
+                                      <WarningCircle className="h-3.5 w-3.5 text-white/90" />
                                       <span>Revision</span>
                                     </button>
                                   </div>
@@ -2117,7 +2117,7 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isSubmittingRevision}
                 onClick={handleSendRevisionRequest}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-900 dark:border-slate-100 px-4 py-2 text-xs font-semibold transition shadow-sm cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {isSubmittingRevision ? (
                   <>
@@ -2126,7 +2126,7 @@ function FacultyVerificationDrawer({
                   </>
                 ) : (
                   <>
-                    <WarningCircle className="h-3.5 w-3.5 text-rose-400 dark:text-rose-600" />
+                    <WarningCircle className="h-3.5 w-3.5 text-white" />
                     Send Revision Request
                   </>
                 )}
@@ -2200,7 +2200,7 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isValidatingSingle}
                 onClick={handleSendValidateRequest}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-900 dark:border-slate-100 px-4 py-2 text-xs font-semibold transition shadow-sm cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-4 py-2 text-xs font-semibold transition shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {isValidatingSingle ? (
                   <>
@@ -2209,7 +2209,7 @@ function FacultyVerificationDrawer({
                   </>
                 ) : (
                   <>
-                    <Check className="h-3.5 w-3.5 text-emerald-400 dark:text-emerald-600" />
+                    <Check className="h-3.5 w-3.5 text-white" />
                     Confirm &amp; Validate
                   </>
                 )}
@@ -2475,7 +2475,7 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isValidatingAll || validateTimerSeconds > 0}
                 onClick={executeValidateAllPending}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-900 dark:border-slate-100 px-4 py-2 text-xs font-bold transition shadow-xs disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-4 py-2 text-xs font-bold transition shadow-xs disabled:opacity-50 cursor-pointer"
               >
                 {isValidatingAll ? (
                   <>
@@ -2832,14 +2832,23 @@ export function RequirementsPanel({
                       ).length
                     : 0;
 
+                  const rejectedCount = statusRecord
+                    ? DEFAULT_REQUIREMENTS.filter(
+                        (code) => statusRecord[code] === "rejected" || statusRecord[code] === "needs_revision"
+                      ).length
+                    : 0;
+
                   // Overall pure text status
                   let overallStatus: "Validated" | "Pending Review" | "Needs Revision" | "Not Submitted" =
                     "Not Submitted";
-                  let statusBadgeClass = "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+                  let statusBadgeClass = "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800";
 
                   if (validatedCount === DEFAULT_REQUIREMENTS.length) {
                     overallStatus = "Validated";
-                    statusBadgeClass = "bg-white text-emerald-700 border border-slate-200 dark:bg-slate-900 dark:text-emerald-400 dark:border-slate-800";
+                    statusBadgeClass = "bg-[#0b5336] text-white border border-[#08412a] shadow-2xs";
+                  } else if (rejectedCount > 0) {
+                    overallStatus = "Needs Revision";
+                    statusBadgeClass = "bg-[#780000] text-white border border-[#5e0000] shadow-2xs";
                   } else if (uploadedCount > 0 || (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)) {
                     overallStatus = "Pending Review";
                     statusBadgeClass = "bg-white text-amber-700 border border-slate-200 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800";

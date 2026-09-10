@@ -38,7 +38,52 @@ PUP FOCUS is a faculty compliance management system for the Polytechnic Universi
 
 ## 2. Color System
 
-### 2.1 Allowed Palette
+### 2.1 Core Status & Action Color Baseline (System Basis)
+
+The PUP FOCUS system color baseline pairs **PUP Institutional Maroon** with a tonal **Dark Green** equal in luminance, visual weight, and contrast. All status indicators, badges, and operational action buttons across tables, dashboards, and modals MUST strictly conform to these tokens:
+
+| Domain / Concept | State / Action | Visual Token & Color | Exact Utility / CSS Tokens |
+|---|---|---|---|
+| **Account & Template Status** | **Active** | Dark Green (`#0b5336`) | `bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs` |
+| **Account & Template Status** | **Inactive / Archived** | PUP Maroon (`#780000`) | `bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs` |
+| **Document Verification** | **Validate / Validated** | Dark Green (`#0b5336`) | Status Badge: `bg-[#0b5336] text-white border border-[#08412a] px-3 py-1 text-xs font-semibold rounded-md`<br>Action Button: `bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-semibold rounded-xl shadow-xs` |
+| **Document Verification** | **Revision / Needs Revision** | PUP Maroon (`#780000`) | Status Badge: `bg-[#780000] text-white border border-[#5e0000] px-3 py-1 text-xs font-semibold rounded-md`<br>Action Button: `bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-1.5 text-xs font-semibold rounded-xl shadow-xs` |
+| **Document Verification** | **Pending Review** | Warm Amber | `bg-white text-amber-700 border border-slate-200/90 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800 px-3 py-1 text-xs font-semibold rounded-md` |
+| **Document Verification** | **Not Submitted** | Neutral Slate | `bg-white text-slate-600 border border-slate-200/90 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 px-3 py-1 text-xs font-semibold rounded-md` |
+
+### 2.2 Operational Action Buttons Color Palette
+
+Buttons across administrative management, faculty settings, and verification panels are standardized into three functional color roles:
+
+#### 1. Gold / Amber Primary & Constructive Actions
+**Utility**: `bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold shadow-xs transition-colors cursor-pointer`  
+Used exclusively for administrative creations, additions, non-destructive configurations, schedule edits, and account activations:
+- **Add Faculty**
+- **Edit / Edit Profile**
+- **Activate**
+- **Extend Window**
+- **Edit Schedule**
+- **Save Profile Changes**
+- **Update Password**
+- **Save System Preferences**
+
+#### 2. Dark Green Verification Actions
+**Utility**: `bg-[#0b5336] hover:bg-[#073d2a] text-white font-semibold border border-[#08412a] shadow-xs transition-colors cursor-pointer`  
+Used exclusively for document validation and approvals:
+- **Validate** (Table Row Action)
+- **Confirm & Validate** (Single Requirement Modal)
+- **Confirm & Validate All** (Bulk Modal)
+
+#### 3. PUP Maroon Destructive & Revision Actions
+**Utility**: `bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] shadow-xs transition-colors cursor-pointer`  
+Used exclusively for destructive, revoking, deactivating, closing, or revision requests:
+- **Deactivate**
+- **Delete**
+- **Close Submissions** / **Confirm Close Submissions**
+- **Revision** (Table Row Action)
+- **Send Revision Request** (Revision Modal)
+
+### 2.3 Surface & Border Palette
 
 #### Dark Mode
 
@@ -57,22 +102,10 @@ PUP FOCUS is a faculty compliance management system for the Polytechnic Universi
 |----------------|----------------------|---------------------------------------|
 | Base           | `#f8fafc` / `#fafafa`| `bg-slate-50` / `bg-zinc-50`          |
 | Surface        | `#ffffff` / `#f4f4f5`| `bg-white` / `bg-zinc-100`            |
-| Border         | `#cbd5e1` / `#d4d4d8`| `border-slate-300` / `border-zinc-300`|
+| Border         | `#cbd5e1` / `#94a3b8`| `border-slate-300` / `border-slate-200/90` |
 | Text Primary   | `#0f172a`            | `text-slate-900`                      |
 | Text Muted     | `#475569`            | `text-slate-600`                      |
 | Action Button  | `#0f172a` on light   | `bg-slate-900 text-slate-50 hover:bg-slate-800` |
-
-#### Functional Status Badges & Chips
-
-All status badges, pills, and tags across tables, dashboards, and modals are 100% adaptive to Light and Dark themes using Tailwind CSS `dark:` utilities:
-
-| Status Role                 | Utility Tokens                                              |
-|-----------------------------|-------------------------------------------------------------|
-| Inactive / Draft / Not Submitted | `bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/60 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Success / Active / Approved | `bg-emerald-50/80 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/25 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Warning / Pending / Review  | `bg-amber-50/80 text-amber-700 border border-amber-200/80 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/25 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Error / Rejected / Overdue  | `bg-rose-50/80 text-rose-700 border border-rose-200/80 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/25 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Secondary / Program Tag     | `bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md` |
 
 #### Sidebar Navigation & Active States
 
@@ -82,19 +115,19 @@ All status badges, pills, and tags across tables, dashboards, and modals are 100
 
 #### Cards, Panels & Modal Surfaces
 
-- **Main Card Container**: `bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800`
-- **Inner Sections & Sub-panels**: `bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800`
+- **Main Card Container**: `bg-white text-slate-900 border border-slate-300 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800`
+- **Inner Sections & Sub-panels**: `bg-slate-50 border border-slate-300/80 dark:bg-slate-900/50 dark:border-slate-800`
 - **Primary Headlines & Values**: `text-slate-900 dark:text-slate-100 font-semibold`
 - **Sub-labels & Form Field Titles**: `text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider`
 
 #### Table Action Buttons & Filter Controls
 
-- **Table Action Buttons ("View Details", "Edit", "Deactivate", "Delete")**: `bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors`
-- **Search & Dropdown Inputs**: `bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600`
+- **Secondary / Neutral Table Action Buttons ("View Details")**: `bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors`
+- **Search & Dropdown Inputs**: `bg-white text-slate-900 border border-slate-300 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600`
 - **Active Filter Tab ("All")**: `bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium`
 - **Inactive Filter Tabs**: `text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60`
 
-### 2.2 Banned Colors
+### 2.4 Banned Colors
 
 Do not use any of the following in dashboard/admin surfaces:
 
@@ -104,13 +137,13 @@ Do not use any of the following in dashboard/admin surfaces:
 - Any `shadow-[0_0_...]` with colored RGBA values (glow effects)
 - Any `bg-gradient-to-*` for decorative purposes on admin surfaces
 
-### 2.3 PUP Brand Colors (Auth/Public Pages Only)
+### 2.5 PUP Brand Colors (Auth/Public Pages Only)
 
 These colors are reserved for login, authentication, and public-facing pages:
 
 | Token        | Value     | Usage                     |
 |--------------|-----------|---------------------------|
-| PUP Maroon   | `#580000` | Card backgrounds          |
+| PUP Maroon   | `#580000` / `#780000` | Card backgrounds, brand accents |
 | PUP Dark     | `#2d0000` | Gradient endpoints        |
 | PUP Amber    | `#f59e0b` | Accent borders, buttons   |
 
@@ -194,28 +227,27 @@ These colors are reserved for login, authentication, and public-facing pages:
 
 ```tsx
 {/* Neutral / Draft */}
-<span className="inline-flex items-center rounded-full bg-slate-800/60 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300 border border-slate-700">
-  Draft
-</span>
-
-{/* Success / Active / Approved */}
-<span className="inline-flex items-center rounded-full bg-emerald-950/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-400 border border-emerald-800/80">
+{/* Active Status / Validate / Validated */}
+<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-[#0b5336] text-white border border-[#08412a] shadow-2xs">
+  <CheckCircle className="h-3.5 w-3.5 text-white" />
   Active
 </span>
 
-{/* Warning / Pending / Review */}
-<span className="inline-flex items-center rounded-full bg-amber-950/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-400 border border-amber-800/80">
-  Pending
+{/* Inactive Status / Revision / Needs Revision */}
+<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+  <WarningCircle className="h-3.5 w-3.5 text-white" />
+  Inactive
 </span>
 
-{/* Error / Rejected / Overdue */}
-<span className="inline-flex items-center rounded-full bg-rose-950/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-400 border border-rose-800/80">
-  Rejected
+{/* Pending Review */}
+<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-white text-amber-700 border border-slate-200/90 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800">
+  <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+  Pending Review
 </span>
 
-{/* Info / Secondary */}
-<span className="inline-flex items-center rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300 border border-slate-800">
-  Archived
+{/* Not Submitted */}
+<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-white text-slate-600 border border-slate-200/90 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800">
+  Not Submitted
 </span>
 ```
 

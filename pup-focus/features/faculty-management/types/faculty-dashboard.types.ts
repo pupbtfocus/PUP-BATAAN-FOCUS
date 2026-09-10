@@ -1,6 +1,11 @@
 import type { RequirementCode } from "@/config/compliance";
 
-export type RequirementStatus = "not_submitted" | "uploaded" | "validated";
+export type RequirementStatus =
+  | "not_submitted"
+  | "uploaded"
+  | "validated"
+  | "rejected"
+  | "needs_revision";
 export type SemesterOption = "1st Semester" | "2nd Semester";
 
 export type AdminSection =

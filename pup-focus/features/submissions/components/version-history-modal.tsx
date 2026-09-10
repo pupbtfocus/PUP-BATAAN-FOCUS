@@ -49,8 +49,8 @@ const getStatusConfig = (status?: string | null) => {
 
   if (
     [
-      "approved",
       "validated",
+      "approved",
       "accepted",
       "compliant",
       "passed",
@@ -62,10 +62,10 @@ const getStatusConfig = (status?: string | null) => {
       containerBg:
         "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100",
       badgeBg:
-        "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80",
+        "bg-[#0b5336] text-white border border-[#08412a]",
       iconBoxBg:
-        "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700",
-      iconColor: "text-emerald-600 dark:text-emerald-400",
+        "bg-[#0b5336]/10 dark:bg-[#0b5336]/20 border-[#08412a]/30",
+      iconColor: "text-[#0b5336] dark:text-emerald-400",
       textColor: "text-slate-800 dark:text-slate-200",
       subtextColor: "text-slate-500 dark:text-slate-400",
     };
@@ -86,10 +86,10 @@ const getStatusConfig = (status?: string | null) => {
       containerBg:
         "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100",
       badgeBg:
-        "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800/80",
+        "bg-[#780000] text-white border border-[#5e0000]",
       iconBoxBg:
-        "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700",
-      iconColor: "text-rose-600 dark:text-rose-400",
+        "bg-[#780000]/10 dark:bg-[#780000]/20 border-[#5e0000]/30",
+      iconColor: "text-[#780000] dark:text-rose-400",
       textColor: "text-slate-800 dark:text-slate-200",
       subtextColor: "text-slate-500 dark:text-slate-400",
     };
