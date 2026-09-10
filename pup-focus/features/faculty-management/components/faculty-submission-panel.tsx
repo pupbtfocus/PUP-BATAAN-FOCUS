@@ -1968,8 +1968,8 @@ function FacultySubmissionPanelContent({
                                         />
                                       </div>
                                       {req.status === "Rejected" && (
-                                        <p className="text-xs text-amber-700 dark:text-amber-300/90 flex items-center gap-1.5 mt-1.5 font-normal">
-                                          <WarningCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
+                                        <p className="text-xs text-[#780000] dark:text-rose-400 flex items-center gap-1.5 mt-1.5 font-medium">
+                                          <WarningCircle className="h-3.5 w-3.5 text-[#780000] dark:text-rose-400 shrink-0" />
                                           <span className="italic truncate">
                                             &ldquo;
                                             {req.adminRemarks ||
@@ -2852,13 +2852,13 @@ function FacultySubmissionPanelContent({
                           isBulkDownloading ||
                           filteredPastSubmissions.length === 0
                         }
-                        className="inline-flex items-center gap-1.5 border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold"
+                        className="inline-flex items-center gap-1.5 border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold shadow-xs transition-colors cursor-pointer"
                         title="Download all validated requirements in current view as ZIP"
                       >
                         {isBulkDownloading ? (
                           <SystemRestart className="h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <Download className="h-3.5 w-3.5" />
+                          <Download className="h-3.5 w-3.5 text-slate-950" />
                         )}
                         <span>
                           {isBulkDownloading

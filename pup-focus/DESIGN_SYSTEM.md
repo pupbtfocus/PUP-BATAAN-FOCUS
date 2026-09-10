@@ -46,19 +46,26 @@ The PUP FOCUS system color baseline pairs **PUP Institutional Maroon** with a to
 |---|---|---|---|
 | **Account & Template Status** | **Active** | Dark Green (`#0b5336`) | `bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs` |
 | **Account & Template Status** | **Inactive / Archived** | PUP Maroon (`#780000`) | `bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs` |
+| **Academic Term Status** | **Current** | Dark Green (`#0b5336`) | `bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-0.5 text-xs font-semibold rounded-md shadow-2xs` |
+| **Academic Term Status** | **Upcoming** | Gold (`#f59e0b`) | `bg-amber-500 text-slate-950 border border-amber-600 px-2.5 py-0.5 text-xs font-semibold rounded-md shadow-2xs` |
 | **Document Verification** | **Validate / Validated** | Dark Green (`#0b5336`) | Status Badge: `bg-[#0b5336] text-white border border-[#08412a] px-3 py-1 text-xs font-semibold rounded-md`<br>Action Button: `bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-semibold rounded-xl shadow-xs` |
 | **Document Verification** | **Revision / Needs Revision** | PUP Maroon (`#780000`) | Status Badge: `bg-[#780000] text-white border border-[#5e0000] px-3 py-1 text-xs font-semibold rounded-md`<br>Action Button: `bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-1.5 text-xs font-semibold rounded-xl shadow-xs` |
-| **Document Verification** | **Pending Review** | Warm Amber | `bg-white text-amber-700 border border-slate-200/90 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800 px-3 py-1 text-xs font-semibold rounded-md` |
+| **Verification Progress** | **Overall Status: Pending Review** | Gold (`#f59e0b`) | `bg-amber-500 text-slate-950 border border-amber-600 px-2.5 py-0.5 text-xs font-semibold rounded-md shadow-2xs` |
+| **Document Verification** | **Pending Review (Per-File)** | Warm Amber | `bg-white text-amber-700 border border-slate-200/90 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800 px-3 py-1 text-xs font-semibold rounded-md` |
 | **Document Verification** | **Not Submitted** | Neutral Slate | `bg-white text-slate-600 border border-slate-200/90 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 px-3 py-1 text-xs font-semibold rounded-md` |
+| **Notes & Feedback** | **Remarks** | Dark Green (`#0b5336`) | Label / Icon: `text-[#0b5336] dark:text-emerald-400 font-bold` |
+| **Notes & Feedback** | **Revision** | PUP Maroon (`#780000`) | Label / Icon: `text-[#780000] dark:text-rose-400 font-bold` |
 
 ### 2.2 Operational Action Buttons Color Palette
 
 Buttons across administrative management, faculty settings, and verification panels are standardized into three functional color roles:
 
 #### 1. Gold / Amber Primary & Constructive Actions
-**Utility**: `bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold shadow-xs transition-colors cursor-pointer`  
-Used exclusively for administrative creations, additions, non-destructive configurations, schedule edits, and account activations:
+**Utility**: `bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold shadow-xs transition-colors cursor-pointer border border-amber-600`  
+Used exclusively for administrative creations, additions, non-destructive configurations, schedule edits, downloads, and account activations:
 - **Add Faculty**
+- **+ Create Next Academic Year** (Panel & Modal)
+- **Download All (ZIP)** (Verification & Submission Panels)
 - **Edit / Edit Profile**
 - **Activate**
 - **Extend Window**
@@ -67,18 +74,20 @@ Used exclusively for administrative creations, additions, non-destructive config
 - **Update Password**
 - **Save System Preferences**
 
-#### 2. Dark Green Verification Actions
+#### 2. Dark Green Verification & Activation Actions
 **Utility**: `bg-[#0b5336] hover:bg-[#073d2a] text-white font-semibold border border-[#08412a] shadow-xs transition-colors cursor-pointer`  
-Used exclusively for document validation and approvals:
+Used exclusively for document validation, approvals, and setting active/current academic term:
 - **Validate** (Table Row Action)
+- **Validate All Pending** (Verification Toolbar Action)
 - **Confirm & Validate** (Single Requirement Modal)
 - **Confirm & Validate All** (Bulk Modal)
+- **Set Current** (Academic Term Management Row & Modal Switch)
 
 #### 3. PUP Maroon Destructive & Revision Actions
 **Utility**: `bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] shadow-xs transition-colors cursor-pointer`  
-Used exclusively for destructive, revoking, deactivating, closing, or revision requests:
+Used exclusively for destructive, revoking, deactivating, closing, deleting, or revision requests:
 - **Deactivate**
-- **Delete**
+- **Delete** (Faculty Accounts, Academic Terms, Admin Accounts)
 - **Close Submissions** / **Confirm Close Submissions**
 - **Revision** (Table Row Action)
 - **Send Revision Request** (Revision Modal)

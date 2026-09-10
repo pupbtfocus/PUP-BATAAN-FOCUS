@@ -315,8 +315,8 @@ export function AdminAcademicTerms({
   function renderStatusBadge(status: AcademicTermStatus) {
     if (status === "Current") {
       return (
-        <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80 px-2 py-0.5 text-xs font-semibold rounded-md">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+        <span className="inline-flex items-center gap-1.5 bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
           Current
         </span>
       );
@@ -329,7 +329,8 @@ export function AdminAcademicTerms({
       );
     }
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs">
+        <span className="h-1.5 w-1.5 rounded-full bg-slate-950" />
         Upcoming
       </span>
     );
@@ -390,7 +391,7 @@ export function AdminAcademicTerms({
         type="button"
         onClick={() => handleSetCurrent(term)}
         disabled={isLoading || isSaving}
-        className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        className="bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
       >
         Set Current
       </button>
@@ -411,7 +412,7 @@ export function AdminAcademicTerms({
           type="button"
           onClick={() => setIsCreateModalOpen(true)}
           disabled={isLoading || isSaving}
-          className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+          className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
         >
           + Create Next Academic Year
         </button>
@@ -484,7 +485,7 @@ export function AdminAcademicTerms({
                                 ? "Cannot delete term with existing data"
                                 : "Delete academic term")
                             }
-                            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold px-3 py-1 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
+                            className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-3 py-1 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-[#780000] disabled:cursor-not-allowed cursor-pointer shadow-2xs"
                           >
                             Delete
                           </button>
@@ -572,7 +573,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={handleCreateNextAcademicYear}
                 disabled={isSaving}
-                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 cursor-pointer shadow-sm"
               >
                 {isSaving ? "Creating..." : "Confirm & Create"}
               </button>
@@ -605,7 +606,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={confirmSetCurrent}
                 disabled={isSaving || countdown > 0}
-                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                className="bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
               >
                 {isSaving
                   ? "Saving..."
@@ -647,7 +648,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={confirmDeleteTerm}
                 disabled={isSaving || !termToDelete.canDelete || countdown > 0}
-                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold px-4 py-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
               >
                 {isSaving
                   ? "Deleting..."

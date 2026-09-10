@@ -1362,9 +1362,9 @@ function FacultyVerificationDrawer({
                     type="button"
                     disabled={isValidatingAll || pendingSubmissionsCount === 0}
                     onClick={triggerValidateAllPendingModal}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-900 dark:border-slate-100 px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <CheckCircle className="h-3.5 w-3.5 text-emerald-400 dark:text-emerald-600" />
+                    <CheckCircle className="h-3.5 w-3.5 text-white" />
                     {isValidatingAll
                       ? "Validating..."
                       : `Validate All Pending (${pendingSubmissionsCount})`}
@@ -1374,9 +1374,9 @@ function FacultyVerificationDrawer({
                     type="button"
                     disabled={isDownloadingZip}
                     onClick={handleDownloadZip}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <Download className="h-3.5 w-3.5 text-slate-950" />
                     {isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}
                   </button>
                 </div>
@@ -1602,8 +1602,8 @@ function FacultyVerificationDrawer({
 
                                     {isRevisionRequested ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-semibold text-[10.5px] text-rose-600 dark:text-rose-300 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <WarningCircle className="h-3 w-3 text-rose-500 dark:text-rose-400" />
+                                        <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1">
+                                          <WarningCircle className="h-3 w-3 text-[#780000] dark:text-rose-400" />
                                           Revision:
                                         </span>
                                         <p
@@ -1616,8 +1616,8 @@ function FacultyVerificationDrawer({
                                       </div>
                                     ) : isValidated && adminNote ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-semibold text-[10.5px] text-emerald-600 dark:text-emerald-300 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <CheckCircle className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
+                                        <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1">
+                                          <CheckCircle className="h-3 w-3 text-[#0b5336] dark:text-emerald-400" />
                                           Remarks:
                                         </span>
                                         <p
@@ -2845,16 +2845,16 @@ export function RequirementsPanel({
 
                   if (validatedCount === DEFAULT_REQUIREMENTS.length) {
                     overallStatus = "Validated";
-                    statusBadgeClass = "bg-[#0b5336] text-white border border-[#08412a] shadow-2xs";
+                    statusBadgeClass = "bg-[#0b5336] text-white border border-[#08412a] shadow-2xs font-semibold";
                   } else if (rejectedCount > 0) {
                     overallStatus = "Needs Revision";
-                    statusBadgeClass = "bg-[#780000] text-white border border-[#5e0000] shadow-2xs";
+                    statusBadgeClass = "bg-[#780000] text-white border border-[#5e0000] shadow-2xs font-semibold";
                   } else if (uploadedCount > 0 || (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)) {
                     overallStatus = "Pending Review";
-                    statusBadgeClass = "bg-white text-amber-700 border border-slate-200 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800";
+                    statusBadgeClass = "bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs font-semibold";
                   } else {
                     overallStatus = "Not Submitted";
-                    statusBadgeClass = "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800";
+                    statusBadgeClass = "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 font-semibold";
                   }
 
                   const programCode =
@@ -2911,7 +2911,7 @@ export function RequirementsPanel({
                             ...
                           </span>
                         ) : (
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${statusBadgeClass}`}>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${statusBadgeClass}`}>
                             {overallStatus}
                           </span>
                         )}
