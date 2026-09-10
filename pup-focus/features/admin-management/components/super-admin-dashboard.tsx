@@ -20,6 +20,7 @@ import { SubmissionWindowPanel } from "@/features/faculty-management/components/
 import { RequirementTemplatesPanel } from "@/features/requirement-templates/components/requirement-templates-panel";
 import { BackupArchivePanel } from "@/features/backup-archive/components/backup-archive-panel";
 import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
+import { SuperAdminSettings } from "@/features/admin-management/components/super-admin-settings";
 import { AddFacultyModal } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
 import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
 import { FacultyDetailsModal } from "@/features/faculty-management/components/faculty-modals/faculty-details-modal";
@@ -219,7 +220,7 @@ export function SuperAdminDashboard({
 
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
   const [superAdminAvatarUrl, setSuperAdminAvatarUrl] = useState<string | null>(
-    null
+    "/icons/pup-focus-emblem-logo.png"
   );
   const [isAvatarImageError, setIsAvatarImageError] = useState<boolean>(false);
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
@@ -240,6 +241,28 @@ export function SuperAdminDashboard({
   const [isLoadingAdminDetails, setIsLoadingAdminDetails] = useState(false);
   const [adminDetailsOpen, setAdminDetailsOpen] = useState(false);
   const [adminDetailsEditable, setAdminDetailsEditable] = useState(false);
+  const [currentAdminName, setCurrentAdminName] = useState(
+    adminName || "Super Administrator"
+  );
+  const [currentAdminEmail, setCurrentAdminEmail] = useState(adminEmail || "");
+
+  const handleSuperAdminProfileUpdated = (updated: {
+    fullName?: string;
+    email?: string;
+    avatarUrl?: string | null;
+  }) => {
+    if (updated.fullName) {
+      setCurrentAdminName(updated.fullName);
+    }
+    if (updated.email) {
+      setCurrentAdminEmail(updated.email);
+    }
+    if (updated.avatarUrl !== undefined) {
+      setSuperAdminAvatarUrl(updated.avatarUrl);
+      setIsAvatarImageError(false);
+    }
+  };
+
   const [settingsFullName, setSettingsFullName] = useState("");
   const [settingsEmail, setSettingsEmail] = useState("");
   const [activeSettingsOption, setActiveSettingsOption] =
@@ -725,6 +748,12 @@ export function SuperAdminDashboard({
         return;
       }
 
+      if (data.account.fullName) {
+        setCurrentAdminName(data.account.fullName);
+      }
+      if (data.account.email) {
+        setCurrentAdminEmail(data.account.email);
+      }
       setSettingsFullName(data.account.fullName ?? "");
       setSettingsEmail(data.account.email ?? "");
 
@@ -1376,7 +1405,7 @@ export function SuperAdminDashboard({
       <Sidebar
         activeSection={activeSection}
         setActiveSection={handleSetActiveSection}
-        adminName={adminName}
+        adminName={currentAdminName}
         roleTitle="Super Admin"
         isSuperAdmin={true}
         profileImageUrl={superAdminAvatarUrl}
@@ -1405,7 +1434,7 @@ export function SuperAdminDashboard({
             <SidebarContent
               activeSection={activeSection}
               setActiveSection={handleSetActiveSection}
-              adminName={adminName}
+              adminName={currentAdminName}
               roleTitle="Super Admin"
               isSuperAdmin={true}
               profileImageUrl={superAdminAvatarUrl}
@@ -1424,7 +1453,7 @@ export function SuperAdminDashboard({
                 <section className="relative overflow-hidden rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-sm transition-colors">
                   <div className="relative z-10 space-y-1">
                     <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                      Welcome back, {extractFirstName(adminName, "Super Admin")}
+                      Welcome back, {extractFirstName(currentAdminName, "Super Admin")}
                     </h1>
                     <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
                       Super Admin Dashboard • Campus Management Overview
@@ -1806,237 +1835,13 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "settings" ? (
-              <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
-                  <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                      Settings
-                    </h1>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void refreshCurrentPanel()}
-                    disabled={isLoadingSettings}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer shadow-xs"
-                  >
-                    <Refresh className={`h-3.5 w-3.5 ${isLoadingSettings ? "animate-spin" : ""}`} />
-                    <span>{isLoadingSettings ? "Refreshing..." : "Refresh"}</span>
-                  </button>
-                </div>
-
-                <section className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]">
-                  <div className="space-y-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs transition-colors">
-                    <SettingsOptionButton
-                      active={activeSettingsOption === "profile"}
-                      title="Account Profile"
-                      description="Update username and email"
-                      onClick={() => setActiveSettingsOption("profile")}
-                    />
-                    <SettingsOptionButton
-                      active={activeSettingsOption === "password"}
-                      title="Password"
-                      description="Change super admin password"
-                      onClick={() => setActiveSettingsOption("password")}
-                    />
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs transition-colors">
-                    {activeSettingsOption === "profile" ? (
-                      isLoadingSettings ? (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Loading account settings...
-                        </p>
-                      ) : (
-                        <form className="space-y-4" onSubmit={onSettingsSubmit}>
-                          <div className="flex items-center gap-4 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 transition-colors">
-                            {superAdminAvatarUrl && !isAvatarImageError ? (
-                              <img
-                                src={superAdminAvatarUrl}
-                                alt={settingsFullName || "Super Admin"}
-                                className="w-16 h-16 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950"
-                                onError={() => setIsAvatarImageError(true)}
-                              />
-                            ) : (
-                              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950">
-                                {getInitials(settingsFullName || adminName, "SA")}
-                              </div>
-                            )}
-                            <div>
-                              <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Super Admin Profile</h4>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">Manage your system credentials and display identity</p>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label
-                              className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                              htmlFor="settingsFullName"
-                            >
-                              Username / Full Name
-                            </label>
-                            <input
-                              id="settingsFullName"
-                              type="text"
-                              value={settingsFullName}
-                              onChange={(event) =>
-                                setSettingsFullName(event.target.value)
-                              }
-                              required
-                              placeholder="Enter full name"
-                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-slate-600 px-4 py-2.5 text-xs font-medium outline-none transition-colors"
-                            />
-                          </div>
-
-                          <div>
-                            <label
-                              className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                              htmlFor="settingsEmail"
-                            >
-                              Email Address
-                            </label>
-                            <input
-                              id="settingsEmail"
-                              type="email"
-                              value={settingsEmail}
-                              onChange={(event) =>
-                                setSettingsEmail(event.target.value)
-                              }
-                              required
-                              placeholder="Enter email address"
-                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-slate-600 px-4 py-2.5 text-xs font-medium outline-none transition-colors"
-                            />
-                          </div>
-
-                          {settingsError ? (
-                            <p className="text-xs text-rose-600 dark:text-red-300">
-                              {settingsError}
-                            </p>
-                          ) : null}
-                          {settingsSuccess ? (
-                            <p className="text-xs text-emerald-600 dark:text-emerald-300">
-                              {settingsSuccess}
-                            </p>
-                          ) : null}
-
-                          <div className="flex justify-end pt-2">
-                            <button
-                              type="submit"
-                              disabled={isSavingSettings}
-                              className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
-                            >
-                              {isSavingSettings
-                                ? "Saving..."
-                                : "Update Account"}
-                            </button>
-                          </div>
-                        </form>
-                      )
-                    ) : (
-                      <form className="space-y-4" onSubmit={onPasswordSubmit}>
-                        <div>
-                          <label
-                            className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                            htmlFor="settingsOldPassword"
-                          >
-                            Old Password
-                          </label>
-                          <div className="relative">
-                            <input
-                              id="settingsOldPassword"
-                              type={showOldPassword ? "text" : "password"}
-                              value={settingsOldPassword}
-                              onChange={(event) =>
-                                setSettingsOldPassword(event.target.value)
-                              }
-                              required
-                              placeholder="Enter current password"
-                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-slate-600 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
-                            />
-                            <PasswordToggleButton
-                              shown={showOldPassword}
-                              onClick={() => setShowOldPassword((s) => !s)}
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                            htmlFor="settingsPassword"
-                          >
-                            New Password
-                          </label>
-                          <div className="relative">
-                            <input
-                              id="settingsPassword"
-                              type={showNewPassword ? "text" : "password"}
-                              value={settingsPassword}
-                              onChange={(event) =>
-                                setSettingsPassword(event.target.value)
-                              }
-                              required
-                              minLength={8}
-                              placeholder="Minimum 8 characters"
-                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-slate-600 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
-                            />
-                            <PasswordToggleButton
-                              shown={showNewPassword}
-                              onClick={() => setShowNewPassword((s) => !s)}
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
-                            htmlFor="settingsConfirmPassword"
-                          >
-                            Confirm New Password
-                          </label>
-                          <div className="relative">
-                            <input
-                              id="settingsConfirmPassword"
-                              type={showConfirmPassword ? "text" : "password"}
-                              value={settingsConfirmPassword}
-                              onChange={(event) =>
-                                setSettingsConfirmPassword(event.target.value)
-                              }
-                              required
-                              minLength={8}
-                              placeholder="Retype new password"
-                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-slate-600 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
-                            />
-                            <PasswordToggleButton
-                              shown={showConfirmPassword}
-                              onClick={() => setShowConfirmPassword((s) => !s)}
-                            />
-                          </div>
-                        </div>
-
-                        {passwordError ? (
-                          <p className="text-xs text-rose-600 dark:text-red-300">
-                            {passwordError}
-                          </p>
-                        ) : null}
-                        {passwordSuccess ? (
-                          <p className="text-xs text-emerald-600 dark:text-emerald-300">
-                            {passwordSuccess}
-                          </p>
-                        ) : null}
-
-                        <div className="flex justify-end pt-2">
-                          <button
-                            type="submit"
-                            disabled={isSavingPassword}
-                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50 shadow-sm"
-                          >
-                            {isSavingPassword ? "Saving..." : "Update Password"}
-                          </button>
-                        </div>
-                      </form>
-                    )}
-                  </div>
-                </section>
+              <article className="space-y-6">
+                <SuperAdminSettings
+                  adminName={currentAdminName}
+                  adminEmail={currentAdminEmail}
+                  profileImageUrl={superAdminAvatarUrl}
+                  onProfileUpdated={handleSuperAdminProfileUpdated}
+                />
               </article>
             ) : null}
 
