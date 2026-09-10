@@ -225,11 +225,14 @@ export function FacultyTable({
                             onViewDetails(faculty.id);
                           }}
                         >
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-[10px] font-semibold text-amber-800 dark:text-amber-200">
+                          <div
+                            className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-[10px] font-semibold text-amber-800 dark:text-amber-200"
+                            aria-hidden="true"
+                          >
                             {faculty.profileImageUrl ? (
                               <img
                                 src={faculty.profileImageUrl}
-                                alt={faculty.fullName}
+                                alt=""
                                 className="h-full w-full object-cover"
                               />
                             ) : (
