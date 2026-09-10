@@ -55,21 +55,21 @@ export function SubmissionStatusBadge({
       containerClass:
         "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80",
       dotClass: "bg-emerald-400",
-      icon: <CheckCircle className="shrink-0" strokeWidth={1.5} aria-hidden="true" />,
+      icon: <CheckCircle className="shrink-0" strokeWidth={2} aria-hidden="true" />,
     },
     "Needs Revision": {
       label: "Needs Revision",
       containerClass:
         "bg-rose-950/50 text-rose-400 border border-rose-800/80",
       dotClass: "bg-rose-400",
-      icon: <WarningCircle className="shrink-0" strokeWidth={1.5} aria-hidden="true" />,
+      icon: <WarningCircle className="shrink-0" strokeWidth={2} aria-hidden="true" />,
     },
     "Pending Review": {
       label: "Pending Review",
       containerClass:
         "bg-amber-950/50 text-amber-400 border border-amber-800/80",
       dotClass: "bg-amber-400",
-      icon: <Clock className="shrink-0" strokeWidth={1.5} aria-hidden="true" />,
+      icon: <Clock className="shrink-0" strokeWidth={2} aria-hidden="true" />,
     },
     "Not Submitted": {
       label: "Not Submitted",

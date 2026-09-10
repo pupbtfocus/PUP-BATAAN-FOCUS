@@ -60,6 +60,7 @@ export function SidebarButton({
     >
       {Icon && (
         <Icon
+          strokeWidth={2}
           className={
             active
               ? "h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0"
@@ -227,6 +228,7 @@ export function SidebarContent({
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <Group
+                  strokeWidth={2}
                   className={
                     isUserManagementActive
                       ? "h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0"
@@ -236,9 +238,9 @@ export function SidebarContent({
                 <span className="truncate">User Management</span>
               </div>
               {isUserManagementOpen ? (
-                <NavArrowDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+                <NavArrowDown strokeWidth={2} className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
               ) : (
-                <NavArrowRight className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+                <NavArrowRight strokeWidth={2} className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
               )}
             </button>
 
@@ -255,6 +257,7 @@ export function SidebarContent({
                   }`}
                 >
                   <UserBadgeCheck
+                    strokeWidth={2}
                     className={
                       isAccountsActive
                         ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
@@ -273,6 +276,7 @@ export function SidebarContent({
                   }`}
                 >
                   <Group
+                    strokeWidth={2}
                     className={
                       isFacultyActive
                         ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
@@ -316,6 +320,7 @@ export function SidebarContent({
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <Calendar
+                strokeWidth={2}
                 className={
                   isAcademicCycleActive
                     ? "h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0"
@@ -325,9 +330,9 @@ export function SidebarContent({
               <span className="truncate">Academic Cycle</span>
             </div>
             {isAcademicCycleOpen ? (
-              <NavArrowDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+              <NavArrowDown strokeWidth={2} className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
             ) : (
-              <NavArrowRight className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+              <NavArrowRight strokeWidth={2} className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
             )}
           </button>
 
@@ -346,6 +351,7 @@ export function SidebarContent({
                 }`}
               >
                 <Clock
+                  strokeWidth={2}
                   className={
                     isTermsActive
                       ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
@@ -366,6 +372,7 @@ export function SidebarContent({
                 }`}
               >
                 <Hourglass
+                  strokeWidth={2}
                   className={
                     isWindowActive
                       ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
@@ -386,6 +393,7 @@ export function SidebarContent({
                     }`}
                   >
                     <Page
+                      strokeWidth={2}
                       className={
                         isTemplatesActive
                           ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
@@ -404,6 +412,7 @@ export function SidebarContent({
                     }`}
                   >
                     <Archive
+                      strokeWidth={2}
                       className={
                         isBackupsActive
                           ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"

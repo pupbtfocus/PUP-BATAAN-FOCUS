@@ -2083,7 +2083,7 @@ export function RequirementsPanel({
                             ...
                           </span>
                         ) : (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${statusBadgeClass}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${statusBadgeClass}`}>
                             {overallStatus}
                           </span>
                         )}

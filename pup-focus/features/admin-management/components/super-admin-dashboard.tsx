@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
-import { Activity, CheckCircle, Clock, Group, Menu, NavArrowRight, Page, Refresh, Shield, Xmark } from "iconoir-react";
+import { Activity, CheckCircle, Clock, Eye, EyeClosed, Group, Menu, NavArrowRight, Page, Refresh, Shield, Xmark } from "iconoir-react";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
@@ -1429,7 +1429,7 @@ export function SuperAdminDashboard({
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Admin Accounts</span>
-                      <Shield className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                      <Shield className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -1445,7 +1445,7 @@ export function SuperAdminDashboard({
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Faculty Accounts</span>
-                      <Group className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -1461,7 +1461,7 @@ export function SuperAdminDashboard({
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Requirements & Cycle</span>
-                      <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <CheckCircle className="h-5 w-5 text-emerald-400" strokeWidth={2} />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -2395,91 +2395,9 @@ function PasswordToggleButton({
       className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-[rgba(255,255,255,0.18)] bg-[rgba(255,255,255,0.06)] p-1.5 text-white"
     >
       {shown ? (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="#fff"
-          aria-hidden
-        >
-          <g clipPath="url(#clip0_4418_8295)">
-            <path
-              d="M21.25 9.14969C18.94 5.51969 15.56 3.42969 12 3.42969C10.22 3.42969 8.49 3.94969 6.91 4.91969C5.33 5.89969 3.91 7.32969 2.75 9.14969C1.75 10.7197 1.75 13.2697 2.75 14.8397C5.06 18.4797 8.44 20.5597 12 20.5597C13.78 20.5597 15.51 20.0397 17.09 19.0697C18.67 18.0897 20.09 16.6597 21.25 14.8397C22.25 13.2797 22.25 10.7197 21.25 9.14969ZM12 16.0397C9.76 16.0397 7.96 14.2297 7.96 11.9997C7.96 9.76969 9.76 7.95969 12 7.95969C14.24 7.95969 16.04 9.76969 16.04 11.9997C16.04 14.2297 14.24 16.0397 12 16.0397Z"
-              fill="white"
-              style={{ fill: "var(--fillg)" }}
-            />
-            <path
-              d="M11.9999 9.14062C10.4299 9.14062 9.1499 10.4206 9.1499 12.0006C9.1499 13.5706 10.4299 14.8506 11.9999 14.8506C13.5699 14.8506 14.8599 13.5706 14.8599 12.0006C14.8599 10.4306 13.5699 9.14062 11.9999 9.14062Z"
-              fill="white"
-              style={{ fill: "var(--fillg)" }}
-            />
-          </g>
-          <defs>
-            <clipPath id="clip0_4418_8295">
-              <rect width="24" height="24" fill="white" />
-            </clipPath>
-          </defs>
-        </svg>
+        <Eye className="h-4 w-4 text-white" strokeWidth={2} />
       ) : (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden
-        >
-          <g clipPath="url(#clip0_4418_9538)">
-            <path
-              d="M14.53 9.46992L9.47004 14.5299C8.82004 13.8799 8.42004 12.9899 8.42004 11.9999C8.42004 10.0199 10.02 8.41992 12 8.41992C12.99 8.41992 13.88 8.81992 14.53 9.46992Z"
-              stroke="#fff"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M17.82 5.77047C16.07 4.45047 14.07 3.73047 12 3.73047C8.46997 3.73047 5.17997 5.81047 2.88997 9.41047C1.98997 10.8205 1.98997 13.1905 2.88997 14.6005C3.67997 15.8405 4.59997 16.9105 5.59997 17.7705"
-              stroke="#fff"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M8.42004 19.5297C9.56004 20.0097 10.77 20.2697 12 20.2697C15.53 20.2697 18.82 18.1897 21.11 14.5897C22.01 13.1797 22.01 10.8097 21.11 9.39969C20.78 8.87969 20.42 8.38969 20.05 7.92969"
-              stroke="#fff"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M15.5099 12.6992C15.2499 14.1092 14.0999 15.2592 12.6899 15.5192"
-              stroke="#fff"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M9.47 14.5293L2 21.9993"
-              stroke="#fff"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M22 2L14.53 9.47"
-              stroke="#fff"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </g>
-          <defs>
-            <clipPath id="clip0_4418_9538">
-              <rect width="24" height="24" fill="white" />
-            </clipPath>
-          </defs>
-        </svg>
+        <EyeClosed className="h-4 w-4 text-white" strokeWidth={2} />
       )}
     </button>
   );
