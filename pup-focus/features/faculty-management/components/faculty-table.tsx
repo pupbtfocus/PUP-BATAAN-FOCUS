@@ -180,6 +180,7 @@ export function FacultyTable({
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[700px]">
             <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
               <tr>
+                <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
                 <th className="px-4 py-2.5 font-semibold">Faculty Member</th>
                 <th className="px-4 py-2.5 font-semibold">Program</th>
                 <th className="px-4 py-2.5 font-semibold">Status</th>
@@ -193,7 +194,7 @@ export function FacultyTable({
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
                   >
                     Loading faculty accounts...
@@ -202,14 +203,14 @@ export function FacultyTable({
               ) : filteredFacultyAccounts.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
                   >
                     No faculty members found.
                   </td>
                 </tr>
               ) : (
-                filteredFacultyAccounts.map((faculty) => {
+                filteredFacultyAccounts.map((faculty, index) => {
                   const programCode =
                     faculty.program?.code ||
                     faculty.program?.name ||
@@ -220,6 +221,9 @@ export function FacultyTable({
                       key={faculty.id}
                       className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                     >
+                      <td className="px-3 py-2.5 text-center text-xs font-mono text-slate-400 dark:text-slate-500">
+                        {index + 1}
+                      </td>
                       <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-slate-200">
                         <div
                           className="flex items-center gap-2.5 cursor-pointer"

@@ -2799,6 +2799,7 @@ export function RequirementsPanel({
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[750px]">
             <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
               <tr>
+                <th className="px-3 py-3 font-semibold w-10 text-center">#</th>
                 <th className="px-4 py-3 font-semibold">Faculty Member</th>
                 <th className="px-4 py-3 font-semibold">Program</th>
                 <th className="px-4 py-3 font-semibold">Verification Progress</th>
@@ -2810,14 +2811,14 @@ export function RequirementsPanel({
               {filteredFaculty.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-12 text-center text-xs text-slate-500 dark:text-slate-400"
                   >
                     No faculty found matching the filter criteria.
                   </td>
                 </tr>
               ) : (
-                filteredFaculty.map((faculty) => {
+                filteredFaculty.map((faculty, index) => {
                   const statusRecord = facultyStatuses[faculty.id];
                   const validatedCount = statusRecord
                     ? DEFAULT_REQUIREMENTS.filter(
@@ -2855,6 +2856,9 @@ export function RequirementsPanel({
                       key={faculty.id}
                       className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
                     >
+                      <td className="px-3 py-3 text-center text-xs font-mono text-slate-400 dark:text-slate-500">
+                        {index + 1}
+                      </td>
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-200">
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm">
