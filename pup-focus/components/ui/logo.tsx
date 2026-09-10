@@ -96,7 +96,7 @@ export function Logo({ size = 115, className = "" }: LogoProps) {
         {/* Inner Crest Logo */}
         <BrandMark
           size={brandMarkSize}
-          className="shrink-0 drop-shadow-[0_0_20px_rgba(255,215,0,0.35)] rounded-full overflow-hidden object-cover mx-auto"
+          className="shrink-0 drop-shadow-md rounded-full overflow-hidden object-cover mx-auto"
         />
       </div>
     </div>

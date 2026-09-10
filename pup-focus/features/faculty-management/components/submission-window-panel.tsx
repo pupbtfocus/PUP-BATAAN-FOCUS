@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Loader2, Clock, History, Calendar, ShieldAlert, CheckCircle2, Pencil, Save, X, AlertTriangle } from "lucide-react";
+import { Loader2, Clock, History, Calendar, ShieldAlert, CheckCircle2, Pencil, Save, X, AlertTriangle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
   ApiBody,
@@ -464,7 +464,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
         ) {
           setWarningModalData({
             isOpen: true,
-            title: "⚠️ Incomplete Term Requirements",
+            title: "Incomplete Term Requirements",
             description:
               "The submission window cannot be changed or closed yet. There are still missing requirements or unvalidated submissions for the current term.",
           });
@@ -774,7 +774,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 <button
                   type="submit"
                   disabled={isLoading || isSaving}
-                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm hover:shadow-amber-500/20 transition-all disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm hover:shadow-md transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {isSaving ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -804,7 +804,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                   type="button"
                   onClick={() => setShowExtendModal(true)}
                   disabled={isLoading || isSaving}
-                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm hover:shadow-amber-500/20 transition-all disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm hover:shadow-md transition-all disabled:opacity-50 cursor-pointer"
                 >
                   <Clock className="w-3.5 h-3.5" />
                   <span>Extend Window</span>
@@ -839,8 +839,9 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                 type="button"
                 onClick={() => setShowLogsModal(false)}
                 className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200 transition cursor-pointer"
+                aria-label="Close logs"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -891,7 +892,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                           <span className="text-slate-500 line-through">
                             {log.old_end_date} {log.old_end_time || ""}
                           </span>
-                          <span className="text-amber-600 dark:text-amber-400 font-bold">➔</span>
+                          <ArrowRight className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                         </>
                       ) : null}
                       <span className="font-bold text-amber-800 dark:text-amber-300">
@@ -948,7 +949,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
               <button
                 type="button"
                 onClick={() => void submitSave()}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl px-4 py-2 transition cursor-pointer shadow-sm shadow-amber-500/10"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl px-4 py-2 transition cursor-pointer shadow-sm"
               >
                 Confirm Save
               </button>
@@ -961,8 +962,9 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       {showCloseConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-red-300 dark:border-rose-500/30 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-            <p className="text-xs uppercase tracking-wider text-rose-700 dark:text-rose-400 font-semibold">
-              ⚠ Destructive Action
+            <p className="text-xs uppercase tracking-wider text-rose-700 dark:text-rose-400 font-semibold flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              Destructive Action
             </p>
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
               Close Submissions Now?

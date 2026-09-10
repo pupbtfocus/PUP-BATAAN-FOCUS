@@ -345,7 +345,7 @@ export function AddFacultyPanel({
         ) : null}
 
         <button
-          className="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition-all shadow-lg hover:shadow-amber-500/20 disabled:opacity-50 cursor-pointer text-sm tracking-wide"
+          className="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"
           type="submit"
           disabled={isCreating || isLoadingPrograms}
         >

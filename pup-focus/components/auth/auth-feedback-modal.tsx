@@ -56,10 +56,10 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-[360px] sm:max-w-[380px] overflow-hidden rounded-[2rem] border bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 sm:p-8 text-[#fff8e7] backdrop-blur-xl shadow-2xl transition-all duration-300 animate-in zoom-in-95 cursor-default ${
+        className={`relative w-full max-w-[360px] sm:max-w-[380px] overflow-hidden rounded-[2rem] border bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 sm:p-8 text-[#fff8e7] backdrop-blur-xl shadow-2xl shadow-black/50 transition-all duration-300 animate-in zoom-in-95 cursor-default ${
           isSuccess
-            ? "border-amber-400/60 shadow-[0_0_40px_rgba(245,158,11,0.18)]"
-            : "border-rose-500/50 shadow-[0_0_40px_rgba(244,67,54,0.22)]"
+            ? "border-amber-400/60"
+            : "border-rose-500/50"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -83,18 +83,13 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
         </button>
 
         <div className="flex flex-col items-center justify-center text-center">
-          {/* Circular Icon Container with Ambient Halo */}
+          {/* Circular Icon Container */}
           <div className="relative flex items-center justify-center my-1.5">
             <div
-              className={`absolute w-24 h-24 rounded-full blur-xl pointer-events-none ${
-                isSuccess ? "bg-emerald-500/20" : "bg-rose-500/25"
-              }`}
-            />
-            <div
-              className={`relative flex items-center justify-center w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-[#180000] border-2 shadow-inner ${
+              className={`relative flex items-center justify-center w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-[#180000] border-2 ${
                 isSuccess
-                  ? "border-emerald-500/50 shadow-emerald-500/20"
-                  : "border-rose-500/50 shadow-rose-500/20"
+                  ? "border-emerald-500/50"
+                  : "border-rose-500/50"
               }`}
             >
               <img
@@ -110,8 +105,8 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
           <h3
             className={`mt-3 text-xl sm:text-2xl font-black uppercase tracking-wider ${
               isSuccess
-                ? "text-amber-300 drop-shadow-[0_2px_8px_rgba(251,191,36,0.35)]"
-                : "text-rose-200 drop-shadow-[0_2px_8px_rgba(244,67,54,0.35)]"
+                ? "text-amber-300"
+                : "text-rose-200"
             }`}
           >
             {isSuccess ? "Login Successful" : (modal.title || "Login Failed")}
@@ -148,7 +143,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
               </div>
               <Button
                 type="button"
-                className="mt-1 h-11 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+                className="mt-1 h-11 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2"
                 onClick={onClose}
               >
                 <span>Continue</span>
@@ -159,7 +154,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
             <div className="mt-5 w-full">
               <Button
                 type="button"
-                className="h-11 sm:h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+                className="h-11 sm:h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2"
                 onClick={onClose}
               >
                 <RefreshCw className="w-3.5 h-3.5" />

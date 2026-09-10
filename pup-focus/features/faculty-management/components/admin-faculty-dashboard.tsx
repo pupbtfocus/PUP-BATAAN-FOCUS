@@ -8,7 +8,7 @@ import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
-import { Menu, X, CheckCircle2, Clock3, Users, ArrowRight } from "lucide-react";
+import { Menu, X, CheckCircle2, Clock3, Users, ArrowRight, RotateCcw } from "lucide-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
@@ -728,7 +728,7 @@ export function AdminFacultyDashboard({
                             setCreateSuccess(null);
                             setAddFacultyModalOpen(true);
                           }}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-sm shadow-amber-500/10 active:scale-[0.98] transition cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-sm active:scale-[0.98] transition cursor-pointer"
                         >
                           + Add Faculty
                         </button>
@@ -736,9 +736,10 @@ export function AdminFacultyDashboard({
                           type="button"
                           onClick={() => void refreshCurrentPanel()}
                           disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                         >
-                          {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                          <RotateCcw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                          <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
                         </button>
                       </div>
                     </div>
@@ -784,9 +785,10 @@ export function AdminFacultyDashboard({
                         type="button"
                         onClick={() => void refreshCurrentPanel()}
                         disabled={isLoading}
-                        className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                       >
-                        {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                        <RotateCcw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                        <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
 
@@ -811,9 +813,10 @@ export function AdminFacultyDashboard({
                         type="button"
                         onClick={() => void refreshCurrentPanel()}
                         disabled={isLoading}
-                        className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                       >
-                        {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                        <RotateCcw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                        <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
 
@@ -837,9 +840,10 @@ export function AdminFacultyDashboard({
                         type="button"
                         onClick={() => void refreshCurrentPanel()}
                         disabled={isLoading}
-                        className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                       >
-                        {isLoading ? "Refreshing..." : "⟳ Refresh"}
+                        <RotateCcw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                        <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
 

@@ -384,9 +384,9 @@ export default function Home() {
           </div>
 
           {/* Card Body */}
-          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-md shadow-xl shadow-amber-500/10">
+          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-md shadow-xl shadow-black/40">
             <div className="mt-2 mb-6 sm:mb-7 text-center">
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-wider text-amber-200 drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)] uppercase mb-1">
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-wider text-amber-200 uppercase mb-1">
                 Sign In
               </h2>
               <div className="mx-auto my-2.5 h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />

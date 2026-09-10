@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Eye, Pencil, UserMinus, UserCheck, Trash2 } from "lucide-react";
+import { Eye, Pencil, UserMinus, UserCheck, Trash2, X } from "lucide-react";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { FacultyFilterBar } from "./faculty-filter-bar";
@@ -125,9 +125,10 @@ export function FacultyTable({
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="text-red-400 hover:text-red-200 text-xs"
+            className="text-red-400 hover:text-red-200 transition-colors p-1"
+            aria-label="Dismiss message"
           >
-            ✕
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       ) : null}
@@ -138,9 +139,10 @@ export function FacultyTable({
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="text-emerald-400 hover:text-emerald-200 text-xs"
+            className="text-emerald-400 hover:text-emerald-200 transition-colors p-1"
+            aria-label="Dismiss message"
           >
-            ✕
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       ) : null}
@@ -151,9 +153,10 @@ export function FacultyTable({
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="text-red-400 hover:text-red-200 text-xs"
+            className="text-red-400 hover:text-red-200 transition-colors p-1"
+            aria-label="Dismiss message"
           >
-            ✕
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       ) : null}

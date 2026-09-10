@@ -175,7 +175,7 @@ function getFileTypeDetails(fileName: string) {
   ) {
     return {
       icon: (
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white shadow-xs">
+        <div className="h-10 w-10 rounded-xl bg-slate-700 flex items-center justify-center text-white shadow-xs">
           <FileCode className="h-6 w-6 stroke-[2]" />
         </div>
       ),
@@ -193,7 +193,7 @@ function getFileTypeDetails(fileName: string) {
   ) {
     return {
       icon: (
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-xs">
+        <div className="h-10 w-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-xs">
           <FileImage className="h-6 w-6 stroke-[2]" />
         </div>
       ),
@@ -203,7 +203,7 @@ function getFileTypeDetails(fileName: string) {
   }
   return {
     icon: (
-      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-white shadow-xs">
+      <div className="h-10 w-10 rounded-xl bg-slate-600 flex items-center justify-center text-white shadow-xs">
         <File className="h-6 w-6 stroke-[2]" />
       </div>
     ),
@@ -256,8 +256,8 @@ export const getFileBrand = (
     return {
       label: "Compressed Archive",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-zip.svg",
-      borderColor: "border-purple-500/30 dark:border-purple-500/40",
-      badgeBg: "bg-purple-600 text-white",
+      borderColor: "border-slate-500/30 dark:border-slate-500/40",
+      badgeBg: "bg-slate-600 text-white",
     };
   }
   if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(ext)) {
@@ -718,7 +718,7 @@ export function DocumentUploadZone({
                         download={selectedFile.name}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-amber-500/20 cursor-pointer"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-sm hover:shadow-md cursor-pointer"
                       >
                         <Download className="w-4 h-4 stroke-[2.2]" />
                         Download & View File

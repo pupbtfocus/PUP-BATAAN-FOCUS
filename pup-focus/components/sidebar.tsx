@@ -31,7 +31,7 @@ export interface SidebarProps {
 function getRoleBadgeClasses(roleTitle?: string): string {
   const role = (roleTitle || "").toLowerCase().trim();
   if (role.includes("super")) {
-    return "bg-purple-100 dark:bg-purple-900/40 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-700";
+    return "bg-slate-200 dark:bg-slate-700/50 text-slate-800 dark:text-slate-200 border border-slate-400 dark:border-slate-600";
   }
   if (role.includes("faculty")) {
     return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700";

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Eye, Pencil, UserMinus, UserCheck, Trash2 } from "lucide-react";
+import { Eye, Pencil, UserMinus, UserCheck, Trash2, X } from "lucide-react";
 import { ROLE, type AppRole } from "@/config/roles";
 
 export interface AdminAccount {
@@ -254,7 +254,7 @@ export function AdminAccountsTable({
           <span>{accountsError}</span>
           {onClearMessages ? (
             <button type="button" onClick={onClearMessages} className="text-red-400 hover:text-red-200 text-xs">
-              ✕
+              <X className="h-3.5 w-3.5" />
             </button>
           ) : null}
         </div>
@@ -265,7 +265,7 @@ export function AdminAccountsTable({
           <span>{accountActionError}</span>
           {onClearMessages ? (
             <button type="button" onClick={onClearMessages} className="text-red-400 hover:text-red-200 text-xs">
-              ✕
+              <X className="h-3.5 w-3.5" />
             </button>
           ) : null}
         </div>
@@ -276,7 +276,7 @@ export function AdminAccountsTable({
           <span>{accountActionSuccess}</span>
           {onClearMessages ? (
             <button type="button" onClick={onClearMessages} className="text-emerald-400 hover:text-emerald-200 text-xs">
-              ✕
+              <X className="h-3.5 w-3.5" />
             </button>
           ) : null}
         </div>
@@ -368,7 +368,7 @@ export function AdminAccountsTable({
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
                           isSuperAdmin
-                            ? "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20"
+                            ? "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700/30 dark:text-slate-300 dark:border-slate-600"
                             : "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
                         }`}
                       >

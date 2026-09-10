@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
-import { Menu, X, Shield, ScrollText, Activity, CheckCircle2, Clock3, Users } from "lucide-react";
+import { Menu, X, Shield, ScrollText, Activity, CheckCircle2, Clock3, Users, RotateCcw, ArrowRight, ChevronRight } from "lucide-react";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
@@ -1429,7 +1429,7 @@ export function SuperAdminDashboard({
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Admin Accounts</span>
-                      <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      <Shield className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -1490,7 +1490,7 @@ export function SuperAdminDashboard({
                           className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold transition cursor-pointer"
                         >
                           <span>View all</span>
-                          <span>→</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
                         </button>
                       </div>
                       {adminAccounts.length > 0 ? (
@@ -1534,7 +1534,7 @@ export function SuperAdminDashboard({
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
                           <span>Faculty Management</span>
-                          <span>→</span>
+                          <ChevronRight className="h-4 w-4 text-slate-400" />
                         </button>
                         <button
                           type="button"
@@ -1542,7 +1542,7 @@ export function SuperAdminDashboard({
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
                           <span>Requirements Verification</span>
-                          <span>→</span>
+                          <ChevronRight className="h-4 w-4 text-slate-400" />
                         </button>
                         <button
                           type="button"
@@ -1550,7 +1550,7 @@ export function SuperAdminDashboard({
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
                           <span>Academic Terms</span>
-                          <span>→</span>
+                          <ChevronRight className="h-4 w-4 text-slate-400" />
                         </button>
                         <button
                           type="button"
@@ -1558,7 +1558,7 @@ export function SuperAdminDashboard({
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
                           <span>Submission Window</span>
-                          <span>→</span>
+                          <ChevronRight className="h-4 w-4 text-slate-400" />
                         </button>
                         <button
                           type="button"
@@ -1566,7 +1566,7 @@ export function SuperAdminDashboard({
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
                           <span>Audit Logs</span>
-                          <span>→</span>
+                          <ChevronRight className="h-4 w-4 text-slate-400" />
                         </button>
                       </div>
                     </div>
@@ -1587,7 +1587,7 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={openCreateAdminModal}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition cursor-pointer shadow-sm shadow-amber-500/10"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition cursor-pointer shadow-sm"
                     >
                       + Create Admin
                     </button>
@@ -1595,9 +1595,10 @@ export function SuperAdminDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingAccounts}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
                     >
-                      {isLoadingAccounts ? "Refreshing..." : "⟳ Refresh"}
+                      <RotateCcw className={`h-3.5 w-3.5 ${isLoadingAccounts ? "animate-spin" : ""}`} />
+                      <span>{isLoadingAccounts ? "Refreshing..." : "Refresh"}</span>
                     </button>
                   </div>
                 </div>
@@ -1639,7 +1640,7 @@ export function SuperAdminDashboard({
                         setCreateFacultySuccess(null);
                         setAddFacultyModalOpen(true);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition cursor-pointer shadow-sm shadow-amber-500/10"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition cursor-pointer shadow-sm"
                     >
                       + Add Faculty
                     </button>
@@ -1647,9 +1648,10 @@ export function SuperAdminDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingFaculty}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
                     >
-                      {isLoadingFaculty ? "Refreshing..." : "⟳ Refresh"}
+                      <RotateCcw className={`h-3.5 w-3.5 ${isLoadingFaculty ? "animate-spin" : ""}`} />
+                      <span>{isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
                     </button>
                   </div>
                 </div>
@@ -1695,9 +1697,10 @@ export function SuperAdminDashboard({
                     type="button"
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoadingFaculty}
-                    className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
                   >
-                    {isLoadingFaculty ? "Refreshing..." : "⟳ Refresh"}
+                    <RotateCcw className={`h-3.5 w-3.5 ${isLoadingFaculty ? "animate-spin" : ""}`} />
+                    <span>{isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
                   </button>
                 </div>
 
@@ -1721,9 +1724,10 @@ export function SuperAdminDashboard({
                   <button
                     type="button"
                     onClick={() => void refreshCurrentPanel()}
-                    className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
                   >
-                    ⟳ Refresh
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span>Refresh</span>
                   </button>
                 </div>
 
@@ -1742,9 +1746,10 @@ export function SuperAdminDashboard({
                   <button
                     type="button"
                     onClick={() => void refreshCurrentPanel()}
-                    className="inline-flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
                   >
-                    ⟳ Refresh
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span>Refresh</span>
                   </button>
                 </div>
 
@@ -1794,9 +1799,10 @@ export function SuperAdminDashboard({
                     type="button"
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoadingSettings}
-                    className="rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
                   >
-                    {isLoadingSettings ? "Refreshing..." : "⟳ Refresh"}
+                    <RotateCcw className={`h-3.5 w-3.5 ${isLoadingSettings ? "animate-spin" : ""}`} />
+                    <span>{isLoadingSettings ? "Refreshing..." : "Refresh"}</span>
                   </button>
                 </div>
 

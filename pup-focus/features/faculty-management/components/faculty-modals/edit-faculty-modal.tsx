@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildFacultyInitials, parseFullNameFallback } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
@@ -211,10 +212,10 @@ export function EditFacultyModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-200"
+            className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1 rounded-lg"
             aria-label="Close modal"
           >
-            ✕
+            <X className="h-4 w-4" />
           </button>
         </div>
 

@@ -13,7 +13,7 @@ export function BrandMark({
 }: BrandMarkProps) {
   return (
     <div
-      className={`relative rounded-full overflow-hidden border-2 border-[#FBBF24] shadow-[0_0_12px_rgba(251,191,36,0.35)] ${className ?? ""}`}
+      className={`relative rounded-full overflow-hidden border-2 border-[#FBBF24] shadow-sm ${className ?? ""}`}
       style={{ width: size, height: size, position: "relative" }}
       aria-hidden="true"
     >
