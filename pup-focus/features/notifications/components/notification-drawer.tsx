@@ -100,8 +100,8 @@ function getNotificationTypeCategory(notification: AppNotification): {
   return {
     category: "INFO",
     Icon: InfoCircle,
-    colorClasses: "text-slate-300 border-slate-800 bg-slate-900",
-    badgeBg: "bg-slate-800/60 text-slate-300 border border-slate-700",
+    colorClasses: "text-slate-600 border-slate-200 bg-slate-100 dark:text-slate-300 dark:border-slate-800 dark:bg-slate-900",
+    badgeBg: "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
   };
 }
 
@@ -381,15 +381,15 @@ export function NotificationDrawer() {
             />
 
             {/* Slide-out Sheet Panel */}
-            <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-full sm:max-w-md flex-col p-0 bg-slate-900 border-l border-slate-800 shadow-2xl">
+            <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-full sm:max-w-md flex-col p-0 bg-white text-slate-900 border-l border-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 shadow-2xl">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-3 shrink-0">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-3 shrink-0">
                 {/* Left Side: Title & Badge */}
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <Bell className="h-5 w-5 text-amber-400 shrink-0" />
-                  <h3 className="text-base font-semibold text-slate-100 truncate">Notifications</h3>
+                  <Bell className="h-5 w-5 text-amber-500 dark:text-amber-400 shrink-0" />
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">Notifications</h3>
                   {unreadCount > 0 && (
-                    <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400 whitespace-nowrap">
+                    <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
                       {unreadCount} unread
                     </span>
                   )}
@@ -468,9 +468,9 @@ export function NotificationDrawer() {
                     <span>Loading notifications...</span>
                   </div>
                 ) : notifications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400">
-                    <Bell className="h-12 w-12 text-slate-600 mb-3 opacity-40" />
-                    <p className="text-sm font-medium text-slate-300">No notifications yet</p>
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-slate-500 dark:text-slate-400">
+                    <Bell className="h-12 w-12 text-slate-400 dark:text-slate-600 mb-3 opacity-40" />
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No notifications yet</p>
                     <p className="mt-1 text-xs text-slate-500">
                       Updates on your document review status will appear here.
                     </p>
@@ -489,7 +489,10 @@ export function NotificationDrawer() {
                       notification.metadata?.reviewerName ??
                       notification.metadata?.reviewer_name;
                     const remarks =
-                      notification.metadata?.remarks ??
+                      notification.metadata?.reviewerRemarks ??
+                      notification.metadata?.reviewer_remarks ??
+                      notification.metadata?.rejectionReason ??
+                      notification.metadata?.rejection_reason ??
                       (notification.message.includes("Remarks:")
                         ? notification.message.split("Remarks:")[1]?.trim()
                         : null);
@@ -500,8 +503,8 @@ export function NotificationDrawer() {
                         onClick={() => handleNotificationClick(notification)}
                         className={`group relative rounded-xl border p-4 transition-all duration-200 cursor-pointer ${
                           !notification.isRead
-                            ? "bg-slate-800/90 border-amber-500/40 shadow-sm ring-1 ring-amber-500/20"
-                            : "bg-slate-950/50 border-slate-800 hover:bg-slate-800/50"
+                            ? "bg-amber-500/10 border-amber-500/40 shadow-xs ring-1 ring-amber-500/20 dark:bg-slate-800/90 dark:border-amber-500/40"
+                            : "bg-white border-slate-200 hover:bg-slate-50 dark:bg-slate-900/50 dark:border-slate-800 dark:hover:bg-slate-800/50"
                         }`}
                       >
                         {/* Top Bar: Icon + Title + Unread indicator */}
@@ -511,10 +514,10 @@ export function NotificationDrawer() {
                               <Icon className="h-4 w-4" />
                             </div>
                             <div>
-                              <h3 className="text-sm font-semibold text-slate-100 group-hover:text-amber-300 transition-colors">
+                              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
                                 {notification.title}
                               </h3>
-                              <span className="text-[11px] text-slate-400">
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400">
                                 {formatRelativeTime(notification.createdAt)}
                               </span>
                             </div>
@@ -522,7 +525,7 @@ export function NotificationDrawer() {
 
                           {!notification.isRead && (
                             <span
-                              className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-sky-400 shadow-sm shadow-sky-400"
+                              className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-sky-500 dark:bg-sky-400 shadow-xs"
                               title="Unread"
                             />
                           )}
@@ -532,7 +535,7 @@ export function NotificationDrawer() {
                         {(reqLabel || isDeadlineAlert) && (
                           <div className="mt-2 flex items-center gap-2">
                             {isDeadlineAlert && (
-                              <span className="inline-flex items-center gap-1 rounded border border-amber-500/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                              <span className="inline-flex items-center gap-1 rounded border border-amber-500/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
                                 <Clock className="h-3 w-3" />
                                 Deadline Alert
                               </span>
@@ -546,14 +549,14 @@ export function NotificationDrawer() {
                         )}
 
                         {/* Main Message */}
-                        <p className="mt-2 text-xs text-slate-300 leading-relaxed">
+                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                           {notification.message}
                         </p>
 
                         {/* Reviewer remarks preview if provided */}
                         {remarks && (
-                          <div className="mt-2.5 rounded-lg border border-slate-700/80 bg-slate-900/90 p-2.5 text-xs text-slate-300 italic">
-                            <span className="font-semibold not-italic text-amber-300">
+                          <div className="mt-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700/80 dark:bg-slate-900/90 dark:text-slate-300 italic p-2.5 text-xs">
+                            <span className="font-semibold not-italic text-amber-700 dark:text-amber-300">
                               {reviewerName ? `${reviewerName}: ` : "Reviewer Remarks: "}
                             </span>
                             &ldquo;{remarks}&rdquo;

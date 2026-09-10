@@ -43,26 +43,35 @@ PUP FOCUS is a faculty compliance management system for the Polytechnic Universi
 
 #### Functional Status Badges & Chips
 
-All status badges, pills, and tags across tables, dashboards, and modals must use these subtle, grounded tokens:
+All status badges, pills, and tags across tables, dashboards, and modals are 100% adaptive to Light and Dark themes using Tailwind CSS `dark:` utilities:
 
 | Status Role                 | Utility Tokens                                              |
 |-----------------------------|-------------------------------------------------------------|
-| Inactive / Draft / Not Submitted | `bg-slate-900 text-slate-400 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Success / Active / Approved | `bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Warning / Pending / Review  | `bg-amber-950/30 text-amber-400/90 border border-amber-900/40 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Error / Rejected / Overdue  | `bg-rose-950/50 text-rose-400 border border-rose-800/80 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Secondary / Program Tag     | `bg-slate-900/80 text-slate-300 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Inactive / Draft / Not Submitted | `bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Success / Active / Approved | `bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Warning / Pending / Review  | `bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Error / Rejected / Overdue  | `bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Secondary / Program Tag     | `bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md` |
 
-#### Stat & Overview Cards
+#### Sidebar Navigation & Active States
 
-- **Header Text**: Standardize all stat card titles to neutral muted slate (`text-[11px] font-semibold uppercase tracking-wider text-slate-400`).
-- **Icons**: Top-right icons must use neutral muted slate (`text-slate-400` or `text-slate-500` with `strokeWidth={2}`).
-- **Banned**: Colored text for stat titles (gold/green/orange) and bright accent borders.
+- **Sidebar Container**: `bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800`
+- **Active Sidebar Item**: `bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100 transition-colors`
+- **Inactive Sidebar Item**: `text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200 transition-colors`
 
-#### Filter Tabs & Controls
+#### Cards, Panels & Modal Surfaces
 
-- **Active Filter Tab**: High-contrast neutral slate (`bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs`).
-- **Inactive Filter Tabs**: Neutral muted slate (`text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50`).
+- **Main Card Container**: `bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800`
+- **Inner Sections & Sub-panels**: `bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800`
+- **Primary Headlines & Values**: `text-slate-900 dark:text-slate-100 font-semibold`
+- **Sub-labels & Form Field Titles**: `text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider`
+
+#### Table Action Buttons & Filter Controls
+
+- **Table Action Buttons ("View Details", "Edit", "Deactivate", "Delete")**: `bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors`
+- **Search & Dropdown Inputs**: `bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600`
+- **Active Filter Tab ("All")**: `bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium`
+- **Inactive Filter Tabs**: `text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60`
 
 ### 2.2 Banned Colors
 

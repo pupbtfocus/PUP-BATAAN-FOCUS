@@ -539,7 +539,7 @@ export function AdminFacultyDashboard({
       {/* Body Wrapper */}
       <div className="flex flex-1 h-screen pt-14 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-300 dark:border-slate-800 bg-[#F6F8FC] dark:bg-slate-950 p-2.5 shadow-sm transition-colors duration-200">
+        <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 p-2.5 shadow-sm transition-colors duration-200">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={handleSetActiveSection}
@@ -556,10 +556,10 @@ export function AdminFacultyDashboard({
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <aside
-              className="relative flex flex-col h-full w-64 bg-[#F6F8FC] dark:bg-slate-950 border-r border-slate-300 dark:border-slate-800 p-4 shadow-2xl overflow-y-auto transition-colors duration-200"
+              className="relative flex flex-col h-full w-64 bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 border-r border-slate-200 dark:border-slate-800 p-4 shadow-2xl overflow-y-auto transition-colors duration-200"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800 mb-2">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-2">
                 <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                   Admin Menu
                 </span>

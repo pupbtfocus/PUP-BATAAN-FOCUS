@@ -120,12 +120,12 @@ export function FacultyTable({
   return (
     <div className="space-y-3">
       {deleteError ? (
-        <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3.5 py-2 text-xs text-red-300 flex justify-between items-center">
+        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300 px-3.5 py-2 text-xs flex justify-between items-center">
           <span>{deleteError}</span>
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="text-red-400 hover:text-red-200 transition-colors p-1"
+            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 transition-colors p-1 cursor-pointer"
             aria-label="Dismiss message"
           >
             <Xmark className="h-3.5 w-3.5" />
@@ -134,12 +134,12 @@ export function FacultyTable({
       ) : null}
 
       {deleteSuccess ? (
-        <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/30 px-3.5 py-2 text-xs text-emerald-300 flex justify-between items-center">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300 px-3.5 py-2 text-xs flex justify-between items-center">
           <span>{deleteSuccess}</span>
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="text-emerald-400 hover:text-emerald-200 transition-colors p-1"
+            className="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 transition-colors p-1 cursor-pointer"
             aria-label="Dismiss message"
           >
             <Xmark className="h-3.5 w-3.5" />
@@ -148,12 +148,12 @@ export function FacultyTable({
       ) : null}
 
       {facultyActionError ? (
-        <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3.5 py-2 text-xs text-red-300 flex justify-between items-center">
+        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300 px-3.5 py-2 text-xs flex justify-between items-center">
           <span>{facultyActionError}</span>
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="text-red-400 hover:text-red-200 transition-colors p-1"
+            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 transition-colors p-1 cursor-pointer"
             aria-label="Dismiss message"
           >
             <Xmark className="h-3.5 w-3.5" />
@@ -176,9 +176,9 @@ export function FacultyTable({
         programs={programs}
       />
 
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[700px]">
-            <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-700 dark:text-slate-400">
+            <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-2.5 font-semibold">Faculty Member</th>
                 <th className="px-4 py-2.5 font-semibold">Program</th>
@@ -189,7 +189,7 @@ export function FacultyTable({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
               {isLoading ? (
                 <tr>
                   <td
@@ -218,7 +218,7 @@ export function FacultyTable({
                   return (
                     <tr
                       key={faculty.id}
-                      className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                      className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                     >
                       <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-slate-200">
                         <div
@@ -255,17 +255,17 @@ export function FacultyTable({
                         </div>
                       </td>
                       <td className="px-4 py-2.5 font-medium text-xs">
-                        <span className="bg-slate-900/80 text-slate-300 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                        <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
                           {programCode}
                         </span>
                       </td>
                       <td className="px-4 py-2.5 font-medium">
                         {faculty.is_active ? (
-                          <span className="bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
                             Active
                           </span>
                         ) : (
-                          <span className="bg-slate-900 text-slate-400 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                          <span className="bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
                             Inactive
                           </span>
                         )}
@@ -289,7 +289,7 @@ export function FacultyTable({
                             type="button"
                             onClick={() => onViewDetails(faculty.id)}
                             title="View Faculty Details"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition cursor-pointer"
+                            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5"
                           >
                             <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                             <span>View Details</span>
@@ -302,7 +302,7 @@ export function FacultyTable({
                                 : onViewDetails(faculty.id)
                             }
                             title="Edit Faculty"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition cursor-pointer"
+                            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5"
                           >
                             <EditPencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                             <span>Edit</span>
@@ -313,7 +313,7 @@ export function FacultyTable({
                               onClick={() => onDeactivate(faculty.id)}
                               disabled={loadingFacultyIds.has(faculty.id)}
                               title="Deactivate Faculty"
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
+                              className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
                             >
                               <UserXmark className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                               <span>
@@ -328,7 +328,7 @@ export function FacultyTable({
                               onClick={() => onActivate(faculty.id)}
                               disabled={loadingFacultyIds.has(faculty.id)}
                               title="Activate Faculty"
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
+                              className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
                             >
                               <UserBadgeCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                               <span>
@@ -343,7 +343,7 @@ export function FacultyTable({
                             onClick={() => onDeleteFaculty(faculty.id)}
                             disabled={deletingFacultyIds.has(faculty.id)}
                             title="Delete Faculty"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
+                            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
                           >
                             <Trash className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                             <span>

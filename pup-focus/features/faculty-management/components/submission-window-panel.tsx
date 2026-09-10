@@ -540,13 +540,13 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
           {/* Live Pulsing Badge */}
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${
             isWindowOpen
-              ? "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40"
+              ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60"
               : isUpcoming
-              ? "bg-amber-950/30 text-amber-400/90 border border-amber-900/40"
-              : "bg-rose-950/50 text-rose-400 border border-rose-800/80"
+              ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60"
+              : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60"
           }`}>
             <span className={`w-2 h-2 rounded-full ${
-              isWindowOpen ? "bg-emerald-400 animate-pulse" : isUpcoming ? "bg-amber-400 animate-ping" : "bg-rose-400"
+              isWindowOpen ? "bg-emerald-500 dark:bg-emerald-400 animate-pulse" : isUpcoming ? "bg-amber-500 dark:bg-amber-400 animate-ping" : "bg-rose-500 dark:bg-rose-400"
             }`} />
             <span>{isWindowOpen ? "Live Submission Window" : isUpcoming ? "Scheduled Window" : "Window Closed"}</span>
           </div>
@@ -653,7 +653,7 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
                       {windowStatus.endDate} at {windowStatus.endTimeLabel}
                     </span>
                   </div>
-                  <span className="text-[10px] font-semibold bg-slate-800/60 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 rounded-md">
                     Configured Deadline
                   </span>
                 </div>

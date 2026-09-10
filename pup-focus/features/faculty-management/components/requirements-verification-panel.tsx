@@ -1662,7 +1662,7 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isValidatingAll}
                 onClick={() => setIsValidateModalOpen(false)}
-                className="rounded-lg bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition cursor-pointer disabled:opacity-50"
+                className="rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-3.5 py-2 text-xs font-medium transition cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -1982,25 +1982,25 @@ export function RequirementsPanel({
       </div>
 
       {/* 2. Faculty List / Table View */}
-      <div className="w-full overflow-x-auto rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-200/60 dark:shadow-none">
-        <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[600px]">
-            <thead className="border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none">
+        <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[750px]">
+            <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
               <tr>
-                <th className="px-4 py-3.5 font-semibold">Faculty Name</th>
-                <th className="px-4 py-3.5 font-semibold">Program</th>
-                <th className="px-4 py-3.5 font-semibold">Submission Progress</th>
-                <th className="px-4 py-3.5 font-semibold">Status</th>
-                <th className="px-4 py-3.5 text-right font-semibold">Action</th>
+                <th className="px-4 py-3 font-semibold">Faculty Member</th>
+                <th className="px-4 py-3 font-semibold">Program</th>
+                <th className="px-4 py-3 font-semibold">Verification Progress</th>
+                <th className="px-4 py-3 font-semibold">Overall Status</th>
+                <th className="px-4 py-3 text-right font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-400 dark:divide-slate-800/60">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
               {filteredFaculty.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
+                    className="px-4 py-12 text-center text-xs text-slate-500 dark:text-slate-400"
                   >
-                    No faculty members found.
+                    No faculty found matching the filter criteria.
                   </td>
                 </tr>
               ) : (
@@ -2021,17 +2021,17 @@ export function RequirementsPanel({
                   // Overall pure text status
                   let overallStatus: "Validated" | "Pending Review" | "Needs Revision" | "Not Submitted" =
                     "Not Submitted";
-                  let statusBadgeClass = "bg-slate-900 text-slate-400 border border-slate-800";
+                  let statusBadgeClass = "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
 
                   if (validatedCount === DEFAULT_REQUIREMENTS.length) {
                     overallStatus = "Validated";
-                    statusBadgeClass = "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40";
+                    statusBadgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60";
                   } else if (uploadedCount > 0 || (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)) {
                     overallStatus = "Pending Review";
-                    statusBadgeClass = "bg-amber-950/30 text-amber-400/90 border border-amber-900/40";
+                    statusBadgeClass = "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60";
                   } else {
                     overallStatus = "Not Submitted";
-                    statusBadgeClass = "bg-slate-900 text-slate-400 border border-slate-800";
+                    statusBadgeClass = "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
                   }
 
                   const programCode =
@@ -2040,7 +2040,7 @@ export function RequirementsPanel({
                   return (
                     <tr
                       key={faculty.id}
-                      className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-400 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
+                      className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"
                     >
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-200">
                         <div className="flex items-center gap-3">
@@ -2066,7 +2066,7 @@ export function RequirementsPanel({
                         </div>
                       </td>
                       <td className="px-4 py-3 font-medium text-xs">
-                        <span className="bg-slate-900/80 text-slate-300 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                        <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
                           {programCode}
                         </span>
                       </td>

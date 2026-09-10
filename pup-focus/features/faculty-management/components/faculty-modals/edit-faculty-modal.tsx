@@ -205,14 +205,14 @@ export function EditFacultyModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Faculty Details</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Faculty Details</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1 rounded-lg"
+            className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1 rounded-lg cursor-pointer"
             aria-label="Close modal"
           >
             <Xmark className="h-4 w-4" />
@@ -220,11 +220,11 @@ export function EditFacultyModal({
         </div>
 
         <div className="space-y-4">
-          <article className="rounded-xl border border-slate-400/80 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
+          <article className="rounded-xl border border-slate-200/80 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50 p-4">
             <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-400/30 bg-amber-400/10 text-lg font-semibold text-amber-200">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-lg font-semibold text-amber-700 dark:text-amber-200">
                     {profileImagePreviewUrl ? (
                       <img
                         src={profileImagePreviewUrl}
@@ -248,7 +248,7 @@ export function EditFacultyModal({
                           .getElementById("facultyProfileImageInput")
                           ?.click()
                       }
-                      className="rounded-md bg-slate-800 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 transition hover:bg-slate-700"
+                      className="rounded-md bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium transition cursor-pointer"
                     >
                       Change Photo
                     </button>
@@ -355,14 +355,14 @@ export function EditFacultyModal({
                     <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                       Created Date
                     </p>
-                    <p className="text-sm text-slate-200">{formattedDate}</p>
+                    <p className="text-sm text-slate-900 dark:text-slate-200">{formattedDate}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-400/80 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 p-4">
+              <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200/80 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50 p-4">
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Edit faculty details
                   </p>
                   <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">

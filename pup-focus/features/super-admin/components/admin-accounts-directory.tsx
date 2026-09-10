@@ -87,8 +87,8 @@ export function AdminStatsCards({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
       {/* 1. TOTAL ADMINS */}
-      <div className="rounded-2xl border border-slate-400 dark:border-slate-800 border-l-4 border-l-amber-500 bg-white dark:bg-slate-900 p-5 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
-        <p className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+      <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+        <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
           Total Admins
         </p>
         <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -97,21 +97,21 @@ export function AdminStatsCards({
       </div>
 
       {/* 2. ACTIVE ADMINS */}
-      <div className="rounded-2xl border border-slate-400 dark:border-slate-800 border-l-4 border-l-emerald-500 bg-white dark:bg-slate-900 p-5 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
-        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+      <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+        <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
           Active Admins
         </p>
-        <p className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+        <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : activeCount}
         </p>
       </div>
 
       {/* 3. INACTIVE ADMINS */}
-      <div className="rounded-2xl border border-slate-400 dark:border-slate-800 border-l-4 border-l-slate-400 dark:border-l-slate-600 bg-white dark:bg-slate-900 p-5 shadow-sm shadow-slate-200/60 dark:shadow-none transition-colors">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+      <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+        <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
           Inactive Admins
         </p>
-        <p className="mt-2 text-2xl font-bold text-slate-700 dark:text-slate-300">
+        <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : inactiveCount}
         </p>
       </div>
@@ -137,20 +137,20 @@ export function AdminFilterBar({
   placeholder?: string;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-400 dark:border-slate-800 mb-6 shadow-sm shadow-slate-200/60 dark:shadow-none text-slate-900 dark:text-slate-200">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 rounded-2xl mb-6 transition-colors">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={placeholder}
-          className="w-full sm:w-64 h-9 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+          className="w-full sm:w-64 h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs placeholder-slate-400 dark:placeholder-slate-500 outline-none transition"
         />
 
         <select
           value={roleFilter}
           onChange={(e) => onRoleFilterChange(e.target.value)}
-          className="w-full sm:w-44 h-9 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 cursor-pointer"
+          className="w-full sm:w-44 h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs outline-none transition cursor-pointer"
         >
           <option value="all">All Roles</option>
           <option value={ROLE.ADMIN}>Admin</option>
@@ -158,14 +158,14 @@ export function AdminFilterBar({
         </select>
 
         <div className="flex items-center justify-start gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          <div className="flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 p-1 h-9 shrink-0">
+          <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 h-9 shrink-0">
             <button
               type="button"
               onClick={() => onStatusFilterChange("all")}
               className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                 statusFilter === "all"
-                  ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
+                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
               }`}
             >
               All
@@ -175,8 +175,8 @@ export function AdminFilterBar({
               onClick={() => onStatusFilterChange("active")}
               className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                 statusFilter === "active"
-                  ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
+                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
               }`}
             >
               Active
@@ -186,8 +186,8 @@ export function AdminFilterBar({
               onClick={() => onStatusFilterChange("inactive")}
               className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                 statusFilter === "inactive"
-                  ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
+                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
               }`}
             >
               Inactive
@@ -296,17 +296,17 @@ export function AdminAccountsTable({
       />
 
       {/* Clean Data Table */}
-      <div className="w-full overflow-x-auto rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-200/60 dark:shadow-none">
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none">
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[650px]">
           <thead>
-            <tr className="border-b border-slate-400 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-950/50 text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
               <th className="py-3 px-4">Admin Member</th>
               <th className="py-3 px-4">Role</th>
               <th className="py-3 px-4">Status</th>
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-400 dark:divide-slate-800">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
             {isLoading ? (
               <tr>
                 <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
@@ -338,11 +338,11 @@ export function AdminAccountsTable({
                             <img
                               src={admin.profileImageUrl!}
                               alt=""
-                              className="w-9 h-9 rounded-full object-cover border border-slate-400 dark:border-slate-700 shadow-xs"
+                              className="w-9 h-9 rounded-full object-cover border border-slate-300 dark:border-slate-700 shadow-xs"
                               onError={() => setFailedImageIds((prev) => new Set(prev).add(admin.profile_id))}
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-800 border border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-xs">
+                            <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-800 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-xs">
                               {getInitials(formatAdminName(admin), isSuperAdmin ? "SA" : "AD")}
                             </div>
                           )}
@@ -365,28 +365,22 @@ export function AdminAccountsTable({
 
                     {/* Role Badge */}
                     <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-semibold border ${
-                          isSuperAdmin
-                            ? "bg-slate-800/60 text-slate-300 border-slate-700"
-                            : "bg-slate-900 text-slate-300 border-slate-800"
-                        }`}
-                      >
+                      <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
                         {isSuperAdmin ? "Super Admin" : "Admin"}
                       </span>
                     </td>
 
                     {/* Status Badge */}
                     <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${
-                          admin.is_active
-                            ? "bg-emerald-950/30 text-emerald-400/90 border-emerald-900/40"
-                            : "bg-slate-900 text-slate-400 border-slate-800"
-                        }`}
-                      >
-                        {admin.is_active ? "Active" : "Inactive"}
-                      </span>
+                      {admin.is_active ? (
+                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                          Inactive
+                        </span>
+                      )}
                     </td>
 
                     {/* Inline Actions */}
@@ -397,7 +391,7 @@ export function AdminAccountsTable({
                           type="button"
                           onClick={() => onViewDetails(admin.profile_id)}
                           title="View Admin Details"
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition cursor-pointer"
+                          className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5"
                         >
                           <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                           <span>View Details</span>
@@ -409,7 +403,7 @@ export function AdminAccountsTable({
                             type="button"
                             onClick={() => onEditAdmin(admin.profile_id)}
                             title="Edit Admin"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition cursor-pointer"
+                            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5"
                           >
                             <EditPencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                             <span>Edit</span>
@@ -424,7 +418,7 @@ export function AdminAccountsTable({
                               onClick={() => onDeactivateAdmin(admin.profile_id)}
                               disabled={isLoadingAction}
                               title="Deactivate Admin"
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
+                              className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
                             >
                               <UserXmark className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                               <span>{isLoadingAction ? "..." : "Deactivate"}</span>
@@ -435,7 +429,7 @@ export function AdminAccountsTable({
                               onClick={() => onActivateAdmin(admin.profile_id)}
                               disabled={isLoadingAction}
                               title="Activate Admin"
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
+                              className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
                             >
                               <UserBadgeCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                               <span>{isLoadingAction ? "..." : "Activate"}</span>
@@ -450,7 +444,7 @@ export function AdminAccountsTable({
                             onClick={() => onDeleteAdmin(admin.profile_id)}
                             disabled={isLoadingAction}
                             title="Delete Admin"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
+                            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
                           >
                             <Trash className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                             <span>Delete</span>

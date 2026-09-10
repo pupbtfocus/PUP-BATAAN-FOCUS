@@ -16,7 +16,7 @@ export default function DashboardLayout({
   const [activeSection, setActiveSection] = useState("dashboard");
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#090d16] text-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 overflow-hidden font-sans">
       {/* Consolidated Top Header (All Views) */}
       <header className="w-full bg-gradient-to-r from-[#400000] via-[#2a0000] to-[#1a0000] border-b border-amber-500/20 px-4 py-3 flex items-center justify-between shrink-0 z-40">
         <div className="flex items-center gap-3">
@@ -45,7 +45,7 @@ export default function DashboardLayout({
       {/* Body Wrapper */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex w-56 flex-col bg-[#0d121f] border-r border-slate-800/80 shrink-0 p-2.5">
+        <aside className="hidden md:flex w-56 flex-col bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 shrink-0 p-2.5">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={setActiveSection}
@@ -59,7 +59,7 @@ export default function DashboardLayout({
               className="fixed inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <aside className="relative w-64 max-w-[80%] bg-[#0d121f] h-full p-3 border-r border-slate-800 flex flex-col justify-between z-10 shadow-2xl">
+            <aside className="relative w-64 max-w-[80%] bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 h-full p-3 flex flex-col justify-between z-10 shadow-2xl">
               <SidebarContent
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}
@@ -70,7 +70,7 @@ export default function DashboardLayout({
         )}
 
         {/* Scrollable Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#090d16]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
           <div className="max-w-7xl mx-auto w-full">{children}</div>
         </main>
       </div>

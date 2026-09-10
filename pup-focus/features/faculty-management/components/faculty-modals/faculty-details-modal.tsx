@@ -79,11 +79,11 @@ export function FacultyDetailsModal({
         aria-labelledby="faculty-details-title"
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       >
-        <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xl">
+        <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xl">
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-4">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                 <User className="h-4 w-4" />
               </div>
               <div>
@@ -111,12 +111,12 @@ export function FacultyDetailsModal({
           {/* Content Body */}
           <div className="space-y-6 p-6">
             {/* Profile Card Banner */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-4.5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4.5">
               <button
                 type="button"
                 onClick={() => setShowFullProfile(true)}
                 title="Click for full view of profile"
-                className="group relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800 text-xl font-bold text-slate-700 dark:text-slate-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400"
+                className="group relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xl font-bold text-slate-700 dark:text-slate-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400"
               >
                 {faculty.profileImageUrl ? (
                   <img
@@ -139,17 +139,17 @@ export function FacultyDetailsModal({
                     {faculty.fullName}
                   </h3>
                   {faculty.is_active ? (
-                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-900/40 bg-emerald-950/30 px-2 py-0.5 text-xs font-medium text-emerald-400/90">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                       Active
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-md border border-slate-800 bg-slate-900 px-2 py-0.5 text-xs font-medium text-slate-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                    <span className="bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
                       Inactive
                     </span>
                   )}
-                  <span className="bg-slate-900/80 text-slate-300 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                  <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
                     {programCode}
                   </span>
                 </div>
@@ -169,12 +169,12 @@ export function FacultyDetailsModal({
             {/* Details Grid (Without Duplicates) */}
             <div className="grid gap-4 sm:grid-cols-2">
               {/* Personal Information */}
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40 p-4 space-y-3">
+              <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   <User className="h-3.5 w-3.5 text-slate-500" />
                   <span>Personal Information</span>
                 </div>
-                <div className="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-800/60">
+                <div className="space-y-2 text-xs divide-y divide-slate-200/60 dark:divide-slate-800/60">
                   <div className="flex justify-between py-1.5">
                     <span className="text-slate-500 dark:text-slate-400">First Name</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
@@ -203,12 +203,12 @@ export function FacultyDetailsModal({
               </div>
 
               {/* Academic Information */}
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40 p-4 space-y-3">
+              <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   <Building className="h-3.5 w-3.5 text-slate-500" />
                   <span>Academic Information</span>
                 </div>
-                <div className="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-800/60">
+                <div className="space-y-2 text-xs divide-y divide-slate-200/60 dark:divide-slate-800/60">
                   <div className="flex justify-between py-1.5">
                     <span className="text-slate-500 dark:text-slate-400">Program / Dept</span>
                     <span
@@ -241,7 +241,7 @@ export function FacultyDetailsModal({
             </div>
 
             {/* Compliance & Requirements Status */}
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40 p-4 space-y-3.5">
+            <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   <ShieldCheck className="h-3.5 w-3.5 text-slate-500" />
@@ -270,7 +270,7 @@ export function FacultyDetailsModal({
                   return (
                     <div
                       key={code}
-                      className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 px-3 py-2 text-xs"
+                      className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-3 py-2 text-xs"
                     >
                       <span
                         className="font-medium text-slate-700 dark:text-slate-300 truncate"
@@ -280,17 +280,17 @@ export function FacultyDetailsModal({
                       </span>
 
                       {status === "validated" ? (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
                           <CheckCircle className="h-3 w-3" />
                           Validated
                         </span>
                       ) : status === "uploaded" ? (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300">
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
                           <Clock className="h-3 w-3" />
                           Uploaded
                         </span>
                       ) : (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/40 px-2 py-0.5 text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-400">
                           <WarningCircle className="h-3 w-3" />
                           Not Submitted
                         </span>
@@ -311,7 +311,7 @@ export function FacultyDetailsModal({
               <button
                 type="button"
                 onClick={() => setShowFullProfile(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3.5 py-1.5 text-xs font-medium transition cursor-pointer"
+                className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-3.5 py-1.5 transition-colors cursor-pointer inline-flex items-center gap-1.5"
               >
                 <OpenNewWindow className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                 Full View of Profile
@@ -323,7 +323,7 @@ export function FacultyDetailsModal({
                     onClose();
                     onEdit(faculty.id);
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3.5 py-1.5 text-xs font-medium transition cursor-pointer"
+                  className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-3.5 py-1.5 transition-colors cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <EditPencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                   Edit Profile
@@ -332,7 +332,7 @@ export function FacultyDetailsModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-1.5 text-xs font-medium transition cursor-pointer"
+                className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-4 py-1.5 transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -349,9 +349,9 @@ export function FacultyDetailsModal({
           aria-labelledby="full-profile-title"
           className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-4"
         >
-          <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-2xl">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-5 py-3.5">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 px-5 py-3.5">
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                 <h3
@@ -364,7 +364,7 @@ export function FacultyDetailsModal({
               <button
                 type="button"
                 onClick={() => setShowFullProfile(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 aria-label="Close full profile view"
               >
                 <Xmark className="h-4 w-4" />
@@ -375,7 +375,7 @@ export function FacultyDetailsModal({
             <div className="p-6 space-y-5">
               {/* Large Photo Display */}
               <div className="flex flex-col items-center justify-center text-center">
-                <div className="relative flex h-36 w-36 sm:h-44 sm:w-44 items-center justify-center overflow-hidden rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-md">
+                <div className="relative flex h-36 w-36 sm:h-44 sm:w-44 items-center justify-center overflow-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-md">
                   {faculty.profileImageUrl ? (
                     <img
                       src={faculty.profileImageUrl}
@@ -401,7 +401,7 @@ export function FacultyDetailsModal({
               </div>
 
               {/* Verified Identity Information */}
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 p-4 space-y-2 text-xs divide-y divide-slate-200 dark:divide-slate-800/80">
+              <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-2 text-xs divide-y divide-slate-200/60 dark:divide-slate-800/80">
                 <div className="flex justify-between py-1.5">
                   <span className="text-slate-500 dark:text-slate-400">Official Email</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
@@ -447,11 +447,11 @@ export function FacultyDetailsModal({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-5 py-3">
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 px-5 py-3">
               <button
                 type="button"
                 onClick={() => setShowFullProfile(false)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-1.5 text-xs font-medium transition cursor-pointer"
+                className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-4 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer inline-flex items-center gap-1.5"
               >
                 <ArrowLeft className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                 Back to Details

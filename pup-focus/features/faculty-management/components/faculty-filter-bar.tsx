@@ -22,21 +22,21 @@ export function FacultyFilterBar({
   placeholder = "Search faculty by name or email...",
 }: FacultyFilterBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 mb-6 shadow-sm shadow-slate-300/50 dark:shadow-none text-slate-900 dark:text-slate-200 transition-colors">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 rounded-xl mb-6 transition-colors">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={placeholder}
-          className="w-full sm:w-64 h-9 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+          className="w-full sm:w-64 h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs placeholder-slate-400 dark:placeholder-slate-500 outline-none transition"
         />
 
         {onProgramFilterChange ? (
           <select
             value={programFilter || "all"}
             onChange={(e) => onProgramFilterChange(e.target.value)}
-            className="w-full sm:w-48 h-9 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            className="w-full sm:w-48 h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs outline-none transition cursor-pointer"
           >
             <option value="all">All Programs</option>
             {programs.map((p) => (
@@ -49,14 +49,14 @@ export function FacultyFilterBar({
 
         {onStatusFilterChange ? (
           <div className="flex items-center justify-start gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-            <div className="flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-950 p-1 h-9 shrink-0">
+            <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 h-9 shrink-0">
               <button
                 type="button"
                 onClick={() => onStatusFilterChange("all")}
                 className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                   statusFilter === "all"
-                    ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
+                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
                 }`}
               >
                 All
@@ -66,8 +66,8 @@ export function FacultyFilterBar({
                 onClick={() => onStatusFilterChange("active")}
                 className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                   statusFilter === "active"
-                    ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
+                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
                 }`}
               >
                 Active
@@ -77,8 +77,8 @@ export function FacultyFilterBar({
                 onClick={() => onStatusFilterChange("inactive")}
                 className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                   statusFilter === "inactive"
-                    ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
+                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
                 }`}
               >
                 Inactive
