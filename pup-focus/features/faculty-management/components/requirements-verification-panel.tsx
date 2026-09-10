@@ -331,6 +331,7 @@ interface FacultyVerificationDrawerProps {
   faculty: FacultyAccount;
   academicYear: string;
   semester: SemesterOption;
+  initialRequirementCode?: string | null;
   onClose: () => void;
   onStatusUpdated: () => void;
 }
@@ -348,6 +349,7 @@ function FacultyVerificationDrawer({
   faculty,
   academicYear,
   semester,
+  initialRequirementCode,
   onClose,
   onStatusUpdated,
 }: FacultyVerificationDrawerProps) {
@@ -433,6 +435,23 @@ function FacultyVerificationDrawer({
       document.body.style.overflow = originalOverflow;
     };
   }, []);
+
+  // Highlight and scroll to target requirement if requested
+  useEffect(() => {
+    if (!initialRequirementCode || isLoading) return;
+    const timeout = setTimeout(() => {
+      const element = document.getElementById(`req-row-${initialRequirementCode}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.classList.add("ring-2", "ring-amber-400", "bg-amber-500/15", "dark:bg-amber-500/25");
+        const removeTimeout = setTimeout(() => {
+          element.classList.remove("ring-2", "ring-amber-400", "bg-amber-500/15", "dark:bg-amber-500/25");
+        }, 4000);
+        return () => clearTimeout(removeTimeout);
+      }
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [initialRequirementCode, isLoading]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -1587,6 +1606,7 @@ function FacultyVerificationDrawer({
                           return (
                             <tr
                               key={code}
+                              id={`req-row-${code}`}
                               className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                             >
                               {/* Column 1: Requirement */}
@@ -2782,11 +2802,17 @@ export interface RequirementsPanelProps {
   selectedFaculty?: FacultyAccount | null;
   onSelectFaculty?: (facultyId: string) => void;
   resetTrigger?: number;
+  initialReviewFacultyId?: string | null;
+  initialRequirementCode?: string | null;
 }
 
 export function RequirementsPanel({
   facultyAccounts,
+  selectedFaculty,
+  onSelectFaculty,
   resetTrigger,
+  initialReviewFacultyId,
+  initialRequirementCode,
 }: RequirementsPanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("All Programs");
@@ -2803,6 +2829,17 @@ export function RequirementsPanel({
   const [reviewingFaculty, setReviewingFaculty] = useState<FacultyAccount | null>(
     null
   );
+
+  // Auto-open review drawer if initialReviewFacultyId is provided
+  useEffect(() => {
+    if (initialReviewFacultyId && facultyAccounts.length > 0) {
+      const target = facultyAccounts.find((f) => f.id === initialReviewFacultyId);
+      if (target) {
+        setReviewingFaculty(target);
+        onSelectFaculty?.(target.id);
+      }
+    }
+  }, [initialReviewFacultyId, facultyAccounts, onSelectFaculty]);
 
   // Derive unique programs from facultyAccounts
   const availablePrograms = useMemo(() => {
@@ -3130,6 +3167,7 @@ export function RequirementsPanel({
           faculty={reviewingFaculty}
           academicYear={academicYear}
           semester={semester}
+          initialRequirementCode={initialRequirementCode}
           onClose={() => setReviewingFaculty(null)}
           onStatusUpdated={() => {
             if (academicYear && semester) {

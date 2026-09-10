@@ -11,7 +11,10 @@ import { Sidebar, SidebarContent } from "@/components/sidebar";
 import { CheckCircle, Clock, Group, Menu, NavArrowRight, Refresh, Xmark } from "iconoir-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
-import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
+import {
+  AdminNotificationDrawer,
+  type AdminNotificationItem,
+} from "@/features/notifications/components/admin-notification-drawer";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
@@ -184,6 +187,60 @@ export function AdminFacultyDashboard({
   );
   const [verificationResetTrigger, setVerificationResetTrigger] = useState(0);
   const [adminAvatarUrl, setAdminAvatarUrl] = useState<string | null>(null);
+  const [initialReviewFacultyId, setInitialReviewFacultyId] = useState<string | null>(null);
+  const [initialHighlightRequirementCode, setInitialHighlightRequirementCode] = useState<string | null>(null);
+
+  const handleNotificationNavigate = (notification: AdminNotificationItem) => {
+    const reqCode = notification.requirementCode;
+    let targetFacultyId = notification.facultyId;
+
+    if (!targetFacultyId && notification.facultyName) {
+      const matched = facultyAccounts.find(
+        (f) =>
+          f.fullName.toLowerCase().includes(notification.facultyName!.toLowerCase()) ||
+          notification.facultyName!.toLowerCase().includes(f.fullName.toLowerCase()),
+      );
+      if (matched) {
+        targetFacultyId = matched.id;
+      }
+    }
+
+    if (notification.isSubmission || reqCode || targetFacultyId) {
+      handleSetActiveSection("requirements");
+      if (targetFacultyId) {
+        setSelectedFacultyId(targetFacultyId);
+        setInitialReviewFacultyId(targetFacultyId);
+      }
+      if (reqCode) {
+        setInitialHighlightRequirementCode(reqCode);
+      }
+      return;
+    }
+
+    if (
+      notification.type?.includes("FACULTY") ||
+      notification.type?.includes("ACCOUNT") ||
+      notification.title?.toLowerCase().includes("account")
+    ) {
+      handleSetActiveSection("facultyManagement");
+      if (targetFacultyId) {
+        setSelectedFacultyId(targetFacultyId);
+      }
+      return;
+    }
+
+    if (notification.type?.includes("WINDOW") || notification.title?.toLowerCase().includes("window")) {
+      handleSetActiveSection("submissionWindow");
+      return;
+    }
+
+    if (notification.type?.includes("TERM") || notification.title?.toLowerCase().includes("term")) {
+      handleSetActiveSection("academicTerms");
+      return;
+    }
+
+    handleSetActiveSection("requirements");
+  };
 
   interface DashboardStats {
     verified: number;
@@ -600,7 +657,7 @@ export function AdminFacultyDashboard({
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
-            <NotificationDrawer />
+            <AdminNotificationDrawer onNavigateToTarget={handleNotificationNavigate} />
             <LogoutButton />
           </div>
         </div>
@@ -804,6 +861,10 @@ export function AdminFacultyDashboard({
                                     onClick={() => {
                                       if (item.facultyId) {
                                         setSelectedFacultyId(item.facultyId);
+                                        setInitialReviewFacultyId(item.facultyId);
+                                      }
+                                      if (item.requirementCode) {
+                                        setInitialHighlightRequirementCode(item.requirementCode);
                                       }
                                       handleSetActiveSection("requirements");
                                     }}
@@ -946,6 +1007,8 @@ export function AdminFacultyDashboard({
                       selectedFaculty={selectedFaculty}
                       onSelectFaculty={setSelectedFacultyId}
                       resetTrigger={verificationResetTrigger}
+                      initialReviewFacultyId={initialReviewFacultyId}
+                      initialRequirementCode={initialHighlightRequirementCode}
                     />
                   </article>
                 ) : null}
