@@ -532,8 +532,8 @@ export function AdminAcademicTerms({
 
               <div className="mt-4 space-y-2.5">
                 <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-                    <Check className="h-3.5 w-3.5" />
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs shrink-0">
+                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
                   </span>
                   <div>
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
@@ -545,8 +545,8 @@ export function AdminAcademicTerms({
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-                    <Check className="h-3.5 w-3.5" />
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs shrink-0">
+                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
                   </span>
                   <div>
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
