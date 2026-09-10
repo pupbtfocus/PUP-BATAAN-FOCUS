@@ -21,16 +21,16 @@ export function DeleteFacultyModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-3xl border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
-        <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+        <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400 font-semibold">
           {pendingFacultyAction.kind === "delete"
             ? "Confirm Delete"
             : pendingFacultyAction.kind === "activate"
               ? "Confirm Activate"
               : "Confirm Deactivate"}
         </p>
-        <h3 className="mt-3 text-2xl font-semibold text-white">
+        <h3 className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">
           {pendingFacultyAction.kind === "delete"
             ? "Delete Faculty Account?"
             : pendingFacultyAction.kind === "activate"
@@ -40,7 +40,7 @@ export function DeleteFacultyModal({
         <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
           {pendingFaculty ? (
             <>
-              <span className="font-medium text-white">
+              <span className="font-semibold text-slate-900 dark:text-white">
                 {pendingFaculty.fullName}
               </span>{" "}
               ({pendingFaculty.email}) will be affected.
