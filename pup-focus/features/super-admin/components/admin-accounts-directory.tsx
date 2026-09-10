@@ -333,11 +333,11 @@ export function AdminAccountsTable({
                     {/* Admin Member */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="relative shrink-0">
+                        <div className="relative shrink-0" aria-hidden="true">
                           {hasAvatar ? (
                             <img
                               src={admin.profileImageUrl!}
-                              alt={formatAdminName(admin)}
+                              alt=""
                               className="w-9 h-9 rounded-full object-cover border border-slate-400 dark:border-slate-700 shadow-xs"
                               onError={() => setFailedImageIds((prev) => new Set(prev).add(admin.profile_id))}
                             />
