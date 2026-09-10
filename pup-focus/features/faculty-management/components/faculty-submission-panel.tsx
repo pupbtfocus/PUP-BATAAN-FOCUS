@@ -2268,14 +2268,14 @@ function FacultySubmissionPanelContent({
                 ) : null}
                 {isMounted && isGuideOpen ? (
                   <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm"
+                    className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="submission-guide-title"
                     onClick={() => setIsGuideOpen(false)}
                   >
                     <div
-                      className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-700 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-6 shadow-2xl"
+                      className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-6 shadow-2xl my-auto"
                       onClick={(event) => event.stopPropagation()}
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -2590,21 +2590,22 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && selectedRequirementForUpload && (
               <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="upload-modal-title"
                 onClick={closeDirectUploadModal}
               >
                 <div
-                  className="w-full max-w-2xl rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+                  className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
+                  {/* Modal Header (Pinned Top) */}
+                  <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-4 shrink-0 bg-white dark:bg-slate-900">
                     <div>
                       <h3
                         id="upload-modal-title"
-                        className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"
+                        className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"
                       >
                         {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected") ? (
                           <>
@@ -2631,94 +2632,100 @@ function FacultySubmissionPanelContent({
                       <Xmark className="h-4 w-4" />
                     </button>
                   </div>
+
+                  {/* Modal Form with Scrollable Content */}
                   <form
                     onSubmit={handleDirectUploadSubmit}
-                    className="p-6 space-y-5"
+                    className="flex flex-col flex-1 min-h-0 overflow-hidden"
                   >
-                    {/* Reviewer Feedback / Revision Request Alert Box */}
-                    {(isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")) && (() => {
-                      const statusItem = selectedRequirementForUpload
-                        ? getRequirementStatusItem(selectedRequirementForUpload)
-                        : null;
-                      const reviewerRemarks =
-                        statusItem?.adminRemarks ||
-                        statusItem?.admin_remarks ||
-                        statusItem?.feedback;
-                      if (!reviewerRemarks) return null;
-                      return (
-                        <div className="rounded-xl border border-rose-300 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/30 p-4 space-y-1.5 shadow-2xs">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-[#780000] dark:text-rose-400 uppercase tracking-wider">
-                            <WarningCircle className="h-4 w-4 shrink-0" />
-                            <span>Reviewer Feedback / Revision Request:</span>
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                      {/* Reviewer Feedback / Revision Request Alert Box */}
+                      {(isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")) && (() => {
+                        const statusItem = selectedRequirementForUpload
+                          ? getRequirementStatusItem(selectedRequirementForUpload)
+                          : null;
+                        const reviewerRemarks =
+                          statusItem?.adminRemarks ||
+                          statusItem?.admin_remarks ||
+                          statusItem?.feedback;
+                        if (!reviewerRemarks) return null;
+                        return (
+                          <div className="rounded-xl border border-rose-300 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/30 p-3.5 space-y-1 shadow-2xs">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-[#780000] dark:text-rose-400 uppercase tracking-wider">
+                              <WarningCircle className="h-4 w-4 shrink-0" />
+                              <span>Reviewer Feedback / Revision Request:</span>
+                            </div>
+                            <p className="text-xs text-slate-800 dark:text-slate-200 italic font-medium leading-relaxed pl-5.5">
+                              &ldquo;{reviewerRemarks}&rdquo;
+                            </p>
                           </div>
-                          <p className="text-xs text-slate-800 dark:text-slate-200 italic font-medium leading-relaxed pl-5.5">
-                            &ldquo;{reviewerRemarks}&rdquo;
-                          </p>
-                        </div>
-                      );
-                    })()}
+                        );
+                      })()}
 
-                    <div>
-                      <DocumentUploadZone
-                        selectedFile={directUploadFile}
-                        onFileSelect={setDirectUploadFile}
-                        isUploading={isUploadingDirect}
-                        maxSizeMb={10}
-                        allowedFormats={["PDF", "DOCX", "XLSX", "JPG", "PNG"]}
-                        currentStatus={
-                          selectedRequirementForUpload
-                            ? getRequirementStatus(selectedRequirementForUpload)
-                            : null
-                        }
-                        reviewerFeedback={
-                          selectedRequirementForUpload
-                            ? getRequirementStatusItem(
-                                selectedRequirementForUpload,
-                              )?.adminRemarks ||
-                              getRequirementStatusItem(
-                                selectedRequirementForUpload,
-                              )?.admin_remarks ||
-                              getRequirementStatusItem(
-                                selectedRequirementForUpload,
-                              )?.feedback
-                            : null
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="directUploadRemarks"
-                        className="block text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300 mb-2"
-                      >
-                        {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
-                          ? "Notes on Corrections Made (Optional)"
-                          : "Notes / Remarks for Reviewer (Optional)"}
-                      </label>
-                      <textarea
-                        id="directUploadRemarks"
-                        rows={3}
-                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
-                        placeholder={
-                          isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
-                            ? "Explain the corrections made in this revision (e.g., Added missing signatures, updated section codes)..."
-                            : "Add optional notes or remarks for the reviewer..."
-                        }
-                        value={directUploadRemarks}
-                        onChange={(e) => setDirectUploadRemarks(e.target.value)}
-                      />
-                    </div>
-                    {directUploadMessage && (
-                      <p
-                        className={`text-sm rounded-xl p-3 border ${
-                          directUploadMessage.startsWith("Error")
-                            ? "border-red-500/30 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300"
+                      <div>
+                        <DocumentUploadZone
+                          selectedFile={directUploadFile}
+                          onFileSelect={setDirectUploadFile}
+                          isUploading={isUploadingDirect}
+                          maxSizeMb={10}
+                          allowedFormats={["PDF", "DOCX", "XLSX", "JPG", "PNG"]}
+                          currentStatus={
+                            isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                              ? undefined
+                              : (selectedRequirementForUpload
+                                ? getRequirementStatus(selectedRequirementForUpload)
+                                : null)
+                          }
+                          reviewerFeedback={
+                            isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                              ? undefined
+                              : (selectedRequirementForUpload
+                                ? getRequirementStatusItem(selectedRequirementForUpload)?.adminRemarks ||
+                                  getRequirementStatusItem(selectedRequirementForUpload)?.admin_remarks ||
+                                  getRequirementStatusItem(selectedRequirementForUpload)?.feedback
+                                : null)
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="directUploadRemarks"
+                          className="block text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300 mb-1.5"
+                        >
+                          {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                            ? "Notes on Corrections Made (Optional)"
+                            : "Notes / Remarks for Reviewer (Optional)"}
+                        </label>
+                        <textarea
+                          id="directUploadRemarks"
+                          rows={3}
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
+                          placeholder={
+                            isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                              ? "Explain the corrections made in this revision (e.g., Added missing signatures, updated section codes)..."
+                              : "Add optional notes or remarks for the reviewer..."
+                          }
+                          value={directUploadRemarks}
+                          onChange={(e) => setDirectUploadRemarks(e.target.value)}
+                        />
+                      </div>
+
+                      {directUploadMessage && (
+                        <p
+                          className={`text-sm rounded-xl p-3 border ${
+                            directUploadMessage.startsWith("Error")
+                              ? "border-red-500/30 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300"
                             : "border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
-                        }`}
-                      >
-                        {directUploadMessage}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-300 dark:border-slate-800">
+                          }`}
+                        >
+                          {directUploadMessage}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Modal Footer (Pinned Bottom) */}
+                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-300 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/50">
                       <button
                         type="button"
                         onClick={closeDirectUploadModal}
@@ -2756,8 +2763,8 @@ function FacultySubmissionPanelContent({
             )}
             {/* SUBMITTING & SUCCESS MODAL POPUPS */}
             {isMounted && isSubmittingModalOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
-                <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4">
+              <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4 sm:p-6 flex min-h-full items-center justify-center animate-in fade-in">
+                <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4 my-auto">
                   {isUploadingDirect ? (
                     <>
                       <SystemRestart className="w-12 h-12 text-amber-500 dark:text-amber-400 mx-auto animate-spin" />
@@ -2795,7 +2802,7 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && successModalData.isOpen && (
               <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="success-modal-title"
@@ -2804,7 +2811,7 @@ function FacultySubmissionPanelContent({
                 }
               >
                 <div
-                  className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 text-center shadow-2xl overflow-hidden"
+                  className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 text-center shadow-2xl my-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-500/50 text-emerald-600 dark:text-emerald-400 mb-4">
@@ -2836,14 +2843,14 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && isHistoryModalOpen && (
               <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="submission-history-title"
                 onClick={closeHistoryModal}
               >
                 <div
-                  className="relative w-full max-w-7xl mx-auto flex max-h-[90vh] flex-col rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+                  className="relative w-full max-w-7xl mx-auto flex max-h-[90vh] flex-col rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
@@ -2980,14 +2987,14 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && previewSubmission ? (
               <div
-                className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
                 onClick={closeSubmissionPreview}
               >
                 <div
-                  className="w-full max-w-4xl rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+                  className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="flex items-start justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
+                  <div className="flex items-start justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5 shrink-0 bg-white dark:bg-slate-900">
                     <div className="flex-1 min-w-0">
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 truncate">
                         {previewSubmission.title}
@@ -3006,7 +3013,7 @@ function FacultySubmissionPanelContent({
                       <Xmark className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+                  <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)] flex-1 overflow-y-auto min-h-0">
                     <div className="min-h-[60vh] overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 shadow-xs flex items-center justify-center p-4">
                       {(() => {
                         const fileUrl = getSubmissionPreviewUrl(
@@ -3155,12 +3162,12 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && showIncompleteRequirementsModal ? (
               <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="incomplete-requirements-title"
               >
-                <div className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+                <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200 my-auto">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold mb-3">
@@ -3261,9 +3268,9 @@ function FacultySubmissionPanelContent({
               </article>
             )}
             {isMounted && isSubmitModalOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
-                <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl">
-                  <div className="flex items-start justify-between border-b border-slate-300 dark:border-slate-700 px-6 py-5">
+              <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm">
+                <div className="w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl my-auto">
+                  <div className="flex items-start justify-between border-b border-slate-300 dark:border-slate-700 px-6 py-5 shrink-0 bg-white dark:bg-slate-900">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-amber-300">
                       Submit Requirement
                     </h3>
@@ -3275,7 +3282,7 @@ function FacultySubmissionPanelContent({
                       <Xmark className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="max-h-[75vh] overflow-y-auto p-6">
+                  <div className="flex-1 overflow-y-auto p-6 min-h-0">
                     {isSubmissionAvailable ? (
                       <form className="space-y-4" onSubmit={handleSubmit}>
                         <div className="grid gap-4 md:grid-cols-2">
