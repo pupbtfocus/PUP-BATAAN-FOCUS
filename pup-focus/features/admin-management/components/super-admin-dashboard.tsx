@@ -1428,7 +1428,7 @@ export function SuperAdminDashboard({
                   {/* Card 1: Active Admin Accounts */}
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Admin Accounts</span>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Admin Accounts</span>
                       <Shield className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
                     <div>
@@ -1444,7 +1444,7 @@ export function SuperAdminDashboard({
                   {/* Card 2: Faculty Accounts */}
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Faculty Accounts</span>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Faculty Accounts</span>
                       <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
                     <div>
@@ -1460,8 +1460,8 @@ export function SuperAdminDashboard({
                   {/* Card 3: Academic Window & Compliance */}
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Requirements & Cycle</span>
-                      <CheckCircle className="h-5 w-5 text-emerald-400" strokeWidth={2} />
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Requirements & Cycle</span>
+                      <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -1478,25 +1478,29 @@ export function SuperAdminDashboard({
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   {/* Left Column (2-Span) — Admin Accounts Overview */}
                   <div className="lg:col-span-2 space-y-4">
-                    <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-400 dark:border-slate-800">
+                    <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-sm transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-400 dark:border-slate-800">
                         <div>
-                          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Admin Management</h2>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Overview of all admin and super admin accounts.</p>
+                          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                            Administrative Accounts
+                          </h2>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Active system administrators and credentials
+                          </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleSetActiveSection("accounts")}
-                          className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer self-start sm:self-auto"
                         >
-                          <span>View all</span>
+                          <span>Manage Accounts</span>
                           <NavArrowRight className="h-3.5 w-3.5" />
                         </button>
                       </div>
                       {adminAccounts.length > 0 ? (
                         <div className="divide-y divide-slate-400 dark:divide-slate-800 mt-2">
                           {adminAccounts.slice(0, 5).map((admin) => (
-                            <div key={admin.profile_id} className="flex items-center justify-between py-3">
+                            <div key={admin.profile_id} className="py-3 flex items-center justify-between gap-4">
                               <div className="flex items-center gap-3">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-400 bg-slate-100 text-slate-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 text-xs font-bold shadow-sm">
                                   {getInitials(admin.full_name, admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD")}
@@ -1506,7 +1510,7 @@ export function SuperAdminDashboard({
                                   <p className="text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
                                 </div>
                               </div>
-                              <span className={`text-xs px-2.5 py-0.5 rounded-md font-medium ${admin.is_active ? "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80" : "bg-slate-800/60 text-slate-300 border border-slate-700"}`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${admin.is_active ? "bg-emerald-950/30 text-emerald-400/90 border-emerald-900/40" : "bg-slate-900 text-slate-400 border-slate-800"}`}>
                                 {admin.is_active ? "Active" : "Inactive"}
                               </span>
                             </div>

@@ -53,7 +53,7 @@ function getNotificationTypeCategory(notification: AppNotification): {
       category: "DEADLINE_ALERT",
       Icon: Clock,
       colorClasses: "text-amber-400 border-amber-800/60 bg-amber-950/40",
-      badgeBg: "bg-amber-950/50 text-amber-400 border border-amber-800/80",
+      badgeBg: "bg-amber-950/30 text-amber-400/90 border border-amber-900/40",
     };
   }
 
@@ -67,7 +67,7 @@ function getNotificationTypeCategory(notification: AppNotification): {
       category: "APPROVED",
       Icon: CheckCircle,
       colorClasses: "text-emerald-400 border-emerald-800/60 bg-emerald-950/40",
-      badgeBg: "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80",
+      badgeBg: "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40",
     };
   }
 
@@ -80,7 +80,7 @@ function getNotificationTypeCategory(notification: AppNotification): {
       category: "REVISION_REQUESTED",
       Icon: WarningTriangle,
       colorClasses: "text-amber-400 border-amber-800/60 bg-amber-950/40",
-      badgeBg: "bg-amber-950/50 text-amber-400 border border-amber-800/80",
+      badgeBg: "bg-amber-950/30 text-amber-400/90 border border-amber-900/40",
     };
   }
 

@@ -139,17 +139,17 @@ export function FacultyDetailsModal({
                     {faculty.fullName}
                   </h3>
                   {faculty.is_active ? (
-                    <span className="inline-flex items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-900/40 bg-emerald-950/30 px-2 py-0.5 text-xs font-medium text-emerald-400/90">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                       Active
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                    <span className="inline-flex items-center gap-1 rounded-md border border-slate-800 bg-slate-900 px-2 py-0.5 text-xs font-medium text-slate-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
                       Inactive
                     </span>
                   )}
-                  <span className="rounded-md border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <span className="bg-slate-900/80 text-slate-300 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
                     {programCode}
                   </span>
                 </div>

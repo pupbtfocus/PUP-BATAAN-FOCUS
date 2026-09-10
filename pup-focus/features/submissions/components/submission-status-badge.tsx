@@ -53,7 +53,7 @@ export function SubmissionStatusBadge({
     Validated: {
       label: "Validated",
       containerClass:
-        "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80",
+        "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40",
       dotClass: "bg-emerald-400",
       icon: <CheckCircle className="shrink-0" strokeWidth={2} aria-hidden="true" />,
     },
@@ -67,14 +67,14 @@ export function SubmissionStatusBadge({
     "Pending Review": {
       label: "Pending Review",
       containerClass:
-        "bg-amber-950/50 text-amber-400 border border-amber-800/80",
+        "bg-amber-950/30 text-amber-400/90 border border-amber-900/40",
       dotClass: "bg-amber-400",
       icon: <Clock className="shrink-0" strokeWidth={2} aria-hidden="true" />,
     },
     "Not Submitted": {
       label: "Not Submitted",
       containerClass:
-        "bg-slate-800/60 text-slate-300 border border-slate-700",
+        "bg-slate-900 text-slate-400 border border-slate-800",
       dotClass: "bg-slate-500",
       icon: null,
     },

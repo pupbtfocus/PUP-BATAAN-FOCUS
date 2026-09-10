@@ -310,12 +310,12 @@ function getStatusBadgeTone(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
   if (status === "Validated")
-    return "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80";
+    return "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40";
   if (status === "Rejected")
     return "bg-rose-950/50 text-rose-400 border border-rose-800/80";
   if (status === "Not Submitted")
-    return "bg-slate-800/60 text-slate-300 border border-slate-700 font-semibold";
-  return "bg-amber-950/50 text-amber-400 border border-amber-800/80";
+    return "bg-slate-900 text-slate-400 border border-slate-800";
+  return "bg-amber-950/30 text-amber-400/90 border border-amber-900/40";
 }
 function getStatusIcon(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
@@ -1774,10 +1774,10 @@ function FacultySubmissionPanelContent({
                   {/* Card 1: Overall Progress */}
                   <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                         Overall Progress
                       </span>
-                      <CheckCircle className="h-5 w-5 text-emerald-400" strokeWidth={2} />
+                      <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
                     <div>
                       <div className="flex items-baseline justify-between">
@@ -1812,13 +1812,13 @@ function FacultySubmissionPanelContent({
                   {/* Card 2: Submission Window Status */}
                   <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                         Window Status
                       </span>
                       {hasActiveSchedule && !isWindowClosed ? (
-                        <Calendar className="h-5 w-5 text-emerald-400" strokeWidth={2} />
+                        <Calendar className="h-5 w-5 text-slate-400" strokeWidth={2} />
                       ) : (
-                        <Hourglass className="h-5 w-5 text-amber-400" strokeWidth={2} />
+                        <Hourglass className="h-5 w-5 text-slate-400" strokeWidth={2} />
                       )}
                     </div>
                     <div>
@@ -1844,7 +1844,7 @@ function FacultySubmissionPanelContent({
                   {/* Card 3: Action Required */}
                   <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                         Action Required
                       </span>
                       <TaskList className="h-5 w-5 text-slate-400" strokeWidth={2} />

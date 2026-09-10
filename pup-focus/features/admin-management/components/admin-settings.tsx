@@ -1290,7 +1290,7 @@ export function AdminSettings({
                   Automated Email Reminders on Submission Windows
                 </span>
                 {emailReminders && (
-                  <span className="rounded-md bg-emerald-950/50 text-emerald-400 border border-emerald-800/80 px-1.5 py-0.5 text-[10px] font-medium">
+                  <span className="rounded-md bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40 px-1.5 py-0.5 text-[10px] font-medium">
                     Active
                   </span>
                 )}
@@ -1330,7 +1330,7 @@ export function AdminSettings({
                   New Submission Alert Notifications
                 </span>
                 {submissionAlerts && (
-                  <span className="rounded-md bg-emerald-950/50 text-emerald-400 border border-emerald-800/80 px-1.5 py-0.5 text-[10px] font-medium">
+                  <span className="rounded-md bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40 px-1.5 py-0.5 text-[10px] font-medium">
                     Active
                   </span>
                 )}

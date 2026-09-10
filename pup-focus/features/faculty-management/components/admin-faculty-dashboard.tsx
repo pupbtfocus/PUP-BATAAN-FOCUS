@@ -621,8 +621,8 @@ export function AdminFacultyDashboard({
                       {/* Card 1: Faculty Submissions Verified */}
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Submissions Verified</span>
-                          <CheckCircle className="h-5 w-5 text-emerald-400" strokeWidth={2} />
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Submissions Verified</span>
+                          <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -635,8 +635,8 @@ export function AdminFacultyDashboard({
                       {/* Card 2: Pending Verification */}
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Pending Verification</span>
-                          <Clock className="h-5 w-5 text-amber-400" strokeWidth={2} />
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Pending Verification</span>
+                          <Clock className="h-5 w-5 text-slate-400" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -649,7 +649,7 @@ export function AdminFacultyDashboard({
                       {/* Card 3: Total Active Faculty */}
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Total Active Faculty</span>
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Active Faculty</span>
                           <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
                         </div>
                         <div>

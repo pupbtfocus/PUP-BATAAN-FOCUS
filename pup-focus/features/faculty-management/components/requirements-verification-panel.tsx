@@ -1946,7 +1946,7 @@ export function RequirementsPanel({
                     }}
                     className={`w-full text-left px-3 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
                       selectedProgram === "All Programs"
-                        ? "bg-amber-500/10 text-amber-900 dark:text-amber-300 font-semibold"
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
                         : "text-slate-700 dark:text-slate-300"
                     }`}
                   >
@@ -1962,7 +1962,7 @@ export function RequirementsPanel({
                       }}
                       className={`w-full text-left px-3 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
                         selectedProgram === prog
-                          ? "bg-amber-500/10 text-amber-900 dark:text-amber-300 font-semibold"
+                          ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
                           : "text-slate-700 dark:text-slate-300"
                       }`}
                     >
@@ -2021,17 +2021,17 @@ export function RequirementsPanel({
                   // Overall pure text status
                   let overallStatus: "Validated" | "Pending Review" | "Needs Revision" | "Not Submitted" =
                     "Not Submitted";
-                  let statusBadgeClass = "bg-slate-800/60 text-slate-300 border border-slate-700";
+                  let statusBadgeClass = "bg-slate-900 text-slate-400 border border-slate-800";
 
                   if (validatedCount === DEFAULT_REQUIREMENTS.length) {
                     overallStatus = "Validated";
-                    statusBadgeClass = "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80";
+                    statusBadgeClass = "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40";
                   } else if (uploadedCount > 0 || (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)) {
                     overallStatus = "Pending Review";
-                    statusBadgeClass = "bg-amber-950/50 text-amber-400 border border-amber-800/80";
+                    statusBadgeClass = "bg-amber-950/30 text-amber-400/90 border border-amber-900/40";
                   } else {
                     overallStatus = "Not Submitted";
-                    statusBadgeClass = "bg-slate-800/60 text-slate-300 border border-slate-700";
+                    statusBadgeClass = "bg-slate-900 text-slate-400 border border-slate-800";
                   }
 
                   const programCode =
@@ -2065,8 +2065,10 @@ export function RequirementsPanel({
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 font-medium">
-                        {programCode}
+                      <td className="px-4 py-3 font-medium text-xs">
+                        <span className="bg-slate-900/80 text-slate-300 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                          {programCode}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                         {isLoadingStatuses && !statusRecord ? (

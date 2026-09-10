@@ -53,10 +53,10 @@ export function FacultyFilterBar({
               <button
                 type="button"
                 onClick={() => onStatusFilterChange("all")}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                   statusFilter === "all"
-                    ? "bg-amber-500 text-slate-950 font-semibold shadow-xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                    ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
                 }`}
               >
                 All
@@ -64,10 +64,10 @@ export function FacultyFilterBar({
               <button
                 type="button"
                 onClick={() => onStatusFilterChange("active")}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                   statusFilter === "active"
-                    ? "bg-emerald-500 text-white font-semibold shadow-xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                    ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
                 }`}
               >
                 Active
@@ -75,10 +75,10 @@ export function FacultyFilterBar({
               <button
                 type="button"
                 onClick={() => onStatusFilterChange("inactive")}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                   statusFilter === "inactive"
-                    ? "bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                    ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
                 }`}
               >
                 Inactive

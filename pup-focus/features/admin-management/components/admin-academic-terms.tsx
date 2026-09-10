@@ -315,7 +315,7 @@ export function AdminAcademicTerms({
   function renderStatusBadge(status: AcademicTermStatus) {
     if (status === "Current") {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-950/50 text-emerald-400 border border-emerald-800/80">
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           Current
         </span>
@@ -323,13 +323,13 @@ export function AdminAcademicTerms({
     }
     if (status === "Archived" || (status as string) === "Completed") {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-900 text-slate-400 border border-slate-800">
           Archived
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-amber-950/50 text-amber-400 border border-amber-800/80">
+      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-amber-950/30 text-amber-400/90 border border-amber-900/40">
         Upcoming
       </span>
     );
