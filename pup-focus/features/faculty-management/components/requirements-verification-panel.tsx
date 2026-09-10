@@ -381,6 +381,7 @@ function FacultyVerificationDrawer({
   } | null>(null);
 
   const [isValidateModalOpen, setIsValidateModalOpen] = useState(false);
+  const [bulkValidateNotes, setBulkValidateNotes] = useState("");
   const [validateTimerSeconds, setValidateTimerSeconds] = useState(5);
   const [noticeModalData, setNoticeModalData] = useState<{
     title: string;
@@ -1001,6 +1002,7 @@ function FacultyVerificationDrawer({
       return;
     }
 
+    setBulkValidateNotes("");
     setValidateTimerSeconds(5);
     setIsValidateModalOpen(true);
   }
@@ -1027,6 +1029,7 @@ function FacultyVerificationDrawer({
 
     setIsValidatingAll(true);
     try {
+      const remarksToSend = bulkValidateNotes.trim();
       await Promise.all(
         pendingSubmissions.map((sub) =>
           fetch("/api/admin/faculty/submissions/review", {
@@ -1036,7 +1039,7 @@ function FacultyVerificationDrawer({
             body: JSON.stringify({
               submissionId: sub.id,
               decision: "validated",
-              remarks: "Bulk validated by admin",
+              remarks: remarksToSend,
             }),
           })
         )
@@ -1045,7 +1048,23 @@ function FacultyVerificationDrawer({
       const pendingIds = new Set(pendingSubmissions.map((s) => s.id));
       setSubmissions((prev) =>
         prev.map((sub) =>
-          pendingIds.has(sub.id) ? { ...sub, status: "validated" } : sub
+          pendingIds.has(sub.id)
+            ? {
+                ...sub,
+                status: "validated",
+                admin_remarks: remarksToSend || sub.admin_remarks,
+                review_decisions: remarksToSend
+                  ? [
+                      {
+                        decision: "validated",
+                        remarks: remarksToSend,
+                        created_at: new Date().toISOString(),
+                      },
+                      ...(sub.review_decisions || []),
+                    ]
+                  : sub.review_decisions,
+              }
+            : sub
         )
       );
       setActionFeedback({
@@ -1055,6 +1074,7 @@ function FacultyVerificationDrawer({
       setTimeout(() => setActionFeedback(null), 4000);
       onStatusUpdated();
       setIsValidateModalOpen(false);
+      setBulkValidateNotes("");
     } catch (err) {
       console.error("Bulk validate failed:", err);
       setActionFeedback({
@@ -2307,7 +2327,12 @@ function FacultyVerificationDrawer({
       {isValidateModalOpen ? (
         <div
           className="fixed inset-0 z-70 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
-          onClick={() => setIsValidateModalOpen(false)}
+          onClick={() => {
+            if (!isValidatingAll) {
+              setIsValidateModalOpen(false);
+              setBulkValidateNotes("");
+            }
+          }}
         >
           <div
             className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl"
@@ -2319,14 +2344,19 @@ function FacultyVerificationDrawer({
               </h3>
               <button
                 type="button"
-                onClick={() => setIsValidateModalOpen(false)}
+                onClick={() => {
+                  if (!isValidatingAll) {
+                    setIsValidateModalOpen(false);
+                    setBulkValidateNotes("");
+                  }
+                }}
                 className="rounded-full p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
               >
                 <Xmark className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="space-y-3 mb-5">
+            <div className="space-y-4 mb-5">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 You are about to validate{" "}
                 <span className="font-bold text-emerald-700 dark:text-emerald-400">
@@ -2338,14 +2368,31 @@ function FacultyVerificationDrawer({
                 </span>{" "}
                 (A.Y. {academicYear} &bull; {semester}).
               </p>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                  Remarks / Notes for All Files (Optional):
+                </label>
+                <textarea
+                  rows={3}
+                  value={bulkValidateNotes}
+                  onChange={(e) => setBulkValidateNotes(e.target.value)}
+                  placeholder="Add remarks or feedback to apply to all validated files (optional)..."
+                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition resize-none"
+                />
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  This note will be saved in the verification history of each validated requirement and visible to the faculty member.
+                </p>
+              </div>
+
               {validateTimerSeconds > 0 ? (
-                <p className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[11px] font-medium text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 flex items-center gap-2">
+                <p className="rounded-xl border border-amber-200/80 bg-amber-50/80 p-2.5 text-[11px] font-medium text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300 flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5 animate-pulse" />
                   Please review for {validateTimerSeconds} second(s) before
                   confirming.
                 </p>
               ) : (
-                <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-[11px] font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 flex items-center gap-2">
+                <p className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-2.5 text-[11px] font-medium text-emerald-800 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-300 flex items-center gap-2">
                   <Check className="h-3.5 w-3.5" />
                   Ready to confirm bulk validation.
                 </p>
@@ -2356,7 +2403,10 @@ function FacultyVerificationDrawer({
               <button
                 type="button"
                 disabled={isValidatingAll}
-                onClick={() => setIsValidateModalOpen(false)}
+                onClick={() => {
+                  setIsValidateModalOpen(false);
+                  setBulkValidateNotes("");
+                }}
                 className="rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-300 px-3.5 py-2 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
               >
                 Cancel
@@ -2365,13 +2415,18 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isValidatingAll || validateTimerSeconds > 0}
                 onClick={executeValidateAllPending}
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-bold text-white transition shadow-xs disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-bold text-white transition shadow-xs disabled:opacity-50 cursor-pointer"
               >
-                {isValidatingAll
-                  ? "Validating..."
-                  : validateTimerSeconds > 0
-                  ? `Confirm (${validateTimerSeconds}s)`
-                  : `Confirm & Validate All (${pendingSubmissionsCount})`}
+                {isValidatingAll ? (
+                  <>
+                    <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                    Validating...
+                  </>
+                ) : validateTimerSeconds > 0 ? (
+                  `Confirm (${validateTimerSeconds}s)`
+                ) : (
+                  `Confirm & Validate All (${pendingSubmissionsCount})`
+                )}
               </button>
             </div>
           </div>
