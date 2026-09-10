@@ -1650,7 +1650,7 @@ export function DevPreviewPanel() {
               <button
                 type="button"
                 onClick={() => setActiveShowcaseModal(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg border border-[#780000] text-[#780000] dark:text-rose-300 dark:border-rose-800 hover:bg-[#780000]/10 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-all cursor-pointer shadow-xs"
               >
                 Cancel
               </button>

@@ -1024,7 +1024,7 @@ export function SubmissionWindowPanel({
               <button
                 type="button"
                 onClick={() => { setShowCloseConfirmation(false); setCloseCountdown(10); }}
-                className="border border-[#780000] text-[#780000] dark:text-rose-300 dark:border-rose-800 hover:bg-[#780000]/10 dark:hover:bg-rose-950/40 text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
