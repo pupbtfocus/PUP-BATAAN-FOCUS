@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Clock, Calendar, AlertCircle, Loader2, CheckCircle2, RefreshCw } from "lucide-react";
+import { Clock, Calendar, AlertCircle, Loader2, CheckCircle2, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface ExtendSubmissionWindowModalProps {
@@ -225,8 +225,9 @@ export function ExtendSubmissionWindowModal({
             onClick={onClose}
             disabled={isSubmitting}
             className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200 transition cursor-pointer"
+            aria-label="Close modal"
           >
-            ✕
+            <X className="h-4 w-4" />
           </button>
         </div>
 

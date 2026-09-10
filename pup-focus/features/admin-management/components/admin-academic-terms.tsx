@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Lock, X, Check } from "lucide-react";
 
 type AcademicTermStatus = "Current" | "Upcoming" | "Archived" | "Completed";
 
@@ -233,7 +233,7 @@ export function AdminAcademicTerms({
         ) {
           setWarningModalData({
             isOpen: true,
-            title: "⚠️ Incomplete Term Requirements",
+            title: "Incomplete Term Requirements",
             description:
               "The submission window cannot be changed or closed yet. There are still missing requirements or unvalidated submissions for the current term.",
           });
@@ -316,7 +316,8 @@ export function AdminAcademicTerms({
     if (status === "Current") {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-          Current 🟢
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          Current
         </span>
       );
     }
@@ -355,7 +356,7 @@ export function AdminAcademicTerms({
           title="Term Closed / Completed"
           className="text-slate-600 dark:text-slate-400 font-medium text-[11px] sm:text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-400 dark:border-slate-700 cursor-not-allowed select-none inline-flex items-center gap-1 shrink-0 whitespace-nowrap"
         >
-          <span>🔒</span>
+          <Lock className="h-3.5 w-3.5" />
           <span className="sm:hidden">Closed</span>
           <span className="hidden sm:inline">Term Closed / Completed</span>
         </span>
@@ -410,7 +411,7 @@ export function AdminAcademicTerms({
           type="button"
           onClick={() => setIsCreateModalOpen(true)}
           disabled={isLoading || isSaving}
-          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm shadow-amber-500/10"
+          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
         >
           + Create Next Academic Year
         </button>
@@ -513,9 +514,10 @@ export function AdminAcademicTerms({
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="rounded-lg border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
+                className="rounded-lg border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
+                aria-label="Close modal"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -530,7 +532,7 @@ export function AdminAcademicTerms({
               <div className="mt-4 space-y-2.5">
                 <div className="flex items-center gap-3 rounded-xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-                    ✓
+                    <Check className="h-3.5 w-3.5" />
                   </span>
                   <div>
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
@@ -543,7 +545,7 @@ export function AdminAcademicTerms({
                 </div>
                 <div className="flex items-center gap-3 rounded-xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-                    ✓
+                    <Check className="h-3.5 w-3.5" />
                   </span>
                   <div>
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
@@ -570,7 +572,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={handleCreateNextAcademicYear}
                 disabled={isSaving}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 cursor-pointer shadow-sm shadow-amber-500/10"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 cursor-pointer shadow-sm"
               >
                 {isSaving ? "Creating..." : "Confirm & Create"}
               </button>
@@ -603,7 +605,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={confirmSetCurrent}
                 disabled={isSaving || countdown > 0}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm shadow-amber-500/10"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
               >
                 {isSaving
                   ? "Saving..."

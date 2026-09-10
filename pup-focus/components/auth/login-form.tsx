@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
 import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
-import { Clock, AlertCircle, CheckCircle2, Mail, Lock, Check, Eye, EyeOff } from "lucide-react";
+import { Clock, AlertCircle, CheckCircle2, Mail, Lock, Check, Eye, EyeOff, AlertTriangle } from "lucide-react";
 
 export interface NoticeBanner {
   type: "timeout" | "error" | "success" | "info";
@@ -237,7 +237,7 @@ export function LoginForm({
           </div>
           {isCapsLockOn && (
             <p className="ml-1 mt-1 flex items-center gap-1.5 text-xs text-amber-300 font-medium">
-              <span>⚠️</span>
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
               <span>Caps Lock is ON</span>
             </p>
           )}

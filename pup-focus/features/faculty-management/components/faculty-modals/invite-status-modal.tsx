@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface InviteStatusModalProps {
@@ -82,7 +83,17 @@ export function InviteStatusModal({
               onClick={handleCopy}
               className="inline-flex items-center gap-1.5 rounded-xl border border-[rgba(255,215,0,0.3)] bg-[#ffd700]/10 hover:bg-[#ffd700]/20 px-3.5 py-2 text-xs font-semibold text-[#ffd700] transition cursor-pointer"
             >
-              {copied ? "✓ Copied!" : "📋 Copy Credentials"}
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy Credentials</span>
+                </>
+              )}
             </button>
           ) : (
             <div />

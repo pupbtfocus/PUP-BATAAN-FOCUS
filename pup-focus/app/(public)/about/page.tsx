@@ -35,7 +35,7 @@ export default function AboutPage() {
         </div>
 
         {/* Main Hero Card */}
-        <div className="rounded-3xl border-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-8 sm:p-12 shadow-2xl shadow-amber-500/10 backdrop-blur-xl">
+        <div className="rounded-3xl border-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-8 sm:p-12 shadow-2xl shadow-black/40 backdrop-blur-xl">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
             {/* Center/Left Logos Container */}
             <div className="md:col-span-7 flex justify-center items-center gap-6 sm:gap-8 py-2">
@@ -61,7 +61,7 @@ export default function AboutPage() {
                 <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />
                 <span>PUP Bataan Campus</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl font-black text-amber-200 tracking-wider uppercase leading-none mb-3 drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]">
+              <h1 className="text-4xl sm:text-5xl font-black text-amber-200 tracking-wider uppercase leading-none mb-3">
                 ABOUT
                 <br />
                 PUP

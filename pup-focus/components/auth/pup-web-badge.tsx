@@ -16,7 +16,7 @@ export function PupWebBadge() {
         <button
           type="button"
           onClick={() => setIsAboutOpen(true)}
-          className="group relative h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center border-2 border-amber-400/80 bg-gradient-to-b from-[#580000] to-[#2d0000] shadow-lg shadow-black/40 backdrop-blur-md transition-all duration-300 hover:border-amber-300 hover:scale-105 hover:shadow-amber-500/25 active:scale-95 text-amber-300 focus:outline-none cursor-pointer"
+          className="group relative h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center border-2 border-amber-400/80 bg-gradient-to-b from-[#580000] to-[#2d0000] shadow-lg shadow-black/40 backdrop-blur-md transition-all duration-300 hover:border-amber-300 hover:scale-105 active:scale-95 text-amber-300 focus:outline-none cursor-pointer"
           title="About PUP FOCUS"
           aria-label="About PUP FOCUS"
         >
@@ -31,7 +31,7 @@ export function PupWebBadge() {
           href="https://www.pup.edu.ph"
           target="_blank"
           rel="noopener noreferrer"
-          className="group relative h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center border-2 border-amber-400/80 bg-gradient-to-b from-[#580000] to-[#2d0000] shadow-lg shadow-black/40 backdrop-blur-md transition-all duration-300 hover:border-amber-300 hover:scale-105 hover:shadow-amber-500/25 active:scale-95 focus:outline-none cursor-pointer p-1"
+          className="group relative h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center border-2 border-amber-400/80 bg-gradient-to-b from-[#580000] to-[#2d0000] shadow-lg shadow-black/40 backdrop-blur-md transition-all duration-300 hover:border-amber-300 hover:scale-105 active:scale-95 focus:outline-none cursor-pointer p-1"
           title="PUP Official Website"
           aria-label="PUP Official Website"
         >
@@ -57,7 +57,7 @@ export function PupWebBadge() {
           onClick={() => setIsAboutOpen(false)}
         >
           <div
-            className="relative w-full max-w-sm rounded-3xl border-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-6 sm:p-7 text-[#fff8e7] shadow-2xl shadow-amber-500/15 backdrop-blur-xl animate-in zoom-in-95 duration-200"
+            className="relative w-full max-w-sm rounded-3xl border-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-6 sm:p-7 text-[#fff8e7] shadow-2xl shadow-black/40 backdrop-blur-xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
@@ -75,7 +75,7 @@ export function PupWebBadge() {
               <div className="mb-3">
                 <BrandMark size={56} />
               </div>
-              <h2 className="text-2xl font-extrabold tracking-wider text-amber-200 drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)] uppercase">
+              <h2 className="text-2xl font-extrabold tracking-wider text-amber-200 uppercase">
                 PUP FOCUS
               </h2>
               <div className="mx-auto mt-2.5 h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
@@ -86,7 +86,7 @@ export function PupWebBadge() {
               <Link
                 href="/about"
                 onClick={() => setIsAboutOpen(false)}
-                className="flex-1 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 py-2.5 text-center text-xs font-black uppercase text-[#3d0000] tracking-wider transition-all cursor-pointer shadow-md shadow-amber-500/10 active:scale-95"
+                className="flex-1 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 py-2.5 text-center text-xs font-black uppercase text-[#3d0000] tracking-wider transition-all cursor-pointer shadow-md shadow-black/30 active:scale-95"
               >
                 Learn More
               </Link>

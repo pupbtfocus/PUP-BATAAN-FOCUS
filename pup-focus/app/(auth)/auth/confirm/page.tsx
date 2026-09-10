@@ -13,6 +13,7 @@ import {
   Mail,
   KeyRound,
   ArrowRight,
+  Info,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { PupWebBadge } from "@/components/auth/pup-web-badge";
@@ -300,13 +301,13 @@ function AuthConfirmContent() {
           </div>
 
           {/* Card Body */}
-          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 dark:border-amber-500/80 bg-[#4d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-md shadow-xl shadow-amber-500/10">
+          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 dark:border-amber-500/80 bg-[#4d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-md shadow-xl shadow-black/40">
             {/* Header / Title Area */}
             <div className="mt-2 mb-5 text-center">
-              <p className="text-[10px] sm:text-xs font-bold tracking-[0.25em] text-amber-300 uppercase mb-1 drop-shadow-[0_1px_4px_rgba(255,215,0,0.3)]">
+              <p className="text-[10px] sm:text-xs font-bold tracking-[0.25em] text-amber-300 uppercase mb-1">
                 PUP FOCUS • BATAAN CAMPUS
               </p>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-wider text-amber-200 drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)] uppercase mb-1">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-wider text-amber-200 uppercase mb-1">
                 {status === "loading"
                   ? "Verifying Link"
                   : status === "success"
@@ -457,8 +458,9 @@ function AuthConfirmContent() {
                       </button>
                     </div>
 
-                    <p className="text-[10px] text-amber-200/70 pt-0.5">
-                      💡 Please save or copy this password. You can set your personal password after signing in.
+                    <p className="text-[10px] text-amber-200/70 pt-0.5 flex items-center gap-1.5">
+                      <Info className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                      <span>Please save or copy this password. You can set your personal password after signing in.</span>
                     </p>
                   </div>
                 )}

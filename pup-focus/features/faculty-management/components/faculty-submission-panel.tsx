@@ -150,8 +150,8 @@ export const getFileBrand = (
     return {
       label: "Compressed Archive",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-zip.svg",
-      borderColor: "border-purple-500/30 dark:border-purple-500/40",
-      badgeBg: "bg-purple-600 text-white",
+      borderColor: "border-slate-500/30 dark:border-slate-500/40",
+      badgeBg: "bg-slate-600 text-white",
     };
   }
   if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(ext)) {
@@ -1363,7 +1363,7 @@ function FacultySubmissionPanelContent({
       const result = await response.json();
 
       setSubmissionMessage(
-        `✓ Requirement submitted successfully! Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
+        `Requirement submitted successfully. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
       );
 
       // Optimistically update status badge to Pending immediately
@@ -1671,7 +1671,7 @@ function FacultySubmissionPanelContent({
       const result = await response.json();
 
       setSubmissionMessage(
-        `✓ Successfully submitted ${REQUIREMENT_LABEL[form.requirementCode]} for S.Y. ${form.academicYear} ${form.semester}. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
+        `Successfully submitted ${REQUIREMENT_LABEL[form.requirementCode]} for S.Y. ${form.academicYear} ${form.semester}. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
       );
 
       // Optimistically mark this requirement as pending so the UI disables re-submission
@@ -1719,8 +1719,8 @@ function FacultySubmissionPanelContent({
         }`}
         aria-hidden={!isPageLoading}
       >
-        {/* PUP Logo with gold glow */}
-        <div className="relative mb-3 drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]">
+        {/* PUP Logo */}
+        <div className="relative mb-3">
           <BrandMark size={64} className="rounded-full" />
         </div>
 
@@ -1730,7 +1730,7 @@ function FacultySubmissionPanelContent({
         </h1>
 
         {/* Animated hourglass loader */}
-        <div className="my-4 flex items-center justify-center drop-shadow-[0_0_12px_rgba(245,158,11,0.5)]">
+        <div className="my-4 flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/loading.svg"
@@ -2191,7 +2191,7 @@ function FacultySubmissionPanelContent({
                                         disabled={
                                           !hasActiveSchedule || isWindowClosed
                                         }
-                                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                                       >
                                         <Upload className="h-3.5 w-3.5" />
                                         <span>
@@ -2411,7 +2411,7 @@ function FacultySubmissionPanelContent({
                     </div>
                   </form>
                 ) : (
-                  <div className="mt-6 flex min-h-[60vh] items-center justify-center rounded-2xl border border-amber-700/60 bg-gradient-to-br from-amber-950/25 via-slate-950 to-slate-900 p-8">
+                  <div className="mt-6 flex min-h-[60vh] items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 p-8">
                     <div className="w-full max-w-2xl rounded-2xl border border-amber-500/30 bg-slate-950/80 p-8 text-center shadow-2xl">
                       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/15 text-amber-300">
                         <svg
@@ -2739,7 +2739,7 @@ function FacultySubmissionPanelContent({
                                 type="button"
                                 onClick={() => openDirectUploadModal(req.code)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
-                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                               >
                                 <Upload className="h-3.5 w-3.5" />
                                 Submit
@@ -2752,7 +2752,7 @@ function FacultySubmissionPanelContent({
                                 type="button"
                                 onClick={() => openDirectUploadModal(req.code)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
-                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                               >
                                 <Upload className="h-3.5 w-3.5" />
                                 Resubmit
@@ -3260,7 +3260,7 @@ function FacultySubmissionPanelContent({
                                 download={fileIdentifier}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-amber-500/20 cursor-pointer"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-sm hover:shadow-md cursor-pointer"
                               >
                                 <Download className="w-4 h-4 stroke-[2.2]" />
                                 Download & View File
@@ -3447,7 +3447,7 @@ function FacultySubmissionPanelContent({
                         dismissIncompleteRequirementsAlert();
                         navigateToView("status");
                       }}
-                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm shadow-amber-500/10 active:scale-[0.98] transition-all cursor-pointer"
+                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                     >
                       Go to Requirements Management
                     </button>

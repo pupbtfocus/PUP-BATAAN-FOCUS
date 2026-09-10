@@ -153,7 +153,7 @@ export function DocumentPreviewModal({
                 <a
                   href={`${fileUrl}&download=true`}
                   download={fileIdentifier}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-amber-500/20 cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-sm hover:shadow-md cursor-pointer"
                 >
                   <Download className="w-4 h-4 stroke-[2.2]" />
                   Download & View File
