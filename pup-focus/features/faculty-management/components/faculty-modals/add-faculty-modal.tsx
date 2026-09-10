@@ -190,39 +190,39 @@ export function AddFacultyPanel({
       >
         <div className="grid gap-3 md:grid-cols-3">
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90" htmlFor="firstName">
-              First Name <span className="text-red-400">*</span>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="firstName">
+              First Name <span className="text-red-500">*</span>
             </label>
             <input
               id="firstName"
               placeholder="e.g. Juan"
-              className="mt-1.5 w-full bg-[#1f0407]/80 border border-amber-500/30 focus:border-amber-500 text-slate-100 placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
               {...form.register("firstName")}
             />
             <FieldError message={form.formState.errors.firstName?.message} />
           </div>
 
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90" htmlFor="middleName">
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="middleName">
               Middle Name
             </label>
             <input
               id="middleName"
               placeholder="e.g. Santos"
-              className="mt-1.5 w-full bg-[#1f0407]/80 border border-amber-500/30 focus:border-amber-500 text-slate-100 placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
               {...form.register("middleName")}
             />
             <FieldError message={form.formState.errors.middleName?.message} />
           </div>
 
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90" htmlFor="lastName">
-              Last Name <span className="text-red-400">*</span>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="lastName">
+              Last Name <span className="text-red-500">*</span>
             </label>
             <input
               id="lastName"
               placeholder="e.g. Dela Cruz"
-              className="mt-1.5 w-full bg-[#1f0407]/80 border border-amber-500/30 focus:border-amber-500 text-slate-100 placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
               {...form.register("lastName")}
             />
             <FieldError message={form.formState.errors.lastName?.message} />
@@ -230,23 +230,23 @@ export function AddFacultyPanel({
         </div>
 
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90" htmlFor="programId">
-            Academic Program / Department <span className="text-red-400">*</span>
+          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="programId">
+            Academic Program / Department <span className="text-red-500">*</span>
           </label>
           <select
             id="programId"
-            className="mt-1.5 w-full bg-[#1f0407]/80 border border-amber-500/30 text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-sm outline-none transition-all disabled:opacity-50"
+            className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-slate-900 dark:focus:border-slate-100 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10 disabled:opacity-50"
             disabled={isLoadingPrograms || isCreating}
             {...form.register("programId")}
           >
-            <option value="" className="bg-[#1f0407] text-slate-400">
+            <option value="" className="bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400">
               {isLoadingPrograms ? "Loading programs..." : "-- Select Program / Department --"}
             </option>
 
             {degreePrograms.length > 0 && (
-              <optgroup label="Degree Programs" className="bg-[#1f0407] text-amber-300 font-bold">
+              <optgroup label="Degree Programs" className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
                 {degreePrograms.map((p) => (
-                  <option key={p.id} value={p.id} className="bg-[#1f0407] text-slate-100 font-normal">
+                  <option key={p.id} value={p.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-normal">
                     {p.code} — {p.name}
                   </option>
                 ))}
@@ -254,9 +254,9 @@ export function AddFacultyPanel({
             )}
 
             {diplomaCourses.length > 0 && (
-              <optgroup label="Diploma Courses" className="bg-[#1f0407] text-amber-300 font-bold">
+              <optgroup label="Diploma Courses" className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
                 {diplomaCourses.map((p) => (
-                  <option key={p.id} value={p.id} className="bg-[#1f0407] text-slate-100 font-normal">
+                  <option key={p.id} value={p.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-normal">
                     {p.code} — {p.name}
                   </option>
                 ))}
@@ -267,25 +267,25 @@ export function AddFacultyPanel({
         </div>
 
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90 mb-1.5 block">
+          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 block">
             Profile Photo
           </label>
-          <div className="flex items-center gap-4 p-3 bg-[#1f0407]/50 border border-dashed border-amber-500/30 rounded-xl">
+          <div className="border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-3">
             {imagePreview ? (
               <img
                 src={imagePreview}
                 alt="Preview"
-                className="w-12 h-12 rounded-full object-cover border border-amber-500/50 shrink-0"
+                className="w-12 h-12 rounded-full object-cover border border-slate-300 dark:border-slate-700 shrink-0"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">
+              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">
                 IMG
               </div>
             )}
             <div className="flex-1 min-w-0">
               <label
                 htmlFor={photoInputId}
-                className="cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-3 py-1.5 rounded-lg inline-block transition-all"
+                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer inline-block transition-all"
               >
                 Choose Profile Photo
               </label>
@@ -301,7 +301,7 @@ export function AddFacultyPanel({
                 className="hidden"
               />
               {profileImageFile ? (
-                <p className="text-[11px] text-slate-400 mt-1 truncate">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
                   {profileImageFile.name}
                 </p>
               ) : null}
@@ -309,7 +309,7 @@ export function AddFacultyPanel({
             {profileImageFile ? (
               <button
                 type="button"
-                className="text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0"
+                className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
                 onClick={() => handleImageChange(null)}
               >
                 Remove
@@ -319,13 +319,13 @@ export function AddFacultyPanel({
         </div>
 
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-amber-200/90" htmlFor="email">
-            Email Address <span className="text-red-400">*</span>
+          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="email">
+            Email Address <span className="text-red-500">*</span>
           </label>
           <input
             id="email"
             type="email"
-            className="mt-1.5 w-full bg-[#1f0407]/80 border border-amber-500/30 focus:border-amber-500 text-slate-100 placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
+            className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
             placeholder="faculty@pup.edu.ph"
             {...form.register("email")}
           />
@@ -345,7 +345,7 @@ export function AddFacultyPanel({
         ) : null}
 
         <button
-          className="mt-2 w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-black py-3 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"
+          className="mt-2 w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"
           type="submit"
           disabled={isCreating || isLoadingPrograms}
         >
@@ -372,15 +372,15 @@ export function AddFacultyModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-2xl border border-amber-500/30 bg-[#2a060a]/95 p-6 shadow-2xl shadow-black/60">
-        <div className="flex items-center justify-between pb-4 mb-6 border-b border-amber-500/20">
-          <h3 className="text-xl font-bold text-[#fff8e7] tracking-tight">
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+        <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-200 dark:border-slate-800">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
             Add Faculty Account
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition-all cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-all cursor-pointer"
             aria-label="Close modal"
           >
             <Xmark className="w-5 h-5" />

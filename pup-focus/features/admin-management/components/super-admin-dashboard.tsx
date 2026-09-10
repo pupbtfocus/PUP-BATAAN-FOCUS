@@ -2053,8 +2053,8 @@ export function SuperAdminDashboard({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                Create Admin Account
+              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                Add Admin Account
               </h3>
               <button
                 type="button"
@@ -2085,7 +2085,7 @@ export function SuperAdminDashboard({
                     }
                     required
                     placeholder="e.g. Juan"
-                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
                   />
                 </div>
 
@@ -2104,7 +2104,7 @@ export function SuperAdminDashboard({
                       setCreateAdminMiddleName(event.target.value)
                     }
                     placeholder="e.g. Santos"
-                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
                   />
                 </div>
 
@@ -2124,7 +2124,7 @@ export function SuperAdminDashboard({
                     }
                     required
                     placeholder="e.g. Dela Cruz"
-                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
                   />
                 </div>
               </div>
@@ -2139,17 +2139,17 @@ export function SuperAdminDashboard({
                     <img
                       src={createAdminProfileImagePreview}
                       alt="Preview"
-                      className="w-12 h-12 rounded-full object-cover border border-amber-500/50 shrink-0"
+                      className="w-12 h-12 rounded-full object-cover border border-slate-300 dark:border-slate-700 shrink-0"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">
                       IMG
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <label
                       htmlFor="adminPhotoInput"
-                      className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer inline-block transition-all"
+                      className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer inline-block transition-all"
                     >
                       Choose Profile Photo
                     </label>
@@ -2178,7 +2178,7 @@ export function SuperAdminDashboard({
                   {createAdminProfileImage ? (
                     <button
                       type="button"
-                      className="text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
+                      className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
                       onClick={() => {
                         if (createAdminProfileImagePreview) {
                           URL.revokeObjectURL(createAdminProfileImagePreview);
@@ -2208,7 +2208,7 @@ export function SuperAdminDashboard({
                   onChange={(event) => setEmail(event.target.value)}
                   required
                   placeholder="admin@pup.edu.ph"
-                  className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
+                  className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
                 />
               </div>
 
