@@ -1616,24 +1616,20 @@ function FacultyVerificationDrawer({
                                     </div>
                                     <div className="min-w-0 space-y-1">
                                       <div>
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          <span
-                                            className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug max-w-[170px] xl:max-w-[210px]"
-                                            title={rawFileName}
-                                          >
-                                            {fileName}
-                                          </span>
+                                        <span
+                                          className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug max-w-[190px] xl:max-w-[240px]"
+                                          title={rawFileName}
+                                        >
+                                          {fileName}
+                                        </span>
+                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                          {fileSize ? <span>{fileSize}</span> : null}
                                           {isRevisionUploaded ? (
-                                            <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 text-[9.5px] font-bold dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800 shrink-0">
-                                              Revision Uploaded (v{versionNum})
+                                            <span className="font-sans font-bold text-amber-600 dark:text-amber-400">
+                                              • v{versionNum} (Revision)
                                             </span>
                                           ) : null}
                                         </div>
-                                        {fileSize ? (
-                                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">
-                                            {fileSize}
-                                          </span>
-                                        ) : null}
                                       </div>
 
                                       <div className="flex items-center gap-1.5 pt-0.5">
@@ -1760,55 +1756,47 @@ function FacultyVerificationDrawer({
                                     <SubmissionStatusBadge status="Needs Revision" size="sm" />
                                   </div>
                                 ) : matchingSubmission ? (
-                                  <div className="flex flex-col items-center justify-center gap-1.5">
-                                    {isRevisionUploaded ? (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 text-[10px] font-bold dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800 shadow-2xs">
-                                        <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                                        Revision Pending Review
-                                      </span>
-                                    ) : null}
-                                    <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-                                      <button
-                                        type="button"
-                                        disabled={
-                                          submittingAction !== null ||
-                                          reviewingCode !== null ||
-                                          isValidatingSingle ||
-                                          isSubmittingRevision
-                                        }
-                                        onClick={() =>
-                                          openValidateModal(
-                                            matchingSubmission.id,
-                                            code,
-                                            reqLabel
-                                          )
-                                        }
-                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
-                                      >
-                                        <Check className="h-3.5 w-3.5 text-white/90" />
-                                        <span>Validate</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        disabled={
-                                          submittingAction !== null ||
-                                          reviewingCode !== null ||
-                                          isValidatingSingle ||
-                                          isSubmittingRevision
-                                        }
-                                        onClick={() =>
-                                          openRevisionModal(
-                                            matchingSubmission.id,
-                                            code,
-                                            reqLabel
-                                          )
-                                        }
-                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
-                                      >
-                                        <WarningCircle className="h-3.5 w-3.5 text-white/90" />
-                                        <span>Revision</span>
-                                      </button>
-                                    </div>
+                                  <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      disabled={
+                                        submittingAction !== null ||
+                                        reviewingCode !== null ||
+                                        isValidatingSingle ||
+                                        isSubmittingRevision
+                                      }
+                                      onClick={() =>
+                                        openValidateModal(
+                                          matchingSubmission.id,
+                                          code,
+                                          reqLabel
+                                        )
+                                      }
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                                    >
+                                      <Check className="h-3.5 w-3.5 text-white/90" />
+                                      <span>Validate</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={
+                                        submittingAction !== null ||
+                                        reviewingCode !== null ||
+                                        isValidatingSingle ||
+                                        isSubmittingRevision
+                                      }
+                                      onClick={() =>
+                                        openRevisionModal(
+                                          matchingSubmission.id,
+                                          code,
+                                          reqLabel
+                                        )
+                                      }
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                                    >
+                                      <WarningCircle className="h-3.5 w-3.5 text-white/90" />
+                                      <span>Revision</span>
+                                    </button>
                                   </div>
                                 ) : (
                                   <div className="flex items-center justify-center">
