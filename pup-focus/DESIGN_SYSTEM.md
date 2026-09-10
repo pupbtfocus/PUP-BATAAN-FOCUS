@@ -47,10 +47,10 @@ All status badges, pills, and tags across tables, dashboards, and modals are 100
 
 | Status Role                 | Utility Tokens                                              |
 |-----------------------------|-------------------------------------------------------------|
-| Inactive / Draft / Not Submitted | `bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Success / Active / Approved | `bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Warning / Pending / Review  | `bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60 px-2 py-0.5 text-xs font-medium rounded-md` |
-| Error / Rejected / Overdue  | `bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Inactive / Draft / Not Submitted | `bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/60 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Success / Active / Approved | `bg-emerald-50/80 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/25 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Warning / Pending / Review  | `bg-amber-50/80 text-amber-700 border border-amber-200/80 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/25 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Error / Rejected / Overdue  | `bg-rose-50/80 text-rose-700 border border-rose-200/80 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/25 px-2 py-0.5 text-xs font-medium rounded-md` |
 | Secondary / Program Tag     | `bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md` |
 
 #### Sidebar Navigation & Active States
