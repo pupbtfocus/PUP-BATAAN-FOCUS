@@ -5,6 +5,7 @@ import Image from "next/image";
 import JSZip from "jszip";
 import {
   Archive,
+  ChatBubble,
   Check,
   CheckCircle,
   Clock,
@@ -13,6 +14,7 @@ import {
   Eye,
   InfoCircle,
   NavArrowDown,
+  Notes,
   OpenNewWindow,
   Package,
   Page,
@@ -1588,8 +1590,9 @@ function FacultyVerificationDrawer({
                                   <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
                                     {facultyNote ? (
                                       <div className="flex items-start gap-1.5 leading-snug">
-                                        <span className="font-semibold text-[10.5px] text-slate-500 dark:text-slate-400 shrink-0 mt-0.5">
-                                          Faculty:
+                                        <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1">
+                                          <ChatBubble className="h-3 w-3 text-amber-700 dark:text-amber-400" />
+                                          Faculty Remarks:
                                         </span>
                                         <p
                                           className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
@@ -1617,8 +1620,8 @@ function FacultyVerificationDrawer({
                                     ) : isValidated && adminNote ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
                                         <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <CheckCircle className="h-3 w-3 text-[#0b5336] dark:text-emerald-400" />
-                                          Remarks:
+                                          <Notes className="h-3 w-3 text-[#0b5336] dark:text-emerald-400" />
+                                          Your Remarks:
                                         </span>
                                         <p
                                           className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
@@ -1944,8 +1947,9 @@ function FacultyVerificationDrawer({
                                   <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
                                     {facultyNote ? (
                                       <div className="flex items-start gap-1.5 leading-snug">
-                                        <span className="font-semibold text-[10.5px] text-slate-500 dark:text-slate-400 shrink-0 mt-0.5">
-                                          Faculty:
+                                        <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1">
+                                          <ChatBubble className="h-3 w-3 text-amber-700 dark:text-amber-400" />
+                                          Faculty Remarks:
                                         </span>
                                         <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={facultyNote}>
                                           &ldquo;{facultyNote}&rdquo;
@@ -1954,9 +1958,9 @@ function FacultyVerificationDrawer({
                                     ) : null}
                                     {adminNote ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-semibold text-[10.5px] text-emerald-600 dark:text-emerald-300 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <CheckCircle className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
-                                          Remarks:
+                                        <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1">
+                                          <Notes className="h-3 w-3 text-[#0b5336] dark:text-emerald-400" />
+                                          Your Remarks:
                                         </span>
                                         <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={adminNote}>
                                           &ldquo;{adminNote}&rdquo;
