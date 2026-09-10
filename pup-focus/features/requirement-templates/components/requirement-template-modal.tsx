@@ -250,7 +250,7 @@ export function RequirementTemplateModal({
                     onClick={() => toggleFormat(opt.value)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-slate-900/10 border-slate-900 text-slate-900 dark:bg-white/15 dark:border-slate-400 dark:text-slate-200"
+                        ? "bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-300 dark:bg-amber-500/20 dark:border-amber-400 shadow-2xs"
                         : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
@@ -295,7 +295,7 @@ export function RequirementTemplateModal({
                   onClick={() => setIsMandatory(true)}
                   className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                     isMandatory
-                      ? "bg-slate-900/10 border-slate-900 text-slate-900 dark:bg-white/15 dark:border-slate-400 dark:text-slate-200"
+                      ? "bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-300 dark:bg-amber-500/20 dark:border-amber-400 shadow-2xs"
                       : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                   }`}
                 >
@@ -306,7 +306,7 @@ export function RequirementTemplateModal({
                   onClick={() => setIsMandatory(false)}
                   className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                     !isMandatory
-                      ? "bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100"
+                      ? "bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-300 dark:bg-amber-500/20 dark:border-amber-400 shadow-2xs"
                       : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                   }`}
                 >

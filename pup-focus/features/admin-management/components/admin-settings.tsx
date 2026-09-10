@@ -1311,7 +1311,7 @@ export function AdminSettings({
               onClick={() => setEmailReminders((prev) => !prev)}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
                 emailReminders
-                  ? "bg-slate-900 border border-slate-800 dark:bg-white dark:border-slate-200"
+                  ? "bg-amber-500 border border-amber-400 shadow-xs"
                   : "bg-slate-300 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
               }`}
             >
@@ -1355,7 +1355,7 @@ export function AdminSettings({
               onClick={() => setSubmissionAlerts((prev) => !prev)}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
                 submissionAlerts
-                  ? "bg-slate-900 border border-slate-800 dark:bg-white dark:border-slate-200"
+                  ? "bg-amber-500 border border-amber-400 shadow-xs"
                   : "bg-slate-300 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
               }`}
             >
