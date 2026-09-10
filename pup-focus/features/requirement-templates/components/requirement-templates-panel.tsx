@@ -152,7 +152,7 @@ export function RequirementTemplatesPanel() {
         <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Total Templates</span>
-            <MultiplePages className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <MultiplePages className="h-5 w-5 text-amber-400" strokeWidth={2} />
           </div>
           <div className="mt-2">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -167,7 +167,7 @@ export function RequirementTemplatesPanel() {
         <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Active Requirements</span>
-            <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle className="h-5 w-5 text-emerald-400" strokeWidth={2} />
           </div>
           <div className="mt-2">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -182,7 +182,7 @@ export function RequirementTemplatesPanel() {
         <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Mandatory Items</span>
-            <Check className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+            <Check className="h-5 w-5 text-slate-400" strokeWidth={2} />
           </div>
           <div className="mt-2">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">

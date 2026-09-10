@@ -218,13 +218,13 @@ import { Settings, Search, NavArrowRight, Xmark, Check, InfoCircle, WarningTrian
 
 ### 6.2 Sizing and Stroke Width
 
-Standardize all icons to `h-4 w-4` (inline/nav) or `h-5 w-5` (panel/modal header) with explicit stroke width `strokeWidth={1.5}`:
+Standardize all icons to `h-4 w-4` (inline/nav) or `h-5 w-5` (panel/modal header) with bold stroke width `strokeWidth={2}`:
 
 | Context     | Size Class     | Stroke Width | Component Usage Example |
 |-------------|----------------|--------------|-------------------------|
-| Inline/Nav  | `h-4 w-4`      | `1.5`        | `<Search className="h-4 w-4" strokeWidth={1.5} />` |
-| Panel/Card  | `h-5 w-5`      | `1.5`        | `<Settings className="h-5 w-5" strokeWidth={1.5} />` |
-| Hero/Empty  | `h-8 w-8`      | `1.5`        | `<Page className="h-8 w-8" strokeWidth={1.5} />` |
+| Inline/Nav  | `h-4 w-4`      | `2`          | `<Search className="h-4 w-4" strokeWidth={2} />` |
+| Panel/Card  | `h-5 w-5`      | `2`          | `<Settings className="h-5 w-5" strokeWidth={2} />` |
+| Hero/Empty  | `h-8 w-8`      | `2`          | `<Page className="h-8 w-8" strokeWidth={2} />` |
 
 ### 6.3 Banned Icons
 

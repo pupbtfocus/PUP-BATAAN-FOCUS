@@ -622,9 +622,7 @@ export function AdminFacultyDashboard({
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Submissions Verified</span>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-950/50 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-md">
-                            Verified
-                          </span>
+                          <CheckCircle className="h-5 w-5 text-emerald-400" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -638,9 +636,7 @@ export function AdminFacultyDashboard({
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Pending Verification</span>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20 px-2 py-0.5 rounded-full">
-                            Pending
-                          </span>
+                          <Clock className="h-5 w-5 text-amber-400" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -654,9 +650,7 @@ export function AdminFacultyDashboard({
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Total Active Faculty</span>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-800 bg-blue-50 border border-blue-200/80 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20 px-2 py-0.5 rounded-full">
-                            Faculty
-                          </span>
+                          <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">

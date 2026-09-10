@@ -257,3 +257,8 @@ input:not(.pup-login-input):-webkit-autofill:active {
   color: #fff7ed !important;
   -webkit-text-fill-color: #fff7ed !important;
 }
+
+/* Ensure bold vector weight across all Iconoir SVG icons */
+svg[stroke-width="1.5"] {
+  stroke-width: 2;
+}

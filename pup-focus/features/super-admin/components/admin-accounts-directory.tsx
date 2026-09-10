@@ -379,10 +379,10 @@ export function AdminAccountsTable({
                     {/* Status Badge */}
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-semibold border ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
                           admin.is_active
-                            ? "bg-emerald-950/50 text-emerald-400 border-emerald-800/80"
-                            : "bg-slate-800/60 text-slate-300 border-slate-700"
+                            ? "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80"
+                            : "bg-slate-800/60 text-slate-300 border border-slate-700"
                         }`}
                       >
                         {admin.is_active ? "Active" : "Inactive"}
