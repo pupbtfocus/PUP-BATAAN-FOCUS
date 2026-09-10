@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu } from "iconoir-react";
 import { SidebarContent } from "@/components/sidebar";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { LogoutButton } from "@/components/shared/logout-button";

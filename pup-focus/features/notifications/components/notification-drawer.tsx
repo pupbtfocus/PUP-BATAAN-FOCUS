@@ -3,20 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import {
-  Bell,
-  CheckCheck,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Info,
-  ExternalLink,
-  X,
-  Loader2,
-  Clock,
-  AlertCircle,
-  Trash2,
-} from "lucide-react";
+import { Bell, CheckCircle, Clock, DoubleCheck, InfoCircle, OpenNewWindow, SystemRestart, Trash, WarningCircle, WarningTriangle, Xmark, XmarkCircle } from "iconoir-react";
 import { Button } from "@/components/ui/button";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import type { AppNotification } from "@/features/notifications/services/notification.service";
@@ -48,7 +35,7 @@ function formatRelativeTime(dateString: string): string {
 
 function getNotificationTypeCategory(notification: AppNotification): {
   category: "APPROVED" | "REVISION_REQUESTED" | "REJECTED" | "DEADLINE_ALERT" | "INFO";
-  Icon: typeof CheckCircle2;
+  Icon: typeof CheckCircle;
   colorClasses: string;
   badgeBg: string;
 } {
@@ -66,7 +53,7 @@ function getNotificationTypeCategory(notification: AppNotification): {
       category: "DEADLINE_ALERT",
       Icon: Clock,
       colorClasses: "text-amber-400 border-amber-800/60 bg-amber-950/40",
-      badgeBg: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+      badgeBg: "bg-amber-950/50 text-amber-400 border border-amber-800/80",
     };
   }
 
@@ -78,9 +65,9 @@ function getNotificationTypeCategory(notification: AppNotification): {
   ) {
     return {
       category: "APPROVED",
-      Icon: CheckCircle2,
+      Icon: CheckCircle,
       colorClasses: "text-emerald-400 border-emerald-800/60 bg-emerald-950/40",
-      badgeBg: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+      badgeBg: "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80",
     };
   }
 
@@ -91,9 +78,9 @@ function getNotificationTypeCategory(notification: AppNotification): {
   ) {
     return {
       category: "REVISION_REQUESTED",
-      Icon: AlertTriangle,
+      Icon: WarningTriangle,
       colorClasses: "text-amber-400 border-amber-800/60 bg-amber-950/40",
-      badgeBg: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+      badgeBg: "bg-amber-950/50 text-amber-400 border border-amber-800/80",
     };
   }
 
@@ -104,17 +91,17 @@ function getNotificationTypeCategory(notification: AppNotification): {
   ) {
     return {
       category: "REJECTED",
-      Icon: XCircle,
-      colorClasses: "text-red-400 border-red-800/60 bg-red-950/40",
-      badgeBg: "bg-red-500/20 text-red-300 border-red-500/30",
+      Icon: XmarkCircle,
+      colorClasses: "text-rose-400 border-rose-800/60 bg-rose-950/40",
+      badgeBg: "bg-rose-950/50 text-rose-400 border border-rose-800/80",
     };
   }
 
   return {
     category: "INFO",
-    Icon: Info,
-    colorClasses: "text-sky-400 border-sky-800/60 bg-sky-950/40",
-    badgeBg: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+    Icon: InfoCircle,
+    colorClasses: "text-slate-300 border-slate-800 bg-slate-900",
+    badgeBg: "bg-slate-800/60 text-slate-300 border border-slate-700",
   };
 }
 
@@ -419,9 +406,9 @@ export function NotificationDrawer() {
                       title="Mark all notifications as read"
                     >
                       {isMarkingAll ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <SystemRestart className="h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        <CheckCheck className="h-3.5 w-3.5" />
+                        <DoubleCheck className="h-3.5 w-3.5" />
                       )}
                       <span>Mark all read</span>
                     </button>
@@ -436,9 +423,9 @@ export function NotificationDrawer() {
                       title="Clear all notifications"
                     >
                       {isClearingAll ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <SystemRestart className="h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash className="h-3.5 w-3.5" />
                       )}
                       <span>Clear all</span>
                     </button>
@@ -450,7 +437,7 @@ export function NotificationDrawer() {
                     className="p-1 text-slate-400 hover:text-slate-200 transition-colors rounded-md cursor-pointer"
                     aria-label="Close notifications"
                   >
-                    <X className="h-4 w-4" />
+                    <Xmark className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -459,7 +446,7 @@ export function NotificationDrawer() {
               {toastMessage && (
                 <div className="flex items-center justify-between gap-2 bg-emerald-500/15 border-b border-emerald-500/30 px-4 py-2.5 text-xs text-emerald-200 animate-in fade-in slide-in-from-top-1 duration-150">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
                     <span className="font-medium">{toastMessage}</span>
                   </div>
                   <button
@@ -468,7 +455,7 @@ export function NotificationDrawer() {
                     className="text-emerald-400 hover:text-emerald-200 p-0.5 rounded"
                     aria-label="Dismiss toast"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <Xmark className="h-3.5 w-3.5" />
                   </button>
                 </div>
               )}
@@ -477,7 +464,7 @@ export function NotificationDrawer() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-12 text-slate-400">
-                    <Loader2 className="h-6 w-6 animate-spin text-amber-400 mr-2" />
+                    <SystemRestart className="h-6 w-6 animate-spin text-amber-400 mr-2" />
                     <span>Loading notifications...</span>
                   </div>
                 ) : notifications.length === 0 ? (
@@ -578,7 +565,7 @@ export function NotificationDrawer() {
                           <div className="mt-3 flex items-center justify-end">
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400 group-hover:underline">
                               {reqCode ? "View requirement" : "View pending requirements"}{" "}
-                              <ExternalLink className="h-3 w-3" />
+                              <OpenNewWindow className="h-3 w-3" />
                             </span>
                           </div>
                         )}

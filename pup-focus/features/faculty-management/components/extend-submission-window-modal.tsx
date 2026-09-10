@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Clock, Calendar, AlertCircle, Loader2, CheckCircle2, RefreshCw, X } from "lucide-react";
+import { Calendar, CheckCircle, Clock, Refresh, SystemRestart, WarningCircle, Xmark } from "iconoir-react";
 import { Button } from "@/components/ui/button";
 
 export interface ExtendSubmissionWindowModalProps {
@@ -16,7 +16,6 @@ export interface ExtendSubmissionWindowModalProps {
 
 type ExtensionPreset = "+24 Hours" | "+48 Hours" | "+3 Days" | "+1 Week" | "Custom";
 type ExtensionScope = "global" | "program" | "faculty";
-
 
 const PROGRAM_OPTIONS = [
   { code: "BEED", name: "Bachelor of Elementary Education" },
@@ -95,7 +94,7 @@ export function ExtendSubmissionWindowModal({
   const [scopeTarget, setScopeTarget] = useState("BSIT");
   const [facultyNameInput, setFacultyNameInput] = useState("");
   const [preset, setPreset] = useState<ExtensionPreset>("+3 Days");
-  
+
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("17:00");
 
@@ -227,13 +226,13 @@ export function ExtendSubmissionWindowModal({
             className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200 transition cursor-pointer"
             aria-label="Close modal"
           >
-            <X className="h-4 w-4" />
+            <Xmark className="h-4 w-4" />
           </button>
         </div>
 
         {error ? (
           <div className="flex items-center gap-2 rounded-xl border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-950/30 p-3 text-xs text-red-700 dark:text-red-300">
-            <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+            <WarningCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
             <span>{error}</span>
           </div>
         ) : null}
@@ -375,7 +374,7 @@ export function ExtendSubmissionWindowModal({
                   </span>
                   {isPreviouslyClosed && (
                     <span className="inline-flex items-center gap-1 rounded bg-amber-100 dark:bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40">
-                      <RefreshCw className="h-2.5 w-2.5" />
+                      <Refresh className="h-2.5 w-2.5" />
                       Status: Re-opening Closed Window
                     </span>
                   )}
@@ -405,12 +404,12 @@ export function ExtendSubmissionWindowModal({
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <SystemRestart className="h-3.5 w-3.5 animate-spin" />
                   Extending Window...
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <CheckCircle className="h-3.5 w-3.5" />
                   Confirm & Extend Window
                 </>
               )}

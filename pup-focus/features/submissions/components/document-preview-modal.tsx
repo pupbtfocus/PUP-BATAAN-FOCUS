@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, FileText, ExternalLink, Download } from "lucide-react";
+import { Download, OpenNewWindow, Page, Xmark } from "iconoir-react";
 import { getFileType } from "@/features/faculty-management/components/faculty-submission-panel";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 
@@ -110,7 +110,7 @@ export function DocumentPreviewModal({
               {title}
             </h3>
             <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-              <FileText className="h-3.5 w-3.5" />
+              <Page className="h-3.5 w-3.5" />
               Document Preview
             </span>
           </div>
@@ -120,7 +120,7 @@ export function DocumentPreviewModal({
             className="rounded-full p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors shrink-0 ml-3 cursor-pointer"
             aria-label="Close preview"
           >
-            <X className="h-4 w-4" />
+            <Xmark className="h-4 w-4" />
           </button>
         </div>
 
@@ -137,7 +137,7 @@ export function DocumentPreviewModal({
             ) : isExcel || isWord || (!isPdf && !isImage) ? (
               <div className="flex flex-col items-center justify-center p-8 text-center max-w-md">
                 <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20 flex items-center justify-center mb-4 text-amber-600 dark:text-amber-400">
-                  <FileText className="w-8 h-8" />
+                  <Page className="w-8 h-8" />
                 </div>
                 <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
                   Preview Not Supported
@@ -233,7 +233,7 @@ export function DocumentPreviewModal({
                 )
               }
             >
-              <ExternalLink className="h-4 w-4" />
+              <OpenNewWindow className="h-4 w-4" />
               Full View
             </button>
           </div>

@@ -1,15 +1,6 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import {
-  Clock,
-  Lock,
-  Unlock,
-  AlertTriangle,
-  Calendar,
-  Timer,
-} from "lucide-react";
-
+import { Calendar, Clock, Lock, LockSlash, Timer, WarningTriangle } from "iconoir-react";
 type SubmissionWindowState = {
   isConfigured: boolean;
   isOpen: boolean;
@@ -26,13 +17,11 @@ type SubmissionWindowState = {
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
 };
-
 type SubmissionWindowCountdownProps = {
   window: SubmissionWindowState | null;
   isLoading: boolean;
   onExpired?: () => void;
 };
-
 type TimeRemaining = {
   days: number;
   hours: number;
@@ -40,7 +29,6 @@ type TimeRemaining = {
   seconds: number;
   totalMs: number;
 };
-
 function getManilaTimestamp(date: string, time: string): number {
   // Build an ISO-ish string and parse it as Asia/Manila local time.
   // The service stores dates as YYYY-MM-DD and times as HH:mm:ss.
@@ -48,20 +36,16 @@ function getManilaTimestamp(date: string, time: string): number {
   const iso = `${date}T${time}+08:00`;
   return new Date(iso).getTime();
 }
-
 function computeRemaining(targetMs: number): TimeRemaining {
   const now = Date.now();
   const diff = Math.max(0, targetMs - now);
-
   const totalSeconds = Math.floor(diff / 1000);
   const days = Math.floor(totalSeconds / 86400);
   const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-
   return { days, hours, minutes, seconds, totalMs: diff };
 }
-
 function formatDateReadable(dateStr: string): string {
   try {
     const d = new Date(`${dateStr}T00:00:00+08:00`);
@@ -75,7 +59,6 @@ function formatDateReadable(dateStr: string): string {
     return dateStr;
   }
 }
-
 function TimeUnit({
   value,
   label,
@@ -96,7 +79,6 @@ function TimeUnit({
     </div>
   );
 }
-
 export function SubmissionWindowCountdown({
   window: windowState,
   isLoading,
@@ -104,41 +86,32 @@ export function SubmissionWindowCountdown({
 }: SubmissionWindowCountdownProps) {
   const [remaining, setRemaining] = useState<TimeRemaining | null>(null);
   const [hasExpired, setHasExpired] = useState(false);
-
   useEffect(() => {
     if (!windowState || !windowState.isConfigured) {
       setRemaining(null);
       return;
     }
-
     const { status, startDate, startTime, endDate, endTime } = windowState;
-
     // Determine target timestamp based on status.
     let targetMs: number | null = null;
-
     if (status === "Open" && endDate && endTime) {
       targetMs = getManilaTimestamp(endDate, endTime);
     } else if (status === "Upcoming" && startDate && startTime) {
       targetMs = getManilaTimestamp(startDate, startTime);
     }
-
     if (targetMs === null) {
       setRemaining(null);
       return;
     }
-
     // Compute immediately on mount.
     const initial = computeRemaining(targetMs);
     setRemaining(initial);
-
     if (initial.totalMs <= 0 && status === "Open") {
       setHasExpired(true);
     }
-
     const intervalId = setInterval(() => {
       const updated = computeRemaining(targetMs);
       setRemaining(updated);
-
       if (updated.totalMs <= 0 && status === "Open" && !hasExpired) {
         setHasExpired(true);
         // Auto-refetch after 2 seconds to let parent update the state.
@@ -148,7 +121,6 @@ export function SubmissionWindowCountdown({
         clearInterval(intervalId);
       }
     }, 1000);
-
     return () => clearInterval(intervalId);
   }, [
     windowState?.status,
@@ -160,14 +132,12 @@ export function SubmissionWindowCountdown({
     hasExpired,
     onExpired,
   ]);
-
   // Reset expired state when window state changes externally.
   useEffect(() => {
     if (windowState?.status !== "Open") {
       setHasExpired(false);
     }
   }, [windowState?.status]);
-
   // ── Loading skeleton ──
   if (isLoading) {
     return (
@@ -187,13 +157,12 @@ export function SubmissionWindowCountdown({
       </div>
     );
   }
-
   // ── Not configured ──
   if (!windowState || !windowState.isConfigured) {
     return (
       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs shadow-slate-300/40 dark:shadow-none">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="h-3.5 w-3.5 text-slate-500" />
+          <WarningTriangle className="h-3.5 w-3.5 text-slate-500" />
           <span className="text-[10px] uppercase tracking-[0.15em] text-slate-600 dark:text-slate-400 font-semibold">
             Window Not Configured
           </span>
@@ -204,12 +173,10 @@ export function SubmissionWindowCountdown({
       </div>
     );
   }
-
   const { status, academicYear, semester, startDate, endDate, startTime, endTime } =
     windowState;
   const startTimeLabel = windowState.startTimeLabel ?? startTime;
   const endTimeLabel = windowState.endTimeLabel ?? endTime;
-
   // ── Status badge config ──
   const badges: Record<
     typeof status,
@@ -225,7 +192,7 @@ export function SubmissionWindowCountdown({
   > = {
     Open: {
       label: "Window Open",
-      icon: <Unlock className="h-3 w-3" />,
+      icon: <LockSlash className="h-3 w-3" />,
       dotClass: "bg-emerald-500 pulse-dot",
       borderClass: "border-emerald-200/80 dark:border-emerald-800/60",
       bgClass: "bg-emerald-50/70 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300",
@@ -251,9 +218,7 @@ export function SubmissionWindowCountdown({
       numberClass: "text-amber-950 font-bold dark:text-amber-300",
     },
   };
-
   const badge = badges[status];
-
   return (
     <div
       className={`rounded-xl border ${badge.borderClass} ${badge.bgClass} p-3 transition-colors duration-500 shadow-xs shadow-slate-300/40 dark:shadow-none`}
@@ -273,7 +238,6 @@ export function SubmissionWindowCountdown({
         </div>
         <span className={badge.textClass}>{badge.icon}</span>
       </div>
-
       {/* Academic term */}
       {academicYear && semester ? (
         <div className="mt-2 flex items-center gap-1.5">
@@ -283,7 +247,6 @@ export function SubmissionWindowCountdown({
           </span>
         </div>
       ) : null}
-
       {/* Countdown ticker (Open or Upcoming) */}
       {remaining && status !== "Closed" ? (
         <div className="mt-3">
@@ -308,7 +271,6 @@ export function SubmissionWindowCountdown({
           </div>
         </div>
       ) : null}
-
       {/* Closed state — show window dates */}
       {status === "Closed" && startDate && endDate ? (
         <div className="mt-2.5 rounded-lg bg-white/80 dark:bg-slate-950/50 border border-red-300 dark:border-red-900/40 px-2.5 py-2 text-center">
@@ -319,7 +281,6 @@ export function SubmissionWindowCountdown({
           </p>
         </div>
       ) : null}
-
       {/* Upcoming — show scheduled start */}
       {status === "Upcoming" && startDate ? (
         <div className="mt-2 rounded-lg bg-white/80 dark:bg-slate-950/50 border border-amber-300 dark:border-amber-900/40 px-2.5 py-1.5 text-center">
@@ -328,7 +289,6 @@ export function SubmissionWindowCountdown({
           </p>
         </div>
       ) : null}
-
       {/* Expired flash */}
       {hasExpired ? (
         <div className="mt-2 rounded-lg border border-red-300 dark:border-red-700/40 bg-red-100 dark:bg-red-950/40 px-2.5 py-1.5 text-center">

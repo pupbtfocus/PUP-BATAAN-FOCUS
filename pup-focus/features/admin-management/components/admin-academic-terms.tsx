@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 
-import { AlertTriangle, Lock, X, Check } from "lucide-react";
+import { Check, Lock, WarningTriangle, Xmark } from "iconoir-react";
 
 type AcademicTermStatus = "Current" | "Upcoming" | "Archived" | "Completed";
 
@@ -315,21 +315,21 @@ export function AdminAcademicTerms({
   function renderStatusBadge(status: AcademicTermStatus) {
     if (status === "Current") {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-950/50 text-emerald-400 border border-emerald-800/80">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           Current
         </span>
       );
     }
     if (status === "Archived" || (status as string) === "Completed") {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-400 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800">
           Archived
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-amber-950/50 text-amber-400 border border-amber-800/80">
         Upcoming
       </span>
     );
@@ -517,7 +517,7 @@ export function AdminAcademicTerms({
                 className="rounded-lg border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
                 aria-label="Close modal"
               >
-                <X className="h-4 w-4" />
+                <Xmark className="h-4 w-4" />
               </button>
             </div>
 
@@ -528,7 +528,7 @@ export function AdminAcademicTerms({
               <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {computedNextAcademicYear}
               </p>
-              
+
               <div className="mt-4 space-y-2.5">
                 <div className="flex items-center gap-3 rounded-xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
@@ -664,7 +664,7 @@ export function AdminAcademicTerms({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in">
           <div className="bg-white dark:bg-slate-950 border border-amber-500/40 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
             <div className="w-16 h-16 bg-amber-500/10 border-2 border-amber-500/40 rounded-full flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400">
-              <AlertTriangle className="w-8 h-8 animate-pulse" />
+              <WarningTriangle className="w-8 h-8 animate-pulse" />
             </div>
             <h3 className="text-xl font-bold text-amber-800 dark:text-amber-200">
               {warningModalData.title}

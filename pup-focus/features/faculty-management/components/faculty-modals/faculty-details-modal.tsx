@@ -1,21 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  X,
-  Pencil,
-  CheckCircle2,
-  Clock3,
-  AlertCircle,
-  Building,
-  Mail,
-  User,
-  ShieldCheck,
-  Maximize2,
-  ExternalLink,
-  ArrowLeft,
-  GraduationCap,
-} from "lucide-react";
+import { ArrowLeft, Building, CheckCircle, Clock, EditPencil, Expand, GraduationCap, Mail, OpenNewWindow, ShieldCheck, User, WarningCircle, Xmark } from "iconoir-react";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
 import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
@@ -118,7 +104,7 @@ export function FacultyDetailsModal({
               className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
               aria-label="Close dialog"
             >
-              <X className="h-5 w-5" />
+              <Xmark className="h-5 w-5" />
             </button>
           </div>
 
@@ -143,7 +129,7 @@ export function FacultyDetailsModal({
                   <span aria-hidden="true">{buildFacultyInitials(faculty.fullName)}</span>
                 )}
                 <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-semibold">
-                  <Maximize2 className="h-4 w-4" />
+                  <Expand className="h-4 w-4" />
                 </span>
               </button>
 
@@ -173,7 +159,7 @@ export function FacultyDetailsModal({
                     {faculty.email}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <Clock3 className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                    <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                     Last login: {formattedLastLogin}
                   </span>
                 </div>
@@ -295,17 +281,17 @@ export function FacultyDetailsModal({
 
                       {status === "validated" ? (
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="h-3 w-3" />
+                          <CheckCircle className="h-3 w-3" />
                           Validated
                         </span>
                       ) : status === "uploaded" ? (
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300">
-                          <Clock3 className="h-3 w-3" />
+                          <Clock className="h-3 w-3" />
                           Uploaded
                         </span>
                       ) : (
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/40 px-2 py-0.5 text-[10px] font-medium text-slate-400 dark:text-slate-500">
-                          <AlertCircle className="h-3 w-3" />
+                          <WarningCircle className="h-3 w-3" />
                           Not Submitted
                         </span>
                       )}
@@ -327,7 +313,7 @@ export function FacultyDetailsModal({
                 onClick={() => setShowFullProfile(true)}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3.5 py-1.5 text-xs font-medium transition cursor-pointer"
               >
-                <ExternalLink className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                <OpenNewWindow className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                 Full View of Profile
               </button>
               {onEdit ? (
@@ -339,7 +325,7 @@ export function FacultyDetailsModal({
                   }}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3.5 py-1.5 text-xs font-medium transition cursor-pointer"
                 >
-                  <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                  <EditPencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                   Edit Profile
                 </button>
               ) : null}
@@ -381,7 +367,7 @@ export function FacultyDetailsModal({
                 className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 aria-label="Close full profile view"
               >
-                <X className="h-4 w-4" />
+                <Xmark className="h-4 w-4" />
               </button>
             </div>
 

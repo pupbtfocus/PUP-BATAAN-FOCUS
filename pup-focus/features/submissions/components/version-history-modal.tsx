@@ -1,17 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  FileText,
-  Download,
-  History,
-  Clock,
-  X,
-  AlertCircle,
-  ShieldCheck,
-  MessageSquareQuote,
-  Loader2,
-} from "lucide-react";
+import { ChatBubble, Clock, ClockRotateRight, Download, Page, ShieldCheck, SystemRestart, WarningCircle, Xmark } from "iconoir-react";
 import { Button } from "@/components/ui/button";
 import type {
   DocumentVersionDetail,
@@ -72,7 +62,7 @@ const getStatusConfig = (status?: string | null) => {
       containerBg:
         "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-500/30 text-emerald-900 dark:text-emerald-200",
       badgeBg:
-        "bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 ring-emerald-500/30",
+        "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80",
       iconBoxBg:
         "bg-emerald-100 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-700/40",
       iconColor: "text-emerald-600 dark:text-emerald-400",
@@ -92,11 +82,11 @@ const getStatusConfig = (status?: string | null) => {
   ) {
     return {
       label: "REVISION REQUESTED",
-      Icon: AlertCircle,
+      Icon: WarningCircle,
       containerBg:
         "bg-rose-50/80 dark:bg-rose-950/40 border-rose-500/30 text-rose-900 dark:text-rose-200",
       badgeBg:
-        "bg-rose-500/10 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 ring-rose-500/30",
+        "bg-rose-950/50 text-rose-400 border border-rose-800/80",
       iconBoxBg:
         "bg-rose-100 dark:bg-rose-900/40 border-rose-200 dark:border-rose-700/40",
       iconColor: "text-rose-600 dark:text-rose-400",
@@ -107,11 +97,11 @@ const getStatusConfig = (status?: string | null) => {
 
   return {
     label: "REVIEWER REMARKS",
-    Icon: MessageSquareQuote,
+    Icon: ChatBubble,
     containerBg:
       "bg-amber-50/80 dark:bg-amber-950/40 border-amber-500/30 text-amber-900 dark:text-amber-200",
     badgeBg:
-      "bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 ring-amber-500/30",
+      "bg-amber-950/50 text-amber-400 border border-amber-800/80",
     iconBoxBg:
       "bg-amber-100 dark:bg-amber-900/40 border-amber-200 dark:border-amber-700/40",
     iconColor: "text-amber-600 dark:text-amber-400",
@@ -238,7 +228,7 @@ export function VersionHistoryModal({
         <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <History className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <ClockRotateRight className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <h3
                 id="version-history-title"
                 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate"
@@ -256,7 +246,7 @@ export function VersionHistoryModal({
             className="rounded-full p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors shrink-0 ml-3 cursor-pointer"
             aria-label="Close version history"
           >
-            <X className="h-4 w-4" />
+            <Xmark className="h-4 w-4" />
           </button>
         </div>
 
@@ -298,7 +288,7 @@ export function VersionHistoryModal({
           {facultyNotes && (
             <div className="mb-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-4 shadow-xs flex items-start gap-3.5">
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 shrink-0 shadow-2xs">
-                <FileText className="w-5 h-5 stroke-[1.8]" />
+                <Page className="w-5 h-5 stroke-[1.8]" />
               </div>
               <div className="space-y-1 text-left min-w-0 flex-1">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
@@ -314,7 +304,7 @@ export function VersionHistoryModal({
           {/* Loading state */}
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+              <SystemRestart className="h-8 w-8 animate-spin text-amber-500" />
               <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                 Loading version history…
               </p>
@@ -324,7 +314,7 @@ export function VersionHistoryModal({
           {/* Error state */}
           {!isLoading && error && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-red-500/30 bg-red-50 dark:bg-red-950/20 px-6 py-8">
-              <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+              <WarningCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
               <p className="mt-3 text-sm text-red-700 dark:text-red-300">{error}</p>
               <Button
                 type="button"
@@ -341,7 +331,7 @@ export function VersionHistoryModal({
           {/* Empty state */}
           {!isLoading && !error && versions.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-6 py-8">
-              <FileText className="h-8 w-8 text-slate-400 dark:text-slate-600" />
+              <Page className="h-8 w-8 text-slate-400 dark:text-slate-600" />
               <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
                 No versions found for this document.
               </p>

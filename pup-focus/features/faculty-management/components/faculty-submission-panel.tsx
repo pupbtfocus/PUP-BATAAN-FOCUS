@@ -1,5 +1,4 @@
 "use client";
-
 import {
   Suspense,
   useCallback,
@@ -43,38 +42,10 @@ import {
   DashboardMetricsSkeleton,
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
-import {
-  Menu,
-  X,
-  LayoutDashboard,
-  ClipboardList,
-  History,
-  Activity,
-  Settings,
-  FileText,
-  AlertCircle,
-  Upload,
-  UploadCloud,
-  CheckCircle2,
-  Calendar,
-  Loader2,
-  Eye,
-  RotateCw,
-  Clock3,
-  Download,
-  ExternalLink,
-  ArrowRight,
-  Sparkles,
-  FileSpreadsheet,
-  FileCheck,
-  File,
-  Archive,
-} from "lucide-react";
+import { Activity, Archive, Calendar, Check, CheckCircle, Clock, ClockRotateRight, CloudUpload, Download, Eye, Menu, NavArrowRight, OpenNewWindow, Page, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, Xmark } from "iconoir-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
-
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
-
 export function getFileType(fileNameOrUrl: string): {
   type: DetectedFileType;
   extension: string;
@@ -89,30 +60,25 @@ export function getFileType(fileNameOrUrl: string): {
     .toLowerCase();
   const match = cleanStr.match(/\.([a-z0-9]+)$/i);
   const extension = match ? match[1].toLowerCase() : "";
-
   const isPdf = extension === "pdf";
   const isImage = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(
     extension,
   );
   const isExcel = ["xlsx", "xls", "csv"].includes(extension);
   const isWord = ["docx", "doc"].includes(extension);
-
   let type: DetectedFileType = "other";
   if (isPdf) type = "pdf";
   else if (isImage) type = "image";
   else if (isExcel) type = "excel";
   else if (isWord) type = "word";
-
   return { type, extension, isPdf, isImage, isExcel, isWord };
 }
-
 export const getFileBrand = (
   extension: string,
   isExcel?: boolean,
   isWord?: boolean,
 ) => {
   const ext = (extension || "").toLowerCase().trim();
-
   if (ext === "pdf") {
     return {
       label: "Adobe PDF Document",
@@ -169,7 +135,6 @@ export const getFileBrand = (
     badgeBg: "bg-amber-500 text-slate-950",
   };
 };
-
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
 const REQUIREMENT_DESCRIPTIONS: Record<RequirementCode, string> = {
   grade_sheet: "Official signed grade sheets for assigned course sections.",
@@ -193,10 +158,8 @@ const LOGIN_PAGE_IMAGES = [
   "/images/attachments/IMG_9399.jpeg",
   "/images/attachments/IMG_9402.jpeg",
 ];
-
 export type PanelView = (typeof PANEL_VIEWS)[number];
 type HistorySubmissionStatus = "Pending" | "Validated" | "Rejected";
-
 type RequirementStatus = {
   code: RequirementCode;
   status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
@@ -214,7 +177,6 @@ type RequirementStatus = {
   isViewed?: boolean;
   viewed_at?: string;
 };
-
 type SubmissionPreview = {
   code: RequirementCode;
   title: string;
@@ -230,7 +192,6 @@ type SubmissionPreview = {
   reviewedAt?: string;
   latestSubmissionId: string;
 };
-
 type PastSubmission = {
   id: string;
   academicYear: string;
@@ -255,7 +216,6 @@ type PastSubmission = {
   isViewed?: boolean;
   viewed_at?: string;
 };
-
 type SubmissionFormState = {
   academicYear: string;
   semester: (typeof SEMESTER_OPTIONS)[number];
@@ -263,7 +223,6 @@ type SubmissionFormState = {
   fileName: string;
   remarks: string;
 };
-
 type SubmissionWindowState = {
   isConfigured: boolean;
   status: "Upcoming" | "Open" | "Closed";
@@ -280,25 +239,21 @@ type SubmissionWindowState = {
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
 };
-
 function buildAcademicYears(count = 5): string[] {
   const now = new Date();
   const startYear =
     now.getMonth() + 1 >= 6 ? now.getFullYear() : now.getFullYear() - 1;
-
   return Array.from({ length: count }, (_, index) => {
     const yearStart = startYear - index;
     return `${yearStart}-${yearStart + 1}`;
   });
 }
-
 function toAcademicYearAndSemester(dateInput: string | null | undefined) {
   const sourceDate = dateInput ? new Date(dateInput) : new Date();
   const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
   const month = date.getMonth() + 1;
   const year = date.getFullYear();
   const startsSchoolYear = month >= 6;
-
   return {
     academicYear: startsSchoolYear
       ? `${year}-${year + 1}`
@@ -306,7 +261,6 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined) {
     semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
   } as const;
 }
-
 function normalizeSemester(sem?: string | null): string {
   if (!sem) return "";
   const s = sem.toLowerCase().trim();
@@ -323,7 +277,6 @@ function normalizeSemester(sem?: string | null): string {
     return "3rd semester";
   return s;
 }
-
 function normalizeAcademicYear(ay?: string | null): string {
   if (!ay) return "";
   return ay
@@ -332,7 +285,6 @@ function normalizeAcademicYear(ay?: string | null): string {
     .replace(/^s\.?y\.?\s*/i, "")
     .replace(/^a\.?y\.?\s*/i, "");
 }
-
 function getStatusDotColor(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
@@ -341,7 +293,6 @@ function getStatusDotColor(
   if (status === "Not Submitted") return "bg-slate-600";
   return "bg-blue-400";
 }
-
 function getStatusTextColor(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
@@ -350,35 +301,31 @@ function getStatusTextColor(
   if (status === "Not Submitted") return "text-slate-500 dark:text-slate-500";
   return "text-blue-700 dark:text-blue-400";
 }
-
 function getStatusTextColorClass(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
   return getStatusTextColor(status);
 }
-
 function getStatusBadgeTone(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
   if (status === "Validated")
-    return "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400";
+    return "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80";
   if (status === "Rejected")
-    return "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400";
+    return "bg-rose-950/50 text-rose-400 border border-rose-800/80";
   if (status === "Not Submitted")
-    return "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700/50 dark:bg-slate-800/60 dark:text-slate-400 font-semibold";
-  return "border-blue-200 bg-blue-100 text-blue-800 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400";
+    return "bg-slate-800/60 text-slate-300 border border-slate-700 font-semibold";
+  return "bg-amber-950/50 text-amber-400 border border-amber-800/80";
 }
-
 function getStatusIcon(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ) {
-  if (status === "Validated") return <CheckCircle2 className="h-3 w-3" />;
-  if (status === "Rejected") return <AlertCircle className="h-3 w-3" />;
+  if (status === "Validated") return <CheckCircle className="h-3 w-3" />;
+  if (status === "Rejected") return <WarningCircle className="h-3 w-3" />;
   if (status === "Not Submitted")
     return <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />;
-  return <Clock3 className="h-3 w-3" />;
+  return <Clock className="h-3 w-3" />;
 }
-
 function getStatusText(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
@@ -387,13 +334,10 @@ function getStatusText(
   if (status === "Not Submitted") return "Not Submitted";
   return "Pending Review";
 }
-
 function formatSubmittedDateTime(value?: string): string | null {
   if (!value) return null;
-
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return null;
-
   return parsed.toLocaleString("en-PH", {
     year: "numeric",
     month: "short",
@@ -403,11 +347,9 @@ function formatSubmittedDateTime(value?: string): string | null {
     hour12: true,
   });
 }
-
 function getSubmissionPreviewUrl(submissionId: string) {
   return `/api/faculty/submissions/view?submissionId=${encodeURIComponent(submissionId)}`;
 }
-
 export interface FacultySubmissionPanelProps {
   facultyName?: string | null;
   facultyEmail?: string | null;
@@ -421,7 +363,6 @@ export interface FacultySubmissionPanelProps {
   initialData?: FacultyInitialData | null;
   initialView?: PanelView;
 }
-
 function FacultySubmissionPanelContent({
   facultyName,
   facultyEmail,
@@ -443,7 +384,6 @@ function FacultySubmissionPanelContent({
   const [currentFacultyName, setCurrentFacultyName] = useState<string | null>(
     facultyName ?? null,
   );
-
   const resolvedFirstName = initialFirstName ?? propFacultyFirstName ?? null;
   const resolvedMiddleName = initialMiddleName ?? propFacultyMiddleName ?? null;
   const resolvedLastName = initialLastName ?? propFacultyLastName ?? null;
@@ -462,21 +402,17 @@ function FacultySubmissionPanelContent({
       null
     );
   }, [facultyAvatarUrl, initialData?.avatarUrl, initialData?.profileImageUrl]);
-
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(avatarUrl);
   const [hasAvatarError, setHasAvatarError] = useState(false);
-
   useEffect(() => {
     setCurrentAvatarUrl(avatarUrl);
     setHasAvatarError(false);
   }, [avatarUrl]);
-
   useEffect(() => {
     if (facultyName) {
       setCurrentFacultyName(facultyName);
     }
   }, [facultyName]);
-
   // Fallback client session check for profile image and name if initial data didn't have it
   useEffect(() => {
     if (!avatarUrl || !currentFacultyName) {
@@ -503,7 +439,6 @@ function FacultySubmissionPanelContent({
       }
     }
   }, [avatarUrl, currentFacultyName]);
-
   const handleProfileUpdated = useCallback(
     (updated: { fullName?: string; avatarUrl?: string | null }) => {
       if (updated.fullName) {
@@ -516,46 +451,38 @@ function FacultySubmissionPanelContent({
     },
     [],
   );
-
   const facultyFirstName = useMemo(
     () => extractFirstName(currentFacultyName, "Faculty"),
     [currentFacultyName],
   );
-
   const facultyInitials = useMemo(
     () => buildFacultyInitials(currentFacultyName || "Faculty"),
     [currentFacultyName],
   );
-
   useEffect(() => {
     if (currentAvatarUrl && typeof window !== "undefined") {
       const img = new window.Image();
       img.src = currentAvatarUrl;
     }
   }, [currentAvatarUrl]);
-
   const [isMounted, setIsMounted] = useState(false);
-
   // Synchronously compute initial active view without flashing Dashboard
   const resolvedInitialView = useMemo<PanelView>(() => {
     if (initialView && initialView !== "dashboard") {
       return initialView;
     }
-
     if (typeof window !== "undefined") {
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const v = urlParams.get("view");
         const highlight = urlParams.get("highlight") || urlParams.get("requirement");
         const hist = urlParams.get("history");
-
         if (v === "history" || (v === "status" && hist === "true") || highlight) {
           return "status";
         }
         if (v && (PANEL_VIEWS as readonly string[]).includes(v)) {
           return v as PanelView;
         }
-
         const savedView = sessionStorage.getItem("pup_focus_faculty_active_view");
         if (savedView && (PANEL_VIEWS as readonly string[]).includes(savedView)) {
           return savedView as PanelView;
@@ -564,10 +491,8 @@ function FacultySubmissionPanelContent({
         // safe fallback
       }
     }
-
     return initialView || "dashboard";
   }, [initialView]);
-
   const [activeView, setActiveView] = useState<PanelView>(resolvedInitialView);
   const [form, setForm] = useState<SubmissionFormState>({
     academicYear: initialData?.academicYear || academicYears[0] || "",
@@ -644,7 +569,6 @@ function FacultySubmissionPanelContent({
     }
     return false;
   });
-
   useEffect(() => {
     try {
       sessionStorage.setItem("pup_focus_faculty_active_view", activeView);
@@ -656,26 +580,21 @@ function FacultySubmissionPanelContent({
     isOpen: boolean;
     requirementTitle: string;
   }>({ isOpen: false, requirementTitle: "" });
-
   // ─── Mobile menu state ────────────────────────────────────────────
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   // ─── Page-load overlay state ───────────────────────────────────────
   const [isPageLoading, setIsPageLoading] = useState(!initialData);
-
   useEffect(() => {
     if (!initialData) {
       const timer = setTimeout(() => setIsPageLoading(false), 400);
       return () => clearTimeout(timer);
     }
   }, [initialData]);
-
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>(
     academicYears[0] ?? "",
   );
   const [selectedSemester, setSelectedSemester] =
     useState<(typeof SEMESTER_OPTIONS)[number]>("1st Semester");
-
   const [selectedRequirementForUpload, setSelectedRequirementForUpload] =
     useState<RequirementCode | null>(null);
   const [directUploadFile, setDirectUploadFile] = useState<File | null>(null);
@@ -685,10 +604,8 @@ function FacultySubmissionPanelContent({
     null,
   );
   const [isDraggingFile, setIsDraggingFile] = useState(false);
-
   const [isSubmittingModalOpen, setIsSubmittingModalOpen] = useState(false);
   const [isSubmitSuccess, setIsSubmitSuccess] = useState(false);
-
   function handleCloseModalAndRefresh() {
     setIsSubmittingModalOpen(false);
     setIsSubmitSuccess(false);
@@ -696,13 +613,11 @@ function FacultySubmissionPanelContent({
     router.refresh();
     void fetchStatuses();
   }
-
   const hasSubmissionWindowAcademicTerm = Boolean(
     submissionWindow?.isConfigured &&
     submissionWindow.academicYear &&
     submissionWindow.semester,
   );
-
   const historyAcademicYears = useMemo(() => {
     const yearsSet = new Set<string>(academicYears);
     pastSubmissions.forEach((sub) => {
@@ -710,7 +625,6 @@ function FacultySubmissionPanelContent({
     });
     return ["All", ...Array.from(yearsSet)];
   }, [academicYears, pastSubmissions]);
-
   const historySemesterOptions = useMemo<
     Array<(typeof SEMESTER_OPTIONS)[number] | "All">
   >(() => {
@@ -720,7 +634,6 @@ function FacultySubmissionPanelContent({
     hasSeenIncompleteRequirementsModal,
     setHasSeenIncompleteRequirementsModal,
   ] = useState(false);
-
   useEffect(() => {
     setIsMounted(true);
     try {
@@ -742,7 +655,6 @@ function FacultySubmissionPanelContent({
       // safe
     }
   }, []);
-
   function dismissIncompleteRequirementsAlert() {
     setHasSeenIncompleteRequirementsModal(true);
     try {
@@ -751,7 +663,6 @@ function FacultySubmissionPanelContent({
       // safe
     }
   }
-
   async function fetchHistory() {
     try {
       setIsLoadingHistory(true);
@@ -764,11 +675,9 @@ function FacultySubmissionPanelContent({
         setHistoryError("Failed to load submission history");
         return;
       }
-
       const data = await response.json();
       const historyList: PastSubmission[] = data.submissions || [];
       setPastSubmissions(historyList);
-
       setViewedSubmissionIds((current) => {
         const next = new Set(current);
         historyList.forEach((s) => {
@@ -784,22 +693,17 @@ function FacultySubmissionPanelContent({
       setIsLoadingHistory(false);
     }
   }
-
   async function handleBulkDownload() {
     if (filteredPastSubmissions.length === 0 || isBulkDownloading) return;
-
     try {
       setIsBulkDownloading(true);
       setBulkDownloadProgressText("Preparing...");
-
       const zip = new JSZip();
       let processed = 0;
       const total = filteredPastSubmissions.length;
-
       for (const sub of filteredPastSubmissions) {
         processed++;
         setBulkDownloadProgressText(`Downloading ${processed}/${total}...`);
-
         const downloadUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(sub.id)}&download=true`;
         try {
           const fileRes = await fetch(downloadUrl);
@@ -823,7 +727,6 @@ function FacultySubmissionPanelContent({
           console.error("Failed to fetch file for ZIP:", sub.id, fetchErr);
         }
       }
-
       setBulkDownloadProgressText("Generating ZIP...");
       const zipContent = await zip.generateAsync({ type: "blob" });
       const url = window.URL.createObjectURL(zipContent);
@@ -849,18 +752,15 @@ function FacultySubmissionPanelContent({
       setBulkDownloadProgressText("");
     }
   }
-
   async function fetchStatuses(year?: string, sem?: string) {
     try {
       setIsLoadingStatuses(true);
       setStatusError(null);
-
       const params = new URLSearchParams();
       if (year && sem) {
         params.set("academicYear", year);
         params.set("semester", sem);
       }
-
       const response = await fetch(
         `/api/faculty/submissions/status?${params.toString()}`,
         {
@@ -878,7 +778,6 @@ function FacultySubmissionPanelContent({
         if (typeof data.hasActiveSchedule === "boolean") {
           setHasActiveSchedule(data.hasActiveSchedule);
         }
-
         setViewedSubmissionIds((current) => {
           const next = new Set(current);
           try {
@@ -894,7 +793,6 @@ function FacultySubmissionPanelContent({
           } catch {
             // safe fallback
           }
-
           statuses.forEach((r) => {
             if (r.latestSubmissionId && (r.is_read || r.isViewed)) {
               next.add(r.latestSubmissionId);
@@ -911,7 +809,6 @@ function FacultySubmissionPanelContent({
       setIsLoadingStatuses(false);
     }
   }
-
   const refetchSubmissionWindow = useCallback(async () => {
     setIsLoadingSubmissionWindow(true);
     try {
@@ -929,19 +826,16 @@ function FacultySubmissionPanelContent({
       setIsLoadingSubmissionWindow(false);
     }
   }, []);
-
   const handleWindowExpired = useCallback(() => {
     void refetchSubmissionWindow();
     void fetchStatuses();
   }, [refetchSubmissionWindow]);
-
   useEffect(() => {
     if (!initialData) {
       void fetchStatuses();
       void refetchSubmissionWindow();
     }
   }, [initialData, refetchSubmissionWindow]);
-
   // Deep-linking, view routing, and auto-scrolling with highlight
   useEffect(() => {
     try {
@@ -950,7 +844,6 @@ function FacultySubmissionPanelContent({
       const highlightParam =
         params.get("highlight") || params.get("requirement");
       const historyParam = params.get("history");
-
       if (
         view === "history" ||
         (view === "status" && historyParam === "true")
@@ -962,7 +855,6 @@ function FacultySubmissionPanelContent({
       } else if (view && (PANEL_VIEWS as readonly string[]).includes(view)) {
         setActiveView((prev) => (prev !== view ? (view as PanelView) : prev));
       }
-
       if (highlightParam) {
         const timer = setTimeout(() => {
           const targetElement =
@@ -993,7 +885,6 @@ function FacultySubmissionPanelContent({
       // ignore
     }
   }, [searchParams, requirementStatuses]);
-
   useEffect(() => {
     if (submissionWindow?.academicYear && submissionWindow?.semester) {
       void fetchStatuses(
@@ -1002,18 +893,15 @@ function FacultySubmissionPanelContent({
       );
     }
   }, [submissionWindow]);
-
   useEffect(() => {
     if (isHistoryModalOpen) {
       void fetchHistory();
     }
   }, [isHistoryModalOpen]);
-
   useEffect(() => {
     if (!submissionWindow) {
       return;
     }
-
     const currentTerm =
       submissionWindow.academicYear && submissionWindow.semester
         ? {
@@ -1021,27 +909,22 @@ function FacultySubmissionPanelContent({
             semester: submissionWindow.semester,
           }
         : toAcademicYearAndSemester(submissionWindow.today);
-
     setForm((previous) => ({
       ...previous,
       academicYear: currentTerm.academicYear,
       semester: currentTerm.semester,
     }));
-
     setSelectedAcademicYear(currentTerm.academicYear);
     setSelectedSemester(currentTerm.semester);
   }, [submissionWindow]);
-
   useEffect(() => {
     if (!historyAcademicYears.includes(historyAcademicYear)) {
       setHistoryAcademicYear(historyAcademicYears[0] ?? "All");
     }
-
     if (!historySemesterOptions.includes(historySemester)) {
       setHistorySemester(historySemesterOptions[0] ?? "All");
     }
   }, [historyAcademicYears, historySemesterOptions]);
-
   function openHistoryModal() {
     setIsHistoryModalOpen(true);
     void fetchHistory();
@@ -1054,7 +937,6 @@ function FacultySubmissionPanelContent({
       // fallback
     }
   }
-
   function closeHistoryModal() {
     setIsHistoryModalOpen(false);
     try {
@@ -1066,20 +948,16 @@ function FacultySubmissionPanelContent({
       // fallback
     }
   }
-
   function navigateToView(view: PanelView) {
     let targetView = view;
     let openHistory = false;
-
     if (view === "history") {
       targetView = "status";
       openHistory = true;
     }
-
     setActiveView(targetView);
     setIsHistoryModalOpen(openHistory);
     setIsMobileMenuOpen(false);
-
     try {
       sessionStorage.setItem("pup_focus_faculty_active_view", targetView);
       const params = new URLSearchParams(searchParams?.toString() ?? "");
@@ -1095,7 +973,6 @@ function FacultySubmissionPanelContent({
       router.replace(pathname, { scroll: false });
     }
   }
-
   const filteredPastSubmissions = useMemo(() => {
     return pastSubmissions.filter((submission) => {
       const matchesYear =
@@ -1106,11 +983,9 @@ function FacultySubmissionPanelContent({
       return matchesYear && matchesSemester;
     });
   }, [historyAcademicYear, historySemester, pastSubmissions]);
-
   const deduplicatedRecentActivities = useMemo(() => {
     const seen = new Set<string>();
     const list: PastSubmission[] = [];
-
     for (const sub of pastSubmissions) {
       const key = `${sub.requirementCode}-${sub.status}-${sub.submittedAt}`;
       if (!seen.has(key)) {
@@ -1119,15 +994,12 @@ function FacultySubmissionPanelContent({
       }
       if (list.length >= 4) break;
     }
-
     return list;
   }, [pastSubmissions]);
-
   const activeAY =
     submissionWindow?.academicYear || selectedAcademicYear || form.academicYear;
   const activeSem =
     submissionWindow?.semester || selectedSemester || form.semester;
-
   const displayedRequirementStatuses = useMemo<RequirementStatus[]>(() => {
     if (!hasActiveSchedule) {
       return DEFAULT_REQUIREMENTS.map((code) => ({
@@ -1135,30 +1007,25 @@ function FacultySubmissionPanelContent({
         status: "Not Submitted" as const,
       }));
     }
-
     const normActiveAY = normalizeAcademicYear(activeAY);
     const normActiveSem = normalizeSemester(activeSem);
-
     return DEFAULT_REQUIREMENTS.map((code) => {
       const live = requirementStatuses.find((r) => r.code === code);
       if (live && live.status !== "Not Submitted") {
         return live;
       }
-
       const match = pastSubmissions.find((s) => {
         if (s.requirementCode !== code) return false;
         const subSem = normalizeSemester(s.semester);
         const subYear = normalizeAcademicYear(s.academicYear);
         return subSem === normActiveSem && subYear === normActiveAY;
       });
-
       if (match) {
         const adminRemarks =
           match.adminRemarks ||
           match.admin_remarks ||
           match.feedback ||
           null;
-
         const matchUserNote =
           (match.note && match.note !== adminRemarks ? match.note : null) ||
           ((match as { notes?: string }).notes &&
@@ -1169,7 +1036,6 @@ function FacultySubmissionPanelContent({
             ? match.remarks
             : null) ||
           null;
-
         return {
           code: match.requirementCode || code,
           status:
@@ -1188,14 +1054,12 @@ function FacultySubmissionPanelContent({
           feedback: adminRemarks || undefined,
         };
       }
-
       if (live) {
         const liveAdminRemarks =
           live.adminRemarks ||
           live.admin_remarks ||
           live.feedback ||
           null;
-
         const liveUserNote =
           (live.note && live.note !== liveAdminRemarks ? live.note : null) ||
           ((live as { notes?: string }).notes &&
@@ -1206,7 +1070,6 @@ function FacultySubmissionPanelContent({
             ? live.remarks
             : null) ||
           null;
-
         return {
           ...live,
           note: liveUserNote,
@@ -1216,7 +1079,6 @@ function FacultySubmissionPanelContent({
           feedback: liveAdminRemarks || undefined,
         };
       }
-
       return {
         code,
         status: "Not Submitted" as const,
@@ -1229,7 +1091,6 @@ function FacultySubmissionPanelContent({
     pastSubmissions,
     requirementStatuses,
   ]);
-
   const displayedStatusCounts = useMemo(() => {
     const total = DEFAULT_REQUIREMENTS.length;
     const validated = displayedRequirementStatuses.filter(
@@ -1246,13 +1107,11 @@ function FacultySubmissionPanelContent({
     ).length;
     return { total, validated, rejected, pending, notSubmitted };
   }, [displayedRequirementStatuses]);
-
   const totalRequirements =
     displayedStatusCounts?.total ?? DEFAULT_REQUIREMENTS.length;
   const validatedCount = displayedStatusCounts?.validated ?? 0;
   const isAllValidated =
     totalRequirements > 0 && validatedCount === totalRequirements;
-
   const windowDeadlineDisplay = useMemo(() => {
     if (!submissionWindow?.endDate) return null;
     const parsed = new Date(
@@ -1265,7 +1124,6 @@ function FacultySubmissionPanelContent({
       year: "numeric",
     });
   }, [submissionWindow]);
-
   const windowDaysRemaining = useMemo(() => {
     if (!submissionWindow?.endDate) return null;
     const targetMs = new Date(
@@ -1276,7 +1134,6 @@ function FacultySubmissionPanelContent({
     if (diffMs <= 0) return 0;
     return Math.floor(diffMs / (1000 * 60 * 60 * 24));
   }, [submissionWindow]);
-
   const showIncompleteRequirementsModal =
     isMounted &&
     activeView === "dashboard" &&
@@ -1284,14 +1141,12 @@ function FacultySubmissionPanelContent({
     Boolean(submissionWindow?.isConfigured && submissionWindow?.isOpen) &&
     displayedStatusCounts !== null &&
     displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected > 0;
-
   function openDirectUploadModal(code: RequirementCode) {
     setSelectedRequirementForUpload(code);
     setDirectUploadFile(null);
     setDirectUploadRemarks("");
     setDirectUploadMessage(null);
   }
-
   function closeDirectUploadModal() {
     if (isUploadingDirect) return;
     setSelectedRequirementForUpload(null);
@@ -1299,7 +1154,6 @@ function FacultySubmissionPanelContent({
     setDirectUploadRemarks("");
     setDirectUploadMessage(null);
   }
-
   async function handleDirectUploadSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
@@ -1308,17 +1162,14 @@ function FacultySubmissionPanelContent({
       setDirectUploadMessage("Please select a file to submit.");
       return;
     }
-
     if (directUploadFile.size > 10 * 1024 * 1024) {
       setDirectUploadMessage("File size exceeds 10MB limit.");
       return;
     }
-
     setIsUploadingDirect(true);
     setIsSubmittingModalOpen(true);
     setIsSubmitSuccess(false);
     setDirectUploadMessage(null);
-
     try {
       const activeAY =
         submissionWindow?.academicYear ||
@@ -1330,7 +1181,6 @@ function FacultySubmissionPanelContent({
         selectedSemester ||
         form.semester ||
         "1st Semester";
-
       const formData = new FormData();
       formData.append("file", directUploadFile);
       formData.append("academicYear", activeAY);
@@ -1339,12 +1189,10 @@ function FacultySubmissionPanelContent({
       formData.append("requirement_type", selectedRequirementForUpload);
       formData.append("remarks", directUploadRemarks);
       formData.append("notes", directUploadRemarks);
-
       const response = await fetch("/api/faculty/submissions/create", {
         method: "POST",
         body: formData,
       });
-
       if (!response.ok) {
         setIsSubmittingModalOpen(false);
         try {
@@ -1359,13 +1207,10 @@ function FacultySubmissionPanelContent({
         }
         return;
       }
-
       const result = await response.json();
-
       setSubmissionMessage(
         `Requirement submitted successfully. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
       );
-
       // Optimistically update status badge to Pending immediately
       setRequirementStatuses((prev) => {
         const exists = prev.some(
@@ -1393,7 +1238,6 @@ function FacultySubmissionPanelContent({
           },
         ];
       });
-
       setIsSubmitSuccess(true);
       router.refresh();
       void fetchStatuses();
@@ -1407,25 +1251,20 @@ function FacultySubmissionPanelContent({
       setIsUploadingDirect(false);
     }
   }
-
   function updateField<K extends keyof SubmissionFormState>(
     key: K,
     value: SubmissionFormState[K],
   ) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
-
   function getRequirementStatus(code: RequirementCode) {
     return requirementStatuses.find((r) => r.code === code)?.status;
   }
-
   function getRequirementStatusItem(code: RequirementCode) {
     return requirementStatuses.find((r) => r.code === code);
   }
-
   function markSubmissionViewed(submissionId: string) {
     if (!submissionId) return;
-
     setViewedSubmissionIds((current) => {
       const next = new Set(current);
       next.add(submissionId);
@@ -1439,7 +1278,6 @@ function FacultySubmissionPanelContent({
       }
       return next;
     });
-
     // Persist viewed state to backend database
     void fetch("/api/faculty/submissions/mark-viewed", {
       method: "POST",
@@ -1449,17 +1287,13 @@ function FacultySubmissionPanelContent({
       console.warn("Failed to persist mark-viewed on server:", err);
     });
   }
-
   function openSubmissionPreview(item: RequirementStatus) {
     if (!item.latestSubmissionId) {
       return;
     }
-
     markSubmissionViewed(item.latestSubmissionId);
-
     const adminRemarks =
       item.adminRemarks || item.admin_remarks || item.feedback || null;
-
     const userNote =
       (item.note && item.note !== adminRemarks ? item.note : null) ||
       ((item as { notes?: string }).notes &&
@@ -1468,14 +1302,12 @@ function FacultySubmissionPanelContent({
         : null) ||
       (item.remarks && item.remarks !== adminRemarks ? item.remarks : null) ||
       null;
-
     const fileName =
       item.fileName ||
       item.storagePath ||
       (item as { file_name?: string }).file_name ||
       (item as { original_name?: string }).original_name ||
       undefined;
-
     setPreviewSubmission({
       code: item.code,
       title: REQUIREMENT_LABEL[item.code],
@@ -1492,16 +1324,13 @@ function FacultySubmissionPanelContent({
       latestSubmissionId: item.latestSubmissionId,
     });
   }
-
   function openHistorySubmissionPreview(submission: PastSubmission) {
     markSubmissionViewed(submission.id);
-
     const adminRemarks =
       submission.adminRemarks ||
       submission.admin_remarks ||
       submission.feedback ||
       null;
-
     const userNote =
       (submission.note && submission.note !== adminRemarks
         ? submission.note
@@ -1514,7 +1343,6 @@ function FacultySubmissionPanelContent({
         ? submission.remarks
         : null) ||
       null;
-
     const fileName =
       submission.fileName ||
       submission.storagePath ||
@@ -1522,7 +1350,6 @@ function FacultySubmissionPanelContent({
       submission.original_name ||
       submission.file_path ||
       undefined;
-
     setPreviewSubmission({
       code: submission.requirementCode,
       title: REQUIREMENT_LABEL[submission.requirementCode],
@@ -1539,7 +1366,6 @@ function FacultySubmissionPanelContent({
       latestSubmissionId: submission.id,
     });
   }
-
   function openVersionHistory(
     item:
       | RequirementStatus
@@ -1558,7 +1384,6 @@ function FacultySubmissionPanelContent({
         : "requirementCode" in item && item.requirementCode
           ? item.requirementCode
           : undefined;
-
     let targetSubmissionId =
       "latestSubmissionId" in item && item.latestSubmissionId
         ? item.latestSubmissionId
@@ -1567,7 +1392,6 @@ function FacultySubmissionPanelContent({
           : "id" in item && item.id
             ? item.id
             : undefined;
-
     if (!targetSubmissionId && code) {
       const match = pastSubmissions.find(
         (s) =>
@@ -1579,47 +1403,38 @@ function FacultySubmissionPanelContent({
         targetSubmissionId = match.id;
       }
     }
-
     const finalSubmissionId = targetSubmissionId || code;
     if (!finalSubmissionId) return;
-
     setVersionHistorySubmissionId(finalSubmissionId);
     setVersionHistoryLabel(
       code ? REQUIREMENT_LABEL[code] || code : "Version History",
     );
     setVersionHistoryCode(code || "");
   }
-
   function closeVersionHistory() {
     setVersionHistorySubmissionId(null);
     setVersionHistoryLabel("");
     setVersionHistoryCode("");
   }
-
   function startRevision(requirementCode: RequirementCode) {
     updateField("requirementCode", requirementCode);
     openSubmitModal();
   }
-
   function closeSubmissionPreview() {
     setPreviewSubmission(null);
   }
-
   function openSubmitModal() {
     setSubmissionMessage(null);
     setIsSubmitModalOpen(true);
   }
-
   function closeSubmitModal() {
     if (isSubmitting) return;
     setIsSubmitModalOpen(false);
   }
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
     setSubmissionMessage(null);
-
     try {
       if (
         isLoadingSubmissionWindow ||
@@ -1633,27 +1448,22 @@ function FacultySubmissionPanelContent({
         );
         return;
       }
-
       const fileInput = fileInputRef.current;
       const file = fileInput?.files?.[0];
-
       if (!file) {
         setSubmissionMessage("Please select a file to submit.");
         return;
       }
-
       const formData = new FormData();
       formData.append("file", file);
       formData.append("academicYear", form.academicYear);
       formData.append("semester", form.semester);
       formData.append("requirementCode", form.requirementCode);
       formData.append("remarks", form.remarks);
-
       const response = await fetch("/api/faculty/submissions/create", {
         method: "POST",
         body: formData,
       });
-
       if (!response.ok) {
         try {
           const errorData = await response.json();
@@ -1667,13 +1477,10 @@ function FacultySubmissionPanelContent({
         }
         return;
       }
-
       const result = await response.json();
-
       setSubmissionMessage(
         `Successfully submitted ${REQUIREMENT_LABEL[form.requirementCode]} for S.Y. ${form.academicYear} ${form.semester}. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
       );
-
       // Optimistically mark this requirement as pending so the UI disables re-submission
       setRequirementStatuses((prev) => {
         const found = prev.find((p) => p.code === form.requirementCode);
@@ -1684,17 +1491,14 @@ function FacultySubmissionPanelContent({
         }
         return [...prev, { code: form.requirementCode, status: "Pending" }];
       });
-
       await Promise.all([fetchStatuses(), fetchHistory()]);
       router.refresh();
-
       setForm((prev) => ({
         ...prev,
         requirementCode: DEFAULT_REQUIREMENTS[0],
         fileName: "",
         remarks: "",
       }));
-
       if (fileInput) fileInput.value = "";
       setIsSubmitModalOpen(false);
     } catch (error) {
@@ -1705,11 +1509,9 @@ function FacultySubmissionPanelContent({
       setIsSubmitting(false);
     }
   }
-
   const isSubmissionAvailable =
     !isLoadingSubmissionWindow && Boolean(submissionWindow?.isOpen);
   const isWindowClosed = !isSubmissionAvailable;
-
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
       {/* ─── Initial page-load overlay ─────────────────────────────── */}
@@ -1723,12 +1525,10 @@ function FacultySubmissionPanelContent({
         <div className="relative mb-3">
           <BrandMark size={64} className="rounded-full" />
         </div>
-
         {/* App Title */}
         <h1 className="text-xl font-bold tracking-wider text-amber-300">
           ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
         </h1>
-
         {/* Animated hourglass loader */}
         <div className="my-4 flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1740,7 +1540,6 @@ function FacultySubmissionPanelContent({
             className="h-24 w-24"
           />
         </div>
-
         {/* Subtext */}
         <p className="text-xs font-medium tracking-wide text-slate-400">
           Loading academic portal...
@@ -1757,7 +1556,6 @@ function FacultySubmissionPanelContent({
           <Menu className="w-5 h-5" />
         </button>
       )}
-
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-300 dark:border-slate-800 bg-[#F6F8FC] dark:bg-slate-950 p-2.5 shadow-sm transition-colors duration-200">
         <div className="my-1.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 p-2.5 flex flex-col items-center shadow-xs shadow-slate-300/40 dark:shadow-none transition-colors">
@@ -1784,18 +1582,14 @@ function FacultySubmissionPanelContent({
               title="Active"
             />
           </button>
-
           <p className="mt-0.5 font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
             {facultyFirstName}
           </p>
-
           <div className="my-1.5 h-px w-full bg-slate-300 dark:bg-slate-800" />
-
           <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
             Faculty
           </span>
         </div>
-
         <div className="my-2">
           <SubmissionWindowCountdown
             window={submissionWindow}
@@ -1803,14 +1597,13 @@ function FacultySubmissionPanelContent({
             onExpired={handleWindowExpired}
           />
         </div>
-
         <nav className="mt-1.5 space-y-1">
           {[
-            { key: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
+            { key: "dashboard", label: "Dashboard", Icon: ViewGrid },
             {
               key: "status",
               label: "Requirements Management",
-              Icon: ClipboardList,
+              Icon: TaskList,
             },
             { key: "settings", label: "Settings", Icon: Settings },
           ].map(({ key, label, Icon }) => {
@@ -1827,12 +1620,11 @@ function FacultySubmissionPanelContent({
                 }`}
               >
                 <Icon
-                  size={16}
-                  className={
+                  className={`h-4 w-4 shrink-0 ${
                     isActive
                       ? "text-amber-700 dark:text-amber-300"
                       : "text-slate-500 dark:text-slate-400"
-                  }
+                  }`}
                 />
                 <span>{label}</span>
               </button>
@@ -1840,7 +1632,6 @@ function FacultySubmissionPanelContent({
           })}
         </nav>
       </aside>
-
       {/* Mobile Drawer (visible only on small screens when drawer is open) */}
       {isMobileMenuOpen && (
         <div
@@ -1860,10 +1651,9 @@ function FacultySubmissionPanelContent({
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               >
-                <X className="w-4 h-4" />
+                <Xmark className="w-4 h-4" />
               </button>
             </div>
-
             <div className="my-1.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 p-2.5 flex flex-col items-center shadow-xs shadow-slate-300/40 dark:shadow-none transition-colors">
               <button
                 type="button"
@@ -1888,18 +1678,14 @@ function FacultySubmissionPanelContent({
                   title="Active"
                 />
               </button>
-
               <p className="mt-0.5 font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
                 {facultyFirstName}
               </p>
-
               <div className="my-1.5 h-px w-full bg-slate-300 dark:bg-slate-800" />
-
               <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
                 Faculty
               </span>
             </div>
-
             <div className="my-2">
               <SubmissionWindowCountdown
                 window={submissionWindow}
@@ -1907,14 +1693,13 @@ function FacultySubmissionPanelContent({
                 onExpired={handleWindowExpired}
               />
             </div>
-
             <nav className="mt-1.5 space-y-1 flex-1">
               {[
-                { key: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
+                { key: "dashboard", label: "Dashboard", Icon: ViewGrid },
                 {
                   key: "status",
                   label: "Requirements Management",
-                  Icon: ClipboardList,
+                  Icon: TaskList,
                 },
                 { key: "settings", label: "Settings", Icon: Settings },
               ].map(({ key, label, Icon }) => {
@@ -1931,12 +1716,11 @@ function FacultySubmissionPanelContent({
                     }`}
                   >
                     <Icon
-                      size={16}
-                      className={
+                      className={`h-4 w-4 shrink-0 ${
                         isActive
                           ? "text-amber-700 dark:text-amber-300"
                           : "text-slate-500 dark:text-slate-400"
-                      }
+                      }`}
                     />
                     <span>{label}</span>
                   </button>
@@ -1946,7 +1730,6 @@ function FacultySubmissionPanelContent({
           </aside>
         </div>
       )}
-
       <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
           <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
@@ -1975,7 +1758,6 @@ function FacultySubmissionPanelContent({
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/50 to-white/90 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950/90" />
                   </div>
-
                   <div className="relative z-10 space-y-1">
                     <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                       Welcome back, {facultyFirstName}
@@ -1987,7 +1769,6 @@ function FacultySubmissionPanelContent({
                     </p>
                   </div>
                 </section>
-
                 {/* Top Stat Summary Grid (3 Cards) */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Card 1: Overall Progress */}
@@ -1996,7 +1777,7 @@ function FacultySubmissionPanelContent({
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
                         Overall Progress
                       </span>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20 px-2 py-0.5 rounded-full">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-950/50 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-md">
                         {Math.round(
                           ((displayedStatusCounts?.validated ?? 0) /
                             (displayedStatusCounts?.total || 6)) *
@@ -2025,7 +1806,6 @@ function FacultySubmissionPanelContent({
                       />
                     </div>
                   </div>
-
                   {/* Card 2: Submission Window Status */}
                   <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
@@ -2064,7 +1844,6 @@ function FacultySubmissionPanelContent({
                         : "Document submissions are currently locked"}
                     </p>
                   </div>
-
                   {/* Card 3: Action Required */}
                   <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
@@ -2090,7 +1869,6 @@ function FacultySubmissionPanelContent({
                     </p>
                   </div>
                 </section>
-
                 {/* Main Dashboard Body (2-Column Grid) */}
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   {/* Left Column (2 Span - Action Required Checklist) */}
@@ -2112,10 +1890,9 @@ function FacultySubmissionPanelContent({
                           className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
                         >
                           <span>View all 6</span>
-                          <ArrowRight className="h-3 w-3" />
+                          <NavArrowRight className="h-3 w-3" />
                         </button>
                       </div>
-
                       {isLoadingStatuses ? (
                         <p className="text-xs text-slate-500 dark:text-slate-400 py-6 text-center">
                           Loading requirements...
@@ -2128,7 +1905,7 @@ function FacultySubmissionPanelContent({
                               req.status === "Rejected",
                           ).length === 0 ? (
                             <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/5 p-6 text-center space-y-2">
-                              <CheckCircle2 className="h-8 w-8 text-emerald-500 dark:text-emerald-400 mx-auto" />
+                              <CheckCircle className="h-8 w-8 text-emerald-500 dark:text-emerald-400 mx-auto" />
                               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 Great job! No pending requirements.
                               </h3>
@@ -2169,7 +1946,7 @@ function FacultySubmissionPanelContent({
                                       </div>
                                       {req.status === "Rejected" && (
                                         <p className="text-xs text-amber-700 dark:text-amber-300/90 flex items-center gap-1.5 mt-1.5 font-normal">
-                                          <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
+                                          <WarningCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
                                           <span className="italic truncate">
                                             &ldquo;
                                             {req.adminRemarks ||
@@ -2181,7 +1958,6 @@ function FacultySubmissionPanelContent({
                                         </p>
                                       )}
                                     </div>
-
                                     <div className="shrink-0">
                                       <button
                                         type="button"
@@ -2209,7 +1985,6 @@ function FacultySubmissionPanelContent({
                       )}
                     </div>
                   </div>
-
                   {/* Right Column (1 Span - Recent Activity) */}
                   <div className="space-y-6">
                     {/* Activity Feed Card */}
@@ -2226,7 +2001,6 @@ function FacultySubmissionPanelContent({
                           View all
                         </button>
                       </div>
-
                       {deduplicatedRecentActivities.length > 0 ? (
                         <div className="space-y-3">
                           {deduplicatedRecentActivities.map((sub) => (
@@ -2269,7 +2043,6 @@ function FacultySubmissionPanelContent({
                 </section>
               </article>
             )}
-
             {activeView === "submit" && (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
                 {isSubmissionAvailable ? (
@@ -2285,7 +2058,6 @@ function FacultySubmissionPanelContent({
                             : "Loading current term..."}
                         </p>
                       </div>
-
                       <div>
                         <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
                           Semester
@@ -2295,7 +2067,6 @@ function FacultySubmissionPanelContent({
                         </p>
                       </div>
                     </div>
-
                     <div>
                       <label
                         className="text-xs uppercase tracking-[0.18em] text-amber-300"
@@ -2328,7 +2099,6 @@ function FacultySubmissionPanelContent({
                         })}
                       </select>
                     </div>
-
                     <div>
                       <DocumentUploadZone
                         selectedFile={directUploadFile}
@@ -2355,7 +2125,6 @@ function FacultySubmissionPanelContent({
                         })()}
                       />
                     </div>
-
                     <div>
                       <label
                         className="text-xs uppercase tracking-[0.18em] text-amber-300"
@@ -2374,7 +2143,6 @@ function FacultySubmissionPanelContent({
                         }
                       />
                     </div>
-
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-400">
                       <span>
                         Submission will be queued for review after upload.
@@ -2429,11 +2197,9 @@ function FacultySubmissionPanelContent({
                           />
                         </svg>
                       </div>
-
                       <h3 className="mt-5 text-2xl font-semibold text-slate-100">
                         Submission Is Currently Unavailable
                       </h3>
-
                       {isLoadingSubmissionWindow ? (
                         <p className="mt-3 text-sm text-slate-300">
                           Checking submission availability...
@@ -2458,7 +2224,6 @@ function FacultySubmissionPanelContent({
                           yet. Please wait until the schedule is available.
                         </p>
                       )}
-
                       {submissionWindow?.today ? (
                         <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500">
                           Now: {submissionWindow.today}{" "}
@@ -2469,13 +2234,11 @@ function FacultySubmissionPanelContent({
                     </div>
                   </div>
                 )}
-
                 {submissionMessage ? (
                   <p className="mt-4 rounded-md border border-emerald-700 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-300">
                     {submissionMessage}
                   </p>
                 ) : null}
-
                 {isMounted && isGuideOpen ? (
                   <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
@@ -2504,7 +2267,6 @@ function FacultySubmissionPanelContent({
                           Close
                         </Button>
                       </div>
-
                       <div className="mt-5 space-y-3 text-sm text-slate-300">
                         <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
                           <p className="font-medium text-slate-100">
@@ -2539,7 +2301,6 @@ function FacultySubmissionPanelContent({
                 ) : null}
               </article>
             )}
-
             {activeView === "status" && (
               <article className="space-y-5 p-2 sm:p-4 md:p-5">
                 {/* Minimalist Header */}
@@ -2577,7 +2338,7 @@ function FacultySubmissionPanelContent({
                       className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
                       title="View validated documents history"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                       Validation History
                     </button>
                     <button
@@ -2601,14 +2362,13 @@ function FacultySubmissionPanelContent({
                       title="Refresh status"
                       className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                     >
-                      <RotateCw
+                      <Refresh
                         className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin text-amber-500" : ""}`}
                       />
                       <span className="sr-only">Refresh</span>
                     </button>
                   </div>
                 </div>
-
                 {/* Clean Header Progress & Status Counts */}
                 {displayedStatusCounts && !isLoadingStatuses && (
                   <div className="space-y-2.5">
@@ -2662,7 +2422,6 @@ function FacultySubmissionPanelContent({
                     </div>
                   </div>
                 )}
-
                 {(!hasActiveSchedule || isWindowClosed) && (
                   <div className="p-3 sm:p-3.5 rounded-xl border border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 text-xs text-amber-950 dark:text-amber-200">
                     <span className="font-semibold text-amber-900 dark:text-amber-300 mr-1.5">
@@ -2673,7 +2432,6 @@ function FacultySubmissionPanelContent({
                       : "Submission Window is currently closed. Document uploads are locked for this term."}
                   </div>
                 )}
-
                 {/* Single Unified Table/List Container */}
                 {isLoadingStatuses ? (
                   <p className="text-sm text-slate-500 dark:text-slate-400 py-6 text-center">
@@ -2712,7 +2470,7 @@ function FacultySubmissionPanelContent({
                           {/* Inline Revision Note */}
                           {req.status === "Rejected" && (
                             <p className="text-xs text-amber-800 dark:text-amber-300/90 flex items-center gap-1.5 mt-1 font-normal">
-                              <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
+                              <WarningCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
                               <span className="italic truncate">
                                 &ldquo;
                                 {req.adminRemarks ||
@@ -2724,13 +2482,11 @@ function FacultySubmissionPanelContent({
                             </p>
                           )}
                         </div>
-
                         <div className="flex shrink-0 flex-wrap items-center gap-3">
                           <SubmissionStatusBadge
                             status={req.status}
                             size="sm"
                           />
-
                           {/* Action Buttons */}
                           <div className="flex items-center gap-1.5">
                             {/* Submit Button for Not Submitted */}
@@ -2745,7 +2501,6 @@ function FacultySubmissionPanelContent({
                                 Submit
                               </button>
                             )}
-
                             {/* Resubmit Button for Rejected */}
                             {req.status === "Rejected" && (
                               <button
@@ -2758,7 +2513,6 @@ function FacultySubmissionPanelContent({
                                 Resubmit
                               </button>
                             )}
-
                             {/* View File & History Buttons */}
                             {req.status !== "Not Submitted" &&
                             req.latestSubmissionId ? (
@@ -2783,14 +2537,13 @@ function FacultySubmissionPanelContent({
                                   <Eye className="h-3.5 w-3.5" />
                                   View File
                                 </button>
-
                                 <button
                                   type="button"
                                   onClick={() => openVersionHistory(req)}
                                   className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
                                   title="View file versions"
                                 >
-                                  <History className="h-3.5 w-3.5" />
+                                  <ClockRotateRight className="h-3.5 w-3.5" />
                                   Versions
                                 </button>
                               </>
@@ -2803,7 +2556,6 @@ function FacultySubmissionPanelContent({
                 )}
               </article>
             )}
-
             {isMounted && selectedRequirementForUpload && (
               <div
                 className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
@@ -2830,10 +2582,9 @@ function FacultySubmissionPanelContent({
                       className="rounded-full border border-slate-300 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 disabled:opacity-50"
                       aria-label="Close upload modal"
                     >
-                      <X className="h-4 w-4" />
+                      <Xmark className="h-4 w-4" />
                     </button>
                   </div>
-
                   <form
                     onSubmit={handleDirectUploadSubmit}
                     className="p-6 space-y-5"
@@ -2865,7 +2616,6 @@ function FacultySubmissionPanelContent({
                         }
                       />
                     </div>
-
                     <div>
                       <label
                         htmlFor="directUploadRemarks"
@@ -2882,7 +2632,6 @@ function FacultySubmissionPanelContent({
                         onChange={(e) => setDirectUploadRemarks(e.target.value)}
                       />
                     </div>
-
                     {directUploadMessage && (
                       <p
                         className={`text-sm rounded-xl p-3 border ${
@@ -2894,7 +2643,6 @@ function FacultySubmissionPanelContent({
                         {directUploadMessage}
                       </p>
                     )}
-
                     <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-300 dark:border-slate-800">
                       <button
                         type="button"
@@ -2911,7 +2659,7 @@ function FacultySubmissionPanelContent({
                       >
                         {isUploadingDirect ? (
                           <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <SystemRestart className="h-4 w-4 animate-spin" />
                             <span>Uploading...</span>
                           </>
                         ) : (
@@ -2923,14 +2671,13 @@ function FacultySubmissionPanelContent({
                 </div>
               </div>
             )}
-
             {/* SUBMITTING & SUCCESS MODAL POPUPS */}
             {isMounted && isSubmittingModalOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
                 <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4">
                   {isUploadingDirect ? (
                     <>
-                      <Loader2 className="w-12 h-12 text-amber-500 dark:text-amber-400 mx-auto animate-spin" />
+                      <SystemRestart className="w-12 h-12 text-amber-500 dark:text-amber-400 mx-auto animate-spin" />
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                         Submitting Document...
                       </h3>
@@ -2942,7 +2689,7 @@ function FacultySubmissionPanelContent({
                   ) : isSubmitSuccess ? (
                     <>
                       <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 animate-in zoom-in">
-                        <CheckCircle2 className="w-10 h-10" />
+                        <CheckCircle className="w-10 h-10" />
                       </div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                         Submitted Successfully!
@@ -2963,7 +2710,6 @@ function FacultySubmissionPanelContent({
                 </div>
               </div>
             )}
-
             {isMounted && successModalData.isOpen && (
               <div
                 className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
@@ -2979,16 +2725,14 @@ function FacultySubmissionPanelContent({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-500/50 text-emerald-600 dark:text-emerald-400 mb-4">
-                    <CheckCircle2 className="h-10 w-10" />
+                    <CheckCircle className="h-10 w-10" />
                   </div>
-
                   <h3
                     id="success-modal-title"
                     className="text-xl font-bold text-slate-900 dark:text-slate-100"
                   >
                     Upload Successful
                   </h3>
-
                   <div className="mt-6 flex justify-center">
                     <Button
                       type="button"
@@ -3007,7 +2751,6 @@ function FacultySubmissionPanelContent({
                 </div>
               </div>
             )}
-
             {isMounted && isHistoryModalOpen && (
               <div
                 className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
@@ -3033,10 +2776,9 @@ function FacultySubmissionPanelContent({
                       className="rounded-full border border-slate-300 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                       aria-label="Close history modal"
                     >
-                      <X className="h-4 w-4" />
+                      <Xmark className="h-4 w-4" />
                     </button>
                   </div>
-
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-6 py-3">
                     <div className="flex flex-wrap items-center gap-4">
                       <div className="flex items-center gap-2">
@@ -3063,7 +2805,6 @@ function FacultySubmissionPanelContent({
                           ))}
                         </select>
                       </div>
-
                       <div className="flex items-center gap-2">
                         <label
                           htmlFor="modalHistorySemester"
@@ -3091,7 +2832,6 @@ function FacultySubmissionPanelContent({
                         </select>
                       </div>
                     </div>
-
                     <div className="flex items-center gap-2">
                       <Button
                         type="button"
@@ -3106,7 +2846,7 @@ function FacultySubmissionPanelContent({
                         title="Download all validated requirements in current view as ZIP"
                       >
                         {isBulkDownloading ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <SystemRestart className="h-3.5 w-3.5 animate-spin" />
                         ) : (
                           <Download className="h-3.5 w-3.5" />
                         )}
@@ -3127,7 +2867,6 @@ function FacultySubmissionPanelContent({
                       </Button>
                     </div>
                   </div>
-
                   <div className="flex-1 overflow-y-auto p-6">
                     {isLoadingHistory ? (
                       <SubmissionHistorySkeleton count={4} />
@@ -3144,7 +2883,6 @@ function FacultySubmissionPanelContent({
                       />
                     )}
                   </div>
-
                   <div className="flex justify-end border-t border-slate-300 dark:border-slate-800 px-6 py-4">
                     <Button
                       type="button"
@@ -3157,7 +2895,6 @@ function FacultySubmissionPanelContent({
                 </div>
               </div>
             )}
-
             {isMounted && previewSubmission ? (
               <div
                 className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
@@ -3173,7 +2910,7 @@ function FacultySubmissionPanelContent({
                         {previewSubmission.title}
                       </h3>
                       <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                        <FileText className="h-3.5 w-3.5" />
+                        <Page className="h-3.5 w-3.5" />
                         Document Preview
                       </span>
                     </div>
@@ -3183,10 +2920,9 @@ function FacultySubmissionPanelContent({
                       className="rounded-full p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors shrink-0 ml-3"
                       aria-label="Close preview"
                     >
-                      <X className="h-4 w-4" />
+                      <Xmark className="h-4 w-4" />
                     </button>
                   </div>
-
                   <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
                     <div className="min-h-[60vh] overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 shadow-xs flex items-center justify-center p-4">
                       {(() => {
@@ -3200,7 +2936,6 @@ function FacultySubmissionPanelContent({
                         const { isPdf, isImage, isExcel, isWord, extension } =
                           getFileType(fileIdentifier);
                         const fileExtension = extension || "file";
-
                         if (isImage) {
                           return (
                             <img
@@ -3210,7 +2945,6 @@ function FacultySubmissionPanelContent({
                             />
                           );
                         }
-
                         // Ensure Fallback Card Renders BEFORE Mounting iframe
                         if (
                           isExcel ||
@@ -3222,7 +2956,6 @@ function FacultySubmissionPanelContent({
                             isExcel,
                             isWord,
                           );
-
                           return (
                             <div
                               className={`flex flex-col items-center justify-center h-full w-full min-h-[50vh] p-8 text-center bg-slate-50/60 dark:bg-slate-900/80 rounded-2xl border ${brand.borderColor} shadow-xs backdrop-blur-xs transition-all`}
@@ -3241,11 +2974,9 @@ function FacultySubmissionPanelContent({
                                   {fileExtension}
                                 </span>
                               </div>
-
                               <h4 className="text-base font-bold text-slate-900 dark:text-amber-100 mb-1 max-w-sm truncate">
                                 {fileIdentifier}
                               </h4>
-
                               <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 max-w-xs leading-relaxed">
                                 Direct browser preview is not supported for{" "}
                                 <span className="font-bold text-slate-800 dark:text-slate-200">
@@ -3254,7 +2985,6 @@ function FacultySubmissionPanelContent({
                                 . You can download or open the file to view its
                                 contents.
                               </p>
-
                               <a
                                 href={fileUrl}
                                 download={fileIdentifier}
@@ -3268,7 +2998,6 @@ function FacultySubmissionPanelContent({
                             </div>
                           );
                         }
-
                         return (
                           <iframe
                             title={`${previewSubmission.title} preview`}
@@ -3278,7 +3007,6 @@ function FacultySubmissionPanelContent({
                         );
                       })()}
                     </div>
-
                     <div className="space-y-4">
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 p-4">
                         <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
@@ -3298,7 +3026,6 @@ function FacultySubmissionPanelContent({
                           )}
                         </div>
                       </div>
-
                       {previewSubmission.reviewedAt ||
                       previewSubmission.adminRemarks ||
                       previewSubmission.admin_remarks ||
@@ -3325,7 +3052,6 @@ function FacultySubmissionPanelContent({
                           ) : null}
                         </div>
                       ) : null}
-
                       {previewSubmission.submittedAt ? (
                         <div className="rounded-xl border border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 p-4 text-sm text-slate-700 dark:text-slate-300">
                           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
@@ -3338,7 +3064,6 @@ function FacultySubmissionPanelContent({
                           </p>
                         </div>
                       ) : null}
-
                       <button
                         type="button"
                         className="w-full bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 py-2.5 cursor-pointer"
@@ -3352,7 +3077,7 @@ function FacultySubmissionPanelContent({
                           )
                         }
                       >
-                        <ExternalLink className="h-4 w-4" />
+                        <OpenNewWindow className="h-4 w-4" />
                         Full View
                       </button>
                     </div>
@@ -3360,7 +3085,6 @@ function FacultySubmissionPanelContent({
                 </div>
               </div>
             ) : null}
-
             {isMounted && versionHistorySubmissionId && (
               <VersionHistoryModal
                 submissionId={versionHistorySubmissionId}
@@ -3369,7 +3093,6 @@ function FacultySubmissionPanelContent({
                 onClose={closeVersionHistory}
               />
             )}
-
             {isMounted && showIncompleteRequirementsModal ? (
               <div
                 className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
@@ -3381,7 +3104,7 @@ function FacultySubmissionPanelContent({
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold mb-3">
-                        <AlertCircle className="h-3.5 w-3.5" />
+                        <WarningCircle className="h-3.5 w-3.5" />
                         <span>Action Required</span>
                       </div>
                       <h3
@@ -3397,16 +3120,14 @@ function FacultySubmissionPanelContent({
                       className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                       aria-label="Close alert"
                     >
-                      <X className="h-4 w-4" />
+                      <Xmark className="h-4 w-4" />
                     </button>
                   </div>
-
                   <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                     You have documents awaiting submission or revision for this
                     semester. Please submit the missing requirements before the
                     deadline.
                   </p>
-
                   {/* Inner Stats Container */}
                   <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800/80 rounded-xl p-4 my-4 flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
                     <div className="flex items-center gap-3">
@@ -3432,7 +3153,6 @@ function FacultySubmissionPanelContent({
                       </span>
                     )}
                   </div>
-
                   <div className="flex items-center justify-end gap-2.5 mt-5">
                     <button
                       type="button"
@@ -3455,7 +3175,6 @@ function FacultySubmissionPanelContent({
                 </div>
               </div>
             ) : null}
-
             {activeView === "settings" && (
               <article className="space-y-6">
                 <FacultySettingsPanel
@@ -3481,7 +3200,6 @@ function FacultySubmissionPanelContent({
                 />
               </article>
             )}
-
             {isMounted && isSubmitModalOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
                 <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl">
@@ -3494,10 +3212,9 @@ function FacultySubmissionPanelContent({
                       onClick={closeSubmitModal}
                       className="rounded-full border border-slate-300 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                     >
-                      <X className="h-4 w-4" />
+                      <Xmark className="h-4 w-4" />
                     </button>
                   </div>
-
                   <div className="max-h-[75vh] overflow-y-auto p-6">
                     {isSubmissionAvailable ? (
                       <form className="space-y-4" onSubmit={handleSubmit}>
@@ -3513,7 +3230,6 @@ function FacultySubmissionPanelContent({
                                   : "Loading current term..."}
                               </p>
                             </div>
-
                             <div>
                               <label className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300">
                                 Semester
@@ -3524,7 +3240,6 @@ function FacultySubmissionPanelContent({
                             </div>
                           </div>
                         </div>
-
                         <div>
                           <label
                             className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300"
@@ -3561,7 +3276,6 @@ function FacultySubmissionPanelContent({
                             })}
                           </select>
                         </div>
-
                         <div>
                           <label
                             className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300"
@@ -3587,7 +3301,6 @@ function FacultySubmissionPanelContent({
                             })()}
                           />
                         </div>
-
                         <div>
                           <label
                             className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300"
@@ -3605,7 +3318,6 @@ function FacultySubmissionPanelContent({
                             }
                           />
                         </div>
-
                         <div className="flex items-center gap-3">
                           <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting
@@ -3620,7 +3332,6 @@ function FacultySubmissionPanelContent({
                             Cancel
                           </button>
                         </div>
-
                         {submissionMessage && (
                           <p className="text-sm text-slate-700 dark:text-slate-300">
                             {submissionMessage}
@@ -3646,7 +3357,6 @@ function FacultySubmissionPanelContent({
     </div>
   );
 }
-
 function FacultySubmissionPanelFallback() {
   return (
     <div className="flex h-screen w-full items-center justify-center bg-slate-950 text-amber-400 p-8">
@@ -3657,7 +3367,6 @@ function FacultySubmissionPanelFallback() {
     </div>
   );
 }
-
 export function FacultySubmissionPanel(props: FacultySubmissionPanelProps) {
   return (
     <Suspense fallback={<FacultySubmissionPanelFallback />}>

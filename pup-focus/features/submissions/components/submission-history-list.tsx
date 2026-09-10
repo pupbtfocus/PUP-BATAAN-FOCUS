@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Eye, Clock3, AlertCircle, FileText, CheckCircle2, FileCheck2, Download } from "lucide-react";
+import { Check, CheckCircle, Clock, Download, Eye, Page, WarningCircle } from "iconoir-react";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { SubmissionStatusBadge } from "./submission-status-badge";
 import { cn } from "@/utils/cn";
@@ -112,7 +112,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
   if (submissions.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 px-4 py-12 text-center shadow-xs">
-        <FileCheck2 className="mx-auto h-8 w-8 text-slate-400 dark:text-slate-600 mb-2" />
+        <Check className="mx-auto h-8 w-8 text-slate-400 dark:text-slate-600 mb-2" />
         <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No Validated Documents Found</p>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{emptyMessage}</p>
       </div>
@@ -182,7 +182,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 
                     {/* Academic Term */}
                     <td className="px-5 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      <span className="inline-flex items-center rounded-md border border-slate-200/80 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300">
+                      <span className="inline-flex items-center rounded-md border border-slate-700 bg-slate-800/60 px-2 py-0.5 text-[11px] font-medium text-slate-300">
                         {sub.semester} • S.Y. {sub.academicYear}
                       </span>
                     </td>
@@ -274,7 +274,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                       {title}
                     </h4>
                   </div>
-                  <span className="inline-flex items-center rounded-md border border-slate-200/80 bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300 mt-1">
+                  <span className="inline-flex items-center rounded-md border border-slate-700 bg-slate-800/60 px-2 py-0.5 text-[10px] font-medium text-slate-300 mt-1">
                     {sub.semester} • S.Y. {sub.academicYear}
                   </span>
                 </div>
@@ -284,14 +284,14 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 
               {/* Date Validated */}
               <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                 <span>Date Validated: {formatDateTime(dateValidated)}</span>
               </div>
 
               {/* Reviewer Feedback Callout */}
               {adminFeedback && (
-                <div className="rounded-xl border border-emerald-300/80 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 p-2.5 text-xs text-emerald-900 dark:text-emerald-200">
-                  <span className="font-semibold block uppercase tracking-wider text-[10px] text-emerald-800 dark:text-emerald-300 mb-0.5">
+                <div className="rounded-xl border border-emerald-800/80 bg-emerald-950/50 p-2.5 text-xs text-emerald-400">
+                  <span className="font-semibold block uppercase tracking-wider text-[10px] text-emerald-400 mb-0.5">
                     Reviewer Remarks:
                   </span>
                   <p className="italic leading-relaxed">&ldquo;{adminFeedback}&rdquo;</p>

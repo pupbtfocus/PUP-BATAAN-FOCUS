@@ -1,25 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import {
-  Database,
-  Archive,
-  Download,
-  CheckCircle2,
-  Calendar,
-  AlertTriangle,
-  RefreshCw,
-  Plus,
-  Trash2,
-  Eye,
-  FileCheck,
-  HardDrive,
-  Clock,
-  Layers,
-  X,
-  FolderArchive,
-  FileArchive,
-} from "lucide-react";
+import { Archive, Calendar, Check, CheckCircle, Clock, Database, Download, Eye, HardDrive, MultiplePages, Plus, Refresh, Trash, WarningTriangle, Xmark } from "iconoir-react";
 import type {
   SystemBackup,
   ArchivedTermSummary,
@@ -383,7 +365,7 @@ export function BackupArchivePanel() {
               className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition cursor-pointer"
               title="Refresh backups"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+              <Refresh className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
             </button>
 
             <button
@@ -394,12 +376,12 @@ export function BackupArchivePanel() {
             >
               {exportingTermKey === "all__all" ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
+                  <Refresh className="w-4 h-4 animate-spin text-amber-500" />
                   <span>{exportProgress || "Zipping documents..."}</span>
                 </>
               ) : (
                 <>
-                  <FolderArchive className="w-4 h-4 text-amber-500" />
+                  <Archive className="w-4 h-4 text-amber-500" />
                   <span>Download Document Vault (.ZIP)</span>
                 </>
               )}
@@ -413,7 +395,7 @@ export function BackupArchivePanel() {
             >
               {isGeneratingBackup ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <Refresh className="w-4 h-4 animate-spin" />
                   <span>Generating Snapshot...</span>
                 </>
               ) : (
@@ -444,7 +426,7 @@ export function BackupArchivePanel() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-500">
-                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-amber-500" />
+                      <Refresh className="w-5 h-5 animate-spin mx-auto mb-2 text-amber-500" />
                       Loading backup records...
                     </td>
                   </tr>
@@ -536,7 +518,7 @@ export function BackupArchivePanel() {
                             className="p-1 text-red-500 hover:bg-red-500/10 rounded-lg transition cursor-pointer"
                             title="Delete backup log"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
@@ -643,7 +625,7 @@ export function BackupArchivePanel() {
                       </td>
                       <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300">
                         <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
-                          <FileCheck className="w-3.5 h-3.5" />
+                          <Check className="w-3.5 h-3.5" />
                           <span>Protected & Retained</span>
                         </span>
                       </td>
@@ -670,12 +652,12 @@ export function BackupArchivePanel() {
                           >
                             {exportingTermKey === `${term.academic_year}__${term.semester}` ? (
                               <>
-                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                <Refresh className="w-3 h-3 animate-spin" />
                                 <span>{exportProgress || "Zipping..."}</span>
                               </>
                             ) : (
                               <>
-                                <FolderArchive className="w-3 h-3" />
+                                <Archive className="w-3 h-3" />
                                 <span>Vault (.ZIP)</span>
                               </>
                             )}
@@ -697,7 +679,7 @@ export function BackupArchivePanel() {
           <div className="w-full max-w-md rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center gap-3 text-amber-500 mb-3">
               <div className="p-2 rounded-xl bg-amber-500/10">
-                <AlertTriangle className="w-5 h-5" />
+                <WarningTriangle className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold">Archive Academic Term?</h3>
             </div>
@@ -748,7 +730,7 @@ export function BackupArchivePanel() {
                 onClick={() => setInspectedBackup(null)}
                 className="p-1 rounded-full text-slate-400 hover:text-slate-100 hover:bg-slate-800"
               >
-                <X className="w-4 h-4" />
+                <Xmark className="w-4 h-4" />
               </button>
             </div>
 
@@ -838,7 +820,7 @@ export function BackupArchivePanel() {
                 onClick={() => setInspectedTerm(null)}
                 className="p-1 rounded-full text-slate-400 hover:text-slate-100 hover:bg-slate-800"
               >
-                <X className="w-4 h-4" />
+                <Xmark className="w-4 h-4" />
               </button>
             </div>
 
@@ -871,12 +853,12 @@ export function BackupArchivePanel() {
               >
                 {exportingTermKey === `${inspectedTerm.academic_year}__${inspectedTerm.semester}` ? (
                   <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <Refresh className="w-3.5 h-3.5 animate-spin" />
                     <span>{exportProgress || "Zipping documents..."}</span>
                   </>
                 ) : (
                   <>
-                    <FolderArchive className="w-3.5 h-3.5" />
+                    <Archive className="w-3.5 h-3.5" />
                     <span>Download Vault (.ZIP)</span>
                   </>
                 )}
@@ -899,7 +881,7 @@ export function BackupArchivePanel() {
           <div className="w-full max-w-md rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center gap-3 text-red-500 mb-3">
               <div className="p-2 rounded-xl bg-red-500/10">
-                <AlertTriangle className="w-5 h-5" />
+                <WarningTriangle className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold">Delete Backup Record</h3>
             </div>

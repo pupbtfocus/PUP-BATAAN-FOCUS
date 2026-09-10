@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Eye, Pencil, UserMinus, UserCheck, Trash2, X } from "lucide-react";
+import { EditPencil, Eye, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoir-react";
 import { ROLE, type AppRole } from "@/config/roles";
 
 export interface AdminAccount {
@@ -254,7 +254,7 @@ export function AdminAccountsTable({
           <span>{accountsError}</span>
           {onClearMessages ? (
             <button type="button" onClick={onClearMessages} className="text-red-400 hover:text-red-200 text-xs">
-              <X className="h-3.5 w-3.5" />
+              <Xmark className="h-3.5 w-3.5" />
             </button>
           ) : null}
         </div>
@@ -265,7 +265,7 @@ export function AdminAccountsTable({
           <span>{accountActionError}</span>
           {onClearMessages ? (
             <button type="button" onClick={onClearMessages} className="text-red-400 hover:text-red-200 text-xs">
-              <X className="h-3.5 w-3.5" />
+              <Xmark className="h-3.5 w-3.5" />
             </button>
           ) : null}
         </div>
@@ -276,7 +276,7 @@ export function AdminAccountsTable({
           <span>{accountActionSuccess}</span>
           {onClearMessages ? (
             <button type="button" onClick={onClearMessages} className="text-emerald-400 hover:text-emerald-200 text-xs">
-              <X className="h-3.5 w-3.5" />
+              <Xmark className="h-3.5 w-3.5" />
             </button>
           ) : null}
         </div>
@@ -366,10 +366,10 @@ export function AdminAccountsTable({
                     {/* Role Badge */}
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                           isSuperAdmin
-                            ? "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700/30 dark:text-slate-300 dark:border-slate-600"
-                            : "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
+                            ? "bg-slate-800/60 text-slate-300 border-slate-700"
+                            : "bg-slate-900 text-slate-300 border-slate-800"
                         }`}
                       >
                         {isSuperAdmin ? "Super Admin" : "Admin"}
@@ -379,10 +379,10 @@ export function AdminAccountsTable({
                     {/* Status Badge */}
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-semibold border ${
                           admin.is_active
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
-                            : "bg-slate-100 text-slate-700 border-slate-400 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                            ? "bg-emerald-950/50 text-emerald-400 border-emerald-800/80"
+                            : "bg-slate-800/60 text-slate-300 border-slate-700"
                         }`}
                       >
                         {admin.is_active ? "Active" : "Inactive"}
@@ -411,7 +411,7 @@ export function AdminAccountsTable({
                             title="Edit Admin"
                             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition cursor-pointer"
                           >
-                            <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <EditPencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                             <span>Edit</span>
                           </button>
                         )}
@@ -426,7 +426,7 @@ export function AdminAccountsTable({
                               title="Deactivate Admin"
                               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                             >
-                              <UserMinus className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <UserXmark className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                               <span>{isLoadingAction ? "..." : "Deactivate"}</span>
                             </button>
                           ) : (
@@ -437,7 +437,7 @@ export function AdminAccountsTable({
                               title="Activate Admin"
                               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                             >
-                              <UserCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <UserBadgeCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                               <span>{isLoadingAction ? "..." : "Activate"}</span>
                             </button>
                           )
@@ -452,7 +452,7 @@ export function AdminAccountsTable({
                             title="Delete Admin"
                             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <Trash className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                             <span>Delete</span>
                           </button>
                         )}

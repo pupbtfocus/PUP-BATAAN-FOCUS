@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useId } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { X } from "lucide-react";
+import { Xmark } from "iconoir-react";
 import { createClient } from "@/lib/supabase/client";
 import type { FacultyAccountFormInput } from "@/features/faculty-management/schemas/faculty-account.schema";
 
@@ -383,7 +383,7 @@ export function AddFacultyModal({
             className="rounded-lg p-1.5 text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 transition-all cursor-pointer"
             aria-label="Close modal"
           >
-            <X className="w-5 h-5" />
+            <Xmark className="w-5 h-5" />
           </button>
         </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy } from "iconoir-react";
 import { Button } from "@/components/ui/button";
 
 export interface InviteStatusModalProps {

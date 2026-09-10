@@ -1,27 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  Search,
-  Filter,
-  ShieldAlert,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-  Eye,
-  X,
-  Upload,
-  UserPlus,
-  UserMinus,
-  UserCheck,
-  Trash2,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  Settings,
-  Pencil,
-} from "lucide-react";
+import { CheckCircle, Clock, EditPencil, Eye, Filter, NavArrowLeft, NavArrowRight, Page, Refresh, Search, Settings, ShieldAlert, Trash, Upload, UserBadgeCheck, UserPlus, UserXmark, Xmark, XmarkCircle } from "iconoir-react";
 import { Button } from "@/components/ui/button";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -86,14 +66,14 @@ function getActionBadgeStyle(action: string): ActionBadgeStyle {
     return {
       bg: "bg-emerald-50 border-emerald-300 dark:bg-emerald-500/15 dark:border-emerald-500/30",
       text: "text-emerald-800 dark:text-emerald-400",
-      icon: <CheckCircle2 className="h-3 w-3" />,
+      icon: <CheckCircle className="h-3 w-3" />,
     };
   }
   if (action.includes("reject") || action.includes("delete") || action.includes("deactivate")) {
     return {
       bg: "bg-rose-50 border-rose-300 dark:bg-rose-500/15 dark:border-rose-500/30",
       text: "text-rose-800 dark:text-rose-400",
-      icon: <XCircle className="h-3 w-3" />,
+      icon: <XmarkCircle className="h-3 w-3" />,
     };
   }
   if (action.includes("upload")) {
@@ -107,7 +87,7 @@ function getActionBadgeStyle(action: string): ActionBadgeStyle {
     return {
       bg: "bg-amber-50 border-amber-300 dark:bg-amber-500/15 dark:border-amber-500/30",
       text: "text-amber-900 dark:text-amber-400",
-      icon: <Pencil className="h-3 w-3" />,
+      icon: <EditPencil className="h-3 w-3" />,
     };
   }
   return {
@@ -119,15 +99,15 @@ function getActionBadgeStyle(action: string): ActionBadgeStyle {
 
 function getActionIcon(action: string): React.ReactNode {
   if (action.includes("upload")) return <Upload className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
-  if (action.includes("approve") || action.includes("validated")) return <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
-  if (action.includes("reject")) return <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />;
+  if (action.includes("approve") || action.includes("validated")) return <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
+  if (action.includes("reject")) return <XmarkCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />;
   if (action.includes("create") || action.includes("invite")) return <UserPlus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
-  if (action.includes("delete")) return <Trash2 className="h-4 w-4 text-rose-600 dark:text-rose-400" />;
-  if (action.includes("activate")) return <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
-  if (action.includes("deactivate")) return <UserMinus className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
-  if (action.includes("update")) return <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
+  if (action.includes("delete")) return <Trash className="h-4 w-4 text-rose-600 dark:text-rose-400" />;
+  if (action.includes("activate")) return <UserBadgeCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
+  if (action.includes("deactivate")) return <UserXmark className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
+  if (action.includes("update")) return <EditPencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
   if (action.includes("window")) return <Settings className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
-  return <FileText className="h-4 w-4 text-slate-500 dark:text-slate-400" />;
+  return <Page className="h-4 w-4 text-slate-500 dark:text-slate-400" />;
 }
 
 function formatActionLabel(action: string): string {
@@ -173,7 +153,7 @@ function MetadataModal({
             className="rounded-full border border-slate-400 dark:border-slate-800 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
             aria-label="Close"
           >
-            <X className="h-4 w-4" />
+            <Xmark className="h-4 w-4" />
           </button>
         </div>
 
@@ -387,7 +367,7 @@ export function AuditLogsPanel() {
               disabled={isLoading}
               className="flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
             >
-              <RefreshCw
+              <Refresh
                 className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
               />
               {isLoading ? "Loading…" : "Refresh"}
@@ -434,7 +414,7 @@ export function AuditLogsPanel() {
         {/* Table Body */}
         {isLoading && logs.length === 0 ? (
           <div className="px-4 py-12 text-center">
-            <RefreshCw className="mx-auto h-6 w-6 animate-spin text-slate-400" />
+            <Refresh className="mx-auto h-6 w-6 animate-spin text-slate-400" />
             <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
               Loading audit logs…
             </p>
@@ -525,7 +505,7 @@ export function AuditLogsPanel() {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             className="flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 transition disabled:opacity-50 cursor-pointer"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <NavArrowLeft className="h-3.5 w-3.5" />
             Previous
           </button>
 
@@ -540,7 +520,7 @@ export function AuditLogsPanel() {
             className="flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 transition disabled:opacity-50 cursor-pointer"
           >
             Next
-            <ChevronRight className="h-3.5 w-3.5" />
+            <NavArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
       ) : null}

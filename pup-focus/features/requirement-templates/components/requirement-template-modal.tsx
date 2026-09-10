@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Check } from "lucide-react";
+import { Check, Xmark } from "iconoir-react";
 import {
   ALLOWED_FORMAT_OPTIONS,
   MAX_SIZE_OPTIONS,
@@ -170,7 +170,7 @@ export function RequirementTemplateModal({
             className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-all cursor-pointer"
             aria-label="Close modal"
           >
-            <X className="w-5 h-5" />
+            <Xmark className="w-5 h-5" />
           </button>
         </div>
 

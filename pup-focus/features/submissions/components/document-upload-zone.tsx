@@ -8,24 +8,7 @@ import React, {
   type DragEvent,
   type KeyboardEvent,
 } from "react";
-import {
-  UploadCloud,
-  FileText,
-  FileSpreadsheet,
-  FileImage,
-  FileCode,
-  Archive,
-  File,
-  Trash2,
-  X,
-  Eye,
-  ExternalLink,
-  AlertCircle,
-  CheckCircle2,
-  Info,
-  Loader2,
-  Download,
-} from "lucide-react";
+import { Archive, CheckCircle, CloudUpload, Code, Download, Eye, InfoCircle, MediaImage, OpenNewWindow, Page, Reports, SystemRestart, Trash, WarningCircle, Xmark } from "iconoir-react";
 import { cn } from "@/utils/cn";
 import { SubmissionStatusBadge } from "./submission-status-badge";
 
@@ -176,7 +159,7 @@ function getFileTypeDetails(fileName: string) {
     return {
       icon: (
         <div className="h-10 w-10 rounded-xl bg-slate-700 flex items-center justify-center text-white shadow-xs">
-          <FileCode className="h-6 w-6 stroke-[2]" />
+          <Code className="h-6 w-6 stroke-[2]" />
         </div>
       ),
       tag: ext.slice(0, 4),
@@ -194,7 +177,7 @@ function getFileTypeDetails(fileName: string) {
     return {
       icon: (
         <div className="h-10 w-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-xs">
-          <FileImage className="h-6 w-6 stroke-[2]" />
+          <MediaImage className="h-6 w-6 stroke-[2]" />
         </div>
       ),
       tag: "IMG",
@@ -204,7 +187,7 @@ function getFileTypeDetails(fileName: string) {
   return {
     icon: (
       <div className="h-10 w-10 rounded-xl bg-slate-600 flex items-center justify-center text-white shadow-xs">
-        <File className="h-6 w-6 stroke-[2]" />
+        <Page className="h-6 w-6 stroke-[2]" />
       </div>
     ),
     tag: ext.slice(0, 4),
@@ -442,7 +425,7 @@ export function DocumentUploadZone({
           role="alert"
           className="flex items-start gap-2.5 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200 shadow-2xs"
         >
-          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <WarningCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div>
             <span className="font-semibold block uppercase tracking-wider text-[10px] text-amber-800 dark:text-amber-300">
               Reviewer Feedback:
@@ -517,7 +500,7 @@ export function DocumentUploadZone({
                     <span>{formatBytes(selectedFile.size)}</span>
                     <span>•</span>
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
-                      <CheckCircle2 className="h-3 w-3" /> Ready to submit
+                      <CheckCircle className="h-3 w-3" /> Ready to submit
                     </span>
                   </div>
                 </div>
@@ -549,7 +532,7 @@ export function DocumentUploadZone({
                   className="p-2 text-xs font-semibold rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-2xs active:scale-95"
                   title="Remove File"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -584,9 +567,9 @@ export function DocumentUploadZone({
               )}
             >
               {isUploading ? (
-                <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+                <SystemRestart className="h-6 w-6 animate-spin text-amber-500" />
               ) : (
-                <UploadCloud className="h-6 w-6" />
+                <CloudUpload className="h-6 w-6" />
               )}
             </div>
 
@@ -637,7 +620,7 @@ export function DocumentUploadZone({
                   download={selectedFile.name}
                   className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all shadow-2xs"
                 >
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <OpenNewWindow className="h-3.5 w-3.5" />
                   <span>Download</span>
                 </a>
                 <button
@@ -646,7 +629,7 @@ export function DocumentUploadZone({
                   className="rounded-full p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                   aria-label="Close Preview"
                 >
-                  <X className="h-5 w-5" />
+                  <Xmark className="h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -752,14 +735,14 @@ export function DocumentUploadZone({
           role="alert"
           className="flex items-center gap-2 rounded-xl border border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 px-3 py-2 text-xs text-rose-800 dark:text-rose-300 shadow-2xs animate-in fade-in slide-in-from-top-1"
         >
-          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          <WarningCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{validationError}</span>
         </div>
       )}
 
       <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
         <span className="flex items-center gap-1">
-          <FileText className="h-3 w-3" />
+          <Page className="h-3 w-3" />
           <span>Max {maxSizeMb}MB • PDF / Scanned Copy</span>
         </span>
 
@@ -773,7 +756,7 @@ export function DocumentUploadZone({
             className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition focus-visible:outline-none"
             aria-label="Upload rules and information"
           >
-            <Info className="h-3 w-3" />
+            <InfoCircle className="h-3 w-3" />
             <span>Upload rules</span>
           </button>
 

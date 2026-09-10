@@ -8,7 +8,7 @@ import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
-import { Menu, X, CheckCircle2, Clock3, Users, ArrowRight, RotateCcw } from "lucide-react";
+import { CheckCircle, Clock, Group, Menu, NavArrowRight, Refresh, Xmark } from "iconoir-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
@@ -35,8 +35,6 @@ import { DeleteFacultyModal } from "./faculty-modals/delete-faculty-modal";
 import { InviteStatusModal } from "./faculty-modals/invite-status-modal";
 import { SubmissionWindowPanel } from "./submission-window-panel";
 import { RequirementsPanel } from "./requirements-verification-panel";
-
-
 
 function normalizeAdminSection(raw?: string | null): AdminSection | null {
   if (!raw) return null;
@@ -571,7 +569,7 @@ export function AdminFacultyDashboard({
                   className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
                   aria-label="Close navigation"
                 >
-                  <X className="w-4 h-4" />
+                  <Xmark className="w-4 h-4" />
                 </button>
               </div>
               <SidebarContent
@@ -624,7 +622,7 @@ export function AdminFacultyDashboard({
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Submissions Verified</span>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20 px-2 py-0.5 rounded-full">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-950/50 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-md">
                             Verified
                           </span>
                         </div>
@@ -687,7 +685,7 @@ export function AdminFacultyDashboard({
                               className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
                             >
                               <span>View all</span>
-                              <ArrowRight className="h-3 w-3" />
+                              <NavArrowRight className="h-3 w-3" />
                             </button>
                           </div>
                           <div className="py-8 text-center">
@@ -738,7 +736,7 @@ export function AdminFacultyDashboard({
                           disabled={isLoading}
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                         >
-                          <RotateCcw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                          <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                           <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
                         </button>
                       </div>
@@ -787,7 +785,7 @@ export function AdminFacultyDashboard({
                         disabled={isLoading}
                         className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                       >
-                        <RotateCcw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                        <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                         <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
@@ -815,7 +813,7 @@ export function AdminFacultyDashboard({
                         disabled={isLoading}
                         className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                       >
-                        <RotateCcw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                        <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                         <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
@@ -842,7 +840,7 @@ export function AdminFacultyDashboard({
                         disabled={isLoading}
                         className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
                       >
-                        <RotateCcw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                        <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                         <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>

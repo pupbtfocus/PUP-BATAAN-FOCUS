@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Info, X, ExternalLink } from "lucide-react";
+import { InfoCircle, OpenNewWindow, Xmark } from "iconoir-react";
 import { BrandMark } from "@/components/shared/brand-mark";
 
 export function PupWebBadge() {
@@ -20,7 +20,7 @@ export function PupWebBadge() {
           title="About PUP FOCUS"
           aria-label="About PUP FOCUS"
         >
-          <Info className="w-4 h-4 sm:w-[18px] sm:h-[18px] transition-transform duration-200 group-hover:scale-110" />
+          <InfoCircle className="w-4 h-4 sm:w-[18px] sm:h-[18px] transition-transform duration-200 group-hover:scale-110" />
           <span className="pointer-events-none absolute -top-8 right-0 whitespace-nowrap rounded-md bg-black/85 px-2 py-0.5 text-[10px] font-medium text-amber-200 opacity-0 shadow-md backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
             About FOCUS
           </span>
@@ -67,7 +67,7 @@ export function PupWebBadge() {
               className="absolute top-4 right-4 rounded-full p-1.5 text-amber-200/70 hover:text-amber-200 hover:bg-amber-400/10 transition-colors cursor-pointer"
               aria-label="Close modal"
             >
-              <X className="w-5 h-5" />
+              <Xmark className="w-5 h-5" />
             </button>
 
             {/* Header with Crest */}
@@ -106,7 +106,7 @@ export function PupWebBadge() {
                   />
                 </div>
                 <span>PUP Website</span>
-                <ExternalLink className="w-3 h-3 text-amber-400/70" />
+                <OpenNewWindow className="w-3 h-3 text-amber-400/70" />
               </a>
             </div>
           </div>

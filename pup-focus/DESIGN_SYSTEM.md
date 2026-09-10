@@ -41,14 +41,17 @@ PUP FOCUS is a faculty compliance management system for the Polytechnic Universi
 | Text Muted     | `#475569`            | `text-slate-600`                      |
 | Action Button  | `#0f172a` on light   | `bg-slate-900 text-slate-50 hover:bg-slate-800` |
 
-#### Functional Accents (Status Indicators Only)
+#### Functional Status Badges & Chips
 
-| Purpose       | Utility                          |
-|---------------|----------------------------------|
-| Info/Active   | `bg-blue-600 text-white`         |
-| Success       | `bg-emerald-600 text-white`      |
-| Warning       | `bg-amber-500 text-slate-950`    |
-| Danger        | `bg-rose-600 text-white`         |
+All status badges, pills, and tags across tables, dashboards, and modals must use these grounded tokens:
+
+| Status Role                 | Utility Tokens                                              |
+|-----------------------------|-------------------------------------------------------------|
+| Neutral / Draft             | `bg-slate-800/60 text-slate-300 border border-slate-700`    |
+| Success / Active / Approved | `bg-emerald-950/50 text-emerald-400 border border-emerald-800/80` |
+| Warning / Pending / Review  | `bg-amber-950/50 text-amber-400 border border-amber-800/80` |
+| Error / Rejected / Overdue  | `bg-rose-950/50 text-rose-400 border border-rose-800/80`    |
+| Info / Secondary            | `bg-slate-900 text-slate-300 border border-slate-800`        |
 
 ### 2.2 Banned Colors
 
@@ -146,17 +149,32 @@ These colors are reserved for login, authentication, and public-facing pages:
 />
 ```
 
-### 5.5 Badge
+### 5.5 Badges and Chips
 
 ```tsx
-{/* Neutral */}
-<span className="inline-flex items-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
-  Admin
+{/* Neutral / Draft */}
+<span className="inline-flex items-center rounded-full bg-slate-800/60 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300 border border-slate-700">
+  Draft
 </span>
 
-{/* Functional (status) */}
-<span className="inline-flex items-center rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+{/* Success / Active / Approved */}
+<span className="inline-flex items-center rounded-full bg-emerald-950/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-400 border border-emerald-800/80">
   Active
+</span>
+
+{/* Warning / Pending / Review */}
+<span className="inline-flex items-center rounded-full bg-amber-950/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-400 border border-amber-800/80">
+  Pending
+</span>
+
+{/* Error / Rejected / Overdue */}
+<span className="inline-flex items-center rounded-full bg-rose-950/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-400 border border-rose-800/80">
+  Rejected
+</span>
+
+{/* Info / Secondary */}
+<span className="inline-flex items-center rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300 border border-slate-800">
+  Archived
 </span>
 ```
 
@@ -192,38 +210,69 @@ These colors are reserved for login, authentication, and public-facing pages:
 
 ### 6.1 Library
 
-Use `lucide-react` exclusively. Import from `lucide-react`.
+Use `iconoir-react` exclusively. Import directly from `'iconoir-react'`:
 
-### 6.2 Sizing
+```tsx
+import { Settings, Search, NavArrowRight, Xmark, Check, InfoCircle, WarningTriangle } from 'iconoir-react';
+```
 
-| Context     | Size Class     | Stroke Width |
-|-------------|----------------|--------------|
-| Inline/Nav  | `h-4 w-4`     | `1.5`        |
-| Panel/Card  | `h-5 w-5`     | `1.5`        |
-| Hero/Empty  | `h-8 w-8`     | `1.5`        |
+### 6.2 Sizing and Stroke Width
+
+Standardize all icons to `h-4 w-4` (inline/nav) or `h-5 w-5` (panel/modal header) with explicit stroke width `strokeWidth={1.5}`:
+
+| Context     | Size Class     | Stroke Width | Component Usage Example |
+|-------------|----------------|--------------|-------------------------|
+| Inline/Nav  | `h-4 w-4`      | `1.5`        | `<Search className="h-4 w-4" strokeWidth={1.5} />` |
+| Panel/Card  | `h-5 w-5`      | `1.5`        | `<Settings className="h-5 w-5" strokeWidth={1.5} />` |
+| Hero/Empty  | `h-8 w-8`      | `1.5`        | `<Page className="h-8 w-8" strokeWidth={1.5} />` |
 
 ### 6.3 Banned Icons
 
 Never import, render, or reference: `Sparkles`, `Wand2`, `Stars`, `Bot`, or any glowing orb SVGs.
 
-### 6.4 Approved Icon Mapping
+### 6.4 Approved Icon Mapping (Iconoir)
 
-| Concept       | Icon              |
-|---------------|-------------------|
-| Close/Dismiss | `X`               |
-| Success       | `Check`           |
-| Warning       | `AlertTriangle`   |
-| Error         | `XCircle`         |
-| Info          | `Info`            |
-| Settings      | `Settings`        |
-| Search        | `Search`          |
-| Filter        | `SlidersHorizontal` |
-| Navigate      | `ChevronRight`    |
-| Expand        | `ChevronDown`     |
-| Lock          | `Lock`            |
-| Package       | `Package`         |
-| Copy          | `Copy`            |
-| Arrow         | `ArrowRight`      |
+| Concept       | Iconoir Component   | Usage                                 |
+|---------------|---------------------|---------------------------------------|
+| Close/Dismiss | `Xmark`             | Modal / drawer close buttons          |
+| Success/Done  | `Check`             | Completed items, confirmations        |
+| Validated     | `CheckCircle`       | Document validated status             |
+| Warning       | `WarningTriangle`   | Destructive actions, schedule alerts  |
+| Alert/Notice  | `WarningCircle`     | Form error alerts                     |
+| Error         | `XmarkCircle`       | Rejected or failed items              |
+| Info          | `InfoCircle`        | Information tooltips and notices      |
+| Settings      | `Settings`          | Settings panels and preferences       |
+| Search        | `Search`            | Search filters and input bars         |
+| Filter        | `Filter`            | Table and list filtering              |
+| Navigate/Next | `NavArrowRight`     | List row chevron, breadcrumb          |
+| Expand        | `NavArrowDown`      | Dropdown and accordions               |
+| Collapse      | `NavArrowUp`        | Collapsible panels                    |
+| Back          | `NavArrowLeft`      | Back navigation                       |
+| Lock/Secure   | `Lock`              | Password, closed submission window    |
+| Unlock        | `LockSlash`         | Opened or extended permission         |
+| Package/Batch | `Package`           | Batch actions                         |
+| Copy          | `Copy`              | Clipboard copy action                 |
+| Arrow         | `ArrowRight`        | Action buttons, CTA links             |
+| Refresh       | `Refresh`           | Data refresh buttons                  |
+| Spinner       | `SystemRestart`     | Animated loading state                |
+| Users/Group   | `Group`             | Faculty lists, user management        |
+| User Item     | `User`              | Profile avatar, individual admin      |
+| Add User      | `UserPlus`          | Create faculty/admin account          |
+| Remove User   | `UserXmark`         | Deactivate faculty account            |
+| Verified User | `UserBadgeCheck`    | Active verified user status           |
+| Document/File | `Page`              | Generic file or text requirement      |
+| Spreadsheet   | `Reports`           | Excel / tabular compliance file       |
+| Archive/Zip   | `Archive`           | Compressed backup / archive bundle    |
+| Code File     | `Code`              | Source code attachment                |
+| Image File    | `MediaImage`        | Image requirement                     |
+| Download      | `Download`          | File download action                  |
+| Upload        | `Upload`            | Document submission upload zone       |
+| Cloud Upload  | `CloudUpload`       | Remote sync/backup                    |
+| Edit          | `EditPencil`        | Rename, update requirement template   |
+| Delete/Trash  | `Trash`             | Delete account or record              |
+| Save/Floppy   | `FloppyDisk`        | Form save buttons                     |
+| History       | `ClockRotateRight`  | Submission history, audit logs        |
+| Clock/Timer   | `Clock`             | Deadline, submission window timer     |
 
 ---
 

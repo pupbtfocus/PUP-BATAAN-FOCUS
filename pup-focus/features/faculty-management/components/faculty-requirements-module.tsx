@@ -2,18 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  CheckCircle2,
-  Clock3,
-  FileUp,
-  Loader2,
-  AlertCircle,
-  RotateCw,
-  X,
-  Calendar,
-  Eye,
-  FileText,
-} from "lucide-react";
+import { Calendar, CheckCircle, Clock, Eye, Page, Refresh, SystemRestart, Upload, WarningCircle, Xmark } from "iconoir-react";
 import { Button } from "@/components/ui/button";
 import {
   DEFAULT_REQUIREMENTS,
@@ -441,7 +430,7 @@ export function FacultyRequirementsModule({
               className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs shadow-sm active:scale-[0.98] transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
               onClick={() => openModal()}
             >
-              <FileUp className="h-3.5 w-3.5" />
+              <Upload className="h-3.5 w-3.5" />
               Submit Requirements
             </button>
             <button
@@ -451,7 +440,7 @@ export function FacultyRequirementsModule({
               aria-label="Refresh requirement statuses"
               className="inline-flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             >
-              <RotateCw
+              <Refresh
                 className={`h-4 w-4 ${isLoading ? "animate-spin text-amber-500" : ""}`}
               />
             </button>
@@ -463,7 +452,7 @@ export function FacultyRequirementsModule({
             role="status"
             className="flex items-center gap-2 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200 shadow-2xs"
           >
-            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <WarningCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
             <span>{message}</span>
           </div>
         )}
@@ -562,7 +551,7 @@ export function FacultyRequirementsModule({
                               onClick={() => openModal(code)}
                               className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 text-xs transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                             >
-                              <FileUp className="h-3.5 w-3.5" />
+                              <Upload className="h-3.5 w-3.5" />
                               Submit
                             </button>
                           )}
@@ -573,7 +562,7 @@ export function FacultyRequirementsModule({
                               onClick={() => openModal(code)}
                               className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 text-xs transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                             >
-                              <FileUp className="h-3.5 w-3.5" />
+                              <Upload className="h-3.5 w-3.5" />
                               Resubmit
                             </button>
                           )}
@@ -632,7 +621,7 @@ export function FacultyRequirementsModule({
                     </div>
 
                     <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                      <Clock3 className="h-3.5 w-3.5 shrink-0" />
+                      <Clock className="h-3.5 w-3.5 shrink-0" />
                       <span>
                         {item?.submittedAt
                           ? `Submitted: ${formatSubmittedDateTime(item.submittedAt)}`
@@ -659,7 +648,7 @@ export function FacultyRequirementsModule({
                           onClick={() => openModal(code)}
                           className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs transition cursor-pointer shadow-2xs"
                         >
-                          <FileUp className="h-3.5 w-3.5" />
+                          <Upload className="h-3.5 w-3.5" />
                           Submit Document
                         </button>
                       )}
@@ -670,7 +659,7 @@ export function FacultyRequirementsModule({
                           onClick={() => openModal(code)}
                           className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs transition cursor-pointer shadow-2xs"
                         >
-                          <FileUp className="h-3.5 w-3.5" />
+                          <Upload className="h-3.5 w-3.5" />
                           Resubmit Revision
                         </button>
                       )}
@@ -727,7 +716,7 @@ export function FacultyRequirementsModule({
                 className="rounded-full border border-slate-300 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition"
                 aria-label="Close modal"
               >
-                <X className="h-4 w-4" />
+                <Xmark className="h-4 w-4" />
               </button>
             </div>
 
@@ -837,7 +826,7 @@ export function FacultyRequirementsModule({
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <SystemRestart className="h-4 w-4 animate-spin" />
                       Uploading...
                     </span>
                   ) : (
@@ -881,7 +870,7 @@ export function FacultyRequirementsModule({
                 className="rounded-full border border-slate-300 dark:border-slate-700 p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 aria-label="Close calendar modal"
               >
-                <X className="h-4 w-4" />
+                <Xmark className="h-4 w-4" />
               </button>
             </div>
 

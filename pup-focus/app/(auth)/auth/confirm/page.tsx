@@ -2,19 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Copy,
-  Check,
-  Eye,
-  EyeOff,
-  Loader2,
-  AlertCircle,
-  CheckCircle2,
-  Mail,
-  KeyRound,
-  ArrowRight,
-  Info,
-} from "lucide-react";
+import { Check, CheckCircle, Copy, Eye, EyeClosed, InfoCircle, Key, Mail, NavArrowRight, SystemRestart, WarningCircle } from "iconoir-react";
 import { Logo } from "@/components/ui/logo";
 import { PupWebBadge } from "@/components/auth/pup-web-badge";
 import { createClient } from "@/lib/supabase/client";
@@ -325,7 +313,7 @@ function AuthConfirmContent() {
               <div className="py-8 flex flex-col items-center justify-center gap-4 text-center">
                 <div className="relative">
                   <div className="h-14 w-14 rounded-full border-4 border-amber-400/20 border-t-amber-400 animate-spin" />
-                  <Loader2 className="absolute inset-0 m-auto h-6 w-6 text-amber-300 animate-spin" />
+                  <SystemRestart className="absolute inset-0 m-auto h-6 w-6 text-amber-300 animate-spin" />
                 </div>
                 <p className="text-xs text-amber-200/80 font-medium tracking-wide uppercase">
                   Securing institutional session...
@@ -337,7 +325,7 @@ function AuthConfirmContent() {
             {status === "error" && (
               <div className="space-y-5 py-2">
                 <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-left flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
+                  <WarningCircle className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
                   <div className="text-xs text-rose-200/90 leading-relaxed">
                     <p className="font-semibold text-rose-200 mb-1">
                       Verification Notice
@@ -352,7 +340,7 @@ function AuthConfirmContent() {
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-[0.99] text-slate-950 font-bold text-sm py-3 px-4 shadow-lg transition duration-150"
                 >
                   <span>Return to Sign In</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <NavArrowRight className="h-4 w-4" />
                 </button>
               </div>
             )}
@@ -362,7 +350,7 @@ function AuthConfirmContent() {
               <div className="space-y-4 pt-1">
                 {/* Success Banner */}
                 <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-3.5 py-2.5 text-xs text-emerald-200">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span className="font-medium">
                     {userFullName ? `Welcome, ${userFullName}!` : "Credentials issued successfully."}
                   </span>
@@ -409,7 +397,7 @@ function AuthConfirmContent() {
                   <div className="space-y-1.5 text-left">
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1.5">
-                        <KeyRound className="h-3.5 w-3.5 text-amber-400" />
+                        <Key className="h-3.5 w-3.5 text-amber-400" />
                         <span>Temporary Password</span>
                       </label>
                       <button
@@ -419,7 +407,7 @@ function AuthConfirmContent() {
                       >
                         {showPassword ? (
                           <>
-                            <EyeOff className="h-3 w-3" />
+                            <EyeClosed className="h-3 w-3" />
                             <span>Hide</span>
                           </>
                         ) : (
@@ -459,7 +447,7 @@ function AuthConfirmContent() {
                     </div>
 
                     <p className="text-[10px] text-amber-200/70 pt-0.5 flex items-center gap-1.5">
-                      <Info className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                      <InfoCircle className="h-3.5 w-3.5 shrink-0 text-amber-300" />
                       <span>Please save or copy this password. You can set your personal password after signing in.</span>
                     </p>
                   </div>
@@ -473,7 +461,7 @@ function AuthConfirmContent() {
                     className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-amber-200 active:scale-[0.99] text-slate-950 font-extrabold text-sm py-3 px-4 shadow-xl shadow-black/30 transition duration-150"
                   >
                     <span>Proceed to Sign In</span>
-                    <ArrowRight className="h-4 w-4" />
+                    <NavArrowRight className="h-4 w-4" />
                   </button>
 
                   {userEmail && tempPassword && (

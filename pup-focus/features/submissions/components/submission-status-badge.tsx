@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, AlertCircle, Clock3 } from "lucide-react";
+import { CheckCircle, Clock, WarningCircle } from "iconoir-react";
 import { cn } from "@/utils/cn";
 
 export type NormalizedSubmissionStatus =
@@ -53,29 +53,29 @@ export function SubmissionStatusBadge({
     Validated: {
       label: "Validated",
       containerClass:
-        "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300",
-      dotClass: "bg-emerald-500 dark:bg-emerald-400",
-      icon: <CheckCircle2 className="shrink-0" aria-hidden="true" />,
+        "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80",
+      dotClass: "bg-emerald-400",
+      icon: <CheckCircle className="shrink-0" strokeWidth={1.5} aria-hidden="true" />,
     },
     "Needs Revision": {
       label: "Needs Revision",
       containerClass:
-        "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
-      dotClass: "bg-amber-500 dark:bg-amber-400",
-      icon: <AlertCircle className="shrink-0" aria-hidden="true" />,
+        "bg-rose-950/50 text-rose-400 border border-rose-800/80",
+      dotClass: "bg-rose-400",
+      icon: <WarningCircle className="shrink-0" strokeWidth={1.5} aria-hidden="true" />,
     },
     "Pending Review": {
       label: "Pending Review",
       containerClass:
-        "border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300",
-      dotClass: "bg-blue-500 dark:bg-blue-400",
-      icon: <Clock3 className="shrink-0" aria-hidden="true" />,
+        "bg-amber-950/50 text-amber-400 border border-amber-800/80",
+      dotClass: "bg-amber-400",
+      icon: <Clock className="shrink-0" strokeWidth={1.5} aria-hidden="true" />,
     },
     "Not Submitted": {
       label: "Not Submitted",
       containerClass:
-        "border-slate-300 dark:border-slate-700 bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
-      dotClass: "bg-slate-400",
+        "bg-slate-800/60 text-slate-300 border border-slate-700",
+      dotClass: "bg-slate-500",
       icon: null,
     },
   }[normalized];
