@@ -10,6 +10,8 @@ const buttonVariants = cva(
         default: "bg-amber-500 text-slate-950 hover:bg-amber-400",
         secondary: "bg-slate-800 text-slate-100 hover:bg-slate-700",
         ghost: "hover:bg-slate-800",
+        maroon: "bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs",
+        "maroon-outline": "border border-[#780000] text-[#780000] dark:text-rose-300 dark:border-rose-800 hover:bg-[#780000]/10 dark:hover:bg-rose-950/40 font-semibold",
       },
       size: {
         default: "h-10 px-4 py-2",

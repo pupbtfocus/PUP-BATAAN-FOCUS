@@ -626,7 +626,7 @@ export function DocumentUploadZone({
                 <button
                   type="button"
                   onClick={() => setIsPreviewOpen(false)}
-                  className="rounded-full p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
                   aria-label="Close Preview"
                 >
                   <Xmark className="h-5 w-5" />

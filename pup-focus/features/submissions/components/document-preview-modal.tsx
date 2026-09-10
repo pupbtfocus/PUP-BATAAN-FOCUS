@@ -118,7 +118,7 @@ export function DocumentPreviewModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors shrink-0 ml-3 cursor-pointer"
+            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors shrink-0 ml-3 cursor-pointer shadow-2xs"
             aria-label="Close preview"
           >
             <Xmark className="h-4 w-4" />

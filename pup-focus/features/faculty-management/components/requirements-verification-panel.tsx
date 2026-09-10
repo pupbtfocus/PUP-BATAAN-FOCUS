@@ -1200,7 +1200,7 @@ function FacultyVerificationDrawer({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-full p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
             aria-label="Close modal"
           >
             <Xmark className="h-4 w-4" />
@@ -2046,7 +2046,7 @@ function FacultyVerificationDrawer({
               <button
                 type="button"
                 onClick={() => setRevisionModalData(null)}
-                className="rounded-full p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
               >
                 <Xmark className="h-4 w-4" />
               </button>
@@ -2109,7 +2109,7 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isSubmittingRevision}
                 onClick={() => setRevisionModalData(null)}
-                className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                className="rounded-xl border border-[#780000] text-[#780000] dark:text-rose-300 dark:border-rose-800 hover:bg-[#780000]/10 dark:hover:bg-rose-950/40 px-4 py-2 text-xs font-semibold transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -2163,7 +2163,7 @@ function FacultyVerificationDrawer({
               <button
                 type="button"
                 onClick={() => setValidateModalData(null)}
-                className="rounded-full p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
               >
                 <Xmark className="h-4 w-4" />
               </button>
@@ -2192,7 +2192,7 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isValidatingSingle}
                 onClick={() => setValidateModalData(null)}
-                className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
@@ -2296,7 +2296,7 @@ function FacultyVerificationDrawer({
                     <button
                       type="button"
                       onClick={() => setPreviewingDoc(null)}
-                      className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
                       aria-label="Close preview"
                     >
                       <Xmark className="h-4 w-4" />
@@ -2357,7 +2357,7 @@ function FacultyVerificationDrawer({
               <button
                 type="button"
                 onClick={() => setNoticeModalData(null)}
-                className="rounded-full p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition cursor-pointer shadow-2xs"
               >
                 <Xmark className="h-4 w-4" />
               </button>
@@ -2410,7 +2410,7 @@ function FacultyVerificationDrawer({
                     setBulkValidateNotes("");
                   }
                 }}
-                className="rounded-full p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition cursor-pointer shadow-2xs"
               >
                 <Xmark className="h-4 w-4" />
               </button>
@@ -2467,7 +2467,7 @@ function FacultyVerificationDrawer({
                   setIsValidateModalOpen(false);
                   setBulkValidateNotes("");
                 }}
-                className="rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-300 px-3.5 py-2 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2 text-xs font-semibold transition cursor-pointer shadow-xs disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -2515,7 +2515,7 @@ function FacultyVerificationDrawer({
                 <button
                   type="button"
                   onClick={() => setZipProgressData(null)}
-                  className="rounded-full p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+                  className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition cursor-pointer shadow-2xs"
                 >
                   <Xmark className="h-4 w-4" />
                 </button>

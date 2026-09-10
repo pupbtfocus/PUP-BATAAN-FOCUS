@@ -443,7 +443,7 @@ export function RequirementTemplatesPanel() {
               <button
                 type="button"
                 onClick={() => setTemplateToDelete(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-semibold border border-[#780000] text-[#780000] dark:text-rose-300 dark:border-rose-800 hover:bg-[#780000]/10 dark:hover:bg-rose-950/40 transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -451,7 +451,7 @@ export function RequirementTemplatesPanel() {
                 type="button"
                 disabled={isDeleting}
                 onClick={() => void handleDeleteConfirm()}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer disabled:opacity-50 shadow-xs"
               >
                 {isDeleting ? "Deleting..." : "Confirm Delete"}
               </button>

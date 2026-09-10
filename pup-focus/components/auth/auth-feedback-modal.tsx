@@ -86,7 +86,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3.5 right-3.5 p-1.5 rounded-full text-amber-200/40 hover:text-amber-200 hover:bg-white/10 transition-colors cursor-pointer"
+          className="absolute top-3.5 right-3.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
           aria-label="Close modal"
         >
           <Xmark className="w-4 h-4" />
@@ -161,7 +161,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
               <button
                 type="button"
                 onClick={onClose}
-                className="text-xs text-amber-200/60 hover:text-amber-200 transition-colors cursor-pointer py-1"
+                className="text-xs font-semibold px-4 py-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all cursor-pointer shadow-xs"
               >
                 Cancel
               </button>

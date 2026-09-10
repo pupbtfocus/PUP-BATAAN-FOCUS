@@ -167,7 +167,7 @@ export function RequirementTemplateModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-all cursor-pointer"
+            className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all cursor-pointer shadow-2xs"
             aria-label="Close modal"
           >
             <Xmark className="w-5 h-5" />

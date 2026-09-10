@@ -83,9 +83,14 @@ Used exclusively for document validation, approvals, and setting active/current 
 - **Confirm & Validate All** (Bulk Modal)
 - **Set Current** (Academic Term Management Row & Modal Switch)
 
-#### 3. PUP Maroon Destructive & Revision Actions
-**Utility**: `bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] shadow-xs transition-colors cursor-pointer`  
-Used exclusively for destructive, revoking, deactivating, closing, deleting, or revision requests:
+#### 3. PUP Maroon Destructive, Dismissive & Cancel Actions
+**Solid Utility**: `bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] shadow-xs transition-colors cursor-pointer`  
+**Dismiss X Utility**: `rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs`  
+**Destructive Dialog Cancel (Outline)**: `border border-[#780000] text-[#780000] dark:text-rose-300 dark:border-rose-800 hover:bg-[#780000]/10 dark:hover:bg-rose-950/40 font-semibold transition-colors cursor-pointer`  
+Used for all destructive, revoking, deactivating, closing, deleting, revision requests, and ALL modal dismissals:
+- **Cancel** (All modals, dialogs, drawers, and form cards)
+- **Close** (Modal footers and detailed view dialogs)
+- **Close 'X' / Dismiss** (Top-right modal headers, lightbox previewers, drawer dismissals)
 - **Deactivate**
 - **Delete** (Faculty Accounts, Academic Terms, Admin Accounts)
 - **Close Submissions** / **Confirm Close Submissions**

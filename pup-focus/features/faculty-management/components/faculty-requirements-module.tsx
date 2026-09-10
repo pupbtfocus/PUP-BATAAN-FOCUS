@@ -713,7 +713,7 @@ export function FacultyRequirementsModule({
               <button
                 type="button"
                 onClick={closeModal}
-                className="rounded-full border border-slate-300 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition shadow-2xs cursor-pointer"
                 aria-label="Close modal"
               >
                 <Xmark className="h-4 w-4" />
@@ -813,9 +813,10 @@ export function FacultyRequirementsModule({
               <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="maroon"
                   onClick={closeModal}
                   disabled={isSubmitting}
+                  className="cursor-pointer"
                 >
                   Cancel
                 </Button>
@@ -867,7 +868,7 @@ export function FacultyRequirementsModule({
               <button
                 type="button"
                 onClick={closeCalendarModal}
-                className="rounded-full border border-slate-300 dark:border-slate-700 p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition cursor-pointer"
                 aria-label="Close calendar modal"
               >
                 <Xmark className="h-4 w-4" />

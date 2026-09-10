@@ -770,7 +770,7 @@ export function SubmissionWindowPanel({
                     setIsEditingSchedule(false);
                   }}
                   disabled={isSaving}
-                  className="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                 >
                   <Xmark className="w-3.5 h-3.5" />
                   <span>Cancel</span>
@@ -847,7 +847,7 @@ export function SubmissionWindowPanel({
               <button
                 type="button"
                 onClick={() => setShowLogsModal(false)}
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200 transition cursor-pointer"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
                 aria-label="Close logs"
               >
                 <Xmark className="h-4 w-4" />
@@ -960,7 +960,7 @@ export function SubmissionWindowPanel({
               <button
                 type="button"
                 onClick={() => setShowSaveConfirmation(false)}
-                className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
@@ -1024,7 +1024,7 @@ export function SubmissionWindowPanel({
               <button
                 type="button"
                 onClick={() => { setShowCloseConfirmation(false); setCloseCountdown(10); }}
-                className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                className="border border-[#780000] text-[#780000] dark:text-rose-300 dark:border-rose-800 hover:bg-[#780000]/10 dark:hover:bg-rose-950/40 text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>

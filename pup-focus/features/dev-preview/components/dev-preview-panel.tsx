@@ -1489,7 +1489,8 @@ export function DevPreviewPanel() {
             <button
               type="button"
               onClick={() => setIsPasswordModalOpen(false)}
-              className="absolute -top-12 right-0 p-2 text-slate-300 hover:text-white cursor-pointer"
+              className="absolute -top-12 right-0 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-2 transition cursor-pointer shadow-2xs"
+              aria-label="Close"
             >
               <Xmark className="w-6 h-6" />
             </button>
@@ -1508,29 +1509,29 @@ export function DevPreviewPanel() {
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-xs text-white placeholder-slate-400 focus:border-amber-400 outline-none"
                     required
-                    minLength={8}
-                    className="w-full rounded-xl border border-[rgba(255,215,0,0.25)] bg-black/30 px-4 py-2.5 text-xs text-white outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#fff8e7] mb-1">Confirm password</label>
+                  <label className="block text-xs font-medium text-[#fff8e7] mb-1">Confirm new password</label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-xs text-white placeholder-slate-400 focus:border-amber-400 outline-none"
                     required
-                    minLength={8}
-                    className="w-full rounded-xl border border-[rgba(255,215,0,0.25)] bg-black/30 px-4 py-2.5 text-xs text-white outline-none"
                   />
                 </div>
                 {changePassError ? <p className="text-xs text-red-300">{changePassError}</p> : null}
                 {changePassSuccess ? <p className="text-xs text-emerald-300">{changePassSuccess}</p> : null}
-                <div className="flex gap-2 pt-2">
+                <div className="flex items-center gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setIsPasswordModalOpen(false)}
-                    className="flex-1 py-2 text-xs font-semibold rounded-xl bg-black/40 hover:bg-black/60 text-slate-300 transition cursor-pointer"
+                    className="flex-1 py-2 text-xs font-semibold rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
                   >
                     Close Preview
                   </button>
@@ -1559,7 +1560,8 @@ export function DevPreviewPanel() {
               <button
                 type="button"
                 onClick={() => setActiveShowcaseModal(null)}
-                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 cursor-pointer"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
+                aria-label="Close"
               >
                 <Xmark className="h-4 w-4" />
               </button>
@@ -1613,7 +1615,7 @@ export function DevPreviewPanel() {
               <button
                 type="button"
                 onClick={() => setActiveShowcaseModal(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
               >
                 Close Logs
               </button>
@@ -1648,7 +1650,7 @@ export function DevPreviewPanel() {
               <button
                 type="button"
                 onClick={() => setActiveShowcaseModal(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold rounded-lg border border-[#780000] text-[#780000] dark:text-rose-300 dark:border-rose-800 hover:bg-[#780000]/10 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -1679,7 +1681,7 @@ export function DevPreviewPanel() {
               <button
                 type="button"
                 onClick={() => setActiveShowcaseModal(null)}
-                className="flex-1 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-xs font-semibold cursor-pointer"
+                className="flex-1 py-2.5 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold cursor-pointer shadow-xs transition-all"
               >
                 Close
               </button>
@@ -1706,7 +1708,7 @@ export function DevPreviewPanel() {
           <button
             type="button"
             onClick={() => setShowSystemLoadingScreen(false)}
-            className="fixed top-6 right-6 z-50 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 text-white text-xs font-semibold backdrop-blur-md border border-white/20 transition cursor-pointer flex items-center gap-1.5 shadow-lg"
+            className="fixed top-6 right-6 z-50 px-3 py-1.5 rounded-full bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold backdrop-blur-md border border-[#5e0000] transition cursor-pointer flex items-center gap-1.5 shadow-lg"
           >
             <Xmark className="w-3.5 h-3.5" />
             <span>Dismiss Preview</span>

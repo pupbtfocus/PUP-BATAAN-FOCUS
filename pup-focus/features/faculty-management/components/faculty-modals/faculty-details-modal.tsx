@@ -125,7 +125,7 @@ export function FacultyDetailsModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
               aria-label="Close dialog"
             >
               <Xmark className="h-5 w-5" />
@@ -357,7 +357,7 @@ export function FacultyDetailsModal({
             <button
               type="button"
               onClick={onClose}
-              className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold rounded-xl px-5 py-2 transition-colors cursor-pointer"
+              className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold rounded-xl px-5 py-2 transition-colors cursor-pointer shadow-xs"
             >
               Close
             </button>
@@ -382,7 +382,7 @@ export function FacultyDetailsModal({
               <button
                 type="button"
                 onClick={() => setShowPhotoPreview(false)}
-                className="rounded-lg p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
                 aria-label="Close preview"
               >
                 <Xmark className="h-4 w-4" />
