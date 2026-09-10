@@ -15,20 +15,28 @@ export async function GET(request: NextRequest) {
       (user?.user_metadata?.role as string | undefined) ??
       (user?.app_metadata?.role as string | undefined);
 
-    if (
-      !user ||
-      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
-    ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const url = new URL(request.url);
     const path = url.searchParams.get("path");
     const download = url.searchParams.get("download");
     const filename = url.searchParams.get("filename");
+    const asJson =
+      url.searchParams.get("json") === "true" ||
+      url.searchParams.get("format") === "json";
 
     if (!path) {
       return NextResponse.json({ error: "path is required" }, { status: 400 });
+    }
+
+    const isFaculty = requesterRole === ROLE.FACULTY;
+    const isOwner = Boolean(isFaculty && user?.id && path.includes(user.id));
+
+    if (
+      !user ||
+      (!isOwner &&
+        requesterRole !== ROLE.ADMIN &&
+        requesterRole !== ROLE.SUPER_ADMIN)
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Get signed URL from Supabase
@@ -50,6 +58,14 @@ export async function GET(request: NextRequest) {
         },
         { status: 500 },
       );
+    }
+
+    if (asJson) {
+      return NextResponse.json({
+        success: true,
+        signedUrl: data.signedUrl,
+        url: data.signedUrl,
+      });
     }
 
     // Redirect to the signed URL
