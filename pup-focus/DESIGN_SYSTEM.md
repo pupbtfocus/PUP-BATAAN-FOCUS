@@ -55,14 +55,15 @@ The PUP FOCUS system color baseline pairs **PUP Institutional Maroon** with a to
 | **Document Verification** | **Not Submitted** | Neutral Slate | `bg-white text-slate-600 border border-slate-200/90 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 px-3 py-1 text-xs font-semibold rounded-md` |
 | **Notes & Feedback** | **Remarks** | Dark Green (`#0b5336`) | Label / Icon: `text-[#0b5336] dark:text-emerald-400 font-bold` |
 | **Notes & Feedback** | **Revision** | PUP Maroon (`#780000`) | Label / Icon: `text-[#780000] dark:text-rose-400 font-bold` |
+| **Toggle Switches & Checkboxes** | **Active / Checked (On)** | PUP Gold (`#f59e0b`) | Track: `bg-amber-500 border border-amber-400 shadow-xs focus:ring-amber-500/50`<br>Knob: `translate-x-5.5 bg-slate-950`<br>Checkbox: `bg-amber-500 border-amber-400` |
 
-### 2.2 Operational Action Buttons Color Palette
+### 2.2 Operational Action Buttons & Controls Color Palette
 
-Buttons across administrative management, faculty settings, and verification panels are standardized into three functional color roles:
+Buttons and controls across administrative management, faculty settings, and verification panels are standardized into functional color roles:
 
-#### 1. Gold / Amber Primary & Constructive Actions
+#### 1. Gold / Amber Primary, Constructive Actions & Active Toggles
 **Utility**: `bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold shadow-xs transition-colors cursor-pointer border border-amber-600`  
-Used exclusively for administrative creations, additions, non-destructive configurations, schedule edits, downloads, and account activations:
+Used exclusively for administrative creations, additions, non-destructive configurations, schedule edits, downloads, account activations, and active toggle/selection states:
 - **Add Faculty**
 - **+ Create Next Academic Year** (Panel & Modal)
 - **Download All (ZIP)** (Verification & Submission Panels)
@@ -73,6 +74,8 @@ Used exclusively for administrative creations, additions, non-destructive config
 - **Save Profile Changes**
 - **Update Password**
 - **Save System Preferences**
+- **Toggle Switches (Active / On)**: `bg-amber-500 border border-amber-400 shadow-xs` track with `translate-x-5.5 bg-slate-950` knob
+- **Multi-Select & Format Toggles (Active / Selected)**: `bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-300 dark:bg-amber-500/20 dark:border-amber-400 shadow-2xs`
 
 #### 2. Dark Green Verification & Activation Actions
 **Utility**: `bg-[#0b5336] hover:bg-[#073d2a] text-white font-semibold border border-[#08412a] shadow-xs transition-colors cursor-pointer`  
