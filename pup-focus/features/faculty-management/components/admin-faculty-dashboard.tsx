@@ -505,7 +505,7 @@ export function AdminFacultyDashboard({
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-200">
       {/* Consolidated Top Header (All Views) - Fixed 56px matching Faculty AppShell */}
-      <header className="fixed inset-x-0 top-0 h-14 z-50 border-b border-slate-300 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex items-center transition-colors duration-200">
+      <header className="fixed inset-x-0 top-0 h-14 z-50 border-t-2 border-amber-600 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex items-center transition-colors duration-200">
         <div className="flex w-full items-center justify-between pl-4 pr-3 sm:pr-6">
           {/* Left: Mobile Menu Trigger & Title */}
           <div className="flex items-center gap-2 sm:gap-3">

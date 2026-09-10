@@ -18,7 +18,7 @@ export default function DashboardLayout({
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 overflow-hidden font-sans">
       {/* Consolidated Top Header (All Views) */}
-      <header className="w-full bg-gradient-to-r from-[#400000] via-[#2a0000] to-[#1a0000] border-b border-amber-500/20 px-4 py-3 flex items-center justify-between shrink-0 z-40">
+      <header className="w-full bg-gradient-to-r from-[#400000] via-[#2a0000] to-[#1a0000] border-t-2 border-amber-600 border-b border-amber-500/20 px-4 py-3 flex items-center justify-between shrink-0 z-40">
         <div className="flex items-center gap-3">
           <button
             type="button"

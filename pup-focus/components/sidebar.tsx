@@ -15,15 +15,7 @@ export interface SidebarProps {
 }
 
 function getRoleBadgeClasses(roleTitle?: string): string {
-  const role = (roleTitle || "").toLowerCase().trim();
-  if (role.includes("super")) {
-    return "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
-  }
-  if (role.includes("faculty")) {
-    return "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
-  }
-  // Default: Admin
-  return "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
+  return "bg-slate-200/70 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
 }
 
 function getSidebarInitials(name?: string | null, fallback = "AD"): string {
@@ -52,9 +44,9 @@ export function SidebarButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-lg ${
+      className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
         active
-          ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+          ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
       }`}
     >
@@ -63,7 +55,7 @@ export function SidebarButton({
           strokeWidth={2}
           className={
             active
-              ? "h-4 w-4 text-slate-900 dark:text-slate-100 shrink-0"
+              ? "h-4 w-4 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
               : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
           }
         />
@@ -74,7 +66,7 @@ export function SidebarButton({
           <p
             className={`mt-0.5 text-[10px] font-normal truncate ${
               active
-                ? "text-slate-600 dark:text-slate-300"
+                ? "text-amber-800/80 dark:text-amber-300/80"
                 : "text-slate-500 dark:text-slate-400"
             }`}
           >
@@ -167,7 +159,7 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 p-2.5 flex flex-col items-center shadow-xs shadow-slate-300/40 dark:shadow-none transition-colors">
+      <div className="my-1.5 bg-slate-50 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800 p-4 rounded-xl text-center flex flex-col items-center transition-colors">
         <button
           type="button"
           onClick={() => handleSelect("settings")}
@@ -199,7 +191,7 @@ export function SidebarContent({
         <div className="my-1.5 h-px w-full bg-slate-300 dark:bg-slate-800" />
 
         <span
-          className={`mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full border ${getRoleBadgeClasses(roleTitle)}`}
+          className="mt-0.5 inline-flex items-center justify-center bg-slate-200/70 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full"
         >
           {roleTitle}
         </span>
@@ -220,9 +212,9 @@ export function SidebarContent({
             <button
               type="button"
               onClick={() => setIsUserManagementOpen((prev) => !prev)}
-              className={`flex w-full items-center justify-between gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-lg ${
+              className={`flex w-full items-center justify-between gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
                 isUserManagementActive
-                  ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                  ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
               }`}
             >
@@ -231,16 +223,16 @@ export function SidebarContent({
                   strokeWidth={2}
                   className={
                     isUserManagementActive
-                      ? "h-4 w-4 text-slate-900 dark:text-slate-100 shrink-0"
+                      ? "h-4 w-4 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
                       : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
                   }
                 />
                 <span className="truncate">User Management</span>
               </div>
               {isUserManagementOpen ? (
-                <NavArrowDown strokeWidth={2} className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+                <NavArrowDown strokeWidth={2} className={`h-3.5 w-3.5 shrink-0 ml-1 ${isUserManagementActive ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`} />
               ) : (
-                <NavArrowRight strokeWidth={2} className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+                <NavArrowRight strokeWidth={2} className={`h-3.5 w-3.5 shrink-0 ml-1 ${isUserManagementActive ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`} />
               )}
             </button>
 
@@ -252,7 +244,7 @@ export function SidebarContent({
                   onClick={() => handleSelect("accounts")}
                   className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                     isAccountsActive
-                      ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                      ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                   }`}
                 >
@@ -260,7 +252,7 @@ export function SidebarContent({
                     strokeWidth={2}
                     className={
                       isAccountsActive
-                        ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
+                        ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
                         : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                     }
                   />
@@ -271,7 +263,7 @@ export function SidebarContent({
                   onClick={() => handleSelect("faculty")}
                   className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                     isFacultyActive
-                      ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                      ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                   }`}
                 >
@@ -279,7 +271,7 @@ export function SidebarContent({
                     strokeWidth={2}
                     className={
                       isFacultyActive
-                        ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
+                        ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
                         : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                     }
                   />
@@ -312,9 +304,9 @@ export function SidebarContent({
           <button
             type="button"
             onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
-            className={`flex w-full items-center justify-between gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-lg ${
+            className={`flex w-full items-center justify-between gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
               isAcademicCycleActive
-                ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
             }`}
           >
@@ -323,16 +315,16 @@ export function SidebarContent({
                 strokeWidth={2}
                 className={
                   isAcademicCycleActive
-                    ? "h-4 w-4 text-slate-900 dark:text-slate-100 shrink-0"
+                    ? "h-4 w-4 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
                     : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
                 }
               />
               <span className="truncate">Academic Cycle</span>
             </div>
             {isAcademicCycleOpen ? (
-              <NavArrowDown strokeWidth={2} className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+              <NavArrowDown strokeWidth={2} className={`h-3.5 w-3.5 shrink-0 ml-1 ${isAcademicCycleActive ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`} />
             ) : (
-              <NavArrowRight strokeWidth={2} className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+              <NavArrowRight strokeWidth={2} className={`h-3.5 w-3.5 shrink-0 ml-1 ${isAcademicCycleActive ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`} />
             )}
           </button>
 
@@ -346,7 +338,7 @@ export function SidebarContent({
                 }
                 className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                   isTermsActive
-                    ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                    ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
@@ -354,7 +346,7 @@ export function SidebarContent({
                   strokeWidth={2}
                   className={
                     isTermsActive
-                      ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
+                      ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
                       : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                   }
                 />
@@ -367,7 +359,7 @@ export function SidebarContent({
                 }
                 className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                   isWindowActive
-                    ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                    ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
@@ -375,7 +367,7 @@ export function SidebarContent({
                   strokeWidth={2}
                   className={
                     isWindowActive
-                      ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
+                      ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
                       : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                   }
                 />
@@ -388,7 +380,7 @@ export function SidebarContent({
                     onClick={() => handleSelect("templates")}
                     className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                       isTemplatesActive
-                        ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                        ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
@@ -396,7 +388,7 @@ export function SidebarContent({
                       strokeWidth={2}
                       className={
                         isTemplatesActive
-                          ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
+                          ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
                           : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                       }
                     />
@@ -407,7 +399,7 @@ export function SidebarContent({
                     onClick={() => handleSelect("backups")}
                     className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                       isBackupsActive
-                        ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                        ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
@@ -415,7 +407,7 @@ export function SidebarContent({
                       strokeWidth={2}
                       className={
                         isBackupsActive
-                          ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
+                          ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
                           : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                       }
                     />

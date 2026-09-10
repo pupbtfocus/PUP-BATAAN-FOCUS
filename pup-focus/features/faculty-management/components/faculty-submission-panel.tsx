@@ -1557,8 +1557,8 @@ function FacultySubmissionPanelContent({
         </button>
       )}
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-300 dark:border-slate-800 bg-[#F6F8FC] dark:bg-slate-950 p-2.5 shadow-sm transition-colors duration-200">
-        <div className="my-1.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 p-2.5 flex flex-col items-center shadow-xs shadow-slate-300/40 dark:shadow-none transition-colors">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 p-2.5 shadow-sm transition-colors duration-200">
+        <div className="my-1.5 bg-slate-50 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800 p-4 rounded-xl text-center flex flex-col items-center transition-colors">
           <button
             type="button"
             onClick={() => navigateToView("settings")}
@@ -1586,7 +1586,7 @@ function FacultySubmissionPanelContent({
             {facultyFirstName}
           </p>
           <div className="my-1.5 h-px w-full bg-slate-300 dark:bg-slate-800" />
-          <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
+          <span className="mt-0.5 inline-flex items-center justify-center bg-slate-200/70 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full">
             Faculty
           </span>
         </div>
@@ -1613,20 +1613,21 @@ function FacultySubmissionPanelContent({
                 key={key}
                 type="button"
                 onClick={() => navigateToView(key as PanelView)}
-                className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs transition-all ${
+                className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
                   isActive
-                    ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                    : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                    ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
                 <Icon
+                  strokeWidth={2}
                   className={`h-4 w-4 shrink-0 ${
                     isActive
-                      ? "text-amber-700 dark:text-amber-300"
+                      ? "text-amber-600 dark:text-amber-400 stroke-[2]"
                       : "text-slate-500 dark:text-slate-400"
                   }`}
                 />
-                <span>{label}</span>
+                <span className="truncate">{label}</span>
               </button>
             );
           })}
@@ -1639,25 +1640,28 @@ function FacultySubmissionPanelContent({
           onClick={() => setIsMobileMenuOpen(false)}
         >
           <aside
-            className="relative flex flex-col h-full w-64 bg-[#F6F8FC] dark:bg-slate-950 border-r border-slate-300 dark:border-slate-800 p-4 shadow-2xl transition-colors duration-200"
+            className="relative flex flex-col h-full w-64 bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 border-r border-slate-200 dark:border-slate-800 p-4 shadow-2xl transition-colors duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800 mb-2">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-2">
               <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                 Faculty Menu
               </span>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
               >
                 <Xmark className="w-4 h-4" />
               </button>
             </div>
-            <div className="my-1.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 p-2.5 flex flex-col items-center shadow-xs shadow-slate-300/40 dark:shadow-none transition-colors">
+            <div className="my-1.5 bg-slate-50 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800 p-4 rounded-xl text-center flex flex-col items-center transition-colors">
               <button
                 type="button"
-                onClick={() => navigateToView("settings")}
+                onClick={() => {
+                  navigateToView("settings");
+                  setIsMobileMenuOpen(false);
+                }}
                 className="relative mb-2 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
                 title="Manage Profile & Settings"
               >
@@ -1682,7 +1686,7 @@ function FacultySubmissionPanelContent({
                 {facultyFirstName}
               </p>
               <div className="my-1.5 h-px w-full bg-slate-300 dark:bg-slate-800" />
-              <span className="mt-0.5 inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
+              <span className="mt-0.5 inline-flex items-center justify-center bg-slate-200/70 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full">
                 Faculty
               </span>
             </div>
@@ -1708,21 +1712,25 @@ function FacultySubmissionPanelContent({
                   <button
                     key={key}
                     type="button"
-                    onClick={() => navigateToView(key as PanelView)}
-                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs transition-all ${
+                    onClick={() => {
+                      navigateToView(key as PanelView);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
                       isActive
-                        ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                        : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                        ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
                     <Icon
+                      strokeWidth={2}
                       className={`h-4 w-4 shrink-0 ${
                         isActive
-                          ? "text-amber-700 dark:text-amber-300"
+                          ? "text-amber-600 dark:text-amber-400 stroke-[2]"
                           : "text-slate-500 dark:text-slate-400"
                       }`}
                     />
-                    <span>{label}</span>
+                    <span className="truncate">{label}</span>
                   </button>
                 );
               })}
@@ -1731,7 +1739,7 @@ function FacultySubmissionPanelContent({
         </div>
       )}
       <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
           <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeView === "submit" ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800 pb-4 mb-6">

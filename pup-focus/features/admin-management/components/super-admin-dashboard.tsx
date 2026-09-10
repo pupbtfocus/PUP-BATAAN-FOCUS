@@ -1380,8 +1380,8 @@ export function SuperAdminDashboard({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-950 h-full p-3 border-r border-slate-400 dark:border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-400 dark:border-slate-800">
+          <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-950 h-full p-3 border-r border-slate-200 dark:border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Navigation</span>
               <button
                 type="button"
@@ -2334,15 +2334,15 @@ function SidebarButton({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left px-3 py-2 text-xs transition ${
+      className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors cursor-pointer rounded-md ${
         active
-          ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-900 dark:border-amber-400 dark:bg-amber-500/15 dark:text-amber-400 font-semibold rounded-r-lg"
-          : "rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+          ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
+          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
       }`}
     >
-      <p className="text-xs">{title}</p>
+      <p className="text-xs truncate">{title}</p>
       {description ? (
-        <p className={`mt-0.5 text-[11px] font-normal ${active ? "text-amber-800/80 dark:text-amber-300/80" : "text-slate-500 dark:text-slate-400"}`}>
+        <p className={`mt-0.5 text-[10px] font-normal truncate ${active ? "text-amber-800/80 dark:text-amber-300/80" : "text-slate-500 dark:text-slate-400"}`}>
           {description}
         </p>
       ) : null}
