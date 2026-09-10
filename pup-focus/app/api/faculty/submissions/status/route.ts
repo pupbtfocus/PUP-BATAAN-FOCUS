@@ -32,6 +32,8 @@ type RequirementStatus = {
   is_read?: boolean;
   isViewed?: boolean;
   viewed_at?: string;
+  isRevision?: boolean;
+  hasPriorRevision?: boolean;
 };
 
 type ReviewDecision = {
@@ -615,6 +617,17 @@ export async function GET(request: NextRequest) {
       let status: "Validated" | "Rejected" | "Pending" | "Not Submitted" =
         "Not Submitted";
 
+      const isPendingUpload =
+        rawStatus === "pending" ||
+        rawStatus === "uploaded" ||
+        rawStatus === "submitted" ||
+        rawStatus === "under_review" ||
+        rawStatus === "pending_review";
+
+      const hasPriorRejection =
+        latestDecision === "rejected" ||
+        reviews.some((r) => (r.decision || "").toLowerCase() === "rejected");
+
       if (
         rawStatus === "validated" ||
         rawStatus === "approved" ||
@@ -622,19 +635,15 @@ export async function GET(request: NextRequest) {
         latestDecision === "approved"
       ) {
         status = "Validated";
+      } else if (isPendingUpload) {
+        // If the faculty uploaded or resubmitted, it is actively Pending review even if previously rejected
+        status = "Pending";
       } else if (
         rawStatus === "rejected" ||
         latestDecision === "rejected"
       ) {
         status = "Rejected";
-      } else if (
-        rawStatus === "pending" ||
-        rawStatus === "uploaded" ||
-        rawStatus === "submitted" ||
-        rawStatus === "under_review" ||
-        rawStatus === "pending_review" ||
-        !rawStatus
-      ) {
+      } else if (isPendingUpload || !rawStatus) {
         status = "Pending";
       } else {
         status = "Pending";
@@ -662,6 +671,7 @@ export async function GET(request: NextRequest) {
       const primaryDoc = docList[0];
       const storagePath = primaryDoc?.storage_path;
       const fileName = storagePath ? storagePath.split("/").pop() : undefined;
+      const isRevision = Boolean((hasPriorRejection || docList.length > 1) && status === "Pending");
 
       statusMap.set(matchedCode, {
         code: matchedCode,
@@ -681,6 +691,8 @@ export async function GET(request: NextRequest) {
         is_read: Boolean(submission.is_read),
         isViewed: Boolean(submission.is_read),
         viewed_at: submission.viewed_at || undefined,
+        isRevision,
+        hasPriorRevision: isRevision || hasPriorRejection,
       });
     }
 

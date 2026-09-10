@@ -28,6 +28,8 @@ export type RequirementStatusData = {
   is_read?: boolean;
   isViewed?: boolean;
   viewed_at?: string;
+  isRevision?: boolean;
+  hasPriorRevision?: boolean;
 };
 
 export type RequirementTemplateData = {
@@ -379,11 +381,26 @@ export async function getFacultyInitialData(
     const rawStatus = (sub.status || "").toLowerCase().trim();
     const latestDecision = (latestReview?.decision || "").toLowerCase().trim();
 
+    const isPendingUpload =
+      rawStatus === "pending" ||
+      rawStatus === "uploaded" ||
+      rawStatus === "submitted" ||
+      rawStatus === "under_review" ||
+      rawStatus === "pending_review";
+
+    const hasPriorRejection =
+      latestDecision === "rejected" ||
+      reviews.some((r) => (r.decision || "").toLowerCase() === "rejected");
+
     let status: "Validated" | "Rejected" | "Pending" | "Not Submitted" = "Pending";
     if (rawStatus === "validated" || rawStatus === "approved" || latestDecision === "validated") {
       status = "Validated";
+    } else if (isPendingUpload) {
+      status = "Pending";
     } else if (rawStatus === "rejected" || latestDecision === "rejected") {
       status = "Rejected";
+    } else {
+      status = "Pending";
     }
 
     const adminFeedback =
@@ -396,6 +413,8 @@ export async function getFacultyInitialData(
       sub.remarks && sub.remarks.trim() !== adminFeedback?.trim()
         ? sub.remarks.trim()
         : undefined;
+
+    const isRevision = Boolean(hasPriorRejection && status === "Pending");
 
     statusMap.set(matchedCode, {
       code: matchedCode,
@@ -413,6 +432,8 @@ export async function getFacultyInitialData(
       is_read: Boolean(sub.is_read),
       isViewed: Boolean(sub.is_read),
       viewed_at: sub.viewed_at || undefined,
+      isRevision,
+      hasPriorRevision: isRevision || hasPriorRejection,
     });
   }
 

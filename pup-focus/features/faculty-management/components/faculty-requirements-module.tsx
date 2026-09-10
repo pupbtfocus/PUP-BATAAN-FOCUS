@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, CheckCircle, Clock, Eye, Page, Refresh, SystemRestart, Upload, WarningCircle, Xmark } from "iconoir-react";
+import { Calendar, CheckCircle, Clock, Eye, Notes, Page, Refresh, SystemRestart, Upload, WarningCircle, Xmark } from "iconoir-react";
 import { Button } from "@/components/ui/button";
 import {
   DEFAULT_REQUIREMENTS,
@@ -33,6 +33,8 @@ export type RequirementStatusItem = {
   adminRemarks?: string | null;
   submittedAt?: string;
   latestSubmissionId?: string;
+  isRevision?: boolean;
+  hasPriorRevision?: boolean;
 };
 
 export type StatusResponse = {
@@ -138,6 +140,7 @@ export function FacultyRequirementsModule({
   );
   const [isLoading, setIsLoading] = useState(!initialStatuses);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRevisionModal, setIsRevisionModal] = useState(false);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -273,8 +276,9 @@ export function FacultyRequirementsModule({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isModalOpen, isCalendarModalOpen]);
 
-  function openModal(code?: string) {
+  function openModal(code?: string, isRevision: boolean = false) {
     setMessage(null);
+    setIsRevisionModal(isRevision);
     if (code) {
       setForm((curr) => ({ ...curr, requirementCode: code }));
     }
@@ -283,6 +287,7 @@ export function FacultyRequirementsModule({
 
   function closeModal() {
     setIsModalOpen(false);
+    setIsRevisionModal(false);
     setSelectedFile(null);
     setForm((current) => ({ ...current, remarks: "" }));
   }
@@ -334,7 +339,24 @@ export function FacultyRequirementsModule({
         throw new Error(data.error || "Failed to submit requirement");
       }
 
-      setMessage("Requirement submitted successfully!");
+      setMessage(
+        isRevisionModal
+          ? "Revision submitted successfully for review!"
+          : "Requirement submitted successfully!",
+      );
+      // Optimistically update status to Pending immediately and lock out resubmission
+      setRequirementStatuses((prev) =>
+        prev.map((item) =>
+          item.code === form.requirementCode
+            ? {
+                ...item,
+                status: "Pending" as const,
+                latestSubmissionId: data.submissionId,
+                submittedAt: new Date().toISOString(),
+              }
+            : item,
+        ),
+      );
       closeModal();
       router.refresh();
       await loadStatuses();
@@ -516,7 +538,15 @@ export function FacultyRequirementsModule({
 
                         {/* Status Badge */}
                         <td className="px-4 py-3.5">
-                          <SubmissionStatusBadge status={status} size="sm" />
+                          <SubmissionStatusBadge
+                            status={
+                              status === "Pending" &&
+                              (item?.hasPriorRevision || item?.isRevision)
+                                ? "Revision Under Review"
+                                : status
+                            }
+                            size="sm"
+                          />
                         </td>
 
                         {/* Submission Date */}
@@ -559,7 +589,7 @@ export function FacultyRequirementsModule({
                             <button
                               type="button"
                               aria-label={`Resubmit revision for ${req.title}`}
-                              onClick={() => openModal(code)}
+                              onClick={() => openModal(code, true)}
                               className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 text-xs transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                             >
                               <Upload className="h-3.5 w-3.5" />
@@ -617,7 +647,15 @@ export function FacultyRequirementsModule({
                           {req.allowedFormats.join(", ")}
                         </p>
                       </div>
-                      <SubmissionStatusBadge status={status} size="sm" />
+                      <SubmissionStatusBadge
+                        status={
+                          status === "Pending" &&
+                          (item?.hasPriorRevision || item?.isRevision)
+                            ? "Revision Under Review"
+                            : status
+                        }
+                        size="sm"
+                      />
                     </div>
 
                     <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
@@ -631,8 +669,17 @@ export function FacultyRequirementsModule({
 
                     {adminRemarks && (
                       <div className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-2.5 text-xs text-slate-700 dark:text-slate-300">
-                        <span className="font-semibold block uppercase tracking-wider text-[10px] text-amber-800 dark:text-amber-300 mb-0.5">
-                          Admin Remarks:
+                        <span className={`font-bold block uppercase tracking-wider text-[10px] mb-0.5 flex items-center gap-1.5 ${
+                          status === "Rejected"
+                            ? "text-[#780000] dark:text-rose-400"
+                            : "text-[#0b5336] dark:text-emerald-400"
+                        }`}>
+                          {status === "Rejected" ? (
+                            <WarningCircle className="h-3.5 w-3.5 text-[#780000] dark:text-rose-400 shrink-0" />
+                          ) : (
+                            <Notes className="h-3.5 w-3.5 text-[#0b5336] dark:text-emerald-400 shrink-0" />
+                          )}
+                          <span>{status === "Rejected" ? "Revision Remarks:" : "Reviewer Remarks:"}</span>
                         </span>
                         <p className="italic leading-relaxed">
                           &ldquo;{adminRemarks}&rdquo;
@@ -656,7 +703,7 @@ export function FacultyRequirementsModule({
                         <button
                           type="button"
                           aria-label={`Resubmit revision for ${req.title}`}
-                          onClick={() => openModal(code)}
+                          onClick={() => openModal(code, true)}
                           className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs transition cursor-pointer shadow-2xs"
                         >
                           <Upload className="h-3.5 w-3.5" />
@@ -702,12 +749,21 @@ export function FacultyRequirementsModule({
               <div>
                 <h3
                   id="submit-modal-title"
-                  className="text-xl font-bold text-slate-900 dark:text-slate-100"
+                  className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"
                 >
-                  Submit Requirement Document
+                  {isRevisionModal || selectedReqStatus?.status === "Rejected" ? (
+                    <>
+                      <WarningCircle className="h-5 w-5 text-amber-500 shrink-0" />
+                      <span>Resubmit Revision: {selectedTemplate?.title || "Requirement"}</span>
+                    </>
+                  ) : (
+                    <span>Submit Requirement Document</span>
+                  )}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  Upload your compliance file for admin review and validation.
+                  {isRevisionModal || selectedReqStatus?.status === "Rejected"
+                    ? "Upload your corrected compliance file addressing the reviewer's feedback below."
+                    : "Upload your compliance file for admin review and validation."}
                 </p>
               </div>
               <button
@@ -721,6 +777,26 @@ export function FacultyRequirementsModule({
             </div>
 
             <form className="space-y-4" onSubmit={handleSubmit}>
+              {/* Reviewer Feedback / Revision Request Alert Box */}
+              {(isRevisionModal || selectedReqStatus?.status === "Rejected") && (() => {
+                const reviewerRemarks =
+                  selectedReqStatus?.adminRemarks ||
+                  selectedReqStatus?.admin_remarks ||
+                  selectedReqStatus?.feedback;
+                if (!reviewerRemarks) return null;
+                return (
+                  <div className="rounded-2xl border border-rose-300 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/30 p-4 space-y-1.5 shadow-2xs">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#780000] dark:text-rose-400 uppercase tracking-wider">
+                      <WarningCircle className="h-4 w-4 shrink-0" />
+                      <span>Reviewer Feedback / Revision Request:</span>
+                    </div>
+                    <p className="text-xs text-slate-800 dark:text-slate-200 italic font-medium leading-relaxed pl-5.5">
+                      &ldquo;{reviewerRemarks}&rdquo;
+                    </p>
+                  </div>
+                );
+              })()}
+
               {/* Term Selection */}
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
@@ -792,13 +868,19 @@ export function FacultyRequirementsModule({
                   htmlFor="req-remarks"
                   className="text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400"
                 >
-                  Optional Remarks for Admin
+                  {isRevisionModal || selectedReqStatus?.status === "Rejected"
+                    ? "Notes on Corrections Made (Optional)"
+                    : "Optional Remarks for Admin"}
                 </label>
                 <textarea
                   id="req-remarks"
                   rows={3}
                   className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 placeholder:text-slate-400 resize-none"
-                  placeholder="Add notes, course section codes, or explanations for reviewer..."
+                  placeholder={
+                    isRevisionModal || selectedReqStatus?.status === "Rejected"
+                      ? "Explain the corrections made in this revision for the reviewer..."
+                      : "Add notes, course section codes, or explanations for reviewer..."
+                  }
                   value={form.remarks}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -828,10 +910,14 @@ export function FacultyRequirementsModule({
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
                       <SystemRestart className="h-4 w-4 animate-spin" />
-                      Uploading...
+                      {isRevisionModal || selectedReqStatus?.status === "Rejected"
+                        ? "Submitting Revision..."
+                        : "Uploading..."}
                     </span>
                   ) : (
-                    "Submit File"
+                    isRevisionModal || selectedReqStatus?.status === "Rejected"
+                      ? "Resubmit Revision"
+                      : "Submit File"
                   )}
                 </Button>
               </div>

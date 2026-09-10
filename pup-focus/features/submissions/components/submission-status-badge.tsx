@@ -7,6 +7,7 @@ export type NormalizedSubmissionStatus =
   | "Approved"
   | "Rejected"
   | "Needs Revision"
+  | "Revision Under Review"
   | "Pending"
   | "Pending Review"
   | "Not Submitted";
@@ -21,13 +22,21 @@ interface SubmissionStatusBadgeProps {
 
 export function getNormalizedStatus(
   status?: string | null,
-): "Validated" | "Needs Revision" | "Pending Review" | "Not Submitted" {
+): "Validated" | "Needs Revision" | "Revision Under Review" | "Pending Review" | "Not Submitted" {
   if (!status) return "Not Submitted";
   const s = status.toLowerCase().trim();
 
   if (s === "validated" || s === "approved") return "Validated";
   if (s === "rejected" || s === "needs revision" || s === "needs_revision")
     return "Needs Revision";
+  if (
+    s === "revision under review" ||
+    s === "revision_under_review" ||
+    s === "revision pending review" ||
+    s === "revision_pending" ||
+    s === "revision_uploaded"
+  )
+    return "Revision Under Review";
   if (
     s === "pending" ||
     s === "pending review" ||
@@ -63,6 +72,13 @@ export function SubmissionStatusBadge({
         "bg-[#780000] text-white border border-[#5e0000]",
       dotClass: "bg-rose-300",
       icon: <WarningCircle className="shrink-0 text-white" strokeWidth={2} aria-hidden="true" />,
+    },
+    "Revision Under Review": {
+      label: "Revision Under Review",
+      containerClass:
+        "bg-amber-500 text-slate-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-slate-950 dark:border-amber-400",
+      dotClass: "bg-slate-950",
+      icon: <Clock className="shrink-0 text-slate-950" strokeWidth={2.2} aria-hidden="true" />,
     },
     "Pending Review": {
       label: "Pending Review",

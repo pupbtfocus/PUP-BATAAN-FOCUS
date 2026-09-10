@@ -193,6 +193,8 @@ type RequirementStatus = {
   is_read?: boolean;
   isViewed?: boolean;
   viewed_at?: string;
+  isRevision?: boolean;
+  hasPriorRevision?: boolean;
 };
 type SubmissionPreview = {
   code: RequirementCode;
@@ -614,6 +616,7 @@ function FacultySubmissionPanelContent({
     useState<(typeof SEMESTER_OPTIONS)[number]>("1st Semester");
   const [selectedRequirementForUpload, setSelectedRequirementForUpload] =
     useState<RequirementCode | null>(null);
+  const [isRevisionUpload, setIsRevisionUpload] = useState(false);
   const [directUploadFile, setDirectUploadFile] = useState<File | null>(null);
   const [directUploadRemarks, setDirectUploadRemarks] = useState("");
   const [isUploadingDirect, setIsUploadingDirect] = useState(false);
@@ -1158,8 +1161,12 @@ function FacultySubmissionPanelContent({
     Boolean(submissionWindow?.isConfigured && submissionWindow?.isOpen) &&
     displayedStatusCounts !== null &&
     displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected > 0;
-  function openDirectUploadModal(code: RequirementCode) {
+  function openDirectUploadModal(
+    code: RequirementCode,
+    isRevision: boolean = false,
+  ) {
     setSelectedRequirementForUpload(code);
+    setIsRevisionUpload(isRevision);
     setDirectUploadFile(null);
     setDirectUploadRemarks("");
     setDirectUploadMessage(null);
@@ -1167,6 +1174,7 @@ function FacultySubmissionPanelContent({
   function closeDirectUploadModal() {
     if (isUploadingDirect) return;
     setSelectedRequirementForUpload(null);
+    setIsRevisionUpload(false);
     setDirectUploadFile(null);
     setDirectUploadRemarks("");
     setDirectUploadMessage(null);
@@ -1226,9 +1234,11 @@ function FacultySubmissionPanelContent({
       }
       const result = await response.json();
       setSubmissionMessage(
-        `Requirement submitted successfully. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
+        isRevisionUpload
+          ? `Revision submitted successfully for review. Reference ID: ${String(result.submissionId).slice(0, 8)}...`
+          : `Requirement submitted successfully. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
       );
-      // Optimistically update status badge to Pending immediately
+      // Optimistically update status badge to Pending immediately and lock out resubmission
       setRequirementStatuses((prev) => {
         const exists = prev.some(
           (r) => r.code === selectedRequirementForUpload,
@@ -1241,6 +1251,8 @@ function FacultySubmissionPanelContent({
                   status: "Pending" as const,
                   submittedAt: new Date().toISOString(),
                   latestSubmissionId: result.submissionId,
+                  isRevision: isRevisionUpload || Boolean(r.feedback),
+                  hasPriorRevision: true,
                 }
               : r,
           );
@@ -1252,6 +1264,8 @@ function FacultySubmissionPanelContent({
             status: "Pending" as const,
             submittedAt: new Date().toISOString(),
             latestSubmissionId: result.submissionId,
+            isRevision: isRevisionUpload,
+            hasPriorRevision: isRevisionUpload,
           },
         ];
       });
@@ -1985,7 +1999,10 @@ function FacultySubmissionPanelContent({
                                       <button
                                         type="button"
                                         onClick={() =>
-                                          openDirectUploadModal(req.code)
+                                          openDirectUploadModal(
+                                            req.code,
+                                            req.status === "Rejected",
+                                          )
                                         }
                                         disabled={
                                           !hasActiveSchedule || isWindowClosed
@@ -2479,8 +2496,8 @@ function FacultySubmissionPanelContent({
                           </div>
                           {/* Inline Revision Note */}
                           {req.status === "Rejected" && (
-                            <p className="text-xs text-amber-800 dark:text-amber-300/90 flex items-center gap-1.5 mt-1 font-normal">
-                              <WarningCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400/90 shrink-0" />
+                            <p className="text-xs text-[#780000] dark:text-rose-400 flex items-center gap-1.5 mt-1 font-medium">
+                              <WarningCircle className="h-3.5 w-3.5 text-[#780000] dark:text-rose-400 shrink-0" />
                               <span className="italic truncate">
                                 &ldquo;
                                 {req.adminRemarks ||
@@ -2494,7 +2511,12 @@ function FacultySubmissionPanelContent({
                         </div>
                         <div className="flex shrink-0 flex-wrap items-center gap-3">
                           <SubmissionStatusBadge
-                            status={req.status}
+                            status={
+                              req.status === "Pending" &&
+                              (req.hasPriorRevision || req.isRevision)
+                                ? "Revision Under Review"
+                                : req.status
+                            }
                             size="sm"
                           />
                           {/* Action Buttons */}
@@ -2515,7 +2537,7 @@ function FacultySubmissionPanelContent({
                             {req.status === "Rejected" && (
                               <button
                                 type="button"
-                                onClick={() => openDirectUploadModal(req.code)}
+                                onClick={() => openDirectUploadModal(req.code, true)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
                                 className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                               >
@@ -2579,12 +2601,26 @@ function FacultySubmissionPanelContent({
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
-                    <h3
-                      id="upload-modal-title"
-                      className="text-xl font-semibold text-slate-900 dark:text-slate-100"
-                    >
-                      Upload {REQUIREMENT_LABEL[selectedRequirementForUpload]}
-                    </h3>
+                    <div>
+                      <h3
+                        id="upload-modal-title"
+                        className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"
+                      >
+                        {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected") ? (
+                          <>
+                            <WarningCircle className="h-5 w-5 text-amber-500 shrink-0" />
+                            <span>Resubmit Revision: {REQUIREMENT_LABEL[selectedRequirementForUpload]}</span>
+                          </>
+                        ) : (
+                          <span>Upload {REQUIREMENT_LABEL[selectedRequirementForUpload]}</span>
+                        )}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                          ? "Upload your revised compliance document addressing the reviewer's feedback below."
+                          : "Upload your compliance document for admin review and validation."}
+                      </p>
+                    </div>
                     <button
                       type="button"
                       onClick={closeDirectUploadModal}
@@ -2599,6 +2635,29 @@ function FacultySubmissionPanelContent({
                     onSubmit={handleDirectUploadSubmit}
                     className="p-6 space-y-5"
                   >
+                    {/* Reviewer Feedback / Revision Request Alert Box */}
+                    {(isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")) && (() => {
+                      const statusItem = selectedRequirementForUpload
+                        ? getRequirementStatusItem(selectedRequirementForUpload)
+                        : null;
+                      const reviewerRemarks =
+                        statusItem?.adminRemarks ||
+                        statusItem?.admin_remarks ||
+                        statusItem?.feedback;
+                      if (!reviewerRemarks) return null;
+                      return (
+                        <div className="rounded-xl border border-rose-300 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/30 p-4 space-y-1.5 shadow-2xs">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-[#780000] dark:text-rose-400 uppercase tracking-wider">
+                            <WarningCircle className="h-4 w-4 shrink-0" />
+                            <span>Reviewer Feedback / Revision Request:</span>
+                          </div>
+                          <p className="text-xs text-slate-800 dark:text-slate-200 italic font-medium leading-relaxed pl-5.5">
+                            &ldquo;{reviewerRemarks}&rdquo;
+                          </p>
+                        </div>
+                      );
+                    })()}
+
                     <div>
                       <DocumentUploadZone
                         selectedFile={directUploadFile}
@@ -2631,13 +2690,19 @@ function FacultySubmissionPanelContent({
                         htmlFor="directUploadRemarks"
                         className="block text-xs uppercase tracking-[0.18em] font-semibold text-slate-700 dark:text-amber-300 mb-2"
                       >
-                        Notes / Remarks for Reviewer (Optional)
+                        {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                          ? "Notes on Corrections Made (Optional)"
+                          : "Notes / Remarks for Reviewer (Optional)"}
                       </label>
                       <textarea
                         id="directUploadRemarks"
                         rows={3}
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition resize-none"
-                        placeholder="Add optional notes or remarks for the reviewer..."
+                        placeholder={
+                          isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                            ? "Explain the corrections made in this revision (e.g., Added missing signatures, updated section codes)..."
+                            : "Add optional notes or remarks for the reviewer..."
+                        }
                         value={directUploadRemarks}
                         onChange={(e) => setDirectUploadRemarks(e.target.value)}
                       />
@@ -2670,10 +2735,18 @@ function FacultySubmissionPanelContent({
                         {isUploadingDirect ? (
                           <>
                             <SystemRestart className="h-4 w-4 animate-spin" />
-                            <span>Uploading...</span>
+                            <span>
+                              {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                                ? "Submitting Revision..."
+                                : "Uploading..."}
+                            </span>
                           </>
                         ) : (
-                          <span>Submit File</span>
+                          <span>
+                            {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                              ? "Resubmit Revision"
+                              : "Submit File"}
+                          </span>
                         )}
                       </Button>
                     </div>
