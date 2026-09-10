@@ -13,6 +13,27 @@ PUP FOCUS is a faculty compliance management system for the Polytechnic Universi
 - **Functional clarity**: Every visual element serves a purpose. No decorative gradients, glowing shadows, or ambient effects on dashboard/admin surfaces.
 - **Zero emojis**: All interface copy is technical, direct, and concise. No emoji characters in JSX, labels, titles, or documentation.
 
+### 1.1 Strict Anti-Duplication Rule (Zero Redundancy Across Entire App)
+
+> [!IMPORTANT]
+> **MANDATORY RULE ACROSS THE ENTIRE APP**: Under no circumstances should duplicate action buttons, controls, labels, indicators, or status badges be rendered within the same view, component, modal, or screen. If an action or control already exists, **DO NOT ADD IT AGAIN**.
+
+1. **No Duplicate Buttons or Operational Controls**:
+   - Every action (such as `Refresh`, `Download`, `Validate`, `Edit`, `Delete`, `Submit`) must have exactly **ONE** clear, authoritative, and logically placed button per view or screen.
+   - Example: If a `Refresh` button is placed in the table actions toolbar, it must NOT also be placed in the modal header or anywhere else in the same view.
+   - If an action already exists in any section of a view or container, developers and agents are strictly forbidden from creating a duplicate of it.
+
+2. **No Duplicate Column Headers or Parallel Status Indicators**:
+   - Do not create split or parallel columns that communicate the same underlying state (e.g., merge "Status" and "Review Action" into a single consolidated column).
+   - A row or card must never show two separate badges stating the same status.
+
+3. **No Duplicate Glyph Stutter on Badges**:
+   - Status badges must never render both an icon and a dot together (`● 🕒` or `● ✓`). Badges render either the icon or the dot, never both.
+
+4. **No Redundant Technical Labels or Identifiers**:
+   - Do not display database identifier keys (e.g., `grade_sheet`, `enhanced_syllabus`) beneath human-readable titles.
+   - Do not display duplicate feedback prompts, helper text, or notes cards.
+
 ---
 
 ## 2. Color System

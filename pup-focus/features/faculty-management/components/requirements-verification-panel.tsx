@@ -382,6 +382,7 @@ function FacultyVerificationDrawer({
 
   const [isValidateModalOpen, setIsValidateModalOpen] = useState(false);
   const [bulkValidateNotes, setBulkValidateNotes] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [validateTimerSeconds, setValidateTimerSeconds] = useState(5);
   const [noticeModalData, setNoticeModalData] = useState<{
     title: string;
@@ -582,6 +583,57 @@ function FacultyVerificationDrawer({
     setRevisionModalData(null);
     setValidateModalData(null);
     onClose();
+  };
+
+  const handleRefresh = async () => {
+    if (!faculty.id || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      if (activeTab === "current") {
+        const subRes = await fetch(
+          `/api/admin/faculty/submissions?facultyId=${encodeURIComponent(
+            faculty.id
+          )}&academicYear=${encodeURIComponent(
+            academicYear
+          )}&semester=${encodeURIComponent(semester)}`,
+          { credentials: "include", cache: "no-store" }
+        );
+        if (subRes.ok) {
+          const subData = await subRes.json();
+          setSubmissions(subData.submissions || []);
+        }
+      } else {
+        if (selectedHistoryAy && selectedHistorySem) {
+          const res = await fetch(
+            `/api/admin/faculty/submissions?facultyId=${encodeURIComponent(
+              faculty.id
+            )}&academicYear=${encodeURIComponent(
+              selectedHistoryAy
+            )}&semester=${encodeURIComponent(selectedHistorySem)}`,
+            { credentials: "include", cache: "no-store" }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            setHistorySubmissions(data.submissions || []);
+          }
+        }
+      }
+      onStatusUpdated();
+      setActionFeedback({
+        type: "info",
+        message: "Requirements data refreshed successfully.",
+      });
+      setTimeout(() => setActionFeedback(null), 3000);
+    } catch (err) {
+      console.error("Failed to refresh requirements:", err);
+      setActionFeedback({
+        type: "error",
+        message: "Failed to refresh requirements. Please try again.",
+      });
+      setTimeout(() => setActionFeedback(null), 3000);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const openValidateModal = (
@@ -1278,6 +1330,19 @@ function FacultyVerificationDrawer({
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
+                    disabled={isRefreshing || isLoading}
+                    onClick={handleRefresh}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
+                    title="Refresh current submissions"
+                  >
+                    <SystemRestart
+                      className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-emerald-500 dark:text-emerald-400" : ""}`}
+                    />
+                    <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                  </button>
+
+                  <button
+                    type="button"
                     disabled={isValidatingAll || pendingSubmissionsCount === 0}
                     onClick={triggerValidateAllPendingModal}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1663,17 +1728,32 @@ function FacultyVerificationDrawer({
                   </select>
                 </div>
 
-                <button
-                  type="button"
-                  disabled={isDownloadingHistoryZip}
-                  onClick={handleDownloadHistoryZip}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 text-xs font-semibold px-3.5 py-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  {isDownloadingHistoryZip
-                    ? "Zipping..."
-                    : "Download History ZIP"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isRefreshing || isLoadingHistory}
+                    onClick={handleRefresh}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 text-xs font-semibold px-3.5 py-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                    title="Refresh history"
+                  >
+                    <SystemRestart
+                      className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-emerald-500 dark:text-emerald-400" : ""}`}
+                    />
+                    <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isDownloadingHistoryZip}
+                    onClick={handleDownloadHistoryZip}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 text-xs font-semibold px-3.5 py-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    {isDownloadingHistoryZip
+                      ? "Zipping..."
+                      : "Download History ZIP"}
+                  </button>
+                </div>
               </div>
 
               {/* Action Feedback Banner */}
@@ -2605,6 +2685,7 @@ export function RequirementsPanel({
 
   async function fetchAllStatuses(ay: string, sem: SemesterOption) {
     if (facultyAccounts.length === 0) return;
+    setIsLoadingStatuses(true);
     try {
       const results = await Promise.all(
         facultyAccounts.map(async (faculty) => {
@@ -2615,7 +2696,7 @@ export function RequirementsPanel({
               )}&academicYear=${encodeURIComponent(ay)}&semester=${encodeURIComponent(
                 sem
               )}`,
-              { credentials: "include" }
+              { credentials: "include", cache: "no-store" }
             );
             if (res.ok) {
               const data = await res.json();
@@ -2638,6 +2719,8 @@ export function RequirementsPanel({
       setFacultyStatuses(statusMap);
     } catch (err) {
       console.error("Error fetching faculty statuses:", err);
+    } finally {
+      setIsLoadingStatuses(false);
     }
   }
 
@@ -2725,9 +2808,23 @@ export function RequirementsPanel({
           </div>
         </div>
 
-        {/* Active Term Indicator */}
-        <div className="text-slate-600 dark:text-slate-400 text-xs font-medium tracking-wide shrink-0">
-          A.Y. {academicYear || "2026-2027"} &bull; {semester}
+        {/* Active Term Indicator & Refresh */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="text-slate-600 dark:text-slate-400 text-xs font-medium tracking-wide">
+            A.Y. {academicYear || "2026-2027"} &bull; {semester}
+          </div>
+          <button
+            type="button"
+            disabled={isLoadingStatuses}
+            onClick={() => fetchAllStatuses(academicYear, semester)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
+            title="Refresh faculty verification statuses"
+          >
+            <SystemRestart
+              className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin text-emerald-500 dark:text-emerald-400" : ""}`}
+            />
+            <span>{isLoadingStatuses ? "Refreshing..." : "Refresh"}</span>
+          </button>
         </div>
       </div>
 
