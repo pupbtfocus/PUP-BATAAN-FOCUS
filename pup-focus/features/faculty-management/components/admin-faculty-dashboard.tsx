@@ -185,8 +185,69 @@ export function AdminFacultyDashboard({
   const [verificationResetTrigger, setVerificationResetTrigger] = useState(0);
   const [adminAvatarUrl, setAdminAvatarUrl] = useState<string | null>(null);
 
+  interface DashboardStats {
+    verified: number;
+    pending: number;
+    rejected: number;
+    revisions: number;
+    totalFaculty: number;
+    activeFaculty: number;
+    currentAcademicYear: string;
+    currentSemester: string;
+  }
+
+  interface PendingQueueItem {
+    id: string;
+    facultyId: string;
+    facultyName: string;
+    facultyEmail: string;
+    requirementCode: string;
+    requirementTitle: string;
+    submittedAt: string;
+    status: string;
+    isRevision: boolean;
+    facultyRemarks: string | null;
+    fileCount: number;
+  }
+
+  interface RecentActivityItem {
+    id: string;
+    decision: "validated" | "rejected";
+    requirementCode: string;
+    requirementTitle: string;
+    facultyName: string;
+    facultyId: string;
+    remarks: string | null;
+    createdAt: string;
+  }
+
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [pendingQueue, setPendingQueue] = useState<PendingQueueItem[]>([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+
+  async function loadDashboardStats() {
+    try {
+      setIsLoadingStats(true);
+      const res = await fetch(`/api/admin/dashboard/stats?_t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDashboardStats(data.stats || null);
+        setPendingQueue(data.pendingQueue || []);
+        setRecentActivity(data.recentActivity || []);
+      }
+    } catch (err) {
+      console.warn("Failed to load dashboard stats:", err);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  }
+
   useEffect(() => {
     void loadFacultyFromDatabase();
+    void loadDashboardStats();
 
     async function loadAdminAvatar() {
       try {
@@ -208,6 +269,12 @@ export function AdminFacultyDashboard({
     void loadAdminAvatar();
   }, []);
 
+  useEffect(() => {
+    if (activeSection === "dashboard") {
+      void loadDashboardStats();
+    }
+  }, [activeSection, verificationResetTrigger]);
+
   async function loadFacultyFromDatabase() {
     try {
       setIsLoading(true);
@@ -226,7 +293,7 @@ export function AdminFacultyDashboard({
   }
 
   async function refreshCurrentPanel() {
-    await loadFacultyFromDatabase();
+    await Promise.all([loadFacultyFromDatabase(), loadDashboardStats()]);
     setVerificationResetTrigger((prev) => prev + 1);
   }
 
@@ -612,7 +679,7 @@ export function AdminFacultyDashboard({
                           Welcome back, {extractFirstName(currentAdminName || adminName, "Admin")}
                         </h1>
                         <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
-                          Admin Dashboard • A.Y. 2026-2027 • 1st Semester
+                          Admin Dashboard • A.Y. {dashboardStats?.currentAcademicYear || "2026-2027"} • {dashboardStats?.currentSemester || "1st Semester"}
                         </p>
                       </div>
                     </section>
@@ -623,11 +690,11 @@ export function AdminFacultyDashboard({
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Submissions Verified</span>
-                          <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                          <CheckCircle className="h-5 w-5 text-emerald-500" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                            {facultyAccounts.reduce((count, f) => count + (f.is_active ? 0 : 0), 0)} Verified
+                            {isLoadingStats ? "..." : `${dashboardStats?.verified ?? 0} Verified`}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Faculty submissions reviewed and validated</p>
                         </div>
@@ -637,11 +704,16 @@ export function AdminFacultyDashboard({
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Pending Verification</span>
-                          <Clock className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                          <Clock className="h-5 w-5 text-amber-500" strokeWidth={2} />
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                            — Pending
+                          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                            <span>{isLoadingStats ? "..." : `${dashboardStats?.pending ?? 0} Pending`}</span>
+                            {!isLoadingStats && dashboardStats && dashboardStats.revisions > 0 && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                {dashboardStats.revisions} revision{dashboardStats.revisions > 1 ? "s" : ""}
+                              </span>
+                            )}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Submissions awaiting admin review</p>
                         </div>
@@ -651,14 +723,14 @@ export function AdminFacultyDashboard({
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Active Faculty</span>
-                          <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                          <Group className="h-5 w-5 text-blue-500" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                            {facultyAccounts.filter(f => f.is_active).length} Active
+                            {isLoadingStats ? "..." : `${dashboardStats?.activeFaculty ?? facultyAccounts.filter(f => f.is_active).length} Active`}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            {facultyAccounts.length} total faculty accounts
+                            {dashboardStats?.totalFaculty ?? facultyAccounts.length} total faculty accounts
                           </p>
                         </div>
                       </div>
@@ -671,7 +743,16 @@ export function AdminFacultyDashboard({
                         <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 sm:p-6 transition-colors">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-300 dark:border-slate-800">
                             <div>
-                              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Pending Submissions Verification Queue</h2>
+                              <div className="flex items-center gap-2">
+                                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+                                  Pending Submissions Verification Queue
+                                </h2>
+                                {pendingQueue.length > 0 && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
+                                    {pendingQueue.length}
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Faculty submissions awaiting your review and validation.</p>
                             </div>
                             <button
@@ -683,9 +764,51 @@ export function AdminFacultyDashboard({
                               <NavArrowRight className="h-3 w-3" />
                             </button>
                           </div>
-                          <div className="py-8 text-center">
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Navigate to Requirements Verification to review pending submissions.</p>
-                          </div>
+
+                          {pendingQueue.length === 0 ? (
+                            <div className="py-8 text-center space-y-2">
+                              <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto opacity-70" />
+                              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">All submissions up to date</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">No pending submissions awaiting review.</p>
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                              {pendingQueue.slice(0, 5).map((item) => (
+                                <div key={item.id} className="py-3.5 flex items-center justify-between gap-4">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                                        {item.facultyName}
+                                      </span>
+                                      {item.isRevision && (
+                                        <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+                                          Revision
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 truncate mt-0.5">
+                                      {item.requirementTitle}
+                                    </p>
+                                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                                      Submitted: {new Date(item.submittedAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (item.facultyId) {
+                                        setSelectedFacultyId(item.facultyId);
+                                      }
+                                      handleSetActiveSection("requirements");
+                                    }}
+                                    className="shrink-0 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                  >
+                                    Review
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -694,11 +817,38 @@ export function AdminFacultyDashboard({
                         <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 transition-colors">
                           <div className="pb-3 border-b border-slate-300 dark:border-slate-800">
                             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Recent Admin Actions</h2>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Latest admin activity feed.</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Latest reviews and validation activity.</p>
                           </div>
-                          <div className="py-6 text-center">
-                            <p className="text-xs text-slate-500 dark:text-slate-400">No recent activity to display.</p>
-                          </div>
+                          {recentActivity.length === 0 ? (
+                            <div className="py-6 text-center">
+                              <p className="text-xs text-slate-500 dark:text-slate-400">No recent activity to display.</p>
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                              {recentActivity.slice(0, 5).map((act) => (
+                                <div key={act.id} className="py-3 space-y-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                      {act.facultyName}
+                                    </span>
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                                      act.decision === "validated"
+                                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                                    }`}>
+                                      {act.decision === "validated" ? "Validated" : "Revision Requested"}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                    {act.requirementTitle}
+                                  </p>
+                                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                                    {new Date(act.createdAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </section>
