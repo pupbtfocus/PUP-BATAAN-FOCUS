@@ -45,6 +45,7 @@ import {
 import { Activity, Archive, Calendar, Check, CheckCircle, Clock, ClockRotateRight, CloudUpload, Download, Eye, Hourglass, Menu, NavArrowRight, OpenNewWindow, Page, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
+import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
 export function getFileType(fileNameOrUrl: string): {
   type: DetectedFileType;
@@ -85,6 +86,10 @@ export const getFileBrand = (
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-pdf2.svg",
       borderColor: "border-[#E5252A]/30 dark:border-[#E5252A]/40",
       badgeBg: "bg-[#E5252A] text-white",
+      googleApp: "Google Drive",
+      googleAction: "Open in Google Drive",
+      officeApp: null,
+      officeAction: null,
     };
   }
   if (isExcel || ["xlsx", "xls", "csv"].includes(ext)) {
@@ -93,6 +98,10 @@ export const getFileBrand = (
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-excel.svg",
       borderColor: "border-[#107C41]/30 dark:border-[#107C41]/40",
       badgeBg: "bg-[#107C41] text-white",
+      googleApp: "Google Sheets",
+      googleAction: "Open in Google Sheets (Drive)",
+      officeApp: "Excel Online",
+      officeAction: "Open in Excel Online",
     };
   }
   if (isWord || ["docx", "doc"].includes(ext)) {
@@ -101,6 +110,10 @@ export const getFileBrand = (
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-word.svg",
       borderColor: "border-[#185ABD]/30 dark:border-[#185ABD]/40",
       badgeBg: "bg-[#185ABD] text-white",
+      googleApp: "Google Docs",
+      googleAction: "Open in Google Docs (Drive)",
+      officeApp: "Word Online",
+      officeAction: "Open in Word Online",
     };
   }
   if (["pptx", "ppt"].includes(ext)) {
@@ -110,6 +123,10 @@ export const getFileBrand = (
         "https://api.iconify.design/vscode-icons:file-type-powerpoint.svg",
       borderColor: "border-[#C43E1C]/30 dark:border-[#C43E1C]/40",
       badgeBg: "bg-[#C43E1C] text-white",
+      googleApp: "Google Slides",
+      googleAction: "Open in Google Slides (Drive)",
+      officeApp: "PowerPoint Online",
+      officeAction: "Open in PowerPoint Online",
     };
   }
   if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
@@ -2950,45 +2967,22 @@ function FacultySubmissionPanelContent({
                             isWord,
                           );
                           return (
-                            <div
-                              className={`flex flex-col items-center justify-center h-full w-full min-h-[50vh] p-8 text-center bg-slate-50/60 dark:bg-slate-900/80 rounded-2xl border ${brand.borderColor} shadow-xs backdrop-blur-xs transition-all`}
-                            >
-                              {/* File Brand Icon Badge */}
-                              <div className="relative p-4 rounded-2xl bg-white/80 dark:bg-slate-800/80 mb-4 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700/60 flex items-center justify-center">
-                                <img
-                                  src={brand.iconUrl}
-                                  alt={brand.label}
-                                  className="w-12 h-12 object-contain select-none"
-                                  loading="lazy"
-                                />
-                                <span
-                                  className={`absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider ${brand.badgeBg} shadow-sm`}
-                                >
-                                  {fileExtension}
-                                </span>
-                              </div>
-                              <h4 className="text-base font-bold text-slate-900 dark:text-amber-100 mb-1 max-w-sm truncate">
-                                {fileIdentifier}
-                              </h4>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 max-w-xs leading-relaxed">
-                                Direct browser preview is not supported for{" "}
-                                <span className="font-bold text-slate-800 dark:text-slate-200">
-                                  {brand.label}
-                                </span>
-                                . You can download or open the file to view its
-                                contents.
-                              </p>
-                              <a
-                                href={fileUrl}
-                                download={fileIdentifier}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-sm hover:shadow-md cursor-pointer"
-                              >
-                                <Download className="w-4 h-4 stroke-[2.2]" />
-                                Download & View File
-                              </a>
-                            </div>
+                            <OnlineDocumentPreview
+                              fileName={fileIdentifier}
+                              fileUrl={fileUrl}
+                              storagePath={previewSubmission.storagePath}
+                              submissionId={previewSubmission.latestSubmissionId}
+                              fileExtension={fileExtension}
+                              isExcel={isExcel}
+                              isWord={isWord}
+                              brand={brand}
+                              onDownload={() =>
+                                window.open(
+                                  `${fileUrl}&download=true`,
+                                  "_blank",
+                                )
+                              }
+                            />
                           );
                         }
                         return (

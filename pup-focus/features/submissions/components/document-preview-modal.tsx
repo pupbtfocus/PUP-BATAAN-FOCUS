@@ -2,7 +2,8 @@
 
 import React from "react";
 import { Download, OpenNewWindow, Page, Xmark } from "iconoir-react";
-import { getFileType } from "@/features/faculty-management/components/faculty-submission-panel";
+import { getFileType, getFileBrand } from "@/features/faculty-management/components/faculty-submission-panel";
+import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 
 export interface DocumentPreviewSubmission {
@@ -135,30 +136,19 @@ export function DocumentPreviewModal({
                 className="max-h-[60vh] max-w-full rounded-lg object-contain"
               />
             ) : isExcel || isWord || (!isPdf && !isImage) ? (
-              <div className="flex flex-col items-center justify-center p-8 text-center max-w-md">
-                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20 flex items-center justify-center mb-4 text-amber-600 dark:text-amber-400">
-                  <Page className="w-8 h-8" />
-                </div>
-                <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
-                  Preview Not Supported
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-                  This document is in{" "}
-                  <span className="font-semibold uppercase text-slate-700 dark:text-slate-300">
-                    .{fileExtension}
-                  </span>{" "}
-                  format. You can download the file to view its complete
-                  contents.
-                </p>
-                <a
-                  href={`${fileUrl}&download=true`}
-                  download={fileIdentifier}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-sm hover:shadow-md cursor-pointer"
-                >
-                  <Download className="w-4 h-4 stroke-[2.2]" />
-                  Download & View File
-                </a>
-              </div>
+              <OnlineDocumentPreview
+                fileName={fileIdentifier}
+                fileUrl={fileUrl}
+                storagePath={submission.storagePath}
+                submissionId={submission.latestSubmissionId}
+                fileExtension={fileExtension}
+                isExcel={isExcel}
+                isWord={isWord}
+                brand={getFileBrand(fileExtension, isExcel, isWord)}
+                onDownload={() =>
+                  window.open(`${fileUrl}&download=true`, "_blank")
+                }
+              />
             ) : (
               <iframe
                 title={`${title} preview`}

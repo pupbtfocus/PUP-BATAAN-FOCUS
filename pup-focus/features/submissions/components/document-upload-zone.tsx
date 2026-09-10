@@ -703,8 +703,10 @@ export function DocumentUploadZone({
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-sm hover:shadow-md cursor-pointer"
                       >
-                        <Download className="w-4 h-4 stroke-[2.2]" />
-                        Download & View File
+                        <Download className="w-4 h-4 stroke-[2.2] shrink-0 text-slate-950" />
+                        <span className="text-slate-950">
+                          Download &amp; View File
+                        </span>
                       </a>
                     </div>
                   );
