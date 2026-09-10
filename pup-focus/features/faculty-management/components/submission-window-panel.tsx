@@ -538,11 +538,11 @@ export function SubmissionWindowPanel({ onWindowChange }: SubmissionWindowPanelP
       }`}>
         <div className="flex items-center gap-3">
           {/* Live Pulsing Badge */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider ${
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium ${
             isWindowOpen
-              ? "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80"
+              ? "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40"
               : isUpcoming
-              ? "bg-amber-950/50 text-amber-400 border border-amber-800/80"
+              ? "bg-amber-950/30 text-amber-400/90 border border-amber-900/40"
               : "bg-rose-950/50 text-rose-400 border border-rose-800/80"
           }`}>
             <span className={`w-2 h-2 rounded-full ${

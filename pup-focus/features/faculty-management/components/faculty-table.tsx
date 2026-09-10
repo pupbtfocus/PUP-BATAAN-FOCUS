@@ -255,17 +255,17 @@ export function FacultyTable({
                         </div>
                       </td>
                       <td className="px-4 py-2.5 font-medium text-xs">
-                        <span className="text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
+                        <span className="bg-slate-900/80 text-slate-300 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
                           {programCode}
                         </span>
                       </td>
                       <td className="px-4 py-2.5 font-medium">
                         {faculty.is_active ? (
-                          <span className="bg-emerald-950/50 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                          <span className="bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
                             Active
                           </span>
                         ) : (
-                          <span className="bg-slate-800/60 text-slate-300 border border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                          <span className="bg-slate-900 text-slate-400 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
                             Inactive
                           </span>
                         )}

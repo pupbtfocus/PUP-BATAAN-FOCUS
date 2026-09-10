@@ -162,10 +162,10 @@ export function AdminFilterBar({
             <button
               type="button"
               onClick={() => onStatusFilterChange("all")}
-              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+              className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                 statusFilter === "all"
-                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                  ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
               }`}
             >
               All
@@ -173,10 +173,10 @@ export function AdminFilterBar({
             <button
               type="button"
               onClick={() => onStatusFilterChange("active")}
-              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+              className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                 statusFilter === "active"
-                  ? "bg-emerald-500 text-white font-semibold shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                  ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
               }`}
             >
               Active
@@ -184,10 +184,10 @@ export function AdminFilterBar({
             <button
               type="button"
               onClick={() => onStatusFilterChange("inactive")}
-              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+              className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                 statusFilter === "inactive"
-                  ? "bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                  ? "bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50"
               }`}
             >
               Inactive
@@ -379,10 +379,10 @@ export function AdminAccountsTable({
                     {/* Status Badge */}
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${
                           admin.is_active
-                            ? "bg-emerald-950/50 text-emerald-400 border border-emerald-800/80"
-                            : "bg-slate-800/60 text-slate-300 border border-slate-700"
+                            ? "bg-emerald-950/30 text-emerald-400/90 border-emerald-900/40"
+                            : "bg-slate-900 text-slate-400 border-slate-800"
                         }`}
                       >
                         {admin.is_active ? "Active" : "Inactive"}

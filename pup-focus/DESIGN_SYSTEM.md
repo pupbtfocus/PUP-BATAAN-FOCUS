@@ -43,15 +43,26 @@ PUP FOCUS is a faculty compliance management system for the Polytechnic Universi
 
 #### Functional Status Badges & Chips
 
-All status badges, pills, and tags across tables, dashboards, and modals must use these grounded tokens:
+All status badges, pills, and tags across tables, dashboards, and modals must use these subtle, grounded tokens:
 
 | Status Role                 | Utility Tokens                                              |
 |-----------------------------|-------------------------------------------------------------|
-| Neutral / Draft             | `bg-slate-800/60 text-slate-300 border border-slate-700`    |
-| Success / Active / Approved | `bg-emerald-950/50 text-emerald-400 border border-emerald-800/80` |
-| Warning / Pending / Review  | `bg-amber-950/50 text-amber-400 border border-amber-800/80` |
-| Error / Rejected / Overdue  | `bg-rose-950/50 text-rose-400 border border-rose-800/80`    |
-| Info / Secondary            | `bg-slate-900 text-slate-300 border border-slate-800`        |
+| Inactive / Draft / Not Submitted | `bg-slate-900 text-slate-400 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Success / Active / Approved | `bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Warning / Pending / Review  | `bg-amber-950/30 text-amber-400/90 border border-amber-900/40 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Error / Rejected / Overdue  | `bg-rose-950/50 text-rose-400 border border-rose-800/80 px-2 py-0.5 text-xs font-medium rounded-md` |
+| Secondary / Program Tag     | `bg-slate-900/80 text-slate-300 border border-slate-800 px-2 py-0.5 text-xs font-medium rounded-md` |
+
+#### Stat & Overview Cards
+
+- **Header Text**: Standardize all stat card titles to neutral muted slate (`text-[11px] font-semibold uppercase tracking-wider text-slate-400`).
+- **Icons**: Top-right icons must use neutral muted slate (`text-slate-400` or `text-slate-500` with `strokeWidth={2}`).
+- **Banned**: Colored text for stat titles (gold/green/orange) and bright accent borders.
+
+#### Filter Tabs & Controls
+
+- **Active Filter Tab**: High-contrast neutral slate (`bg-slate-100 text-slate-900 font-semibold dark:bg-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs`).
+- **Inactive Filter Tabs**: Neutral muted slate (`text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900/50`).
 
 ### 2.2 Banned Colors
 
