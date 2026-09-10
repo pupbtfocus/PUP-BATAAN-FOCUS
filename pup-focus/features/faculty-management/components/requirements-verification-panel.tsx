@@ -2921,7 +2921,7 @@ export function RequirementsPanel({
                         <button
                           type="button"
                           onClick={() => setReviewingFaculty(faculty)}
-                          className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-900 dark:border-slate-100 font-semibold px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition cursor-pointer"
+                          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition cursor-pointer"
                         >
                           Review Requirements
                         </button>
