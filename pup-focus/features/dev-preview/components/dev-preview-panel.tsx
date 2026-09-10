@@ -35,6 +35,8 @@ import {
 } from "@/components/auth/auth-feedback-modal";
 import successfullyIcon from "@/assets/icons animations/successfully.svg";
 import failedIcon from "@/assets/icons animations/fail.svg";
+import loadingIcon from "@/assets/icons animations/loading.svg";
+import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 
 type PreviewTab =
   | "gmail"
@@ -46,11 +48,13 @@ type PreviewTab =
 export function DevPreviewPanel() {
   const [activeTab, setActiveTab] = useState<PreviewTab>("gmail");
 
-  // Login Success & Fail Preview State
+  // Login Success, Fail & Loading Preview State
   const [authFeedbackModal, setAuthFeedbackModal] = useState<AuthModalState | null>(null);
   const [testLoginEmail, setTestLoginEmail] = useState("preview@pupfocus.dev");
   const [testLoginPassword, setTestLoginPassword] = useState("PreviewPassword2026!");
   const [previewAnimationKey, setPreviewAnimationKey] = useState(Date.now());
+  const [showSystemLoadingScreen, setShowSystemLoadingScreen] = useState(false);
+  const [isSimulatingLoginSequence, setIsSimulatingLoginSequence] = useState(false);
 
   // Email Preview State
   const [emailTemplate, setEmailTemplate] = useState<"invite" | "temp-password" | "window">("invite");
@@ -153,6 +157,42 @@ export function DevPreviewPanel() {
     }, 1000);
   };
 
+  const handleSimulateRealisticLogin = (outcome: "success" | "fail") => {
+    setIsSimulatingLoginSequence(true);
+    setAuthFeedbackModal({
+      title: "Authenticating...",
+      message: "Verifying institutional credentials with campus directory...",
+      variant: "loading",
+    });
+
+    setTimeout(() => {
+      setIsSimulatingLoginSequence(false);
+      if (outcome === "success") {
+        setAuthFeedbackModal({
+          title: "Login Successful",
+          message: `Welcome back, ${testLoginEmail.split("@")[0] || "User"}!`,
+          actionLabel: "Continue",
+          variant: "success",
+        });
+      } else {
+        setAuthFeedbackModal({
+          title: "Login Failed",
+          message:
+            "Invalid institutional email address or password. Please verify your credentials and try again.",
+          actionLabel: "Try Again",
+          variant: "error",
+        });
+      }
+    }, 1600);
+  };
+
+  const handleTriggerSystemLoading = () => {
+    setShowSystemLoadingScreen(true);
+    setTimeout(() => {
+      setShowSystemLoadingScreen(false);
+    }, 3200);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-2 sm:p-4">
       {/* Top Header Card */}
@@ -174,73 +214,81 @@ export function DevPreviewPanel() {
           </p>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={() => setActiveTab("gmail")}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-              activeTab === "gmail"
-                ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
-          >
-            <Mail className="w-4 h-4" />
-            <span>Gmail & Email</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("verification")}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-              activeTab === "verification"
-                ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
-          >
-            <Shield className="w-4 h-4" />
-            <span>Verify Tab Screen</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("change-password")}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-              activeTab === "change-password"
-                ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
-          >
-            <Key className="w-4 h-4" />
-            <span>First Login Change Pass</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("login-feedback")}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-              activeTab === "login-feedback"
-                ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
-          >
-            <CheckCircle className="w-4 h-4 text-emerald-500" />
-            <span>Login Success & Fail</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("modals")}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-              activeTab === "modals"
-                ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
-          >
-            <Eye className="w-4 h-4" />
-            <span>Modals Showcase</span>
-          </button>
+        {/* Global Action Badges */}
+        <div className="flex items-center gap-2 self-start md:self-auto">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <Shield className="w-4 h-4 text-amber-500" />
+            <span>Mock Mode: Safe</span>
+          </span>
         </div>
+      </div>
+
+      {/* Tabs Navigation Bar */}
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => setActiveTab("gmail")}
+          className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === "gmail"
+              ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+          }`}
+        >
+          <Mail className="w-4 h-4" />
+          <span>Gmail & Email</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("verification")}
+          className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === "verification"
+              ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+          }`}
+        >
+          <Shield className="w-4 h-4" />
+          <span>Verify Tab Screen</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("change-password")}
+          className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === "change-password"
+              ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+          }`}
+        >
+          <Key className="w-4 h-4" />
+          <span>First Login Change Pass</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("login-feedback")}
+          className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === "login-feedback"
+              ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+          }`}
+        >
+          <CheckCircle className="w-4 h-4 text-emerald-500" />
+          <span>Login, Fail & Loading</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("modals")}
+          className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === "modals"
+              ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+          }`}
+        >
+          <Eye className="w-4 h-4" />
+          <span>Modals Showcase</span>
+        </button>
       </div>
 
       {/* TAB 1: GMAIL & EMAIL TEMPLATES */}
@@ -778,20 +826,36 @@ export function DevPreviewPanel() {
         </div>
       )}
 
-      {/* TAB 4: LOGIN SUCCESS & FAIL FEEDBACK */}
+      {/* TAB 4: LOGIN FEEDBACK & LOADING */}
       {activeTab === "login-feedback" && (
         <div className="space-y-6">
           {/* Controls Bar */}
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                Institutional Sign-In Feedback System (AuthFeedbackModal)
+                Institutional Sign-In Feedback & Loading Systems
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Inspect the authentic modal animations, gradient borders, and state handling shown to users when logging in.
+                Inspect authentic modal animations, gradient borders, loading states, and redirect transitions experienced by users during login.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setAuthFeedbackModal({
+                    title: "Authenticating...",
+                    message:
+                      "Verifying institutional credentials with campus security...",
+                    variant: "loading",
+                  })
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-2xs"
+              >
+                <SystemRestart className="w-3.5 h-3.5 animate-spin" />
+                <span>Launch Loading Modal</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() =>
@@ -841,17 +905,26 @@ export function DevPreviewPanel() {
                 <WarningTriangle className="w-3.5 h-3.5 text-amber-500" />
                 <span>Launch Restricted Alert</span>
               </button>
+
+              <button
+                type="button"
+                onClick={handleTriggerSystemLoading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 transition cursor-pointer"
+              >
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                <span>Preview System Loading Screen</span>
+              </button>
             </div>
           </div>
 
-          {/* Side-by-Side In-Page Inspection Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            {/* 1. SUCCESS CARD MOCKUP */}
-            <div className="flex flex-col items-center justify-center p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-950">
+          {/* 3-Column Side-by-Side In-Page Inspection Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+            {/* 1. LOADING CARD MOCKUP */}
+            <div className="flex flex-col items-center justify-center p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-950">
               <div className="w-full flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-xs">
-                <span className="font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  State 1: Successful Authentication
+                <span className="font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                  <SystemRestart className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                  State 1: Loading & Verification
                 </span>
                 <button
                   type="button"
@@ -859,16 +932,88 @@ export function DevPreviewPanel() {
                   className="text-slate-400 hover:text-slate-200 flex items-center gap-1 text-[11px] cursor-pointer"
                 >
                   <Refresh className="w-3 h-3" />
-                  <span>Replay Animation</span>
+                  <span>Replay</span>
                 </button>
               </div>
 
-              <div className="relative w-full max-w-[340px] overflow-hidden rounded-[2rem] border border-amber-400/60 bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 text-[#fff8e7] shadow-2xl shadow-black/60">
+              <div className="relative w-full max-w-[320px] overflow-hidden rounded-[2rem] border border-amber-400/80 bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 text-[#fff8e7] shadow-2xl shadow-black/60 ring-1 ring-amber-400/30">
                 <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
 
                 <div className="flex flex-col items-center justify-center text-center">
                   <div className="relative flex items-center justify-center my-1.5">
-                    <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-emerald-500/50">
+                    <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-amber-400/60 shadow-inner">
+                      <img
+                        key={previewAnimationKey}
+                        src={
+                          typeof loadingIcon === "string"
+                            ? loadingIcon
+                            : (loadingIcon as any)?.src ??
+                              "/icons-animations/loading.svg"
+                        }
+                        alt="Loading..."
+                        className="h-14 w-14 object-contain"
+                      />
+                    </div>
+                  </div>
+
+                  <h3 className="mt-3 text-xl font-black uppercase tracking-wider text-amber-300">
+                    Authenticating...
+                  </h3>
+
+                  <div className="h-0.5 w-12 rounded-full my-2 bg-gradient-to-r from-transparent via-amber-400/70 to-transparent" />
+
+                  <p className="text-xs font-medium leading-relaxed text-amber-100/90 max-w-[240px]">
+                    Verifying institutional credentials with campus directory...
+                  </p>
+
+                  <div className="mt-4 w-full flex flex-col items-center gap-2">
+                    <div className="flex items-center justify-center gap-2 text-xs font-semibold tracking-wide text-amber-300/90 py-0.5">
+                      <SystemRestart className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                      <span>Securing institutional session...</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAuthFeedbackModal({
+                          title: "Authenticating...",
+                          message:
+                            "Verifying institutional credentials with campus security...",
+                          variant: "loading",
+                        })
+                      }
+                      className="mt-1 h-10 w-full rounded-2xl bg-amber-400 hover:bg-amber-300 font-extrabold text-slate-950 tracking-widest uppercase text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-md"
+                    >
+                      <span>Launch Loading Modal</span>
+                      <NavArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. SUCCESS CARD MOCKUP */}
+            <div className="flex flex-col items-center justify-center p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-950">
+              <div className="w-full flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-xs">
+                <span className="font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  State 2: Success
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPreviewAnimationKey(Date.now())}
+                  className="text-slate-400 hover:text-slate-200 flex items-center gap-1 text-[11px] cursor-pointer"
+                >
+                  <Refresh className="w-3 h-3" />
+                  <span>Replay</span>
+                </button>
+              </div>
+
+              <div className="relative w-full max-w-[320px] overflow-hidden rounded-[2rem] border border-amber-400/60 bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 text-[#fff8e7] shadow-2xl shadow-black/60">
+                <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="relative flex items-center justify-center my-1.5">
+                    <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-emerald-500/50 shadow-inner">
                       <img
                         key={previewAnimationKey}
                         src={
@@ -889,7 +1034,7 @@ export function DevPreviewPanel() {
 
                   <div className="h-0.5 w-12 rounded-full my-2 bg-gradient-to-r from-transparent via-amber-400/70 to-transparent" />
 
-                  <p className="text-xs font-medium leading-relaxed text-amber-100/90 max-w-[260px]">
+                  <p className="text-xs font-medium leading-relaxed text-amber-100/90 max-w-[240px]">
                     Welcome back to PUP FOCUS. Securing institutional session...
                   </p>
 
@@ -918,12 +1063,12 @@ export function DevPreviewPanel() {
               </div>
             </div>
 
-            {/* 2. FAIL CARD MOCKUP */}
-            <div className="flex flex-col items-center justify-center p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-950">
+            {/* 3. FAIL CARD MOCKUP */}
+            <div className="flex flex-col items-center justify-center p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-950">
               <div className="w-full flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-xs">
                 <span className="font-bold text-rose-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
                   <WarningCircle className="w-3.5 h-3.5" />
-                  State 2: Failed Authentication
+                  State 3: Failed
                 </span>
                 <button
                   type="button"
@@ -931,16 +1076,16 @@ export function DevPreviewPanel() {
                   className="text-slate-400 hover:text-slate-200 flex items-center gap-1 text-[11px] cursor-pointer"
                 >
                   <Refresh className="w-3 h-3" />
-                  <span>Replay Animation</span>
+                  <span>Replay</span>
                 </button>
               </div>
 
-              <div className="relative w-full max-w-[340px] overflow-hidden rounded-[2rem] border border-rose-500/50 bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 text-[#fff8e7] shadow-2xl shadow-black/60">
+              <div className="relative w-full max-w-[320px] overflow-hidden rounded-[2rem] border border-rose-500/50 bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 text-[#fff8e7] shadow-2xl shadow-black/60">
                 <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent" />
 
                 <div className="flex flex-col items-center justify-center text-center">
                   <div className="relative flex items-center justify-center my-1.5">
-                    <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-rose-500/50">
+                    <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-rose-500/50 shadow-inner">
                       <img
                         key={previewAnimationKey}
                         src={
@@ -961,8 +1106,8 @@ export function DevPreviewPanel() {
 
                   <div className="h-0.5 w-12 rounded-full my-2 bg-gradient-to-r from-transparent via-rose-500/70 to-transparent" />
 
-                  <p className="text-xs font-medium leading-relaxed text-rose-100/80 max-w-[260px]">
-                    Invalid institutional email address or password. Please verify your credentials and try again.
+                  <p className="text-xs font-medium leading-relaxed text-rose-100/80 max-w-[240px]">
+                    Invalid institutional email address or password. Please verify credentials.
                   </p>
 
                   <div className="mt-4 w-full">
@@ -991,10 +1136,10 @@ export function DevPreviewPanel() {
           {/* Interactive Live Login Simulation Box */}
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs">
             <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-100 mb-1">
-              Live Interactive Sign-In Tester
+              Live Interactive Sign-In Tester & Sequence Simulator
             </h4>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Enter any test credentials or use the quick buttons below to trigger the authentic full-screen login response modal as experienced by users on the landing page.
+              Test realistic full-screen authentication sequences (Loading spinner → Verified Success / Failed notice) as experienced by faculty and admins.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1023,7 +1168,47 @@ export function DevPreviewPanel() {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <div className="mt-5 flex flex-wrap items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+              {/* Realistic Sequence 1: Loading -> Success */}
+              <button
+                type="button"
+                disabled={isSimulatingLoginSequence}
+                onClick={() => handleSimulateRealisticLogin("success")}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-slate-950 font-bold text-xs transition cursor-pointer shadow-md flex items-center gap-2 disabled:opacity-50"
+              >
+                <SystemRestart className="w-4 h-4 animate-spin text-slate-950" />
+                <span>Simulate Flow (Loading → Success)</span>
+              </button>
+
+              {/* Realistic Sequence 2: Loading -> Fail */}
+              <button
+                type="button"
+                disabled={isSimulatingLoginSequence}
+                onClick={() => handleSimulateRealisticLogin("fail")}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-slate-950 font-bold text-xs transition cursor-pointer shadow-md flex items-center gap-2 disabled:opacity-50"
+              >
+                <SystemRestart className="w-4 h-4 animate-spin text-slate-950" />
+                <span>Simulate Flow (Loading → Fail)</span>
+              </button>
+
+              {/* Instant Loading Only */}
+              <button
+                type="button"
+                onClick={() =>
+                  setAuthFeedbackModal({
+                    title: "Authenticating...",
+                    message:
+                      "Verifying institutional credentials with campus directory...",
+                    variant: "loading",
+                  })
+                }
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs transition cursor-pointer shadow-2xs flex items-center gap-1.5"
+              >
+                <SystemRestart className="w-4 h-4 animate-spin" />
+                <span>Launch Loading Modal Only</span>
+              </button>
+
+              {/* Instant Success Only */}
               <button
                 type="button"
                 onClick={() => {
@@ -1037,9 +1222,10 @@ export function DevPreviewPanel() {
                 className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition cursor-pointer shadow-2xs flex items-center gap-1.5"
               >
                 <CheckCircle className="w-4 h-4" />
-                <span>Simulate Successful Sign-In</span>
+                <span>Instant Login Success</span>
               </button>
 
+              {/* Instant Fail Only */}
               <button
                 type="button"
                 onClick={() => {
@@ -1054,24 +1240,17 @@ export function DevPreviewPanel() {
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition cursor-pointer shadow-2xs flex items-center gap-1.5"
               >
                 <Xmark className="w-4 h-4" />
-                <span>Simulate Failed Sign-In</span>
+                <span>Instant Login Failed</span>
               </button>
 
+              {/* Full-Screen Loading Screen Preview */}
               <button
                 type="button"
-                onClick={() => {
-                  setAuthFeedbackModal({
-                    title: "Account Restricted",
-                    message:
-                      "Your institutional account has been deactivated by an administrator. Please contact system support.",
-                    actionLabel: "Understood",
-                    variant: "error",
-                  });
-                }}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs transition cursor-pointer flex items-center gap-1.5"
+                onClick={handleTriggerSystemLoading}
+                className="px-4 py-2 rounded-xl border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 font-semibold text-xs transition cursor-pointer flex items-center gap-1.5"
               >
-                <WarningTriangle className="w-4 h-4 text-amber-500" />
-                <span>Simulate Deactivated Account</span>
+                <Clock className="w-4 h-4 text-amber-500" />
+                <span>Preview System Loading Screen</span>
               </button>
             </div>
           </div>
@@ -1246,6 +1425,57 @@ export function DevPreviewPanel() {
                 className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 transition cursor-pointer"
               >
                 Launch Restricted Modal
+              </button>
+            </div>
+
+            {/* Modal Card 7: Auth Loading Modal */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-amber-500">
+                  <SystemRestart className="w-5 h-5 animate-spin" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Authentication Loading Modal
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Inspect the authentic animated hourglass loading modal displayed while checking credentials and securing the session.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setAuthFeedbackModal({
+                    title: "Authenticating...",
+                    message:
+                      "Verifying institutional credentials with campus security...",
+                    variant: "loading",
+                  })
+                }
+                className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition cursor-pointer"
+              >
+                Launch Loading Modal
+              </button>
+            </div>
+
+            {/* Modal Card 8: Full-Screen System Loading Screen */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <Clock className="w-5 h-5 text-amber-500" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    System Loading Screen
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  The institutional full-screen loading backdrop with PUP Seal, FOCUS emblem, and animated loader used across dashboard routes.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleTriggerSystemLoading}
+                className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 transition cursor-pointer shadow-xs"
+              >
+                Launch System Loading Screen
               </button>
             </div>
           </div>
@@ -1465,7 +1695,26 @@ export function DevPreviewPanel() {
         </div>
       )}
 
-      {/* AUTH FEEDBACK MODAL (LOGIN SUCCESS & FAIL) */}
+      {/* FULL-SCREEN SYSTEM LOADING PREVIEW OVERLAY */}
+      {showSystemLoadingScreen && (
+        <div
+          className="fixed inset-0 z-50 cursor-pointer"
+          onClick={() => setShowSystemLoadingScreen(false)}
+          title="Click anywhere to dismiss loading screen preview"
+        >
+          <SystemLoadingScreen text="Loading PUP FOCUS Campus Dashboard..." />
+          <button
+            type="button"
+            onClick={() => setShowSystemLoadingScreen(false)}
+            className="fixed top-6 right-6 z-50 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 text-white text-xs font-semibold backdrop-blur-md border border-white/20 transition cursor-pointer flex items-center gap-1.5 shadow-lg"
+          >
+            <Xmark className="w-3.5 h-3.5" />
+            <span>Dismiss Preview</span>
+          </button>
+        </div>
+      )}
+
+      {/* AUTH FEEDBACK MODAL (LOGIN SUCCESS, FAIL & LOADING) */}
       <AuthFeedbackModal
         modal={authFeedbackModal}
         onClose={() => setAuthFeedbackModal(null)}
