@@ -19,6 +19,7 @@ import { AdminAcademicTerms } from "@/features/admin-management/components/admin
 import { SubmissionWindowPanel } from "@/features/faculty-management/components/submission-window-panel";
 import { RequirementTemplatesPanel } from "@/features/requirement-templates/components/requirement-templates-panel";
 import { BackupArchivePanel } from "@/features/backup-archive/components/backup-archive-panel";
+import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
 import { AddFacultyModal } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
 import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
 import { FacultyDetailsModal } from "@/features/faculty-management/components/faculty-modals/faculty-details-modal";
@@ -51,7 +52,8 @@ export type SuperAdminSection =
   | "templates"
   | "backups"
   | "audit"
-  | "settings";
+  | "settings"
+  | "previews";
 
 interface AdminAccount {
   id?: string;
@@ -182,6 +184,13 @@ function normalizeSuperAdminSection(
     return "backups";
   if (val === "audit" || val === "auditlogs" || val === "audit-logs" || val === "logs") return "audit";
   if (val === "settings" || val === "super-admin-settings" || val === "admin-settings") return "settings";
+  if (
+    val === "previews" ||
+    val === "preview" ||
+    val === "dev-preview" ||
+    val === "features"
+  )
+    return "previews";
   return null;
 }
 
@@ -2028,6 +2037,12 @@ export function SuperAdminDashboard({
                     )}
                   </div>
                 </section>
+              </article>
+            ) : null}
+
+            {activeSection === "previews" ? (
+              <article className="space-y-6">
+                <DevPreviewPanel />
               </article>
             ) : null}
           </div>

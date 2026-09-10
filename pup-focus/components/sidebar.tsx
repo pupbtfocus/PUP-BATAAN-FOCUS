@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Activity, Archive, Calendar, ClipboardCheck, Clock, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, UserBadgeCheck, ViewGrid } from "iconoir-react";
+import { Activity, Archive, Calendar, ClipboardCheck, Clock, Eye, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, UserBadgeCheck, ViewGrid } from "iconoir-react";
 import { extractFirstName } from "@/lib/faculty-profile";
 
 export interface SidebarProps {
@@ -124,6 +124,10 @@ export function SidebarContent({
     activeSection === "audit" ||
     activeSection === "auditLogs" ||
     activeSection === "audit-logs";
+  const isPreviewsActive =
+    activeSection === "previews" ||
+    activeSection === "preview" ||
+    activeSection === "dev-preview";
   const isSettingsActive = activeSection === "settings";
 
   const isAcademicCycleActive =
@@ -429,7 +433,17 @@ export function SidebarContent({
           />
         )}
 
-        {/* 6. Settings */}
+        {/* 6. Developer Feature Previews (Super Admin) */}
+        {isSuperAdmin && (
+          <SidebarButton
+            active={isPreviewsActive}
+            title="Feature Previews"
+            Icon={Eye}
+            onClick={() => handleSelect("previews")}
+          />
+        )}
+
+        {/* 7. Settings */}
         <SidebarButton
           active={isSettingsActive}
           title="Settings"

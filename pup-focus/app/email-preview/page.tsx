@@ -1,7 +1,7 @@
 import {
   buildInviteEmailHtml,
   buildTempPasswordEmailHtml,
-} from "../../lib/email/send-invite";
+} from "../../lib/email/email-templates";
 import { ROLE } from "../../config/roles";
 
 export default function EmailPreviewPage() {
