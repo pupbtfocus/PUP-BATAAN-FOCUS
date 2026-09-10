@@ -40,7 +40,7 @@ function renderNoFileHtml(message?: string) {
       :root {
         --bg: #f8fafc;
         --card: #ffffff;
-        --border: #e2e8f0;
+        --border: #cbd5e1;
         --text: #0f172a;
         --text-muted: #64748b;
       }
