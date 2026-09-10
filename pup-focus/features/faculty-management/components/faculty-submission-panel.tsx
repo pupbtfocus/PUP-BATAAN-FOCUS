@@ -310,12 +310,12 @@ function getStatusBadgeTone(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
   if (status === "Validated")
-    return "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40";
+    return "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60";
   if (status === "Rejected")
-    return "bg-rose-950/50 text-rose-400 border border-rose-800/80";
+    return "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60";
   if (status === "Not Submitted")
-    return "bg-slate-900 text-slate-400 border border-slate-800";
-  return "bg-amber-950/30 text-amber-400/90 border border-amber-900/40";
+    return "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+  return "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60";
 }
 function getStatusIcon(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
@@ -2047,34 +2047,34 @@ function FacultySubmissionPanelContent({
                   <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                        <p className="text-xs uppercase tracking-[0.18em] text-amber-600 dark:text-amber-300 font-semibold">
                           School Year
                         </p>
-                        <p className="mt-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                        <p className="mt-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-900 dark:text-slate-100">
                           {form.academicYear
                             ? `S.Y. ${form.academicYear}`
                             : "Loading current term..."}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
+                        <p className="text-xs uppercase tracking-[0.18em] text-amber-600 dark:text-amber-300 font-semibold">
                           Semester
                         </p>
-                        <p className="mt-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100">
+                        <p className="mt-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-3 text-sm text-slate-900 dark:text-slate-100">
                           {form.semester}
                         </p>
                       </div>
                     </div>
                     <div>
                       <label
-                        className="text-xs uppercase tracking-[0.18em] text-amber-300"
+                        className="text-xs uppercase tracking-[0.18em] text-amber-600 dark:text-amber-300 font-semibold"
                         htmlFor="requirementCode"
                       >
                         Requirement Type
                       </label>
                       <select
                         id="requirementCode"
-                        className="mt-0 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:ring focus:ring-amber-300/30"
+                        className="mt-0 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 px-3 py-2 text-sm outline-none focus:border-slate-400 dark:focus:border-slate-600 focus:ring focus:ring-amber-300/30 cursor-pointer"
                         value={form.requirementCode}
                         onChange={(event) =>
                           updateField(
@@ -2141,7 +2141,7 @@ function FacultySubmissionPanelContent({
                         }
                       />
                     </div>
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-400">
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
                       <span>
                         Submission will be queued for review after upload.
                       </span>
@@ -2177,22 +2177,22 @@ function FacultySubmissionPanelContent({
                     </div>
                   </form>
                 ) : (
-                  <div className="mt-6 flex min-h-[60vh] items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 p-8">
-                    <div className="w-full max-w-2xl rounded-2xl border border-amber-500/30 bg-slate-950/80 p-8 text-center shadow-2xl">
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/15 text-amber-300">
+                  <div className="mt-6 flex min-h-[60vh] items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8">
+                    <div className="w-full max-w-2xl rounded-2xl border border-amber-500/30 bg-amber-500/5 dark:bg-slate-950/80 p-8 text-center shadow-2xl">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-300">
                         <WarningTriangle className="h-8 w-8" strokeWidth={2} />
                       </div>
-                      <h3 className="mt-5 text-2xl font-semibold text-slate-100">
+                      <h3 className="mt-5 text-2xl font-semibold text-slate-900 dark:text-slate-100">
                         Submission Is Currently Unavailable
                       </h3>
                       {isLoadingSubmissionWindow ? (
-                        <p className="mt-3 text-sm text-slate-300">
+                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
                           Checking submission availability...
                         </p>
                       ) : submissionWindow?.isConfigured ? (
-                        <p className="mt-3 text-sm text-slate-300">
+                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
                           The submission window is closed. Allowed schedule is
-                          <span className="font-semibold text-amber-300">
+                          <span className="font-semibold text-amber-600 dark:text-amber-300">
                             {" "}
                             {submissionWindow.startDate}{" "}
                             {submissionWindow.startTimeLabel ??
@@ -2204,13 +2204,13 @@ function FacultySubmissionPanelContent({
                           .
                         </p>
                       ) : (
-                        <p className="mt-3 text-sm text-slate-300">
+                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
                           Admin has not set the submission start and end dates
                           yet. Please wait until the schedule is available.
                         </p>
                       )}
                       {submissionWindow?.today ? (
-                        <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500">
+                        <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                           Now: {submissionWindow.today}{" "}
                           {submissionWindow.currentTimeLabel ??
                             submissionWindow.currentTime}
@@ -2220,26 +2220,26 @@ function FacultySubmissionPanelContent({
                   </div>
                 )}
                 {submissionMessage ? (
-                  <p className="mt-4 rounded-md border border-emerald-700 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-300">
+                  <p className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300 px-3 py-2 text-sm">
                     {submissionMessage}
                   </p>
                 ) : null}
                 {isMounted && isGuideOpen ? (
                   <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="submission-guide-title"
                     onClick={() => setIsGuideOpen(false)}
                   >
                     <div
-                      className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+                      className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-700 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-6 shadow-2xl"
                       onClick={(event) => event.stopPropagation()}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <h3
                           id="submission-guide-title"
-                          className="text-2xl font-semibold text-slate-100"
+                          className="text-2xl font-semibold text-slate-900 dark:text-slate-100"
                         >
                           Submission Guide
                         </h3>
@@ -2252,30 +2252,30 @@ function FacultySubmissionPanelContent({
                           Close
                         </Button>
                       </div>
-                      <div className="mt-5 space-y-3 text-sm text-slate-300">
-                        <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                          <p className="font-medium text-slate-100">
+                      <div className="mt-5 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+                        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
+                          <p className="font-medium text-slate-900 dark:text-slate-100">
                             1. Select the term
                           </p>
-                          <p className="mt-1 text-slate-400">
+                          <p className="mt-1 text-slate-500 dark:text-slate-400">
                             Match the school year and semester for the document
                             you are uploading.
                           </p>
                         </div>
-                        <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                          <p className="font-medium text-slate-100">
+                        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
+                          <p className="font-medium text-slate-900 dark:text-slate-100">
                             2. Choose the requirement
                           </p>
-                          <p className="mt-1 text-slate-400">
+                          <p className="mt-1 text-slate-500 dark:text-slate-400">
                             Pick the requirement type so the reviewer can
                             validate it correctly.
                           </p>
                         </div>
-                        <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                          <p className="font-medium text-slate-100">
+                        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
+                          <p className="font-medium text-slate-900 dark:text-slate-100">
                             3. Attach the file
                           </p>
-                          <p className="mt-1 text-slate-400">
+                          <p className="mt-1 text-slate-500 dark:text-slate-400">
                             Upload a PDF, Word file, or image, then submit it
                             for review.
                           </p>

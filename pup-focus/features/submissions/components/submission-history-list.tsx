@@ -182,7 +182,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 
                     {/* Academic Term */}
                     <td className="px-5 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      <span className="inline-flex items-center rounded-md border border-slate-700 bg-slate-800/60 px-2 py-0.5 text-[11px] font-medium text-slate-300">
+                      <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-[11px] font-medium rounded-md inline-flex items-center">
                         {sub.semester} • S.Y. {sub.academicYear}
                       </span>
                     </td>
@@ -274,7 +274,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                       {title}
                     </h4>
                   </div>
-                  <span className="inline-flex items-center rounded-md border border-slate-700 bg-slate-800/60 px-2 py-0.5 text-[10px] font-medium text-slate-300 mt-1">
+                  <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-[10px] font-medium rounded-md inline-flex items-center mt-1">
                     {sub.semester} • S.Y. {sub.academicYear}
                   </span>
                 </div>

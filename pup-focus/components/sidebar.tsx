@@ -17,13 +17,13 @@ export interface SidebarProps {
 function getRoleBadgeClasses(roleTitle?: string): string {
   const role = (roleTitle || "").toLowerCase().trim();
   if (role.includes("super")) {
-    return "bg-slate-200 dark:bg-slate-700/50 text-slate-800 dark:text-slate-200 border border-slate-400 dark:border-slate-600";
+    return "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
   }
   if (role.includes("faculty")) {
-    return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700";
+    return "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
   }
   // Default: Admin
-  return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700";
+  return "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
 }
 
 function getSidebarInitials(name?: string | null, fallback = "AD"): string {
@@ -52,10 +52,10 @@ export function SidebarButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs transition-all cursor-pointer ${
+      className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-lg ${
         active
-          ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-          : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+          ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
       }`}
     >
       {Icon && (
@@ -63,7 +63,7 @@ export function SidebarButton({
           strokeWidth={2}
           className={
             active
-              ? "h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0"
+              ? "h-4 w-4 text-slate-900 dark:text-slate-100 shrink-0"
               : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
           }
         />
@@ -74,7 +74,7 @@ export function SidebarButton({
           <p
             className={`mt-0.5 text-[10px] font-normal truncate ${
               active
-                ? "text-amber-800/80 dark:text-amber-300/80"
+                ? "text-slate-600 dark:text-slate-300"
                 : "text-slate-500 dark:text-slate-400"
             }`}
           >
@@ -220,10 +220,10 @@ export function SidebarContent({
             <button
               type="button"
               onClick={() => setIsUserManagementOpen((prev) => !prev)}
-              className={`flex w-full items-center justify-between gap-2.5 px-4 py-2.5 text-left text-xs transition-all cursor-pointer ${
+              className={`flex w-full items-center justify-between gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-lg ${
                 isUserManagementActive
-                  ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                  : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                  ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
@@ -231,7 +231,7 @@ export function SidebarContent({
                   strokeWidth={2}
                   className={
                     isUserManagementActive
-                      ? "h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0"
+                      ? "h-4 w-4 text-slate-900 dark:text-slate-100 shrink-0"
                       : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
                   }
                 />
@@ -246,21 +246,21 @@ export function SidebarContent({
 
             {/* Child Sub-items (Indented with left border indicator) */}
             {isUserManagementOpen && (
-              <div className="ml-4 pl-2 border-l border-slate-300 dark:border-slate-800 flex flex-col gap-1 mt-1">
+              <div className="ml-3 pl-2 border-l border-slate-200 dark:border-slate-800 flex flex-col gap-1 mt-1">
                 <button
                   type="button"
                   onClick={() => handleSelect("accounts")}
-                  className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
+                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                     isAccountsActive
-                      ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                      : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                      ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                   }`}
                 >
                   <UserBadgeCheck
                     strokeWidth={2}
                     className={
                       isAccountsActive
-                        ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                        ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
                         : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                     }
                   />
@@ -269,17 +269,17 @@ export function SidebarContent({
                 <button
                   type="button"
                   onClick={() => handleSelect("faculty")}
-                  className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
+                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                     isFacultyActive
-                      ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                      : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                      ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                   }`}
                 >
                   <Group
                     strokeWidth={2}
                     className={
                       isFacultyActive
-                        ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                        ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
                         : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                     }
                   />
@@ -312,10 +312,10 @@ export function SidebarContent({
           <button
             type="button"
             onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
-            className={`flex w-full items-center justify-between gap-2.5 px-4 py-2.5 text-left text-xs transition-all cursor-pointer ${
+            className={`flex w-full items-center justify-between gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-lg ${
               isAcademicCycleActive
-                ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
@@ -323,7 +323,7 @@ export function SidebarContent({
                 strokeWidth={2}
                 className={
                   isAcademicCycleActive
-                    ? "h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0"
+                    ? "h-4 w-4 text-slate-900 dark:text-slate-100 shrink-0"
                     : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
                 }
               />
@@ -338,23 +338,23 @@ export function SidebarContent({
 
           {/* Child Sub-items (Indented with left border indicator) */}
           {isAcademicCycleOpen && (
-            <div className="ml-4 pl-2 border-l border-slate-300 dark:border-slate-800 flex flex-col gap-1 mt-1">
+            <div className="ml-3 pl-2 border-l border-slate-200 dark:border-slate-800 flex flex-col gap-1 mt-1">
               <button
                 type="button"
                 onClick={() =>
                   handleSelect(isSuperAdmin ? "terms" : "academicTerms")
                 }
-                className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
+                className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                   isTermsActive
-                    ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                    : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                    ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
                 <Clock
                   strokeWidth={2}
                   className={
                     isTermsActive
-                      ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                      ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
                       : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                   }
                 />
@@ -365,17 +365,17 @@ export function SidebarContent({
                 onClick={() =>
                   handleSelect(isSuperAdmin ? "window" : "submissionWindow")
                 }
-                className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
+                className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                   isWindowActive
-                    ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                    : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                    ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
                 <Hourglass
                   strokeWidth={2}
                   className={
                     isWindowActive
-                      ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                      ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
                       : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                   }
                 />
@@ -386,17 +386,17 @@ export function SidebarContent({
                   <button
                     type="button"
                     onClick={() => handleSelect("templates")}
-                    className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
+                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                       isTemplatesActive
-                        ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                        : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                        ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
                     <Page
                       strokeWidth={2}
                       className={
                         isTemplatesActive
-                          ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                          ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
                           : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                       }
                     />
@@ -405,17 +405,17 @@ export function SidebarContent({
                   <button
                     type="button"
                     onClick={() => handleSelect("backups")}
-                    className={`flex w-full items-center gap-2 px-3.5 py-2 text-xs transition-all cursor-pointer ${
+                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                       isBackupsActive
-                        ? "rounded-full bg-amber-500/15 text-amber-950 dark:bg-amber-500/20 dark:text-amber-300 font-semibold"
-                        : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
+                        ? "bg-slate-100 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800/90 dark:text-slate-100 dark:border-slate-100"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
                     <Archive
                       strokeWidth={2}
                       className={
                         isBackupsActive
-                          ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                          ? "h-3.5 w-3.5 text-slate-900 dark:text-slate-100 shrink-0"
                           : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                       }
                     />
@@ -451,7 +451,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none border-r border-l-0 border-slate-300 dark:border-slate-800 bg-[#F6F8FC] dark:bg-slate-950 p-2.5 shadow-sm z-30 transition-colors duration-200">
+    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 p-2.5 shadow-sm z-30 transition-colors duration-200">
       <SidebarContent {...props} />
     </aside>
   );

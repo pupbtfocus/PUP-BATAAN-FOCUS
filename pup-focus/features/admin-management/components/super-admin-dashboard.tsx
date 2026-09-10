@@ -1510,7 +1510,11 @@ export function SuperAdminDashboard({
                                   <p className="text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
                                 </div>
                               </div>
-                              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${admin.is_active ? "bg-emerald-950/30 text-emerald-400/90 border-emerald-900/40" : "bg-slate-900 text-slate-400 border-slate-800"}`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${
+                                admin.is_active
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60"
+                                  : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                              }`}>
                                 {admin.is_active ? "Active" : "Inactive"}
                               </span>
                             </div>

@@ -53,29 +53,29 @@ export function SubmissionStatusBadge({
     Validated: {
       label: "Validated",
       containerClass:
-        "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40",
-      dotClass: "bg-emerald-400",
+        "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60",
+      dotClass: "bg-emerald-500 dark:bg-emerald-400",
       icon: <CheckCircle className="shrink-0" strokeWidth={2} aria-hidden="true" />,
     },
     "Needs Revision": {
       label: "Needs Revision",
       containerClass:
-        "bg-rose-950/50 text-rose-400 border border-rose-800/80",
-      dotClass: "bg-rose-400",
+        "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60",
+      dotClass: "bg-rose-500 dark:bg-rose-400",
       icon: <WarningCircle className="shrink-0" strokeWidth={2} aria-hidden="true" />,
     },
     "Pending Review": {
       label: "Pending Review",
       containerClass:
-        "bg-amber-950/30 text-amber-400/90 border border-amber-900/40",
-      dotClass: "bg-amber-400",
+        "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60",
+      dotClass: "bg-amber-500 dark:bg-amber-400",
       icon: <Clock className="shrink-0" strokeWidth={2} aria-hidden="true" />,
     },
     "Not Submitted": {
       label: "Not Submitted",
       containerClass:
-        "bg-slate-900 text-slate-400 border border-slate-800",
-      dotClass: "bg-slate-500",
+        "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
+      dotClass: "bg-slate-400 dark:bg-slate-500",
       icon: null,
     },
   }[normalized];
