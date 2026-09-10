@@ -348,7 +348,7 @@ export function AdminAccountsTable({
                           )}
                           <span
                             className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${
-                              admin.is_active ? "bg-emerald-500" : "bg-slate-400"
+                              admin.is_active ? "bg-[#0b5336]" : "bg-[#780000]"
                             }`}
                           />
                         </div>
@@ -373,11 +373,11 @@ export function AdminAccountsTable({
                     {/* Status Badge */}
                     <td className="py-3.5 px-4">
                       {admin.is_active ? (
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                        <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs">
                           Active
                         </span>
                       ) : (
-                        <span className="bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center">
+                        <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs">
                           Inactive
                         </span>
                       )}

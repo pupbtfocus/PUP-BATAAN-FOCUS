@@ -165,13 +165,13 @@ export function FacultyDetailsModal({
                     {faculty.fullName}
                   </h3>
                   {faculty.is_active ? (
-                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                    <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
                       Active
                     </span>
                   ) : (
-                    <span className="bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md inline-flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
+                    <span className="bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
+                      <span className="h-1.5 w-1.5 rounded-full bg-rose-300" />
                       Inactive
                     </span>
                   )}
@@ -249,13 +249,19 @@ export function FacultyDetailsModal({
                   </div>
                   <div className="flex justify-between items-center py-1.5">
                     <span className="text-slate-500 dark:text-slate-400">Account Status</span>
-                    <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                    <span className="inline-flex items-center gap-1.5 font-semibold">
                       <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          faculty.is_active ? "bg-emerald-500" : "bg-slate-400"
+                        className={`h-2 w-2 rounded-full ${
+                          faculty.is_active ? "bg-[#0b5336]" : "bg-[#780000]"
                         }`}
                       />
-                      {faculty.is_active ? "Active" : "Inactive"}
+                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
+                        faculty.is_active
+                          ? "bg-[#0b5336] text-white border-[#08412a]"
+                          : "bg-[#780000] text-white border-[#5e0000]"
+                      }`}>
+                        {faculty.is_active ? "Active" : "Inactive"}
+                      </span>
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-1.5">

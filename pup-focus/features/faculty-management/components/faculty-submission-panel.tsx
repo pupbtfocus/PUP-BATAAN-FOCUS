@@ -305,16 +305,16 @@ function normalizeAcademicYear(ay?: string | null): string {
 function getStatusDotColor(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
-  if (status === "Validated") return "bg-emerald-400";
-  if (status === "Rejected") return "bg-amber-400";
+  if (status === "Validated") return "bg-[#0b5336]";
+  if (status === "Rejected") return "bg-[#780000]";
   if (status === "Not Submitted") return "bg-slate-600";
   return "bg-blue-400";
 }
 function getStatusTextColor(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
-  if (status === "Validated") return "text-emerald-700 dark:text-emerald-400";
-  if (status === "Rejected") return "text-amber-700 dark:text-amber-400";
+  if (status === "Validated") return "text-[#0b5336] dark:text-emerald-400 font-semibold";
+  if (status === "Rejected") return "text-[#780000] dark:text-rose-400 font-semibold";
   if (status === "Not Submitted") return "text-slate-500 dark:text-slate-500";
   return "text-blue-700 dark:text-blue-400";
 }
@@ -327,9 +327,9 @@ function getStatusBadgeTone(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
   if (status === "Validated")
-    return "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60";
+    return "bg-[#0b5336] text-white border border-[#08412a]";
   if (status === "Rejected")
-    return "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60";
+    return "bg-[#780000] text-white border border-[#5e0000]";
   if (status === "Not Submitted")
     return "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
   return "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60";
@@ -337,8 +337,8 @@ function getStatusBadgeTone(
 function getStatusIcon(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ) {
-  if (status === "Validated") return <CheckCircle className="h-3 w-3" />;
-  if (status === "Rejected") return <WarningCircle className="h-3 w-3" />;
+  if (status === "Validated") return <CheckCircle className="h-3 w-3 text-white" />;
+  if (status === "Rejected") return <WarningCircle className="h-3 w-3 text-white" />;
   if (status === "Not Submitted")
     return <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />;
   return <Clock className="h-3 w-3" />;

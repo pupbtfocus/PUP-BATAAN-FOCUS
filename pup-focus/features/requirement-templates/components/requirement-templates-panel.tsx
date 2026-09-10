@@ -363,13 +363,13 @@ export function RequirementTemplatesPanel() {
                     {/* Column 5: Status */}
                     <td className="py-3.5 px-4">
                       {tpl.is_active ? (
-                        <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80 px-2 py-0.5 text-xs font-semibold rounded-md">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="inline-flex items-center gap-1.5 bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                        <span className="inline-flex items-center gap-1.5 bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-300" />
                           Archived
                         </span>
                       )}

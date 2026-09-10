@@ -53,16 +53,16 @@ export function SubmissionStatusBadge({
     Validated: {
       label: "Validated",
       containerClass:
-        "bg-white text-emerald-700 border border-slate-200/90 dark:bg-slate-900 dark:text-emerald-400 dark:border-slate-800",
-      dotClass: "bg-emerald-500 dark:bg-emerald-400",
-      icon: <CheckCircle className="shrink-0 text-emerald-600 dark:text-emerald-400" strokeWidth={2} aria-hidden="true" />,
+        "bg-[#0b5336] text-white border border-[#08412a]",
+      dotClass: "bg-emerald-300",
+      icon: <CheckCircle className="shrink-0 text-white" strokeWidth={2} aria-hidden="true" />,
     },
     "Needs Revision": {
       label: "Needs Revision",
       containerClass:
-        "bg-white text-rose-700 border border-slate-200/90 dark:bg-slate-900 dark:text-rose-400 dark:border-slate-800",
-      dotClass: "bg-rose-500 dark:bg-rose-400",
-      icon: <WarningCircle className="shrink-0 text-rose-600 dark:text-rose-400" strokeWidth={2} aria-hidden="true" />,
+        "bg-[#780000] text-white border border-[#5e0000]",
+      dotClass: "bg-rose-300",
+      icon: <WarningCircle className="shrink-0 text-white" strokeWidth={2} aria-hidden="true" />,
     },
     "Pending Review": {
       label: "Pending Review",

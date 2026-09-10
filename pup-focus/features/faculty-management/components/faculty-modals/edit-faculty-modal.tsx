@@ -342,10 +342,10 @@ export function EditFacultyModal({
                       Account Status
                     </p>
                     <p
-                      className={`text-sm ${
+                      className={`text-xs font-semibold inline-flex items-center px-2 py-0.5 rounded-md border shadow-2xs mt-1 ${
                         selectedFaculty.is_active
-                          ? "text-green-400"
-                          : "text-red-400"
+                          ? "bg-[#0b5336] text-white border-[#08412a]"
+                          : "bg-[#780000] text-white border-[#5e0000]"
                       }`}
                     >
                       {selectedFaculty.is_active ? "Active" : "Inactive"}
