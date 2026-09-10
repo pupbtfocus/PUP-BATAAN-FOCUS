@@ -688,7 +688,7 @@ export function AdminAcademicTerms({
                   setWarningModalData({ ...warningModalData, isOpen: false });
                   window.location.href = "/admin/dashboard?tab=requirements";
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs shadow-sm transition-all cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
               >
                 Review Requirements
               </button>

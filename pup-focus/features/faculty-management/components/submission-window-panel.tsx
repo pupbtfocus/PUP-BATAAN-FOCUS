@@ -1073,7 +1073,7 @@ export function SubmissionWindowPanel({
                   setWarningModalData({ ...warningModalData, isOpen: false });
                   window.location.href = "/admin/dashboard?tab=requirements";
                 }}
-                className="flex-1 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+                className="flex-1 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs shadow-xs active:scale-[0.98] transition-colors cursor-pointer"
               >
                 Review Requirements
               </button>
