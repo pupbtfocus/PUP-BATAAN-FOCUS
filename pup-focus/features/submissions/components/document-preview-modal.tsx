@@ -214,7 +214,7 @@ export function DocumentPreviewModal({
             {/* Full View Button */}
             <button
               type="button"
-              className="w-full bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 py-2.5 cursor-pointer"
+              className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-medium rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 py-2.5 cursor-pointer"
               onClick={() =>
                 window.open(
                   getPreviewUrl(submission.latestSubmissionId),

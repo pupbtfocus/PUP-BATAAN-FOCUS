@@ -512,7 +512,7 @@ export function AdminFacultyDashboard({
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden p-1.5 text-slate-700 dark:text-amber-300 hover:bg-slate-100 dark:hover:bg-amber-500/10 rounded-xl transition-all"
+              className="md:hidden p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
               aria-label="Open Navigation Menu"
             >
               <Menu className="w-5 h-5" />
@@ -676,7 +676,7 @@ export function AdminFacultyDashboard({
                             <button
                               type="button"
                               onClick={() => handleSetActiveSection("requirements")}
-                              className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
+                              className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition cursor-pointer"
                             >
                               <span>View all</span>
                               <NavArrowRight className="h-3 w-3" />
@@ -720,7 +720,7 @@ export function AdminFacultyDashboard({
                             setCreateSuccess(null);
                             setAddFacultyModalOpen(true);
                           }}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-sm active:scale-[0.98] transition cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 px-4 py-2 text-xs font-semibold text-white dark:text-slate-900 shadow-sm active:scale-[0.98] transition cursor-pointer"
                         >
                           + Add Faculty
                         </button>

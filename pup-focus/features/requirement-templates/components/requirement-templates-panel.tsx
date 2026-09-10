@@ -255,7 +255,7 @@ export function RequirementTemplatesPanel() {
             <button
               type="button"
               onClick={handleOpenAddModal}
-              className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl text-xs sm:text-sm px-4 py-2 transition shadow-sm cursor-pointer whitespace-nowrap"
+              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold rounded-xl text-xs sm:text-sm px-4 py-2 transition shadow-sm cursor-pointer whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
               <span>Add Requirement Template</span>
@@ -305,7 +305,7 @@ export function RequirementTemplatesPanel() {
                     {/* Column 1: Document Title & Code */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0">
+                        <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 mt-0.5 shrink-0">
                           <Page className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
@@ -350,7 +350,7 @@ export function RequirementTemplatesPanel() {
                     {/* Column 4: Mandatory */}
                     <td className="py-3.5 px-4">
                       {tpl.is_mandatory ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-500/30">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-900/10 text-slate-900 dark:bg-white/15 dark:text-slate-200 border border-slate-400/40 dark:border-slate-600">
                           Required
                         </span>
                       ) : (
@@ -391,11 +391,7 @@ export function RequirementTemplatesPanel() {
                           type="button"
                           disabled={isTogglingStatus === tpl.id}
                           onClick={() => void handleToggleActive(tpl)}
-                          className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition cursor-pointer flex items-center gap-1 ${
-                            tpl.is_active
-                              ? "bg-slate-100 hover:bg-amber-50 dark:bg-slate-800 dark:hover:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-slate-200 dark:border-slate-700"
-                              : "bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
-                          }`}
+                          className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer flex items-center gap-1 shadow-2xs"
                         >
                           <Archive className="w-3 h-3" />
                           <span>{tpl.is_active ? "Archive" : "Activate"}</span>
@@ -455,7 +451,7 @@ export function RequirementTemplatesPanel() {
                 type="button"
                 disabled={isDeleting}
                 onClick={() => void handleDeleteConfirm()}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-500 text-white transition cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer disabled:opacity-50"
               >
                 {isDeleting ? "Deleting..." : "Confirm Delete"}
               </button>

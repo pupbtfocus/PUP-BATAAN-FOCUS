@@ -1259,7 +1259,7 @@ export function SuperAdminDashboard({
                   }}
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-800 dark:text-amber-400 shadow-sm">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm">
                   {getInitials(
                     admin.full_name,
                     admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
@@ -1304,7 +1304,7 @@ export function SuperAdminDashboard({
                 type="button"
                 onClick={() => onDeactivateAdmin(admin.profile_id)}
                 disabled={loadingAdminIds.has(admin.profile_id)}
-                className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
               >
                 {loadingAdminIds.has(admin.profile_id)
                   ? "Deactivating..."
@@ -1315,7 +1315,7 @@ export function SuperAdminDashboard({
                 type="button"
                 onClick={() => onActivateAdmin(admin.profile_id)}
                 disabled={loadingAdminIds.has(admin.profile_id)}
-                className="bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
               >
                 {loadingAdminIds.has(admin.profile_id)
                   ? "Activating..."
@@ -1344,7 +1344,7 @@ export function SuperAdminDashboard({
               type="button"
               onClick={() => onDeleteAdmin(admin.profile_id)}
               disabled={loadingAdminIds.has(admin.profile_id)}
-              className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
             >
               Delete
             </button>
@@ -1365,7 +1365,7 @@ export function SuperAdminDashboard({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-slate-700 dark:text-amber-300 hover:bg-slate-100 dark:hover:bg-amber-500/10 rounded-xl transition-all cursor-pointer"
+          className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-slate-700 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
           aria-label="Open Navigation Menu"
         >
           <Menu className="w-5 h-5" />
@@ -1511,7 +1511,7 @@ export function SuperAdminDashboard({
                           {adminAccounts.slice(0, 5).map((admin) => (
                             <div key={admin.profile_id} className="py-3 flex items-center justify-between gap-4">
                               <div className="flex items-center gap-3">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-400 bg-slate-100 text-slate-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 text-xs font-bold shadow-sm">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-400 bg-slate-100 text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 text-xs font-bold shadow-sm">
                                   {getInitials(admin.full_name, admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD")}
                                 </div>
                                 <div>
@@ -1604,7 +1604,7 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={openCreateAdminModal}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition cursor-pointer shadow-sm"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 px-4 py-2 text-xs font-semibold text-white dark:text-slate-900 transition cursor-pointer shadow-sm"
                     >
                       + Create Admin
                     </button>
@@ -1657,7 +1657,7 @@ export function SuperAdminDashboard({
                         setCreateFacultySuccess(null);
                         setAddFacultyModalOpen(true);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition cursor-pointer shadow-sm"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 px-4 py-2 text-xs font-semibold text-white dark:text-slate-900 transition cursor-pointer shadow-sm"
                     >
                       + Add Faculty
                     </button>
@@ -1857,7 +1857,7 @@ export function SuperAdminDashboard({
                                 onError={() => setIsAvatarImageError(true)}
                               />
                             ) : (
-                              <div className="w-16 h-16 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-800 dark:text-amber-400 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950">
+                              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950">
                                 {getInitials(settingsFullName || adminName, "SA")}
                               </div>
                             )}
@@ -1922,7 +1922,7 @@ export function SuperAdminDashboard({
                             <button
                               type="submit"
                               disabled={isSavingSettings}
-                              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
+                              className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
                             >
                               {isSavingSettings
                                 ? "Saving..."
@@ -2028,7 +2028,7 @@ export function SuperAdminDashboard({
                           <button
                             type="submit"
                             disabled={isSavingPassword}
-                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
+                            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
                           >
                             {isSavingPassword ? "Saving..." : "Update Password"}
                           </button>
@@ -2142,7 +2142,7 @@ export function SuperAdminDashboard({
                       className="w-12 h-12 rounded-full object-cover border border-amber-500/50 shrink-0"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">
                       IMG
                     </div>
                   )}
@@ -2178,7 +2178,7 @@ export function SuperAdminDashboard({
                   {createAdminProfileImage ? (
                     <button
                       type="button"
-                      className="text-xs font-bold text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
+                      className="text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
                       onClick={() => {
                         if (createAdminProfileImagePreview) {
                           URL.revokeObjectURL(createAdminProfileImagePreview);
@@ -2228,7 +2228,7 @@ export function SuperAdminDashboard({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-md mt-2 disabled:opacity-50 cursor-pointer text-sm tracking-wide"
+                className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold py-3 rounded-xl transition-all shadow-md mt-2 disabled:opacity-50 cursor-pointer text-sm tracking-wide"
               >
                 {isSubmitting ? "Creating Admin..." : "Create Admin Account"}
               </button>
@@ -2266,7 +2266,7 @@ export function SuperAdminDashboard({
               <button
                 type="button"
                 onClick={() => setInviteModalOpen(false)}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer"
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer"
               >
                 OK
               </button>
@@ -2352,7 +2352,7 @@ function SidebarButton({
       onClick={onClick}
       className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors cursor-pointer rounded-md ${
         active
-          ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
+          ? "bg-slate-200/70 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-400"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
       }`}
     >
@@ -2394,7 +2394,7 @@ function SettingsOptionButton({
       onClick={onClick}
       className={`w-full text-left px-4 py-3 transition cursor-pointer ${
         active
-          ? "bg-amber-500/15 text-amber-950 dark:text-amber-300 font-semibold border-l-4 border-amber-500 rounded-r-xl"
+          ? "bg-slate-200/70 text-slate-900 dark:text-slate-100 font-semibold border-l-4 border-slate-900 dark:border-slate-400 rounded-r-xl"
           : "text-slate-600 hover:text-slate-900 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-xl"
       }`}
     >
@@ -2552,7 +2552,7 @@ function AdminDetailsModal({
                   onError={() => setModalAvatarError(true)}
                 />
               ) : (
-                <div className="w-14 h-14 rounded-full bg-amber-500/10 border-2 border-amber-500/40 text-amber-800 dark:text-amber-400 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950">
+                <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950">
                   {getInitials(
                     details.full_name,
                     details.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
@@ -2564,7 +2564,7 @@ function AdminDetailsModal({
                   {details.full_name || "Admin User"}
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400">{details.email}</p>
-                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30">
+                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/70 text-slate-900 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
                   {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
                 </span>
               </div>
@@ -2697,7 +2697,7 @@ function AdminDetailsModal({
                       <button
                         type="submit"
                         disabled={isSaving}
-                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
+                        className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
                       >
                         {isSaving ? "Saving..." : "Save Changes"}
                       </button>

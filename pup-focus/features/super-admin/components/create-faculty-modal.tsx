@@ -283,14 +283,14 @@ export function CreateFacultyPanel({
                 className="w-12 h-12 rounded-full object-cover border border-amber-500/50 shrink-0"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">
+              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">
                 IMG
               </div>
             )}
             <div className="flex-1 min-w-0">
               <label
                 htmlFor={photoInputId}
-                className="cursor-pointer text-xs font-bold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3 py-1.5 rounded-lg inline-block transition-all"
+                className="cursor-pointer text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 px-3 py-1.5 rounded-lg inline-block transition-all"
               >
                 Choose Profile Photo
               </label>
@@ -314,7 +314,7 @@ export function CreateFacultyPanel({
             {profileImageFile ? (
               <button
                 type="button"
-                className="text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2.5 py-1.5 rounded-lg transition-all shrink-0"
+                className="text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0"
                 onClick={() => handleImageChange(null)}
               >
                 Remove
@@ -350,7 +350,7 @@ export function CreateFacultyPanel({
         ) : null}
 
         <button
-          className="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"
+          className="mt-2 w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-black py-3 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"
           type="submit"
           disabled={isCreating || isLoadingPrograms}
         >
@@ -456,7 +456,7 @@ export function CreateFacultyModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 transition-all cursor-pointer"
+            className="rounded-lg p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition-all cursor-pointer"
             aria-label="Close modal"
           >
             <Xmark className="w-5 h-5" />

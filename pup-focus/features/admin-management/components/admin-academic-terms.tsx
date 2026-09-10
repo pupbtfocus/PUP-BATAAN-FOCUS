@@ -378,7 +378,7 @@ export function AdminAcademicTerms({
               ? `Terms must be activated sequentially (Activate ${immediateNextTerm.academicYear} ${immediateNextTerm.semester} first)`
               : "Terms must be activated sequentially"
           }
-          className="bg-amber-500/5 text-amber-600/40 dark:text-amber-400/40 border border-amber-500/10 text-xs font-medium px-3 py-1.5 rounded-lg cursor-not-allowed select-none"
+          className="bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-xs font-medium px-3 py-1.5 rounded-lg cursor-not-allowed select-none"
         >
           Set Current
         </button>
@@ -390,7 +390,7 @@ export function AdminAcademicTerms({
         type="button"
         onClick={() => handleSetCurrent(term)}
         disabled={isLoading || isSaving}
-        className="bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         Set Current
       </button>
@@ -411,7 +411,7 @@ export function AdminAcademicTerms({
           type="button"
           onClick={() => setIsCreateModalOpen(true)}
           disabled={isLoading || isSaving}
-          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+          className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
         >
           + Create Next Academic Year
         </button>
@@ -484,7 +484,7 @@ export function AdminAcademicTerms({
                                 ? "Cannot delete term with existing data"
                                 : "Delete academic term")
                             }
-                            className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 text-xs font-semibold px-3 py-1 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
+                            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold px-3 py-1 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
                           >
                             Delete
                           </button>
@@ -572,7 +572,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={handleCreateNextAcademicYear}
                 disabled={isSaving}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 cursor-pointer shadow-sm"
               >
                 {isSaving ? "Creating..." : "Confirm & Create"}
               </button>
@@ -605,7 +605,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={confirmSetCurrent}
                 disabled={isSaving || countdown > 0}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
               >
                 {isSaving
                   ? "Saving..."
@@ -647,7 +647,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={confirmDeleteTerm}
                 disabled={isSaving || !termToDelete.canDelete || countdown > 0}
-                className="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold px-4 py-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
               >
                 {isSaving
                   ? "Deleting..."
@@ -663,7 +663,7 @@ export function AdminAcademicTerms({
       {warningModalData.isOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in">
           <div className="bg-white dark:bg-slate-950 border border-amber-500/40 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-            <div className="w-16 h-16 bg-amber-500/10 border-2 border-amber-500/40 rounded-full flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 rounded-full flex items-center justify-center mx-auto text-slate-600 dark:text-slate-400">
               <WarningTriangle className="w-8 h-8 animate-pulse" />
             </div>
             <h3 className="text-xl font-bold text-amber-800 dark:text-amber-200">
@@ -688,7 +688,7 @@ export function AdminAcademicTerms({
                   setWarningModalData({ ...warningModalData, isOpen: false });
                   window.location.href = "/admin/dashboard?tab=requirements";
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs shadow-sm transition-all cursor-pointer"
               >
                 Review Requirements
               </button>

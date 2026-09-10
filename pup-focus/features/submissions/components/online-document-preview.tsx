@@ -149,7 +149,7 @@ export function OnlineDocumentPreview({
               href={currentExternalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 transition cursor-pointer font-semibold text-[11px]"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 transition cursor-pointer font-medium text-[11px]"
               title="Open full page in new tab"
             >
               <img
@@ -220,10 +220,10 @@ export function OnlineDocumentPreview({
   // Default Options Card
   return (
     <div
-      className={`flex flex-col items-center justify-center h-full w-full max-w-xl mx-auto p-6 text-center bg-slate-50/80 dark:bg-slate-900/80 rounded-2xl border ${brand.borderColor} shadow-xs backdrop-blur-xs transition-all`}
+      className="flex flex-col items-center justify-center h-full w-full max-w-xl mx-auto p-6 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs backdrop-blur-xs transition-all"
     >
       {/* File Brand Icon Badge */}
-      <div className="relative p-4 rounded-2xl bg-white/90 dark:bg-slate-800/90 mb-3 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700/60 flex items-center justify-center">
+      <div className="relative p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 mb-3 shadow-xs border border-slate-200 dark:border-slate-700/60 flex items-center justify-center">
         <img
           src={brand.iconUrl}
           alt={brand.label}
@@ -231,7 +231,7 @@ export function OnlineDocumentPreview({
           loading="lazy"
         />
         <span
-          className={`absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider ${brand.badgeBg} shadow-sm`}
+          className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100 shadow-xs border border-slate-700 dark:border-slate-600"
         >
           {fileExtension}
         </span>
@@ -256,32 +256,32 @@ export function OnlineDocumentPreview({
           href={googleViewerUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/25 bg-emerald-50/60 hover:bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 transition-all group cursor-pointer shadow-2xs"
+          className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all group cursor-pointer shadow-xs"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-10 h-10 p-1.5 rounded-xl bg-white dark:bg-slate-800 ring-1 ring-emerald-300 dark:ring-emerald-700/60 flex items-center justify-center shadow-xs">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex-shrink-0 w-10 h-10 p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs">
               <img
                 src="/icons/google-drive.svg"
                 alt="Google Drive"
                 className="w-full h-full object-contain select-none"
               />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-slate-950 dark:group-hover:text-white transition-colors">
                   {googleActionLabel}
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-200/60 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium tracking-wide px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
                   <img src="/icons/google-drive.svg" alt="" className="w-2.5 h-2.5 object-contain" />
                   Drive
                 </span>
               </div>
-              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 View &amp; import directly into Google Drive online
               </p>
             </div>
           </div>
-          <OpenNewWindow className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+          <OpenNewWindow className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
         </a>
 
         {/* Option 2: Microsoft Office Online */}
@@ -289,32 +289,32 @@ export function OnlineDocumentPreview({
           href={officeViewerUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-between p-3 rounded-xl border border-sky-500/25 bg-sky-50/60 hover:bg-sky-50 dark:border-sky-500/30 dark:bg-sky-950/30 dark:hover:bg-sky-950/50 transition-all group cursor-pointer shadow-2xs"
+          className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all group cursor-pointer shadow-xs"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-10 h-10 p-1.5 rounded-xl bg-white dark:bg-slate-800 ring-1 ring-sky-300 dark:ring-sky-700/60 flex items-center justify-center shadow-xs">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex-shrink-0 w-10 h-10 p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs">
               <img
                 src="/icons/microsoft-office.svg"
                 alt="Microsoft Office"
                 className="w-full h-full object-contain select-none"
               />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-sky-900 dark:text-sky-300">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-slate-950 dark:group-hover:text-white transition-colors">
                   {officeActionLabel}
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-sky-200/60 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300">
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium tracking-wide px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
                   <img src="/icons/microsoft-office.svg" alt="" className="w-2.5 h-2.5 object-contain" />
                   Office 365
                 </span>
               </div>
-              <p className="text-[11px] text-sky-700/80 dark:text-sky-400/80">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 Render with official Microsoft 365 web fidelity
               </p>
             </div>
           </div>
-          <OpenNewWindow className="w-4 h-4 text-sky-600 dark:text-sky-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+          <OpenNewWindow className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
         </a>
 
         {/* Action Row: Preview Here (Embedded) & Download */}

@@ -176,7 +176,7 @@ function getFileTypeDetails(fileName: string) {
   ) {
     return {
       icon: (
-        <div className="h-10 w-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-xs">
+        <div className="h-10 w-10 rounded-xl bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-white shadow-xs">
           <MediaImage className="h-6 w-6 stroke-[2]" />
         </div>
       ),
@@ -206,24 +206,24 @@ export const getFileBrand = (
     return {
       label: "Adobe PDF Document",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-pdf2.svg",
-      borderColor: "border-[#E5252A]/30 dark:border-[#E5252A]/40",
-      badgeBg: "bg-[#E5252A] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
   }
   if (isExcel || ["xlsx", "xls", "csv"].includes(ext)) {
     return {
       label: "Microsoft Excel Spreadsheet",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-excel.svg",
-      borderColor: "border-[#107C41]/30 dark:border-[#107C41]/40",
-      badgeBg: "bg-[#107C41] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
   }
   if (isWord || ["docx", "doc"].includes(ext)) {
     return {
       label: "Microsoft Word Document",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-word.svg",
-      borderColor: "border-[#185ABD]/30 dark:border-[#185ABD]/40",
-      badgeBg: "bg-[#185ABD] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
   }
   if (["pptx", "ppt"].includes(ext)) {
@@ -231,31 +231,31 @@ export const getFileBrand = (
       label: "Microsoft PowerPoint Presentation",
       iconUrl:
         "https://api.iconify.design/vscode-icons:file-type-powerpoint.svg",
-      borderColor: "border-[#C43E1C]/30 dark:border-[#C43E1C]/40",
-      badgeBg: "bg-[#C43E1C] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
   }
   if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
     return {
       label: "Compressed Archive",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-zip.svg",
-      borderColor: "border-slate-500/30 dark:border-slate-500/40",
-      badgeBg: "bg-slate-600 text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
   }
   if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(ext)) {
     return {
       label: "Image File",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-image.svg",
-      borderColor: "border-amber-500/30 dark:border-amber-500/40",
-      badgeBg: "bg-amber-500 text-slate-950",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
   }
   return {
     label: "Document File",
     iconUrl: "https://api.iconify.design/vscode-icons:file-type-text.svg",
-    borderColor: "border-amber-500/30 dark:border-amber-500/40",
-    badgeBg: "bg-amber-500 text-slate-950",
+    borderColor: "border-slate-200 dark:border-slate-800",
+    badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
   };
 };
 
@@ -468,7 +468,7 @@ export function DocumentUploadZone({
 
           return (
             <div
-              className={`bg-white dark:bg-slate-900 border ${brand.borderColor} rounded-2xl p-4 shadow-xs flex items-center justify-between transition-all`}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs flex items-center justify-between transition-all"
             >
               <div className="flex items-center gap-3.5 min-w-0 text-left">
                 {isImage && fileObjectUrl ? (
@@ -550,10 +550,10 @@ export function DocumentUploadZone({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={cn(
-            "relative group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950",
+            "relative group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-100 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950",
             isDragOver
-              ? "border-amber-500 bg-amber-50/80 dark:bg-amber-500/10 scale-[1.01] shadow-md ring-2 ring-amber-400/40"
-              : "border-slate-300 dark:border-slate-700 bg-slate-50/50 hover:border-amber-500 hover:bg-amber-50/50 dark:bg-slate-900/50 dark:hover:border-amber-500 dark:hover:bg-amber-500/5 transition-all shadow-xs",
+              ? "border-slate-900 bg-slate-100/80 dark:border-slate-100 dark:bg-slate-800/60 scale-[1.01] shadow-md ring-2 ring-slate-400/40"
+              : "border-slate-300 dark:border-slate-700 bg-slate-50/50 hover:border-slate-400 hover:bg-slate-100/50 dark:bg-slate-900/50 dark:hover:border-slate-600 dark:hover:bg-slate-800/40 transition-all shadow-xs",
             disabled && "opacity-50 cursor-not-allowed pointer-events-none",
           )}
         >
@@ -562,12 +562,12 @@ export function DocumentUploadZone({
               className={cn(
                 "flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-200 shadow-2xs",
                 isDragOver
-                  ? "border-amber-400 bg-amber-100 text-amber-600 dark:bg-amber-400/20 dark:text-amber-300 animate-bounce"
-                  : "border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:border-amber-400/50 group-hover:text-amber-500",
+                  ? "border-slate-900 bg-slate-200 text-slate-900 dark:border-slate-100 dark:bg-slate-700 dark:text-slate-100 animate-bounce"
+                  : "border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:border-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300",
               )}
             >
               {isUploading ? (
-                <SystemRestart className="h-6 w-6 animate-spin text-amber-500" />
+                <SystemRestart className="h-6 w-6 animate-spin text-slate-600 dark:text-slate-400" />
               ) : (
                 <CloudUpload className="h-6 w-6" />
               )}
@@ -667,7 +667,7 @@ export function DocumentUploadZone({
 
                   return (
                     <div
-                      className={`flex flex-col items-center justify-center h-full w-full p-8 text-center bg-slate-50/60 dark:bg-slate-900/80 rounded-2xl border ${brand.borderColor} shadow-xs backdrop-blur-xs transition-all max-w-md`}
+                      className="flex flex-col items-center justify-center h-full w-full p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs backdrop-blur-xs transition-all max-w-md"
                     >
                       {/* File Brand Icon Badge */}
                       <div className="relative p-4 rounded-2xl bg-white/80 dark:bg-slate-800/80 mb-4 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700/60 flex items-center justify-center">
@@ -701,7 +701,7 @@ export function DocumentUploadZone({
                         download={selectedFile.name}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-sm hover:shadow-md cursor-pointer"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 active:scale-95 text-white dark:text-slate-900 font-bold text-xs uppercase tracking-wider transition-all shadow-sm hover:shadow-md cursor-pointer"
                       >
                         <Download className="w-4 h-4 stroke-[2.2] shrink-0 text-slate-950" />
                         <span className="text-slate-950">
@@ -725,7 +725,7 @@ export function DocumentUploadZone({
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
             <div
-              className="h-full rounded-full bg-amber-500 transition-all duration-300 ease-out"
+              className="h-full rounded-full bg-slate-900 dark:bg-slate-300 transition-all duration-300 ease-out"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
