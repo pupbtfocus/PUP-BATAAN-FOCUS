@@ -400,7 +400,7 @@ export function ExtendSubmissionWindowModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 px-4 py-2 text-sm font-semibold rounded-lg transition-colors shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 text-sm font-semibold rounded-lg transition-colors shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -409,7 +409,7 @@ export function ExtendSubmissionWindowModal({
                 </>
               ) : (
                 <>
-                  <CheckCircle className="h-3.5 w-3.5" />
+                  <CheckCircle className="h-3.5 w-3.5 text-slate-950" />
                   Confirm & Extend Window
                 </>
               )}

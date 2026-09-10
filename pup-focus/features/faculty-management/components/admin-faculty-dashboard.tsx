@@ -721,7 +721,7 @@ export function AdminFacultyDashboard({
                             setCreateSuccess(null);
                             setAddFacultyModalOpen(true);
                           }}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 px-4 py-2 text-xs font-semibold text-white dark:text-slate-900 shadow-sm active:scale-[0.98] transition cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-sm active:scale-[0.98] transition cursor-pointer"
                         >
                           + Add Faculty
                         </button>
