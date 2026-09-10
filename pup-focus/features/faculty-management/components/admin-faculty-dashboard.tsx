@@ -227,6 +227,7 @@ export function AdminFacultyDashboard({
 
   async function refreshCurrentPanel() {
     await loadFacultyFromDatabase();
+    setVerificationResetTrigger((prev) => prev + 1);
   }
 
   const form = useForm<FacultyAccountFormInput>({
