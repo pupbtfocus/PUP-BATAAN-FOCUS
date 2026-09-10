@@ -2788,23 +2788,9 @@ export function RequirementsPanel({
           </div>
         </div>
 
-        {/* Active Term Indicator & Refresh */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="text-slate-600 dark:text-slate-400 text-xs font-medium tracking-wide">
-            A.Y. {academicYear || "2026-2027"} &bull; {semester}
-          </div>
-          <button
-            type="button"
-            disabled={isLoadingStatuses}
-            onClick={() => fetchAllStatuses(academicYear, semester)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
-            title="Refresh faculty verification statuses"
-          >
-            <SystemRestart
-              className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin text-emerald-500 dark:text-emerald-400" : ""}`}
-            />
-            <span>{isLoadingStatuses ? "Refreshing..." : "Refresh"}</span>
-          </button>
+        {/* Active Term Indicator */}
+        <div className="text-slate-600 dark:text-slate-400 text-xs font-medium tracking-wide shrink-0">
+          A.Y. {academicYear || "2026-2027"} &bull; {semester}
         </div>
       </div>
 
