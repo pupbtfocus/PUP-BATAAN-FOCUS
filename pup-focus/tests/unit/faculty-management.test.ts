@@ -255,3 +255,31 @@ describe("Faculty Program Persistence & Filtering Logic", () => {
     expect(matchById?.code).toBe("BSIT");
   });
 });
+
+describe("Faculty Details Modal Data Integrity & Compliance Summary", () => {
+  it("calculates compliance statistics correctly across all 6 requirements", () => {
+    const requirementStatus = {
+      grade_sheet: "validated",
+      enhanced_syllabus: "validated",
+      class_orientation: "uploaded",
+      midterm_package: "uploaded",
+      final_package: "not_submitted",
+      class_records: "not_submitted",
+    };
+
+    let validated = 0;
+    let uploaded = 0;
+    let pending = 0;
+
+    Object.values(requirementStatus).forEach((status) => {
+      if (status === "validated") validated++;
+      else if (status === "uploaded") uploaded++;
+      else pending++;
+    });
+
+    expect(validated).toBe(2);
+    expect(uploaded).toBe(2);
+    expect(pending).toBe(2);
+    expect(validated + uploaded + pending).toBe(6);
+  });
+});

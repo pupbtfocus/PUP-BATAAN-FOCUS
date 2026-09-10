@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse, type NextRequest } from "next/server";
 import { ROLE } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -98,6 +101,8 @@ export async function GET(request: NextRequest) {
         permissions: [],
         is_active: isActive,
         created_at: profile?.created_at || authUser?.created_at,
+        last_sign_in_at: authUser?.last_sign_in_at ?? null,
+        lastLoginAt: authUser?.last_sign_in_at ?? null,
         profileImageUrl: resolvedAvatarUrl,
         avatar_url: resolvedAvatarUrl,
       },

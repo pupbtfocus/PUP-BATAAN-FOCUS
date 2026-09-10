@@ -30,6 +30,7 @@ import type {
 import { FacultyTable } from "./faculty-table";
 import { AddFacultyModal } from "./faculty-modals/add-faculty-modal";
 import { EditFacultyModal } from "./faculty-modals/edit-faculty-modal";
+import { FacultyDetailsModal } from "./faculty-modals/faculty-details-modal";
 import { DeleteFacultyModal } from "./faculty-modals/delete-faculty-modal";
 import { InviteStatusModal } from "./faculty-modals/invite-status-modal";
 import { SubmissionWindowPanel } from "./submission-window-panel";
@@ -174,6 +175,10 @@ export function AdminFacultyDashboard({
     useState<PendingFacultyAction | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [detailsFacultyId, setDetailsFacultyId] = useState<string | null>(null);
+  const [viewDetailsModalOpen, setViewDetailsModalOpen] = useState(false);
+  const [viewDetailsFacultyId, setViewDetailsFacultyId] = useState<string | null>(
+    null,
+  );
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
   const [facultyActionError, setFacultyActionError] = useState<string | null>(
@@ -208,7 +213,9 @@ export function AdminFacultyDashboard({
   async function loadFacultyFromDatabase() {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/admin/faculty/list");
+      const response = await fetch(`/api/admin/faculty/list?_t=${Date.now()}`, {
+        cache: "no-store",
+      });
       if (response.ok) {
         const data = await response.json();
         setFacultyAccounts(data.faculty || []);
@@ -742,6 +749,10 @@ export function AdminFacultyDashboard({
                       onSelectFaculty={setSelectedFacultyId}
                       onDeleteFaculty={onDeleteFaculty}
                       onViewDetails={(facultyId) => {
+                        setViewDetailsFacultyId(facultyId);
+                        setViewDetailsModalOpen(true);
+                      }}
+                      onEditFaculty={(facultyId) => {
                         setDetailsFacultyId(facultyId);
                         setDetailsModalOpen(true);
                       }}
@@ -854,6 +865,20 @@ export function AdminFacultyDashboard({
           </div>
         </div>
       </div>
+
+      {viewDetailsModalOpen && viewDetailsFacultyId ? (
+        <FacultyDetailsModal
+          facultyId={viewDetailsFacultyId}
+          facultyAccounts={facultyAccounts}
+          isOpen={viewDetailsModalOpen}
+          onClose={() => setViewDetailsModalOpen(false)}
+          onEdit={(facultyId) => {
+            setViewDetailsModalOpen(false);
+            setDetailsFacultyId(facultyId);
+            setDetailsModalOpen(true);
+          }}
+        />
+      ) : null}
 
       {detailsModalOpen && detailsFacultyId ? (
         <EditFacultyModal

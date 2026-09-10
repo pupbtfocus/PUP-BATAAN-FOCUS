@@ -21,6 +21,7 @@ import { RequirementTemplatesPanel } from "@/features/requirement-templates/comp
 import { BackupArchivePanel } from "@/features/backup-archive/components/backup-archive-panel";
 import { AddFacultyModal } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
 import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
+import { FacultyDetailsModal } from "@/features/faculty-management/components/faculty-modals/faculty-details-modal";
 import { DeleteFacultyModal } from "@/features/faculty-management/components/faculty-modals/delete-faculty-modal";
 import { InviteStatusModal } from "@/features/faculty-management/components/faculty-modals/invite-status-modal";
 import { useForm } from "react-hook-form";
@@ -71,6 +72,8 @@ interface AdminAccount {
   department?: string | null;
   permissions?: string[];
   created_at: string;
+  last_sign_in_at?: string | null;
+  lastLoginAt?: string | null;
 }
 
 interface AdminDetails {
@@ -87,6 +90,8 @@ interface AdminDetails {
   permissions?: string[];
   created_at?: string | null;
   updated_at?: string | null;
+  last_sign_in_at?: string | null;
+  lastLoginAt?: string | null;
   metadata?: Record<string, unknown> | null;
   profileImageUrl?: string | null;
   avatar_url?: string | null;
@@ -298,6 +303,8 @@ export function SuperAdminDashboard({
   const [pendingFacultyAction, setPendingFacultyAction] = useState<PendingFacultyAction | null>(null);
   const [detailsFacultyModalOpen, setDetailsFacultyModalOpen] = useState(false);
   const [detailsFacultyId, setDetailsFacultyId] = useState<string | null>(null);
+  const [viewFacultyDetailsModalOpen, setViewFacultyDetailsModalOpen] = useState(false);
+  const [viewFacultyDetailsId, setViewFacultyDetailsId] = useState<string | null>(null);
   const [deleteFacultyError, setDeleteFacultyError] = useState<string | null>(null);
   const [deleteFacultySuccess, setDeleteFacultySuccess] = useState<string | null>(null);
   const [facultyActionError, setFacultyActionError] = useState<string | null>(null);
@@ -343,7 +350,9 @@ export function SuperAdminDashboard({
   async function loadFacultyFromDatabase() {
     try {
       setIsLoadingFaculty(true);
-      const response = await fetch("/api/admin/faculty/list");
+      const response = await fetch(`/api/admin/faculty/list?_t=${Date.now()}`, {
+        cache: "no-store",
+      });
       if (response.ok) {
         const data = await response.json();
         setFacultyAccounts(data.faculty || []);
@@ -642,7 +651,9 @@ export function SuperAdminDashboard({
       setIsLoadingAccounts(true);
       setAccountsError(null);
 
-      let response = await fetch("/api/super-admin/accounts");
+      let response = await fetch(`/api/super-admin/accounts?_t=${Date.now()}`, {
+        cache: "no-store",
+      });
       if (response.ok) {
         const data = await response.json();
         const rawAccounts = Array.isArray(data)
@@ -667,13 +678,17 @@ export function SuperAdminDashboard({
             created_at: acc.created_at,
             role: normalizedRole,
             profileImageUrl: acc.avatar_url || null,
+            last_sign_in_at: acc.last_sign_in_at ?? null,
+            lastLoginAt: acc.last_sign_in_at ?? null,
           };
         });
         setAdminAccounts(mapped);
         return;
       }
 
-      response = await fetch("/api/super-admin/admin/list");
+      response = await fetch(`/api/super-admin/admin/list?_t=${Date.now()}`, {
+        cache: "no-store",
+      });
       if (!response.ok) {
         setAccountsError("Failed to load admin accounts");
         return;
@@ -1160,7 +1175,8 @@ export function SuperAdminDashboard({
 
     try {
       const response = await fetch(
-        `/api/super-admin/admin/details?profileId=${encodeURIComponent(profileId)}`,
+        `/api/super-admin/admin/details?profileId=${encodeURIComponent(profileId)}&_t=${Date.now()}`,
+        { cache: "no-store" },
       );
       const data = await response.json();
 
@@ -1189,7 +1205,8 @@ export function SuperAdminDashboard({
       const response = await fetch(
         `/api/super-admin/admin/details?profileId=${encodeURIComponent(
           profileId,
-        )}`,
+        )}&_t=${Date.now()}`,
+        { cache: "no-store" },
       );
       const data = await response.json();
 
@@ -1643,6 +1660,10 @@ export function SuperAdminDashboard({
                   onSelectFaculty={setSelectedFacultyId}
                   onDeleteFaculty={onDeleteFaculty}
                   onViewDetails={(facultyId) => {
+                    setViewFacultyDetailsId(facultyId);
+                    setViewFacultyDetailsModalOpen(true);
+                  }}
+                  onEditFaculty={(facultyId) => {
                     setDetailsFacultyId(facultyId);
                     setDetailsFacultyModalOpen(true);
                   }}
@@ -2225,6 +2246,20 @@ export function SuperAdminDashboard({
       ) : null}
 
       {/* Faculty Modals */}
+      {viewFacultyDetailsModalOpen && viewFacultyDetailsId ? (
+        <FacultyDetailsModal
+          facultyId={viewFacultyDetailsId}
+          facultyAccounts={facultyAccounts}
+          isOpen={viewFacultyDetailsModalOpen}
+          onClose={() => setViewFacultyDetailsModalOpen(false)}
+          onEdit={(facultyId) => {
+            setViewFacultyDetailsModalOpen(false);
+            setDetailsFacultyId(facultyId);
+            setDetailsFacultyModalOpen(true);
+          }}
+        />
+      ) : null}
+
       {detailsFacultyModalOpen && detailsFacultyId ? (
         <EditFacultyModal
           facultyId={detailsFacultyId}
@@ -2681,14 +2716,26 @@ function AdminDetailsModal({
                 ) : null}
 
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-400 dark:border-slate-800">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Created{" "}
-                    {details.created_at
-                      ? new Date(details.created_at).toLocaleString()
-                      : "Unknown"}
-                    {details.updated_at
-                      ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
-                      : ""}
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
+                    <div>
+                      Created{" "}
+                      {details.created_at
+                        ? new Date(details.created_at).toLocaleString()
+                        : "Unknown"}
+                      {details.updated_at
+                        ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
+                        : ""}
+                    </div>
+                    <div>
+                      Last Login:{" "}
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        {details.last_sign_in_at || details.lastLoginAt
+                          ? new Date(
+                              details.last_sign_in_at || details.lastLoginAt!,
+                            ).toLocaleString()
+                          : "Never logged in"}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -2767,14 +2814,26 @@ function AdminDetailsModal({
                 ) : null}
 
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-400 dark:border-slate-800">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Created{" "}
-                    {details.created_at
-                      ? new Date(details.created_at).toLocaleString()
-                      : "Unknown"}
-                    {details.updated_at
-                      ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
-                      : ""}
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
+                    <div>
+                      Created{" "}
+                      {details.created_at
+                        ? new Date(details.created_at).toLocaleString()
+                        : "Unknown"}
+                      {details.updated_at
+                        ? ` • Updated ${new Date(details.updated_at).toLocaleString()}`
+                        : ""}
+                    </div>
+                    <div>
+                      Last Login:{" "}
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        {details.last_sign_in_at || details.lastLoginAt
+                          ? new Date(
+                              details.last_sign_in_at || details.lastLoginAt!,
+                            ).toLocaleString()
+                          : "Never logged in"}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button
