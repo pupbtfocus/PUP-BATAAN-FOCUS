@@ -29,11 +29,28 @@ import {
   buildSubmissionWindowNotificationEmailHtml,
 } from "@/lib/email/email-templates";
 import { ROLE, type AppRole } from "@/config/roles";
+import {
+  AuthFeedbackModal,
+  type AuthModalState,
+} from "@/components/auth/auth-feedback-modal";
+import successfullyIcon from "@/assets/icons animations/successfully.svg";
+import failedIcon from "@/assets/icons animations/fail.svg";
 
-type PreviewTab = "gmail" | "verification" | "change-password" | "modals";
+type PreviewTab =
+  | "gmail"
+  | "verification"
+  | "change-password"
+  | "login-feedback"
+  | "modals";
 
 export function DevPreviewPanel() {
   const [activeTab, setActiveTab] = useState<PreviewTab>("gmail");
+
+  // Login Success & Fail Preview State
+  const [authFeedbackModal, setAuthFeedbackModal] = useState<AuthModalState | null>(null);
+  const [testLoginEmail, setTestLoginEmail] = useState("preview@pupfocus.dev");
+  const [testLoginPassword, setTestLoginPassword] = useState("PreviewPassword2026!");
+  const [previewAnimationKey, setPreviewAnimationKey] = useState(Date.now());
 
   // Email Preview State
   const [emailTemplate, setEmailTemplate] = useState<"invite" | "temp-password" | "window">("invite");
@@ -196,6 +213,19 @@ export function DevPreviewPanel() {
           >
             <Key className="w-4 h-4" />
             <span>First Login Change Pass</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("login-feedback")}
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeTab === "login-feedback"
+                ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+            }`}
+          >
+            <CheckCircle className="w-4 h-4 text-emerald-500" />
+            <span>Login Success & Fail</span>
           </button>
 
           <button
@@ -748,7 +778,307 @@ export function DevPreviewPanel() {
         </div>
       )}
 
-      {/* TAB 4: MODALS SHOWCASE */}
+      {/* TAB 4: LOGIN SUCCESS & FAIL FEEDBACK */}
+      {activeTab === "login-feedback" && (
+        <div className="space-y-6">
+          {/* Controls Bar */}
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                Institutional Sign-In Feedback System (AuthFeedbackModal)
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Inspect the authentic modal animations, gradient borders, and state handling shown to users when logging in.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setAuthFeedbackModal({
+                    title: "Login Successful",
+                    message: "Welcome back, Developer Preview!",
+                    actionLabel: "Continue",
+                    variant: "success",
+                  })
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition cursor-pointer shadow-2xs"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span>Launch Login Success</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAuthFeedbackModal({
+                    title: "Login Failed",
+                    message:
+                      "Invalid institutional email address or password. Please verify your credentials and try again.",
+                    actionLabel: "Try Again",
+                    variant: "error",
+                  })
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-500 text-white transition cursor-pointer shadow-2xs"
+              >
+                <Xmark className="w-3.5 h-3.5" />
+                <span>Launch Login Failed</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAuthFeedbackModal({
+                    title: "Account Restricted",
+                    message:
+                      "Your institutional account has been deactivated by a campus administrator. Please contact IT support.",
+                    actionLabel: "Understood",
+                    variant: "error",
+                  })
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition cursor-pointer"
+              >
+                <WarningTriangle className="w-3.5 h-3.5 text-amber-500" />
+                <span>Launch Restricted Alert</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Side-by-Side In-Page Inspection Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            {/* 1. SUCCESS CARD MOCKUP */}
+            <div className="flex flex-col items-center justify-center p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-950">
+              <div className="w-full flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-xs">
+                <span className="font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  State 1: Successful Authentication
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPreviewAnimationKey(Date.now())}
+                  className="text-slate-400 hover:text-slate-200 flex items-center gap-1 text-[11px] cursor-pointer"
+                >
+                  <Refresh className="w-3 h-3" />
+                  <span>Replay Animation</span>
+                </button>
+              </div>
+
+              <div className="relative w-full max-w-[340px] overflow-hidden rounded-[2rem] border border-amber-400/60 bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 text-[#fff8e7] shadow-2xl shadow-black/60">
+                <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="relative flex items-center justify-center my-1.5">
+                    <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-emerald-500/50">
+                      <img
+                        key={previewAnimationKey}
+                        src={
+                          typeof successfullyIcon === "string"
+                            ? successfullyIcon
+                            : (successfullyIcon as any)?.src ??
+                              "/icons-animations/successfully.svg"
+                        }
+                        alt="Success"
+                        className="h-14 w-14 object-contain"
+                      />
+                    </div>
+                  </div>
+
+                  <h3 className="mt-3 text-xl font-black uppercase tracking-wider text-amber-300">
+                    Login Successful
+                  </h3>
+
+                  <div className="h-0.5 w-12 rounded-full my-2 bg-gradient-to-r from-transparent via-amber-400/70 to-transparent" />
+
+                  <p className="text-xs font-medium leading-relaxed text-amber-100/90 max-w-[260px]">
+                    Welcome back to PUP FOCUS. Securing institutional session...
+                  </p>
+
+                  <div className="mt-4 w-full flex flex-col items-center gap-2">
+                    <div className="flex items-center justify-center gap-2 text-xs font-semibold tracking-wide text-amber-300/90 py-0.5">
+                      <SystemRestart className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                      <span>Redirecting to your portal...</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAuthFeedbackModal({
+                          title: "Login Successful",
+                          message: "Welcome back, Developer Preview!",
+                          actionLabel: "Continue",
+                          variant: "success",
+                        })
+                      }
+                      className="mt-1 h-10 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 cursor-pointer flex items-center justify-center gap-2 shadow-md"
+                    >
+                      <span>Continue</span>
+                      <NavArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. FAIL CARD MOCKUP */}
+            <div className="flex flex-col items-center justify-center p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-950">
+              <div className="w-full flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-xs">
+                <span className="font-bold text-rose-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                  <WarningCircle className="w-3.5 h-3.5" />
+                  State 2: Failed Authentication
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPreviewAnimationKey(Date.now())}
+                  className="text-slate-400 hover:text-slate-200 flex items-center gap-1 text-[11px] cursor-pointer"
+                >
+                  <Refresh className="w-3 h-3" />
+                  <span>Replay Animation</span>
+                </button>
+              </div>
+
+              <div className="relative w-full max-w-[340px] overflow-hidden rounded-[2rem] border border-rose-500/50 bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 text-[#fff8e7] shadow-2xl shadow-black/60">
+                <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent" />
+
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="relative flex items-center justify-center my-1.5">
+                    <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-rose-500/50">
+                      <img
+                        key={previewAnimationKey}
+                        src={
+                          typeof failedIcon === "string"
+                            ? failedIcon
+                            : (failedIcon as any)?.src ??
+                              "/icons-animations/fail.svg"
+                        }
+                        alt="Failed"
+                        className="h-14 w-14 object-contain"
+                      />
+                    </div>
+                  </div>
+
+                  <h3 className="mt-3 text-xl font-black uppercase tracking-wider text-rose-200">
+                    Login Failed
+                  </h3>
+
+                  <div className="h-0.5 w-12 rounded-full my-2 bg-gradient-to-r from-transparent via-rose-500/70 to-transparent" />
+
+                  <p className="text-xs font-medium leading-relaxed text-rose-100/80 max-w-[260px]">
+                    Invalid institutional email address or password. Please verify your credentials and try again.
+                  </p>
+
+                  <div className="mt-4 w-full">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAuthFeedbackModal({
+                          title: "Login Failed",
+                          message:
+                            "Invalid institutional email address or password. Please verify your credentials and try again.",
+                          actionLabel: "Try Again",
+                          variant: "error",
+                        })
+                      }
+                      className="h-10 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 cursor-pointer flex items-center justify-center gap-2 shadow-md"
+                    >
+                      <Refresh className="w-3.5 h-3.5" />
+                      <span>Try Again</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Live Login Simulation Box */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs">
+            <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              Live Interactive Sign-In Tester
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+              Enter any test credentials or use the quick buttons below to trigger the authentic full-screen login response modal as experienced by users on the landing page.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Institutional Email
+                </label>
+                <input
+                  type="email"
+                  value={testLoginEmail}
+                  onChange={(e) => setTestLoginEmail(e.target.value)}
+                  className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2.5 outline-none text-slate-900 dark:text-slate-100 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={testLoginPassword}
+                  onChange={(e) => setTestLoginPassword(e.target.value)}
+                  className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2.5 outline-none text-slate-900 dark:text-slate-100 font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthFeedbackModal({
+                    title: "Login Successful",
+                    message: `Welcome back, ${testLoginEmail.split("@")[0]}!`,
+                    actionLabel: "Continue",
+                    variant: "success",
+                  });
+                }}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition cursor-pointer shadow-2xs flex items-center gap-1.5"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>Simulate Successful Sign-In</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthFeedbackModal({
+                    title: "Login Failed",
+                    message:
+                      "Invalid institutional email address or password. Please verify your credentials and try again.",
+                    actionLabel: "Try Again",
+                    variant: "error",
+                  });
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition cursor-pointer shadow-2xs flex items-center gap-1.5"
+              >
+                <Xmark className="w-4 h-4" />
+                <span>Simulate Failed Sign-In</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthFeedbackModal({
+                    title: "Account Restricted",
+                    message:
+                      "Your institutional account has been deactivated by an administrator. Please contact system support.",
+                    actionLabel: "Understood",
+                    variant: "error",
+                  });
+                }}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs transition cursor-pointer flex items-center gap-1.5"
+              >
+                <WarningTriangle className="w-4 h-4 text-amber-500" />
+                <span>Simulate Deactivated Account</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: MODALS SHOWCASE */}
       {activeTab === "modals" && (
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs">
@@ -827,6 +1157,95 @@ export function DevPreviewPanel() {
                 className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 transition cursor-pointer"
               >
                 Launch Warning Modal
+              </button>
+            </div>
+
+            {/* Modal Card 4: Login Success Feedback Modal */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle className="w-5 h-5" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Login Success Modal
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Inspect the authentic animated checkmark feedback modal with ambient glow and auto-redirect indicator displayed upon login.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setAuthFeedbackModal({
+                    title: "Login Successful",
+                    message: "Welcome back, Developer Preview!",
+                    actionLabel: "Continue",
+                    variant: "success",
+                  })
+                }
+                className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition cursor-pointer"
+              >
+                Launch Login Success Modal
+              </button>
+            </div>
+
+            {/* Modal Card 5: Login Failed Feedback Modal */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                  <Xmark className="w-5 h-5" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Login Failed Modal
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Inspect the animated error feedback modal displayed when invalid institutional credentials are submitted.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setAuthFeedbackModal({
+                    title: "Login Failed",
+                    message:
+                      "Invalid institutional email address or password. Please verify your credentials and try again.",
+                    actionLabel: "Try Again",
+                    variant: "error",
+                  })
+                }
+                className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 transition cursor-pointer"
+              >
+                Launch Login Failed Modal
+              </button>
+            </div>
+
+            {/* Modal Card 6: Account Restricted Modal */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-amber-500">
+                  <WarningTriangle className="w-5 h-5" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Account Restricted Modal
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Inspect the error modal shown when an inactive account attempts to sign into the system.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setAuthFeedbackModal({
+                    title: "Account Restricted",
+                    message:
+                      "Your institutional account has been deactivated by an administrator. Please contact system support.",
+                    actionLabel: "Understood",
+                    variant: "error",
+                  })
+                }
+                className="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 transition cursor-pointer"
+              >
+                Launch Restricted Modal
               </button>
             </div>
           </div>
@@ -1045,6 +1464,12 @@ export function DevPreviewPanel() {
           </div>
         </div>
       )}
+
+      {/* AUTH FEEDBACK MODAL (LOGIN SUCCESS & FAIL) */}
+      <AuthFeedbackModal
+        modal={authFeedbackModal}
+        onClose={() => setAuthFeedbackModal(null)}
+      />
     </div>
   );
 }
