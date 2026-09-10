@@ -224,7 +224,7 @@ export function EditFacultyModal({
             <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-lg font-semibold text-amber-700 dark:text-amber-200">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-lg font-semibold text-slate-700 dark:text-slate-300">
                     {profileImagePreviewUrl ? (
                       <img
                         src={profileImagePreviewUrl}

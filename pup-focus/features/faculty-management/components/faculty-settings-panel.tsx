@@ -618,7 +618,7 @@ export function FacultySettingsPanel({
 
                 {/* Persistent Floating Camera Badge */}
                 <div
-                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900 transition-transform group-hover:scale-110 pointer-events-none"
+                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900 transition-transform group-hover:scale-110 pointer-events-none"
                   aria-hidden="true"
                 >
                   <Camera className="h-3.5 w-3.5" />
@@ -857,7 +857,7 @@ export function FacultySettingsPanel({
               <button
                 type="submit"
                 disabled={isSaving || !isProfileChanged}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isSaving ? "Saving..." : "Save Profile Changes"}
               </button>
@@ -1067,7 +1067,7 @@ export function FacultySettingsPanel({
               <button
                 type="submit"
                 disabled={!isPasswordEditing || !isPasswordFormValid || isChangingPassword}
-                className="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-900 disabled:shadow-none cursor-pointer"
               >
                 {isChangingPassword ? (
                   <>
@@ -1109,12 +1109,12 @@ export function FacultySettingsPanel({
             ) : (
               <div className="relative mb-5 flex items-center justify-center">
                 {/* Ambient Backdrop Glow */}
-                <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl dark:bg-emerald-500/30" />
+                <div className="absolute inset-0 rounded-full bg-slate-500/20 blur-xl dark:bg-slate-500/30" />
 
                 {/* Outer Layer Ring */}
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 p-3 ring-8 ring-emerald-500/5 dark:bg-emerald-500/20 dark:ring-emerald-500/10">
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-500/10 p-3 ring-8 ring-slate-500/5 dark:bg-slate-500/20 dark:ring-slate-500/10">
                   {/* Inner Shield Icon */}
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg">
                     <ShieldCheck className="h-6 w-6 stroke-[2.2]" />
                   </div>
                 </div>
@@ -1133,7 +1133,7 @@ export function FacultySettingsPanel({
               onClick={() => setFeedbackModal(null)}
               className={
                 feedbackModal.type === "success"
-                  ? "w-full bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
+                  ? "w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
                   : "w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
               }
             >

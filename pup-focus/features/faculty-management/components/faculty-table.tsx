@@ -229,7 +229,7 @@ export function FacultyTable({
                           }}
                         >
                           <div
-                            className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-[10px] font-semibold text-amber-800 dark:text-amber-200"
+                            className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-700 dark:text-slate-300"
                             aria-hidden="true"
                           >
                             {faculty.profileImageUrl ? (

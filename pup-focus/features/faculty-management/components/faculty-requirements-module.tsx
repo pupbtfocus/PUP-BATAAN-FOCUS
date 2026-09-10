@@ -427,7 +427,7 @@ export function FacultyRequirementsModule({
             <button
               type="button"
               aria-label="Open document submission modal"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs shadow-sm active:scale-[0.98] transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold px-4 py-2 text-xs shadow-sm active:scale-[0.98] transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
               onClick={() => openModal()}
             >
               <Upload className="h-3.5 w-3.5" />
@@ -450,7 +450,7 @@ export function FacultyRequirementsModule({
         {message && (
           <div
             role="status"
-            className="flex items-center gap-2 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200 shadow-2xs"
+            className="flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 text-xs text-slate-700 dark:text-slate-300 shadow-2xs"
           >
             <WarningCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
             <span>{message}</span>
@@ -549,7 +549,7 @@ export function FacultyRequirementsModule({
                               type="button"
                               aria-label={`Submit document for ${req.title}`}
                               onClick={() => openModal(code)}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 text-xs transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold px-3 py-1.5 text-xs transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
                             >
                               <Upload className="h-3.5 w-3.5" />
                               Submit
@@ -560,7 +560,7 @@ export function FacultyRequirementsModule({
                               type="button"
                               aria-label={`Resubmit revision for ${req.title}`}
                               onClick={() => openModal(code)}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 text-xs transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold px-3 py-1.5 text-xs transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
                             >
                               <Upload className="h-3.5 w-3.5" />
                               Resubmit
@@ -630,7 +630,7 @@ export function FacultyRequirementsModule({
                     </div>
 
                     {adminRemarks && (
-                      <div className="rounded-xl border border-amber-300/80 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200">
+                      <div className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-2.5 text-xs text-slate-700 dark:text-slate-300">
                         <span className="font-semibold block uppercase tracking-wider text-[10px] text-amber-800 dark:text-amber-300 mb-0.5">
                           Admin Remarks:
                         </span>
@@ -646,7 +646,7 @@ export function FacultyRequirementsModule({
                           type="button"
                           aria-label={`Submit requirement ${req.title}`}
                           onClick={() => openModal(code)}
-                          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs transition cursor-pointer shadow-2xs"
+                          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold px-4 py-2 text-xs transition cursor-pointer shadow-2xs"
                         >
                           <Upload className="h-3.5 w-3.5" />
                           Submit Document
@@ -657,7 +657,7 @@ export function FacultyRequirementsModule({
                           type="button"
                           aria-label={`Resubmit revision for ${req.title}`}
                           onClick={() => openModal(code)}
-                          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs transition cursor-pointer shadow-2xs"
+                          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold px-4 py-2 text-xs transition cursor-pointer shadow-2xs"
                         >
                           <Upload className="h-3.5 w-3.5" />
                           Resubmit Revision
@@ -822,7 +822,7 @@ export function FacultyRequirementsModule({
                 <Button
                   type="submit"
                   disabled={isSubmitting || !selectedFile}
-                  className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium px-5 py-2.5 rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none"
+                  className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-medium px-5 py-2.5 rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-900 disabled:shadow-none"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">

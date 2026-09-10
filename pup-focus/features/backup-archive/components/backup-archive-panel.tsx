@@ -391,7 +391,7 @@ export function BackupArchivePanel() {
               type="button"
               disabled={isGeneratingBackup || Boolean(exportingTermKey)}
               onClick={() => void handleGenerateBackup()}
-              className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm px-4 py-2 transition shadow-sm cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold rounded-xl text-xs sm:text-sm px-4 py-2 transition shadow-sm cursor-pointer disabled:opacity-50"
             >
               {isGeneratingBackup ? (
                 <>
@@ -448,7 +448,7 @@ export function BackupArchivePanel() {
                     >
                       <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
                         <div className="flex items-center gap-2.5">
-                          <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                          <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
                             <Database className="w-3.5 h-3.5" />
                           </div>
                           <div>
@@ -505,7 +505,7 @@ export function BackupArchivePanel() {
                           <a
                             href={`/api/admin/backups/download?id=${bk.id}`}
                             download
-                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer flex items-center gap-1 shadow-sm"
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1 shadow-sm"
                             title="Download JSON Snapshot"
                           >
                             <Download className="w-3 h-3" />
@@ -647,7 +647,7 @@ export function BackupArchivePanel() {
                             type="button"
                             disabled={Boolean(exportingTermKey)}
                             onClick={() => void handleDownloadZip(term.academic_year, term.semester)}
-                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer inline-flex items-center gap-1 shadow-sm disabled:opacity-50"
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer inline-flex items-center gap-1 shadow-sm disabled:opacity-50"
                             title="Download Document Vault (.ZIP)"
                           >
                             {exportingTermKey === `${term.academic_year}__${term.semester}` ? (
@@ -678,7 +678,7 @@ export function BackupArchivePanel() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center gap-3 text-amber-500 mb-3">
-              <div className="p-2 rounded-xl bg-amber-500/10">
+              <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800">
                 <WarningTriangle className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold">Archive Academic Term?</h3>
@@ -705,7 +705,7 @@ export function BackupArchivePanel() {
                 type="button"
                 disabled={isArchiving}
                 onClick={() => void handleArchiveTermConfirm()}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer disabled:opacity-50"
               >
                 {isArchiving ? "Archiving..." : "Confirm & Archive Term"}
               </button>
@@ -720,7 +720,7 @@ export function BackupArchivePanel() {
           <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
+                <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                   <Database className="w-4 h-4" />
                 </div>
                 <h3 className="text-sm font-bold truncate">{inspectedBackup.backup_name}</h3>
@@ -789,7 +789,7 @@ export function BackupArchivePanel() {
               <a
                 href={`/api/admin/backups/download?id=${inspectedBackup.id}`}
                 download
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1.5"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download JSON</span>
@@ -849,7 +849,7 @@ export function BackupArchivePanel() {
                 type="button"
                 disabled={Boolean(exportingTermKey)}
                 onClick={() => void handleDownloadZip(inspectedTerm.academic_year, inspectedTerm.semester)}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
                 {exportingTermKey === `${inspectedTerm.academic_year}__${inspectedTerm.semester}` ? (
                   <>
@@ -900,7 +900,7 @@ export function BackupArchivePanel() {
                 type="button"
                 disabled={isDeleting}
                 onClick={() => void handleDeleteBackup()}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-500 text-white transition cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer disabled:opacity-50"
               >
                 {isDeleting ? "Deleting..." : "Confirm Delete"}
               </button>

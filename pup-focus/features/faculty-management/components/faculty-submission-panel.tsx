@@ -84,8 +84,8 @@ export const getFileBrand = (
     return {
       label: "Adobe PDF Document",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-pdf2.svg",
-      borderColor: "border-[#E5252A]/30 dark:border-[#E5252A]/40",
-      badgeBg: "bg-[#E5252A] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Drive",
       googleAction: "Open in Google Drive",
       officeApp: null,
@@ -96,8 +96,8 @@ export const getFileBrand = (
     return {
       label: "Microsoft Excel Spreadsheet",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-excel.svg",
-      borderColor: "border-[#107C41]/30 dark:border-[#107C41]/40",
-      badgeBg: "bg-[#107C41] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Sheets",
       googleAction: "Open in Google Sheets (Drive)",
       officeApp: "Excel Online",
@@ -108,8 +108,8 @@ export const getFileBrand = (
     return {
       label: "Microsoft Word Document",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-word.svg",
-      borderColor: "border-[#185ABD]/30 dark:border-[#185ABD]/40",
-      badgeBg: "bg-[#185ABD] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Docs",
       googleAction: "Open in Google Docs (Drive)",
       officeApp: "Word Online",
@@ -121,8 +121,8 @@ export const getFileBrand = (
       label: "Microsoft PowerPoint Presentation",
       iconUrl:
         "https://api.iconify.design/vscode-icons:file-type-powerpoint.svg",
-      borderColor: "border-[#C43E1C]/30 dark:border-[#C43E1C]/40",
-      badgeBg: "bg-[#C43E1C] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Slides",
       googleAction: "Open in Google Slides (Drive)",
       officeApp: "PowerPoint Online",
@@ -133,23 +133,23 @@ export const getFileBrand = (
     return {
       label: "Compressed Archive",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-zip.svg",
-      borderColor: "border-slate-500/30 dark:border-slate-500/40",
-      badgeBg: "bg-slate-600 text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
   }
   if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(ext)) {
     return {
       label: "Image File",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-image.svg",
-      borderColor: "border-amber-500/30 dark:border-amber-500/40",
-      badgeBg: "bg-amber-500 text-slate-950",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
   }
   return {
     label: "Document File",
     iconUrl: "https://api.iconify.design/vscode-icons:file-type-text.svg",
-    borderColor: "border-amber-500/30 dark:border-amber-500/40",
-    badgeBg: "bg-amber-500 text-slate-950",
+    borderColor: "border-slate-200 dark:border-slate-800",
+    badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
   };
 };
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
@@ -884,14 +884,14 @@ function FacultySubmissionPanelContent({
             });
             targetElement.classList.add(
               "ring-2",
-              "ring-amber-400",
-              "bg-amber-500/10",
+              "ring-slate-400",
+              "bg-slate-500/10",
             );
             setTimeout(() => {
               targetElement.classList.remove(
                 "ring-2",
-                "ring-amber-400",
-                "bg-amber-500/10",
+                "ring-slate-400",
+                "bg-slate-500/10",
               );
             }, 3500);
           }
@@ -1567,7 +1567,7 @@ function FacultySubmissionPanelContent({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-amber-300 hover:bg-amber-500/10 rounded-xl transition-all"
+          className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
           aria-label="Open Navigation Menu"
         >
           <Menu className="w-5 h-5" />
@@ -1590,7 +1590,7 @@ function FacultySubmissionPanelContent({
                 onError={() => setHasAvatarError(true)}
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500/60 transition-colors">
+              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-slate-500 transition-colors">
                 {facultyInitials}
               </div>
             )}
@@ -1632,7 +1632,7 @@ function FacultySubmissionPanelContent({
                 onClick={() => navigateToView(key as PanelView)}
                 className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
                   isActive
-                    ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
+                    ? "bg-slate-200/70 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-400"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
@@ -1690,7 +1690,7 @@ function FacultySubmissionPanelContent({
                     onError={() => setHasAvatarError(true)}
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500/60 transition-colors">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-slate-500 transition-colors">
                     {facultyInitials}
                   </div>
                 )}
@@ -1735,7 +1735,7 @@ function FacultySubmissionPanelContent({
                     }}
                     className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
                       isActive
-                        ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
+                        ? "bg-slate-200/70 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-400"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
@@ -1927,7 +1927,7 @@ function FacultySubmissionPanelContent({
                               req.status === "Not Submitted" ||
                               req.status === "Rejected",
                           ).length === 0 ? (
-                            <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/5 p-6 text-center space-y-2">
+                            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center space-y-2 shadow-xs">
                               <CheckCircle className="h-8 w-8 text-emerald-500 dark:text-emerald-400 mx-auto" />
                               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 Great job! No pending requirements.
@@ -1990,7 +1990,7 @@ function FacultySubmissionPanelContent({
                                         disabled={
                                           !hasActiveSchedule || isWindowClosed
                                         }
-                                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                        className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-3 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                                       >
                                         <Upload className="h-3.5 w-3.5" />
                                         <span>
@@ -2203,8 +2203,8 @@ function FacultySubmissionPanelContent({
                   </form>
                 ) : (
                   <div className="mt-6 flex min-h-[60vh] items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8">
-                    <div className="w-full max-w-2xl rounded-2xl border border-amber-500/30 bg-amber-500/5 dark:bg-slate-950/80 p-8 text-center shadow-2xl">
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-300">
+                    <div className="w-full max-w-2xl rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/80 p-8 text-center shadow-2xl">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                         <WarningTriangle className="h-8 w-8" strokeWidth={2} />
                       </div>
                       <h3 className="mt-5 text-2xl font-semibold text-slate-900 dark:text-slate-100">
@@ -2433,7 +2433,7 @@ function FacultySubmissionPanelContent({
                   </div>
                 )}
                 {(!hasActiveSchedule || isWindowClosed) && (
-                  <div className="p-3 sm:p-3.5 rounded-xl border border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 text-xs text-amber-950 dark:text-amber-200">
+                  <div className="p-3 sm:p-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs text-slate-700 dark:text-slate-300">
                     <span className="font-semibold text-amber-900 dark:text-amber-300 mr-1.5">
                       Submission Window Closed:
                     </span>
@@ -2505,7 +2505,7 @@ function FacultySubmissionPanelContent({
                                 type="button"
                                 onClick={() => openDirectUploadModal(req.code)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
-                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                               >
                                 <Upload className="h-3.5 w-3.5" />
                                 Submit
@@ -2517,7 +2517,7 @@ function FacultySubmissionPanelContent({
                                 type="button"
                                 onClick={() => openDirectUploadModal(req.code)}
                                 disabled={!hasActiveSchedule || isWindowClosed}
-                                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                               >
                                 <Upload className="h-3.5 w-3.5" />
                                 Resubmit
@@ -2665,7 +2665,7 @@ function FacultySubmissionPanelContent({
                       <Button
                         type="submit"
                         disabled={isUploadingDirect || !directUploadFile}
-                        className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium px-4 py-2 rounded-xl text-sm shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none"
+                        className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-medium px-4 py-2 rounded-xl text-sm shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-900 disabled:shadow-none"
                       >
                         {isUploadingDirect ? (
                           <>
@@ -2711,7 +2711,7 @@ function FacultySubmissionPanelContent({
                       <button
                         type="button"
                         onClick={handleCloseModalAndRefresh}
-                        className="w-full py-3 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium rounded-xl shadow-sm transition-colors"
+                        className="w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-medium rounded-xl shadow-sm transition-colors"
                       >
                         Done
                       </button>
@@ -2753,7 +2753,7 @@ function FacultySubmissionPanelContent({
                         });
                         navigateToView("status");
                       }}
-                      className="w-full max-w-xs rounded-xl bg-amber-500 hover:bg-amber-400 font-semibold text-slate-950 py-2.5"
+                      className="w-full max-w-xs rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 font-semibold text-white dark:text-slate-900 py-2.5"
                     >
                       Back to Requirements
                     </Button>
@@ -2852,7 +2852,7 @@ function FacultySubmissionPanelContent({
                           isBulkDownloading ||
                           filteredPastSubmissions.length === 0
                         }
-                        className="inline-flex items-center gap-1.5 border-emerald-300/80 dark:border-emerald-600/50 bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-semibold"
+                        className="inline-flex items-center gap-1.5 border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold"
                         title="Download all validated requirements in current view as ZIP"
                       >
                         {isBulkDownloading ? (
@@ -3053,7 +3053,7 @@ function FacultySubmissionPanelContent({
                       ) : null}
                       <button
                         type="button"
-                        className="w-full bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 py-2.5 cursor-pointer"
+                        className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-medium rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 py-2.5 cursor-pointer"
                         onClick={() =>
                           window.open(
                             getSubmissionPreviewUrl(
@@ -3090,7 +3090,7 @@ function FacultySubmissionPanelContent({
                 <div className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold mb-3">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold mb-3">
                         <WarningCircle className="h-3.5 w-3.5" />
                         <span>Action Required</span>
                       </div>
@@ -3154,7 +3154,7 @@ function FacultySubmissionPanelContent({
                         dismissIncompleteRequirementsAlert();
                         navigateToView("status");
                       }}
-                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                      className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                     >
                       Go to Requirements Management
                     </button>
@@ -3274,7 +3274,7 @@ function FacultySubmissionPanelContent({
                             ref={fileInputRef}
                             id="modalFileName"
                             type="file"
-                            className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-amber-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-950 hover:file:bg-amber-400 disabled:opacity-50"
+                            className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 hover:file:bg-slate-800 dark:file:bg-white dark:hover:file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white dark:file:text-slate-900 disabled:opacity-50"
                             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                             onChange={(event) => {
                               const file = event.target.files?.[0];

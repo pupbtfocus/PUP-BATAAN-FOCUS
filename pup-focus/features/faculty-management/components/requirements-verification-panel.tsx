@@ -80,8 +80,8 @@ export const getFileBrand = (
     return {
       label: "Adobe PDF Document",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-pdf2.svg",
-      borderColor: "border-[#E5252A]/30 dark:border-[#E5252A]/40",
-      badgeBg: "bg-[#E5252A] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Drive",
       googleAction: "Open in Google Drive",
       officeApp: null,
@@ -92,8 +92,8 @@ export const getFileBrand = (
     return {
       label: "Microsoft Excel Spreadsheet",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-excel.svg",
-      borderColor: "border-[#107C41]/30 dark:border-[#107C41]/40",
-      badgeBg: "bg-[#107C41] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Sheets",
       googleAction: "Open in Google Sheets (Drive)",
       officeApp: "Excel Online",
@@ -104,8 +104,8 @@ export const getFileBrand = (
     return {
       label: "Microsoft Word Document",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-word.svg",
-      borderColor: "border-[#185ABD]/30 dark:border-[#185ABD]/40",
-      badgeBg: "bg-[#185ABD] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Docs",
       googleAction: "Open in Google Docs (Drive)",
       officeApp: "Word Online",
@@ -117,8 +117,8 @@ export const getFileBrand = (
       label: "Microsoft PowerPoint Presentation",
       iconUrl:
         "https://api.iconify.design/vscode-icons:file-type-powerpoint.svg",
-      borderColor: "border-[#C43E1C]/30 dark:border-[#C43E1C]/40",
-      badgeBg: "bg-[#C43E1C] text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Slides",
       googleAction: "Open in Google Slides (Drive)",
       officeApp: "PowerPoint Online",
@@ -129,23 +129,23 @@ export const getFileBrand = (
     return {
       label: "Compressed Archive",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-zip.svg",
-      borderColor: "border-slate-500/30 dark:border-slate-500/40",
-      badgeBg: "bg-slate-600 text-white",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
   }
   if (["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"].includes(ext)) {
     return {
       label: "Image File",
       iconUrl: "https://api.iconify.design/vscode-icons:file-type-image.svg",
-      borderColor: "border-amber-500/30 dark:border-amber-500/40",
-      badgeBg: "bg-amber-500 text-slate-950",
+      borderColor: "border-slate-200 dark:border-slate-800",
+      badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
   }
   return {
     label: "Document File",
     iconUrl: "https://api.iconify.design/vscode-icons:file-type-text.svg",
-    borderColor: "border-amber-500/30 dark:border-amber-500/40",
-    badgeBg: "bg-amber-500 text-slate-950",
+    borderColor: "border-slate-200 dark:border-slate-800",
+    badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
   };
 };
 
@@ -1281,7 +1281,7 @@ function FacultyVerificationDrawer({
                     onClick={() => setFilterMode("pending")}
                     className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                       filterMode === "pending"
-                        ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/40 shadow-2xs font-bold"
+                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs font-bold"
                         : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
                     }`}
                   >
@@ -1290,7 +1290,7 @@ function FacultyVerificationDrawer({
                     <span
                       className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
                         filterMode === "pending"
-                          ? "bg-amber-500/20 text-amber-800 dark:text-amber-300"
+                          ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                       }`}
                     >
@@ -1302,7 +1302,7 @@ function FacultyVerificationDrawer({
                     onClick={() => setFilterMode("validated")}
                     className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                       filterMode === "validated"
-                        ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 shadow-2xs font-bold"
+                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs font-bold"
                         : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
                     }`}
                   >
@@ -1311,7 +1311,7 @@ function FacultyVerificationDrawer({
                     <span
                       className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
                         filterMode === "validated"
-                          ? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300"
+                          ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                       }`}
                     >
@@ -1324,7 +1324,7 @@ function FacultyVerificationDrawer({
                       onClick={() => setFilterMode("revision")}
                       className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                         filterMode === "revision"
-                          ? "bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/40 shadow-2xs font-bold"
+                          ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs font-bold"
                           : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
                       }`}
                     >
@@ -1333,7 +1333,7 @@ function FacultyVerificationDrawer({
                       <span
                         className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
                           filterMode === "revision"
-                            ? "bg-rose-500/20 text-rose-800 dark:text-rose-300"
+                            ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
@@ -1362,9 +1362,9 @@ function FacultyVerificationDrawer({
                     type="button"
                     disabled={isValidatingAll || pendingSubmissionsCount === 0}
                     onClick={triggerValidateAllPendingModal}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-900 dark:border-slate-100 px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <CheckCircle className="h-3.5 w-3.5" />
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-400 dark:text-emerald-600" />
                     {isValidatingAll
                       ? "Validating..."
                       : `Validate All Pending (${pendingSubmissionsCount})`}
@@ -1385,21 +1385,15 @@ function FacultyVerificationDrawer({
               {/* Action Feedback Banner */}
               {actionFeedback ? (
                 <div
-                  className={`flex items-center gap-2.5 rounded-2xl border p-3 text-xs font-semibold shadow-2xs transition-all ${
-                    actionFeedback.type === "info"
-                      ? "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300"
-                      : actionFeedback.type === "success"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
-                      : "border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
-                  }`}
+                  className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 p-3 text-xs font-semibold shadow-2xs transition-all"
                 >
                   <span className="text-sm">
                     {actionFeedback.type === "info" ? (
-                      <InfoCircle className="h-4 w-4" />
+                      <InfoCircle className="h-4 w-4 text-amber-500" />
                     ) : actionFeedback.type === "success" ? (
-                      <Check className="h-4 w-4" />
+                      <Check className="h-4 w-4 text-emerald-500" />
                     ) : (
-                      <WarningTriangle className="h-4 w-4" />
+                      <WarningTriangle className="h-4 w-4 text-rose-500" />
                     )}
                   </span>
                   <span>{actionFeedback.message}</span>
@@ -1669,9 +1663,9 @@ function FacultyVerificationDrawer({
                                           reqLabel
                                         )
                                       }
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 active:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs hover:border-slate-300 dark:hover:border-slate-600"
                                     >
-                                      <Check className="h-3.5 w-3.5" />
+                                      <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                                       <span>Validate</span>
                                     </button>
                                     <button
@@ -1689,9 +1683,9 @@ function FacultyVerificationDrawer({
                                           reqLabel
                                         )
                                       }
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/25 text-rose-700 dark:text-rose-300 px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs hover:border-slate-300 dark:hover:border-slate-600"
                                     >
-                                      <WarningCircle className="h-3.5 w-3.5" />
+                                      <WarningCircle className="h-3.5 w-3.5 text-rose-500 dark:text-rose-400" />
                                       <span>Revision</span>
                                     </button>
                                   </div>
@@ -2081,7 +2075,7 @@ function FacultyVerificationDrawer({
                         }}
                         className={`rounded-lg px-2.5 py-1 text-[11px] font-medium border transition cursor-pointer ${
                           isSelected
-                            ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                            ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900 font-semibold"
                             : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200"
                         }`}
                       >
@@ -2123,7 +2117,7 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isSubmittingRevision}
                 onClick={handleSendRevisionRequest}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 text-xs font-semibold transition shadow-sm cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-900 dark:border-slate-100 px-4 py-2 text-xs font-semibold transition shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {isSubmittingRevision ? (
                   <>
@@ -2132,7 +2126,7 @@ function FacultyVerificationDrawer({
                   </>
                 ) : (
                   <>
-                    <WarningCircle className="h-3.5 w-3.5" />
+                    <WarningCircle className="h-3.5 w-3.5 text-rose-400 dark:text-rose-600" />
                     Send Revision Request
                   </>
                 )}
@@ -2145,7 +2139,7 @@ function FacultyVerificationDrawer({
       {/* Interactive Validate Requirement Dialog Modal */}
       {validateModalData ? (
         <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
           onClick={() => setValidateModalData(null)}
         >
           <div
@@ -2154,7 +2148,7 @@ function FacultyVerificationDrawer({
           >
             <div className="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/60">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700 shadow-2xs">
                   <CheckCircle className="h-5 w-5" />
                 </div>
                 <div>
@@ -2206,7 +2200,7 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isValidatingSingle}
                 onClick={handleSendValidateRequest}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 text-xs font-semibold transition shadow-sm cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-900 dark:border-slate-100 px-4 py-2 text-xs font-semibold transition shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {isValidatingSingle ? (
                   <>
@@ -2215,7 +2209,7 @@ function FacultyVerificationDrawer({
                   </>
                 ) : (
                   <>
-                    <Check className="h-3.5 w-3.5" />
+                    <Check className="h-3.5 w-3.5 text-emerald-400 dark:text-emerald-600" />
                     Confirm &amp; Validate
                   </>
                 )}
@@ -2452,14 +2446,14 @@ function FacultyVerificationDrawer({
               </div>
 
               {validateTimerSeconds > 0 ? (
-                <p className="rounded-xl border border-amber-200/80 bg-amber-50/80 p-2.5 text-[11px] font-medium text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300 flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 animate-pulse" />
+                <p className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
                   Please review for {validateTimerSeconds} second(s) before
                   confirming.
                 </p>
               ) : (
-                <p className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-2.5 text-[11px] font-medium text-emerald-800 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-300 flex items-center gap-2">
-                  <Check className="h-3.5 w-3.5" />
+                <p className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
                   Ready to confirm bulk validation.
                 </p>
               )}
@@ -2481,7 +2475,7 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isValidatingAll || validateTimerSeconds > 0}
                 onClick={executeValidateAllPending}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-bold text-white transition shadow-xs disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-900 dark:border-slate-100 px-4 py-2 text-xs font-bold transition shadow-xs disabled:opacity-50 cursor-pointer"
               >
                 {isValidatingAll ? (
                   <>
@@ -2548,7 +2542,7 @@ function FacultyVerificationDrawer({
                 </>
               ) : zipProgressData.status === "success" ? (
                 <>
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700 shadow-2xs">
                     <Check className="h-6 w-6" />
                   </div>
                   <div>
@@ -2562,7 +2556,7 @@ function FacultyVerificationDrawer({
                 </>
               ) : (
                 <>
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 border border-slate-200 dark:border-slate-700 shadow-2xs">
                     <WarningTriangle className="h-6 w-6" />
                   </div>
                   <div>
@@ -2858,13 +2852,13 @@ export function RequirementsPanel({
 
                   if (validatedCount === DEFAULT_REQUIREMENTS.length) {
                     overallStatus = "Validated";
-                    statusBadgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60";
+                    statusBadgeClass = "bg-white text-emerald-700 border border-slate-200 dark:bg-slate-900 dark:text-emerald-400 dark:border-slate-800";
                   } else if (uploadedCount > 0 || (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)) {
                     overallStatus = "Pending Review";
-                    statusBadgeClass = "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60";
+                    statusBadgeClass = "bg-white text-amber-700 border border-slate-200 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800";
                   } else {
                     overallStatus = "Not Submitted";
-                    statusBadgeClass = "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+                    statusBadgeClass = "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800";
                   }
 
                   const programCode =
@@ -2877,7 +2871,7 @@ export function RequirementsPanel({
                     >
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-200">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-800 dark:text-amber-300 shadow-sm">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm">
                             {faculty.profileImageUrl ? (
                               <img
                                 src={faculty.profileImageUrl}
@@ -2927,7 +2921,7 @@ export function RequirementsPanel({
                         <button
                           type="button"
                           onClick={() => setReviewingFaculty(faculty)}
-                          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition cursor-pointer"
+                          className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-900 dark:border-slate-100 font-semibold px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition cursor-pointer"
                         >
                           Review Requirements
                         </button>

@@ -53,28 +53,28 @@ export function SubmissionStatusBadge({
     Validated: {
       label: "Validated",
       containerClass:
-        "bg-emerald-50/80 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/25",
+        "bg-white text-emerald-700 border border-slate-200/90 dark:bg-slate-900 dark:text-emerald-400 dark:border-slate-800",
       dotClass: "bg-emerald-500 dark:bg-emerald-400",
-      icon: <CheckCircle className="shrink-0" strokeWidth={2} aria-hidden="true" />,
+      icon: <CheckCircle className="shrink-0 text-emerald-600 dark:text-emerald-400" strokeWidth={2} aria-hidden="true" />,
     },
     "Needs Revision": {
       label: "Needs Revision",
       containerClass:
-        "bg-rose-50/80 text-rose-700 border border-rose-200/80 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/25",
+        "bg-white text-rose-700 border border-slate-200/90 dark:bg-slate-900 dark:text-rose-400 dark:border-slate-800",
       dotClass: "bg-rose-500 dark:bg-rose-400",
-      icon: <WarningCircle className="shrink-0" strokeWidth={2} aria-hidden="true" />,
+      icon: <WarningCircle className="shrink-0 text-rose-600 dark:text-rose-400" strokeWidth={2} aria-hidden="true" />,
     },
     "Pending Review": {
       label: "Pending Review",
       containerClass:
-        "bg-amber-50/80 text-amber-700 border border-amber-200/80 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/25",
+        "bg-white text-amber-700 border border-slate-200/90 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800",
       dotClass: "bg-amber-500 dark:bg-amber-400",
-      icon: <Clock className="shrink-0" strokeWidth={2} aria-hidden="true" />,
+      icon: <Clock className="shrink-0 text-amber-600 dark:text-amber-400" strokeWidth={2} aria-hidden="true" />,
     },
     "Not Submitted": {
       label: "Not Submitted",
       containerClass:
-        "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/60",
+        "bg-white text-slate-600 border border-slate-200/90 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800",
       dotClass: "bg-slate-400 dark:bg-slate-500",
       icon: null,
     },

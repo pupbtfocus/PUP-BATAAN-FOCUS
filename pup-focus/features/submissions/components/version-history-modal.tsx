@@ -60,14 +60,14 @@ const getStatusConfig = (status?: string | null) => {
       label: "VALIDATED REVIEWER FEEDBACK",
       Icon: ShieldCheck,
       containerBg:
-        "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-500/30 text-emerald-900 dark:text-emerald-200",
+        "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100",
       badgeBg:
         "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80",
       iconBoxBg:
-        "bg-emerald-100 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-700/40",
+        "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700",
       iconColor: "text-emerald-600 dark:text-emerald-400",
-      textColor: "text-emerald-950 dark:text-emerald-100",
-      subtextColor: "text-emerald-700/80 dark:text-emerald-400/70",
+      textColor: "text-slate-800 dark:text-slate-200",
+      subtextColor: "text-slate-500 dark:text-slate-400",
     };
   }
 
@@ -84,14 +84,14 @@ const getStatusConfig = (status?: string | null) => {
       label: "REVISION REQUESTED",
       Icon: WarningCircle,
       containerBg:
-        "bg-rose-50/80 dark:bg-rose-950/40 border-rose-500/30 text-rose-900 dark:text-rose-200",
+        "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100",
       badgeBg:
         "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800/80",
       iconBoxBg:
-        "bg-rose-100 dark:bg-rose-900/40 border-rose-200 dark:border-rose-700/40",
+        "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700",
       iconColor: "text-rose-600 dark:text-rose-400",
-      textColor: "text-rose-950 dark:text-rose-100",
-      subtextColor: "text-rose-700/80 dark:text-rose-400/70",
+      textColor: "text-slate-800 dark:text-slate-200",
+      subtextColor: "text-slate-500 dark:text-slate-400",
     };
   }
 
@@ -99,14 +99,14 @@ const getStatusConfig = (status?: string | null) => {
     label: "REVIEWER REMARKS",
     Icon: ChatBubble,
     containerBg:
-      "bg-amber-50/80 dark:bg-amber-950/40 border-amber-500/30 text-amber-900 dark:text-amber-200",
+      "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100",
     badgeBg:
       "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/80",
     iconBoxBg:
-      "bg-amber-100 dark:bg-amber-900/40 border-amber-200 dark:border-amber-700/40",
+      "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700",
     iconColor: "text-amber-600 dark:text-amber-400",
-    textColor: "text-amber-950 dark:text-amber-100",
-    subtextColor: "text-amber-700/80 dark:text-amber-400/70",
+    textColor: "text-slate-800 dark:text-slate-200",
+    subtextColor: "text-slate-500 dark:text-slate-400",
   };
 };
 
@@ -378,11 +378,7 @@ export function VersionHistoryModal({
                 return (
                   <div
                     key={version.id}
-                    className={`rounded-2xl p-4 transition-all shadow-xs bg-slate-50/90 dark:bg-slate-950/60 border ${
-                      isCurrent
-                        ? "border-emerald-500/40 dark:border-emerald-500/30"
-                        : "border-slate-200 dark:border-slate-800"
-                    }`}
+                    className="rounded-2xl p-4 transition-all shadow-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
                   >
                     {/* Top row: version title + current badge + download button */}
                     <div className="flex items-start justify-between gap-3">
@@ -424,7 +420,7 @@ export function VersionHistoryModal({
                           download={fileName}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+                          className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 active:scale-95 text-white dark:text-slate-900 font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
                           title="Download this version"
                         >
                           <Download className="h-3.5 w-3.5 stroke-[2.2]" />
