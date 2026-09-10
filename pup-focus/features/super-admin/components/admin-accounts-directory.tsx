@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { Eye, Pencil, UserMinus, UserCheck, Trash2 } from "lucide-react";
 import { ROLE, type AppRole } from "@/config/roles";
 
 export interface AdminAccount {
@@ -22,6 +23,8 @@ export interface AdminAccount {
   department?: string | null;
   permissions?: string[];
   created_at: string;
+  last_sign_in_at?: string | null;
+  lastLoginAt?: string | null;
 }
 
 export interface AdminAccountsTableProps {
@@ -389,14 +392,27 @@ export function AdminAccountsTable({
                     {/* Inline Actions */}
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {/* View Details Button */}
+                        <button
+                          type="button"
+                          onClick={() => onViewDetails(admin.profile_id)}
+                          title="View Admin Details"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition cursor-pointer"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                          <span>View Details</span>
+                        </button>
+
                         {/* Edit Button (Admin only) */}
                         {!isSuperAdmin && (
                           <button
                             type="button"
                             onClick={() => onEditAdmin(admin.profile_id)}
-                            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer"
+                            title="Edit Admin"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition cursor-pointer"
                           >
-                            Edit
+                            <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <span>Edit</span>
                           </button>
                         )}
 
@@ -407,18 +423,22 @@ export function AdminAccountsTable({
                               type="button"
                               onClick={() => onDeactivateAdmin(admin.profile_id)}
                               disabled={isLoadingAction}
-                              className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                              title="Deactivate Admin"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                             >
-                              {isLoadingAction ? "..." : "Deactivate"}
+                              <UserMinus className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <span>{isLoadingAction ? "..." : "Deactivate"}</span>
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={() => onActivateAdmin(admin.profile_id)}
                               disabled={isLoadingAction}
-                              className="bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                              title="Activate Admin"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                             >
-                              {isLoadingAction ? "..." : "Activate"}
+                              <UserCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <span>{isLoadingAction ? "..." : "Activate"}</span>
                             </button>
                           )
                         ) : null}
@@ -429,20 +449,13 @@ export function AdminAccountsTable({
                             type="button"
                             onClick={() => onDeleteAdmin(admin.profile_id)}
                             disabled={isLoadingAction}
-                            className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                            title="Delete Admin"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                           >
-                            Delete
+                            <Trash2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <span>Delete</span>
                           </button>
                         )}
-
-                        {/* View Details Button */}
-                        <button
-                          type="button"
-                          onClick={() => onViewDetails(admin.profile_id)}
-                          className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer"
-                        >
-                          View Details
-                        </button>
                       </div>
                     </td>
                   </tr>

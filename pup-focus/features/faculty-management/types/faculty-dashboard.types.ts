@@ -31,6 +31,8 @@ export type FacultyAccount = {
   profileImageUrl: string | null;
   is_active: boolean;
   created_at: string;
+  last_sign_in_at?: string | null;
+  lastLoginAt?: string | null;
   program?: FacultyProgramInfo | null;
   requirementStatus: Record<RequirementCode, RequirementStatus>;
 };

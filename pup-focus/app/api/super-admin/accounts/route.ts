@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -172,6 +175,8 @@ export async function GET() {
             avatar_url: resolvedAvatarUrl,
             created_at: u.created_at,
             status: "active",
+            last_sign_in_at: u.last_sign_in_at ?? null,
+            lastLoginAt: u.last_sign_in_at ?? null,
           };
         })
     );

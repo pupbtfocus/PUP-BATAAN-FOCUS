@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -156,11 +159,20 @@ export async function GET() {
             created_at: u.created_at,
             role: userRole,
             profileImageUrl: resolvedAvatarUrl,
+            last_sign_in_at: u.last_sign_in_at ?? null,
+            lastLoginAt: u.last_sign_in_at ?? null,
           };
         })
     );
 
-    return NextResponse.json({ admins: adminAccounts });
+    return NextResponse.json(
+      { admins: adminAccounts },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      },
+    );
   } catch (err: any) {
     console.error("Super Admin list error:", err);
     return NextResponse.json(

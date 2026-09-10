@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Eye, Pencil, UserMinus, UserCheck, Trash2 } from "lucide-react";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { FacultyFilterBar } from "./faculty-filter-bar";
@@ -12,6 +13,7 @@ export interface FacultyTableProps {
   onSelectFaculty: (facultyId: string) => void;
   onDeleteFaculty: (facultyId: string) => void;
   onViewDetails: (facultyId: string) => void;
+  onEditFaculty?: (facultyId: string) => void;
   onActivate: (facultyId: string) => void;
   onDeactivate: (facultyId: string) => void;
   loadingFacultyIds: Set<string>;
@@ -23,12 +25,27 @@ export interface FacultyTableProps {
   programs?: Array<{ id: string; code: string; name: string }>;
 }
 
+function formatLastLogin(isoDate?: string | null): string {
+  if (!isoDate) return "Never logged in";
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return "Never logged in";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export function FacultyTable({
   facultyAccounts,
   isLoading,
   onSelectFaculty,
   onDeleteFaculty,
   onViewDetails,
+  onEditFaculty,
   onActivate,
   onDeactivate,
   loadingFacultyIds,
@@ -157,12 +174,13 @@ export function FacultyTable({
       />
 
       <div className="w-full overflow-x-auto rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
-        <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[600px]">
+        <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[700px]">
             <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-700 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-2.5 font-semibold">Faculty Member</th>
                 <th className="px-4 py-2.5 font-semibold">Program</th>
                 <th className="px-4 py-2.5 font-semibold">Status</th>
+                <th className="px-4 py-2.5 font-semibold">Last Login</th>
                 <th className="px-4 py-2.5 text-right font-semibold">
                   Actions
                 </th>
@@ -172,7 +190,7 @@ export function FacultyTable({
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
                   >
                     Loading faculty accounts...
@@ -181,7 +199,7 @@ export function FacultyTable({
               ) : filteredFacultyAccounts.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400"
                   >
                     No faculty members found.
@@ -202,7 +220,10 @@ export function FacultyTable({
                       <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-slate-200">
                         <div
                           className="flex items-center gap-2.5 cursor-pointer"
-                          onClick={() => onSelectFaculty(faculty.id)}
+                          onClick={() => {
+                            onSelectFaculty(faculty.id);
+                            onViewDetails(faculty.id);
+                          }}
                         >
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-amber-500/10 text-[10px] font-semibold text-amber-800 dark:text-amber-200">
                             {faculty.profileImageUrl ? (
@@ -243,47 +264,87 @@ export function FacultyTable({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="px-4 py-2.5 font-medium text-xs whitespace-nowrap text-slate-700 dark:text-slate-300">
+                        {faculty.last_sign_in_at || faculty.lastLoginAt ? (
+                          <span>
+                            {formatLastLogin(
+                              faculty.last_sign_in_at || faculty.lastLoginAt,
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">
+                            Never logged in
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => onViewDetails(faculty.id)}
-                            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer"
+                            title="View Faculty Details"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition cursor-pointer"
                           >
-                            Edit
+                            <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <span>View Details</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onEditFaculty
+                                ? onEditFaculty(faculty.id)
+                                : onViewDetails(faculty.id)
+                            }
+                            title="Edit Faculty"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition cursor-pointer"
+                          >
+                            <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <span>Edit</span>
                           </button>
                           {faculty.is_active ? (
                             <button
                               type="button"
                               onClick={() => onDeactivate(faculty.id)}
                               disabled={loadingFacultyIds.has(faculty.id)}
-                              className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg px-3 py-1 text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
+                              title="Deactivate Faculty"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                             >
-                              {loadingFacultyIds.has(faculty.id)
-                                ? "Deactivating..."
-                                : "Deactivate"}
+                              <UserMinus className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <span>
+                                {loadingFacultyIds.has(faculty.id)
+                                  ? "Deactivating..."
+                                  : "Deactivate"}
+                              </span>
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={() => onActivate(faculty.id)}
                               disabled={loadingFacultyIds.has(faculty.id)}
-                              className="bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 rounded-lg px-3 py-1 text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
+                              title="Activate Faculty"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                             >
-                              {loadingFacultyIds.has(faculty.id)
-                                ? "Activating..."
-                                : "Activate"}
+                              <UserCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <span>
+                                {loadingFacultyIds.has(faculty.id)
+                                  ? "Activating..."
+                                  : "Activate"}
+                              </span>
                             </button>
                           )}
                           <button
                             type="button"
                             onClick={() => onDeleteFaculty(faculty.id)}
                             disabled={deletingFacultyIds.has(faculty.id)}
-                            className="bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg px-3 py-1 text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
+                            title="Delete Faculty"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                           >
-                            {deletingFacultyIds.has(faculty.id)
-                              ? "Deleting..."
-                              : "Delete"}
+                            <Trash2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <span>
+                              {deletingFacultyIds.has(faculty.id)
+                                ? "Deleting..."
+                                : "Delete"}
+                            </span>
                           </button>
                         </div>
                       </td>

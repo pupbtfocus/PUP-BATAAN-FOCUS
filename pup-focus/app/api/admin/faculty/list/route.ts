@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -298,12 +301,14 @@ export async function GET(request: NextRequest) {
     const [
       { data: programAssignments, error: assignmentsError },
       { data: allPrograms, error: programsError },
+      { data: authUsersData, error: authUsersError },
     ] = await Promise.all([
       supabase
         .from("faculty_program_assignments")
         .select("faculty_profile_id, program_id, programs(id, code, name)")
         .in("faculty_profile_id", profileIds),
       supabase.from("programs").select("id, code, name"),
+      supabase.auth.admin.listUsers({ perPage: 1000 }),
     ]);
 
     if (assignmentsError) {
@@ -317,6 +322,19 @@ export async function GET(request: NextRequest) {
         "Failed to fetch programs in /api/admin/faculty/list:",
         programsError,
       );
+    }
+    if (authUsersError) {
+      console.error(
+        "Failed to fetch auth users in /api/admin/faculty/list:",
+        authUsersError,
+      );
+    }
+
+    const authUsersById = new Map<string, any>();
+    const authUsersByEmail = new Map<string, any>();
+    for (const u of authUsersData?.users ?? []) {
+      if (u.id) authUsersById.set(u.id, u);
+      if (u.email) authUsersByEmail.set(u.email.toLowerCase(), u);
     }
 
     const programByProfileId = new Map<
@@ -345,10 +363,13 @@ export async function GET(request: NextRequest) {
 
     const faculty = await Promise.all(
       (profiles ?? []).map(async (profile: any) => {
-        const authUserMetadata = profile?.user_id
-          ? ((await supabase.auth.admin.getUserById(profile.user_id)).data
-              .user?.user_metadata ?? {})
-          : {};
+        const authUser =
+          (profile?.user_id ? authUsersById.get(profile.user_id) : null) ??
+          (profile?.id ? authUsersById.get(profile.id) : null) ??
+          (profile?.email ? authUsersByEmail.get(profile.email.toLowerCase()) : null) ??
+          null;
+        const authUserMetadata = authUser?.user_metadata ?? {};
+        const lastSignInAt = authUser?.last_sign_in_at ?? null;
         const metadata = authUserMetadata as Record<string, unknown>;
 
         const firstName =
@@ -420,6 +441,8 @@ export async function GET(request: NextRequest) {
           program: resolvedProgram,
           is_active: (metadata.is_active as boolean | undefined) ?? true,
           created_at: profile.created_at || new Date().toISOString(),
+          last_sign_in_at: lastSignInAt,
+          lastLoginAt: lastSignInAt,
           requirementStatus,
         };
       }),
@@ -427,7 +450,14 @@ export async function GET(request: NextRequest) {
 
     faculty.sort((a: any, b: any) => a.fullName.localeCompare(b.fullName));
 
-    return NextResponse.json({ faculty });
+    return NextResponse.json(
+      { faculty },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      },
+    );
   } catch (error) {
     console.error("Unhandled error in /api/admin/faculty/list:", error);
     return NextResponse.json(
