@@ -813,6 +813,7 @@ export function AdminFacultyDashboard({
                     </div>
 
                     <SubmissionWindowPanel
+                      isSuperAdmin={false}
                       onWindowChange={() =>
                         setVerificationResetTrigger((prev) => prev + 1)
                       }
