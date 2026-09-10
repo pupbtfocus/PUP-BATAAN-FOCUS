@@ -503,6 +503,7 @@ export function AdminFacultyDashboard({
         ),
       );
       await loadFacultyFromDatabase();
+      void loadDashboardStats();
     } catch (error) {
       setFacultyActionError(
         error instanceof Error
@@ -551,6 +552,7 @@ export function AdminFacultyDashboard({
         ),
       );
       await loadFacultyFromDatabase();
+      void loadDashboardStats();
     } catch (error) {
       setFacultyActionError(
         error instanceof Error
@@ -727,10 +729,14 @@ export function AdminFacultyDashboard({
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                            {isLoadingStats ? "..." : `${dashboardStats?.activeFaculty ?? facultyAccounts.filter(f => f.is_active).length} Active`}
+                            {isLoadingStats && facultyAccounts.length === 0
+                              ? "..."
+                              : `${dashboardStats && dashboardStats.totalFaculty > 0 ? dashboardStats.activeFaculty : facultyAccounts.filter((f) => f.is_active).length} Active`}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            {dashboardStats?.totalFaculty ?? facultyAccounts.length} total faculty accounts
+                            {dashboardStats && dashboardStats.totalFaculty > 0
+                              ? dashboardStats.totalFaculty
+                              : facultyAccounts.length} total faculty accounts
                           </p>
                         </div>
                       </div>

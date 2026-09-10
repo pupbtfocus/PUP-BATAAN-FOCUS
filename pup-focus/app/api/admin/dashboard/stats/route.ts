@@ -10,6 +10,7 @@ import {
   REQUIREMENT_LABEL,
   type RequirementCode,
 } from "@/config/compliance";
+import { buildFacultyFullName } from "@/lib/faculty-profile";
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     const currentAcademicYear = currentTermRow?.academic_year || "2026-2027";
     const currentSemester = currentTermRow?.semester || "1st Semester";
 
-    // 2. Fetch faculty profiles
+    // 2. Fetch faculty profiles & auth users
     const { data: facultyRole } = await supabase
       .from("roles")
       .select("id")
@@ -50,9 +51,9 @@ export async function GET(request: NextRequest) {
 
     let facultyProfiles: Array<{
       id: string;
+      user_id: string | null;
       full_name: string | null;
       email: string | null;
-      is_active: boolean | null;
     }> = [];
 
     if (facultyRole?.id) {
@@ -72,21 +73,64 @@ export async function GET(request: NextRequest) {
       if (profileIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("id, full_name, email, is_active")
+          .select("id, user_id, full_name, email")
           .in("id", profileIds);
 
         facultyProfiles = profiles || [];
       }
     }
 
-    const facultyProfileMap = new Map<
-      string,
-      { id: string; full_name: string | null; email: string | null; is_active: boolean | null }
-    >();
-    facultyProfiles.forEach((p) => facultyProfileMap.set(p.id, p));
+    const { data: authUsersData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    const authUsersById = new Map<string, any>();
+    const authUsersByEmail = new Map<string, any>();
+    for (const u of authUsersData?.users ?? []) {
+      if (u.id) authUsersById.set(u.id, u);
+      if (u.email) authUsersByEmail.set(u.email.toLowerCase(), u);
+    }
 
-    const totalFaculty = facultyProfiles.length;
-    const activeFaculty = facultyProfiles.filter((f) => f.is_active !== false).length;
+    interface ResolvedFaculty {
+      id: string;
+      fullName: string;
+      email: string;
+      isActive: boolean;
+    }
+
+    const facultyProfileMap = new Map<string, ResolvedFaculty>();
+
+    for (const profile of facultyProfiles) {
+      const authUser =
+        (profile.user_id ? authUsersById.get(profile.user_id) : null) ??
+        (profile.id ? authUsersById.get(profile.id) : null) ??
+        (profile.email ? authUsersByEmail.get(profile.email.toLowerCase()) : null) ??
+        null;
+      const metadata = (authUser?.user_metadata ?? {}) as Record<string, unknown>;
+      const firstName =
+        typeof metadata.first_name === "string" ? metadata.first_name.trim() : "";
+      const middleName =
+        typeof metadata.middle_name === "string" ? metadata.middle_name.trim() : "";
+      const lastName =
+        typeof metadata.last_name === "string" ? metadata.last_name.trim() : "";
+
+      const fullName =
+        buildFacultyFullName({ firstName, middleName, lastName }) ||
+        profile.full_name ||
+        profile.email ||
+        "Faculty Member";
+
+      const isActive = (metadata.is_active as boolean | undefined) ?? true;
+
+      facultyProfileMap.set(profile.id, {
+        id: profile.id,
+        fullName,
+        email: profile.email || "",
+        isActive,
+      });
+    }
+
+    const totalFaculty = facultyProfileMap.size;
+    const activeFaculty = Array.from(facultyProfileMap.values()).filter(
+      (f) => f.isActive,
+    ).length;
 
     // 3. Fetch submissions with document versions and review decisions
     const { data: rawSubmissions, error: subError } = await supabase
@@ -178,7 +222,7 @@ export async function GET(request: NextRequest) {
         pendingQueue.push({
           id: sub.id,
           facultyId: sub.faculty_profile_id,
-          facultyName: faculty?.full_name || faculty?.email || "Faculty Member",
+          facultyName: faculty?.fullName || faculty?.email || "Faculty Member",
           facultyEmail: faculty?.email || "",
           requirementCode: sub.requirement_code,
           requirementTitle: reqTitle,
@@ -214,7 +258,7 @@ export async function GET(request: NextRequest) {
         decision: rev.decision as "validated" | "rejected",
         requirementCode: sub?.requirement_code || "",
         requirementTitle: reqTitle,
-        facultyName: faculty?.full_name || faculty?.email || "Faculty Member",
+        facultyName: faculty?.fullName || faculty?.email || "Faculty Member",
         facultyId: sub?.faculty_profile_id || "",
         remarks: rev.remarks || null,
         createdAt: rev.created_at,
