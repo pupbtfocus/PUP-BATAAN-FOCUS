@@ -52,8 +52,8 @@ function getNotificationTypeCategory(notification: AppNotification): {
     return {
       category: "DEADLINE_ALERT",
       Icon: Clock,
-      colorClasses: "text-amber-400 border-amber-800/60 bg-amber-950/40",
-      badgeBg: "bg-amber-950/30 text-amber-400/90 border border-amber-900/40",
+      colorClasses: "text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-800/60 dark:bg-amber-950/40",
+      badgeBg: "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/80",
     };
   }
 
@@ -66,8 +66,8 @@ function getNotificationTypeCategory(notification: AppNotification): {
     return {
       category: "APPROVED",
       Icon: CheckCircle,
-      colorClasses: "text-emerald-400 border-emerald-800/60 bg-emerald-950/40",
-      badgeBg: "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40",
+      colorClasses: "text-emerald-700 border-emerald-200 bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800/60 dark:bg-emerald-950/40",
+      badgeBg: "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80",
     };
   }
 
@@ -79,8 +79,8 @@ function getNotificationTypeCategory(notification: AppNotification): {
     return {
       category: "REVISION_REQUESTED",
       Icon: WarningTriangle,
-      colorClasses: "text-amber-400 border-amber-800/60 bg-amber-950/40",
-      badgeBg: "bg-amber-950/30 text-amber-400/90 border border-amber-900/40",
+      colorClasses: "text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-800/60 dark:bg-amber-950/40",
+      badgeBg: "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/80",
     };
   }
 
@@ -92,8 +92,8 @@ function getNotificationTypeCategory(notification: AppNotification): {
     return {
       category: "REJECTED",
       Icon: XmarkCircle,
-      colorClasses: "text-rose-400 border-rose-800/60 bg-rose-950/40",
-      badgeBg: "bg-rose-950/50 text-rose-400 border border-rose-800/80",
+      colorClasses: "text-rose-700 border-rose-200 bg-rose-50 dark:text-rose-400 dark:border-rose-800/60 dark:bg-rose-950/40",
+      badgeBg: "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800/80",
     };
   }
 
