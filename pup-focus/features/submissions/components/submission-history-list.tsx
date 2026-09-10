@@ -290,8 +290,8 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 
               {/* Reviewer Feedback Callout */}
               {adminFeedback && (
-                <div className="rounded-xl border border-emerald-800/80 bg-emerald-950/50 p-2.5 text-xs text-emerald-400">
-                  <span className="font-semibold block uppercase tracking-wider text-[10px] text-emerald-400 mb-0.5">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/80 dark:bg-emerald-950/50 dark:text-emerald-400 p-2.5 text-xs">
+                  <span className="font-semibold block uppercase tracking-wider text-[10px] text-emerald-700 dark:text-emerald-400 mb-0.5">
                     Reviewer Remarks:
                   </span>
                   <p className="italic leading-relaxed">&ldquo;{adminFeedback}&rdquo;</p>

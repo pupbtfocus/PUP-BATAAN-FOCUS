@@ -1797,7 +1797,7 @@ export function SuperAdminDashboard({
 
             {activeSection === "settings" ? (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
                   <div>
                     <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                       Settings
@@ -1807,7 +1807,7 @@ export function SuperAdminDashboard({
                     type="button"
                     onClick={() => void refreshCurrentPanel()}
                     disabled={isLoadingSettings}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer shadow-xs"
                   >
                     <Refresh className={`h-3.5 w-3.5 ${isLoadingSettings ? "animate-spin" : ""}`} />
                     <span>{isLoadingSettings ? "Refreshing..." : "Refresh"}</span>
@@ -1815,7 +1815,7 @@ export function SuperAdminDashboard({
                 </div>
 
                 <section className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]">
-                  <div className="space-y-2 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm transition-colors">
+                  <div className="space-y-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs transition-colors">
                     <SettingsOptionButton
                       active={activeSettingsOption === "profile"}
                       title="Account Profile"
@@ -1830,7 +1830,7 @@ export function SuperAdminDashboard({
                     />
                   </div>
 
-                  <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs transition-colors">
                     {activeSettingsOption === "profile" ? (
                       isLoadingSettings ? (
                         <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -1838,7 +1838,7 @@ export function SuperAdminDashboard({
                         </p>
                       ) : (
                         <form className="space-y-4" onSubmit={onSettingsSubmit}>
-                          <div className="flex items-center gap-4 rounded-2xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 transition-colors">
+                          <div className="flex items-center gap-4 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 transition-colors">
                             {superAdminAvatarUrl && !isAvatarImageError ? (
                               <img
                                 src={superAdminAvatarUrl}
@@ -1873,7 +1873,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter full name"
-                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 px-4 py-2.5 text-xs font-medium outline-none transition-colors"
+                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-slate-600 px-4 py-2.5 text-xs font-medium outline-none transition-colors"
                             />
                           </div>
 
@@ -1893,7 +1893,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter email address"
-                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 px-4 py-2.5 text-xs font-medium outline-none transition-colors"
+                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-slate-600 px-4 py-2.5 text-xs font-medium outline-none transition-colors"
                             />
                           </div>
 
@@ -1940,7 +1940,7 @@ export function SuperAdminDashboard({
                               }
                               required
                               placeholder="Enter current password"
-                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
+                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-slate-600 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
                             />
                             <PasswordToggleButton
                               shown={showOldPassword}
@@ -1967,7 +1967,7 @@ export function SuperAdminDashboard({
                               required
                               minLength={8}
                               placeholder="Minimum 8 characters"
-                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
+                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-slate-600 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
                             />
                             <PasswordToggleButton
                               shown={showNewPassword}
@@ -1994,7 +1994,7 @@ export function SuperAdminDashboard({
                               required
                               minLength={8}
                               placeholder="Retype new password"
-                              className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
+                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-slate-600 px-4 py-2.5 pr-12 text-xs font-medium outline-none transition-colors"
                             />
                             <PasswordToggleButton
                               shown={showConfirmPassword}
@@ -2035,8 +2035,8 @@ export function SuperAdminDashboard({
 
       {createAdminModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-300 dark:border-slate-800">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-200 dark:border-slate-800">
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                 Create Admin Account
               </h3>
@@ -2069,7 +2069,7 @@ export function SuperAdminDashboard({
                     }
                     required
                     placeholder="e.g. Juan"
-                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
 
@@ -2088,7 +2088,7 @@ export function SuperAdminDashboard({
                       setCreateAdminMiddleName(event.target.value)
                     }
                     placeholder="e.g. Santos"
-                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
 
@@ -2108,7 +2108,7 @@ export function SuperAdminDashboard({
                     }
                     required
                     placeholder="e.g. Dela Cruz"
-                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
+                    className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
                   />
                 </div>
               </div>
@@ -2118,7 +2118,7 @@ export function SuperAdminDashboard({
                 <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 block">
                   Profile Photo
                 </label>
-                <div className="border-2 border-dashed border-slate-300 dark:border-slate-700/80 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-3">
+                <div className="border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-3">
                   {createAdminProfileImagePreview ? (
                     <img
                       src={createAdminProfileImagePreview}
@@ -2192,18 +2192,18 @@ export function SuperAdminDashboard({
                   onChange={(event) => setEmail(event.target.value)}
                   required
                   placeholder="admin@pup.edu.ph"
-                  className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
+                  className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
                 />
               </div>
 
               {error ? (
-                <p className="rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-300">
+                <p className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 px-4 py-3 text-sm">
                   {error}
                 </p>
               ) : null}
 
               {success ? (
-                <p className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300">
+                <p className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 px-4 py-3 text-sm">
                   {success}
                 </p>
               ) : null}

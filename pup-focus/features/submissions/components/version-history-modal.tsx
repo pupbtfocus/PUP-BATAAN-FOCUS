@@ -62,7 +62,7 @@ const getStatusConfig = (status?: string | null) => {
       containerBg:
         "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-500/30 text-emerald-900 dark:text-emerald-200",
       badgeBg:
-        "bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40",
+        "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80",
       iconBoxBg:
         "bg-emerald-100 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-700/40",
       iconColor: "text-emerald-600 dark:text-emerald-400",
@@ -86,7 +86,7 @@ const getStatusConfig = (status?: string | null) => {
       containerBg:
         "bg-rose-50/80 dark:bg-rose-950/40 border-rose-500/30 text-rose-900 dark:text-rose-200",
       badgeBg:
-        "bg-rose-950/50 text-rose-400 border border-rose-800/80",
+        "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800/80",
       iconBoxBg:
         "bg-rose-100 dark:bg-rose-900/40 border-rose-200 dark:border-rose-700/40",
       iconColor: "text-rose-600 dark:text-rose-400",
@@ -101,7 +101,7 @@ const getStatusConfig = (status?: string | null) => {
     containerBg:
       "bg-amber-50/80 dark:bg-amber-950/40 border-amber-500/30 text-amber-900 dark:text-amber-200",
     badgeBg:
-      "bg-amber-950/30 text-amber-400/90 border border-amber-900/40",
+      "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/80",
     iconBoxBg:
       "bg-amber-100 dark:bg-amber-900/40 border-amber-200 dark:border-amber-700/40",
     iconColor: "text-amber-600 dark:text-amber-400",

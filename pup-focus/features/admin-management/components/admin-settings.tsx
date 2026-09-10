@@ -709,7 +709,7 @@ export function AdminSettings({
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 pb-4">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
           <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
             Settings
@@ -723,7 +723,7 @@ export function AdminSettings({
           onClick={() => void refreshAccount()}
           disabled={isRefreshing}
           title="Refresh account details"
-          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-sm shadow-slate-300/50 dark:shadow-none"
+          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-xs"
         >
           <Refresh className={`h-4 w-4 ${isRefreshing ? "animate-spin text-amber-500" : ""}`} />
           <span className="sr-only">Refresh</span>
@@ -733,8 +733,8 @@ export function AdminSettings({
       {/* Grid Layout (2-Column) */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Profile Details Card */}
-        <article className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white shadow-sm shadow-slate-300/50 dark:border dark:bg-slate-900 dark:shadow-none p-6 transition-colors">
-          <div className="pb-4 border-b border-slate-300 dark:border-slate-800">
+        <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
+          <div className="pb-4 border-b border-slate-200 dark:border-slate-800">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
               Profile Details
             </h2>
@@ -759,7 +759,7 @@ export function AdminSettings({
                 }}
                 aria-label="Profile photo options"
               >
-                <div className="relative h-20 w-20 rounded-full border border-slate-300 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-950 overflow-hidden flex items-center justify-center text-lg font-semibold text-slate-800 dark:text-slate-200 shadow-xs">
+                <div className="relative h-20 w-20 rounded-full border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-950 overflow-hidden flex items-center justify-center text-lg font-semibold text-slate-800 dark:text-slate-200 shadow-xs">
                   {/* Clean initials rendered immediately */}
                   <span className="select-none font-semibold text-slate-700 dark:text-slate-300">
                     {buildFacultyInitials(account.fullName || "Admin User")}
@@ -821,7 +821,7 @@ export function AdminSettings({
             </div>
 
             {profileImageFile && (
-              <div className="flex items-center justify-between rounded-xl border border-amber-600/50 bg-amber-500/10 px-3.5 py-2 text-xs text-amber-900 dark:text-amber-300 font-medium">
+              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 px-3.5 py-2 text-xs text-amber-800 dark:text-amber-300 font-medium">
                 <span className="truncate">New image selected: {profileImageFile.name}</span>
                 <button
                   type="button"
@@ -842,7 +842,7 @@ export function AdminSettings({
             )}
 
             {isAvatarMarkedForRemoval && (
-              <div className="flex items-center justify-between rounded-xl border border-rose-500/40 bg-rose-50 dark:bg-rose-950/30 px-3.5 py-2 text-xs text-rose-800 dark:text-rose-300 font-medium">
+              <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/30 px-3.5 py-2 text-xs text-rose-800 dark:text-rose-300 font-medium">
                 <span className="truncate">Avatar marked for removal upon saving</span>
                 <button
                   type="button"
@@ -871,7 +871,7 @@ export function AdminSettings({
                     className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "firstName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.firstName}
                     onChange={(e) => {
@@ -886,7 +886,7 @@ export function AdminSettings({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleCancelEdit("firstName")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <Xmark className="h-3.5 w-3.5" />
                       <span>Cancel</span>
@@ -896,7 +896,7 @@ export function AdminSettings({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleFocusField("firstName", firstNameInputRef)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <EditPencil className="h-3.5 w-3.5" />
                       <span>Edit</span>
@@ -920,7 +920,7 @@ export function AdminSettings({
                     className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "middleName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.middleName}
                     onChange={(e) => {
@@ -935,7 +935,7 @@ export function AdminSettings({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleCancelEdit("middleName")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <Xmark className="h-3.5 w-3.5" />
                       <span>Cancel</span>
@@ -945,7 +945,7 @@ export function AdminSettings({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleFocusField("middleName", middleNameInputRef)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <EditPencil className="h-3.5 w-3.5" />
                       <span>Edit</span>
@@ -969,7 +969,7 @@ export function AdminSettings({
                     className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "lastName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.lastName}
                     onChange={(e) => {
@@ -984,7 +984,7 @@ export function AdminSettings({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleCancelEdit("lastName")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <Xmark className="h-3.5 w-3.5" />
                       <span>Cancel</span>
@@ -994,7 +994,7 @@ export function AdminSettings({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleFocusField("lastName", lastNameInputRef)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <EditPencil className="h-3.5 w-3.5" />
                       <span>Edit</span>
@@ -1008,7 +1008,7 @@ export function AdminSettings({
                   Email Address
                 </label>
                 <input
-                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
+                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
                   value={account.email || ""}
                   disabled
                   readOnly
@@ -1020,7 +1020,7 @@ export function AdminSettings({
                   Role / Campus Office
                 </label>
                 <input
-                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
+                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
                   value="Administrator — Office of Academic Affairs"
                   disabled
                   readOnly
@@ -1033,7 +1033,7 @@ export function AdminSettings({
                 type="button"
                 onClick={handleResetForm}
                 disabled={!isProfileChanged || isSaving}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800/80 cursor-pointer active:scale-[0.98]"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800/80 cursor-pointer active:scale-[0.98]"
               >
                 <Refresh className="h-3.5 w-3.5" />
                 <span>Reset</span>
@@ -1050,8 +1050,8 @@ export function AdminSettings({
         </article>
 
         {/* Change Password Card */}
-        <article className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white shadow-sm shadow-slate-300/50 dark:border dark:bg-slate-900 dark:shadow-none p-6 transition-colors">
-          <div className="pb-4 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between">
+        <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
+          <div className="pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
                 Change Password
@@ -1064,7 +1064,7 @@ export function AdminSettings({
               <button
                 type="button"
                 onClick={handleEnablePasswordEditing}
-                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="Change Password"
                 aria-label="Change Password"
               >
@@ -1080,7 +1080,7 @@ export function AdminSettings({
                   setNewPassword("");
                   setConfirmPassword("");
                 }}
-                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="Cancel Change Password"
                 aria-label="Cancel Change Password"
               >
@@ -1104,7 +1104,7 @@ export function AdminSettings({
                   className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
                     !isPasswordEditing
                       ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
-                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   }`}
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
@@ -1138,7 +1138,7 @@ export function AdminSettings({
                   className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
                     !isPasswordEditing
                       ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
-                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   }`}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -1172,7 +1172,7 @@ export function AdminSettings({
                   className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
                     !isPasswordEditing
                       ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
-                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   }`}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -1195,22 +1195,22 @@ export function AdminSettings({
             </div>
 
             {/* Live Password Requirement Indicators */}
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 p-3.5 space-y-2">
-              <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+            <div className="bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg space-y-2">
+              <p className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                 Password Requirements
               </p>
               <ul className="space-y-1.5 text-xs">
                 <li
                   className={`flex items-center gap-2 transition-colors ${
                     isCurrentPasswordFilled
-                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                      : "text-slate-400 dark:text-slate-500"
+                      ? "text-emerald-700 dark:text-emerald-400 font-medium"
+                      : "text-slate-600 dark:text-slate-400"
                   }`}
                 >
                   {isCurrentPasswordFilled ? (
-                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                   ) : (
-                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1" />
+                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1 text-slate-400 dark:text-slate-500" />
                   )}
                   <span>Current password required</span>
                 </li>
@@ -1218,14 +1218,14 @@ export function AdminSettings({
                 <li
                   className={`flex items-center gap-2 transition-colors ${
                     isLengthValid
-                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                      : "text-slate-400 dark:text-slate-500"
+                      ? "text-emerald-700 dark:text-emerald-400 font-medium"
+                      : "text-slate-600 dark:text-slate-400"
                   }`}
                 >
                   {isLengthValid ? (
-                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                   ) : (
-                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1" />
+                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1 text-slate-400 dark:text-slate-500" />
                   )}
                   <span>At least 8 characters</span>
                 </li>
@@ -1233,14 +1233,14 @@ export function AdminSettings({
                 <li
                   className={`flex items-center gap-2 transition-colors ${
                     isMatching
-                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                      : "text-slate-400 dark:text-slate-500"
+                      ? "text-emerald-700 dark:text-emerald-400 font-medium"
+                      : "text-slate-600 dark:text-slate-400"
                   }`}
                 >
                   {isMatching ? (
-                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                   ) : (
-                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1" />
+                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1 text-slate-400 dark:text-slate-500" />
                   )}
                   <span>Passwords match</span>
                 </li>
@@ -1268,8 +1268,8 @@ export function AdminSettings({
       </section>
 
       {/* System Preferences & Session Duration Section */}
-      <article className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white shadow-sm shadow-slate-300/50 dark:border dark:bg-slate-900 dark:shadow-none p-6 transition-colors">
-        <div className="pb-4 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between">
+      <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
+        <div className="pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
               System Preferences & Session Controls
@@ -1282,20 +1282,24 @@ export function AdminSettings({
 
         <div className="mt-5 space-y-5">
           {/* Notification Rule 1: Automated Email Reminders */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 p-4 transition-colors">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg transition-colors">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Bell className="h-4 w-4 text-amber-500" />
-                <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
+                <span className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                   Automated Email Reminders on Submission Windows
                 </span>
-                {emailReminders && (
-                  <span className="rounded-md bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40 px-1.5 py-0.5 text-[10px] font-medium">
+                {emailReminders ? (
+                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80 px-2 py-0.5 text-xs font-semibold rounded-md">
                     Active
+                  </span>
+                ) : (
+                  <span className="bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md">
+                    Disabled
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed max-w-xl">
                 Send automatic notifications and deadline alerts to faculty regarding document submissions.
               </p>
             </div>
@@ -1322,20 +1326,24 @@ export function AdminSettings({
           </div>
 
           {/* Notification Rule 2: New Submission Alerts */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 p-4 transition-colors">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg transition-colors">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Bell className="h-4 w-4 text-amber-500" />
-                <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
+                <span className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                   New Submission Alert Notifications
                 </span>
-                {submissionAlerts && (
-                  <span className="rounded-md bg-emerald-950/30 text-emerald-400/90 border border-emerald-900/40 px-1.5 py-0.5 text-[10px] font-medium">
+                {submissionAlerts ? (
+                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80 px-2 py-0.5 text-xs font-semibold rounded-md">
                     Active
+                  </span>
+                ) : (
+                  <span className="bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md">
+                    Disabled
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed max-w-xl">
                 Receive dashboard alerts when faculty upload new curriculum and syllabi files.
               </p>
             </div>
@@ -1362,15 +1370,15 @@ export function AdminSettings({
           </div>
 
           {/* Session Duration Control */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 p-4 transition-colors">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg transition-colors">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-amber-500" />
-                <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
+                <span className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                   Session Timeout Duration
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed max-w-xl">
                 Automatically invalidate session and log out user after continuous inactivity.
               </p>
             </div>
@@ -1379,7 +1387,7 @@ export function AdminSettings({
               <select
                 value={sessionTimeout}
                 onChange={(e) => setSessionTimeout(e.target.value)}
-                className="w-full sm:w-48 rounded-xl border border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 px-4 py-2.5 text-xs font-medium focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 cursor-pointer transition"
+                className="w-full sm:w-48 rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-600 px-4 py-2.5 text-xs font-medium focus:outline-none cursor-pointer transition"
               >
                 <option value="15">15 minutes</option>
                 <option value="30">30 minutes</option>
@@ -1480,10 +1488,10 @@ export function AdminSettings({
           onClick={() => setIsProfileImageMenuOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Profile Photo Options
               </h3>
@@ -1502,7 +1510,7 @@ export function AdminSettings({
                   setIsProfileImageMenuOpen(false);
                   profileImageInputRef.current?.click();
                 }}
-                className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+                className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
               >
                 <div>
                   <p className="text-xs font-semibold">Upload Photo</p>
@@ -1520,7 +1528,7 @@ export function AdminSettings({
                     setIsProfileImageMenuOpen(false);
                     setIsFullImageOpen(true);
                   }}
-                  className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
                 >
                   <div>
                     <p className="text-xs font-semibold">View Full Image</p>
@@ -1566,10 +1574,10 @@ export function AdminSettings({
           onClick={() => setIsFullImageOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                 {account.fullName || "Profile Photo"}
               </h3>
@@ -1582,7 +1590,7 @@ export function AdminSettings({
               </button>
             </div>
             <div className="p-6 flex items-center justify-center">
-              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60vh]">
+              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60vh]">
                 <img
                   src={displayedProfileImage}
                   alt={account.fullName || "Administrator"}

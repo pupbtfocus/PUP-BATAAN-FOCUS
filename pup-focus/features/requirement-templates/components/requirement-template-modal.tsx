@@ -154,8 +154,8 @@ export function RequirementTemplateModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-300 dark:border-slate-800">
+      <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-200 dark:border-slate-800">
           <div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               {isEditing ? "Edit Requirement Template" : "Add Requirement Template"}
@@ -190,7 +190,7 @@ export function RequirementTemplateModal({
               onChange={(e) => handleTitleChange(e.target.value)}
               required
               placeholder="e.g. Enhanced Course Syllabus"
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 
@@ -210,7 +210,7 @@ export function RequirementTemplateModal({
               disabled={isEditing}
               required
               placeholder="e.g. enhanced_syllabus"
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all font-mono text-xs disabled:opacity-60"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all font-mono text-xs disabled:opacity-60"
             />
             <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
               Unique identifier used by the compliance engine across submissions.
@@ -231,7 +231,7 @@ export function RequirementTemplateModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Provide instructions or submission guidelines for faculty members..."
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all resize-none"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all resize-none"
             />
           </div>
 
@@ -251,7 +251,7 @@ export function RequirementTemplateModal({
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                       isSelected
                         ? "bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-300"
-                        : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                        : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
                     {isSelected ? <Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> : null}
@@ -275,7 +275,7 @@ export function RequirementTemplateModal({
                 id="templateSize"
                 value={maxSizeMb}
                 onChange={(e) => setMaxSizeMb(Number(e.target.value))}
-                className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-400 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-sm outline-none transition-all cursor-pointer"
+                className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-sm outline-none transition-all cursor-pointer"
               >
                 {MAX_SIZE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -296,7 +296,7 @@ export function RequirementTemplateModal({
                   className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                     isMandatory
                       ? "bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-300"
-                      : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400"
+                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                   }`}
                 >
                   Mandatory
@@ -306,8 +306,8 @@ export function RequirementTemplateModal({
                   onClick={() => setIsMandatory(false)}
                   className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                     !isMandatory
-                      ? "bg-slate-200 dark:bg-slate-700 border-slate-400 dark:border-slate-600 text-slate-900 dark:text-slate-100"
-                      : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400"
+                      ? "bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100"
+                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                   }`}
                 >
                   Optional
@@ -317,7 +317,7 @@ export function RequirementTemplateModal({
           </div>
 
           {error ? (
-            <p className="rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-300">
+            <p className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 px-4 py-3 text-sm">
               {error}
             </p>
           ) : null}

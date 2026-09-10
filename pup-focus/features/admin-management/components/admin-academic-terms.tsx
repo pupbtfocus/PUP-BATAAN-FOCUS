@@ -315,7 +315,7 @@ export function AdminAcademicTerms({
   function renderStatusBadge(status: AcademicTermStatus) {
     if (status === "Current") {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60">
+        <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80 px-2 py-0.5 text-xs font-semibold rounded-md">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
           Current
         </span>
@@ -354,7 +354,7 @@ export function AdminAcademicTerms({
       return (
         <span
           title="Term Closed / Completed"
-          className="text-slate-600 dark:text-slate-400 font-medium text-[11px] sm:text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-400 dark:border-slate-700 cursor-not-allowed select-none inline-flex items-center gap-1 shrink-0 whitespace-nowrap"
+          className="text-slate-600 dark:text-slate-400 font-medium text-[11px] sm:text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-not-allowed select-none inline-flex items-center gap-1 shrink-0 whitespace-nowrap"
         >
           <Lock className="h-3.5 w-3.5" />
           <span className="sm:hidden">Closed</span>
@@ -418,12 +418,12 @@ export function AdminAcademicTerms({
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-500/30 bg-red-950/40 p-3.5 text-xs text-red-300">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 p-3.5 text-xs">
           {error}
         </div>
       ) : null}
       {success ? (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3.5 text-xs text-emerald-300">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 p-3.5 text-xs">
           {success}
         </div>
       ) : null}
@@ -501,7 +501,7 @@ export function AdminAcademicTerms({
       {/* Modal: Create Next Academic Year */}
       {isCreateModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
@@ -514,14 +514,14 @@ export function AdminAcademicTerms({
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="rounded-lg border border-slate-400 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
+                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
                 aria-label="Close modal"
               >
                 <Xmark className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="mt-5 rounded-xl border border-slate-400/80 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/50 p-4">
+            <div className="mt-5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4">
               <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400/90">
                 Next Academic Year
               </p>
@@ -530,7 +530,7 @@ export function AdminAcademicTerms({
               </p>
 
               <div className="mt-4 space-y-2.5">
-                <div className="flex items-center gap-3 rounded-xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
+                <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
                     <Check className="h-3.5 w-3.5" />
                   </span>
@@ -543,7 +543,7 @@ export function AdminAcademicTerms({
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 rounded-xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
+                <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
                     <Check className="h-3.5 w-3.5" />
                   </span>
@@ -564,7 +564,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
                 disabled={isSaving}
-                className="px-4 py-2 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-200 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-200 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -584,7 +584,7 @@ export function AdminAcademicTerms({
       {/* Modal: Confirm Set Current with Safety Timed Countdown */}
       {termToSetCurrent ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
               Set Current Academic Term
             </h3>
@@ -597,7 +597,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={() => setTermToSetCurrent(null)}
                 disabled={isSaving}
-                className="px-4 py-2 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-200 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-200 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -621,7 +621,7 @@ export function AdminAcademicTerms({
       {/* Modal: Confirm Delete with Safety Timed Countdown */}
       {termToDelete ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
               Delete Academic Term
             </h3>
@@ -639,7 +639,7 @@ export function AdminAcademicTerms({
                 type="button"
                 onClick={() => setTermToDelete(null)}
                 disabled={isSaving}
-                className="px-4 py-2 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-200 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-200 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
               >
                 Cancel
               </button>
