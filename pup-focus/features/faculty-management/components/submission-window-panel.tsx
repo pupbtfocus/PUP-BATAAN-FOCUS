@@ -894,20 +894,29 @@ export function SubmissionWindowPanel({
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 text-slate-800 dark:text-slate-300 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800">
-                      <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">Deadline Change:</span>
-                      {log.old_end_date ? (
-                        <>
-                          <span className="text-slate-500 line-through">
-                            {log.old_end_date} {log.old_end_time || ""}
-                          </span>
-                          <NavArrowRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
-                        </>
-                      ) : null}
-                      <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
-                        {log.new_end_date} {log.new_end_time ? `at ${log.new_end_time}` : ""}
-                      </span>
-                    </div>
+                    {log.new_end_date || log.old_end_date ? (
+                      <div className="flex flex-wrap items-center gap-2 text-slate-800 dark:text-slate-300 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800">
+                        <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">Deadline Change:</span>
+                        {log.old_end_date ? (
+                          <>
+                            <span className="text-slate-500 line-through">
+                              {log.old_end_date} {log.old_end_time || ""}
+                            </span>
+                            <NavArrowRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                          </>
+                        ) : null}
+                        <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
+                          {log.new_end_date} {log.new_end_time ? `at ${log.new_end_time}` : ""}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-2 text-slate-800 dark:text-slate-300 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800">
+                        <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">Action:</span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
+                          {log.reason || "Administrative Window Update"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
