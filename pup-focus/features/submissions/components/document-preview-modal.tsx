@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Download, OpenNewWindow, Page, Xmark } from "iconoir-react";
+import { ChatBubble, Download, Notes, OpenNewWindow, Page, Xmark } from "iconoir-react";
 import { getFileType, getFileBrand } from "@/features/faculty-management/components/faculty-submission-panel";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
@@ -162,8 +162,9 @@ export function DocumentPreviewModal({
           <div className="space-y-4">
             {/* MY NOTE Section */}
             <div className="rounded-xl border border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 p-4">
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                MY NOTE
+              <div className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <ChatBubble className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
+                <span>My Remarks / Note</span>
               </div>
               <div className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
                 {userNote ? (
@@ -179,8 +180,9 @@ export function DocumentPreviewModal({
             {/* Admin Remarks */}
             {submission.reviewedAt || adminFeedback ? (
               <div className="rounded-xl border border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 p-4">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  Admin Remarks
+                <p className="text-xs font-bold text-[#0b5336] dark:text-emerald-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Notes className="h-3.5 w-3.5 text-[#0b5336] dark:text-emerald-400" />
+                  <span>Admin Remarks</span>
                 </p>
                 <p className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
                   {adminFeedback || "Validated with no additional remarks."}

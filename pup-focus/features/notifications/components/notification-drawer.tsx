@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCircle, Clock, DoubleCheck, InfoCircle, OpenNewWindow, SystemRestart, Trash, WarningCircle, WarningTriangle, Xmark, XmarkCircle } from "iconoir-react";
+import { Bell, CheckCircle, Clock, DoubleCheck, InfoCircle, Notes, OpenNewWindow, SystemRestart, Trash, WarningCircle, WarningTriangle, Xmark, XmarkCircle } from "iconoir-react";
 import { Button } from "@/components/ui/button";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import type { AppNotification } from "@/features/notifications/services/notification.service";
@@ -556,8 +556,9 @@ export function NotificationDrawer() {
                         {/* Reviewer remarks preview if provided */}
                         {remarks && (
                           <div className="mt-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700/80 dark:bg-slate-900/90 dark:text-slate-300 italic p-2.5 text-xs">
-                            <span className="font-semibold not-italic text-amber-700 dark:text-amber-300">
-                              {reviewerName ? `${reviewerName}: ` : "Reviewer Remarks: "}
+                            <span className="font-bold not-italic text-[#0b5336] dark:text-emerald-400 flex items-center gap-1 mb-0.5">
+                              <Notes className="h-3 w-3 text-[#0b5336] dark:text-emerald-400" />
+                              <span>{reviewerName ? `${reviewerName}: ` : "Reviewer Remarks: "}</span>
                             </span>
                             &ldquo;{remarks}&rdquo;
                           </div>

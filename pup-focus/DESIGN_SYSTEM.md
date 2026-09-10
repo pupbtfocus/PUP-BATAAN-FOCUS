@@ -55,7 +55,7 @@ The PUP FOCUS system color baseline pairs **PUP Institutional Maroon** with a to
 | **Document Verification** | **Not Submitted** | Neutral Slate | `bg-white text-slate-600 border border-slate-200/90 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 px-3 py-1 text-xs font-semibold rounded-md` |
 | **Notes & Feedback** | **Faculty Remarks** | PUP Gold (`#f59e0b`) | Label / Icon: `<ChatBubble>` `text-amber-700 dark:text-amber-400 font-bold` |
 | **Notes & Feedback** | **Your Remarks** | Dark Green (`#0b5336`) | Label / Icon: `<Notes>` `text-[#0b5336] dark:text-emerald-400 font-bold` |
-| **Notes & Feedback** | **Revision** | PUP Maroon (`#780000`) | Label / Icon: `text-[#780000] dark:text-rose-400 font-bold` |
+| **Notes & Feedback** | **Revision** | PUP Maroon (`#780000`) | Label / Icon: `<WarningCircle>` `text-[#780000] dark:text-rose-400 font-bold` |
 | **Toggle Switches & Checkboxes** | **Active / Checked (On)** | PUP Gold (`#f59e0b`) | Track: `bg-amber-500 border border-amber-400 shadow-xs focus:ring-amber-500/50`<br>Knob: `translate-x-5.5 bg-slate-950`<br>Checkbox: `bg-amber-500 border-amber-400` |
 
 ### 2.2 Operational Action Buttons & Controls Color Palette

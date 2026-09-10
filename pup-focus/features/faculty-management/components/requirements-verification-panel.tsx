@@ -391,6 +391,16 @@ function FacultyVerificationDrawer({
     mimeType?: string | null;
     label: string;
     storagePath?: string | null;
+    isRevision?: boolean;
+    versions?: Array<{
+      id: string;
+      version_number?: number | null;
+      storage_path: string;
+      mime_type?: string | null;
+      size_bytes?: number | null;
+      created_at?: string | null;
+    }>;
+    activeVersionIndex?: number;
   } | null>(null);
 
   const [remarksInput, setRemarksInput] = useState<Record<string, string>>({});
@@ -437,7 +447,7 @@ function FacultyVerificationDrawer({
   }, [isValidateModalOpen, validateTimerSeconds]);
 
   const [filterMode, setFilterMode] = useState<
-    "all" | "pending" | "validated" | "revision"
+    "all" | "pending" | "revision_uploaded" | "validated" | "revision"
   >("all");
 
   const pendingSubmissionsCount = useMemo(() => {
@@ -449,6 +459,24 @@ function FacultyVerificationDrawer({
         s.status === "submitted" ||
         s.status === "under_review";
       return matchesTerm && isPending;
+    }).length;
+  }, [submissions, academicYear, semester]);
+
+  const revisionsUploadedCount = useMemo(() => {
+    return submissions.filter((s) => {
+      const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
+      if (!matchesTerm) return false;
+      const sLower = (s.status || "").toLowerCase();
+      const isPending =
+        sLower === "uploaded" ||
+        sLower === "pending" ||
+        sLower === "submitted" ||
+        sLower === "under_review";
+      const hasPriorRejection = (s.review_decisions || []).some(
+        (d) => (d.decision || "").toLowerCase() === "rejected"
+      );
+      const hasMultipleVersions = (s.document_versions || []).length > 1;
+      return isPending && (hasPriorRejection || hasMultipleVersions);
     }).length;
   }, [submissions, academicYear, semester]);
 
@@ -493,8 +521,15 @@ function FacultyVerificationDrawer({
         rawStatus === "submitted" ||
         rawStatus === "under_review" ||
         rawStatus === "pending_review";
+      const hasPriorRejection = (matchingSub?.review_decisions || []).some(
+        (d) => (d.decision || "").toLowerCase() === "rejected"
+      );
+      const isRevisionUploaded =
+        isPending &&
+        (hasPriorRejection || (matchingSub?.document_versions || []).length > 1);
 
       if (filterMode === "pending") return isPending;
+      if (filterMode === "revision_uploaded") return isRevisionUploaded;
       if (filterMode === "validated") return isValidated;
       if (filterMode === "revision") return isRevision;
       return true;
@@ -1299,6 +1334,29 @@ function FacultyVerificationDrawer({
                       {pendingSubmissionsCount}
                     </span>
                   </button>
+                  {revisionsUploadedCount > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setFilterMode("revision_uploaded")}
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                        filterMode === "revision_uploaded"
+                          ? "bg-amber-500 text-slate-950 font-bold shadow-2xs"
+                          : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
+                      }`}
+                    >
+                      <WarningCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      <span>Revisions Uploaded</span>
+                      <span
+                        className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                          filterMode === "revision_uploaded"
+                            ? "bg-slate-950/20 text-slate-950"
+                            : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                        }`}
+                      >
+                        {revisionsUploadedCount}
+                      </span>
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => setFilterMode("validated")}
@@ -1465,6 +1523,27 @@ function FacultyVerificationDrawer({
                           const isRevisionRequested =
                             rawStatus === "rejected" ||
                             rawStatus === "needs_revision";
+                          const isPending =
+                            rawStatus === "uploaded" ||
+                            rawStatus === "pending" ||
+                            rawStatus === "submitted" ||
+                            rawStatus === "under_review" ||
+                            rawStatus === "pending_review";
+                          const hasPriorRejection = (
+                            matchingSubmission?.review_decisions || []
+                          ).some(
+                            (d) => (d.decision || "").toLowerCase() === "rejected"
+                          );
+                          const isRevisionUploaded =
+                            isPending &&
+                            (hasPriorRejection || documents.length > 1);
+                          const versionNum =
+                            firstDoc?.version_number ??
+                            (documents.length > 1
+                              ? documents.length
+                              : isRevisionUploaded
+                              ? 2
+                              : 1);
 
                           const hasFile =
                             documents.length > 0 &&
@@ -1496,6 +1575,14 @@ function FacultyVerificationDrawer({
                             rawFacultyNote && rawFacultyNote !== adminNote
                               ? rawFacultyNote
                               : null;
+                          const priorRejectionDecision = (
+                            matchingSubmission?.review_decisions || []
+                          ).find(
+                            (d) => (d.decision || "").toLowerCase() === "rejected"
+                          );
+                          const priorRejectionNote =
+                            priorRejectionDecision?.remarks ||
+                            (isRevisionRequested ? adminNote : null);
 
                           return (
                             <tr
@@ -1529,12 +1616,19 @@ function FacultyVerificationDrawer({
                                     </div>
                                     <div className="min-w-0 space-y-1">
                                       <div>
-                                        <span
-                                          className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug max-w-[190px] xl:max-w-[240px]"
-                                          title={rawFileName}
-                                        >
-                                          {fileName}
-                                        </span>
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span
+                                            className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug max-w-[170px] xl:max-w-[210px]"
+                                            title={rawFileName}
+                                          >
+                                            {fileName}
+                                          </span>
+                                          {isRevisionUploaded ? (
+                                            <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 text-[9.5px] font-bold dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800 shrink-0">
+                                              Revision Uploaded (v{versionNum})
+                                            </span>
+                                          ) : null}
+                                        </div>
                                         {fileSize ? (
                                           <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">
                                             {fileSize}
@@ -1552,6 +1646,9 @@ function FacultyVerificationDrawer({
                                               mimeType: firstDoc?.mime_type,
                                               label: reqLabel,
                                               storagePath: firstDoc?.storage_path,
+                                              isRevision: isRevisionUploaded,
+                                              versions: documents,
+                                              activeVersionIndex: 0,
                                             });
                                           }}
                                           className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
@@ -1586,13 +1683,13 @@ function FacultyVerificationDrawer({
 
                               {/* Column 3: Notes & Feedback (Unified compact container, prevents row stretching) */}
                               <td className="px-4 py-3.5 align-middle">
-                                {facultyNote || isRevisionRequested || (isValidated && adminNote) ? (
+                                {facultyNote || isRevisionRequested || (isValidated && adminNote) || (isRevisionUploaded && priorRejectionNote) ? (
                                   <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
                                     {facultyNote ? (
                                       <div className="flex items-start gap-1.5 leading-snug">
                                         <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1">
                                           <ChatBubble className="h-3 w-3 text-amber-700 dark:text-amber-400" />
-                                          Faculty Remarks:
+                                          {isRevisionUploaded ? "Faculty Remarks (Revision):" : "Faculty Remarks:"}
                                         </span>
                                         <p
                                           className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
@@ -1603,7 +1700,20 @@ function FacultyVerificationDrawer({
                                       </div>
                                     ) : null}
 
-                                    {isRevisionRequested ? (
+                                    {isRevisionUploaded && priorRejectionNote ? (
+                                      <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
+                                        <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1">
+                                          <WarningCircle className="h-3 w-3 text-[#780000] dark:text-rose-400" />
+                                          Prior Revision Request:
+                                        </span>
+                                        <p
+                                          className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
+                                          title={priorRejectionNote}
+                                        >
+                                          &ldquo;{priorRejectionNote}&rdquo;
+                                        </p>
+                                      </div>
+                                    ) : isRevisionRequested ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
                                         <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1">
                                           <WarningCircle className="h-3 w-3 text-[#780000] dark:text-rose-400" />
@@ -1650,47 +1760,55 @@ function FacultyVerificationDrawer({
                                     <SubmissionStatusBadge status="Needs Revision" size="sm" />
                                   </div>
                                 ) : matchingSubmission ? (
-                                  <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-                                    <button
-                                      type="button"
-                                      disabled={
-                                        submittingAction !== null ||
-                                        reviewingCode !== null ||
-                                        isValidatingSingle ||
-                                        isSubmittingRevision
-                                      }
-                                      onClick={() =>
-                                        openValidateModal(
-                                          matchingSubmission.id,
-                                          code,
-                                          reqLabel
-                                        )
-                                      }
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
-                                    >
-                                      <Check className="h-3.5 w-3.5 text-white/90" />
-                                      <span>Validate</span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      disabled={
-                                        submittingAction !== null ||
-                                        reviewingCode !== null ||
-                                        isValidatingSingle ||
-                                        isSubmittingRevision
-                                      }
-                                      onClick={() =>
-                                        openRevisionModal(
-                                          matchingSubmission.id,
-                                          code,
-                                          reqLabel
-                                        )
-                                      }
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
-                                    >
-                                      <WarningCircle className="h-3.5 w-3.5 text-white/90" />
-                                      <span>Revision</span>
-                                    </button>
+                                  <div className="flex flex-col items-center justify-center gap-1.5">
+                                    {isRevisionUploaded ? (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 text-[10px] font-bold dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800 shadow-2xs">
+                                        <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                                        Revision Pending Review
+                                      </span>
+                                    ) : null}
+                                    <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                                      <button
+                                        type="button"
+                                        disabled={
+                                          submittingAction !== null ||
+                                          reviewingCode !== null ||
+                                          isValidatingSingle ||
+                                          isSubmittingRevision
+                                        }
+                                        onClick={() =>
+                                          openValidateModal(
+                                            matchingSubmission.id,
+                                            code,
+                                            reqLabel
+                                          )
+                                        }
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                                      >
+                                        <Check className="h-3.5 w-3.5 text-white/90" />
+                                        <span>Validate</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={
+                                          submittingAction !== null ||
+                                          reviewingCode !== null ||
+                                          isValidatingSingle ||
+                                          isSubmittingRevision
+                                        }
+                                        onClick={() =>
+                                          openRevisionModal(
+                                            matchingSubmission.id,
+                                            code,
+                                            reqLabel
+                                          )
+                                        }
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                                      >
+                                        <WarningCircle className="h-3.5 w-3.5 text-white/90" />
+                                        <span>Revision</span>
+                                      </button>
+                                    </div>
                                   </div>
                                 ) : (
                                   <div className="flex items-center justify-center">
@@ -1909,6 +2027,8 @@ function FacultyVerificationDrawer({
                                                   mimeType: doc.mime_type || null,
                                                   label: reqLabel,
                                                   storagePath: doc.storage_path,
+                                                  versions: docs,
+                                                  activeVersionIndex: idx,
                                                 });
                                               }}
                                               className="p-1 rounded text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
@@ -1996,6 +2116,8 @@ function FacultyVerificationDrawer({
                                           mimeType: first.mime_type || null,
                                           label: reqLabel,
                                           storagePath: first.storage_path,
+                                          versions: docs,
+                                          activeVersionIndex: 0,
                                         });
                                       }}
                                       className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs"
@@ -2230,42 +2352,60 @@ function FacultyVerificationDrawer({
           onClick={() => setPreviewingDoc(null)}
         >
           {(() => {
-            const fileName = previewingDoc.name || "Document";
-            const fileUrl = previewingDoc.url;
+            const versions = previewingDoc.versions || [];
+            const activeIndex = previewingDoc.activeVersionIndex ?? 0;
+            const currentVersionDoc = versions[activeIndex];
+
+            const rawFileName = currentVersionDoc?.storage_path
+              ? currentVersionDoc.storage_path.split("/").pop() || previewingDoc.name
+              : previewingDoc.name || "Document";
+            const fileName = cleanDisplayFileName(rawFileName);
+            const fileUrl = currentVersionDoc?.storage_path
+              ? `/api/storage/download?path=${encodeURIComponent(currentVersionDoc.storage_path)}`
+              : previewingDoc.url;
+            const storagePath = currentVersionDoc?.storage_path || previewingDoc.storagePath;
+            const mimeType = currentVersionDoc?.mime_type || previewingDoc.mimeType;
+
             const fileInfo = getFileType(fileName || fileUrl);
             const fileExtension =
               fileInfo.extension ||
-              (previewingDoc.mimeType?.includes("excel") ||
-              previewingDoc.mimeType?.includes("spreadsheet")
+              (mimeType?.includes("excel") ||
+              mimeType?.includes("spreadsheet")
                 ? "xlsx"
-                : previewingDoc.mimeType?.includes("word")
+                : mimeType?.includes("word")
                 ? "docx"
                 : "file");
             const isImage =
               fileInfo.isImage ||
-              previewingDoc.mimeType?.startsWith("image/");
+              mimeType?.startsWith("image/");
             const isPdf =
-              fileInfo.isPdf || previewingDoc.mimeType === "application/pdf";
+              fileInfo.isPdf || mimeType === "application/pdf";
             const isExcel =
               fileInfo.isExcel ||
-              Boolean(previewingDoc.mimeType?.includes("excel")) ||
-              Boolean(previewingDoc.mimeType?.includes("spreadsheet"));
+              Boolean(mimeType?.includes("excel")) ||
+              Boolean(mimeType?.includes("spreadsheet"));
             const isWord =
               fileInfo.isWord ||
-              Boolean(previewingDoc.mimeType?.includes("word")) ||
-              Boolean(previewingDoc.mimeType?.includes("document"));
+              Boolean(mimeType?.includes("word")) ||
+              Boolean(mimeType?.includes("document"));
 
             return (
               <div
                 className="flex h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-4 py-3">
+                {/* Modal Top Bar */}
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-4 py-3 bg-white dark:bg-slate-950">
                   <div className="flex items-center gap-2 truncate max-w-[60%]">
                     <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                       {previewingDoc.label}
                     </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                    {previewingDoc.isRevision ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-[10px] font-bold px-2 py-0.5 shrink-0 shadow-2xs">
+                        Revision Uploaded
+                      </span>
+                    ) : null}
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">
                       ({fileName})
                     </span>
                   </div>
@@ -2287,7 +2427,7 @@ function FacultyVerificationDrawer({
                       type="button"
                       onClick={() =>
                         handleSingleFileDownload(
-                          previewingDoc.storagePath || null,
+                          storagePath || null,
                           fileName
                         )
                       }
@@ -2307,31 +2447,90 @@ function FacultyVerificationDrawer({
                     </button>
                   </div>
                 </div>
+
+                {/* Interactive Revision / Version Switcher Tabs */}
+                {versions.length > 1 ? (
+                  <div className="flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 px-4 py-2 text-xs overflow-x-auto">
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mr-1 flex items-center gap-1 shrink-0">
+                      <Clock className="w-3.5 h-3.5" /> File Versions:
+                    </span>
+                    {versions.map((ver, idx) => {
+                      const isLatest = idx === 0;
+                      const isActive = idx === activeIndex;
+                      const vNum = ver.version_number ?? (versions.length - idx);
+                      const isUploadedRevision = isLatest && (previewingDoc.isRevision || versions.length > 1);
+
+                      return (
+                        <button
+                          key={ver.id || idx}
+                          type="button"
+                          onClick={() => {
+                            setPreviewingDoc((prev) =>
+                              prev ? { ...prev, activeVersionIndex: idx } : null
+                            );
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                            isActive
+                              ? isUploadedRevision
+                                ? "bg-amber-500 text-slate-950 shadow-xs ring-1 ring-amber-600 font-bold"
+                                : "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-xs"
+                              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700"
+                          }`}
+                        >
+                          <span>
+                            {isUploadedRevision
+                              ? `v${vNum} (Uploaded Revision)`
+                              : `v${vNum} ${isLatest ? "(Current)" : "(Initial Submission)"}`}
+                          </span>
+                          {ver.created_at ? (
+                            <span className="text-[10px] opacity-75 font-mono">
+                              ({new Date(ver.created_at).toLocaleDateString()})
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : previewingDoc.isRevision ? (
+                  <div className="flex items-center gap-2 border-b border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/40 px-4 py-2 text-xs text-amber-900 dark:text-amber-200">
+                    <span className="inline-flex items-center gap-1 font-bold text-[10.5px] px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-900/80 text-amber-950 dark:text-amber-100">
+                      Uploaded Revision
+                    </span>
+                    <span className="text-[11px]">
+                      This is the resubmitted revision file awaiting verification.
+                    </span>
+                  </div>
+                ) : null}
+
+                {/* Preview Content Area */}
                 <div className="relative flex-1 overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center p-4">
                   {isImage ? (
                     <img
+                      key={fileUrl}
                       src={fileUrl}
                       alt={fileName}
                       className="max-h-full max-w-full object-contain rounded-xl mx-auto"
                     />
                   ) : isExcel || isWord || (!isPdf && !isImage) ? (
                     <OnlineDocumentPreview
+                      key={fileUrl}
                       fileName={fileName}
                       fileUrl={fileUrl}
-                      storagePath={previewingDoc.storagePath}
+                      storagePath={storagePath}
                       fileExtension={fileExtension}
                       isExcel={isExcel}
                       isWord={isWord}
                       brand={getFileBrand(fileExtension, isExcel, isWord)}
                       onDownload={() =>
                         handleSingleFileDownload(
-                          previewingDoc.storagePath || null,
+                          storagePath || null,
                           fileName
                         )
                       }
                     />
                   ) : (
                     <iframe
+                      key={fileUrl}
                       title="PDF Preview"
                       src={fileUrl}
                       className="w-full h-full rounded-xl border-0"

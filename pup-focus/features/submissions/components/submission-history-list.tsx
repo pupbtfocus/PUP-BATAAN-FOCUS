@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check, CheckCircle, Clock, Download, Eye, Page, WarningCircle } from "iconoir-react";
+import { Check, CheckCircle, Clock, Download, Eye, Notes, Page, WarningCircle } from "iconoir-react";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { SubmissionStatusBadge } from "./submission-status-badge";
 import { cn } from "@/utils/cn";
@@ -291,7 +291,8 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
               {/* Reviewer Feedback Callout */}
               {adminFeedback && (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-200 p-2.5 text-xs">
-                  <span className="font-semibold block uppercase tracking-wider text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">
+                  <span className="font-bold uppercase tracking-wider text-[10px] text-[#0b5336] dark:text-emerald-400 mb-0.5 flex items-center gap-1">
+                    <Notes className="h-3 w-3 text-[#0b5336] dark:text-emerald-400" />
                     Reviewer Remarks:
                   </span>
                   <p className="italic leading-relaxed">&ldquo;{adminFeedback}&rdquo;</p>
