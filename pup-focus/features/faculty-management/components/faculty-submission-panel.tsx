@@ -1667,7 +1667,7 @@ function FacultySubmissionPanelContent({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white cursor-pointer shadow-2xs transition-colors"
               >
                 <Xmark className="w-4 h-4" />
               </button>
@@ -2589,7 +2589,7 @@ function FacultySubmissionPanelContent({
                       type="button"
                       onClick={closeDirectUploadModal}
                       disabled={isUploadingDirect}
-                      className="rounded-full border border-slate-300 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 disabled:opacity-50"
+                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors cursor-pointer"
                       aria-label="Close upload modal"
                     >
                       <Xmark className="h-4 w-4" />
@@ -2658,7 +2658,7 @@ function FacultySubmissionPanelContent({
                         type="button"
                         onClick={closeDirectUploadModal}
                         disabled={isUploadingDirect}
-                        className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 font-medium cursor-pointer"
+                        className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-sm font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                       >
                         Cancel
                       </button>
@@ -2783,7 +2783,7 @@ function FacultySubmissionPanelContent({
                     <button
                       type="button"
                       onClick={closeHistoryModal}
-                      className="rounded-full border border-slate-300 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors cursor-pointer"
                       aria-label="Close history modal"
                     >
                       <Xmark className="h-4 w-4" />
@@ -2927,7 +2927,7 @@ function FacultySubmissionPanelContent({
                     <button
                       type="button"
                       onClick={closeSubmissionPreview}
-                      className="rounded-full p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors shrink-0 ml-3"
+                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors shrink-0 ml-3 cursor-pointer"
                       aria-label="Close preview"
                     >
                       <Xmark className="h-4 w-4" />
@@ -3104,7 +3104,7 @@ function FacultySubmissionPanelContent({
                     <button
                       type="button"
                       onClick={dismissIncompleteRequirementsAlert}
-                      className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition cursor-pointer shadow-2xs"
                       aria-label="Close alert"
                     >
                       <Xmark className="h-4 w-4" />
@@ -3197,7 +3197,7 @@ function FacultySubmissionPanelContent({
                     <button
                       type="button"
                       onClick={closeSubmitModal}
-                      className="rounded-full border border-slate-300 dark:border-slate-700 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors cursor-pointer"
                     >
                       <Xmark className="h-4 w-4" />
                     </button>
@@ -3314,7 +3314,7 @@ function FacultySubmissionPanelContent({
                           <button
                             type="button"
                             onClick={closeSubmitModal}
-                            className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium"
+                            className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-sm font-semibold shadow-xs transition-colors cursor-pointer"
                           >
                             Cancel
                           </button>

@@ -253,7 +253,12 @@ export function AdminAccountsTable({
         <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3.5 py-2 text-xs text-red-300 flex justify-between items-center">
           <span>{accountsError}</span>
           {onClearMessages ? (
-            <button type="button" onClick={onClearMessages} className="text-red-400 hover:text-red-200 text-xs">
+            <button
+              type="button"
+              onClick={onClearMessages}
+              className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
+              aria-label="Dismiss alert"
+            >
               <Xmark className="h-3.5 w-3.5" />
             </button>
           ) : null}
@@ -264,7 +269,12 @@ export function AdminAccountsTable({
         <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3.5 py-2 text-xs text-red-300 flex justify-between items-center">
           <span>{accountActionError}</span>
           {onClearMessages ? (
-            <button type="button" onClick={onClearMessages} className="text-red-400 hover:text-red-200 text-xs">
+            <button
+              type="button"
+              onClick={onClearMessages}
+              className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
+              aria-label="Dismiss alert"
+            >
               <Xmark className="h-3.5 w-3.5" />
             </button>
           ) : null}
@@ -275,7 +285,12 @@ export function AdminAccountsTable({
         <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/30 px-3.5 py-2 text-xs text-emerald-300 flex justify-between items-center">
           <span>{accountActionSuccess}</span>
           {onClearMessages ? (
-            <button type="button" onClick={onClearMessages} className="text-emerald-400 hover:text-emerald-200 text-xs">
+            <button
+              type="button"
+              onClick={onClearMessages}
+              className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
+              aria-label="Dismiss alert"
+            >
               <Xmark className="h-3.5 w-3.5" />
             </button>
           ) : null}

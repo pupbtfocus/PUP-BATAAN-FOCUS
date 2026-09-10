@@ -212,7 +212,7 @@ export function EditFacultyModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1 rounded-lg cursor-pointer"
+            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
             aria-label="Close modal"
           >
             <Xmark className="h-4 w-4" />
@@ -390,9 +390,9 @@ export function EditFacultyModal({
                   </Button>
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="maroon"
                     onClick={onClose}
-                    className="text-slate-500 dark:text-slate-400 hover:text-slate-200"
+                    className="cursor-pointer"
                   >
                     Close
                   </Button>

@@ -64,10 +64,10 @@ export function PupWebBadge() {
             <button
               type="button"
               onClick={() => setIsAboutOpen(false)}
-              className="absolute top-4 right-4 rounded-full p-1.5 text-amber-200/70 hover:text-amber-200 hover:bg-amber-400/10 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
               aria-label="Close modal"
             >
-              <Xmark className="w-5 h-5" />
+              <Xmark className="w-4 h-4" />
             </button>
 
             {/* Header with Crest */}

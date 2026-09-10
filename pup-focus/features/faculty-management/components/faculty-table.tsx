@@ -125,7 +125,7 @@ export function FacultyTable({
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 transition-colors p-1 cursor-pointer"
+            className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
             aria-label="Dismiss message"
           >
             <Xmark className="h-3.5 w-3.5" />
@@ -139,7 +139,7 @@ export function FacultyTable({
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 transition-colors p-1 cursor-pointer"
+            className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
             aria-label="Dismiss message"
           >
             <Xmark className="h-3.5 w-3.5" />
@@ -153,7 +153,7 @@ export function FacultyTable({
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 transition-colors p-1 cursor-pointer"
+            className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
             aria-label="Dismiss message"
           >
             <Xmark className="h-3.5 w-3.5" />

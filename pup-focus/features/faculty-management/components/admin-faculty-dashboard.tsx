@@ -567,7 +567,7 @@ export function AdminFacultyDashboard({
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                  className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
                   aria-label="Close navigation"
                 >
                   <Xmark className="w-4 h-4" />

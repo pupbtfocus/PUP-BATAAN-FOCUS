@@ -696,7 +696,7 @@ export function FacultySettingsPanel({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleCancelEdit("firstName")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <Xmark className="h-3.5 w-3.5" />
                       <span>Cancel</span>
@@ -745,7 +745,7 @@ export function FacultySettingsPanel({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleCancelEdit("middleName")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <Xmark className="h-3.5 w-3.5" />
                       <span>Cancel</span>
@@ -794,7 +794,7 @@ export function FacultySettingsPanel({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleCancelEdit("lastName")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <Xmark className="h-3.5 w-3.5" />
                       <span>Cancel</span>
@@ -896,7 +896,7 @@ export function FacultySettingsPanel({
                   setNewPassword("");
                   setConfirmPassword("");
                 }}
-                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="Cancel Change Password"
                 aria-label="Cancel Change Password"
               >
@@ -1160,7 +1160,8 @@ export function FacultySettingsPanel({
               <button
                 type="button"
                 onClick={() => setIsProfileImageMenuOpen(false)}
-                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
+                aria-label="Close"
               >
                 <Xmark className="h-4 w-4" />
               </button>
@@ -1223,7 +1224,8 @@ export function FacultySettingsPanel({
               <button
                 type="button"
                 onClick={() => setIsFullImageOpen(false)}
-                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
+                aria-label="Close"
               >
                 <Xmark className="h-4 w-4" />
               </button>

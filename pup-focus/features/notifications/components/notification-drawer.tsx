@@ -434,7 +434,7 @@ export function NotificationDrawer() {
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="p-1 text-slate-400 hover:text-slate-200 transition-colors rounded-md cursor-pointer"
+                    className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
                     aria-label="Close notifications"
                   >
                     <Xmark className="h-4 w-4" />
@@ -452,7 +452,7 @@ export function NotificationDrawer() {
                   <button
                     type="button"
                     onClick={() => setToastMessage(null)}
-                    className="text-emerald-400 hover:text-emerald-200 p-0.5 rounded"
+                    className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
                     aria-label="Dismiss toast"
                   >
                     <Xmark className="h-3.5 w-3.5" />
