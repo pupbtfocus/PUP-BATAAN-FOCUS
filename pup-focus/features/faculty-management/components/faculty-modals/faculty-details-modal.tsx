@@ -342,9 +342,9 @@ export function FacultyDetailsModal({
                   onClose();
                   onEdit(faculty.id);
                 }}
-                className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-semibold rounded-xl px-4 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold rounded-xl px-4 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
               >
-                <EditPencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                <EditPencil className="h-3.5 w-3.5 text-slate-950" />
                 Edit Profile
               </button>
             ) : null}

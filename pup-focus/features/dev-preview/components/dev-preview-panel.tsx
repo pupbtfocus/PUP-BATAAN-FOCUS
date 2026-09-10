@@ -1655,7 +1655,7 @@ export function DevPreviewPanel() {
               <button
                 type="button"
                 onClick={() => setActiveShowcaseModal(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-500 text-white cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white cursor-pointer shadow-xs"
               >
                 Confirm Close Submissions
               </button>

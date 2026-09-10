@@ -403,9 +403,9 @@ export function AdminAccountsTable({
                             type="button"
                             onClick={() => onEditAdmin(admin.profile_id)}
                             title="Edit Admin"
-                            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                           >
-                            <EditPencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <EditPencil className="h-3.5 w-3.5 text-slate-950 shrink-0" />
                             <span>Edit</span>
                           </button>
                         )}
@@ -418,9 +418,9 @@ export function AdminAccountsTable({
                               onClick={() => onDeactivateAdmin(admin.profile_id)}
                               disabled={isLoadingAction}
                               title="Deactivate Admin"
-                              className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                              className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
                             >
-                              <UserXmark className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <UserXmark className="h-3.5 w-3.5 text-white/90 shrink-0" />
                               <span>{isLoadingAction ? "..." : "Deactivate"}</span>
                             </button>
                           ) : (
@@ -429,9 +429,9 @@ export function AdminAccountsTable({
                               onClick={() => onActivateAdmin(admin.profile_id)}
                               disabled={isLoadingAction}
                               title="Activate Admin"
-                              className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
                             >
-                              <UserBadgeCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <UserBadgeCheck className="h-3.5 w-3.5 text-slate-950 shrink-0" />
                               <span>{isLoadingAction ? "..." : "Activate"}</span>
                             </button>
                           )
@@ -444,9 +444,9 @@ export function AdminAccountsTable({
                             onClick={() => onDeleteAdmin(admin.profile_id)}
                             disabled={isLoadingAction}
                             title="Delete Admin"
-                            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                            className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
                           >
-                            <Trash className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <Trash className="h-3.5 w-3.5 text-white/90 shrink-0" />
                             <span>Delete</span>
                           </button>
                         )}

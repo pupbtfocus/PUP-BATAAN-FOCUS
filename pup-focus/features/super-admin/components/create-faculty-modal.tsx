@@ -350,7 +350,7 @@ export function CreateFacultyPanel({
         ) : null}
 
         <button
-          className="mt-2 w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"
+          className="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"
           type="submit"
           disabled={isCreating || isLoadingPrograms}
         >

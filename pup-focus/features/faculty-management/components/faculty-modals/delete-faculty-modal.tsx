@@ -64,10 +64,10 @@ export function DeleteFacultyModal({
             onClick={() => void onConfirm()}
             className={
               pendingFacultyAction.kind === "delete"
-                ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                ? "bg-[#780000] hover:bg-[#5e0000] text-white font-semibold cursor-pointer border-transparent shadow-xs"
                 : pendingFacultyAction.kind === "activate"
-                  ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
-                  : "bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                  ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold cursor-pointer border-transparent shadow-xs"
+                  : "bg-[#780000] hover:bg-[#5e0000] text-white font-semibold cursor-pointer border-transparent shadow-xs"
             }
           >
             {pendingFacultyAction.kind === "delete"

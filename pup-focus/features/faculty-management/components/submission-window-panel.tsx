@@ -751,9 +751,9 @@ export function SubmissionWindowPanel({
               type="button"
               onClick={handleCloseSubmission}
               disabled={isLoading || isSaving || !windowStatus?.isOpen}
-              className="flex items-center gap-1.5 bg-white hover:bg-rose-50/80 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-300 dark:bg-slate-900 dark:hover:bg-rose-950/30 dark:text-slate-300 dark:hover:text-rose-400 dark:border-slate-800 dark:hover:border-rose-900/50 px-3.5 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
             >
-              <ShieldAlert className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+              <ShieldAlert className="w-3.5 h-3.5 text-white/90" />
               <span>Close Submissions</span>
             </button>
           </div>
@@ -803,9 +803,9 @@ export function SubmissionWindowPanel({
                     }, 50);
                   }}
                   disabled={isLoading || isSaving}
-                  className="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                 >
-                  <EditPencil className="w-3.5 h-3.5" />
+                  <EditPencil className="w-3.5 h-3.5 text-slate-950" />
                   <span>Edit Schedule</span>
                 </button>
 
@@ -813,9 +813,9 @@ export function SubmissionWindowPanel({
                   type="button"
                   onClick={() => setShowExtendModal(true)}
                   disabled={isLoading || isSaving}
-                  className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 px-4 py-2 text-sm font-semibold rounded-lg transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 text-sm rounded-lg transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                 >
-                  <Clock className="w-3.5 h-3.5" />
+                  <Clock className="w-3.5 h-3.5 text-slate-950" />
                   <span>Extend Window</span>
                 </button>
               </>
@@ -1035,7 +1035,7 @@ export function SubmissionWindowPanel({
                 className={`text-xs font-semibold rounded-lg px-4 py-2 transition-all cursor-pointer shadow-xs ${
                   closeCountdown > 0
                     ? "bg-slate-200 dark:bg-slate-800 text-slate-400 border border-slate-300 dark:border-slate-700 cursor-not-allowed opacity-60"
-                    : "bg-rose-600 hover:bg-rose-500 text-white"
+                    : "bg-[#780000] hover:bg-[#5e0000] text-white"
                 }`}
               >
                 {closeCountdown > 0 ? `Confirm Close (${closeCountdown}s)` : "Confirm Close Submissions"}
