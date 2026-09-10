@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Eye, Pencil, UserMinus, UserCheck, Trash2, X } from "lucide-react";
+import { EditPencil, Eye, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoir-react";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { FacultyFilterBar } from "./faculty-filter-bar";
@@ -128,7 +128,7 @@ export function FacultyTable({
             className="text-red-400 hover:text-red-200 transition-colors p-1"
             aria-label="Dismiss message"
           >
-            <X className="h-3.5 w-3.5" />
+            <Xmark className="h-3.5 w-3.5" />
           </button>
         </div>
       ) : null}
@@ -142,7 +142,7 @@ export function FacultyTable({
             className="text-emerald-400 hover:text-emerald-200 transition-colors p-1"
             aria-label="Dismiss message"
           >
-            <X className="h-3.5 w-3.5" />
+            <Xmark className="h-3.5 w-3.5" />
           </button>
         </div>
       ) : null}
@@ -156,7 +156,7 @@ export function FacultyTable({
             className="text-red-400 hover:text-red-200 transition-colors p-1"
             aria-label="Dismiss message"
           >
-            <X className="h-3.5 w-3.5" />
+            <Xmark className="h-3.5 w-3.5" />
           </button>
         </div>
       ) : null}
@@ -261,11 +261,11 @@ export function FacultyTable({
                       </td>
                       <td className="px-4 py-2.5 font-medium">
                         {faculty.is_active ? (
-                          <span className="text-emerald-800 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
+                          <span className="bg-emerald-950/50 text-emerald-400 border border-emerald-800/80 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center font-medium">
                             Active
                           </span>
                         ) : (
-                          <span className="text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700/50 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center">
+                          <span className="bg-slate-800/60 text-slate-300 border border-slate-700 text-xs px-2.5 py-0.5 rounded-md inline-flex items-center font-medium">
                             Inactive
                           </span>
                         )}
@@ -304,7 +304,7 @@ export function FacultyTable({
                             title="Edit Faculty"
                             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition cursor-pointer"
                           >
-                            <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <EditPencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                             <span>Edit</span>
                           </button>
                           {faculty.is_active ? (
@@ -315,7 +315,7 @@ export function FacultyTable({
                               title="Deactivate Faculty"
                               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                             >
-                              <UserMinus className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <UserXmark className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                               <span>
                                 {loadingFacultyIds.has(faculty.id)
                                   ? "Deactivating..."
@@ -330,7 +330,7 @@ export function FacultyTable({
                               title="Activate Faculty"
                               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                             >
-                              <UserCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <UserBadgeCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                               <span>
                                 {loadingFacultyIds.has(faculty.id)
                                   ? "Activating..."
@@ -345,7 +345,7 @@ export function FacultyTable({
                             title="Delete Faculty"
                             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 cursor-pointer"
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <Trash className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                             <span>
                               {deletingFacultyIds.has(faculty.id)
                                 ? "Deleting..."

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "iconoir-react";
 import { Logo } from "@/components/ui/logo";
 
 export default function AboutPage() {

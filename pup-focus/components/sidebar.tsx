@@ -1,21 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  LayoutDashboard,
-  Users,
-  UserCheck,
-  ClipboardCheck,
-  Calendar,
-  Clock,
-  Hourglass,
-  FileText,
-  Archive,
-  Activity,
-  Settings,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { Activity, Archive, Calendar, ClipboardCheck, Clock, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, UserBadgeCheck, ViewGrid } from "iconoir-react";
 import { extractFirstName } from "@/lib/faculty-profile";
 
 export interface SidebarProps {
@@ -59,7 +45,7 @@ export function SidebarButton({
   active: boolean;
   title: string;
   description?: string;
-  Icon?: React.ComponentType<{ size?: number; className?: string }>;
+  Icon?: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
   onClick: () => void;
 }) {
   return (
@@ -74,11 +60,10 @@ export function SidebarButton({
     >
       {Icon && (
         <Icon
-          size={16}
           className={
             active
-              ? "text-amber-700 dark:text-amber-300 shrink-0"
-              : "text-slate-500 dark:text-slate-400 shrink-0"
+              ? "h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0"
+              : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
           }
         />
       )}
@@ -224,7 +209,7 @@ export function SidebarContent({
         <SidebarButton
           active={isDashboardActive}
           title="Dashboard"
-          Icon={LayoutDashboard}
+          Icon={ViewGrid}
           onClick={() => handleSelect("dashboard")}
         />
 
@@ -241,20 +226,19 @@ export function SidebarContent({
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <Users
-                  size={16}
+                <Group
                   className={
                     isUserManagementActive
-                      ? "text-amber-700 dark:text-amber-300 shrink-0"
-                      : "text-slate-500 dark:text-slate-400 shrink-0"
+                      ? "h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0"
+                      : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
                   }
                 />
                 <span className="truncate">User Management</span>
               </div>
               {isUserManagementOpen ? (
-                <ChevronDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+                <NavArrowDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
               ) : (
-                <ChevronRight className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+                <NavArrowRight className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
               )}
             </button>
 
@@ -270,12 +254,11 @@ export function SidebarContent({
                       : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                   }`}
                 >
-                  <UserCheck
-                    size={14}
+                  <UserBadgeCheck
                     className={
                       isAccountsActive
-                        ? "text-amber-700 dark:text-amber-300 shrink-0"
-                        : "text-slate-500 dark:text-slate-400 shrink-0"
+                        ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                        : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                     }
                   />
                   <span>Admin Management</span>
@@ -289,12 +272,11 @@ export function SidebarContent({
                       : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                   }`}
                 >
-                  <Users
-                    size={14}
+                  <Group
                     className={
                       isFacultyActive
-                        ? "text-amber-700 dark:text-amber-300 shrink-0"
-                        : "text-slate-500 dark:text-slate-400 shrink-0"
+                        ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                        : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                     }
                   />
                   <span>Faculty Management</span>
@@ -306,7 +288,7 @@ export function SidebarContent({
           <SidebarButton
             active={isFacultyActive}
             title="Faculty Management"
-            Icon={Users}
+            Icon={Group}
             onClick={() => handleSelect("facultyManagement")}
           />
         )}
@@ -334,19 +316,18 @@ export function SidebarContent({
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <Calendar
-                size={16}
                 className={
                   isAcademicCycleActive
-                    ? "text-amber-700 dark:text-amber-300 shrink-0"
-                    : "text-slate-500 dark:text-slate-400 shrink-0"
+                    ? "h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0"
+                    : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
                 }
               />
               <span className="truncate">Academic Cycle</span>
             </div>
             {isAcademicCycleOpen ? (
-              <ChevronDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+              <NavArrowDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
             ) : (
-              <ChevronRight className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
+              <NavArrowRight className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-1" />
             )}
           </button>
 
@@ -365,11 +346,10 @@ export function SidebarContent({
                 }`}
               >
                 <Clock
-                  size={14}
                   className={
                     isTermsActive
-                      ? "text-amber-700 dark:text-amber-300 shrink-0"
-                      : "text-slate-500 dark:text-slate-400 shrink-0"
+                      ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                      : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                   }
                 />
                 <span>Academic Terms</span>
@@ -386,11 +366,10 @@ export function SidebarContent({
                 }`}
               >
                 <Hourglass
-                  size={14}
                   className={
                     isWindowActive
-                      ? "text-amber-700 dark:text-amber-300 shrink-0"
-                      : "text-slate-500 dark:text-slate-400 shrink-0"
+                      ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                      : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                   }
                 />
                 <span>Submission Window</span>
@@ -406,12 +385,11 @@ export function SidebarContent({
                         : "rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 font-medium"
                     }`}
                   >
-                    <FileText
-                      size={14}
+                    <Page
                       className={
                         isTemplatesActive
-                          ? "text-amber-700 dark:text-amber-300 shrink-0"
-                          : "text-slate-500 dark:text-slate-400 shrink-0"
+                          ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                          : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                       }
                     />
                     <span>Requirement Templates</span>
@@ -426,11 +404,10 @@ export function SidebarContent({
                     }`}
                   >
                     <Archive
-                      size={14}
                       className={
                         isBackupsActive
-                          ? "text-amber-700 dark:text-amber-300 shrink-0"
-                          : "text-slate-500 dark:text-slate-400 shrink-0"
+                          ? "h-3.5 w-3.5 text-amber-700 dark:text-amber-300 shrink-0"
+                          : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
                       }
                     />
                     <span>Backups & Archive</span>

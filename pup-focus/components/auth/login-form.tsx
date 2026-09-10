@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
 import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
-import { Clock, AlertCircle, CheckCircle2, Mail, Lock, Check, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { Check, CheckCircle, Clock, Eye, EyeClosed, Lock, Mail, WarningCircle, WarningTriangle } from "iconoir-react";
 
 export interface NoticeBanner {
   type: "timeout" | "error" | "success" | "info";
@@ -150,15 +150,15 @@ export function LoginForm({
             {notice.type === "timeout" ? (
               <Clock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
             ) : notice.type === "success" ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+              <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
             ) : (
-              <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+              <WarningCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
             )}
             <span className="leading-relaxed font-medium">{notice.message}</span>
           </div>
         ) : error ? (
           <div className="rounded-xl p-3.5 text-xs flex items-start gap-2.5 border bg-rose-500/15 border-rose-500/30 text-rose-200 transition-all">
-            <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+            <WarningCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
             <span className="leading-relaxed font-medium">{error}</span>
           </div>
         ) : null}
@@ -229,7 +229,7 @@ export function LoginForm({
               className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 !text-amber-400/80 hover:!text-amber-300 transition-colors cursor-pointer"
             >
               {showPassword ? (
-                <EyeOff className="h-4 w-4 stroke-[2.2]" />
+                <EyeClosed className="h-4 w-4 stroke-[2.2]" />
               ) : (
                 <Eye className="h-4 w-4 stroke-[2.2]" />
               )}
@@ -237,7 +237,7 @@ export function LoginForm({
           </div>
           {isCapsLockOn && (
             <p className="ml-1 mt-1 flex items-center gap-1.5 text-xs text-amber-300 font-medium">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              <WarningTriangle className="h-3.5 w-3.5 shrink-0" />
               <span>Caps Lock is ON</span>
             </p>
           )}

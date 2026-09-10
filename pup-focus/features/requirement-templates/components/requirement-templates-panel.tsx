@@ -1,19 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import {
-  FileText,
-  Plus,
-  Search,
-  CheckCircle2,
-  AlertTriangle,
-  Archive,
-  Trash2,
-  Edit2,
-  RefreshCw,
-  Layers,
-  FileCheck,
-} from "lucide-react";
+import { Archive, Check, CheckCircle, EditPencil, MultiplePages, Page, Plus, Refresh, Search, Trash, WarningTriangle } from "iconoir-react";
 import type { RequirementTemplate } from "@/features/requirement-templates/types/requirement-template.types";
 import { RequirementTemplateModal } from "./requirement-template-modal";
 
@@ -164,7 +152,7 @@ export function RequirementTemplatesPanel() {
         <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Total Templates</span>
-            <Layers className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <MultiplePages className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           </div>
           <div className="mt-2">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -179,7 +167,7 @@ export function RequirementTemplatesPanel() {
         <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Active Requirements</span>
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="mt-2">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -194,7 +182,7 @@ export function RequirementTemplatesPanel() {
         <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Mandatory Items</span>
-            <FileCheck className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+            <Check className="h-4 w-4 text-slate-600 dark:text-slate-400" />
           </div>
           <div className="mt-2">
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -260,7 +248,7 @@ export function RequirementTemplatesPanel() {
               className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition cursor-pointer"
               title="Refresh templates"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+              <Refresh className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
             </button>
 
             {/* Add Button */}
@@ -294,14 +282,14 @@ export function RequirementTemplatesPanel() {
               {isLoading ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-500">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-amber-500" />
+                    <Refresh className="w-5 h-5 animate-spin mx-auto mb-2 text-amber-500" />
                     Loading requirement templates...
                   </td>
                 </tr>
               ) : filteredTemplates.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-500">
-                    <FileText className="w-8 h-8 mx-auto mb-2 text-slate-400 opacity-60" />
+                    <Page className="w-8 h-8 mx-auto mb-2 text-slate-400 opacity-60" />
                     <p className="font-semibold text-slate-700 dark:text-slate-300">No requirement templates found</p>
                     <p className="text-xs text-slate-500 mt-1">
                       {searchQuery ? "Try modifying your search filter" : "Get started by adding a new requirement template"}
@@ -318,7 +306,7 @@ export function RequirementTemplatesPanel() {
                     <td className="py-3.5 px-4">
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0">
-                          <FileText className="w-4 h-4" />
+                          <Page className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
@@ -395,7 +383,7 @@ export function RequirementTemplatesPanel() {
                           onClick={() => handleOpenEditModal(tpl)}
                           className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition cursor-pointer flex items-center gap-1"
                         >
-                          <Edit2 className="w-3 h-3" />
+                          <EditPencil className="w-3 h-3" />
                           <span>Edit</span>
                         </button>
 
@@ -419,7 +407,7 @@ export function RequirementTemplatesPanel() {
                           className="p-1 text-red-500 hover:bg-red-500/10 rounded-lg transition cursor-pointer"
                           title="Delete template"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
@@ -445,7 +433,7 @@ export function RequirementTemplatesPanel() {
           <div className="w-full max-w-md rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center gap-3 text-red-500 mb-3">
               <div className="p-2 rounded-xl bg-red-500/10">
-                <AlertTriangle className="w-5 h-5" />
+                <WarningTriangle className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold">Delete Requirement Template</h3>
             </div>

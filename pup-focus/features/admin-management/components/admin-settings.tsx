@@ -8,24 +8,7 @@ import {
   parseFullNameFallback,
 } from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
-import {
-  Eye,
-  EyeOff,
-  RotateCw,
-  RotateCcw,
-  X,
-  Camera,
-  Pencil,
-  Check,
-  Circle,
-  Loader2,
-  ShieldAlert,
-  ShieldCheck,
-  Bell,
-  Clock,
-  Trash2,
-  Save,
-} from "lucide-react";
+import { Bell, Camera, Check, Circle, Clock, EditPencil, Eye, EyeClosed, FloppyDisk, Refresh, ShieldAlert, ShieldCheck, SystemRestart, Trash, Xmark } from "iconoir-react";
 
 export interface AdminAccountResponse {
   id?: string;
@@ -742,7 +725,7 @@ export function AdminSettings({
           title="Refresh account details"
           className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-sm shadow-slate-300/50 dark:shadow-none"
         >
-          <RotateCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-amber-500" : ""}`} />
+          <Refresh className={`h-4 w-4 ${isRefreshing ? "animate-spin text-amber-500" : ""}`} />
           <span className="sr-only">Refresh</span>
         </button>
       </div>
@@ -905,7 +888,7 @@ export function AdminSettings({
                       onClick={() => handleCancelEdit("firstName")}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <Xmark className="h-3.5 w-3.5" />
                       <span>Cancel</span>
                     </button>
                   ) : (
@@ -915,7 +898,7 @@ export function AdminSettings({
                       onClick={() => handleFocusField("firstName", firstNameInputRef)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <Pencil className="h-3.5 w-3.5" />
+                      <EditPencil className="h-3.5 w-3.5" />
                       <span>Edit</span>
                     </button>
                   )}
@@ -954,7 +937,7 @@ export function AdminSettings({
                       onClick={() => handleCancelEdit("middleName")}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <Xmark className="h-3.5 w-3.5" />
                       <span>Cancel</span>
                     </button>
                   ) : (
@@ -964,7 +947,7 @@ export function AdminSettings({
                       onClick={() => handleFocusField("middleName", middleNameInputRef)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <Pencil className="h-3.5 w-3.5" />
+                      <EditPencil className="h-3.5 w-3.5" />
                       <span>Edit</span>
                     </button>
                   )}
@@ -1003,7 +986,7 @@ export function AdminSettings({
                       onClick={() => handleCancelEdit("lastName")}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <Xmark className="h-3.5 w-3.5" />
                       <span>Cancel</span>
                     </button>
                   ) : (
@@ -1013,7 +996,7 @@ export function AdminSettings({
                       onClick={() => handleFocusField("lastName", lastNameInputRef)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <Pencil className="h-3.5 w-3.5" />
+                      <EditPencil className="h-3.5 w-3.5" />
                       <span>Edit</span>
                     </button>
                   )}
@@ -1052,7 +1035,7 @@ export function AdminSettings({
                 disabled={!isProfileChanged || isSaving}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800/80 cursor-pointer active:scale-[0.98]"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
+                <Refresh className="h-3.5 w-3.5" />
                 <span>Reset</span>
               </button>
               <button
@@ -1085,7 +1068,7 @@ export function AdminSettings({
                 title="Change Password"
                 aria-label="Change Password"
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <EditPencil className="h-3.5 w-3.5" />
                 <span>Edit</span>
               </button>
             ) : (
@@ -1101,7 +1084,7 @@ export function AdminSettings({
                 title="Cancel Change Password"
                 aria-label="Cancel Change Password"
               >
-                <X className="h-3.5 w-3.5" />
+                <Xmark className="h-3.5 w-3.5" />
                 <span>Cancel</span>
               </button>
             )}
@@ -1137,7 +1120,7 @@ export function AdminSettings({
                   {showOldPassword ? (
                     <Eye className="h-4 w-4 text-amber-500" />
                   ) : (
-                    <EyeOff className="h-4 w-4 text-slate-400" />
+                    <EyeClosed className="h-4 w-4 text-slate-400" />
                   )}
                 </button>
               </div>
@@ -1171,7 +1154,7 @@ export function AdminSettings({
                   {showNewPassword ? (
                     <Eye className="h-4 w-4 text-amber-500" />
                   ) : (
-                    <EyeOff className="h-4 w-4 text-slate-400" />
+                    <EyeClosed className="h-4 w-4 text-slate-400" />
                   )}
                 </button>
               </div>
@@ -1205,7 +1188,7 @@ export function AdminSettings({
                   {showConfirmPassword ? (
                     <Eye className="h-4 w-4 text-amber-500" />
                   ) : (
-                    <EyeOff className="h-4 w-4 text-slate-400" />
+                    <EyeClosed className="h-4 w-4 text-slate-400" />
                   )}
                 </button>
               </div>
@@ -1272,7 +1255,7 @@ export function AdminSettings({
               >
                 {isChangingPassword ? (
                   <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <SystemRestart className="h-3.5 w-3.5 animate-spin" />
                     <span>Updating Password...</span>
                   </>
                 ) : (
@@ -1307,7 +1290,7 @@ export function AdminSettings({
                   Automated Email Reminders on Submission Windows
                 </span>
                 {emailReminders && (
-                  <span className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-medium dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                  <span className="rounded-md bg-emerald-950/50 text-emerald-400 border border-emerald-800/80 px-1.5 py-0.5 text-[10px] font-medium">
                     Active
                   </span>
                 )}
@@ -1347,7 +1330,7 @@ export function AdminSettings({
                   New Submission Alert Notifications
                 </span>
                 {submissionAlerts && (
-                  <span className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-medium dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                  <span className="rounded-md bg-emerald-950/50 text-emerald-400 border border-emerald-800/80 px-1.5 py-0.5 text-[10px] font-medium">
                     Active
                   </span>
                 )}
@@ -1416,12 +1399,12 @@ export function AdminSettings({
             >
               {isSavingPreferences ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <SystemRestart className="h-3.5 w-3.5 animate-spin" />
                   <span>Saving Preferences...</span>
                 </>
               ) : (
                 <>
-                  <Save className="h-3.5 w-3.5" />
+                  <FloppyDisk className="h-3.5 w-3.5" />
                   <span>Save System Preferences</span>
                 </>
               )}
@@ -1509,7 +1492,7 @@ export function AdminSettings({
                 onClick={() => setIsProfileImageMenuOpen(false)}
                 className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
-                <X className="h-4 w-4" />
+                <Xmark className="h-4 w-4" />
               </button>
             </div>
             <div className="p-6 space-y-3">
@@ -1568,7 +1551,7 @@ export function AdminSettings({
                       Remove current photo and restore fallback initials
                     </p>
                   </div>
-                  <Trash2 className="h-4 w-4 text-rose-500" />
+                  <Trash className="h-4 w-4 text-rose-500" />
                 </button>
               )}
             </div>
@@ -1595,7 +1578,7 @@ export function AdminSettings({
                 onClick={() => setIsFullImageOpen(false)}
                 className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
-                <X className="h-4 w-4" />
+                <Xmark className="h-4 w-4" />
               </button>
             </div>
             <div className="p-6 flex items-center justify-center">
