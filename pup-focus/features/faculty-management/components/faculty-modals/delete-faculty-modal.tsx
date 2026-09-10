@@ -56,7 +56,7 @@ export function DeleteFacultyModal({
         </p>
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Button type="button" variant="maroon-outline" onClick={onCancel} className="cursor-pointer">
+          <Button type="button" variant="maroon" onClick={onCancel} className="cursor-pointer">
             Cancel
           </Button>
           <Button

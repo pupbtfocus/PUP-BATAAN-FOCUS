@@ -2109,7 +2109,7 @@ function FacultyVerificationDrawer({
                 type="button"
                 disabled={isSubmittingRevision}
                 onClick={() => setRevisionModalData(null)}
-                className="rounded-xl border border-[#780000] text-[#780000] dark:text-rose-300 dark:border-rose-800 hover:bg-[#780000]/10 dark:hover:bg-rose-950/40 px-4 py-2 text-xs font-semibold transition cursor-pointer"
+                className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
