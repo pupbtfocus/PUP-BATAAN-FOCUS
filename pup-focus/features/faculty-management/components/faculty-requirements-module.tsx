@@ -738,14 +738,15 @@ export function FacultyRequirementsModule({
           role="dialog"
           aria-modal="true"
           aria-labelledby="submit-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-5"
+            className="w-full max-w-xl max-h-[90vh] flex flex-col rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+            {/* Modal Header (Pinned Top) */}
+            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 p-6 shrink-0 bg-white dark:bg-slate-900">
               <div>
                 <h3
                   id="submit-modal-title"
@@ -776,123 +777,135 @@ export function FacultyRequirementsModule({
               </button>
             </div>
 
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              {/* Reviewer Feedback / Revision Request Alert Box */}
-              {(isRevisionModal || selectedReqStatus?.status === "Rejected") && (() => {
-                const reviewerRemarks =
-                  selectedReqStatus?.adminRemarks ||
-                  selectedReqStatus?.admin_remarks ||
-                  selectedReqStatus?.feedback;
-                if (!reviewerRemarks) return null;
-                return (
-                  <div className="rounded-2xl border border-rose-300 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/30 p-4 space-y-1.5 shadow-2xs">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#780000] dark:text-rose-400 uppercase tracking-wider">
-                      <WarningCircle className="h-4 w-4 shrink-0" />
-                      <span>Reviewer Feedback / Revision Request:</span>
+            {/* Modal Form with Scrollable Content */}
+            <form
+              className="flex flex-col flex-1 min-h-0 overflow-hidden"
+              onSubmit={handleSubmit}
+            >
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {/* Reviewer Feedback / Revision Request Alert Box */}
+                {(isRevisionModal || selectedReqStatus?.status === "Rejected") && (() => {
+                  const reviewerRemarks =
+                    selectedReqStatus?.adminRemarks ||
+                    selectedReqStatus?.admin_remarks ||
+                    selectedReqStatus?.feedback;
+                  if (!reviewerRemarks) return null;
+                  return (
+                    <div className="rounded-2xl border border-rose-300 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/30 p-4 space-y-1.5 shadow-2xs">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#780000] dark:text-rose-400 uppercase tracking-wider">
+                        <WarningCircle className="h-4 w-4 shrink-0" />
+                        <span>Reviewer Feedback / Revision Request:</span>
+                      </div>
+                      <p className="text-xs text-slate-800 dark:text-slate-200 italic font-medium leading-relaxed pl-5.5">
+                        &ldquo;{reviewerRemarks}&rdquo;
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-800 dark:text-slate-200 italic font-medium leading-relaxed pl-5.5">
-                      &ldquo;{reviewerRemarks}&rdquo;
+                  );
+                })()}
+
+                {/* Term Selection */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                      Academic Year
+                    </span>
+                    <p className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-semibold">
+                      {form.academicYear ? `S.Y. ${form.academicYear}` : "—"}
                     </p>
                   </div>
-                );
-              })()}
 
-              {/* Term Selection */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
-                    Academic Year
-                  </span>
-                  <p className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-semibold">
-                    {form.academicYear ? `S.Y. ${form.academicYear}` : "—"}
-                  </p>
+                  <div className="space-y-1">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                      Semester
+                    </span>
+                    <p className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-semibold">
+                      {form.semester}
+                    </p>
+                  </div>
                 </div>
 
+                {/* Requirement Type Selector */}
                 <div className="space-y-1">
-                  <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
-                    Semester
-                  </span>
-                  <p className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-semibold">
-                    {form.semester}
-                  </p>
+                  <label
+                    htmlFor="req-type-select"
+                    className="text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400"
+                  >
+                    Requirement Type
+                  </label>
+                  <select
+                    id="req-type-select"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
+                    value={form.requirementCode}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        requirementCode: event.target.value,
+                      }))
+                    }
+                  >
+                    {activeRequirementItems.map((item) => (
+                      <option key={item.code} value={item.code}>
+                        {item.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
 
-              {/* Requirement Type Selector */}
-              <div className="space-y-1">
-                <label
-                  htmlFor="req-type-select"
-                  className="text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400"
-                >
-                  Requirement Type
-                </label>
-                <select
-                  id="req-type-select"
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
-                  value={form.requirementCode}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      requirementCode: event.target.value,
-                    }))
+                {/* Drag and Drop Upload Zone */}
+                <DocumentUploadZone
+                  selectedFile={selectedFile}
+                  onFileSelect={setSelectedFile}
+                  maxSizeMb={selectedTemplate?.maxSizeMb || 10}
+                  allowedFormats={
+                    selectedTemplate?.allowedFormats || ["PDF", "DOCX", "XLSX"]
                   }
-                >
-                  {activeRequirementItems.map((item) => (
-                    <option key={item.code} value={item.code}>
-                      {item.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Drag and Drop Upload Zone */}
-              <DocumentUploadZone
-                selectedFile={selectedFile}
-                onFileSelect={setSelectedFile}
-                maxSizeMb={selectedTemplate?.maxSizeMb || 10}
-                allowedFormats={
-                  selectedTemplate?.allowedFormats || ["PDF", "DOCX", "XLSX"]
-                }
-                currentStatus={selectedReqStatus?.status}
-                reviewerFeedback={
-                  selectedReqStatus?.adminRemarks ||
-                  selectedReqStatus?.admin_remarks ||
-                  selectedReqStatus?.feedback
-                }
-                isUploading={isSubmitting}
-              />
-
-              {/* Remarks / Notes */}
-              <div className="space-y-1">
-                <label
-                  htmlFor="req-remarks"
-                  className="text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400"
-                >
-                  {isRevisionModal || selectedReqStatus?.status === "Rejected"
-                    ? "Notes on Corrections Made (Optional)"
-                    : "Optional Remarks for Admin"}
-                </label>
-                <textarea
-                  id="req-remarks"
-                  rows={3}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 placeholder:text-slate-400 resize-none"
-                  placeholder={
+                  currentStatus={
                     isRevisionModal || selectedReqStatus?.status === "Rejected"
-                      ? "Explain the corrections made in this revision for the reviewer..."
-                      : "Add notes, course section codes, or explanations for reviewer..."
+                      ? undefined
+                      : selectedReqStatus?.status
                   }
-                  value={form.remarks}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      remarks: event.target.value,
-                    }))
+                  reviewerFeedback={
+                    isRevisionModal || selectedReqStatus?.status === "Rejected"
+                      ? undefined
+                      : (selectedReqStatus?.adminRemarks ||
+                        selectedReqStatus?.admin_remarks ||
+                        selectedReqStatus?.feedback)
                   }
+                  isUploading={isSubmitting}
                 />
+
+                {/* Remarks / Notes */}
+                <div className="space-y-1">
+                  <label
+                    htmlFor="req-remarks"
+                    className="text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400"
+                  >
+                    {isRevisionModal || selectedReqStatus?.status === "Rejected"
+                      ? "Notes on Corrections Made (Optional)"
+                      : "Optional Remarks for Admin"}
+                  </label>
+                  <textarea
+                    id="req-remarks"
+                    rows={3}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 placeholder:text-slate-400 resize-none"
+                    placeholder={
+                      isRevisionModal || selectedReqStatus?.status === "Rejected"
+                        ? "Explain the corrections made in this revision for the reviewer..."
+                        : "Add notes, course section codes, or explanations for reviewer..."
+                    }
+                    value={form.remarks}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        remarks: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">
+              {/* Action Buttons (Pinned Bottom) */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/50">
                 <Button
                   type="button"
                   variant="maroon"
@@ -932,11 +945,11 @@ export function FacultyRequirementsModule({
           role="dialog"
           aria-modal="true"
           aria-labelledby="calendar-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
           onClick={closeCalendarModal}
         >
           <div
-            className="w-full max-w-lg rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-4"
+            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-4 my-auto"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
