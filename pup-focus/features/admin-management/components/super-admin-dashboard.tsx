@@ -341,6 +341,7 @@ export function SuperAdminDashboard({
   const [deleteFacultySuccess, setDeleteFacultySuccess] = useState<string | null>(null);
   const [facultyActionError, setFacultyActionError] = useState<string | null>(null);
   const [verificationResetTrigger, setVerificationResetTrigger] = useState(0);
+  const [templatesRefreshTrigger, setTemplatesRefreshTrigger] = useState(0);
 
   // Add Faculty Modal State
   const [addFacultyModalOpen, setAddFacultyModalOpen] = useState(false);
@@ -777,6 +778,8 @@ export function SuperAdminDashboard({
       await loadFacultyFromDatabase();
     } else if (activeSection === "settings") {
       await loadAccountSettings();
+    } else if (activeSection === "templates") {
+      setTemplatesRefreshTrigger((prev) => prev + 1);
     } else if (activeSection === "dashboard") {
       await Promise.all([loadAdminAccounts(), loadFacultyFromDatabase()]);
     }
@@ -1809,9 +1812,27 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "templates" ? (
-              <div className="p-2 sm:p-4 md:p-5">
-                <RequirementTemplatesPanel />
-              </div>
+              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-6">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      Requirement Templates
+                    </h1>
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setTemplatesRefreshTrigger((prev) => prev + 1)}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                    >
+                      <Refresh className="h-3.5 w-3.5" strokeWidth={2} />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+                </div>
+
+                <RequirementTemplatesPanel refreshTrigger={templatesRefreshTrigger} />
+              </article>
             ) : null}
 
             {activeSection === "backups" ? (

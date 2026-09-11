@@ -485,34 +485,48 @@ function FacultySubmissionPanelContent({
     }
   }, [currentAvatarUrl]);
   const [isMounted, setIsMounted] = useState(false);
-  // Synchronously compute initial active view without flashing Dashboard
-  const resolvedInitialView = useMemo<PanelView>(() => {
+
+  // SSR-safe initial view calculation: strictly identical on server and client
+  const resolveInitialView = useCallback((): PanelView => {
     if (initialView && initialView !== "dashboard") {
       return initialView;
     }
-    if (typeof window !== "undefined") {
+    const v = searchParams?.get("view");
+    const highlight = searchParams?.get("highlight") || searchParams?.get("requirement");
+    const hist = searchParams?.get("history");
+    if (v === "history" || (v === "status" && hist === "true") || highlight) {
+      return "status";
+    }
+    if (v && (PANEL_VIEWS as readonly string[]).includes(v)) {
+      return v as PanelView;
+    }
+    return initialView || "dashboard";
+  }, [initialView, searchParams]);
+
+  const [activeView, setActiveView] = useState<PanelView>(() => resolveInitialView());
+
+  // Restore saved view from sessionStorage only after client has hydrated
+  useEffect(() => {
+    setIsMounted(true);
+    const v = searchParams?.get("view");
+    const highlight = searchParams?.get("highlight") || searchParams?.get("requirement");
+    const hist = searchParams?.get("history");
+    if (!v && !highlight && !hist && (!initialView || initialView === "dashboard")) {
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const v = urlParams.get("view");
-        const highlight = urlParams.get("highlight") || urlParams.get("requirement");
-        const hist = urlParams.get("history");
-        if (v === "history" || (v === "status" && hist === "true") || highlight) {
-          return "status";
-        }
-        if (v && (PANEL_VIEWS as readonly string[]).includes(v)) {
-          return v as PanelView;
-        }
         const savedView = sessionStorage.getItem("pup_focus_faculty_active_view");
-        if (savedView && (PANEL_VIEWS as readonly string[]).includes(savedView)) {
-          return savedView as PanelView;
+        if (
+          savedView &&
+          (PANEL_VIEWS as readonly string[]).includes(savedView) &&
+          savedView !== activeView
+        ) {
+          setActiveView(savedView as PanelView);
         }
       } catch {
         // safe fallback
       }
     }
-    return initialView || "dashboard";
-  }, [initialView]);
-  const [activeView, setActiveView] = useState<PanelView>(resolvedInitialView);
+  }, []);
+
   const [form, setForm] = useState<SubmissionFormState>({
     academicYear: initialData?.academicYear || academicYears[0] || "",
     semester:
@@ -578,15 +592,9 @@ function FacultySubmissionPanelContent({
   const [versionHistoryCode, setVersionHistoryCode] = useState("");
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(() => {
     if (initialView === "history") return true;
-    if (typeof window !== "undefined") {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get("history") === "true" || urlParams.get("view") === "history";
-      } catch {
-        return false;
-      }
-    }
-    return false;
+    const hist = searchParams?.get("history");
+    const v = searchParams?.get("view");
+    return hist === "true" || v === "history";
   });
   useEffect(() => {
     try {
