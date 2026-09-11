@@ -26,8 +26,9 @@ export function RequirementTemplateModal({
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
   const [allowedFormats, setAllowedFormats] = useState<AllowedFormat[]>(["PDF", "DOCX"]);
-  const [maxSizeMb, setMaxSizeMb] = useState<number>(5);
+  const [maxSizeMb, setMaxSizeMb] = useState<number>(10);
   const [isMandatory, setIsMandatory] = useState<boolean>(true);
+  const [isActive, setIsActive] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,16 +40,18 @@ export function RequirementTemplateModal({
       setCode(templateToEdit.code);
       setDescription(templateToEdit.description || "");
       setAllowedFormats(templateToEdit.allowed_formats || ["PDF"]);
-      setMaxSizeMb(templateToEdit.max_size_mb || 5);
+      setMaxSizeMb(templateToEdit.max_size_mb || 10);
       setIsMandatory(templateToEdit.is_mandatory);
+      setIsActive(templateToEdit.is_active);
       setError(null);
     } else {
       setTitle("");
       setCode("");
       setDescription("");
       setAllowedFormats(["PDF", "DOCX"]);
-      setMaxSizeMb(5);
+      setMaxSizeMb(10);
       setIsMandatory(true);
+      setIsActive(true);
       setError(null);
     }
   }, [templateToEdit, isOpen]);
@@ -69,7 +72,7 @@ export function RequirementTemplateModal({
   const toggleFormat = (fmt: AllowedFormat) => {
     setAllowedFormats((prev) => {
       if (prev.includes(fmt)) {
-        if (prev.length === 1) return prev; // Keep at least one
+        if (prev.length === 1) return prev; // Keep at least one format
         return prev.filter((f) => f !== fmt);
       }
       return [...prev, fmt];
@@ -112,6 +115,7 @@ export function RequirementTemplateModal({
             allowed_formats: allowedFormats,
             max_size_mb: maxSizeMb,
             is_mandatory: isMandatory,
+            is_active: isActive,
           }),
         });
 
@@ -132,6 +136,7 @@ export function RequirementTemplateModal({
             allowed_formats: allowedFormats,
             max_size_mb: maxSizeMb,
             is_mandatory: isMandatory,
+            is_active: isActive,
           }),
         });
 
@@ -154,23 +159,24 @@ export function RequirementTemplateModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-200 dark:border-slate-800">
+      <div className="w-full max-w-xl rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-300 dark:border-slate-800">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               {isEditing ? "Edit Requirement Template" : "Add Requirement Template"}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-              Configure document compliance rules and validation parameters.
+              Configure document compliance parameters, upload limits, and visibility.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all cursor-pointer shadow-2xs"
+            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
             aria-label="Close modal"
           >
-            <Xmark className="w-5 h-5" />
+            <Xmark className="w-4 h-4" strokeWidth={2} />
           </button>
         </div>
 
@@ -190,7 +196,7 @@ export function RequirementTemplateModal({
               onChange={(e) => handleTitleChange(e.target.value)}
               required
               placeholder="e.g. Enhanced Course Syllabus"
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 
@@ -200,7 +206,7 @@ export function RequirementTemplateModal({
               className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
               htmlFor="templateCode"
             >
-              Document Slug / Code <span className="text-red-500">*</span>
+              Document Identifier Code <span className="text-red-500">*</span>
             </label>
             <input
               id="templateCode"
@@ -210,7 +216,7 @@ export function RequirementTemplateModal({
               disabled={isEditing}
               required
               placeholder="e.g. enhanced_syllabus"
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all font-mono text-xs disabled:opacity-60"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs outline-none transition-all font-mono disabled:opacity-60 disabled:cursor-not-allowed"
             />
             <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
               Unique identifier used by the compliance engine across submissions.
@@ -231,7 +237,7 @@ export function RequirementTemplateModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Provide instructions or submission guidelines for faculty members..."
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all resize-none"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm outline-none transition-all resize-none"
             />
           </div>
 
@@ -254,7 +260,7 @@ export function RequirementTemplateModal({
                         : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
-                    {isSelected ? <Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> : null}
+                    {isSelected ? <Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" strokeWidth={2} /> : null}
                     <span>{opt.value}</span>
                   </button>
                 );
@@ -275,7 +281,7 @@ export function RequirementTemplateModal({
                 id="templateSize"
                 value={maxSizeMb}
                 onChange={(e) => setMaxSizeMb(Number(e.target.value))}
-                className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-sm outline-none transition-all cursor-pointer"
+                className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-xs sm:text-sm outline-none transition-all cursor-pointer"
               >
                 {MAX_SIZE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -316,20 +322,67 @@ export function RequirementTemplateModal({
             </div>
           </div>
 
+          {/* Row 6: Visibility Status (Active vs Hidden) */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5">
+              Faculty Visibility Status
+            </label>
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => setIsActive(true)}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[#0b5336] text-white border-[#08412a] shadow-2xs"
+                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                Active (Visible)
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsActive(false)}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  !isActive
+                    ? "bg-[#780000] text-white border-[#5e0000] shadow-2xs"
+                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                Hidden (Archived)
+              </button>
+            </div>
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+              Hidden templates will not appear in the faculty submission checklist.
+            </p>
+          </div>
+
           {error ? (
-            <p className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 px-4 py-3 text-sm">
+            <p className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 px-4 py-3 text-xs sm:text-sm">
               {error}
             </p>
           ) : null}
 
-          {/* Save Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold py-3 rounded-xl transition-all shadow-md mt-2 disabled:opacity-50 cursor-pointer text-sm tracking-wide"
-          >
-            {isSubmitting ? "Saving Requirement Template..." : "Save Requirement Template"}
-          </button>
+          {/* Modal Action Buttons */}
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-300 dark:border-slate-800 mt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-5 py-2 rounded-xl text-xs transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+            >
+              {isSubmitting
+                ? "Saving..."
+                : isEditing
+                ? "Save Changes"
+                : "Create Template"}
+            </button>
+          </div>
         </form>
       </div>
     </div>

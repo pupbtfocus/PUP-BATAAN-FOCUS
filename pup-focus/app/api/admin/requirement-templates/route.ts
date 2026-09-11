@@ -154,6 +154,42 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    const supabase = getServiceRoleClient();
+
+    // Handle restore defaults action
+    if (body.action === "restore_defaults") {
+      const { data: existingRows } = await supabase
+        .from("requirement_templates")
+        .select("code");
+
+      const existingCodes = new Set((existingRows || []).map((r: { code: string }) => r.code));
+      const missingSeeds = DEFAULT_SEEDS.filter((s) => !existingCodes.has(s.code));
+
+      if (missingSeeds.length > 0) {
+        const { error: seedError } = await supabase
+          .from("requirement_templates")
+          .insert(missingSeeds);
+
+        if (seedError) {
+          return NextResponse.json({ error: seedError.message }, { status: 400 });
+        }
+      }
+
+      // Re-fetch all templates
+      const { data: allTemplates } = await supabase
+        .from("requirement_templates")
+        .select("*")
+        .order("is_mandatory", { ascending: false })
+        .order("created_at", { ascending: true });
+
+      return NextResponse.json({
+        success: true,
+        restoredCount: missingSeeds.length,
+        templates: allTemplates || [],
+      });
+    }
+
     const title = (body.title || "").trim();
     let code = (body.code || "").trim().toLowerCase().replace(/[^a-z0-9_]/g, "_");
     const description = (body.description || "").trim();
@@ -171,8 +207,6 @@ export async function POST(request: NextRequest) {
     if (!code) {
       code = title.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/__+/g, "_");
     }
-
-    const supabase = getServiceRoleClient();
 
     // Check code uniqueness
     const { data: existing } = await supabase
