@@ -21,6 +21,8 @@ const SUBMISSION_ALERT_TYPES = [
   "new_submission",
   "submission_created",
   "faculty_submitted",
+  "EXTENSION_REQUEST",
+  "extension_request",
 ];
 
 function extractRequirementCodeFromText(text: string): RequirementCode | null {
@@ -160,6 +162,11 @@ export async function GET(request: NextRequest) {
         (row.title || "").includes("v2") ||
         (row.title || "").includes("v3");
 
+      const isExtension =
+        row.type === "EXTENSION_REQUEST" ||
+        row.type === "extension_request" ||
+        (row.title || "").toLowerCase().includes("extension");
+
       return {
         id: row.id,
         userId: row.user_id,
@@ -170,10 +177,12 @@ export async function GET(request: NextRequest) {
         createdAt: row.created_at,
         isSubmission,
         isRevision,
+        isExtensionRequest: isExtension,
         facultyName: extractedFacultyName,
         facultyId,
         requirementCode: reqCode,
         requirementLabel: reqLabel,
+        metadata: row.metadata || null,
       };
     });
 

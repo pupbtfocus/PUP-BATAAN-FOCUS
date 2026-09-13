@@ -1,8 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Calendar, CheckCircle, Clock, Refresh, SystemRestart, WarningCircle, Xmark } from "iconoir-react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Calendar, Check, CheckCircle, Clock, NavArrowDown, Refresh, Search, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
 import { Button } from "@/components/ui/button";
+
+export interface FacultyOption {
+  id: string;
+  userId?: string | null;
+  fullName: string;
+  email: string;
+  programCode?: string;
+  programName?: string;
+}
 
 export interface ExtendSubmissionWindowModalProps {
   isOpen: boolean;
@@ -12,6 +21,11 @@ export interface ExtendSubmissionWindowModalProps {
   currentEndTimeLabel?: string | null;
   academicYear?: string | null;
   semester?: string | null;
+  initialScope?: ExtensionScope;
+  initialScopeTarget?: string;
+  initialFacultyName?: string;
+  initialPreset?: ExtensionPreset;
+  linkedRequestId?: string | null;
 }
 
 type ExtensionPreset = "+24 Hours" | "+48 Hours" | "+3 Days" | "+1 Week" | "Custom";
@@ -28,6 +42,13 @@ const PROGRAM_OPTIONS = [
   { code: "DIT", name: "Diploma in Information Technology" },
   { code: "DOMT-LOM", name: "Diploma in Office Management Technology major in Legal Office Management" },
 ];
+
+function getInitials(name?: string | null): string {
+  if (!name) return "FM";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 function parse12HourTime(timeLabel?: string | null): { hour24: number; minute: number } {
   if (!timeLabel) return { hour24: 17, minute: 0 };
@@ -89,17 +110,92 @@ export function ExtendSubmissionWindowModal({
   currentEndTimeLabel,
   academicYear,
   semester,
+  initialScope,
+  initialScopeTarget,
+  initialFacultyName,
+  initialPreset,
+  linkedRequestId,
 }: ExtendSubmissionWindowModalProps) {
-  const [scope, setScope] = useState<ExtensionScope>("global");
-  const [scopeTarget, setScopeTarget] = useState("BSIT");
-  const [facultyNameInput, setFacultyNameInput] = useState("");
-  const [preset, setPreset] = useState<ExtensionPreset>("+3 Days");
+  const [scope, setScope] = useState<ExtensionScope>(initialScope || "global");
+  const [scopeTarget, setScopeTarget] = useState(initialScopeTarget || "BSIT");
+  const [facultyNameInput, setFacultyNameInput] = useState(initialFacultyName || "");
+  const [preset, setPreset] = useState<ExtensionPreset>(initialPreset || "+3 Days");
 
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("17:00");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Faculty searchable dropdown state
+  const [facultyList, setFacultyList] = useState<FacultyOption[]>([]);
+  const [isLoadingFaculty, setIsLoadingFaculty] = useState(false);
+  const [selectedFaculty, setSelectedFaculty] = useState<FacultyOption | null>(null);
+  const [facultySearchQuery, setFacultySearchQuery] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Fetch faculty list when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setIsLoadingFaculty(true);
+      fetch(`/api/admin/faculty/list?_t=${Date.now()}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data.faculty)) {
+            const mapped: FacultyOption[] = data.faculty.map((f: any) => ({
+              id: f.id,
+              userId: f.user_id,
+              fullName: f.fullName || "Unknown Faculty",
+              email: f.email || "",
+              programCode: f.program?.code || f.department || "FACULTY",
+              programName: f.program?.name || "",
+            }));
+            setFacultyList(mapped);
+
+            // Auto-select if initialFacultyName matches
+            const targetName = initialFacultyName || facultyNameInput;
+            if (targetName) {
+              const cleanTarget = targetName.trim().toLowerCase();
+              const found = mapped.find(
+                (item) =>
+                  item.fullName.toLowerCase() === cleanTarget ||
+                  item.fullName.toLowerCase().includes(cleanTarget)
+              );
+              if (found) {
+                setSelectedFaculty(found);
+                setFacultyNameInput(found.fullName);
+              }
+            }
+          }
+        })
+        .catch(() => {})
+        .finally(() => setIsLoadingFaculty(false));
+    }
+  }, [isOpen, initialFacultyName]);
+
+  // Filtered faculty list based on search query
+  const filteredFaculty = useMemo(() => {
+    if (!facultySearchQuery.trim()) return facultyList;
+    const q = facultySearchQuery.toLowerCase().trim();
+    return facultyList.filter(
+      (f) =>
+        f.fullName.toLowerCase().includes(q) ||
+        f.email.toLowerCase().includes(q) ||
+        (f.programCode || "").toLowerCase().includes(q)
+    );
+  }, [facultyList, facultySearchQuery]);
 
   // Check if current window was closed/expired or unconfigured
   const isPreviouslyClosed = useMemo(() => {
@@ -144,13 +240,17 @@ export function ExtendSubmissionWindowModal({
   // Set initial custom date picker values on open
   useEffect(() => {
     if (isOpen) {
+      if (initialScope) setScope(initialScope);
+      if (initialScopeTarget) setScopeTarget(initialScopeTarget);
+      if (initialFacultyName) setFacultyNameInput(initialFacultyName);
+      if (initialPreset) setPreset(initialPreset);
       const base = getBaseDate(currentEndDate, currentEndTimeLabel);
       base.setDate(base.getDate() + 3);
       setCustomDate(formatDateToIsoString(base));
       setCustomTime(`${String(base.getHours()).padStart(2, "0")}:${String(base.getMinutes()).padStart(2, "0")}`);
       setError(null);
     }
-  }, [isOpen, currentEndDate, currentEndTimeLabel]);
+  }, [isOpen, currentEndDate, currentEndTimeLabel, initialScope, initialScopeTarget, initialFacultyName, initialPreset]);
 
   if (!isOpen) return null;
 
@@ -158,8 +258,9 @@ export function ExtendSubmissionWindowModal({
     e.preventDefault();
     setError(null);
 
-    if (scope === "faculty" && !facultyNameInput.trim()) {
-      setError("Please specify the faculty member's name or ID.");
+    const targetFaculty = selectedFaculty ? selectedFaculty.fullName : facultyNameInput.trim();
+    if (scope === "faculty" && !targetFaculty) {
+      setError("Please select or specify a faculty member.");
       return;
     }
 
@@ -173,10 +274,11 @@ export function ExtendSubmissionWindowModal({
             ? "All Faculty"
             : scope === "program"
             ? scopeTarget
-            : facultyNameInput.trim(),
+            : targetFaculty,
         preset,
         newEndDate: computedTarget.dateIso,
         newEndTime: computedTarget.time12h,
+        linkedRequestId: linkedRequestId || null,
       };
 
       const response = await fetch("/api/admin/submission-window/extend", {
@@ -191,6 +293,23 @@ export function ExtendSubmissionWindowModal({
       if (!response.ok) {
         setError(body.error || `Failed to extend submission window (HTTP ${response.status}).`);
         return;
+      }
+
+      if (linkedRequestId) {
+        try {
+          await fetch("/api/admin/submission-window/extension-requests", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              requestId: linkedRequestId,
+              action: "approve",
+              adminRemarks: `Window extended (${preset}) until ${computedTarget.display}`,
+            }),
+          });
+        } catch {
+          // Non-blocking
+        }
       }
 
       onSuccess(body.message || `Submission window extended to ${computedTarget.display}.`);
@@ -301,14 +420,145 @@ export function ExtendSubmissionWindowModal({
             )}
 
             {scope === "faculty" && (
-              <div className="mt-2.5">
-                <input
-                  type="text"
-                  placeholder="Enter faculty name or ID..."
-                  value={facultyNameInput}
-                  onChange={(e) => setFacultyNameInput(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-slate-400 dark:focus:border-slate-600 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                />
+              <div className="mt-2.5 space-y-2" ref={dropdownRef}>
+                {selectedFaculty ? (
+                  /* Selected Faculty Card */
+                  <div className="flex items-center justify-between rounded-xl border border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/15 p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-xs shrink-0 shadow-xs">
+                        {getInitials(selectedFaculty.fullName)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
+                            {selectedFaculty.fullName}
+                          </span>
+                          <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300 border border-amber-500/30">
+                            {selectedFaculty.programCode}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                          {selectedFaculty.email}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFaculty(null);
+                        setFacultyNameInput("");
+                        setFacultySearchQuery("");
+                        setIsDropdownOpen(true);
+                      }}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-[#780000] text-[#780000] hover:bg-[#780000] hover:text-white transition cursor-pointer shrink-0"
+                    >
+                      Change
+                    </button>
+                  </div>
+                ) : (
+                  /* Search & Dropdown Combobox */
+                  <div className="relative">
+                    <div className="relative flex items-center">
+                      <Search className="absolute left-3 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Search faculty by name, email, or department..."
+                        value={facultySearchQuery}
+                        onChange={(e) => {
+                          setFacultySearchQuery(e.target.value);
+                          setIsDropdownOpen(true);
+                        }}
+                        onFocus={() => setIsDropdownOpen(true)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-9 pr-8 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 dark:focus:border-amber-500 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                      />
+                      {facultySearchQuery ? (
+                        <button
+                          type="button"
+                          onClick={() => setFacultySearchQuery("")}
+                          className="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 cursor-pointer"
+                        >
+                          <Xmark className="h-3.5 w-3.5" />
+                        </button>
+                      ) : (
+                        <NavArrowDown className="absolute right-3 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      )}
+                    </div>
+
+                    {isDropdownOpen && (
+                      <div className="absolute z-20 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-1.5 shadow-xl space-y-1">
+                        <div className="flex items-center justify-between px-2.5 py-1 text-[10px] font-semibold text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
+                          <span>
+                            {isLoadingFaculty
+                              ? "Loading faculty..."
+                              : `${filteredFaculty.length} faculty members available`}
+                          </span>
+                          <span>Click to select</span>
+                        </div>
+
+                        <div className="max-h-52 overflow-y-auto space-y-0.5 pr-1">
+                          {isLoadingFaculty ? (
+                            <div className="flex items-center justify-center gap-2 py-6 text-xs text-slate-400">
+                              <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                              <span>Loading faculty members...</span>
+                            </div>
+                          ) : filteredFaculty.length === 0 ? (
+                            <div className="py-4 text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
+                              <p>No faculty found matching &ldquo;{facultySearchQuery}&rdquo;</p>
+                              {facultySearchQuery.trim() && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFacultyNameInput(facultySearchQuery.trim());
+                                    setIsDropdownOpen(false);
+                                  }}
+                                  className="text-xs text-amber-600 dark:text-amber-400 font-semibold underline cursor-pointer"
+                                >
+                                  Use custom name &ldquo;{facultySearchQuery.trim()}&rdquo;
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            filteredFaculty.map((f) => (
+                              <button
+                                key={f.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedFaculty(f);
+                                  setFacultyNameInput(f.fullName);
+                                  setFacultySearchQuery("");
+                                  setIsDropdownOpen(false);
+                                }}
+                                className="w-full flex items-center justify-between p-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-slate-900 transition cursor-pointer group"
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold flex items-center justify-center text-[10px] shrink-0 group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors">
+                                    {getInitials(f.fullName)}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                        {f.fullName}
+                                      </span>
+                                      <span className="rounded bg-slate-100 dark:bg-slate-800 px-1 py-0.2 text-[9px] font-semibold text-slate-600 dark:text-slate-400">
+                                        {f.programCode}
+                                      </span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                                      {f.email}
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  Select
+                                </span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
