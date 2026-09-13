@@ -930,7 +930,7 @@ export function SubmissionWindowPanel({
                   disabled={isLoading || isSaving}
                   className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                 >
-                  <AppIcon icon={EditPencil} size="sm" color="default" />
+                  <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                   <span>Edit Schedule</span>
                 </button>
 
@@ -940,7 +940,7 @@ export function SubmissionWindowPanel({
                   disabled={isLoading || isSaving}
                   className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 text-sm rounded-lg transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                 >
-                  <AppIcon icon={Clock} size="sm" color="default" />
+                  <AppIcon icon={Clock} size="sm" color="inherit" className="text-slate-950" />
                   <span>Extend Window</span>
                 </button>
               </>

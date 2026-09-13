@@ -3294,9 +3294,9 @@ function FacultySubmissionPanelContent({
                         title="Download all validated requirements in current view as ZIP"
                       >
                         {isBulkDownloading ? (
-                          <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                          <AppIcon icon={SystemRestart} size="sm" color="inherit" className="text-slate-950 animate-spin" />
                         ) : (
-                          <AppIcon icon={Download} size="sm" color="default" />
+                          <AppIcon icon={Download} size="sm" color="inherit" className="text-slate-950" />
                         )}
                         <span>
                           {isBulkDownloading
