@@ -3266,13 +3266,8 @@ export function RequirementsPanel({
                             )}
                           </div>
                           <div>
-                            <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                              <span>{faculty.fullName}</span>
-                              {isCompleted && (
-                                <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 text-[9px] font-bold text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-2xs">
-                                  Complete
-                                </span>
-                              )}
+                            <div className="font-semibold text-slate-900 dark:text-slate-100">
+                              {faculty.fullName}
                             </div>
                             {faculty.email ? (
                               <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">
@@ -3297,16 +3292,9 @@ export function RequirementsPanel({
                             <span className="font-semibold text-slate-900 dark:text-slate-100">
                               {validatedCount}/{DEFAULT_REQUIREMENTS.length} Validated
                             </span>
-                            {isCompleted ? (
-                              <span className="text-[10px] font-bold text-[#0b5336] dark:text-emerald-400 flex items-center gap-1 mt-0.5">
-                                <AppIcon icon={CheckCircle} size="xs" color="inherit" />
-                                100% Compliant &bull; Locked
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                                {Math.round((validatedCount / DEFAULT_REQUIREMENTS.length) * 100)}% Complete
-                              </span>
-                            )}
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                              {Math.round((validatedCount / DEFAULT_REQUIREMENTS.length) * 100)}% Complete
+                            </span>
                           </div>
                         )}
                       </td>
@@ -3332,7 +3320,7 @@ export function RequirementsPanel({
                               : "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold"
                           } px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition cursor-pointer`}
                         >
-                          {isCompleted ? "View Completed" : "Review Requirements"}
+                          Review Requirements
                         </button>
                       </td>
                     </tr>
