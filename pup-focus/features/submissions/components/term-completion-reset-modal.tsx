@@ -77,7 +77,7 @@ export function TermCompletionResetModal({
                 id="term-completion-title"
                 className="text-base font-bold text-slate-900 dark:text-slate-100"
               >
-                Term Requirements Completed
+                Done All for This Semester
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 A.Y. {academicYear} • {semester}
@@ -102,16 +102,15 @@ export function TermCompletionResetModal({
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
                 <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                100% Compliance Validated
+                Done All for This Semester (100% Validated)
               </span>
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                Window Ended
+              <span className="text-[11px] font-bold text-[#0b5336] dark:text-emerald-400">
+                6 of 6 Validated
               </span>
             </div>
             <p className="text-xs text-slate-700 dark:text-slate-300">
               All 6 required faculty documents for this semester have been validated by
-              the administration. The submission window for this academic term has now
-              concluded.
+              the administration. As long as the school year or term is not changed, all your validated documents remain active and visible in Requirements Management.
             </p>
           </div>
 
@@ -136,8 +135,8 @@ export function TermCompletionResetModal({
                         {label}
                       </span>
                     </div>
-                    <span className="shrink-0 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-                      Validated
+                    <span className="shrink-0 text-[10px] font-bold text-[#0b5336] dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      Done for this sem
                     </span>
                   </div>
                 );
@@ -160,15 +159,13 @@ export function TermCompletionResetModal({
             </div>
           </div>
 
-          {/* Reset Explanation */}
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-slate-700 dark:text-slate-300">
-            <span className="font-bold text-amber-900 dark:text-amber-400 block mb-0.5">
-              Ready for Next Semester:
+          {/* Term Status Explanation */}
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-slate-700 dark:text-slate-300">
+            <span className="font-bold text-[#0b5336] dark:text-emerald-400 block mb-0.5">
+              Current Semester Compliance:
             </span>
             <span>
-              Resetting refreshes your active compliance checklist for the upcoming
-              semester. Your portal will show a clean waiting status until the administration
-              opens the next submission window.
+              If the academic year or semester is not changed by the administration, your submissions remain fully completed, locked in validated status, and visible on your checklist.
             </span>
           </div>
 
@@ -193,25 +190,25 @@ export function TermCompletionResetModal({
                 type="button"
                 onClick={onClose}
                 disabled={isResetting}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#780000] text-[#780000] hover:bg-[#780000]/10 dark:border-rose-400 dark:text-rose-400 dark:hover:bg-rose-400/10 transition cursor-pointer disabled:opacity-50"
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer disabled:opacity-50"
               >
-                Keep Current View
+                Close
               </button>
               <button
                 type="button"
                 onClick={handleConfirm}
                 disabled={isResetting}
-                className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 bg-[#0b5336] hover:bg-[#083e28] text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
                 {isResetting ? (
                   <>
                     <SystemRestart className="h-3.5 w-3.5 animate-spin" />
-                    <span>Resetting...</span>
+                    <span>Saving...</span>
                   </>
                 ) : (
                   <>
                     <CheckCircle className="h-3.5 w-3.5" />
-                    <span>Confirm & Reset for Next Semester</span>
+                    <span>Done All for This Semester</span>
                   </>
                 )}
               </button>

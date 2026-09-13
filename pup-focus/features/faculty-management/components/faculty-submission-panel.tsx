@@ -805,9 +805,21 @@ function FacultySubmissionPanelContent({
       setIsLoadingStatuses(true);
       setStatusError(null);
       const params = new URLSearchParams();
-      if (year && sem) {
-        params.set("academicYear", year);
-        params.set("semester", sem);
+      const targetYear =
+        year ||
+        (submissionWindow?.academicYear
+          ? submissionWindow.academicYear
+          : statusAcademicYear) ||
+        "2026-2027";
+      const targetSem =
+        sem ||
+        (submissionWindow?.semester
+          ? submissionWindow.semester
+          : statusSemester) ||
+        "1st Semester";
+      if (targetYear && targetSem) {
+        params.set("academicYear", targetYear);
+        params.set("semester", targetSem);
       }
       const response = await fetch(
         `/api/faculty/submissions/status?${params.toString()}`,
@@ -879,6 +891,7 @@ function FacultySubmissionPanelContent({
     void fetchStatuses();
   }, [refetchSubmissionWindow]);
   useEffect(() => {
+    void fetchHistory();
     if (!initialData) {
       void fetchStatuses();
       void refetchSubmissionWindow();
@@ -1044,17 +1057,45 @@ function FacultySubmissionPanelContent({
     }
     return list;
   }, [pastSubmissions]);
-  const activeAY =
-    submissionWindow?.academicYear || selectedAcademicYear || form.academicYear;
-  const activeSem =
-    submissionWindow?.semester || selectedSemester || form.semester;
+  const activeAY = useMemo(() => {
+    return (
+      submissionWindow?.academicYear ||
+      statusAcademicYear ||
+      (pastSubmissions.length > 0 && pastSubmissions[0].academicYear
+        ? pastSubmissions[0].academicYear
+        : null) ||
+      selectedAcademicYear ||
+      form.academicYear ||
+      "2026-2027"
+    );
+  }, [
+    submissionWindow?.academicYear,
+    statusAcademicYear,
+    pastSubmissions,
+    selectedAcademicYear,
+    form.academicYear,
+  ]);
+
+  const activeSem = useMemo(() => {
+    return (
+      submissionWindow?.semester ||
+      statusSemester ||
+      (pastSubmissions.length > 0 && pastSubmissions[0].semester
+        ? pastSubmissions[0].semester
+        : null) ||
+      selectedSemester ||
+      form.semester ||
+      "1st Semester"
+    );
+  }, [
+    submissionWindow?.semester,
+    statusSemester,
+    pastSubmissions,
+    selectedSemester,
+    form.semester,
+  ]);
+
   const displayedRequirementStatuses = useMemo<RequirementStatus[]>(() => {
-    if (!hasActiveSchedule) {
-      return DEFAULT_REQUIREMENTS.map((code) => ({
-        code,
-        status: "Not Submitted" as const,
-      }));
-    }
     const normActiveAY = normalizeAcademicYear(activeAY);
     const normActiveSem = normalizeSemester(activeSem);
     return DEFAULT_REQUIREMENTS.map((code) => {
@@ -1133,7 +1174,6 @@ function FacultySubmissionPanelContent({
       };
     });
   }, [
-    hasActiveSchedule,
     activeAY,
     activeSem,
     pastSubmissions,
@@ -1212,7 +1252,6 @@ function FacultySubmissionPanelContent({
     if (
       isMounted &&
       isAllValidated &&
-      isWindowClosed &&
       !isTermResetAcknowledged &&
       !hasPromptedTermCompletion
     ) {
@@ -1223,7 +1262,6 @@ function FacultySubmissionPanelContent({
   }, [
     isMounted,
     isAllValidated,
-    isWindowClosed,
     isTermResetAcknowledged,
     hasPromptedTermCompletion,
   ]);
@@ -1295,6 +1333,7 @@ function FacultySubmissionPanelContent({
     code: RequirementCode,
     isRevision: boolean = false,
   ) {
+    if (isAllValidated) return;
     setSelectedRequirementForUpload(code);
     setIsRevisionUpload(isRevision);
     setDirectUploadFile(null);
@@ -1787,6 +1826,11 @@ function FacultySubmissionPanelContent({
                   }`}
                 />
                 <span className="truncate">{label}</span>
+                {key === "status" && isAllValidated && (
+                  <span className="ml-auto inline-flex items-center px-1.5 py-0.2 rounded-full bg-[#0b5336] text-[9px] font-bold text-white shadow-2xs">
+                    Done
+                  </span>
+                )}
               </button>
             );
           })}
@@ -1890,6 +1934,11 @@ function FacultySubmissionPanelContent({
                       }`}
                     />
                     <span className="truncate">{label}</span>
+                    {key === "status" && isAllValidated && (
+                      <span className="ml-auto inline-flex items-center px-1.5 py-0.2 rounded-full bg-[#0b5336] text-[9px] font-bold text-white shadow-2xs">
+                        Done
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -1937,18 +1986,28 @@ function FacultySubmissionPanelContent({
                   </div>
                 </section>
                 {/* Term Completion Celebration Banner in Dashboard */}
-                {isAllValidated && isWindowClosed && (
+                {isAllValidated && (
                   <div className="p-4 sm:p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/30 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
                     <div className="flex items-start sm:items-center gap-3">
-                      <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 shrink-0">
+                      <div className="p-2.5 rounded-xl bg-[#0b5336] text-white shrink-0 shadow-2xs">
                         <CheckCircle className="h-6 w-6" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                          Semester Compliance Completed (100% Validated)
-                        </h3>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                          All 6 mandatory documents for {activeAY} • {activeSem} have been verified. The submission window has concluded.
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                            Done All for This Semester (100% Validated)
+                          </h3>
+                          <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white text-[10px] font-bold px-2 py-0.2 shadow-2xs">
+                            6/6 Complete
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
+                          All 6 mandatory compliance documents for {activeAY} • {activeSem} have been verified and validated.
+                          {!isWindowClosed && (
+                            <span className="block mt-0.5 text-[#0b5336] dark:text-emerald-400 font-medium">
+                              Active submission window extensions apply only to faculty with pending lackings. Your account remains fully completed.
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -1966,7 +2025,7 @@ function FacultySubmissionPanelContent({
                         className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition active:scale-[0.98] cursor-pointer"
                       >
                         <CheckCircle className="h-4 w-4" />
-                        <span>{isTermResetAcknowledged ? "Reset Completed View" : "Reset for Next Semester"}</span>
+                        <span>View Summary</span>
                       </button>
                     </div>
                   </div>
@@ -2001,8 +2060,9 @@ function FacultySubmissionPanelContent({
                     <div>
                       <div className="flex items-baseline justify-between">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                          {displayedStatusCounts?.validated ?? 0} of{" "}
-                          {displayedStatusCounts?.total ?? 6} Validated
+                          {isAllValidated
+                            ? "Done All for This Semester"
+                            : `${displayedStatusCounts?.validated ?? 0} of ${displayedStatusCounts?.total ?? 6} Validated`}
                         </h3>
                         <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                           {Math.round(
@@ -2015,7 +2075,7 @@ function FacultySubmissionPanelContent({
                       </div>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {isAllValidated
-                          ? "All documents completed and validated"
+                          ? "All 6/6 requirements completed and validated"
                           : `${(displayedStatusCounts?.total ?? 6) - (displayedStatusCounts?.validated ?? 0)} items awaiting completion`}
                       </p>
                     </div>
@@ -2042,22 +2102,28 @@ function FacultySubmissionPanelContent({
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {!hasActiveSchedule
-                          ? "No Active Window"
-                          : isWindowClosed
-                            ? "Window Closed"
-                            : "Submission Open"}
+                        {isAllValidated
+                          ? "Done All for This Sem"
+                          : !hasActiveSchedule
+                            ? "No Active Window"
+                            : isWindowClosed
+                              ? "Window Closed"
+                              : "Submission Open"}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {windowDeadlineDisplay
-                          ? `Deadline: ${windowDeadlineDisplay}`
-                          : "Schedule not configured"}
+                        {isAllValidated
+                          ? "All requirements completed for this term"
+                          : windowDeadlineDisplay
+                            ? `Deadline: ${windowDeadlineDisplay}`
+                            : "Schedule not configured"}
                       </p>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {hasActiveSchedule && !isWindowClosed
-                        ? "Uploads and resubmissions are currently enabled"
-                        : "Document submissions are currently locked"}
+                      {isAllValidated
+                        ? "Requirements locked in validated status"
+                        : hasActiveSchedule && !isWindowClosed
+                          ? "Uploads and resubmissions are currently enabled"
+                          : "Document submissions are currently locked"}
                     </p>
                   </div>
                   {/* Card 3: Action Required */}
@@ -2070,19 +2136,23 @@ function FacultySubmissionPanelContent({
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {(displayedStatusCounts?.notSubmitted ?? 0) +
-                          (displayedStatusCounts?.rejected ?? 0)}{" "}
-                        Items
+                        {isAllValidated
+                          ? "0 Items (Done All for This Sem)"
+                          : `${(displayedStatusCounts?.notSubmitted ?? 0) +
+                              (displayedStatusCounts?.rejected ?? 0)} Items`}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {displayedStatusCounts?.notSubmitted ?? 0} Not Submitted
-                        • {displayedStatusCounts?.rejected ?? 0} Needs Revision
+                        {isAllValidated
+                          ? "All 6/6 Requirements Validated"
+                          : `${displayedStatusCounts?.notSubmitted ?? 0} Not Submitted • ${displayedStatusCounts?.rejected ?? 0} Needs Revision`}
                       </p>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {(displayedStatusCounts?.pending ?? 0) > 0
-                        ? `${displayedStatusCounts?.pending} item(s) currently under admin review`
-                        : "Direct upload available for pending items"}
+                      {isAllValidated
+                        ? "No further action needed for this semester"
+                        : (displayedStatusCounts?.pending ?? 0) > 0
+                          ? `${displayedStatusCounts?.pending} item(s) currently under admin review`
+                          : "Direct upload available for pending items"}
                     </p>
                   </div>
                 </section>
@@ -2535,29 +2605,24 @@ function FacultySubmissionPanelContent({
                 {/* Minimalist Header */}
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 dark:border-slate-800/80 pb-4">
                   <div>
-                    <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
-                      Requirements Management
-                    </h1>
-                    <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 font-normal">
-                      {!hasActiveSchedule ? (
-                        "No Active Academic Schedule"
-                      ) : (
-                        <>
-                          A.Y.{" "}
-                          {statusAcademicYear ||
-                            submissionWindow?.academicYear ||
-                            "2027-2028"}{" "}
-                          •{" "}
-                          {statusSemester ||
-                            submissionWindow?.semester ||
-                            "1st Semester"}
-                          {isAllValidated && (
-                            <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold">
-                              • Validated
-                            </span>
-                          )}
-                        </>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+                        Requirements Management
+                      </h1>
+                      {isAllValidated && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b5336] text-white text-xs font-bold shadow-2xs">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Done All for This Semester
+                        </span>
                       )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 font-normal">
+                      A.Y. {activeAY} • {activeSem}
+                      {!hasActiveSchedule && !isAllValidated ? (
+                        <span className="ml-2 text-slate-500 dark:text-slate-400 font-medium">
+                          • (Submission Window Closed)
+                        </span>
+                      ) : null}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -2602,15 +2667,8 @@ function FacultySubmissionPanelContent({
                 {displayedStatusCounts && !isLoadingStatuses && (
                   <div className="space-y-2.5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {displayedStatusCounts.validated} of{" "}
-                        {displayedStatusCounts.total} Completed (
-                        {Math.round(
-                          (displayedStatusCounts.validated /
-                            (displayedStatusCounts.total || 1)) *
-                            100,
-                        )}
-                        %)
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        {`${displayedStatusCounts.validated} of ${displayedStatusCounts.total} Completed (${Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100)}%)`}
                       </span>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
                         <span className="flex items-center gap-1.5">
@@ -2628,7 +2686,7 @@ function FacultySubmissionPanelContent({
                         </span>
                         <span className="flex items-center gap-1.5">
                           <span className="h-2 w-2 rounded-full bg-amber-500" />
-                          <span>{displayedStatusCounts.rejected} Revision</span>
+                          <span>{isAllValidated ? 0 : displayedStatusCounts.rejected} Revision</span>
                         </span>
                         <span className="flex items-center gap-1.5">
                           <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-600" />
@@ -2648,41 +2706,6 @@ function FacultySubmissionPanelContent({
                           width: `${Math.min(100, Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100))}%`,
                         }}
                       />
-                    </div>
-                  </div>
-                )}
-                {/* Term Completion Celebration Banner in Requirements View */}
-                {isAllValidated && isWindowClosed && (
-                  <div className="p-4 sm:p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/30 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
-                    <div className="flex items-start sm:items-center gap-3">
-                      <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 shrink-0">
-                        <CheckCircle className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                          Semester Compliance Completed (100% Validated)
-                        </h3>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                          All 6 mandatory documents for {activeAY} • {activeSem} have been verified. The submission window has concluded.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={openHistoryModal}
-                        className="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-semibold cursor-pointer shadow-2xs transition"
-                      >
-                        View History
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsTermCompletionModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition active:scale-[0.98] cursor-pointer"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        <span>{isTermResetAcknowledged ? "Reset Completed View" : "Reset for Next Semester"}</span>
-                      </button>
                     </div>
                   </div>
                 )}
@@ -2744,7 +2767,7 @@ function FacultySubmissionPanelContent({
                   </div>
                 )}
 
-                {/* Single Unified Table/List Container OR Clean Archived State */}
+                {/* Single Unified Table/List Container */}
                 {isLoadingStatuses ? (
                   <p className="text-sm text-slate-500 dark:text-slate-400 py-6 text-center">
                     Loading requirement statuses...
@@ -2753,50 +2776,38 @@ function FacultySubmissionPanelContent({
                   <p className="text-sm text-red-500 dark:text-red-400 py-4">
                     {statusError}
                   </p>
-                ) : isTermResetAcknowledged && !showResetArchivedView ? (
-                  <div className="p-8 sm:p-10 text-center bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl space-y-4 shadow-xs">
-                    <div className="inline-flex p-3.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                      <CheckCircle className="h-10 w-10" />
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                        Semester Compliance Completed &amp; Archived
-                      </h3>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-                        All 6 requirements for A.Y. {activeAY} • {activeSem} have been validated and securely archived in your Submission History. Your portal is ready and waiting for the administration to open the next academic semester submission window.
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                      <button
-                        type="button"
-                        onClick={openHistoryModal}
-                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition cursor-pointer"
-                      >
-                        <Archive className="h-3.5 w-3.5" />
-                        <span>View Submission History</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowResetArchivedView(true)}
-                        className="inline-flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer transition"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        <span>Show Completed Checklist</span>
-                      </button>
-                    </div>
-                  </div>
                 ) : (
                   <div className="space-y-3">
-                    {isTermResetAcknowledged && showResetArchivedView && (
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
-                        <span>Viewing archived checklist for completed term {activeAY} • {activeSem}</span>
-                        <button
-                          type="button"
-                          onClick={() => setShowResetArchivedView(false)}
-                          className="font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
-                        >
-                          Return to Ready View
-                        </button>
+                    {isAllValidated && (
+                      <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-2 rounded-lg bg-[#0b5336] text-white shrink-0 shadow-2xs">
+                            <CheckCircle className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[#0b5336] dark:text-emerald-400 text-sm">
+                                All Requirements Completed & Validated
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0b5336] dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                                6 of 6 Validated
+                              </span>
+                            </div>
+                            <p className="text-slate-600 dark:text-slate-300 text-xs mt-0.5">
+                              All 6 compliance requirements for A.Y. {activeAY} • {activeSem} are completed. Your submissions remain active and viewable below.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={openHistoryModal}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-semibold cursor-pointer shadow-2xs transition"
+                          >
+                            <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span>Validation History</span>
+                          </button>
+                        </div>
                       </div>
                     )}
                     <div className="bg-white border border-slate-300 shadow-sm shadow-slate-300/50 dark:bg-slate-900 dark:border dark:border-slate-800 dark:shadow-none rounded-xl divide-y divide-slate-300 dark:divide-slate-800/60 overflow-hidden transition-colors">
@@ -2807,9 +2818,11 @@ function FacultySubmissionPanelContent({
                           className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/40 transition-colors"
                         >
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                              {REQUIREMENT_LABEL[req.code]}
-                            </h4>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                {REQUIREMENT_LABEL[req.code]}
+                              </h4>
+                            </div>
                             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
                               {req.submittedAt &&
                               formatSubmittedDateTime(req.submittedAt) ? (

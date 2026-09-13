@@ -637,6 +637,14 @@ export function ExtendSubmissionWindowModal({
             </span>
           </div>
 
+          {/* Completed Accounts Protection Notice */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-950/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-3 text-xs text-emerald-900 dark:text-emerald-300">
+            <CheckCircle className="h-4 w-4 text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              <span className="font-semibold">Completed Accounts Protected:</span> Accounts that have already completed and validated all requirements will remain completed. Extending the submission window applies only to faculty with pending or lacking requirements.
+            </p>
+          </div>
+
           {/* Footer Actions */}
           <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">
             <button

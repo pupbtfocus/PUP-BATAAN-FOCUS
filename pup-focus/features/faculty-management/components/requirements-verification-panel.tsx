@@ -2817,6 +2817,9 @@ export function RequirementsPanel({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("All Programs");
   const [isProgramDropdownOpen, setIsProgramDropdownOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "completed" | "pending_review" | "needs_revision" | "not_submitted"
+  >("all");
 
   const [academicYear, setAcademicYear] = useState("");
   const [semester, setSemester] = useState<SemesterOption>("1st Semester");
@@ -2932,6 +2935,113 @@ export function RequirementsPanel({
     }
   }
 
+  // Map faculty account to verification status details
+  const facultyStatusMap = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        category: "completed" | "pending_review" | "needs_revision" | "not_submitted";
+        overallStatus: "Completed / Validated" | "Pending Review" | "Needs Revision" | "Not Submitted";
+        statusBadgeClass: string;
+        validatedCount: number;
+        uploadedCount: number;
+        rejectedCount: number;
+      }
+    >();
+
+    for (const faculty of facultyAccounts) {
+      const statusRecord = facultyStatuses[faculty.id];
+      const validatedCount = statusRecord
+        ? DEFAULT_REQUIREMENTS.filter(
+            (code) => statusRecord[code] === "validated"
+          ).length
+        : 0;
+
+      const uploadedCount = statusRecord
+        ? DEFAULT_REQUIREMENTS.filter(
+            (code) => statusRecord[code] === "uploaded"
+          ).length
+        : 0;
+
+      const rejectedCount = statusRecord
+        ? DEFAULT_REQUIREMENTS.filter(
+            (code) =>
+              statusRecord[code] === "rejected" ||
+              statusRecord[code] === "needs_revision"
+          ).length
+        : 0;
+
+      let category: "completed" | "pending_review" | "needs_revision" | "not_submitted" =
+        "not_submitted";
+      let overallStatus:
+        | "Completed / Validated"
+        | "Pending Review"
+        | "Needs Revision"
+        | "Not Submitted" = "Not Submitted";
+      let statusBadgeClass =
+        "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 font-semibold";
+
+      if (validatedCount === DEFAULT_REQUIREMENTS.length) {
+        category = "completed";
+        overallStatus = "Completed / Validated";
+        statusBadgeClass =
+          "bg-[#0b5336] text-white border border-[#08412a] shadow-2xs font-semibold";
+      } else if (rejectedCount > 0) {
+        category = "needs_revision";
+        overallStatus = "Needs Revision";
+        statusBadgeClass =
+          "bg-[#780000] text-white border border-[#5e0000] shadow-2xs font-semibold";
+      } else if (
+        uploadedCount > 0 ||
+        (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)
+      ) {
+        category = "pending_review";
+        overallStatus = "Pending Review";
+        statusBadgeClass =
+          "bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs font-semibold";
+      } else {
+        category = "not_submitted";
+        overallStatus = "Not Submitted";
+        statusBadgeClass =
+          "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 font-semibold";
+      }
+
+      map.set(faculty.id, {
+        category,
+        overallStatus,
+        statusBadgeClass,
+        validatedCount,
+        uploadedCount,
+        rejectedCount,
+      });
+    }
+
+    return map;
+  }, [facultyAccounts, facultyStatuses]);
+
+  // Tab counters
+  const statusCounts = useMemo(() => {
+    let completed = 0;
+    let pending_review = 0;
+    let needs_revision = 0;
+    let not_submitted = 0;
+
+    facultyStatusMap.forEach((val) => {
+      if (val.category === "completed") completed++;
+      else if (val.category === "pending_review") pending_review++;
+      else if (val.category === "needs_revision") needs_revision++;
+      else if (val.category === "not_submitted") not_submitted++;
+    });
+
+    return {
+      all: facultyAccounts.length,
+      completed,
+      pending_review,
+      needs_revision,
+      not_submitted,
+    };
+  }, [facultyAccounts.length, facultyStatusMap]);
+
   const filteredFaculty = useMemo(() => {
     return facultyAccounts.filter((f) => {
       const matchesSearch =
@@ -2943,14 +3053,18 @@ export function RequirementsPanel({
       const matchesProgram =
         selectedProgram === "All Programs" || progCode === selectedProgram;
 
-      return matchesSearch && matchesProgram;
+      const statInfo = facultyStatusMap.get(f.id);
+      const matchesStatus =
+        statusFilter === "all" || (statInfo && statInfo.category === statusFilter);
+
+      return matchesSearch && matchesProgram && matchesStatus;
     });
-  }, [facultyAccounts, searchTerm, selectedProgram]);
+  }, [facultyAccounts, searchTerm, selectedProgram, statusFilter, facultyStatusMap]);
 
   return (
     <div className="w-full">
       {/* 1. Top Control Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-6 shadow-sm shadow-slate-200/60 dark:shadow-none">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-slate-400/80 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-4 shadow-sm shadow-slate-200/60 dark:shadow-none">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto">
           {/* Search Input */}
           <input
@@ -3022,6 +3136,118 @@ export function RequirementsPanel({
         </div>
       </div>
 
+      {/* 1.5 Status Category Filter Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+        <button
+          type="button"
+          onClick={() => setStatusFilter("all")}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+            statusFilter === "all"
+              ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-xs"
+              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+          }`}
+        >
+          <span>All Faculty</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              statusFilter === "all"
+                ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-950"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+            }`}
+          >
+            {statusCounts.all}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("completed")}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+            statusFilter === "completed"
+              ? "bg-[#0b5336] text-white shadow-xs ring-1 ring-[#08412a]"
+              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20"
+          }`}
+        >
+          <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+          <span>Completed / Validated</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              statusFilter === "completed"
+                ? "bg-white/20 text-white"
+                : "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300"
+            }`}
+          >
+            {statusCounts.completed}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("pending_review")}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+            statusFilter === "pending_review"
+              ? "bg-amber-500 text-slate-950 shadow-xs font-bold"
+              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 hover:bg-amber-50/40 dark:hover:bg-amber-950/20"
+          }`}
+        >
+          <span className="flex h-2 w-2 rounded-full bg-amber-500" />
+          <span>Pending Review</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              statusFilter === "pending_review"
+                ? "bg-slate-950/20 text-slate-950"
+                : "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300"
+            }`}
+          >
+            {statusCounts.pending_review}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("needs_revision")}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+            statusFilter === "needs_revision"
+              ? "bg-[#780000] text-white shadow-xs ring-1 ring-[#5e0000]"
+              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 hover:bg-rose-50/40 dark:hover:bg-rose-950/20"
+          }`}
+        >
+          <span className="flex h-2 w-2 rounded-full bg-rose-500" />
+          <span>Needs Revision</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              statusFilter === "needs_revision"
+                ? "bg-white/20 text-white"
+                : "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300"
+            }`}
+          >
+            {statusCounts.needs_revision}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("not_submitted")}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+            statusFilter === "not_submitted"
+              ? "bg-slate-700 text-white dark:bg-slate-300 dark:text-slate-950 shadow-xs"
+              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+          }`}
+        >
+          <span className="flex h-2 w-2 rounded-full bg-slate-400" />
+          <span>Not Submitted</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              statusFilter === "not_submitted"
+                ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-950"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+            }`}
+          >
+            {statusCounts.not_submitted}
+          </span>
+        </button>
+      </div>
+
       {/* 2. Faculty List / Table View */}
       <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none">
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[750px]">
@@ -3042,48 +3268,25 @@ export function RequirementsPanel({
                     colSpan={6}
                     className="px-4 py-12 text-center text-xs text-slate-500 dark:text-slate-400"
                   >
-                    No faculty found matching the filter criteria.
+                    {statusFilter === "completed"
+                      ? "No faculty accounts have completed all requirements yet."
+                      : statusFilter === "pending_review"
+                      ? "No faculty accounts have submissions awaiting review."
+                      : statusFilter === "needs_revision"
+                      ? "No faculty accounts currently have requirements needing revision."
+                      : statusFilter === "not_submitted"
+                      ? "No faculty accounts with zero submissions found."
+                      : "No faculty found matching the filter criteria."}
                   </td>
                 </tr>
               ) : (
                 filteredFaculty.map((faculty, index) => {
                   const statusRecord = facultyStatuses[faculty.id];
-                  const validatedCount = statusRecord
-                    ? DEFAULT_REQUIREMENTS.filter(
-                        (code) => statusRecord[code] === "validated"
-                      ).length
-                    : 0;
-
-                  const uploadedCount = statusRecord
-                    ? DEFAULT_REQUIREMENTS.filter(
-                        (code) => statusRecord[code] === "uploaded"
-                      ).length
-                    : 0;
-
-                  const rejectedCount = statusRecord
-                    ? DEFAULT_REQUIREMENTS.filter(
-                        (code) => statusRecord[code] === "rejected" || statusRecord[code] === "needs_revision"
-                      ).length
-                    : 0;
-
-                  // Overall pure text status
-                  let overallStatus: "Validated" | "Pending Review" | "Needs Revision" | "Not Submitted" =
-                    "Not Submitted";
-                  let statusBadgeClass = "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800";
-
-                  if (validatedCount === DEFAULT_REQUIREMENTS.length) {
-                    overallStatus = "Validated";
-                    statusBadgeClass = "bg-[#0b5336] text-white border border-[#08412a] shadow-2xs font-semibold";
-                  } else if (rejectedCount > 0) {
-                    overallStatus = "Needs Revision";
-                    statusBadgeClass = "bg-[#780000] text-white border border-[#5e0000] shadow-2xs font-semibold";
-                  } else if (uploadedCount > 0 || (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)) {
-                    overallStatus = "Pending Review";
-                    statusBadgeClass = "bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs font-semibold";
-                  } else {
-                    overallStatus = "Not Submitted";
-                    statusBadgeClass = "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 font-semibold";
-                  }
+                  const statInfo = facultyStatusMap.get(faculty.id);
+                  const validatedCount = statInfo?.validatedCount ?? 0;
+                  const overallStatus = statInfo?.overallStatus ?? "Not Submitted";
+                  const statusBadgeClass = statInfo?.statusBadgeClass ?? "";
+                  const isCompleted = statInfo?.category === "completed";
 
                   const programCode =
                     faculty.program?.code || faculty.program?.name || "N/A";
@@ -3110,7 +3313,14 @@ export function RequirementsPanel({
                             )}
                           </div>
                           <div>
-                            <div className="font-semibold text-slate-900 dark:text-slate-100">{faculty.fullName}</div>
+                            <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                              <span>{faculty.fullName}</span>
+                              {isCompleted && (
+                                <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 text-[9px] font-bold text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-2xs">
+                                  Complete
+                                </span>
+                              )}
+                            </div>
                             {faculty.email ? (
                               <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">
                                 {faculty.email}
@@ -3130,7 +3340,21 @@ export function RequirementsPanel({
                             Loading...
                           </span>
                         ) : (
-                          `${validatedCount}/${DEFAULT_REQUIREMENTS.length} Validated`
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-slate-900 dark:text-slate-100">
+                              {validatedCount}/{DEFAULT_REQUIREMENTS.length} Validated
+                            </span>
+                            {isCompleted ? (
+                              <span className="text-[10px] font-bold text-[#0b5336] dark:text-emerald-400 flex items-center gap-1 mt-0.5">
+                                <CheckCircle className="h-3 w-3" />
+                                100% Compliant &bull; Locked
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                                {Math.round((validatedCount / DEFAULT_REQUIREMENTS.length) * 100)}% Complete
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-3 font-medium">
@@ -3139,8 +3363,9 @@ export function RequirementsPanel({
                             ...
                           </span>
                         ) : (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${statusBadgeClass}`}>
-                            {overallStatus}
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusBadgeClass}`}>
+                            {isCompleted ? <CheckCircle className="h-3.5 w-3.5 text-white shrink-0" /> : null}
+                            <span>{overallStatus}</span>
                           </span>
                         )}
                       </td>
@@ -3148,9 +3373,13 @@ export function RequirementsPanel({
                         <button
                           type="button"
                           onClick={() => setReviewingFaculty(faculty)}
-                          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition cursor-pointer"
+                          className={`${
+                            isCompleted
+                              ? "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-950 font-semibold"
+                              : "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold"
+                          } px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition cursor-pointer`}
                         >
-                          Review Requirements
+                          {isCompleted ? "View Completed" : "Review Requirements"}
                         </button>
                       </td>
                     </tr>
