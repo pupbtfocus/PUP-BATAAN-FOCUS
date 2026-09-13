@@ -367,30 +367,98 @@ export default function Home() {
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
       <div className="relative z-10 w-full max-w-[390px] sm:max-w-md mx-auto my-auto pt-6 sm:pt-10 pb-14 sm:pb-8">
-        <div className="relative w-full mx-auto">
-          {/* Curved Card Top Header SVG */}
+        <div className="relative w-full mx-auto drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)]">
+          {/* Curved Card Top Header SVG with 3D Golden Crest Lighting */}
           <div className="relative">
             <svg
-              viewBox="0 0 400 60"
-              className="w-full h-auto text-[#580000] fill-current stroke-amber-400/80 dark:stroke-amber-500/80 stroke-[2] block -mb-0.5 pointer-events-none"
+              viewBox="0 0 400 64"
+              className="w-full h-auto block -mb-1 pointer-events-none overflow-visible"
             >
-              <path d="M 0,60 L 0,20 Q 0,0 20,0 L 142,0 C 158,0 162,37 200,37 C 238,37 242,0 258,0 L 380,0 Q 400,0 400,20 L 400,60 Z" />
+              <defs>
+                {/* Authentic PUP Maroon Gradient (#8a0c0c -> #780000 -> #680000) */}
+                <linearGradient id="cardTopGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#8a0c0c" />
+                  <stop offset="40%" stopColor="#780000" />
+                  <stop offset="85%" stopColor="#680000" />
+                  <stop offset="100%" stopColor="#680000" />
+                </linearGradient>
+
+                {/* 3D Specular Golden Rim along the curved crest */}
+                <linearGradient id="topGoldCrest" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#D97706" stopOpacity="0.8" />
+                  <stop offset="15%" stopColor="#F59E0B" stopOpacity="0.95" />
+                  <stop offset="35%" stopColor="#FDE68A" stopOpacity="1" />
+                  <stop offset="50%" stopColor="#FFFBEB" stopOpacity="1" />
+                  <stop offset="65%" stopColor="#FDE68A" stopOpacity="1" />
+                  <stop offset="85%" stopColor="#F59E0B" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="#D97706" stopOpacity="0.8" />
+                </linearGradient>
+
+                {/* Top ambient golden light sheen tracing beneath the curve */}
+                <linearGradient id="topAmbientSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.65" />
+                  <stop offset="60%" stopColor="#F59E0B" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#780000" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+
+              {/* 1. Background Fill Path - extends to y=64 to overlap section seamlessly */}
+              <path
+                d="M 0,64 L 0,20 Q 0,0 20,0 L 142,0 C 158,0 162,37 200,37 C 238,37 242,0 258,0 L 380,0 Q 400,0 400,20 L 400,64 Z"
+                fill="url(#cardTopGrad)"
+              />
+
+              {/* 2. Ambient Golden Light Sheen tracing the inner curve (3D light reflection) */}
+              <path
+                d="M 2,20 Q 2,2 20,2 L 142,2 C 158,2 162,37 200,37 C 238,37 242,2 258,2 L 380,2 Q 398,2 398,20"
+                fill="none"
+                stroke="url(#topAmbientSheen)"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+
+              {/* 3. Base Golden Border along the curve and sides - extends down to y=64 */}
+              <path
+                d="M 1,64 L 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20 L 399,64"
+                fill="none"
+                stroke="rgba(245, 158, 11, 0.75)"
+                strokeWidth="2"
+              />
+
+              {/* 4. Luminous 3D Golden Crest (Top Highlight Bevel) */}
+              <path
+                d="M 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20"
+                fill="none"
+                stroke="url(#topGoldCrest)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+
+              {/* 5. Fine Specular Reflection along the center curve */}
+              <path
+                d="M 25,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 375,1"
+                fill="none"
+                stroke="rgba(255, 255, 255, 0.5)"
+                strokeWidth="1"
+                strokeLinecap="round"
+              />
             </svg>
 
-            {/* Logo positioned precisely inside the arch */}
+            {/* Logo positioned precisely inside the curved arch */}
             <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
-              <Logo size={115} className="mb-0" />
+              <Logo size={115} className="mb-0 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]" />
             </div>
           </div>
 
-          {/* Card Body */}
-          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 dark:border-amber-500/80 bg-gradient-to-b from-[#580000] via-[#430000] to-[#2d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-md shadow-xl shadow-black/40">
+          {/* Card Body - Vibrant PUP Brand Maroon (#680000 -> #5e0000 -> #4d0000) with no horizontal seam */}
+          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 bg-gradient-to-b from-[#680000] via-[#5e0000] to-[#4d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-xl">
             <div className="mt-2 mb-6 sm:mb-7 text-center">
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-wider text-amber-200 uppercase mb-1">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 Sign In
               </h2>
-              <div className="mx-auto my-2.5 h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
-              <p className="text-amber-200/80 text-xs sm:text-sm font-medium tracking-wide mb-6">
+              {/* Sleek Golden Divider matching the 3D modal */}
+              <div className="mx-auto my-3 h-0.5 w-14 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+              <p className="text-amber-100/90 text-xs sm:text-sm font-medium tracking-wide">
                 Enter your institutional credentials to continue
               </p>
             </div>
