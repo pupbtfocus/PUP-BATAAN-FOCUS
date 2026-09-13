@@ -333,6 +333,10 @@ export async function PUT(request: NextRequest) {
           {
             academic_year: academicYear,
             semester,
+            start_date: startDate,
+            end_date: endDate,
+            start_time: startTime,
+            end_time: endTime,
             created_by: user.id,
             created_at: new Date().toISOString(),
           },
@@ -349,10 +353,16 @@ export async function PUT(request: NextRequest) {
           usedTerms.push({ academic_year: academicYear, semester });
         }
       } else {
-        console.error(
-          "Failed to record submission window term usage",
-          recordTermError,
-        );
+        if (recordTermError.code === "PGRST205") {
+          console.warn(
+            "Notice: 'submission_window_terms' table does not exist in Supabase yet. Run migration 0014_submission_window_used_terms.sql to enable term history tracking.",
+          );
+        } else {
+          console.error(
+            "Failed to record submission window term usage",
+            recordTermError,
+          );
+        }
       }
 
       const appUrl = (

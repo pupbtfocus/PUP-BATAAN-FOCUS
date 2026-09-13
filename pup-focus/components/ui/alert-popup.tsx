@@ -39,23 +39,19 @@ export function AlertPopup({
   const isWarning = type === "warning";
 
   const icon = isSuccess ? CheckCircle : isError ? WarningCircle : InfoCircle;
-  const iconColor = isSuccess ? "success" : isError ? "danger" : "active";
+  const iconColor = isSuccess ? "white" : isError ? "white" : isWarning ? "inherit" : "white";
 
   const colorStyles = isSuccess
-    ? "border-emerald-300 bg-emerald-50 text-emerald-950 dark:border-emerald-700/60 dark:bg-emerald-950/85 dark:text-emerald-200 shadow-emerald-950/20"
+    ? "bg-[#0b5336] text-white border border-[#08412a] shadow-lg shadow-[#0b5336]/30"
     : isError
-    ? "border-rose-300 bg-rose-50 text-rose-950 dark:border-rose-800/60 dark:bg-rose-950/85 dark:text-rose-200 shadow-rose-950/20"
+    ? "bg-[#780000] text-white border border-[#5e0000] shadow-lg shadow-[#780000]/30"
     : isWarning
-    ? "border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800/60 dark:bg-amber-950/85 dark:text-amber-200 shadow-amber-950/20"
-    : "border-sky-300 bg-sky-50 text-sky-950 dark:border-sky-800/60 dark:bg-sky-950/85 dark:text-sky-200 shadow-sky-950/20";
+    ? "bg-amber-500 text-slate-950 border border-amber-600 font-bold shadow-lg shadow-amber-500/25 dark:bg-amber-500 dark:text-slate-950 dark:border-amber-400"
+    : "bg-slate-900 text-white border border-slate-700 shadow-lg dark:bg-slate-800 dark:text-white dark:border-slate-700";
 
-  const closeButtonHover = isSuccess
-    ? "hover:bg-emerald-200/60 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200"
-    : isError
-    ? "hover:bg-rose-200/60 dark:hover:bg-rose-900/60 text-rose-800 dark:text-rose-200"
-    : isWarning
-    ? "hover:bg-amber-200/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-200"
-    : "hover:bg-sky-200/60 dark:hover:bg-sky-900/60 text-sky-800 dark:text-sky-200";
+  const closeButtonHover = isSuccess || isError || !isWarning
+    ? "hover:bg-white/20 text-white/90 hover:text-white"
+    : "hover:bg-black/15 text-slate-950/80 hover:text-slate-950";
 
   const positionStyles =
     position === "top-right"
