@@ -5,6 +5,7 @@ import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
 import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
 import { Check, CheckCircle, Clock, Eye, EyeClosed, Lock, Mail, WarningCircle, WarningTriangle } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 export interface NoticeBanner {
   type: "timeout" | "error" | "success" | "info";
@@ -148,17 +149,17 @@ export function LoginForm({
             }`}
           >
             {notice.type === "timeout" ? (
-              <Clock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+              <AppIcon icon={Clock} size="md" color="active" className="mt-0.5" />
             ) : notice.type === "success" ? (
-              <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+              <AppIcon icon={CheckCircle} size="md" color="success" className="mt-0.5" />
             ) : (
-              <WarningCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+              <AppIcon icon={WarningCircle} size="md" color="danger" className="mt-0.5" />
             )}
             <span className="leading-relaxed font-medium">{notice.message}</span>
           </div>
         ) : error ? (
           <div className="rounded-xl p-3.5 text-xs flex items-start gap-2.5 border bg-rose-500/15 border-rose-500/30 text-rose-200 transition-all">
-            <WarningCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+            <AppIcon icon={WarningCircle} size="md" color="danger" className="mt-0.5" />
             <span className="leading-relaxed font-medium">{error}</span>
           </div>
         ) : null}
@@ -171,7 +172,7 @@ export function LoginForm({
             Email Address
           </label>
           <div className="relative">
-            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 !text-amber-400/80 pointer-events-none" />
+            <AppIcon icon={Mail} size="md" color="active" />
             <input
               id="email"
               type="email"
@@ -194,7 +195,7 @@ export function LoginForm({
             Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 !text-amber-400/80 pointer-events-none" />
+            <AppIcon icon={Lock} size="md" color="active" />
             <input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -229,15 +230,15 @@ export function LoginForm({
               className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 !text-amber-400/80 hover:!text-amber-300 transition-colors cursor-pointer"
             >
               {showPassword ? (
-                <EyeClosed className="h-4 w-4 stroke-[2.2]" />
+                <AppIcon icon={EyeClosed} size="md" color="inherit" strokeWidth={2.2} />
               ) : (
-                <Eye className="h-4 w-4 stroke-[2.2]" />
+                <AppIcon icon={Eye} size="md" color="inherit" strokeWidth={2.2} />
               )}
             </button>
           </div>
           {isCapsLockOn && (
             <p className="ml-1 mt-1 flex items-center gap-1.5 text-xs text-amber-300 font-medium">
-              <WarningTriangle className="h-3.5 w-3.5 shrink-0" />
+              <AppIcon icon={WarningTriangle} size="sm" color="inherit" />
               <span>Caps Lock is ON</span>
             </p>
           )}
@@ -263,7 +264,7 @@ export function LoginForm({
                 }`}
               >
                 {activeRememberMe && (
-                  <Check className="w-3 h-3 text-[#2b0000] stroke-[3.5] transition-transform duration-150 scale-100" />
+                  <AppIcon icon={Check} size="xs" color="inherit" className="text-[#2b0000] stroke-[3.5] transition-transform duration-150 scale-100" />
                 )}
               </div>
             </div>

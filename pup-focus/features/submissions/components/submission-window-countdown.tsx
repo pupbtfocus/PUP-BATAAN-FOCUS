@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Calendar, Clock, Lock, LockSlash, Timer, WarningTriangle } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 type SubmissionWindowState = {
   isConfigured: boolean;
   isOpen: boolean;
@@ -162,7 +163,7 @@ export function SubmissionWindowCountdown({
     return (
       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs shadow-slate-300/40 dark:shadow-none">
         <div className="flex items-center gap-2">
-          <WarningTriangle className="h-3.5 w-3.5 text-slate-500" />
+          <AppIcon icon={WarningTriangle} size="sm" color="default" />
           <span className="text-[10px] uppercase tracking-[0.15em] text-slate-600 dark:text-slate-400 font-semibold">
             Window Not Configured
           </span>
@@ -192,7 +193,7 @@ export function SubmissionWindowCountdown({
   > = {
     Open: {
       label: "Window Open",
-      icon: <LockSlash className="h-3 w-3" />,
+      icon: <AppIcon icon={LockSlash} size="xs" color="inherit" />,
       dotClass: "bg-emerald-500 pulse-dot",
       borderClass: "border-emerald-200 dark:border-emerald-800/60",
       bgClass: "bg-emerald-50/80 text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-200",
@@ -201,7 +202,7 @@ export function SubmissionWindowCountdown({
     },
     Closed: {
       label: "Window Closed",
-      icon: <Lock className="h-3 w-3" />,
+      icon: <AppIcon icon={Lock} size="xs" color="inherit" />,
       dotClass: "bg-rose-500",
       borderClass: "border-rose-200/80 dark:border-rose-800/60",
       bgClass: "bg-rose-50/70 text-rose-900 dark:bg-rose-950/40 dark:text-rose-300",
@@ -210,7 +211,7 @@ export function SubmissionWindowCountdown({
     },
     Upcoming: {
       label: "Opening Soon",
-      icon: <Clock className="h-3 w-3" />,
+      icon: <AppIcon icon={Clock} size="xs" color="inherit" />,
       dotClass: "bg-amber-500",
       borderClass: "border-amber-200/80 dark:border-amber-800/60",
       bgClass: "bg-amber-50/70 text-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
@@ -241,7 +242,7 @@ export function SubmissionWindowCountdown({
       {/* Academic term */}
       {academicYear && semester ? (
         <div className="mt-2 flex items-center gap-1.5">
-          <Calendar className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+          <AppIcon icon={Calendar} size="xs" color="muted" />
           <span className="text-[10px] tracking-wide text-slate-600 dark:text-slate-400 font-medium">
             A.Y. {academicYear} | {semester}
           </span>
@@ -251,7 +252,7 @@ export function SubmissionWindowCountdown({
       {remaining && status !== "Closed" ? (
         <div className="mt-3">
           <div className="flex items-center justify-center gap-1 mb-1.5">
-            <Timer className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+            <AppIcon icon={Timer} size="xs" color="muted" />
             <span className="text-[9px] uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400 font-semibold">
               {status === "Open" ? "Closes in" : "Opens in"}
             </span>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Calendar, Check, CheckCircle, Clock, NavArrowDown, Refresh, Search, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 
 export interface FacultyOption {
@@ -328,7 +329,7 @@ export function ExtendSubmissionWindowModal({
         <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+              <AppIcon icon={Clock} size="lg" color="default" />
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Extend & Re-open Submission Window</h3>
             </div>
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
@@ -345,13 +346,13 @@ export function ExtendSubmissionWindowModal({
             className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
             aria-label="Close modal"
           >
-            <Xmark className="h-4 w-4" />
+            <AppIcon icon={Xmark} size="md" color="inherit" />
           </button>
         </div>
 
         {error ? (
           <div className="flex items-center gap-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 p-3 text-xs text-rose-700 dark:text-rose-400">
-            <WarningCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+            <AppIcon icon={WarningCircle} size="md" color="danger" />
             <span>{error}</span>
           </div>
         ) : null}
@@ -459,7 +460,7 @@ export function ExtendSubmissionWindowModal({
                   /* Search & Dropdown Combobox */
                   <div className="relative">
                     <div className="relative flex items-center">
-                      <Search className="absolute left-3 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                      <AppIcon icon={Search} size="md" color="muted" />
                       <input
                         type="text"
                         placeholder="Search faculty by name, email, or department..."
@@ -477,10 +478,10 @@ export function ExtendSubmissionWindowModal({
                           onClick={() => setFacultySearchQuery("")}
                           className="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 cursor-pointer"
                         >
-                          <Xmark className="h-3.5 w-3.5" />
+                          <AppIcon icon={Xmark} size="sm" color="inherit" />
                         </button>
                       ) : (
-                        <NavArrowDown className="absolute right-3 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                        <AppIcon icon={NavArrowDown} size="sm" color="muted" />
                       )}
                     </div>
 
@@ -498,7 +499,7 @@ export function ExtendSubmissionWindowModal({
                         <div className="max-h-52 overflow-y-auto space-y-0.5 pr-1">
                           {isLoadingFaculty ? (
                             <div className="flex items-center justify-center gap-2 py-6 text-xs text-slate-400">
-                              <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                              <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                               <span>Loading faculty members...</span>
                             </div>
                           ) : filteredFaculty.length === 0 ? (
@@ -616,7 +617,7 @@ export function ExtendSubmissionWindowModal({
           {/* Live Preview Card with Re-opening Status Badge */}
           <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3.5 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <Calendar className="h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0" />
+              <AppIcon icon={Calendar} size="md" color="default" />
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
@@ -624,7 +625,7 @@ export function ExtendSubmissionWindowModal({
                   </span>
                   {isPreviouslyClosed && (
                     <span className="inline-flex items-center gap-1 rounded bg-slate-200/80 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-                      <Refresh className="h-2.5 w-2.5" />
+                      <AppIcon icon={Refresh} size="md" color="inherit" />
                       Status: Re-opening Closed Window
                     </span>
                   )}
@@ -639,7 +640,7 @@ export function ExtendSubmissionWindowModal({
 
           {/* Completed Accounts Protection Notice */}
           <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-950/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-3 text-xs text-emerald-900 dark:text-emerald-300">
-            <CheckCircle className="h-4 w-4 text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5" />
+            <AppIcon icon={CheckCircle} size="md" color="success" className="mt-0.5" />
             <p className="leading-relaxed">
               <span className="font-semibold">Completed Accounts Protected:</span> Accounts that have already completed and validated all requirements will remain completed. Extending the submission window applies only to faculty with pending or lacking requirements.
             </p>
@@ -662,12 +663,12 @@ export function ExtendSubmissionWindowModal({
             >
               {isSubmitting ? (
                 <>
-                  <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                  <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                   Extending Window...
                 </>
               ) : (
                 <>
-                  <CheckCircle className="h-3.5 w-3.5 text-slate-950" />
+                  <AppIcon icon={CheckCircle} size="sm" color="default" />
                   Confirm & Extend Window
                 </>
               )}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle, Clock, EditPencil, Eye, Filter, NavArrowLeft, NavArrowRight, Page, Refresh, Search, Settings, ShieldAlert, Trash, Upload, UserBadgeCheck, UserPlus, UserXmark, Xmark, XmarkCircle } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -66,48 +67,48 @@ function getActionBadgeStyle(action: string): ActionBadgeStyle {
     return {
       bg: "bg-emerald-50 border-emerald-300 dark:bg-emerald-500/15 dark:border-emerald-500/30",
       text: "text-emerald-800 dark:text-emerald-400",
-      icon: <CheckCircle className="h-3 w-3" />,
+      icon: <AppIcon icon={CheckCircle} size="xs" color="inherit" />,
     };
   }
   if (action.includes("reject") || action.includes("delete") || action.includes("deactivate")) {
     return {
       bg: "bg-rose-50 border-rose-300 dark:bg-rose-500/15 dark:border-rose-500/30",
       text: "text-rose-800 dark:text-rose-400",
-      icon: <XmarkCircle className="h-3 w-3" />,
+      icon: <AppIcon icon={XmarkCircle} size="xs" color="inherit" />,
     };
   }
   if (action.includes("upload")) {
     return {
       bg: "bg-blue-50 border-blue-300 dark:bg-blue-500/15 dark:border-blue-500/30",
       text: "text-blue-800 dark:text-blue-400",
-      icon: <Upload className="h-3 w-3" />,
+      icon: <AppIcon icon={Upload} size="xs" color="inherit" />,
     };
   }
   if (action.includes("update") || action.includes("window")) {
     return {
       bg: "bg-amber-50 border-amber-300 dark:bg-amber-500/15 dark:border-amber-500/30",
       text: "text-amber-900 dark:text-amber-400",
-      icon: <EditPencil className="h-3 w-3" />,
+      icon: <AppIcon icon={EditPencil} size="xs" color="inherit" />,
     };
   }
   return {
     bg: "bg-slate-100 border-slate-400 dark:bg-slate-500/15 dark:border-slate-500/30",
     text: "text-slate-800 dark:text-slate-400",
-    icon: <ShieldAlert className="h-3 w-3" />,
+    icon: <AppIcon icon={ShieldAlert} size="xs" color="inherit" />,
   };
 }
 
 function getActionIcon(action: string): React.ReactNode {
-  if (action.includes("upload")) return <Upload className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
-  if (action.includes("approve") || action.includes("validated")) return <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
-  if (action.includes("reject")) return <XmarkCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />;
-  if (action.includes("create") || action.includes("invite")) return <UserPlus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
-  if (action.includes("delete")) return <Trash className="h-4 w-4 text-rose-600 dark:text-rose-400" />;
-  if (action.includes("activate")) return <UserBadgeCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
-  if (action.includes("deactivate")) return <UserXmark className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
-  if (action.includes("update")) return <EditPencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
-  if (action.includes("window")) return <Settings className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
-  return <Page className="h-4 w-4 text-slate-500 dark:text-slate-400" />;
+  if (action.includes("upload")) return <AppIcon icon={Upload} size="md" color="info" />;
+  if (action.includes("approve") || action.includes("validated")) return <AppIcon icon={CheckCircle} size="md" color="success" />;
+  if (action.includes("reject")) return <AppIcon icon={XmarkCircle} size="md" color="danger" />;
+  if (action.includes("create") || action.includes("invite")) return <AppIcon icon={UserPlus} size="md" color="success" />;
+  if (action.includes("delete")) return <AppIcon icon={Trash} size="md" color="danger" />;
+  if (action.includes("activate")) return <AppIcon icon={UserBadgeCheck} size="md" color="success" />;
+  if (action.includes("deactivate")) return <AppIcon icon={UserXmark} size="md" color="active" />;
+  if (action.includes("update")) return <AppIcon icon={EditPencil} size="md" color="active" />;
+  if (action.includes("window")) return <AppIcon icon={Settings} size="md" color="active" />;
+  return <AppIcon icon={Page} size="md" color="default" />;
 }
 
 function formatActionLabel(action: string): string {
@@ -153,7 +154,7 @@ function MetadataModal({
             className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
             aria-label="Close"
           >
-            <Xmark className="h-4 w-4" />
+            <AppIcon icon={Xmark} size="md" color="inherit" />
           </button>
         </div>
 
@@ -334,7 +335,7 @@ export function AuditLogsPanel() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            <AppIcon icon={Search} size="sm" color="muted" />
             <input
               type="text"
               placeholder="Search actions, entity types…"
@@ -347,7 +348,7 @@ export function AuditLogsPanel() {
           {/* Category Filter */}
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <AppIcon icon={Filter} size="sm" color="muted" />
               <select
                 value={actionCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
@@ -414,14 +415,14 @@ export function AuditLogsPanel() {
         {/* Table Body */}
         {isLoading && logs.length === 0 ? (
           <div className="px-4 py-12 text-center">
-            <Refresh className="mx-auto h-6 w-6 animate-spin text-slate-400" />
+            <AppIcon icon={Refresh} size="lg" color="muted" className="animate-spin mx-auto" />
             <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
               Loading audit logs…
             </p>
           </div>
         ) : logs.length === 0 ? (
           <div className="px-4 py-12 text-center">
-            <ShieldAlert className="mx-auto h-8 w-8 text-slate-400 dark:text-slate-500" />
+            <AppIcon icon={ShieldAlert} size="xl" color="muted" className="mx-auto" />
             <p className="mt-3 text-xs font-semibold text-slate-700 dark:text-slate-300">
               No audit log entries found.
             </p>
@@ -441,7 +442,7 @@ export function AuditLogsPanel() {
                 >
                   {/* Timestamp */}
                   <div className="flex items-center gap-2 lg:gap-0">
-                    <Clock className="h-3.5 w-3.5 text-slate-400 lg:hidden" />
+                    <AppIcon icon={Clock} size="sm" color="muted" />
                     <p className="text-xs text-slate-700 dark:text-slate-300 font-mono">
                       {formatTimestamp(entry.createdAt)}
                     </p>
@@ -485,7 +486,7 @@ export function AuditLogsPanel() {
                       onClick={() => setSelectedEntry(entry)}
                       className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
                     >
-                      <Eye className="h-3 w-3" />
+                      <AppIcon icon={Eye} size="xs" color="inherit" />
                       View
                     </button>
                   </div>
@@ -505,7 +506,7 @@ export function AuditLogsPanel() {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             className="flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 transition disabled:opacity-50 cursor-pointer"
           >
-            <NavArrowLeft className="h-3.5 w-3.5" />
+            <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
             Previous
           </button>
 
@@ -520,7 +521,7 @@ export function AuditLogsPanel() {
             className="flex items-center gap-1 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 transition disabled:opacity-50 cursor-pointer"
           >
             Next
-            <NavArrowRight className="h-3.5 w-3.5" />
+            <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
           </button>
         </div>
       ) : null}

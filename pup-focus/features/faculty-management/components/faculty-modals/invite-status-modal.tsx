@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 
 export interface InviteStatusModalProps {
@@ -85,12 +86,12 @@ export function InviteStatusModal({
             >
               {copied ? (
                 <>
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <AppIcon icon={Check} size="sm" color="success" />
                   <span>Copied!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="h-3.5 w-3.5" />
+                  <AppIcon icon={Copy} size="sm" color="inherit" />
                   <span>Copy Credentials</span>
                 </>
               )}

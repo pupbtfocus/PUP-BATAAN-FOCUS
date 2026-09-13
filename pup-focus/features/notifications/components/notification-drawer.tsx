@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Bell, CheckCircle, Clock, DoubleCheck, InfoCircle, Notes, OpenNewWindow, SystemRestart, Trash, WarningCircle, WarningTriangle, Xmark, XmarkCircle } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import type { AppNotification } from "@/features/notifications/services/notification.service";
@@ -360,7 +361,7 @@ export function NotificationDrawer() {
         aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
         className="relative flex items-center justify-center p-2 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-200/60 dark:bg-slate-900 border border-slate-400 dark:border-slate-800 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40"
       >
-        <Bell className="h-5 w-5" />
+        <AppIcon icon={Bell} size="lg" color="inherit" />
         {unreadCount > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-md animate-pulse">
             {unreadCount > 99 ? "99+" : unreadCount}
@@ -386,7 +387,7 @@ export function NotificationDrawer() {
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-3 shrink-0">
                 {/* Left Side: Title & Badge */}
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <Bell className="h-5 w-5 text-amber-500 dark:text-amber-400 shrink-0" />
+                  <AppIcon icon={Bell} size="lg" color="active" />
                   <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">Notifications</h3>
                   {unreadCount > 0 && (
                     <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
@@ -406,9 +407,9 @@ export function NotificationDrawer() {
                       title="Mark all notifications as read"
                     >
                       {isMarkingAll ? (
-                        <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                        <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                       ) : (
-                        <DoubleCheck className="h-3.5 w-3.5" />
+                        <AppIcon icon={DoubleCheck} size="sm" color="inherit" />
                       )}
                       <span>Mark all read</span>
                     </button>
@@ -423,9 +424,9 @@ export function NotificationDrawer() {
                       title="Clear all notifications"
                     >
                       {isClearingAll ? (
-                        <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                        <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                       ) : (
-                        <Trash className="h-3.5 w-3.5" />
+                        <AppIcon icon={Trash} size="sm" color="inherit" />
                       )}
                       <span>Clear all</span>
                     </button>
@@ -437,7 +438,7 @@ export function NotificationDrawer() {
                     className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
                     aria-label="Close notifications"
                   >
-                    <Xmark className="h-4 w-4" />
+                    <AppIcon icon={Xmark} size="md" color="inherit" />
                   </button>
                 </div>
               </div>
@@ -446,7 +447,7 @@ export function NotificationDrawer() {
               {toastMessage && (
                 <div className="flex items-center justify-between gap-2 bg-emerald-500/15 border-b border-emerald-500/30 px-4 py-2.5 text-xs text-emerald-200 animate-in fade-in slide-in-from-top-1 duration-150">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <AppIcon icon={CheckCircle} size="md" color="success" />
                     <span className="font-medium">{toastMessage}</span>
                   </div>
                   <button
@@ -455,7 +456,7 @@ export function NotificationDrawer() {
                     className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
                     aria-label="Dismiss toast"
                   >
-                    <Xmark className="h-3.5 w-3.5" />
+                    <AppIcon icon={Xmark} size="sm" color="inherit" />
                   </button>
                 </div>
               )}
@@ -464,12 +465,12 @@ export function NotificationDrawer() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-12 text-slate-400">
-                    <SystemRestart className="h-6 w-6 animate-spin text-amber-400 mr-2" />
+                    <AppIcon icon={SystemRestart} size="lg" color="active" className="animate-spin mr-2" />
                     <span>Loading notifications...</span>
                   </div>
                 ) : notifications.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center text-slate-500 dark:text-slate-400">
-                    <Bell className="h-12 w-12 text-slate-400 dark:text-slate-600 mb-3 opacity-40" />
+                    <AppIcon icon={Bell} size="md" color="default" className="mb-3" />
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No notifications yet</p>
                     <p className="mt-1 text-xs text-slate-500">
                       Updates on your document review status will appear here.
@@ -511,7 +512,7 @@ export function NotificationDrawer() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-2.5">
                             <div className={`mt-0.5 rounded-lg border p-1.5 shrink-0 ${colorClasses}`}>
-                              <Icon className="h-4 w-4" />
+                              <AppIcon icon={Icon} size="md" color="inherit" />
                             </div>
                             <div>
                               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
@@ -536,7 +537,7 @@ export function NotificationDrawer() {
                           <div className="mt-2 flex items-center gap-2">
                             {isDeadlineAlert && (
                               <span className="inline-flex items-center gap-1 rounded border border-amber-500/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
-                                <Clock className="h-3 w-3" />
+                                <AppIcon icon={Clock} size="xs" color="inherit" />
                                 Deadline Alert
                               </span>
                             )}
@@ -557,7 +558,7 @@ export function NotificationDrawer() {
                         {remarks && (
                           <div className="mt-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700/80 dark:bg-slate-900/90 dark:text-slate-300 italic p-2.5 text-xs">
                             <span className="font-bold not-italic text-[#0b5336] dark:text-emerald-400 flex items-center gap-1 mb-0.5">
-                              <Notes className="h-3 w-3 text-[#0b5336] dark:text-emerald-400" />
+                              <AppIcon icon={Notes} size="xs" color="success" />
                               <span>{reviewerName ? `${reviewerName}: ` : "Reviewer Remarks: "}</span>
                             </span>
                             &ldquo;{remarks}&rdquo;
@@ -569,7 +570,7 @@ export function NotificationDrawer() {
                           <div className="mt-3 flex items-center justify-end">
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400 group-hover:underline">
                               {reqCode ? "View requirement" : "View pending requirements"}{" "}
-                              <OpenNewWindow className="h-3 w-3" />
+                              <AppIcon icon={OpenNewWindow} size="xs" color="inherit" />
                             </span>
                           </div>
                         )}

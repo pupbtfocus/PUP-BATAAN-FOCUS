@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Check, CheckCircle, Clock, Download, Eye, Notes, Page, WarningCircle } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { SubmissionStatusBadge } from "./submission-status-badge";
 import { cn } from "@/utils/cn";
@@ -112,7 +113,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
   if (submissions.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 px-4 py-12 text-center shadow-xs">
-        <Check className="mx-auto h-8 w-8 text-slate-400 dark:text-slate-600 mb-2" />
+        <AppIcon icon={Check} size="xl" color="muted" className="mx-auto mb-2" />
         <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No Validated Documents Found</p>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{emptyMessage}</p>
       </div>
@@ -218,7 +219,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                           title="Preview Document"
                         >
-                          <Eye className="h-3.5 w-3.5 text-slate-500" />
+                          <AppIcon icon={Eye} size="sm" color="default" />
                           <span>View</span>
                         </button>
                         <button
@@ -228,7 +229,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
                           title="Download File"
                         >
-                          <Download className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                          <AppIcon icon={Download} size="sm" color="default" />
                           <span>Download</span>
                         </button>
                       </div>
@@ -284,7 +285,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
 
               {/* Date Validated */}
               <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <AppIcon icon={CheckCircle} size="sm" color="success" />
                 <span>Date Validated: {formatDateTime(dateValidated)}</span>
               </div>
 
@@ -292,7 +293,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
               {adminFeedback && (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-200 p-2.5 text-xs">
                   <span className="font-bold uppercase tracking-wider text-[10px] text-[#0b5336] dark:text-emerald-400 mb-0.5 flex items-center gap-1">
-                    <Notes className="h-3 w-3 text-[#0b5336] dark:text-emerald-400" />
+                    <AppIcon icon={Notes} size="xs" color="success" />
                     Reviewer Remarks:
                   </span>
                   <p className="italic leading-relaxed">&ldquo;{adminFeedback}&rdquo;</p>
@@ -307,7 +308,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                   onClick={() => onViewFile(sub)}
                   className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
                 >
-                  <Eye className="h-3.5 w-3.5" />
+                  <AppIcon icon={Eye} size="sm" color="inherit" />
                   <span>View</span>
                 </button>
                 <button
@@ -316,7 +317,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                   onClick={() => handleDownload(sub)}
                   className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
                 >
-                  <Download className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                  <AppIcon icon={Download} size="sm" color="default" />
                   <span>Download</span>
                 </button>
               </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Lock, WarningTriangle } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 type SubmissionLockBannerProps = {
   isLocked: boolean;
@@ -21,11 +22,11 @@ export function SubmissionLockBanner({
       role="alert"
     >
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rose-800/60 bg-rose-900/40">
-        <Lock className="h-4 w-4 text-rose-400" />
+        <AppIcon icon={Lock} size="md" color="danger" />
       </div>
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <WarningTriangle className="h-3.5 w-3.5 text-red-400" />
+          <AppIcon icon={WarningTriangle} size="sm" color="danger" />
           <span className="text-xs font-semibold uppercase tracking-[0.12em] text-red-400">
             Uploads Locked
           </span>

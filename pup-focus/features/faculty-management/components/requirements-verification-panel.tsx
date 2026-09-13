@@ -24,6 +24,7 @@ import {
   WarningTriangle,
   Xmark,
 } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_CODE,
@@ -1259,7 +1260,7 @@ function FacultyVerificationDrawer({
             className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
             aria-label="Close modal"
           >
-            <Xmark className="h-4 w-4" />
+            <AppIcon icon={Xmark} size="md" color="inherit" />
           </button>
         </div>
 
@@ -1300,7 +1301,7 @@ function FacultyVerificationDrawer({
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-16 text-center space-y-2.5">
-              <SystemRestart className="h-6 w-6 animate-spin text-slate-400" />
+              <AppIcon icon={SystemRestart} size="lg" color="muted" className="animate-spin" />
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                 Loading faculty requirements...
               </p>
@@ -1363,7 +1364,7 @@ function FacultyVerificationDrawer({
                           : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
                       }`}
                     >
-                      <WarningCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      <AppIcon icon={WarningCircle} size="sm" color="active" />
                       <span>Revisions Uploaded</span>
                       <span
                         className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
@@ -1443,7 +1444,7 @@ function FacultyVerificationDrawer({
                     onClick={triggerValidateAllPendingModal}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <CheckCircle className="h-3.5 w-3.5 text-white" />
+                    <AppIcon icon={CheckCircle} size="sm" color="white" />
                     {isValidatingAll
                       ? "Validating..."
                       : `Validate All Pending (${pendingSubmissionsCount})`}
@@ -1455,7 +1456,7 @@ function FacultyVerificationDrawer({
                     onClick={handleDownloadZip}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
                   >
-                    <Download className="h-3.5 w-3.5 text-slate-950" />
+                    <AppIcon icon={Download} size="sm" color="default" />
                     {isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}
                   </button>
                 </div>
@@ -1468,11 +1469,11 @@ function FacultyVerificationDrawer({
                 >
                   <span className="text-sm">
                     {actionFeedback.type === "info" ? (
-                      <InfoCircle className="h-4 w-4 text-amber-500" />
+                      <AppIcon icon={InfoCircle} size="md" color="active" />
                     ) : actionFeedback.type === "success" ? (
-                      <Check className="h-4 w-4 text-emerald-500" />
+                      <AppIcon icon={Check} size="md" color="success" />
                     ) : (
-                      <WarningTriangle className="h-4 w-4 text-rose-500" />
+                      <AppIcon icon={WarningTriangle} size="md" color="danger" />
                     )}
                   </span>
                   <span>{actionFeedback.message}</span>
@@ -1499,7 +1500,7 @@ function FacultyVerificationDrawer({
                             className="py-12 text-center text-slate-500 dark:text-slate-400"
                           >
                             <div className="flex flex-col items-center justify-center gap-2">
-                              <CheckCircle className="h-7 w-7 text-emerald-500" />
+                              <AppIcon icon={CheckCircle} size="md" color="success" />
                               <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                                 {filterMode === "pending"
                                   ? "All submitted files have been reviewed and verified!"
@@ -1632,7 +1633,7 @@ function FacultyVerificationDrawer({
                                 {hasFile && fileDownloadUrl ? (
                                   <div className="flex items-center gap-2.5">
                                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 text-slate-500 dark:text-slate-400">
-                                      <Page className="h-4 w-4" />
+                                      <AppIcon icon={Page} size="md" color="inherit" />
                                     </div>
                                     <div className="min-w-0 space-y-1">
                                       <div>
@@ -1670,7 +1671,7 @@ function FacultyVerificationDrawer({
                                           className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
                                           title="Preview File"
                                         >
-                                          <Eye className="h-3.5 w-3.5" />
+                                          <AppIcon icon={Eye} size="sm" color="inherit" />
                                           <span>Preview</span>
                                         </button>
 
@@ -1685,7 +1686,7 @@ function FacultyVerificationDrawer({
                                           className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 px-2 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
                                           title="Download File"
                                         >
-                                          <Download className="h-3.5 w-3.5" />
+                                          <AppIcon icon={Download} size="sm" color="inherit" />
                                         </button>
                                       </div>
                                     </div>
@@ -1704,7 +1705,7 @@ function FacultyVerificationDrawer({
                                     {facultyNote ? (
                                       <div className="flex items-start gap-1.5 leading-snug">
                                         <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <ChatBubble className="h-3 w-3 text-amber-700 dark:text-amber-400" />
+                                          <AppIcon icon={ChatBubble} size="xs" color="active" />
                                           {isRevisionUploaded ? "Faculty Remarks (Revision):" : "Faculty Remarks:"}
                                         </span>
                                         <p
@@ -1719,7 +1720,7 @@ function FacultyVerificationDrawer({
                                     {isRevisionUploaded && priorRejectionNote ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
                                         <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <WarningCircle className="h-3 w-3 text-[#780000] dark:text-rose-400" />
+                                          <AppIcon icon={WarningCircle} size="xs" color="danger" />
                                           Prior Revision Request:
                                         </span>
                                         <p
@@ -1732,7 +1733,7 @@ function FacultyVerificationDrawer({
                                     ) : isRevisionRequested ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
                                         <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <WarningCircle className="h-3 w-3 text-[#780000] dark:text-rose-400" />
+                                          <AppIcon icon={WarningCircle} size="xs" color="danger" />
                                           Revision:
                                         </span>
                                         <p
@@ -1746,7 +1747,7 @@ function FacultyVerificationDrawer({
                                     ) : isValidated && adminNote ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
                                         <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <Notes className="h-3 w-3 text-[#0b5336] dark:text-emerald-400" />
+                                          <AppIcon icon={Notes} size="xs" color="success" />
                                           Your Remarks:
                                         </span>
                                         <p
@@ -1794,7 +1795,7 @@ function FacultyVerificationDrawer({
                                       }
                                       className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
                                     >
-                                      <Check className="h-3.5 w-3.5 text-white/90" />
+                                      <AppIcon icon={Check} size="sm" color="white" />
                                       <span>Validate</span>
                                     </button>
                                     <button
@@ -1814,7 +1815,7 @@ function FacultyVerificationDrawer({
                                       }
                                       className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
                                     >
-                                      <WarningCircle className="h-3.5 w-3.5 text-white/90" />
+                                      <AppIcon icon={WarningCircle} size="sm" color="white" />
                                       <span>Revision</span>
                                     </button>
                                   </div>
@@ -1888,7 +1889,7 @@ function FacultyVerificationDrawer({
                     onClick={handleDownloadHistoryZip}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 text-xs font-semibold px-3.5 py-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <AppIcon icon={Download} size="sm" color="inherit" />
                     {isDownloadingHistoryZip
                       ? "Zipping..."
                       : "Download History ZIP"}
@@ -1909,11 +1910,11 @@ function FacultyVerificationDrawer({
                 >
                   <span className="text-sm">
                     {actionFeedback.type === "info" ? (
-                      <InfoCircle className="h-4 w-4" />
+                      <AppIcon icon={InfoCircle} size="md" color="inherit" />
                     ) : actionFeedback.type === "success" ? (
-                      <Check className="h-4 w-4" />
+                      <AppIcon icon={Check} size="md" color="inherit" />
                     ) : (
-                      <WarningTriangle className="h-4 w-4" />
+                      <AppIcon icon={WarningTriangle} size="md" color="inherit" />
                     )}
                   </span>
                   <span>{actionFeedback.message}</span>
@@ -1923,7 +1924,7 @@ function FacultyVerificationDrawer({
               {/* Past Submissions Compressed List Table */}
               {isLoadingHistory ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center space-y-2">
-                  <SystemRestart className="h-5 w-5 animate-spin text-slate-400" />
+                  <AppIcon icon={SystemRestart} size="lg" color="muted" className="animate-spin" />
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Loading history submissions...
                   </p>
@@ -2042,7 +2043,7 @@ function FacultyVerificationDrawer({
                                               className="p-1 rounded text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
                                               title="Preview"
                                             >
-                                              <Eye className="h-3.5 w-3.5" />
+                                              <AppIcon icon={Eye} size="sm" color="inherit" />
                                             </button>
                                             <button
                                               type="button"
@@ -2055,7 +2056,7 @@ function FacultyVerificationDrawer({
                                               className="p-1 rounded text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
                                               title="Download"
                                             >
-                                              <Download className="h-3.5 w-3.5" />
+                                              <AppIcon icon={Download} size="sm" color="inherit" />
                                             </button>
                                           </div>
                                         </div>
@@ -2076,7 +2077,7 @@ function FacultyVerificationDrawer({
                                     {facultyNote ? (
                                       <div className="flex items-start gap-1.5 leading-snug">
                                         <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <ChatBubble className="h-3 w-3 text-amber-700 dark:text-amber-400" />
+                                          <AppIcon icon={ChatBubble} size="xs" color="active" />
                                           Faculty Remarks:
                                         </span>
                                         <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={facultyNote}>
@@ -2087,7 +2088,7 @@ function FacultyVerificationDrawer({
                                     {adminNote ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
                                         <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <Notes className="h-3 w-3 text-[#0b5336] dark:text-emerald-400" />
+                                          <AppIcon icon={Notes} size="xs" color="success" />
                                           Your Remarks:
                                         </span>
                                         <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={adminNote}>
@@ -2130,7 +2131,7 @@ function FacultyVerificationDrawer({
                                       }}
                                       className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs"
                                     >
-                                      <Eye className="h-3.5 w-3.5" />
+                                      <AppIcon icon={Eye} size="sm" color="inherit" />
                                       <span>Preview</span>
                                     </button>
                                   </div>
@@ -2166,7 +2167,7 @@ function FacultyVerificationDrawer({
             <div className="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60">
-                  <WarningCircle className="h-5 w-5" />
+                  <AppIcon icon={WarningCircle} size="lg" color="inherit" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
@@ -2182,7 +2183,7 @@ function FacultyVerificationDrawer({
                 onClick={() => setRevisionModalData(null)}
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
               >
-                <Xmark className="h-4 w-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
 
@@ -2255,12 +2256,12 @@ function FacultyVerificationDrawer({
               >
                 {isSubmittingRevision ? (
                   <>
-                    <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                    <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                     Submitting...
                   </>
                 ) : (
                   <>
-                    <WarningCircle className="h-3.5 w-3.5 text-white" />
+                    <AppIcon icon={WarningCircle} size="sm" color="white" />
                     Send Revision Request
                   </>
                 )}
@@ -2283,7 +2284,7 @@ function FacultyVerificationDrawer({
             <div className="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700 shadow-2xs">
-                  <CheckCircle className="h-5 w-5" />
+                  <AppIcon icon={CheckCircle} size="lg" color="inherit" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
@@ -2299,7 +2300,7 @@ function FacultyVerificationDrawer({
                 onClick={() => setValidateModalData(null)}
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
               >
-                <Xmark className="h-4 w-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
 
@@ -2338,12 +2339,12 @@ function FacultyVerificationDrawer({
               >
                 {isValidatingSingle ? (
                   <>
-                    <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                    <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                     Validating...
                   </>
                 ) : (
                   <>
-                    <Check className="h-3.5 w-3.5 text-white" />
+                    <AppIcon icon={Check} size="sm" color="white" />
                     Confirm &amp; Validate
                   </>
                 )}
@@ -2426,7 +2427,7 @@ function FacultyVerificationDrawer({
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition"
                       >
-                        <OpenNewWindow className="w-3.5 h-3.5" />
+                        <AppIcon icon={OpenNewWindow} size="sm" color="inherit" />
                         Full View
                       </a>
                     ) : null}
@@ -2441,7 +2442,7 @@ function FacultyVerificationDrawer({
                       }
                       className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <AppIcon icon={Download} size="sm" color="inherit" />
                       Download
                     </button>
 
@@ -2451,7 +2452,7 @@ function FacultyVerificationDrawer({
                       className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
                       aria-label="Close preview"
                     >
-                      <Xmark className="h-4 w-4" />
+                      <AppIcon icon={Xmark} size="md" color="inherit" />
                     </button>
                   </div>
                 </div>
@@ -2460,7 +2461,7 @@ function FacultyVerificationDrawer({
                 {versions.length > 1 ? (
                   <div className="flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 px-4 py-2 text-xs overflow-x-auto">
                     <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mr-1 flex items-center gap-1 shrink-0">
-                      <Clock className="w-3.5 h-3.5" /> File Versions:
+                      <AppIcon icon={Clock} size="sm" color="inherit" /> File Versions:
                     </span>
                     {versions.map((ver, idx) => {
                       const isLatest = idx === 0;
@@ -2570,12 +2571,12 @@ function FacultyVerificationDrawer({
                 onClick={() => setNoticeModalData(null)}
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition cursor-pointer shadow-2xs"
               >
-                <Xmark className="h-4 w-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
 
             <div className="flex items-start gap-3 mb-5">
-              <InfoCircle className="h-5 w-5 text-slate-500 dark:text-slate-400 shrink-0 mt-0.5" />
+              <AppIcon icon={InfoCircle} size="lg" color="default" className="mt-0.5" />
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 {noticeModalData.message}
               </p>
@@ -2623,7 +2624,7 @@ function FacultyVerificationDrawer({
                 }}
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition cursor-pointer shadow-2xs"
               >
-                <Xmark className="h-4 w-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
 
@@ -2658,13 +2659,13 @@ function FacultyVerificationDrawer({
 
               {validateTimerSeconds > 0 ? (
                 <p className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+                  <AppIcon icon={Clock} size="sm" color="active" className="animate-pulse" />
                   Please review for {validateTimerSeconds} second(s) before
                   confirming.
                 </p>
               ) : (
                 <p className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <AppIcon icon={Check} size="sm" color="success" />
                   Ready to confirm bulk validation.
                 </p>
               )}
@@ -2690,7 +2691,7 @@ function FacultyVerificationDrawer({
               >
                 {isValidatingAll ? (
                   <>
-                    <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                    <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                     Validating...
                   </>
                 ) : validateTimerSeconds > 0 ? (
@@ -2728,7 +2729,7 @@ function FacultyVerificationDrawer({
                   onClick={() => setZipProgressData(null)}
                   className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition cursor-pointer shadow-2xs"
                 >
-                  <Xmark className="h-4 w-4" />
+                  <AppIcon icon={Xmark} size="md" color="inherit" />
                 </button>
               ) : null}
             </div>
@@ -2754,7 +2755,7 @@ function FacultyVerificationDrawer({
               ) : zipProgressData.status === "success" ? (
                 <>
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700 shadow-2xs">
-                    <Check className="h-6 w-6" />
+                    <AppIcon icon={Check} size="lg" color="inherit" />
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
@@ -2768,7 +2769,7 @@ function FacultyVerificationDrawer({
               ) : (
                 <>
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 border border-slate-200 dark:border-slate-700 shadow-2xs">
-                    <WarningTriangle className="h-6 w-6" />
+                    <AppIcon icon={WarningTriangle} size="lg" color="inherit" />
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-rose-800 dark:text-rose-300">
@@ -3346,7 +3347,7 @@ export function RequirementsPanel({
                             </span>
                             {isCompleted ? (
                               <span className="text-[10px] font-bold text-[#0b5336] dark:text-emerald-400 flex items-center gap-1 mt-0.5">
-                                <CheckCircle className="h-3 w-3" />
+                                <AppIcon icon={CheckCircle} size="xs" color="inherit" />
                                 100% Compliant &bull; Locked
                               </span>
                             ) : (
@@ -3364,7 +3365,7 @@ export function RequirementsPanel({
                           </span>
                         ) : (
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusBadgeClass}`}>
-                            {isCompleted ? <CheckCircle className="h-3.5 w-3.5 text-white shrink-0" /> : null}
+                            {isCompleted ? <AppIcon icon={CheckCircle} size="sm" color="white" /> : null}
                             <span>{overallStatus}</span>
                           </span>
                         )}

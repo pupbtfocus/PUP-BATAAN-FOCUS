@@ -9,6 +9,7 @@ import {
 } from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
 import { Bell, Camera, Check, Circle, Clock, EditPencil, Eye, EyeClosed, FloppyDisk, Refresh, ShieldAlert, ShieldCheck, SystemRestart, Trash, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 export interface AdminAccountResponse {
   id?: string;
@@ -781,7 +782,7 @@ export function AdminSettings({
                   className="absolute inset-0 rounded-full bg-black/40 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center pointer-events-none"
                   aria-hidden="true"
                 >
-                  <Camera className="h-4 w-4 mb-0.5" />
+                  <AppIcon icon={Camera} size="md" color="inherit" className="mb-0.5" />
                   <span>Change</span>
                 </div>
 
@@ -790,7 +791,7 @@ export function AdminSettings({
                   className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900 transition-transform group-hover:scale-110 pointer-events-none"
                   aria-hidden="true"
                 >
-                  <Camera className="h-3.5 w-3.5" />
+                  <AppIcon icon={Camera} size="sm" color="inherit" />
                 </div>
               </div>
 
@@ -888,7 +889,7 @@ export function AdminSettings({
                       onClick={() => handleCancelEdit("firstName")}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <Xmark className="h-3.5 w-3.5" />
+                      <AppIcon icon={Xmark} size="sm" color="inherit" />
                       <span>Cancel</span>
                     </button>
                   ) : (
@@ -898,7 +899,7 @@ export function AdminSettings({
                       onClick={() => handleFocusField("firstName", firstNameInputRef)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <EditPencil className="h-3.5 w-3.5" />
+                      <AppIcon icon={EditPencil} size="sm" color="inherit" />
                       <span>Edit</span>
                     </button>
                   )}
@@ -937,7 +938,7 @@ export function AdminSettings({
                       onClick={() => handleCancelEdit("middleName")}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <Xmark className="h-3.5 w-3.5" />
+                      <AppIcon icon={Xmark} size="sm" color="inherit" />
                       <span>Cancel</span>
                     </button>
                   ) : (
@@ -947,7 +948,7 @@ export function AdminSettings({
                       onClick={() => handleFocusField("middleName", middleNameInputRef)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <EditPencil className="h-3.5 w-3.5" />
+                      <AppIcon icon={EditPencil} size="sm" color="inherit" />
                       <span>Edit</span>
                     </button>
                   )}
@@ -986,7 +987,7 @@ export function AdminSettings({
                       onClick={() => handleCancelEdit("lastName")}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <Xmark className="h-3.5 w-3.5" />
+                      <AppIcon icon={Xmark} size="sm" color="inherit" />
                       <span>Cancel</span>
                     </button>
                   ) : (
@@ -996,7 +997,7 @@ export function AdminSettings({
                       onClick={() => handleFocusField("lastName", lastNameInputRef)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
-                      <EditPencil className="h-3.5 w-3.5" />
+                      <AppIcon icon={EditPencil} size="sm" color="inherit" />
                       <span>Edit</span>
                     </button>
                   )}
@@ -1035,7 +1036,7 @@ export function AdminSettings({
                 disabled={!isProfileChanged || isSaving}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800/80 cursor-pointer active:scale-[0.98]"
               >
-                <Refresh className="h-3.5 w-3.5" />
+                <AppIcon icon={Refresh} size="sm" color="inherit" />
                 <span>Reset</span>
               </button>
               <button
@@ -1068,7 +1069,7 @@ export function AdminSettings({
                 title="Change Password"
                 aria-label="Change Password"
               >
-                <EditPencil className="h-3.5 w-3.5" />
+                <AppIcon icon={EditPencil} size="sm" color="inherit" />
                 <span>Edit</span>
               </button>
             ) : (
@@ -1084,7 +1085,7 @@ export function AdminSettings({
                 title="Cancel Change Password"
                 aria-label="Cancel Change Password"
               >
-                <Xmark className="h-3.5 w-3.5" />
+                <AppIcon icon={Xmark} size="sm" color="inherit" />
                 <span>Cancel</span>
               </button>
             )}
@@ -1118,9 +1119,9 @@ export function AdminSettings({
                   aria-label={showOldPassword ? "Hide password" : "Show password"}
                 >
                   {showOldPassword ? (
-                    <Eye className="h-4 w-4 text-amber-500" />
+                    <AppIcon icon={Eye} size="md" color="active" />
                   ) : (
-                    <EyeClosed className="h-4 w-4 text-slate-400" />
+                    <AppIcon icon={EyeClosed} size="md" color="muted" />
                   )}
                 </button>
               </div>
@@ -1152,9 +1153,9 @@ export function AdminSettings({
                   aria-label={showNewPassword ? "Hide password" : "Show password"}
                 >
                   {showNewPassword ? (
-                    <Eye className="h-4 w-4 text-amber-500" />
+                    <AppIcon icon={Eye} size="md" color="active" />
                   ) : (
-                    <EyeClosed className="h-4 w-4 text-slate-400" />
+                    <AppIcon icon={EyeClosed} size="md" color="muted" />
                   )}
                 </button>
               </div>
@@ -1186,9 +1187,9 @@ export function AdminSettings({
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 >
                   {showConfirmPassword ? (
-                    <Eye className="h-4 w-4 text-amber-500" />
+                    <AppIcon icon={Eye} size="md" color="active" />
                   ) : (
-                    <EyeClosed className="h-4 w-4 text-slate-400" />
+                    <AppIcon icon={EyeClosed} size="md" color="muted" />
                   )}
                 </button>
               </div>
@@ -1208,9 +1209,9 @@ export function AdminSettings({
                   }`}
                 >
                   {isCurrentPasswordFilled ? (
-                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <AppIcon icon={Check} size="sm" color="success" />
                   ) : (
-                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1 text-slate-400 dark:text-slate-500" />
+                    <AppIcon icon={Circle} size="md" color="muted" className="ml-0.5 mr-1" />
                   )}
                   <span>Current password required</span>
                 </li>
@@ -1223,9 +1224,9 @@ export function AdminSettings({
                   }`}
                 >
                   {isLengthValid ? (
-                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <AppIcon icon={Check} size="sm" color="success" />
                   ) : (
-                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1 text-slate-400 dark:text-slate-500" />
+                    <AppIcon icon={Circle} size="md" color="muted" className="ml-0.5 mr-1" />
                   )}
                   <span>At least 8 characters</span>
                 </li>
@@ -1238,9 +1239,9 @@ export function AdminSettings({
                   }`}
                 >
                   {isMatching ? (
-                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <AppIcon icon={Check} size="sm" color="success" />
                   ) : (
-                    <Circle className="h-2 w-2 shrink-0 fill-current ml-0.5 mr-1 text-slate-400 dark:text-slate-500" />
+                    <AppIcon icon={Circle} size="md" color="muted" className="ml-0.5 mr-1" />
                   )}
                   <span>Passwords match</span>
                 </li>
@@ -1255,7 +1256,7 @@ export function AdminSettings({
               >
                 {isChangingPassword ? (
                   <>
-                    <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                    <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                     <span>Updating Password...</span>
                   </>
                 ) : (
@@ -1285,7 +1286,7 @@ export function AdminSettings({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg transition-colors">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-amber-500" />
+                <AppIcon icon={Bell} size="md" color="active" />
                 <span className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                   Automated Email Reminders on Submission Windows
                 </span>
@@ -1329,7 +1330,7 @@ export function AdminSettings({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg transition-colors">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-amber-500" />
+                <AppIcon icon={Bell} size="md" color="active" />
                 <span className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                   New Submission Alert Notifications
                 </span>
@@ -1373,7 +1374,7 @@ export function AdminSettings({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg transition-colors">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-amber-500" />
+                <AppIcon icon={Clock} size="md" color="active" />
                 <span className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                   Session Timeout Duration
                 </span>
@@ -1407,12 +1408,12 @@ export function AdminSettings({
             >
               {isSavingPreferences ? (
                 <>
-                  <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                  <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                   <span>Saving Preferences...</span>
                 </>
               ) : (
                 <>
-                  <FloppyDisk className="h-3.5 w-3.5" />
+                  <AppIcon icon={FloppyDisk} size="sm" color="inherit" />
                   <span>Save System Preferences</span>
                 </>
               )}
@@ -1440,7 +1441,7 @@ export function AdminSettings({
                 <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 p-3 ring-8 ring-rose-500/5 dark:bg-rose-500/20 dark:ring-rose-500/10">
                   {/* Inner Shield Icon */}
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-600 text-white shadow-lg">
-                    <ShieldAlert className="h-6 w-6 stroke-[2.2]" />
+                    <AppIcon icon={ShieldAlert} size="lg" color="inherit" strokeWidth={2.2} />
                   </div>
                 </div>
               </div>
@@ -1453,7 +1454,7 @@ export function AdminSettings({
                 <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 p-3 ring-8 ring-emerald-500/5 dark:bg-emerald-500/20 dark:ring-emerald-500/10">
                   {/* Inner Shield Icon */}
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg">
-                    <ShieldCheck className="h-6 w-6 stroke-[2.2]" />
+                    <AppIcon icon={ShieldCheck} size="lg" color="inherit" strokeWidth={2.2} />
                   </div>
                 </div>
               </div>
@@ -1501,7 +1502,7 @@ export function AdminSettings({
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
                 aria-label="Close"
               >
-                <Xmark className="h-4 w-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
             <div className="p-6 space-y-3">
@@ -1519,7 +1520,7 @@ export function AdminSettings({
                     Select a new image file from your device
                   </p>
                 </div>
-                <Camera className="h-4 w-4 text-slate-400" />
+                <AppIcon icon={Camera} size="md" color="muted" />
               </button>
 
               {displayedProfileImage && (
@@ -1537,7 +1538,7 @@ export function AdminSettings({
                       Preview your current profile picture in full size
                     </p>
                   </div>
-                  <Eye className="h-4 w-4 text-slate-400" />
+                  <AppIcon icon={Eye} size="md" color="muted" />
                 </button>
               )}
 
@@ -1560,7 +1561,7 @@ export function AdminSettings({
                       Remove current photo and restore fallback initials
                     </p>
                   </div>
-                  <Trash className="h-4 w-4 text-rose-500" />
+                  <AppIcon icon={Trash} size="md" color="danger" />
                 </button>
               )}
             </div>
@@ -1588,7 +1589,7 @@ export function AdminSettings({
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
                 aria-label="Close"
               >
-                <Xmark className="h-4 w-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
             <div className="p-6 flex items-center justify-center">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { buildFacultyInitials, parseFullNameFallback } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
@@ -215,7 +216,7 @@ export function EditFacultyModal({
             className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
             aria-label="Close modal"
           >
-            <Xmark className="h-4 w-4" />
+            <AppIcon icon={Xmark} size="md" color="white" />
           </button>
         </div>
 

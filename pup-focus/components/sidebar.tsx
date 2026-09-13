@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Activity, Archive, Calendar, ClipboardCheck, Clock, Eye, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, UserBadgeCheck, ViewGrid } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { extractFirstName } from "@/lib/faculty-profile";
 
 export interface SidebarProps {
@@ -51,14 +52,7 @@ export function SidebarButton({
       }`}
     >
       {Icon && (
-        <Icon
-          strokeWidth={2}
-          className={
-            active
-              ? "h-4 w-4 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
-              : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
-          }
-        />
+        <AppIcon icon={Icon} size="md" color={active ? "active" : "default"} />
       )}
       <div className="min-w-0 flex-1">
         <p className="truncate">{title}</p>
@@ -233,20 +227,13 @@ export function SidebarContent({
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <Group
-                  strokeWidth={2}
-                  className={
-                    isUserManagementActive
-                      ? "h-4 w-4 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
-                      : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
-                  }
-                />
+                <AppIcon icon={Group} size="md" color={isUserManagementActive ? "active" : "default"} />
                 <span className="truncate">User Management</span>
               </div>
               {isUserManagementOpen ? (
-                <NavArrowDown strokeWidth={2} className={`h-3.5 w-3.5 shrink-0 ml-1 ${isUserManagementActive ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`} />
+                <AppIcon icon={NavArrowDown} size="sm" color={isUserManagementActive ? "active" : "muted"} className="ml-1" />
               ) : (
-                <NavArrowRight strokeWidth={2} className={`h-3.5 w-3.5 shrink-0 ml-1 ${isUserManagementActive ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`} />
+                <AppIcon icon={NavArrowRight} size="sm" color={isUserManagementActive ? "active" : "muted"} className="ml-1" />
               )}
             </button>
 
@@ -262,14 +249,7 @@ export function SidebarContent({
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                   }`}
                 >
-                  <UserBadgeCheck
-                    strokeWidth={2}
-                    className={
-                      isAccountsActive
-                        ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
-                        : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
-                    }
-                  />
+                  <AppIcon icon={UserBadgeCheck} size="sm" color={isAccountsActive ? "active" : "default"} />
                   <span>Admin Management</span>
                 </button>
                 <button
@@ -281,14 +261,7 @@ export function SidebarContent({
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                   }`}
                 >
-                  <Group
-                    strokeWidth={2}
-                    className={
-                      isFacultyActive
-                        ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
-                        : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
-                    }
-                  />
+                  <AppIcon icon={Group} size="sm" color={isFacultyActive ? "active" : "default"} />
                   <span>Faculty Management</span>
                 </button>
               </div>
@@ -325,20 +298,13 @@ export function SidebarContent({
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <Calendar
-                strokeWidth={2}
-                className={
-                  isAcademicCycleActive
-                    ? "h-4 w-4 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
-                    : "h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0"
-                }
-              />
+              <AppIcon icon={Calendar} size="md" color={isAcademicCycleActive ? "active" : "default"} />
               <span className="truncate">Academic Cycle</span>
             </div>
             {isAcademicCycleOpen ? (
-              <NavArrowDown strokeWidth={2} className={`h-3.5 w-3.5 shrink-0 ml-1 ${isAcademicCycleActive ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`} />
+              <AppIcon icon={NavArrowDown} size="sm" color={isAcademicCycleActive ? "active" : "muted"} className="ml-1" />
             ) : (
-              <NavArrowRight strokeWidth={2} className={`h-3.5 w-3.5 shrink-0 ml-1 ${isAcademicCycleActive ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`} />
+              <AppIcon icon={NavArrowRight} size="sm" color={isAcademicCycleActive ? "active" : "muted"} className="ml-1" />
             )}
           </button>
 
@@ -356,14 +322,7 @@ export function SidebarContent({
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
-                <Clock
-                  strokeWidth={2}
-                  className={
-                    isTermsActive
-                      ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
-                      : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
-                  }
-                />
+                <AppIcon icon={Clock} size="sm" color={isTermsActive ? "active" : "default"} />
                 <span>Academic Terms</span>
               </button>
               <button
@@ -377,14 +336,7 @@ export function SidebarContent({
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
-                <Hourglass
-                  strokeWidth={2}
-                  className={
-                    isWindowActive
-                      ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
-                      : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
-                  }
-                />
+                <AppIcon icon={Hourglass} size="sm" color={isWindowActive ? "active" : "default"} />
                 <span>Submission Window</span>
               </button>
               {isSuperAdmin && (
@@ -398,14 +350,7 @@ export function SidebarContent({
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
-                    <Page
-                      strokeWidth={2}
-                      className={
-                        isTemplatesActive
-                          ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
-                          : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
-                      }
-                    />
+                    <AppIcon icon={Page} size="sm" color={isTemplatesActive ? "active" : "default"} />
                     <span>Requirement Templates</span>
                   </button>
                   <button
@@ -417,14 +362,7 @@ export function SidebarContent({
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
-                    <Archive
-                      strokeWidth={2}
-                      className={
-                        isBackupsActive
-                          ? "h-3.5 w-3.5 text-amber-600 dark:text-amber-400 stroke-[2] shrink-0"
-                          : "h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0"
-                      }
-                    />
+                    <AppIcon icon={Archive} size="sm" color={isBackupsActive ? "active" : "default"} />
                     <span>Backups & Archive</span>
                   </button>
                 </>

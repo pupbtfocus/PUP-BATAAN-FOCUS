@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, CheckCircle, Clock, Eye, Notes, Page, Refresh, SystemRestart, Upload, WarningCircle, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import {
   DEFAULT_REQUIREMENTS,
@@ -443,7 +444,7 @@ export function FacultyRequirementsModule({
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
               onClick={openCalendarModal}
             >
-              <Calendar className="h-3.5 w-3.5 text-amber-500" />
+              <AppIcon icon={Calendar} size="sm" color="active" />
               University Calendar
             </button>
             <button
@@ -452,7 +453,7 @@ export function FacultyRequirementsModule({
               className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs shadow-sm active:scale-[0.98] transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
               onClick={() => openModal()}
             >
-              <Upload className="h-3.5 w-3.5" />
+              <AppIcon icon={Upload} size="sm" color="inherit" />
               Submit Requirements
             </button>
             <button
@@ -474,7 +475,7 @@ export function FacultyRequirementsModule({
             role="status"
             className="flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 text-xs text-slate-700 dark:text-slate-300 shadow-2xs"
           >
-            <WarningCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <AppIcon icon={WarningCircle} size="md" color="active" />
             <span>{message}</span>
           </div>
         )}
@@ -581,7 +582,7 @@ export function FacultyRequirementsModule({
                               onClick={() => openModal(code)}
                               className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 text-xs transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                             >
-                              <Upload className="h-3.5 w-3.5" />
+                              <AppIcon icon={Upload} size="sm" color="inherit" />
                               Submit
                             </button>
                           )}
@@ -592,7 +593,7 @@ export function FacultyRequirementsModule({
                               onClick={() => openModal(code, true)}
                               className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 text-xs transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                             >
-                              <Upload className="h-3.5 w-3.5" />
+                              <AppIcon icon={Upload} size="sm" color="inherit" />
                               Resubmit
                             </button>
                           )}
@@ -605,7 +606,7 @@ export function FacultyRequirementsModule({
                                 aria-label={`View submitted file for ${req.title}`}
                                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                               >
-                                <Eye className="h-3.5 w-3.5" />
+                                <AppIcon icon={Eye} size="sm" color="inherit" />
                                 View
                               </a>
                             )}
@@ -659,7 +660,7 @@ export function FacultyRequirementsModule({
                     </div>
 
                     <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                      <Clock className="h-3.5 w-3.5 shrink-0" />
+                      <AppIcon icon={Clock} size="sm" color="inherit" />
                       <span>
                         {item?.submittedAt
                           ? `Submitted: ${formatSubmittedDateTime(item.submittedAt)}`
@@ -675,9 +676,9 @@ export function FacultyRequirementsModule({
                             : "text-[#0b5336] dark:text-emerald-400"
                         }`}>
                           {status === "Rejected" ? (
-                            <WarningCircle className="h-3.5 w-3.5 text-[#780000] dark:text-rose-400 shrink-0" />
+                            <AppIcon icon={WarningCircle} size="sm" color="danger" />
                           ) : (
-                            <Notes className="h-3.5 w-3.5 text-[#0b5336] dark:text-emerald-400 shrink-0" />
+                            <AppIcon icon={Notes} size="sm" color="success" />
                           )}
                           <span>{status === "Rejected" ? "Revision Remarks:" : "Reviewer Remarks:"}</span>
                         </span>
@@ -695,7 +696,7 @@ export function FacultyRequirementsModule({
                           onClick={() => openModal(code)}
                           className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs transition cursor-pointer shadow-2xs"
                         >
-                          <Upload className="h-3.5 w-3.5" />
+                          <AppIcon icon={Upload} size="sm" color="inherit" />
                           Submit Document
                         </button>
                       )}
@@ -706,7 +707,7 @@ export function FacultyRequirementsModule({
                           onClick={() => openModal(code, true)}
                           className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs transition cursor-pointer shadow-2xs"
                         >
-                          <Upload className="h-3.5 w-3.5" />
+                          <AppIcon icon={Upload} size="sm" color="inherit" />
                           Resubmit Revision
                         </button>
                       )}
@@ -719,7 +720,7 @@ export function FacultyRequirementsModule({
                             aria-label={`View uploaded file for ${req.title}`}
                             className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
                           >
-                            <Eye className="h-3.5 w-3.5" />
+                            <AppIcon icon={Eye} size="sm" color="inherit" />
                             View Uploaded File
                           </a>
                         )}
@@ -754,7 +755,7 @@ export function FacultyRequirementsModule({
                 >
                   {isRevisionModal || selectedReqStatus?.status === "Rejected" ? (
                     <>
-                      <WarningCircle className="h-5 w-5 text-amber-500 shrink-0" />
+                      <AppIcon icon={WarningCircle} size="lg" color="active" />
                       <span>Resubmit Revision: {selectedTemplate?.title || "Requirement"}</span>
                     </>
                   ) : (
@@ -773,7 +774,7 @@ export function FacultyRequirementsModule({
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition shadow-2xs cursor-pointer"
                 aria-label="Close modal"
               >
-                <Xmark className="h-4 w-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
 
@@ -793,7 +794,7 @@ export function FacultyRequirementsModule({
                   return (
                     <div className="rounded-2xl border border-rose-300 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/30 p-4 space-y-1.5 shadow-2xs">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-[#780000] dark:text-rose-400 uppercase tracking-wider">
-                        <WarningCircle className="h-4 w-4 shrink-0" />
+                        <AppIcon icon={WarningCircle} size="md" />
                         <span>Reviewer Feedback / Revision Request:</span>
                       </div>
                       <p className="text-xs text-slate-800 dark:text-slate-200 italic font-medium leading-relaxed pl-5.5">
@@ -922,7 +923,7 @@ export function FacultyRequirementsModule({
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
-                      <SystemRestart className="h-4 w-4 animate-spin" />
+                      <AppIcon icon={SystemRestart} size="md" color="inherit" className="animate-spin" />
                       {isRevisionModal || selectedReqStatus?.status === "Rejected"
                         ? "Submitting Revision..."
                         : "Uploading..."}
@@ -970,7 +971,7 @@ export function FacultyRequirementsModule({
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition cursor-pointer"
                 aria-label="Close calendar modal"
               >
-                <Xmark className="h-4 w-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
 

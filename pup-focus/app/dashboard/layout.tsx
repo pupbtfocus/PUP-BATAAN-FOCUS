@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Menu } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { SidebarContent } from "@/components/sidebar";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { LogoutButton } from "@/components/shared/logout-button";
@@ -26,7 +27,7 @@ export default function DashboardLayout({
             className="md:hidden p-2 text-amber-300 hover:bg-amber-500/10 rounded-xl transition-all"
             aria-label="Open Navigation Menu"
           >
-            <Menu className="w-5 h-5" />
+            <AppIcon icon={Menu} size="lg" color="inherit" />
           </button>
           <div className="flex items-center gap-2">
             <BrandMark size={28} className="shrink-0" />

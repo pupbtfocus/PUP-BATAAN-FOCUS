@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { EditPencil, Eye, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { FacultyFilterBar } from "./faculty-filter-bar";
@@ -128,7 +129,7 @@ export function FacultyTable({
             className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
             aria-label="Dismiss message"
           >
-            <Xmark className="h-3.5 w-3.5" />
+            <AppIcon icon={Xmark} size="sm" color="inherit" />
           </button>
         </div>
       ) : null}
@@ -142,7 +143,7 @@ export function FacultyTable({
             className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
             aria-label="Dismiss message"
           >
-            <Xmark className="h-3.5 w-3.5" />
+            <AppIcon icon={Xmark} size="sm" color="inherit" />
           </button>
         </div>
       ) : null}
@@ -156,7 +157,7 @@ export function FacultyTable({
             className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
             aria-label="Dismiss message"
           >
-            <Xmark className="h-3.5 w-3.5" />
+            <AppIcon icon={Xmark} size="sm" color="inherit" />
           </button>
         </div>
       ) : null}
@@ -295,7 +296,7 @@ export function FacultyTable({
                             title="View Faculty Details"
                             className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5"
                           >
-                            <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <AppIcon icon={Eye} size="sm" color="default" />
                             <span>View Details</span>
                           </button>
                           <button
@@ -308,7 +309,7 @@ export function FacultyTable({
                             title="Edit Faculty"
                             className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                           >
-                            <EditPencil className="h-3.5 w-3.5 text-slate-950 shrink-0" />
+                            <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                             <span>Edit</span>
                           </button>
                           {faculty.is_active ? (
@@ -319,7 +320,7 @@ export function FacultyTable({
                               title="Deactivate Faculty"
                               className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
                             >
-                              <UserXmark className="h-3.5 w-3.5 text-white/90 shrink-0" />
+                              <AppIcon icon={UserXmark} size="sm" color="white" />
                               <span>
                                 {loadingFacultyIds.has(faculty.id)
                                   ? "Deactivating..."
@@ -334,7 +335,7 @@ export function FacultyTable({
                               title="Activate Faculty"
                               className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
                             >
-                              <UserBadgeCheck className="h-3.5 w-3.5 text-slate-950 shrink-0" />
+                              <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" className="text-slate-950" />
                               <span>
                                 {loadingFacultyIds.has(faculty.id)
                                   ? "Activating..."
@@ -349,7 +350,7 @@ export function FacultyTable({
                             title="Delete Faculty"
                             className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
                           >
-                            <Trash className="h-3.5 w-3.5 text-white/90 shrink-0" />
+                            <AppIcon icon={Trash} size="sm" color="white" />
                             <span>
                               {deletingFacultyIds.has(faculty.id)
                                 ? "Deleting..."

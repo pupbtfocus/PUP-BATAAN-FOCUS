@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { Archive, Calendar, Check, CheckCircle, Clock, Database, Download, Eye, HardDrive, MultiplePages, Plus, Refresh, Trash, WarningTriangle, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import type {
   SystemBackup,
   ArchivedTermSummary,
@@ -350,7 +351,7 @@ export function BackupArchivePanel() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Database className="w-4 h-4 text-amber-500" />
+              <AppIcon icon={Database} size="md" color="active" />
               <span>System Backup Manager</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -376,12 +377,12 @@ export function BackupArchivePanel() {
             >
               {exportingTermKey === "all__all" ? (
                 <>
-                  <Refresh className="w-4 h-4 animate-spin text-amber-500" />
+                  <AppIcon icon={Refresh} size="md" color="active" className="animate-spin" />
                   <span>{exportProgress || "Zipping documents..."}</span>
                 </>
               ) : (
                 <>
-                  <Archive className="w-4 h-4 text-amber-500" />
+                  <AppIcon icon={Archive} size="md" color="active" />
                   <span>Download Document Vault (.ZIP)</span>
                 </>
               )}
@@ -395,12 +396,12 @@ export function BackupArchivePanel() {
             >
               {isGeneratingBackup ? (
                 <>
-                  <Refresh className="w-4 h-4 animate-spin" />
+                  <AppIcon icon={Refresh} size="md" color="inherit" className="animate-spin" />
                   <span>Generating Snapshot...</span>
                 </>
               ) : (
                 <>
-                  <Plus className="w-4 h-4" />
+                  <AppIcon icon={Plus} size="md" color="inherit" />
                   <span>Generate Full Backup Snapshot</span>
                 </>
               )}
@@ -426,14 +427,14 @@ export function BackupArchivePanel() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-500">
-                      <Refresh className="w-5 h-5 animate-spin mx-auto mb-2 text-amber-500" />
+                      <AppIcon icon={Refresh} size="lg" color="active" className="animate-spin mx-auto mb-2" />
                       Loading backup records...
                     </td>
                   </tr>
                 ) : backups.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-500">
-                      <HardDrive className="w-8 h-8 mx-auto mb-2 text-slate-400 opacity-60" />
+                      <AppIcon icon={HardDrive} size="xl" color="muted" className="mx-auto mb-2" />
                       <p className="font-semibold text-slate-700 dark:text-slate-300">No backup records found</p>
                       <p className="text-xs text-slate-500 mt-1">
                         Click "+ Generate Full Backup Snapshot" to create your first recovery snapshot.
@@ -449,7 +450,7 @@ export function BackupArchivePanel() {
                       <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
                         <div className="flex items-center gap-2.5">
                           <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
-                            <Database className="w-3.5 h-3.5" />
+                            <AppIcon icon={Database} size="sm" color="inherit" />
                           </div>
                           <div>
                             <span className="font-mono text-xs">{bk.backup_name}</span>
@@ -498,7 +499,7 @@ export function BackupArchivePanel() {
                             className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer flex items-center gap-1"
                             title="Inspect details"
                           >
-                            <Eye className="w-3 h-3" />
+                            <AppIcon icon={Eye} size="xs" color="inherit" />
                             <span>Inspect</span>
                           </button>
 
@@ -508,7 +509,7 @@ export function BackupArchivePanel() {
                             className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1 shadow-sm"
                             title="Download JSON Snapshot"
                           >
-                            <Download className="w-3 h-3" />
+                            <AppIcon icon={Download} size="xs" color="inherit" />
                             <span>JSON</span>
                           </a>
 
@@ -518,7 +519,7 @@ export function BackupArchivePanel() {
                             className="p-1 text-red-500 hover:bg-red-500/10 rounded-lg transition cursor-pointer"
                             title="Delete backup log"
                           >
-                            <Trash className="w-3.5 h-3.5" />
+                            <AppIcon icon={Trash} size="sm" color="inherit" />
                           </button>
                         </div>
                       </td>
@@ -536,7 +537,7 @@ export function BackupArchivePanel() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Archive className="w-4 h-4 text-emerald-500" />
+              <AppIcon icon={Archive} size="md" color="success" />
               <span>Academic Year Archiving Vault</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -568,7 +569,7 @@ export function BackupArchivePanel() {
               onClick={() => setIsArchiveModalOpen(true)}
               className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-950 font-semibold rounded-xl text-xs px-3.5 py-1.5 transition shadow-sm cursor-pointer disabled:opacity-40 whitespace-nowrap"
             >
-              <Archive className="w-3.5 h-3.5" />
+              <AppIcon icon={Archive} size="sm" color="inherit" />
               <span>Archive Selected Term</span>
             </button>
           </div>
@@ -591,7 +592,7 @@ export function BackupArchivePanel() {
                 {archivedTerms.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-10 text-center text-slate-500">
-                      <Archive className="w-7 h-7 mx-auto mb-2 text-slate-400 opacity-60" />
+                      <AppIcon icon={Archive} size="md" color="muted" className="mx-auto mb-2" />
                       <p className="font-semibold text-slate-700 dark:text-slate-300">No archived academic terms</p>
                       <p className="text-xs text-slate-500 mt-1">
                         Select an active academic term above to archive and freeze submissions.
@@ -607,7 +608,7 @@ export function BackupArchivePanel() {
                       <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
                         <div className="flex items-center gap-2.5">
                           <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-                            <Calendar className="w-3.5 h-3.5" />
+                            <AppIcon icon={Calendar} size="sm" color="inherit" />
                           </div>
                           <div>
                             <span className="font-bold text-xs">{term.academic_year}</span>
@@ -625,7 +626,7 @@ export function BackupArchivePanel() {
                       </td>
                       <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300">
                         <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
-                          <Check className="w-3.5 h-3.5" />
+                          <AppIcon icon={Check} size="sm" color="inherit" />
                           <span>Protected & Retained</span>
                         </span>
                       </td>
@@ -639,7 +640,7 @@ export function BackupArchivePanel() {
                             onClick={() => setInspectedTerm(term)}
                             className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer inline-flex items-center gap-1"
                           >
-                            <Eye className="w-3 h-3" />
+                            <AppIcon icon={Eye} size="xs" color="inherit" />
                             <span>Details</span>
                           </button>
 
@@ -652,12 +653,12 @@ export function BackupArchivePanel() {
                           >
                             {exportingTermKey === `${term.academic_year}__${term.semester}` ? (
                               <>
-                                <Refresh className="w-3 h-3 animate-spin" />
+                                <AppIcon icon={Refresh} size="xs" color="inherit" className="animate-spin" />
                                 <span>{exportProgress || "Zipping..."}</span>
                               </>
                             ) : (
                               <>
-                                <Archive className="w-3 h-3" />
+                                <AppIcon icon={Archive} size="xs" color="inherit" />
                                 <span>Vault (.ZIP)</span>
                               </>
                             )}
@@ -679,7 +680,7 @@ export function BackupArchivePanel() {
           <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center gap-3 text-amber-500 mb-3">
               <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800">
-                <WarningTriangle className="w-5 h-5" />
+                <AppIcon icon={WarningTriangle} size="lg" color="inherit" />
               </div>
               <h3 className="text-base font-bold">Archive Academic Term?</h3>
             </div>
@@ -721,7 +722,7 @@ export function BackupArchivePanel() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                  <Database className="w-4 h-4" />
+                  <AppIcon icon={Database} size="md" color="inherit" />
                 </div>
                 <h3 className="text-sm font-bold truncate">{inspectedBackup.backup_name}</h3>
               </div>
@@ -731,7 +732,7 @@ export function BackupArchivePanel() {
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
                 aria-label="Close"
               >
-                <Xmark className="w-4 h-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
 
@@ -792,7 +793,7 @@ export function BackupArchivePanel() {
                 download
                 className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1.5"
               >
-                <Download className="w-3.5 h-3.5" />
+                <AppIcon icon={Download} size="sm" color="inherit" />
                 <span>Download JSON</span>
               </a>
               <button
@@ -813,7 +814,7 @@ export function BackupArchivePanel() {
           <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2 text-emerald-500">
-                <Archive className="w-5 h-5" />
+                <AppIcon icon={Archive} size="lg" color="inherit" />
                 <h3 className="text-base font-bold">Archive Vault Inspection</h3>
               </div>
               <button
@@ -822,7 +823,7 @@ export function BackupArchivePanel() {
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
                 aria-label="Close"
               >
-                <Xmark className="w-4 h-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
 
@@ -855,12 +856,12 @@ export function BackupArchivePanel() {
               >
                 {exportingTermKey === `${inspectedTerm.academic_year}__${inspectedTerm.semester}` ? (
                   <>
-                    <Refresh className="w-3.5 h-3.5 animate-spin" />
+                    <AppIcon icon={Refresh} size="sm" color="inherit" className="animate-spin" />
                     <span>{exportProgress || "Zipping documents..."}</span>
                   </>
                 ) : (
                   <>
-                    <Archive className="w-3.5 h-3.5" />
+                    <AppIcon icon={Archive} size="sm" color="inherit" />
                     <span>Download Vault (.ZIP)</span>
                   </>
                 )}
@@ -883,7 +884,7 @@ export function BackupArchivePanel() {
           <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center gap-3 text-red-500 mb-3">
               <div className="p-2 rounded-xl bg-red-500/10">
-                <WarningTriangle className="w-5 h-5" />
+                <AppIcon icon={WarningTriangle} size="lg" color="inherit" />
               </div>
               <h3 className="text-base font-bold">Delete Backup Record</h3>
             </div>
