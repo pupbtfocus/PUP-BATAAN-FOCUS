@@ -3,8 +3,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 
-import { Check, Lock, WarningTriangle, Xmark } from "iconoir-react";
+import { Calendar, Check, Lock, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 
 type AcademicTermStatus = "Current" | "Upcoming" | "Archived" | "Completed";
 
@@ -503,81 +504,71 @@ export function AdminAcademicTerms({
       {/* Modal: Create Next Academic Year */}
       {isCreateModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                  Create Next Academic Year
-                </h3>
-                <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-                  Automatically generate terms for the upcoming academic cycle.
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+            <ModalHeader
+              title="Create Next Academic Year"
+              subtitle="Automatically generate terms for the upcoming academic cycle."
+              icon={Calendar}
+              onClose={() => setIsCreateModalOpen(false)}
+              closeAriaLabel="Close modal"
+            />
+            <div className="p-6">
+              <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400/90">
+                  Next Academic Year
                 </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
-                aria-label="Close modal"
-              >
-                <AppIcon icon={Xmark} size="md" color="inherit" />
-              </button>
-            </div>
+                <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  {computedNextAcademicYear}
+                </p>
 
-            <div className="mt-5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400/90">
-                Next Academic Year
-              </p>
-              <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {computedNextAcademicYear}
-              </p>
-
-              <div className="mt-4 space-y-2.5">
-                <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs shrink-0">
-                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
-                  </span>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-                      {computedNextAcademicYear} • 1st Semester
-                    </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Auto-generated for First Semester.
-                    </p>
+                <div className="mt-4 space-y-2.5">
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs shrink-0">
+                      <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
+                        {computedNextAcademicYear} • 1st Semester
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Auto-generated for First Semester.
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs shrink-0">
-                    <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
-                  </span>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-                      {computedNextAcademicYear} • 2nd Semester
-                    </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Auto-generated for Second Semester.
-                    </p>
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs shrink-0">
+                      <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
+                        {computedNextAcademicYear} • 2nd Semester
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Auto-generated for Second Semester.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-6 flex items-center justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                disabled={isSaving}
-                className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateNextAcademicYear}
-                disabled={isSaving}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 cursor-pointer shadow-sm"
-              >
-                {isSaving ? "Creating..." : "Confirm & Create"}
-              </button>
+              <div className="mt-6 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  disabled={isSaving}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateNextAcademicYear}
+                  disabled={isSaving}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                >
+                  {isSaving ? "Creating..." : "Confirm & Create"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

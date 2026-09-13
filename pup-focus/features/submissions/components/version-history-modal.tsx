@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChatBubble, Clock, ClockRotateRight, Download, Page, ShieldCheck, SystemRestart, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import { Button } from "@/components/ui/button";
 import type {
   DocumentVersionDetail,
@@ -226,30 +227,13 @@ export function VersionHistoryModal({
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <AppIcon icon={ClockRotateRight} size="md" color="active" />
-              <h3
-                id="version-history-title"
-                className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate"
-              >
-                Version History
-              </h3>
-            </div>
-            <p className="mt-1 text-sm font-medium text-amber-600 dark:text-amber-400 truncate">
-              {requirementLabel}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors shrink-0 ml-3 cursor-pointer shadow-2xs"
-            aria-label="Close version history"
-          >
-            <AppIcon icon={Xmark} size="md" color="white" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={ClockRotateRight}
+          title="Version History"
+          subtitle={requirementLabel}
+          onClose={onClose}
+          closeAriaLabel="Close version history"
+        />
 
         {/* Content */}
         <div className="max-h-[65vh] overflow-y-auto px-6 py-5">

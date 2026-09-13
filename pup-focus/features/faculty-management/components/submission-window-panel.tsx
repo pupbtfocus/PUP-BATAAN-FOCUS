@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Calendar, CheckCircle, Clock, ClockRotateRight, EditPencil, FloppyDisk, NavArrowRight, ShieldAlert, SystemRestart, WarningTriangle, Xmark } from "iconoir-react";
+import { Calendar, CheckCircle, Clock, ClockRotateRight, EditPencil, FloppyDisk, NavArrowRight, ShieldAlert, SystemRestart, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import { Button } from "@/components/ui/button";
 import type {
   ApiBody,
@@ -975,22 +976,13 @@ export function SubmissionWindowPanel({
       {showRequestsModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-900 dark:text-slate-100">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 shrink-0">
-              <div className="flex items-center gap-2">
-                <AppIcon icon={Clock} size="lg" color="active" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                  Faculty Extension Requests
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowRequestsModal(false)}
-                className="rounded-lg border border-slate-200 dark:border-slate-800 p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer"
-                aria-label="Close modal"
-              >
-                <AppIcon icon={Xmark} size="md" color="inherit" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={Clock}
+              title="Faculty Extension Requests"
+              subtitle="Review and approve faculty deadline extension requests"
+              onClose={() => setShowRequestsModal(false)}
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
 
             {/* Filter Tabs */}
             <div className="flex items-center gap-2 shrink-0">
@@ -1137,16 +1129,16 @@ export function SubmissionWindowPanel({
       {selectedRequestForReject ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              Decline Extension Request
-            </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              Decline extension request submitted by{" "}
-              <strong className="text-slate-900 dark:text-slate-200">
-                {selectedRequestForReject.faculty_name}
-              </strong>{" "}
-              for {selectedRequestForReject.requested_preset || "+3 Days"}.
-            </p>
+            <ModalHeader
+              icon={WarningCircle}
+              title="Decline Extension Request"
+              subtitle={`Faculty: ${selectedRequestForReject.faculty_name} • ${selectedRequestForReject.requested_preset || "+3 Days"}`}
+              onClose={() => {
+                setSelectedRequestForReject(null);
+                setRejectRemarks("");
+              }}
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -1190,20 +1182,14 @@ export function SubmissionWindowPanel({
       {isSuperAdmin && showLogsModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-900 dark:text-slate-100">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 shrink-0">
-              <div className="flex items-center gap-2">
-                <AppIcon icon={ClockRotateRight} size="lg" color="default" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Extension Audit Logs</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowLogsModal(false)}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
-                aria-label="Close logs"
-              >
-                <AppIcon icon={Xmark} size="md" color="inherit" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={ClockRotateRight}
+              title="Extension Audit Logs"
+              subtitle="Historical record of extension approvals, rejections, and window resets"
+              onClose={() => setShowLogsModal(false)}
+              closeAriaLabel="Close logs"
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
 
             <div className="overflow-y-auto space-y-3 pr-1 flex-1">
               {isLoadingLogs ? (
@@ -1290,12 +1276,13 @@ export function SubmissionWindowPanel({
       {showSaveConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-            <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
-              Confirm Window Schedule
-            </p>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              Save Submission Schedule?
-            </h3>
+            <ModalHeader
+              icon={Calendar}
+              title="Save Submission Schedule?"
+              subtitle="Confirm Window Schedule"
+              onClose={() => setShowSaveConfirmation(false)}
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
             <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
               Faculty will be permitted to upload compliance documents starting from{" "}
               <span className="font-semibold text-slate-900 dark:text-slate-100">
@@ -1331,13 +1318,13 @@ export function SubmissionWindowPanel({
       {showCloseConfirmation ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-            <p className="text-xs uppercase tracking-wider text-rose-700 dark:text-rose-400 font-semibold flex items-center gap-1.5">
-              <AppIcon icon={WarningTriangle} size="sm" color="inherit" />
-              Destructive Action
-            </p>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              Close Submissions Now?
-            </h3>
+            <ModalHeader
+              icon={WarningTriangle}
+              title="Close Submissions Now?"
+              subtitle="Immediate Closure & Schedule Reset"
+              onClose={() => setShowCloseConfirmation(false)}
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
             <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
               This will <span className="font-bold text-rose-700 dark:text-rose-400">immediately close</span> the active submission window and clear the schedule. Faculty will no longer be able to upload compliance documents.
             </p>

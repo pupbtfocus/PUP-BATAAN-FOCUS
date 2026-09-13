@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle, Clock, EditPencil, GraduationCap, Mail, ShieldCheck, User, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
 import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
@@ -106,32 +107,14 @@ export function FacultyDetailsModal({
       >
         <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xl">
           {/* Header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-4">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                <AppIcon icon={User} size="md" color="inherit" />
-              </div>
-              <div>
-                <h2
-                  id="faculty-details-title"
-                  className="text-base font-bold text-slate-900 dark:text-slate-100"
-                >
-                  Faculty Member Details
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Full profile, login info, and compliance overview
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
-              aria-label="Close dialog"
-            >
-              <AppIcon icon={Xmark} size="lg" color="inherit" />
-            </button>
-          </div>
+          <ModalHeader
+            icon={User}
+            title="Faculty Member Details"
+            subtitle="Full profile, login info, and compliance overview"
+            onClose={onClose}
+            closeAriaLabel="Close dialog"
+            className="sticky top-0 z-10"
+          />
 
           {/* Content Body */}
           <div className="space-y-6 p-6">
@@ -383,7 +366,7 @@ export function FacultyDetailsModal({
               <button
                 type="button"
                 onClick={() => setShowPhotoPreview(false)}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
+                className="p-1 rounded-lg border border-slate-200 dark:border-slate-700/60 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer shadow-2xs"
                 aria-label="Close preview"
               >
                 <AppIcon icon={Xmark} size="md" color="inherit" />

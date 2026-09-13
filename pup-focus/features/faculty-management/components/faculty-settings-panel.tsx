@@ -8,8 +8,9 @@ import {
   parseFullNameFallback,
 } from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
-import { Camera, Check, CheckCircle, Circle, EditPencil, Eye, EyeClosed, Lock, Refresh, ShieldAlert, ShieldCheck, SystemRestart, WarningCircle, Xmark } from "iconoir-react";
+import { Camera, Check, CheckCircle, Circle, EditPencil, Eye, EyeClosed, Lock, Refresh, ShieldAlert, ShieldCheck, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 
 type FacultyAccountResponse = {
   profileId: string;
@@ -1154,19 +1155,12 @@ export function FacultySettingsPanel({
             className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Profile Photo Options
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsProfileImageMenuOpen(false)}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
-                aria-label="Close"
-              >
-                <AppIcon icon={Xmark} size="md" color="inherit" />
-              </button>
-            </div>
+            <ModalHeader
+              title="Profile Photo Options"
+              icon={Camera}
+              onClose={() => setIsProfileImageMenuOpen(false)}
+              closeAriaLabel="Close"
+            />
             <div className="p-6 space-y-3">
               <button
                 type="button"
@@ -1218,19 +1212,12 @@ export function FacultySettingsPanel({
             className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                {account.fullName || "Profile Photo"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsFullImageOpen(false)}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
-                aria-label="Close"
-              >
-                <AppIcon icon={Xmark} size="md" color="inherit" />
-              </button>
-            </div>
+            <ModalHeader
+              title={account.fullName || "Profile Photo"}
+              icon={User}
+              onClose={() => setIsFullImageOpen(false)}
+              closeAriaLabel="Close"
+            />
             <div className="p-6 flex items-center justify-center">
               <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60vh]">
                 <img

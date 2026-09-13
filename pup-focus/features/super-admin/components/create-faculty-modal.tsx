@@ -3,8 +3,9 @@
 import { useEffect, useState, useId } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Xmark } from "iconoir-react";
+import { UserPlus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import { createClient } from "@/lib/supabase/client";
 import {
   facultyAccountSchema,
@@ -450,19 +451,13 @@ export function CreateFacultyModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
       <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-        <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-200 dark:border-slate-800">
-          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-            Add Faculty Account
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-2xs"
-            aria-label="Close modal"
-          >
-            <AppIcon icon={Xmark} size="lg" color="white" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={UserPlus}
+          title="Add Faculty Account"
+          subtitle="Create faculty credentials and assign permissions"
+          onClose={onClose}
+          className="-mx-6 -mt-6 mb-6 rounded-t-2xl"
+        />
 
         <CreateFacultyPanel
           createError={createError}

@@ -291,8 +291,8 @@ export function SessionTimeoutProvider({
           <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-400/80 dark:border-slate-800 rounded-xl shadow-2xl p-6 text-slate-900 dark:text-slate-100">
             {/* Header Icon & Title */}
             <div className="flex items-center gap-3.5 border-b border-slate-400 dark:border-slate-800/80 pb-4 mb-4">
-              <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                <AppIcon icon={Clock} size="lg" color="active" />
+              <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
+                <AppIcon icon={Clock} size="lg" color="default" />
               </div>
               <div>
                 <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">

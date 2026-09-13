@@ -1490,7 +1490,7 @@ export function DevPreviewPanel() {
             <button
               type="button"
               onClick={() => setIsPasswordModalOpen(false)}
-              className="absolute -top-12 right-0 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-2 transition cursor-pointer shadow-2xs"
+              className="absolute -top-12 right-0 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 transition cursor-pointer shadow-2xs"
               aria-label="Close"
             >
               <AppIcon icon={Xmark} size="lg" color="inherit" />
@@ -1532,7 +1532,7 @@ export function DevPreviewPanel() {
                   <button
                     type="button"
                     onClick={() => setIsPasswordModalOpen(false)}
-                    className="flex-1 py-2 text-xs font-semibold rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
+                    className="flex-1 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition cursor-pointer shadow-xs"
                   >
                     Close Preview
                   </button>
@@ -1554,14 +1554,16 @@ export function DevPreviewPanel() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-900 dark:text-slate-100">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <AppIcon icon={Clock} size="lg" color="active" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
+                  <AppIcon icon={Clock} size="md" color="default" />
+                </div>
                 <h3 className="text-base font-bold">Extension Audit Logs</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveShowcaseModal(null)}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
+                className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 p-1.5 transition-colors cursor-pointer shadow-2xs"
                 aria-label="Close"
               >
                 <AppIcon icon={Xmark} size="md" color="inherit" />
@@ -1616,7 +1618,7 @@ export function DevPreviewPanel() {
               <button
                 type="button"
                 onClick={() => setActiveShowcaseModal(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
+                className="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer shadow-xs"
               >
                 Close Logs
               </button>
@@ -1651,7 +1653,7 @@ export function DevPreviewPanel() {
               <button
                 type="button"
                 onClick={() => setActiveShowcaseModal(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-all cursor-pointer shadow-xs"
+                className="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
@@ -1671,8 +1673,8 @@ export function DevPreviewPanel() {
       {activeShowcaseModal === "warning-requirements" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
           <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-            <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400">
-              <AppIcon icon={WarningTriangle} size="md" color="inherit" />
+            <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-2xl flex items-center justify-center mx-auto text-slate-700 dark:text-slate-300 shadow-2xs">
+              <AppIcon icon={WarningTriangle} size="md" color="default" />
             </div>
             <h3 className="text-xl font-bold">No Requirements Configured</h3>
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -1682,7 +1684,7 @@ export function DevPreviewPanel() {
               <button
                 type="button"
                 onClick={() => setActiveShowcaseModal(null)}
-                className="flex-1 py-2.5 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold cursor-pointer shadow-xs transition-all"
+                className="flex-1 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold cursor-pointer shadow-xs transition-all"
               >
                 Close
               </button>
@@ -1709,7 +1711,7 @@ export function DevPreviewPanel() {
           <button
             type="button"
             onClick={() => setShowSystemLoadingScreen(false)}
-            className="fixed top-6 right-6 z-50 px-3 py-1.5 rounded-full bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold backdrop-blur-md border border-[#5e0000] transition cursor-pointer flex items-center gap-1.5 shadow-lg"
+            className="fixed top-6 right-6 z-50 px-3 py-1.5 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white text-xs font-semibold backdrop-blur-md border border-slate-700 transition cursor-pointer flex items-center gap-1.5 shadow-lg"
           >
             <AppIcon icon={Xmark} size="sm" color="inherit" />
             <span>Dismiss Preview</span>

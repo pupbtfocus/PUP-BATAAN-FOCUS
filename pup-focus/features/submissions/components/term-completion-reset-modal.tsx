@@ -14,6 +14,7 @@ import {
   Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -68,33 +69,13 @@ export function TermCompletionResetModal({
         aria-labelledby="term-completion-title"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-4 bg-emerald-500/5 dark:bg-emerald-500/10">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-              <AppIcon icon={CheckCircle} size="lg" color="inherit" />
-            </div>
-            <div>
-              <h3
-                id="term-completion-title"
-                className="text-base font-bold text-slate-900 dark:text-slate-100"
-              >
-                Done All for This Semester
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                A.Y. {academicYear} • {semester}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isResetting}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-            aria-label="Close modal"
-          >
-            <AppIcon icon={Xmark} size="lg" color="inherit" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={CheckCircle}
+          title="Done All for This Semester"
+          subtitle={`A.Y. ${academicYear} • ${semester}`}
+          onClose={onClose}
+          closeDisabled={isResetting}
+        />
 
         {/* Content Body */}
         <div className="p-5 space-y-4">

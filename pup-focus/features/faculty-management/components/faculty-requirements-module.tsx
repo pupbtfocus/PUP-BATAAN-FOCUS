@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Calendar, CheckCircle, Clock, Eye, Notes, Page, Refresh, SystemRestart, Upload, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
+import { ModalHeader } from "@/components/ui/modal-header";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -746,37 +747,22 @@ export function FacultyRequirementsModule({
             className="w-full max-w-xl max-h-[90vh] flex flex-col rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
             onClick={(event) => event.stopPropagation()}
           >
-            {/* Modal Header (Pinned Top) */}
-            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 p-6 shrink-0 bg-white dark:bg-slate-900">
-              <div>
-                <h3
-                  id="submit-modal-title"
-                  className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"
-                >
-                  {isRevisionModal || selectedReqStatus?.status === "Rejected" ? (
-                    <>
-                      <AppIcon icon={WarningCircle} size="lg" color="active" />
-                      <span>Resubmit Revision: {selectedTemplate?.title || "Requirement"}</span>
-                    </>
-                  ) : (
-                    <span>Submit Requirement Document</span>
-                  )}
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  {isRevisionModal || selectedReqStatus?.status === "Rejected"
-                    ? "Upload your corrected compliance file addressing the reviewer's feedback below."
-                    : "Upload your compliance file for admin review and validation."}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={closeModal}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition shadow-2xs cursor-pointer"
-                aria-label="Close modal"
-              >
-                <AppIcon icon={Xmark} size="md" color="inherit" />
-              </button>
-            </div>
+            <ModalHeader
+              title={
+                isRevisionModal || selectedReqStatus?.status === "Rejected"
+                  ? `Resubmit Revision: ${selectedTemplate?.title || "Requirement"}`
+                  : "Submit Requirement Document"
+              }
+              subtitle={
+                isRevisionModal || selectedReqStatus?.status === "Rejected"
+                  ? "Upload your corrected compliance file addressing the reviewer's feedback below."
+                  : "Upload your compliance file for admin review and validation."
+              }
+              titleId="submit-modal-title"
+              icon={isRevisionModal || selectedReqStatus?.status === "Rejected" ? WarningCircle : Upload}
+              onClose={closeModal}
+              closeAriaLabel="Close modal"
+            />
 
             {/* Modal Form with Scrollable Content */}
             <form
@@ -950,30 +936,18 @@ export function FacultyRequirementsModule({
           onClick={closeCalendarModal}
         >
           <div
-            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-4 my-auto"
+            className="w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl my-auto"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div>
-                <h3
-                  id="calendar-modal-title"
-                  className="text-lg font-bold text-slate-900 dark:text-slate-100"
-                >
-                  University Academic Calendar
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  Reference dates and submission window guidelines.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={closeCalendarModal}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition cursor-pointer"
-                aria-label="Close calendar modal"
-              >
-                <AppIcon icon={Xmark} size="md" color="inherit" />
-              </button>
-            </div>
+            <ModalHeader
+              title="University Academic Calendar"
+              subtitle="Reference dates and submission window guidelines."
+              titleId="calendar-modal-title"
+              icon={Calendar}
+              onClose={closeCalendarModal}
+              closeAriaLabel="Close calendar modal"
+            />
+            <div className="p-6 overflow-y-auto space-y-4">
 
             <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3.5 space-y-2">
@@ -1029,6 +1003,7 @@ export function FacultyRequirementsModule({
               >
                 Close
               </Button>
+            </div>
             </div>
           </div>
         </div>

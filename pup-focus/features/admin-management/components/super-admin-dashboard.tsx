@@ -8,8 +8,9 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
-import { Activity, CheckCircle, Clock, Eye, EyeClosed, Group, Menu, NavArrowRight, Page, Refresh, Shield, Xmark } from "iconoir-react";
+import { Activity, CheckCircle, Clock, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
@@ -1428,7 +1429,7 @@ export function SuperAdminDashboard({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-2xs"
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700/60 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer shadow-2xs"
                 aria-label="Close navigation"
               >
                 <AppIcon icon={Xmark} size="lg" color="inherit" />
@@ -1878,20 +1879,14 @@ export function SuperAdminDashboard({
 
       {createAdminModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                Add Admin Account
-              </h3>
-              <button
-                type="button"
-                onClick={closeCreateAdminModal}
-                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all cursor-pointer shadow-2xs"
-                aria-label="Close modal"
-              >
-                <AppIcon icon={Xmark} size="lg" color="inherit" />
-              </button>
-            </div>
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+            <ModalHeader
+              title="Add Admin Account"
+              icon={UserPlus}
+              onClose={closeCreateAdminModal}
+              closeAriaLabel="Close modal"
+            />
+            <div className="p-6 overflow-y-auto">
 
             <form className="flex flex-col gap-4" onSubmit={onSubmit}>
               {/* Row 1: Name Grid (3 Columns) */}
@@ -2060,6 +2055,7 @@ export function SuperAdminDashboard({
                 {isSubmitting ? "Creating Admin..." : "Create Admin Account"}
               </button>
             </form>
+            </div>
           </div>
         </div>
       ) : null}
@@ -2076,27 +2072,27 @@ export function SuperAdminDashboard({
 
       {inviteModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-            <p className="text-xs uppercase tracking-[0.28em] text-amber-700 dark:text-amber-300 font-semibold">
-              {inviteWasSent ? "Invitation Sent" : "Invite Link Generated"}
-            </p>
-            <h3 className="mt-2 text-xl font-bold text-slate-900 dark:text-slate-100">
-              {inviteWasSent
-                ? "Email sent successfully"
-                : "Email delivery failed"}
-            </h3>
-            <p className="mt-3 whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-400">
-              {inviteModalMessage}
-            </p>
+          <div className="w-full max-w-md rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+            <ModalHeader
+              title={inviteWasSent ? "Email sent successfully" : "Email delivery failed"}
+              subtitle={inviteWasSent ? "Invitation Sent" : "Invite Link Generated"}
+              icon={inviteWasSent ? SendMail : Key}
+              onClose={() => setInviteModalOpen(false)}
+            />
+            <div className="p-6">
+              <p className="whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-400">
+                {inviteModalMessage}
+              </p>
 
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setInviteModalOpen(false)}
-                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer"
-              >
-                OK
-              </button>
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setInviteModalOpen(false)}
+                  className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer"
+                >
+                  OK
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2352,19 +2348,14 @@ function AdminDetailsModal({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-        <div className="flex items-center justify-between border-b border-slate-400 dark:border-slate-800 pb-4">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {canEdit ? "Edit Admin Account" : "View Admin Account"}
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
-          >
-            <AppIcon icon={Xmark} size="md" color="inherit" />
-          </button>
-        </div>
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+        <ModalHeader
+          title={canEdit ? "Edit Admin Account" : "View Admin Account"}
+          icon={User}
+          onClose={onClose}
+          closeAriaLabel="Close"
+        />
+        <div className="p-6 overflow-y-auto">
 
         {isLoading ? (
           <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Loading details...</p>
@@ -2626,7 +2617,7 @@ function AdminDetailsModal({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
+                      className="rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
                     >
                       Close
                     </button>
@@ -2638,6 +2629,7 @@ function AdminDetailsModal({
         ) : (
           <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">No details available.</p>
         )}
+        </div>
       </div>
     </div>
   );

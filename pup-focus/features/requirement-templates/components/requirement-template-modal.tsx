@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Xmark } from "iconoir-react";
+import { Check, Page, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import {
   ALLOWED_FORMAT_OPTIONS,
   MAX_SIZE_OPTIONS,
@@ -162,24 +163,13 @@ export function RequirementTemplateModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
       <div className="w-full max-w-xl rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
         {/* Modal Header */}
-        <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-300 dark:border-slate-800">
-          <div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              {isEditing ? "Edit Requirement Template" : "Add Requirement Template"}
-            </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-              Configure document compliance parameters, upload limits, and visibility.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
-            aria-label="Close modal"
-          >
-            <Xmark className="w-4 h-4" strokeWidth={2} />
-          </button>
-        </div>
+        <ModalHeader
+          icon={Page}
+          title={isEditing ? "Edit Requirement Template" : "Add Requirement Template"}
+          subtitle="Configure document compliance parameters, upload limits, and visibility."
+          onClose={onClose}
+          className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
+        />
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           {/* Row 1: Document Name */}

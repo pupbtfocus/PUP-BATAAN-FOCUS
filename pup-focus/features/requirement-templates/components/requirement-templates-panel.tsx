@@ -15,6 +15,7 @@ import {
   Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import type { RequirementTemplate } from "@/features/requirement-templates/types/requirement-template.types";
 import { RequirementTemplateModal } from "./requirement-template-modal";
 
@@ -499,24 +500,14 @@ export function RequirementTemplatesPanel({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-300 dark:border-slate-800">
-              <div className="flex items-center gap-2.5 text-red-500">
-                <div className="p-2 rounded-xl bg-red-500/10">
-                  <WarningTriangle className="h-5 w-5 text-red-500" strokeWidth={2} />
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  Delete Requirement Template
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setTemplateToDelete(null)}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
-                aria-label="Close dialog"
-              >
-                <Xmark className="h-4 w-4" strokeWidth={2} />
-              </button>
-            </div>
+            <ModalHeader
+              icon={Trash}
+              title="Delete Requirement Template"
+              subtitle="Confirm Permanent Template Deletion"
+              onClose={() => setTemplateToDelete(null)}
+              closeAriaLabel="Close dialog"
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
 
             {/* Description & Warnings */}
             <div className="space-y-3">
