@@ -171,8 +171,13 @@ export function LoginForm({
           >
             Email Address
           </label>
-          <div className="relative">
-            <AppIcon icon={Mail} size="md" color="active" />
+          <div className="relative flex items-center">
+            <AppIcon
+              icon={Mail}
+              size="md"
+              color="inherit"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 !text-amber-400/80"
+            />
             <input
               id="email"
               type="email"
@@ -194,8 +199,13 @@ export function LoginForm({
           >
             Password
           </label>
-          <div className="relative">
-            <AppIcon icon={Lock} size="md" color="active" />
+          <div className="relative flex items-center">
+            <AppIcon
+              icon={Lock}
+              size="md"
+              color="inherit"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 !text-amber-400/80"
+            />
             <input
               id="password"
               type={showPassword ? "text" : "password"}
