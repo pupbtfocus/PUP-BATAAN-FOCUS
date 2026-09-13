@@ -3,6 +3,7 @@ import {
   evaluateSubmissionWindow,
   format24HourTo12Hour,
   getSubmissionWindow,
+  normalizeSemester,
 } from "@/features/submissions/services/submission-window.service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -21,6 +22,19 @@ export async function GET() {
     const supabase = getServiceRoleClient();
     const config = await getSubmissionWindow(supabase);
     const status = evaluateSubmissionWindow(config);
+
+    if (!status.academicYear || !status.semester) {
+      const { data: currentTerm } = await supabase
+        .from("academic_terms")
+        .select("academic_year, semester")
+        .eq("status", "Current")
+        .maybeSingle();
+
+      if (currentTerm?.academic_year && currentTerm?.semester) {
+        status.academicYear = currentTerm.academic_year;
+        status.semester = normalizeSemester(currentTerm.semester);
+      }
+    }
 
     return NextResponse.json({
       ...status,

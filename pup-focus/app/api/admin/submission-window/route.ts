@@ -471,57 +471,12 @@ export async function DELETE() {
 
     const supabase = getServiceRoleClient();
 
-    // Guard: Check if current active term has unvalidated or incomplete submissions
+    // Query active academic term so academicYear and semester are retained after closing
     const { data: activeTerm } = await supabase
       .from("academic_terms")
       .select("academic_year, semester")
       .eq("status", "Current")
       .maybeSingle();
-
-    if (activeTerm) {
-      const { data: assignments } = await supabase
-        .from("faculty_program_assignments")
-        .select("id")
-        .eq("academic_year", activeTerm.academic_year)
-        .ilike("term", `%${activeTerm.semester}%`);
-
-      const assignmentIds = (assignments ?? []).map((a: any) => a.id);
-
-      const { data: currentTermSubs } = await supabase
-        .from("submissions")
-        .select("id, status")
-        .in(
-          "faculty_assignment_id",
-          assignmentIds.length > 0
-            ? assignmentIds
-            : ["00000000-0000-0000-0000-000000000000"],
-        );
-
-      const unvalidatedSubs = (currentTermSubs ?? []).filter(
-        (s: any) => s.status !== "validated" && s.status !== "approved",
-      );
-
-      const expectedSubmissionsCount = (assignments ?? []).length * 6;
-      const validatedSubmissionsCount = (currentTermSubs ?? []).filter(
-        (s: any) => s.status === "validated" || s.status === "approved",
-      ).length;
-
-      const hasIncompleteRequirements =
-        unvalidatedSubs.length > 0 ||
-        validatedSubmissionsCount < expectedSubmissionsCount;
-
-      if (hasIncompleteRequirements) {
-        return NextResponse.json(
-          {
-            error: "Incomplete Term Requirements",
-            details:
-              "The submission window cannot be changed or closed yet. There are still missing requirements or unvalidated submissions for the current term.",
-            unvalidatedCount: unvalidatedSubs.length,
-          },
-          { status: 400 },
-        );
-      }
-    }
 
     const { error } = await supabase
       .from("submission_windows")
@@ -539,6 +494,26 @@ export async function DELETE() {
     }
 
     const status = evaluateSubmissionWindow(null);
+    if (activeTerm?.academic_year && activeTerm?.semester) {
+      status.academicYear = activeTerm.academic_year;
+      status.semester = normalizeSemester(activeTerm.semester);
+    }
+
+    let usedTerms: Array<{ academicYear: string; semester: string }> = [];
+    try {
+      const { data: usedTermsData, error: usedTermsError } = await supabase
+        .from("submission_window_terms")
+        .select("academic_year, semester");
+
+      if (!usedTermsError && Array.isArray(usedTermsData)) {
+        usedTerms = usedTermsData.map((term) => ({
+          academicYear: term.academic_year,
+          semester: term.semester,
+        }));
+      }
+    } catch {
+      usedTerms = [];
+    }
 
     // Audit log – fire-and-forget; never blocks the response
     try {
@@ -547,7 +522,10 @@ export async function DELETE() {
         action: "submission_window.close",
         entityType: "submission_window",
         entityId: user.id,
-        metadata: {},
+        metadata: {
+          academic_year: status.academicYear,
+          semester: status.semester,
+        },
       });
     } catch (auditError) {
       logger.error("audit_log_submission_window_close_failed", {
@@ -557,6 +535,7 @@ export async function DELETE() {
 
     return NextResponse.json({
       ...status,
+      usedTerms,
       startTimeLabel: null,
       endTimeLabel: null,
       currentTimeLabel: format24HourTo12Hour(status.currentTime),

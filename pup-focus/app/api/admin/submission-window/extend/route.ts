@@ -21,6 +21,7 @@ type ExtendPayload = {
   preset?: string;
   newEndDate?: string;
   newEndTime?: string;
+  linkedRequestId?: string;
 };
 
 export async function GET() {
@@ -279,6 +280,144 @@ export async function POST(request: NextRequest) {
         preset,
       },
     });
+
+    // 5. Automatically resolve matching pending extension requests
+    try {
+      const nowIso = new Date().toISOString();
+      const approvalRemarks = `Deadline extended (${preset}) to ${newEndDate} at ${endTimeLabel} (${scope === "global" ? "All Faculty" : scopeTarget})`;
+      const targetAy = latestWindow?.academic_year || activeAcademicYear;
+      const targetSem = latestWindow?.semester || activeSemester;
+
+      // A. Update dedicated extension_requests table if present
+      try {
+        if (body.linkedRequestId) {
+          await supabase
+            .from("extension_requests")
+            .update({
+              status: "approved",
+              admin_remarks: approvalRemarks,
+              reviewed_by: user.id,
+              reviewed_at: nowIso,
+              updated_at: nowIso,
+            })
+            .eq("id", body.linkedRequestId);
+        } else if (scope === "global") {
+          await supabase
+            .from("extension_requests")
+            .update({
+              status: "approved",
+              admin_remarks: approvalRemarks,
+              reviewed_by: user.id,
+              reviewed_at: nowIso,
+              updated_at: nowIso,
+            })
+            .eq("status", "pending")
+            .eq("academic_year", targetAy)
+            .eq("semester", targetSem);
+        } else if (scope === "faculty" && scopeTarget) {
+          await supabase
+            .from("extension_requests")
+            .update({
+              status: "approved",
+              admin_remarks: approvalRemarks,
+              reviewed_by: user.id,
+              reviewed_at: nowIso,
+              updated_at: nowIso,
+            })
+            .eq("status", "pending")
+            .ilike("faculty_name", `%${scopeTarget.trim()}%`);
+        } else if (scope === "program" && scopeTarget) {
+          await supabase
+            .from("extension_requests")
+            .update({
+              status: "approved",
+              admin_remarks: approvalRemarks,
+              reviewed_by: user.id,
+              reviewed_at: nowIso,
+              updated_at: nowIso,
+            })
+            .eq("status", "pending")
+            .eq("department", scopeTarget.trim());
+        }
+      } catch {
+        // Safe if table doesn't exist yet
+      }
+
+      // B. Fallback: Update matching records in notifications table
+      const { data: pendingNotifs } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("type", "EXTENSION_REQUEST");
+
+      if (Array.isArray(pendingNotifs) && pendingNotifs.length > 0) {
+        for (const notif of pendingNotifs) {
+          let parsed: any = {};
+          try {
+            parsed = JSON.parse(notif.message);
+          } catch {
+            parsed = {
+              id: notif.id,
+              reason: notif.message,
+              faculty_name: notif.title?.replace("Extension Request: ", "") || "Faculty",
+              faculty_user_id: notif.user_id,
+              academic_year: targetAy,
+              semester: targetSem,
+            };
+          }
+
+          // Skip if already processed and not pending
+          if (parsed.status && parsed.status !== "pending") {
+            continue;
+          }
+
+          let isMatch = false;
+          if (body.linkedRequestId && (parsed.id === body.linkedRequestId || notif.id === body.linkedRequestId)) {
+            isMatch = true;
+          } else if (scope === "global") {
+            isMatch = true;
+          } else if (scope === "faculty" && scopeTarget) {
+            const cleanTarget = scopeTarget.trim().toLowerCase();
+            const nameMatch = (parsed.faculty_name || "").toLowerCase().includes(cleanTarget);
+            const userMatch = notif.user_id === cleanTarget || parsed.faculty_user_id === cleanTarget;
+            isMatch = nameMatch || userMatch;
+          } else if (scope === "program" && scopeTarget) {
+            const cleanTarget = scopeTarget.trim().toLowerCase();
+            isMatch = (parsed.department || "").toLowerCase() === cleanTarget;
+          }
+
+          if (isMatch) {
+            parsed.status = "approved";
+            parsed.admin_remarks = approvalRemarks;
+            parsed.reviewed_by = user.id;
+            parsed.reviewed_at = nowIso;
+            parsed.updated_at = nowIso;
+
+            await supabase
+              .from("notifications")
+              .update({
+                message: JSON.stringify(parsed),
+                is_read: true,
+              })
+              .eq("id", notif.id);
+
+            // Send notification to the faculty member that their extension was approved!
+            await supabase.from("notifications").insert({
+              id: crypto.randomUUID(),
+              user_id: notif.user_id,
+              title: "Extension Request Approved",
+              message: `Your deadline extension request has been approved. The submission window has been extended until ${newEndDate} at ${endTimeLabel}.`,
+              type: "EXTENSION_APPROVED",
+              is_read: false,
+              created_at: nowIso,
+            });
+          }
+        }
+      }
+    } catch (resolveErr) {
+      logger.warn("auto_resolve_extension_requests_warning", {
+        error: resolveErr instanceof Error ? resolveErr.message : String(resolveErr),
+      });
+    }
 
     // Evaluate new window state
     const { data: updatedRaw } = await supabase

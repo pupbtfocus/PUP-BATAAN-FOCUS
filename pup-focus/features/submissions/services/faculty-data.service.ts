@@ -160,18 +160,6 @@ export async function getFacultyInitialData(
   }
   const evaluatedWindow = evaluateSubmissionWindow(windowConfig);
 
-  const submissionWindow: SubmissionWindowStateData = {
-    ...evaluatedWindow,
-    semester: (evaluatedWindow.semester as "1st Semester" | "2nd Semester") || null,
-    startTimeLabel: evaluatedWindow.startTime
-      ? format24HourTo12Hour(evaluatedWindow.startTime)
-      : null,
-    endTimeLabel: evaluatedWindow.endTime
-      ? format24HourTo12Hour(evaluatedWindow.endTime)
-      : null,
-    currentTimeLabel: format24HourTo12Hour(evaluatedWindow.currentTime),
-  };
-
   // 2. Active Term
   const { data: dbCurrentTerm } = await supabase
     .from("academic_terms")
@@ -196,6 +184,19 @@ export async function getFacultyInitialData(
 
   const normActiveYear = normalizeAcademicYear(activeAcademicYear);
   const normActiveSem = normalizeSemester(activeSemester);
+
+  const submissionWindow: SubmissionWindowStateData = {
+    ...evaluatedWindow,
+    academicYear: evaluatedWindow.academicYear || normActiveYear,
+    semester: (evaluatedWindow.semester as "1st Semester" | "2nd Semester") || activeSemester,
+    startTimeLabel: evaluatedWindow.startTime
+      ? format24HourTo12Hour(evaluatedWindow.startTime)
+      : null,
+    endTimeLabel: evaluatedWindow.endTime
+      ? format24HourTo12Hour(evaluatedWindow.endTime)
+      : null,
+    currentTimeLabel: format24HourTo12Hour(evaluatedWindow.currentTime),
+  };
 
   // 3. Requirement Templates
   let activeTemplates: RequirementTemplateData[] = DEFAULT_REQUIREMENTS.map((code) => ({
