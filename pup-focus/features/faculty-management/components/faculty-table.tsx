@@ -126,7 +126,7 @@ export function FacultyTable({
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 p-1 transition-colors cursor-pointer shadow-2xs"
+            className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
             aria-label="Dismiss message"
           >
             <AppIcon icon={Xmark} size="sm" color="inherit" />
@@ -140,7 +140,7 @@ export function FacultyTable({
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 p-1 transition-colors cursor-pointer shadow-2xs"
+            className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
             aria-label="Dismiss message"
           >
             <AppIcon icon={Xmark} size="sm" color="inherit" />
@@ -154,7 +154,7 @@ export function FacultyTable({
           <button
             type="button"
             onClick={onClearDeleteMessages}
-            className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 p-1 transition-colors cursor-pointer shadow-2xs"
+            className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
             aria-label="Dismiss message"
           >
             <AppIcon icon={Xmark} size="sm" color="inherit" />

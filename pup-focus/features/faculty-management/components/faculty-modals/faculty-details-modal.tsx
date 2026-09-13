@@ -111,8 +111,6 @@ export function FacultyDetailsModal({
             icon={User}
             title="Faculty Member Details"
             subtitle="Full profile, login info, and compliance overview"
-            onClose={onClose}
-            closeAriaLabel="Close dialog"
             className="sticky top-0 z-10"
           />
 
@@ -366,7 +364,7 @@ export function FacultyDetailsModal({
               <button
                 type="button"
                 onClick={() => setShowPhotoPreview(false)}
-                className="p-1 rounded-lg border border-slate-200 dark:border-slate-700/60 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer shadow-2xs"
+                className="p-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs"
                 aria-label="Close preview"
               >
                 <AppIcon icon={Xmark} size="md" color="inherit" />

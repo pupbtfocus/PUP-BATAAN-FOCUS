@@ -65,7 +65,7 @@ export function PupWebBadge() {
             <button
               type="button"
               onClick={() => setIsAboutOpen(false)}
-              className="absolute top-4 right-4 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 transition-colors cursor-pointer shadow-2xs"
+              className="absolute top-4 right-4 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-xs"
               aria-label="Close modal"
             >
               <AppIcon icon={Xmark} size="md" color="inherit" />

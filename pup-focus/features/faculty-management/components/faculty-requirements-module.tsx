@@ -760,8 +760,6 @@ export function FacultyRequirementsModule({
               }
               titleId="submit-modal-title"
               icon={isRevisionModal || selectedReqStatus?.status === "Rejected" ? WarningCircle : Upload}
-              onClose={closeModal}
-              closeAriaLabel="Close modal"
             />
 
             {/* Modal Form with Scrollable Content */}
@@ -944,8 +942,6 @@ export function FacultyRequirementsModule({
               subtitle="Reference dates and submission window guidelines."
               titleId="calendar-modal-title"
               icon={Calendar}
-              onClose={closeCalendarModal}
-              closeAriaLabel="Close calendar modal"
             />
             <div className="p-6 overflow-y-auto space-y-4">
 
@@ -997,9 +993,10 @@ export function FacultyRequirementsModule({
               </a>
               <Button
                 type="button"
-                variant="secondary"
+                variant="maroon"
                 size="sm"
                 onClick={closeCalendarModal}
+                className="cursor-pointer"
               >
                 Close
               </Button>

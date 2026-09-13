@@ -1855,7 +1855,7 @@ function FacultySubmissionPanelContent({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700/60 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer shadow-2xs"
+                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs"
               >
                 <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
@@ -2998,9 +2998,6 @@ function FacultySubmissionPanelContent({
                         ? "Upload your revised compliance document addressing the reviewer's feedback below."
                         : "Upload your compliance document for admin review and validation."
                     }
-                    onClose={closeDirectUploadModal}
-                    closeDisabled={isUploadingDirect}
-                    closeAriaLabel="Close upload modal"
                   />
 
                   {/* Modal Form with Scrollable Content */}
@@ -3334,15 +3331,6 @@ function FacultySubmissionPanelContent({
                       />
                     )}
                   </div>
-                  <div className="flex justify-end border-t border-slate-300 dark:border-slate-800 px-6 py-4">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={closeHistoryModal}
-                    >
-                      Close
-                    </Button>
-                  </div>
                 </div>
               </div>
             )}
@@ -3521,8 +3509,6 @@ function FacultySubmissionPanelContent({
                     title="Requirements Pending Submission"
                     subtitle="Action Required"
                     icon={WarningCircle}
-                    onClose={dismissIncompleteRequirementsAlert}
-                    closeAriaLabel="Close alert"
                     titleId="incomplete-requirements-title"
                   />
                   <div className="p-6 overflow-y-auto">
@@ -3560,7 +3546,7 @@ function FacultySubmissionPanelContent({
                     <button
                       type="button"
                       onClick={dismissIncompleteRequirementsAlert}
-                      className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium px-4 py-2 rounded-xl transition-colors cursor-pointer"
+                      className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-xs"
                     >
                       Dismiss
                     </button>
@@ -3610,8 +3596,6 @@ function FacultySubmissionPanelContent({
                   <ModalHeader
                     title="Submit Requirement"
                     icon={Upload}
-                    onClose={closeSubmitModal}
-                    closeAriaLabel="Close submit modal"
                   />
                   <div className="flex-1 overflow-y-auto p-6 min-h-0">
                     {isSubmissionAvailable ? (
@@ -3782,8 +3766,6 @@ function FacultySubmissionPanelContent({
                   <ModalHeader
                     title="Extension Request Status"
                     icon={Clock}
-                    onClose={() => setShowExtensionDetailsModal(false)}
-                    closeAriaLabel="Close extension request status modal"
                   />
                   <div className="p-6 space-y-4">
                     <div className="space-y-3 text-xs">
@@ -3825,7 +3807,7 @@ function FacultySubmissionPanelContent({
                     <button
                       type="button"
                       onClick={() => setShowExtensionDetailsModal(false)}
-                      className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer"
+                      className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer shadow-xs"
                     >
                       Close
                     </button>

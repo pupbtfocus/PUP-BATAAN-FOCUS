@@ -168,8 +168,6 @@ export function FacultyExtensionRequestModal({
           icon={Clock}
           title="Request Deadline Extension"
           subtitle={`A.Y. ${academicYear} • ${semester}`}
-          onClose={onClose}
-          closeDisabled={isSubmitting}
         />
 
         {/* Content Body */}
@@ -342,7 +340,7 @@ export function FacultyExtensionRequestModal({
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer disabled:opacity-50 shadow-xs"
               >
                 Cancel
               </button>

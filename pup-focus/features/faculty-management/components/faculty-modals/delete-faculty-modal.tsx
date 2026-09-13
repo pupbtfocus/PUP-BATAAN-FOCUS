@@ -47,7 +47,6 @@ export function DeleteFacultyModal({
               ? "Confirm Account Activation"
               : "Confirm Account Deactivation"
           }
-          onClose={onCancel}
           className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
         />
         <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">

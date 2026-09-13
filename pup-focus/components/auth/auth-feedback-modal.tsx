@@ -87,7 +87,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3.5 right-3.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 transition-colors cursor-pointer shadow-2xs"
+          className="absolute top-3.5 right-3.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-xs"
           aria-label="Close modal"
         >
           <AppIcon icon={Xmark} size="md" color="inherit" />
@@ -159,13 +159,6 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
                 <AppIcon icon={SystemRestart} size="md" color="active" className="animate-spin" />
                 <span>Securing institutional session...</span>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-xs font-semibold px-4 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all cursor-pointer shadow-xs"
-              >
-                Cancel
-              </button>
             </div>
           ) : isSuccess ? (
             <div className="mt-5 w-full flex flex-col items-center gap-2">

@@ -723,8 +723,6 @@ export function BackupArchivePanel() {
             <ModalHeader
               title={inspectedBackup.backup_name}
               icon={Database}
-              onClose={() => setInspectedBackup(null)}
-              closeAriaLabel="Close"
             />
             <div className="p-6 overflow-y-auto flex-1 space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3 p-4 rounded-lg bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800">
@@ -789,7 +787,7 @@ export function BackupArchivePanel() {
               <button
                 type="button"
                 onClick={() => setInspectedBackup(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
               >
                 Close
               </button>
@@ -805,8 +803,6 @@ export function BackupArchivePanel() {
             <ModalHeader
               title="Archive Vault Inspection"
               icon={Archive}
-              onClose={() => setInspectedTerm(null)}
-              closeAriaLabel="Close"
             />
             <div className="p-6">
               <div className="space-y-3 text-xs">
@@ -851,7 +847,7 @@ export function BackupArchivePanel() {
               <button
                 type="button"
                 onClick={() => setInspectedTerm(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
               >
                 Close
               </button>
@@ -878,7 +874,7 @@ export function BackupArchivePanel() {
               <button
                 type="button"
                 onClick={() => setBackupToDelete(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
