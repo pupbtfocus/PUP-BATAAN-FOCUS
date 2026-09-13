@@ -271,3 +271,24 @@ html:not(.dark) [class*="border-slate-200/"],
 html:not(.dark) [class*="divide-slate-200/"] > :not([hidden]) ~ :not([hidden]) {
   border-color: #cbd5e1;
 }
+
+/* Ensure icons inside solid gold/amber buttons are always high-contrast dark in both light and dark modes */
+button[class~="bg-amber-500"] svg,
+button[class~="bg-amber-400"] svg,
+a[class~="bg-amber-500"] svg,
+a[class~="bg-amber-400"] svg,
+button[class*="bg-amber-500"][class*="text-slate-950"] svg,
+button[class*="bg-amber-400"][class*="text-slate-950"] svg,
+button[class*="from-amber-"][class*="text-slate-950"] svg,
+a[class*="from-amber-"][class*="text-slate-950"] svg,
+.dark button[class~="bg-amber-500"] svg,
+.dark button[class~="bg-amber-400"] svg,
+.dark a[class~="bg-amber-500"] svg,
+.dark a[class~="bg-amber-400"] svg,
+.dark button[class*="bg-amber-500"][class*="text-slate-950"] svg,
+.dark button[class*="bg-amber-400"][class*="text-slate-950"] svg,
+.dark button[class*="from-amber-"][class*="text-slate-950"] svg,
+.dark a[class*="from-amber-"][class*="text-slate-950"] svg {
+  color: #020617 !important;
+}
+

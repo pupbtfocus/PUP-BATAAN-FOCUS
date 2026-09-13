@@ -1177,7 +1177,7 @@ export function DevPreviewPanel() {
                 onClick={() => handleSimulateRealisticLogin("success")}
                 className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-slate-950 font-bold text-xs transition cursor-pointer shadow-md flex items-center gap-2 disabled:opacity-50"
               >
-                <AppIcon icon={SystemRestart} size="md" color="default" className="animate-spin" />
+                <AppIcon icon={SystemRestart} size="md" color="inherit" className="text-slate-950 animate-spin" />
                 <span>Simulate Flow (Loading → Success)</span>
               </button>
 
@@ -1188,7 +1188,7 @@ export function DevPreviewPanel() {
                 onClick={() => handleSimulateRealisticLogin("fail")}
                 className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-slate-950 font-bold text-xs transition cursor-pointer shadow-md flex items-center gap-2 disabled:opacity-50"
               >
-                <AppIcon icon={SystemRestart} size="md" color="default" className="animate-spin" />
+                <AppIcon icon={SystemRestart} size="md" color="inherit" className="text-slate-950 animate-spin" />
                 <span>Simulate Flow (Loading → Fail)</span>
               </button>
 

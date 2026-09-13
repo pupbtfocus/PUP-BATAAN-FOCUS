@@ -646,12 +646,12 @@ export function ExtendSubmissionWindowModal({
             >
               {isSubmitting ? (
                 <>
-                  <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                  <AppIcon icon={SystemRestart} size="sm" color="inherit" className="text-slate-950 animate-spin" />
                   Extending Window...
                 </>
               ) : (
                 <>
-                  <AppIcon icon={CheckCircle} size="sm" color="default" />
+                  <AppIcon icon={CheckCircle} size="sm" color="inherit" className="text-slate-950" />
                   Confirm & Extend Window
                 </>
               )}

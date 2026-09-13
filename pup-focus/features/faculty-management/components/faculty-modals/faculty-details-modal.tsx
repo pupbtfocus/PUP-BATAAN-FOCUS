@@ -332,7 +332,7 @@ export function FacultyDetailsModal({
                 }}
                 className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold rounded-xl px-4 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
               >
-                <AppIcon icon={EditPencil} size="sm" color="default" />
+                <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                 Edit Profile
               </button>
             ) : null}

@@ -1365,7 +1365,12 @@ function FacultyVerificationDrawer({
                           : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
                       }`}
                     >
-                      <AppIcon icon={WarningCircle} size="sm" color="active" />
+                      <AppIcon
+                        icon={WarningCircle}
+                        size="sm"
+                        color={filterMode === "revision_uploaded" ? "inherit" : "active"}
+                        className={filterMode === "revision_uploaded" ? "text-slate-950" : ""}
+                      />
                       <span>Revisions Uploaded</span>
                       <span
                         className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
@@ -1457,7 +1462,7 @@ function FacultyVerificationDrawer({
                     onClick={handleDownloadZip}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
                   >
-                    <AppIcon icon={Download} size="sm" color="default" />
+                    <AppIcon icon={Download} size="sm" color="inherit" className="text-slate-950" />
                     {isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}
                   </button>
                 </div>
