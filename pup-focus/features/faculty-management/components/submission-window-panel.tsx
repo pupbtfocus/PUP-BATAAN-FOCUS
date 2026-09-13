@@ -1341,6 +1341,13 @@ export function SubmissionWindowPanel({
               This will <span className="font-bold text-rose-700 dark:text-rose-400">immediately close</span> the active submission window and clear the schedule. Faculty will no longer be able to upload compliance documents.
             </p>
 
+            <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-950/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-3 text-xs text-emerald-900 dark:text-emerald-300">
+              <CheckCircle className="h-4 w-4 text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                <span className="font-semibold">Completed Accounts Preserved:</span> Faculty accounts that completed and validated all requirements will be placed under &ldquo;Completed / Validated&rdquo; and remain protected in completed status.
+              </p>
+            </div>
+
             {/* Countdown indicator */}
             {closeCountdown > 0 ? (
               <div className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/30 px-4 py-3">

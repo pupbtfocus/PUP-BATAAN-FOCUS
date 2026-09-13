@@ -167,15 +167,28 @@ export async function getFacultyInitialData(
     .eq("status", "Current")
     .maybeSingle();
 
+  let dbTerm = dbCurrentTerm;
+  if (!dbTerm) {
+    const { data: latestTerm } = await supabase
+      .from("academic_terms")
+      .select("id, academic_year, semester")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latestTerm) {
+      dbTerm = latestTerm;
+    }
+  }
+
   const activeAcademicYear =
     requestedAcademicYear ||
-    dbCurrentTerm?.academic_year ||
+    dbTerm?.academic_year ||
     evaluatedWindow?.academicYear ||
     "2026-2027";
 
   const rawSem =
     requestedSemester ||
-    dbCurrentTerm?.semester ||
+    dbTerm?.semester ||
     evaluatedWindow?.semester ||
     "1st Semester";
 

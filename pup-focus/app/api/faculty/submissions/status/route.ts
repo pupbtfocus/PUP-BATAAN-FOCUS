@@ -215,15 +215,28 @@ export async function GET(request: NextRequest) {
       .eq("status", "Current")
       .maybeSingle();
 
+    let dbTerm = dbCurrentTerm;
+    if (!dbTerm) {
+      const { data: latestTerm } = await supabase
+        .from("academic_terms")
+        .select("id, academic_year, semester")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestTerm) {
+        dbTerm = latestTerm;
+      }
+    }
+
     const activeAcademicYear =
       requestedAcademicYear ||
-      dbCurrentTerm?.academic_year ||
+      dbTerm?.academic_year ||
       windowState?.academicYear ||
-      "2027-2028";
+      "2026-2027";
 
     const activeSemester = normalizeSemester(
       requestedSemester ||
-      dbCurrentTerm?.semester ||
+      dbTerm?.semester ||
       windowState?.semester ||
       "1st Semester"
     );
@@ -347,6 +360,16 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const assignmentMap = new Map<string, { academicYear: string; semester: string }>();
+    for (const a of assignmentRows) {
+      if (a.id) {
+        assignmentMap.set(a.id, {
+          academicYear: normalizeAcademicYear(a.academic_year),
+          semester: normalizeSemester(a.term),
+        });
+      }
+    }
+
     const currentTermAssignments = assignmentRows.filter(
       (row) =>
         normalizeAcademicYear(row.academic_year) === normActiveYear &&
@@ -374,7 +397,9 @@ export async function GET(request: NextRequest) {
         .select(
           "id, requirement_code, status, submitted_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id",
         )
-        .in("faculty_profile_id", facultyIdList)
+        .or(
+          `faculty_profile_id.in.(${facultyIdList.join(",")}),user_id.in.(${facultyIdList.join(",")}),created_by.in.(${facultyIdList.join(",")})`,
+        )
         .order("submitted_at", { ascending: false });
 
       if (error) {
@@ -541,40 +566,29 @@ export async function GET(request: NextRequest) {
 
       // 2. Secondary Check: Match faculty_assignment_id if present
       if (sub.faculty_assignment_id) {
-        return (
-          currentAssignmentIds.length > 0 &&
-          currentAssignmentIds.includes(sub.faculty_assignment_id)
-        );
-      }
-
-      // If requested term has explicit assignments configured or if sub belongs to another assignment, DO NOT bleed unassigned rows.
-      if (currentAssignmentIds.length > 0) {
-        return false;
-      }
-
-      // 3. Fallback for legacy unassigned rows ONLY if active term matches 2026-2027
-      if (normActiveYear === "2026-2027" && sub.submitted_at) {
-        const subTime = new Date(sub.submitted_at).getTime();
-
-        if (!isNaN(subTime)) {
-          if (currentWindowStart) {
-            const winStart = new Date(currentWindowStart).getTime();
-            const is2ndSemActive = normActiveSem === "2nd semester";
-
-            if (subTime >= winStart) {
-              return is2ndSemActive;
-            } else {
-              return !is2ndSemActive;
-            }
-          }
-
-          const { academicYear: subAY, semester: subSem } =
-            toAcademicYearAndSemester(sub.submitted_at);
+        const assigned = assignmentMap.get(sub.faculty_assignment_id);
+        if (assigned) {
           return (
-            normalizeAcademicYear(subAY) === normActiveYear &&
-            normalizeSemester(subSem) === normActiveSem
+            assigned.academicYear === normActiveYear &&
+            assigned.semester === normActiveSem
           );
         }
+        if (
+          currentAssignmentIds.length > 0 &&
+          currentAssignmentIds.includes(sub.faculty_assignment_id)
+        ) {
+          return true;
+        }
+      }
+
+      // 3. Fallback for unassigned rows
+      if (sub.submitted_at) {
+        const { academicYear: subAY, semester: subSem } =
+          toAcademicYearAndSemester(sub.submitted_at);
+        return (
+          normalizeAcademicYear(subAY) === normActiveYear &&
+          normalizeSemester(subSem) === normActiveSem
+        );
       }
 
       return false;
