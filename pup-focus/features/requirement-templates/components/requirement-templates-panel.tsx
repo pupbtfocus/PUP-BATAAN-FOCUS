@@ -18,6 +18,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import type { RequirementTemplate } from "@/features/requirement-templates/types/requirement-template.types";
 import { RequirementTemplateModal } from "./requirement-template-modal";
+import { AlertPopup } from "@/components/ui/alert-popup";
 
 interface RequirementTemplatesPanelProps {
   refreshTrigger?: number;
@@ -255,17 +256,17 @@ export function RequirementTemplatesPanel({
       </div>
 
       {/* Notifications */}
-      {error ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 p-3.5 text-xs">
-          {error}
-        </div>
-      ) : null}
+      <AlertPopup
+        type="error"
+        message={error}
+        onClose={() => setError(null)}
+      />
 
-      {success ? (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 p-3.5 text-xs">
-          {success}
-        </div>
-      ) : null}
+      <AlertPopup
+        type="success"
+        message={success}
+        onClose={() => setSuccess(null)}
+      />
 
       {/* Filter & Actions Bar matching AdminFilterBar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-300 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 rounded-2xl mb-6 transition-colors">

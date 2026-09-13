@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Check, Page, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import {
   ALLOWED_FORMAT_OPTIONS,
   MAX_SIZE_OPTIONS,
@@ -346,11 +347,12 @@ export function RequirementTemplateModal({
             </p>
           </div>
 
-          {error ? (
-            <p className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 px-4 py-3 text-xs sm:text-sm">
-              {error}
-            </p>
-          ) : null}
+          <AlertPopup
+            type="error"
+            message={error}
+            position="inline"
+            onClose={() => setError(null)}
+          />
 
           {/* Modal Action Buttons */}
           <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-300 dark:border-slate-800 mt-2">

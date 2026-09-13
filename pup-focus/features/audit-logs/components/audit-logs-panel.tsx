@@ -5,6 +5,7 @@ import { CheckCircle, EditPencil, Eye, Filter, Hourglass, NavArrowLeft, NavArrow
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { AlertPopup } from "@/components/ui/alert-popup";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -369,11 +370,11 @@ export function AuditLogsPanel() {
       </div>
 
       {/* ── Error State ── */}
-      {error ? (
-        <div className="rounded-xl border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-xs text-red-700 dark:text-red-300">
-          {error}
-        </div>
-      ) : null}
+      <AlertPopup
+        type="error"
+        message={error}
+        onClose={() => setError(null)}
+      />
 
       {/* ── Data Table ── */}
       <div className="w-full overflow-x-auto rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">

@@ -50,6 +50,7 @@ import { ModalHeader } from "@/components/ui/modal-header";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
+import { AlertPopup } from "@/components/ui/alert-popup";
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
 export function getFileType(fileNameOrUrl: string): {
   type: DetectedFileType;
@@ -2034,21 +2035,11 @@ function FacultySubmissionPanelContent({
                 )}
 
                 {/* Extension Request Feedback Toast in Dashboard */}
-                {extensionRequestToast && (
-                  <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-2 animate-in fade-in duration-200">
-                    <div className="flex items-center gap-2">
-                      <AppIcon icon={CheckCircle} size="md" color="success" />
-                      <span>{extensionRequestToast}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setExtensionRequestToast(null)}
-                      className="text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                )}
+                <AlertPopup
+                  type="success"
+                  message={extensionRequestToast}
+                  onClose={() => setExtensionRequestToast(null)}
+                />
                 {/* Top Stat Summary Grid (3 Cards) */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Card 1: Overall Progress */}
@@ -2535,11 +2526,17 @@ function FacultySubmissionPanelContent({
                     </div>
                   </div>
                 )}
-                {submissionMessage ? (
-                  <p className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300 px-3 py-2 text-sm">
-                    {submissionMessage}
-                  </p>
-                ) : null}
+                <AlertPopup
+                  type={
+                    submissionMessage?.toLowerCase().includes("please") ||
+                    submissionMessage?.toLowerCase().includes("failed") ||
+                    submissionMessage?.toLowerCase().includes("error")
+                      ? "error"
+                      : "success"
+                  }
+                  message={submissionMessage}
+                  onClose={() => setSubmissionMessage(null)}
+                />
                 {isMounted && isGuideOpen ? (
                   <div
                     className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
