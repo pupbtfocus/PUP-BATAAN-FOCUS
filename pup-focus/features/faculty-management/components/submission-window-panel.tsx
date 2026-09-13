@@ -10,6 +10,7 @@ import type {
   SubmissionWindowResponse,
 } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { ExtendSubmissionWindowModal } from "./extend-submission-window-modal";
+import { AlertPopup } from "@/components/ui/alert-popup";
 
 function toDateTimeLocal(d: Date): string {
   const year = d.getFullYear();
@@ -641,17 +642,17 @@ export function SubmissionWindowPanel({
         </div>
       </div>
 
-      {error ? (
-        <p className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 px-4 py-2.5 text-xs">
-          {error}
-        </p>
-      ) : null}
+      <AlertPopup
+        type="error"
+        message={error}
+        onClose={() => setError(null)}
+      />
 
-      {success ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 px-4 py-2.5 text-xs">
-          {success}
-        </p>
-      ) : null}
+      <AlertPopup
+        type="success"
+        message={success}
+        onClose={() => setSuccess(null)}
+      />
 
       {/* Pending Extension Requests Alert Banner */}
       {pendingRequestsCount > 0 && (

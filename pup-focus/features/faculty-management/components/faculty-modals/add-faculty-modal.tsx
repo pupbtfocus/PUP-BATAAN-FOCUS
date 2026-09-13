@@ -5,6 +5,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { UserPlus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import { createClient } from "@/lib/supabase/client";
 import type { FacultyAccountFormInput } from "@/features/faculty-management/schemas/faculty-account.schema";
 
@@ -68,6 +69,8 @@ export function AddFacultyPanel({
   const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [dismissedError, setDismissedError] = useState<string | null>(null);
+  const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
   const photoInputId = useId();
 
   useEffect(() => {
@@ -334,17 +337,19 @@ export function AddFacultyPanel({
           <FieldError message={form.formState.errors.email?.message} />
         </div>
 
-        {createError ? (
-          <p className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 px-4 py-3 text-sm">
-            {createError}
-          </p>
-        ) : null}
+        <AlertPopup
+          type="error"
+          message={createError !== dismissedError ? createError : null}
+          position="inline"
+          onClose={() => setDismissedError(createError)}
+        />
 
-        {createSuccess ? (
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 px-4 py-3 text-sm">
-            {createSuccess}
-          </p>
-        ) : null}
+        <AlertPopup
+          type="success"
+          message={createSuccess !== dismissedSuccess ? createSuccess : null}
+          position="inline"
+          onClose={() => setDismissedSuccess(createSuccess)}
+        />
 
         <button
           className="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"

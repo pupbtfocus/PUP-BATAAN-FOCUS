@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { EditPencil, Eye, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { FacultyFilterBar } from "./faculty-filter-bar";
@@ -120,47 +121,23 @@ export function FacultyTable({
 
   return (
     <div className="space-y-3">
-      {deleteError ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300 px-3.5 py-2 text-xs flex justify-between items-center">
-          <span>{deleteError}</span>
-          <button
-            type="button"
-            onClick={onClearDeleteMessages}
-            className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
-            aria-label="Dismiss message"
-          >
-            <AppIcon icon={Xmark} size="sm" color="inherit" />
-          </button>
-        </div>
-      ) : null}
+      <AlertPopup
+        type="error"
+        message={deleteError}
+        onClose={onClearDeleteMessages}
+      />
 
-      {deleteSuccess ? (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300 px-3.5 py-2 text-xs flex justify-between items-center">
-          <span>{deleteSuccess}</span>
-          <button
-            type="button"
-            onClick={onClearDeleteMessages}
-            className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
-            aria-label="Dismiss message"
-          >
-            <AppIcon icon={Xmark} size="sm" color="inherit" />
-          </button>
-        </div>
-      ) : null}
+      <AlertPopup
+        type="success"
+        message={deleteSuccess}
+        onClose={onClearDeleteMessages}
+      />
 
-      {facultyActionError ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300 px-3.5 py-2 text-xs flex justify-between items-center">
-          <span>{facultyActionError}</span>
-          <button
-            type="button"
-            onClick={onClearDeleteMessages}
-            className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-xs"
-            aria-label="Dismiss message"
-          >
-            <AppIcon icon={Xmark} size="sm" color="inherit" />
-          </button>
-        </div>
-      ) : null}
+      <AlertPopup
+        type="error"
+        message={facultyActionError}
+        onClose={onClearDeleteMessages}
+      />
 
       <FacultyStatsCards
         facultyAccounts={facultyAccounts}

@@ -26,6 +26,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_CODE,
@@ -1226,6 +1227,11 @@ function FacultyVerificationDrawer({
         className="flex max-h-[92vh] w-full max-w-6xl xl:max-w-7xl flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl transition-all"
         onClick={(e) => e.stopPropagation()}
       >
+        <AlertPopup
+          type={actionFeedback?.type}
+          message={actionFeedback?.message}
+          onClose={() => setActionFeedback(null)}
+        />
         {/* Modal Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-4 bg-slate-50/50 dark:bg-slate-950/30">
           <div className="flex items-center gap-3.5">
@@ -1468,23 +1474,7 @@ function FacultyVerificationDrawer({
                 </div>
               </div>
 
-              {/* Action Feedback Banner */}
-              {actionFeedback ? (
-                <div
-                  className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 p-3 text-xs font-semibold shadow-2xs transition-all"
-                >
-                  <span className="text-sm">
-                    {actionFeedback.type === "info" ? (
-                      <AppIcon icon={InfoCircle} size="md" color="active" />
-                    ) : actionFeedback.type === "success" ? (
-                      <AppIcon icon={Check} size="md" color="success" />
-                    ) : (
-                      <AppIcon icon={WarningTriangle} size="md" color="danger" />
-                    )}
-                  </span>
-                  <span>{actionFeedback.message}</span>
-                </div>
-              ) : null}
+
 
               {/* Compressed List Table */}
               <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
@@ -1903,29 +1893,7 @@ function FacultyVerificationDrawer({
                 </div>
               </div>
 
-              {/* Action Feedback Banner */}
-              {actionFeedback ? (
-                <div
-                  className={`flex items-center gap-2.5 rounded-2xl border p-3 text-xs font-semibold shadow-2xs transition-all ${
-                    actionFeedback.type === "info"
-                      ? "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300"
-                      : actionFeedback.type === "success"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
-                      : "border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
-                  }`}
-                >
-                  <span className="text-sm">
-                    {actionFeedback.type === "info" ? (
-                      <AppIcon icon={InfoCircle} size="md" color="inherit" />
-                    ) : actionFeedback.type === "success" ? (
-                      <AppIcon icon={Check} size="md" color="inherit" />
-                    ) : (
-                      <AppIcon icon={WarningTriangle} size="md" color="inherit" />
-                    )}
-                  </span>
-                  <span>{actionFeedback.message}</span>
-                </div>
-              ) : null}
+
 
               {/* Past Submissions Compressed List Table */}
               {isLoadingHistory ? (

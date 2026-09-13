@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Calendar, Check, CheckCircle, Hourglass, NavArrowDown, Refresh, Search, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import { Button } from "@/components/ui/button";
 
 export interface FacultyOption {
@@ -333,12 +334,12 @@ export function ExtendSubmissionWindowModal({
           subtitle={`Grant a deadline extension for ${academicYear && semester ? `${academicYear} • ${semester}` : "Active Term"}.`}
         />
 
-        {error ? (
-          <div className="flex items-center gap-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 p-3 text-xs text-rose-700 dark:text-rose-400">
-            <AppIcon icon={WarningCircle} size="md" color="danger" />
-            <span>{error}</span>
-          </div>
-        ) : null}
+        <AlertPopup
+          type="error"
+          message={error}
+          position="inline"
+          onClose={() => setError(null)}
+        />
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Section 1: Extension Scope */}

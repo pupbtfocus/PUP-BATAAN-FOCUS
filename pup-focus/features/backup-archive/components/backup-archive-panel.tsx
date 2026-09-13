@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Archive, Calendar, Check, CheckCircle, Database, Download, Eye, HardDrive, Hourglass, MultiplePages, Plus, Refresh, Trash, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { AlertPopup } from "@/components/ui/alert-popup";
 import type {
   SystemBackup,
   ArchivedTermSummary,
@@ -335,17 +336,17 @@ export function BackupArchivePanel() {
       </section>
 
       {/* Notifications */}
-      {error ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 px-4 py-3 text-xs sm:text-sm">
-          {error}
-        </div>
-      ) : null}
+      <AlertPopup
+        type="error"
+        message={error}
+        onClose={() => setError(null)}
+      />
 
-      {success ? (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 px-4 py-3 text-xs sm:text-sm">
-          {success}
-        </div>
-      ) : null}
+      <AlertPopup
+        type="success"
+        message={success}
+        onClose={() => setSuccess(null)}
+      />
 
       {/* SECTION 1: System Backup Manager */}
       <section className="space-y-4">
