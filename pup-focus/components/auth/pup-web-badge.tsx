@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { InfoCircle, OpenNewWindow, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { BrandMark } from "@/components/shared/brand-mark";
 
 export function PupWebBadge() {
@@ -20,7 +21,7 @@ export function PupWebBadge() {
           title="About PUP FOCUS"
           aria-label="About PUP FOCUS"
         >
-          <InfoCircle className="w-4 h-4 sm:w-[18px] sm:h-[18px] transition-transform duration-200 group-hover:scale-110" />
+          <AppIcon icon={InfoCircle} size="md" color="inherit" className="sm:!h-[18px] sm:!w-[18px] transition-transform duration-200 group-hover:scale-110" />
           <span className="pointer-events-none absolute -top-8 right-0 whitespace-nowrap rounded-md bg-black/85 px-2 py-0.5 text-[10px] font-medium text-amber-200 opacity-0 shadow-md backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
             About FOCUS
           </span>
@@ -67,7 +68,7 @@ export function PupWebBadge() {
               className="absolute top-4 right-4 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
               aria-label="Close modal"
             >
-              <Xmark className="w-4 h-4" />
+              <AppIcon icon={Xmark} size="md" color="white" />
             </button>
 
             {/* Header with Crest */}
@@ -106,7 +107,7 @@ export function PupWebBadge() {
                   />
                 </div>
                 <span>PUP Website</span>
-                <OpenNewWindow className="w-3 h-3 text-amber-400/70" />
+                <AppIcon icon={OpenNewWindow} size="xs" color="inherit" className="text-amber-400/70" />
               </a>
             </div>
           </div>

@@ -45,6 +45,7 @@ import {
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
 import { Activity, Archive, Calendar, Check, CheckCircle, Clock, ClockRotateRight, CloudUpload, Download, Eye, Hourglass, Menu, NavArrowRight, OpenNewWindow, Page, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
@@ -341,11 +342,11 @@ function getStatusBadgeTone(
 function getStatusIcon(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ) {
-  if (status === "Validated") return <CheckCircle className="h-3 w-3 text-white" />;
-  if (status === "Rejected") return <WarningCircle className="h-3 w-3 text-white" />;
+  if (status === "Validated") return <AppIcon icon={CheckCircle} size="xs" color="white" />;
+  if (status === "Rejected") return <AppIcon icon={WarningCircle} size="xs" color="white" />;
   if (status === "Not Submitted")
     return <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />;
-  return <Clock className="h-3 w-3" />;
+  return <AppIcon icon={Clock} size="xs" color="inherit" />;
 }
 function getStatusText(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
@@ -1751,7 +1752,7 @@ function FacultySubmissionPanelContent({
           className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
           aria-label="Open Navigation Menu"
         >
-          <Menu className="w-5 h-5" />
+          <AppIcon icon={Menu} size="lg" color="inherit" />
         </button>
       )}
       {/* Desktop Sidebar (hidden on mobile) */}
@@ -1855,7 +1856,7 @@ function FacultySubmissionPanelContent({
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white cursor-pointer shadow-2xs transition-colors"
               >
-                <Xmark className="w-4 h-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
             <div className="my-1.5 bg-slate-50 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800 p-4 rounded-xl text-center flex flex-col items-center transition-colors">
@@ -1990,7 +1991,7 @@ function FacultySubmissionPanelContent({
                   <div className="p-4 sm:p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/30 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
                     <div className="flex items-start sm:items-center gap-3">
                       <div className="p-2.5 rounded-xl bg-[#0b5336] text-white shrink-0 shadow-2xs">
-                        <CheckCircle className="h-6 w-6" />
+                        <AppIcon icon={CheckCircle} size="lg" color="inherit" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
@@ -2024,7 +2025,7 @@ function FacultySubmissionPanelContent({
                         onClick={() => setIsTermCompletionModalOpen(true)}
                         className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition active:scale-[0.98] cursor-pointer"
                       >
-                        <CheckCircle className="h-4 w-4" />
+                        <AppIcon icon={CheckCircle} size="md" color="inherit" />
                         <span>View Summary</span>
                       </button>
                     </div>
@@ -2035,7 +2036,7 @@ function FacultySubmissionPanelContent({
                 {extensionRequestToast && (
                   <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-2 animate-in fade-in duration-200">
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600" />
+                      <AppIcon icon={CheckCircle} size="md" color="success" />
                       <span>{extensionRequestToast}</span>
                     </div>
                     <button
@@ -2177,7 +2178,7 @@ function FacultySubmissionPanelContent({
                           className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
                         >
                           <span>View all 6</span>
-                          <NavArrowRight className="h-3 w-3" />
+                          <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
                         </button>
                       </div>
                       {isLoadingStatuses ? (
@@ -2192,7 +2193,7 @@ function FacultySubmissionPanelContent({
                               req.status === "Rejected",
                           ).length === 0 ? (
                             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center space-y-2 shadow-xs">
-                              <CheckCircle className="h-8 w-8 text-emerald-500 dark:text-emerald-400 mx-auto" />
+                              <AppIcon icon={CheckCircle} size="xl" color="success" className="mx-auto" />
                               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 Great job! No pending requirements.
                               </h3>
@@ -2233,7 +2234,7 @@ function FacultySubmissionPanelContent({
                                       </div>
                                       {req.status === "Rejected" && (
                                         <p className="text-xs text-[#780000] dark:text-rose-400 flex items-center gap-1.5 mt-1.5 font-medium">
-                                          <WarningCircle className="h-3.5 w-3.5 text-[#780000] dark:text-rose-400 shrink-0" />
+                                          <AppIcon icon={WarningCircle} size="sm" color="danger" />
                                           <span className="italic truncate">
                                             &ldquo;
                                             {req.adminRemarks ||
@@ -2253,7 +2254,7 @@ function FacultySubmissionPanelContent({
                                             onClick={() => setShowExtensionDetailsModal(true)}
                                             className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                                           >
-                                            <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                            <AppIcon icon={Clock} size="sm" color="active" />
                                             <span>Extension Pending</span>
                                           </button>
                                         ) : (
@@ -2264,7 +2265,7 @@ function FacultySubmissionPanelContent({
                                             }
                                             className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                           >
-                                            <Clock className="h-3.5 w-3.5" />
+                                            <AppIcon icon={Clock} size="sm" color="inherit" />
                                             <span>Request Extension</span>
                                           </button>
                                         )
@@ -2280,7 +2281,7 @@ function FacultySubmissionPanelContent({
                                           disabled={!hasActiveSchedule}
                                           className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-3 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                                         >
-                                          <Upload className="h-3.5 w-3.5" />
+                                          <AppIcon icon={Upload} size="sm" color="inherit" />
                                           <span>
                                             {req.status === "Rejected"
                                               ? "Resubmit"
@@ -2611,7 +2612,7 @@ function FacultySubmissionPanelContent({
                       </h1>
                       {isAllValidated && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b5336] text-white text-xs font-bold shadow-2xs">
-                          <CheckCircle className="h-3.5 w-3.5" />
+                          <AppIcon icon={CheckCircle} size="sm" color="inherit" />
                           Done All for This Semester
                         </span>
                       )}
@@ -2632,7 +2633,7 @@ function FacultySubmissionPanelContent({
                       className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
                       title="View validated documents history"
                     >
-                      <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <AppIcon icon={CheckCircle} size="sm" color="success" />
                       Validation History
                     </button>
                     <button
@@ -2646,7 +2647,7 @@ function FacultySubmissionPanelContent({
                       }
                       className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
                     >
-                      <Calendar className="h-3.5 w-3.5" />
+                      <AppIcon icon={Calendar} size="sm" color="inherit" />
                       University Calendar
                     </button>
                     <button
@@ -2715,7 +2716,7 @@ function FacultySubmissionPanelContent({
                   <div className="p-3 sm:p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
                     <div className="flex items-start sm:items-center gap-2.5">
                       <div className="p-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
-                        <Hourglass className="h-4 w-4" />
+                        <AppIcon icon={Hourglass} size="md" color="inherit" />
                       </div>
                       <div>
                         <div>
@@ -2729,7 +2730,7 @@ function FacultySubmissionPanelContent({
                         {hasPendingExtensionRequest && (
                           <div className="mt-2 flex flex-wrap items-center gap-2">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 text-[11px] font-bold">
-                              <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                              <AppIcon icon={Clock} size="xs" color="active" />
                               Extension Request Pending Admin Review ({pendingExtensionData?.requested_preset || "+3 Days"})
                             </span>
                             {pendingExtensionData?.reason && (
@@ -2749,7 +2750,7 @@ function FacultySubmissionPanelContent({
                             onClick={() => setShowExtensionDetailsModal(true)}
                             className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/40 font-bold px-3.5 py-2 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                           >
-                            <Clock className="h-3.5 w-3.5" />
+                            <AppIcon icon={Clock} size="sm" color="inherit" />
                             <span>View Request Details</span>
                           </button>
                         ) : (
@@ -2758,7 +2759,7 @@ function FacultySubmissionPanelContent({
                             onClick={() => openExtensionRequestModal()}
                             className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                           >
-                            <Clock className="h-3.5 w-3.5" />
+                            <AppIcon icon={Clock} size="sm" color="inherit" />
                             <span>Request Extension</span>
                           </button>
                         )}
@@ -2782,7 +2783,7 @@ function FacultySubmissionPanelContent({
                       <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                         <div className="flex items-center gap-2.5">
                           <div className="p-2 rounded-lg bg-[#0b5336] text-white shrink-0 shadow-2xs">
-                            <CheckCircle className="h-4 w-4" />
+                            <AppIcon icon={CheckCircle} size="md" color="inherit" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
@@ -2804,7 +2805,7 @@ function FacultySubmissionPanelContent({
                             onClick={openHistoryModal}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-semibold cursor-pointer shadow-2xs transition"
                           >
-                            <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <AppIcon icon={CheckCircle} size="sm" color="success" />
                             <span>Validation History</span>
                           </button>
                         </div>
@@ -2840,7 +2841,7 @@ function FacultySubmissionPanelContent({
                             {/* Inline Revision Note */}
                             {req.status === "Rejected" && (
                               <p className="text-xs text-[#780000] dark:text-rose-400 flex items-center gap-1.5 mt-1 font-medium">
-                                <WarningCircle className="h-3.5 w-3.5 text-[#780000] dark:text-rose-400 shrink-0" />
+                                <AppIcon icon={WarningCircle} size="sm" color="danger" />
                                 <span className="italic truncate">
                                   &ldquo;
                                   {req.adminRemarks ||
@@ -2873,7 +2874,7 @@ function FacultySubmissionPanelContent({
                                       onClick={() => setShowExtensionDetailsModal(true)}
                                       className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                                     >
-                                      <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                      <AppIcon icon={Clock} size="sm" color="active" />
                                       <span>Extension Pending</span>
                                     </button>
                                   ) : (
@@ -2882,7 +2883,7 @@ function FacultySubmissionPanelContent({
                                       onClick={() => openExtensionRequestModal(req.code)}
                                       className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                     >
-                                      <Clock className="h-3.5 w-3.5" />
+                                      <AppIcon icon={Clock} size="sm" color="inherit" />
                                       <span>Request Extension</span>
                                     </button>
                                   )
@@ -2893,7 +2894,7 @@ function FacultySubmissionPanelContent({
                                     disabled={!hasActiveSchedule}
                                     className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                                   >
-                                    <Upload className="h-3.5 w-3.5" />
+                                    <AppIcon icon={Upload} size="sm" color="inherit" />
                                     Submit
                                   </button>
                                 )
@@ -2907,7 +2908,7 @@ function FacultySubmissionPanelContent({
                                       onClick={() => setShowExtensionDetailsModal(true)}
                                       className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                                     >
-                                      <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                      <AppIcon icon={Clock} size="sm" color="active" />
                                       <span>Extension Pending</span>
                                     </button>
                                   ) : (
@@ -2916,7 +2917,7 @@ function FacultySubmissionPanelContent({
                                       onClick={() => openExtensionRequestModal(req.code)}
                                       className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                     >
-                                      <Clock className="h-3.5 w-3.5" />
+                                      <AppIcon icon={Clock} size="sm" color="inherit" />
                                       <span>Request Extension</span>
                                     </button>
                                   )
@@ -2927,7 +2928,7 @@ function FacultySubmissionPanelContent({
                                     disabled={!hasActiveSchedule}
                                     className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                                   >
-                                    <Upload className="h-3.5 w-3.5" />
+                                    <AppIcon icon={Upload} size="sm" color="inherit" />
                                     Resubmit
                                   </button>
                                 )
@@ -2953,7 +2954,7 @@ function FacultySubmissionPanelContent({
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                                       </span>
                                     ) : null}
-                                    <Eye className="h-3.5 w-3.5" />
+                                    <AppIcon icon={Eye} size="sm" color="inherit" />
                                     View File
                                   </button>
                                   <button
@@ -2962,7 +2963,7 @@ function FacultySubmissionPanelContent({
                                     className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
                                     title="View file versions"
                                   >
-                                    <ClockRotateRight className="h-3.5 w-3.5" />
+                                    <AppIcon icon={ClockRotateRight} size="sm" color="inherit" />
                                     Versions
                                   </button>
                                 </>
@@ -2997,7 +2998,7 @@ function FacultySubmissionPanelContent({
                       >
                         {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected") ? (
                           <>
-                            <WarningCircle className="h-5 w-5 text-amber-500 shrink-0" />
+                            <AppIcon icon={WarningCircle} size="lg" color="active" />
                             <span>Resubmit Revision: {REQUIREMENT_LABEL[selectedRequirementForUpload]}</span>
                           </>
                         ) : (
@@ -3017,7 +3018,7 @@ function FacultySubmissionPanelContent({
                       className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors cursor-pointer"
                       aria-label="Close upload modal"
                     >
-                      <Xmark className="h-4 w-4" />
+                      <AppIcon icon={Xmark} size="md" color="inherit" />
                     </button>
                   </div>
 
@@ -3040,7 +3041,7 @@ function FacultySubmissionPanelContent({
                         return (
                           <div className="rounded-xl border border-rose-300 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/30 p-3.5 space-y-1 shadow-2xs">
                             <div className="flex items-center gap-1.5 text-xs font-bold text-[#780000] dark:text-rose-400 uppercase tracking-wider">
-                              <WarningCircle className="h-4 w-4 shrink-0" />
+                              <AppIcon icon={WarningCircle} size="md" />
                               <span>Reviewer Feedback / Revision Request:</span>
                             </div>
                             <p className="text-xs text-slate-800 dark:text-slate-200 italic font-medium leading-relaxed pl-5.5">
@@ -3129,7 +3130,7 @@ function FacultySubmissionPanelContent({
                       >
                         {isUploadingDirect ? (
                           <>
-                            <SystemRestart className="h-4 w-4 animate-spin" />
+                            <AppIcon icon={SystemRestart} size="md" color="inherit" className="animate-spin" />
                             <span>
                               {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
                                 ? "Submitting Revision..."
@@ -3155,7 +3156,7 @@ function FacultySubmissionPanelContent({
                 <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4 my-auto">
                   {isUploadingDirect ? (
                     <>
-                      <SystemRestart className="w-12 h-12 text-amber-500 dark:text-amber-400 mx-auto animate-spin" />
+                      <AppIcon icon={SystemRestart} size="md" color="active" className="animate-spin mx-auto" />
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                         Submitting Document...
                       </h3>
@@ -3167,7 +3168,7 @@ function FacultySubmissionPanelContent({
                   ) : isSubmitSuccess ? (
                     <>
                       <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 animate-in zoom-in">
-                        <CheckCircle className="w-10 h-10" />
+                        <AppIcon icon={CheckCircle} size="md" color="inherit" />
                       </div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                         Submitted Successfully!
@@ -3203,7 +3204,7 @@ function FacultySubmissionPanelContent({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-500/50 text-emerald-600 dark:text-emerald-400 mb-4">
-                    <CheckCircle className="h-10 w-10" />
+                    <AppIcon icon={CheckCircle} size="md" color="inherit" />
                   </div>
                   <h3
                     id="success-modal-title"
@@ -3254,7 +3255,7 @@ function FacultySubmissionPanelContent({
                       className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors cursor-pointer"
                       aria-label="Close history modal"
                     >
-                      <Xmark className="h-4 w-4" />
+                      <AppIcon icon={Xmark} size="md" color="inherit" />
                     </button>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-6 py-3">
@@ -3324,9 +3325,9 @@ function FacultySubmissionPanelContent({
                         title="Download all validated requirements in current view as ZIP"
                       >
                         {isBulkDownloading ? (
-                          <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                          <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                         ) : (
-                          <Download className="h-3.5 w-3.5 text-slate-950" />
+                          <AppIcon icon={Download} size="sm" color="default" />
                         )}
                         <span>
                           {isBulkDownloading
@@ -3388,7 +3389,7 @@ function FacultySubmissionPanelContent({
                         {previewSubmission.title}
                       </h3>
                       <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                        <Page className="h-3.5 w-3.5" />
+                        <AppIcon icon={Page} size="sm" color="inherit" />
                         Document Preview
                       </span>
                     </div>
@@ -3398,7 +3399,7 @@ function FacultySubmissionPanelContent({
                       className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors shrink-0 ml-3 cursor-pointer"
                       aria-label="Close preview"
                     >
-                      <Xmark className="h-4 w-4" />
+                      <AppIcon icon={Xmark} size="md" color="inherit" />
                     </button>
                   </div>
                   <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)] flex-1 overflow-y-auto min-h-0">
@@ -3532,7 +3533,7 @@ function FacultySubmissionPanelContent({
                           )
                         }
                       >
-                        <OpenNewWindow className="h-4 w-4" />
+                        <AppIcon icon={OpenNewWindow} size="md" color="inherit" />
                         Full View
                       </button>
                     </div>
@@ -3559,7 +3560,7 @@ function FacultySubmissionPanelContent({
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold mb-3">
-                        <WarningCircle className="h-3.5 w-3.5" />
+                        <AppIcon icon={WarningCircle} size="sm" color="inherit" />
                         <span>Action Required</span>
                       </div>
                       <h3
@@ -3575,7 +3576,7 @@ function FacultySubmissionPanelContent({
                       className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition cursor-pointer shadow-2xs"
                       aria-label="Close alert"
                     >
-                      <Xmark className="h-4 w-4" />
+                      <AppIcon icon={Xmark} size="md" color="inherit" />
                     </button>
                   </div>
                   <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -3667,7 +3668,7 @@ function FacultySubmissionPanelContent({
                       onClick={closeSubmitModal}
                       className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors cursor-pointer"
                     >
-                      <Xmark className="h-4 w-4" />
+                      <AppIcon icon={Xmark} size="md" color="inherit" />
                     </button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 min-h-0">
@@ -3838,7 +3839,7 @@ function FacultySubmissionPanelContent({
                 <div className="w-full max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
                   <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                     <div className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                      <AppIcon icon={Clock} size="lg" color="active" />
                       <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                         Extension Request Status
                       </h3>
@@ -3848,7 +3849,7 @@ function FacultySubmissionPanelContent({
                       onClick={() => setShowExtensionDetailsModal(false)}
                       className="rounded-lg border border-slate-200 dark:border-slate-800 p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer"
                     >
-                      <Xmark className="h-4 w-4" />
+                      <AppIcon icon={Xmark} size="md" color="inherit" />
                     </button>
                   </div>
 

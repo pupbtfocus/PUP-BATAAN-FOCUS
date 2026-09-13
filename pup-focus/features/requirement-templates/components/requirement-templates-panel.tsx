@@ -14,6 +14,7 @@ import {
   WarningTriangle,
   Xmark,
 } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import type { RequirementTemplate } from "@/features/requirement-templates/types/requirement-template.types";
 import { RequirementTemplateModal } from "./requirement-template-modal";
 

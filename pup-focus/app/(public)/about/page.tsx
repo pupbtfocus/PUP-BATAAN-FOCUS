@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Logo } from "@/components/ui/logo";
 
 export default function AboutPage() {
@@ -15,7 +16,7 @@ export default function AboutPage() {
             href="/"
             className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#3a080e]/90 hover:bg-[#4a0e17] px-4 py-2 text-xs font-bold text-amber-200 transition-all shadow-xl backdrop-blur-md"
           >
-            <ArrowLeft className="w-4 h-4 text-amber-400" />
+            <AppIcon icon={ArrowLeft} size="md" color="active" />
             <span>Back to Login</span>
           </Link>
 

@@ -11,6 +11,7 @@ import {
   WarningTriangle,
   Xmark,
 } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import {
   REQUIREMENT_LABEL,
   type RequirementCode,
@@ -165,7 +166,7 @@ export function FacultyExtensionRequestModal({
         <div className="shrink-0 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 bg-slate-50/70 dark:bg-slate-950/50">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-2xs">
-              <Clock className="h-5 w-5" />
+              <AppIcon icon={Clock} size="lg" color="inherit" />
             </div>
             <div>
               <h3
@@ -186,7 +187,7 @@ export function FacultyExtensionRequestModal({
             className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors shrink-0 ml-3 cursor-pointer shadow-2xs"
             aria-label="Close modal"
           >
-            <Xmark className="h-4 w-4" />
+            <AppIcon icon={Xmark} size="md" color="inherit" />
           </button>
         </div>
 
@@ -194,7 +195,7 @@ export function FacultyExtensionRequestModal({
         {successState ? (
           <div className="p-8 text-center space-y-3 my-auto">
             <div className="inline-flex p-3 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle className="h-10 w-10" />
+              <AppIcon icon={CheckCircle} size="md" color="inherit" />
             </div>
             <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
               Request Submitted Successfully
@@ -211,7 +212,7 @@ export function FacultyExtensionRequestModal({
               {/* Error Message */}
               {errorMessage && (
                 <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-[#780000] dark:text-rose-400">
-                  <WarningCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5" />
                   <span>{errorMessage}</span>
                 </div>
               )}
@@ -346,7 +347,7 @@ export function FacultyExtensionRequestModal({
 
               {/* Informational Guidance Note */}
               <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 text-[11px] text-slate-700 dark:text-slate-300">
-                <InfoCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <AppIcon icon={InfoCircle} size="md" color="active" />
                 <span className="leading-relaxed">
                   Your request will be submitted to the academic administration. You will
                   receive an alert when the request is approved or processed.
@@ -371,12 +372,12 @@ export function FacultyExtensionRequestModal({
               >
                 {isSubmitting ? (
                   <>
-                    <SystemRestart className="h-3.5 w-3.5 animate-spin" />
+                    <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
                     <span>Submitting...</span>
                   </>
                 ) : (
                   <>
-                    <Clock className="h-3.5 w-3.5" />
+                    <AppIcon icon={Clock} size="sm" color="inherit" />
                     <span>Submit Extension Request</span>
                   </>
                 )}

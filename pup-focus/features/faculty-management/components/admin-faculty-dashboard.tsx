@@ -9,6 +9,7 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
 import { CheckCircle, Clock, Group, Menu, NavArrowRight, Refresh, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import {
@@ -642,7 +643,7 @@ export function AdminFacultyDashboard({
               className="md:hidden p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
               aria-label="Open Navigation Menu"
             >
-              <Menu className="w-5 h-5" />
+              <AppIcon icon={Menu} size="lg" color="inherit" />
             </button>
 
             <BrandMark
@@ -696,7 +697,7 @@ export function AdminFacultyDashboard({
                   className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
                   aria-label="Close navigation"
                 >
-                  <Xmark className="w-4 h-4" />
+                  <AppIcon icon={Xmark} size="md" color="inherit" />
                 </button>
               </div>
               <SidebarContent
@@ -824,13 +825,13 @@ export function AdminFacultyDashboard({
                               className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition cursor-pointer"
                             >
                               <span>View all</span>
-                              <NavArrowRight className="h-3 w-3" />
+                              <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
                             </button>
                           </div>
 
                           {pendingQueue.length === 0 ? (
                             <div className="py-8 text-center space-y-2">
-                              <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto opacity-70" />
+                              <AppIcon icon={CheckCircle} size="xl" color="success" className="mx-auto" />
                               <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">All submissions up to date</p>
                               <p className="text-xs text-slate-500 dark:text-slate-400">No pending submissions awaiting review.</p>
                             </div>

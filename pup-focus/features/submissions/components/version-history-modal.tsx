@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ChatBubble, Clock, ClockRotateRight, Download, Page, ShieldCheck, SystemRestart, WarningCircle, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import type {
   DocumentVersionDetail,
@@ -228,7 +229,7 @@ export function VersionHistoryModal({
         <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <ClockRotateRight className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <AppIcon icon={ClockRotateRight} size="md" color="active" />
               <h3
                 id="version-history-title"
                 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate"
@@ -246,7 +247,7 @@ export function VersionHistoryModal({
             className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors shrink-0 ml-3 cursor-pointer shadow-2xs"
             aria-label="Close version history"
           >
-            <Xmark className="h-4 w-4" />
+            <AppIcon icon={Xmark} size="md" color="white" />
           </button>
         </div>
 
@@ -288,7 +289,7 @@ export function VersionHistoryModal({
           {facultyNotes && (
             <div className="mb-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-4 shadow-xs flex items-start gap-3.5">
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 shrink-0 shadow-2xs">
-                <Page className="w-5 h-5 stroke-[1.8]" />
+                <AppIcon icon={Page} size="lg" color="inherit" strokeWidth={1.8} />
               </div>
               <div className="space-y-1 text-left min-w-0 flex-1">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
@@ -304,7 +305,7 @@ export function VersionHistoryModal({
           {/* Loading state */}
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-12">
-              <SystemRestart className="h-8 w-8 animate-spin text-amber-500" />
+              <AppIcon icon={SystemRestart} size="xl" color="active" className="animate-spin" />
               <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                 Loading version history…
               </p>
@@ -314,7 +315,7 @@ export function VersionHistoryModal({
           {/* Error state */}
           {!isLoading && error && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-red-500/30 bg-red-50 dark:bg-red-950/20 px-6 py-8">
-              <WarningCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+              <AppIcon icon={WarningCircle} size="xl" color="danger" />
               <p className="mt-3 text-sm text-red-700 dark:text-red-300">{error}</p>
               <Button
                 type="button"
@@ -331,7 +332,7 @@ export function VersionHistoryModal({
           {/* Empty state */}
           {!isLoading && !error && versions.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-6 py-8">
-              <Page className="h-8 w-8 text-slate-400 dark:text-slate-600" />
+              <AppIcon icon={Page} size="xl" color="muted" />
               <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
                 No versions found for this document.
               </p>
@@ -407,7 +408,7 @@ export function VersionHistoryModal({
 
                           {/* Timestamp */}
                           <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                            <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                            <AppIcon icon={Clock} size="sm" color="muted" />
                             <span>{formatTimestamp(createdAt)}</span>
                           </div>
                         </div>
@@ -423,7 +424,7 @@ export function VersionHistoryModal({
                           className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 active:scale-95 text-white dark:text-slate-900 font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
                           title="Download this version"
                         >
-                          <Download className="h-3.5 w-3.5 stroke-[2.2]" />
+                          <AppIcon icon={Download} size="sm" color="inherit" strokeWidth={2.2} />
                           <span>Download</span>
                         </a>
                       )}

@@ -9,6 +9,7 @@ import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
 import { Activity, CheckCircle, Clock, Eye, EyeClosed, Group, Menu, NavArrowRight, Page, Refresh, Shield, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
@@ -1400,7 +1401,7 @@ export function SuperAdminDashboard({
           className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-slate-700 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
           aria-label="Open Navigation Menu"
         >
-          <Menu className="w-5 h-5" />
+          <AppIcon icon={Menu} size="lg" color="inherit" />
         </button>
       )}
 
@@ -1430,7 +1431,7 @@ export function SuperAdminDashboard({
                 className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-2xs"
                 aria-label="Close navigation"
               >
-                <Xmark className="w-5 h-5" />
+                <AppIcon icon={Xmark} size="lg" color="inherit" />
               </button>
             </div>
 
@@ -1535,7 +1536,7 @@ export function SuperAdminDashboard({
                           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer self-start sm:self-auto"
                         >
                           <span>Manage Accounts</span>
-                          <NavArrowRight className="h-3.5 w-3.5" />
+                          <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
                         </button>
                       </div>
                       {adminAccounts.length > 0 ? (
@@ -1583,7 +1584,7 @@ export function SuperAdminDashboard({
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
                           <span>Faculty Management</span>
-                          <NavArrowRight className="h-4 w-4 text-slate-400" />
+                          <AppIcon icon={NavArrowRight} size="md" color="muted" />
                         </button>
                         <button
                           type="button"
@@ -1591,7 +1592,7 @@ export function SuperAdminDashboard({
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
                           <span>Requirements Verification</span>
-                          <NavArrowRight className="h-4 w-4 text-slate-400" />
+                          <AppIcon icon={NavArrowRight} size="md" color="muted" />
                         </button>
                         <button
                           type="button"
@@ -1599,7 +1600,7 @@ export function SuperAdminDashboard({
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
                           <span>Academic Terms</span>
-                          <NavArrowRight className="h-4 w-4 text-slate-400" />
+                          <AppIcon icon={NavArrowRight} size="md" color="muted" />
                         </button>
                         <button
                           type="button"
@@ -1607,7 +1608,7 @@ export function SuperAdminDashboard({
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
                           <span>Submission Window</span>
-                          <NavArrowRight className="h-4 w-4 text-slate-400" />
+                          <AppIcon icon={NavArrowRight} size="md" color="muted" />
                         </button>
                         <button
                           type="button"
@@ -1615,7 +1616,7 @@ export function SuperAdminDashboard({
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
                           <span>Audit Logs</span>
-                          <NavArrowRight className="h-4 w-4 text-slate-400" />
+                          <AppIcon icon={NavArrowRight} size="md" color="muted" />
                         </button>
                       </div>
                     </div>
@@ -1775,7 +1776,7 @@ export function SuperAdminDashboard({
                     onClick={() => void refreshCurrentPanel()}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
                   >
-                    <Refresh className="h-3.5 w-3.5" />
+                    <AppIcon icon={Refresh} size="sm" color="inherit" />
                     <span>Refresh</span>
                   </button>
                 </div>
@@ -1797,7 +1798,7 @@ export function SuperAdminDashboard({
                     onClick={() => void refreshCurrentPanel()}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
                   >
-                    <Refresh className="h-3.5 w-3.5" />
+                    <AppIcon icon={Refresh} size="sm" color="inherit" />
                     <span>Refresh</span>
                   </button>
                 </div>
@@ -1888,7 +1889,7 @@ export function SuperAdminDashboard({
                 className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all cursor-pointer shadow-2xs"
                 aria-label="Close modal"
               >
-                <Xmark className="w-5 h-5" />
+                <AppIcon icon={Xmark} size="lg" color="inherit" />
               </button>
             </div>
 
@@ -2361,7 +2362,7 @@ function AdminDetailsModal({
             onClick={onClose}
             className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
           >
-            <Xmark className="h-4 w-4" />
+            <AppIcon icon={Xmark} size="md" color="inherit" />
           </button>
         </div>
 

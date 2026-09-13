@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import {
   ALLOWED_FORMAT_OPTIONS,
   MAX_SIZE_OPTIONS,

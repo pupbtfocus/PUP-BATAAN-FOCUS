@@ -18,6 +18,7 @@ import {
   Xmark,
   XmarkCircle,
 } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 
 export interface AdminNotificationItem {
@@ -224,7 +225,7 @@ export function AdminNotificationDrawer({
         aria-label={`Admin Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
         className="relative flex items-center justify-center p-2 rounded-xl text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 shadow-2xs transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer"
       >
-        <Bell className="h-5 w-5" />
+        <AppIcon icon={Bell} size="lg" color="inherit" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-slate-950 shadow-sm ring-2 ring-white dark:ring-slate-950 animate-pulse">
             {unreadCount > 99 ? "99+" : unreadCount}
@@ -250,7 +251,7 @@ export function AdminNotificationDrawer({
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md px-4 sm:px-5 py-3.5 shrink-0">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 dark:text-amber-400">
-                    <Bell className="h-4 w-4" />
+                    <AppIcon icon={Bell} size="md" color="inherit" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -287,7 +288,7 @@ export function AdminNotificationDrawer({
                     className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
                     aria-label="Close notifications"
                   >
-                    <Xmark className="h-4 w-4" />
+                    <AppIcon icon={Xmark} size="md" color="inherit" />
                   </button>
                 </div>
               </div>
@@ -340,9 +341,9 @@ export function AdminNotificationDrawer({
                       title="Mark all notifications as read"
                     >
                       {isMarkingAll ? (
-                        <SystemRestart className="h-3 w-3 animate-spin" />
+                        <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
                       ) : (
-                        <DoubleCheck className="h-3 w-3" />
+                        <AppIcon icon={DoubleCheck} size="xs" color="inherit" />
                       )}
                       <span>Mark all read</span>
                     </button>
@@ -357,9 +358,9 @@ export function AdminNotificationDrawer({
                       title="Clear all notifications"
                     >
                       {isClearingAll ? (
-                        <SystemRestart className="h-3 w-3 animate-spin" />
+                        <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
                       ) : (
-                        <Trash className="h-3 w-3" />
+                        <AppIcon icon={Trash} size="xs" color="inherit" />
                       )}
                       <span>Clear</span>
                     </button>
@@ -371,7 +372,7 @@ export function AdminNotificationDrawer({
               {toastMessage && (
                 <div className="flex items-center justify-between gap-2 bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-2 text-xs text-emerald-700 dark:text-emerald-300 animate-in fade-in">
                   <div className="flex items-center gap-1.5">
-                    <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                    <AppIcon icon={CheckCircle} size="sm" color="success" />
                     <span>{toastMessage}</span>
                   </div>
                   <button
@@ -379,7 +380,7 @@ export function AdminNotificationDrawer({
                     onClick={() => setToastMessage(null)}
                     className="text-emerald-600 hover:text-emerald-800 dark:text-emerald-300 cursor-pointer"
                   >
-                    <Xmark className="h-3 w-3" />
+                    <AppIcon icon={Xmark} size="xs" color="inherit" />
                   </button>
                 </div>
               )}
@@ -388,13 +389,13 @@ export function AdminNotificationDrawer({
               <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
                 {isLoading && notifications.length === 0 ? (
                   <div className="flex items-center justify-center py-16 text-slate-400 gap-2">
-                    <SystemRestart className="h-5 w-5 animate-spin text-amber-500" />
+                    <AppIcon icon={SystemRestart} size="lg" color="active" className="animate-spin" />
                     <span className="text-xs">Loading notifications...</span>
                   </div>
                 ) : filteredNotifications.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center text-slate-500 dark:text-slate-400">
                     <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-900 mb-3">
-                      <Bell className="h-6 w-6 text-slate-400 opacity-60" />
+                      <AppIcon icon={Bell} size="lg" color="muted" />
                     </div>
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                       {filterTab === "unread"
@@ -431,27 +432,27 @@ export function AdminNotificationDrawer({
                           <div className="flex items-center gap-1.5">
                             {notif.isExtensionRequest || notif.type === "EXTENSION_REQUEST" ? (
                               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold">
-                                <Clock className="h-3 w-3" />
+                                <AppIcon icon={Clock} size="xs" color="inherit" />
                                 Extension Request
                               </span>
                             ) : notif.isRevision ? (
                               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 text-[10px] font-bold">
-                                <WarningTriangle className="h-3 w-3" />
+                                <AppIcon icon={WarningTriangle} size="xs" color="inherit" />
                                 Resubmission
                               </span>
                             ) : notif.isSubmission ? (
                               <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-2 py-0.5 text-[10px] font-bold">
-                                <Upload className="h-3 w-3" />
+                                <AppIcon icon={Upload} size="xs" color="inherit" />
                                 New Submission
                               </span>
                             ) : notif.type === "SUBMISSION_APPROVED" ? (
                               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold">
-                                <CheckCircle className="h-3 w-3" />
+                                <AppIcon icon={CheckCircle} size="xs" color="inherit" />
                                 Validated
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-bold">
-                                <InfoCircle className="h-3 w-3" />
+                                <AppIcon icon={InfoCircle} size="xs" color="inherit" />
                                 Alert
                               </span>
                             )}
@@ -493,7 +494,7 @@ export function AdminNotificationDrawer({
                           </span>
                           <span className="inline-flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400 group-hover:underline">
                             <span>Review submission</span>
-                            <NavArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                            <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
                           </span>
                         </div>
                       </article>

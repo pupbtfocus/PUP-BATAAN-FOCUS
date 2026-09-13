@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CheckCircle, Clock, EditPencil, GraduationCap, Mail, ShieldCheck, User, WarningCircle, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
 import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
@@ -108,7 +109,7 @@ export function FacultyDetailsModal({
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-4">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                <User className="h-4 w-4" />
+                <AppIcon icon={User} size="md" color="inherit" />
               </div>
               <div>
                 <h2
@@ -128,7 +129,7 @@ export function FacultyDetailsModal({
               className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
               aria-label="Close dialog"
             >
-              <Xmark className="h-5 w-5" />
+              <AppIcon icon={Xmark} size="lg" color="inherit" />
             </button>
           </div>
 
@@ -183,7 +184,7 @@ export function FacultyDetailsModal({
                   </span>
                 </div>
                 <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                  <Mail className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                  <AppIcon icon={Mail} size="sm" color="muted" />
                   <span className="truncate">{faculty.email}</span>
                 </div>
               </div>
@@ -194,7 +195,7 @@ export function FacultyDetailsModal({
               {/* Personal Information */}
               <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <User className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                  <AppIcon icon={User} size="sm" color="default" />
                   <span>Personal Information</span>
                 </div>
                 <div className="space-y-2 text-xs divide-y divide-slate-200/60 dark:divide-slate-800/60">
@@ -228,7 +229,7 @@ export function FacultyDetailsModal({
               {/* Academic & System Information */}
               <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <GraduationCap className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                  <AppIcon icon={GraduationCap} size="sm" color="default" />
                   <span>Academic & System</span>
                 </div>
                 <div className="space-y-2 text-xs divide-y divide-slate-200/60 dark:divide-slate-800/60">
@@ -278,7 +279,7 @@ export function FacultyDetailsModal({
             <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <ShieldCheck className="h-3.5 w-3.5 text-slate-500" />
+                  <AppIcon icon={ShieldCheck} size="sm" color="default" />
                   <span>Compliance & Submission Status</span>
                 </div>
                 <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
@@ -318,17 +319,17 @@ export function FacultyDetailsModal({
 
                       {status === "validated" ? (
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#08412a] bg-[#0b5336] px-2 py-0.5 text-[10px] font-semibold text-white shadow-2xs">
-                          <CheckCircle className="h-3 w-3 text-white" />
+                          <AppIcon icon={CheckCircle} size="xs" color="white" />
                           Validated
                         </span>
                       ) : status === "uploaded" ? (
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
-                          <Clock className="h-3 w-3" />
+                          <AppIcon icon={Clock} size="xs" color="inherit" />
                           Uploaded
                         </span>
                       ) : (
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-400">
-                          <WarningCircle className="h-3 w-3" />
+                          <AppIcon icon={WarningCircle} size="xs" color="inherit" />
                           Not Submitted
                         </span>
                       )}
@@ -350,7 +351,7 @@ export function FacultyDetailsModal({
                 }}
                 className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold rounded-xl px-4 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
               >
-                <EditPencil className="h-3.5 w-3.5 text-slate-950" />
+                <AppIcon icon={EditPencil} size="sm" color="default" />
                 Edit Profile
               </button>
             ) : null}
@@ -385,7 +386,7 @@ export function FacultyDetailsModal({
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
                 aria-label="Close preview"
               >
-                <Xmark className="h-4 w-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
             <div className="p-4 flex flex-col items-center">

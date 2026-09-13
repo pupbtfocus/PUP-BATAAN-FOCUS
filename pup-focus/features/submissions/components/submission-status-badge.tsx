@@ -1,5 +1,6 @@
 import React from "react";
 import { CheckCircle, Clock, WarningCircle } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { cn } from "@/utils/cn";
 
 export type NormalizedSubmissionStatus =
@@ -64,28 +65,28 @@ export function SubmissionStatusBadge({
       containerClass:
         "bg-[#0b5336] text-white border border-[#08412a]",
       dotClass: "bg-emerald-300",
-      icon: <CheckCircle className="shrink-0 text-white" strokeWidth={2} aria-hidden="true" />,
+      icon: <AppIcon icon={CheckCircle} color="white" className="shrink-0" />,
     },
     "Needs Revision": {
       label: "Needs Revision",
       containerClass:
         "bg-[#780000] text-white border border-[#5e0000]",
       dotClass: "bg-rose-300",
-      icon: <WarningCircle className="shrink-0 text-white" strokeWidth={2} aria-hidden="true" />,
+      icon: <AppIcon icon={WarningCircle} color="white" className="shrink-0" />,
     },
     "Revision Under Review": {
       label: "Revision Under Review",
       containerClass:
         "bg-amber-500 text-slate-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-slate-950 dark:border-amber-400",
       dotClass: "bg-slate-950",
-      icon: <Clock className="shrink-0 text-slate-950" strokeWidth={2.2} aria-hidden="true" />,
+      icon: <AppIcon icon={Clock} color="inherit" className="shrink-0 text-slate-950" strokeWidth={2.2} />,
     },
     "Pending Review": {
       label: "Pending Review",
       containerClass:
         "bg-white text-amber-700 border border-slate-200/90 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800",
       dotClass: "bg-amber-500 dark:bg-amber-400",
-      icon: <Clock className="shrink-0 text-amber-600 dark:text-amber-400" strokeWidth={2} aria-hidden="true" />,
+      icon: <AppIcon icon={Clock} color="active" className="shrink-0" />,
     },
     "Not Submitted": {
       label: "Not Submitted",

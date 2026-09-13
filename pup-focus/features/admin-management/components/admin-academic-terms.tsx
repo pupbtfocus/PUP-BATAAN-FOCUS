@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 
 import { Check, Lock, WarningTriangle, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 type AcademicTermStatus = "Current" | "Upcoming" | "Archived" | "Completed";
 
@@ -357,7 +358,7 @@ export function AdminAcademicTerms({
           title="Term Closed / Completed"
           className="text-slate-600 dark:text-slate-400 font-medium text-[11px] sm:text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-not-allowed select-none inline-flex items-center gap-1 shrink-0 whitespace-nowrap"
         >
-          <Lock className="h-3.5 w-3.5" />
+          <AppIcon icon={Lock} size="sm" color="inherit" />
           <span className="sm:hidden">Closed</span>
           <span className="hidden sm:inline">Term Closed / Completed</span>
         </span>
@@ -518,7 +519,7 @@ export function AdminAcademicTerms({
                 className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
                 aria-label="Close modal"
               >
-                <Xmark className="h-4 w-4" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
 
@@ -665,7 +666,7 @@ export function AdminAcademicTerms({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in">
           <div className="bg-white dark:bg-slate-950 border border-amber-500/40 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
             <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 rounded-full flex items-center justify-center mx-auto text-slate-600 dark:text-slate-400">
-              <WarningTriangle className="w-8 h-8 animate-pulse" />
+              <AppIcon icon={WarningTriangle} size="xl" color="inherit" className="animate-pulse" />
             </div>
             <h3 className="text-xl font-bold text-amber-800 dark:text-amber-200">
               {warningModalData.title}

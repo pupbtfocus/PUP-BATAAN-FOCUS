@@ -9,6 +9,7 @@ import React, {
   type KeyboardEvent,
 } from "react";
 import { Archive, CheckCircle, CloudUpload, Code, Download, Eye, InfoCircle, MediaImage, OpenNewWindow, Page, Reports, SystemRestart, Trash, WarningCircle, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { cn } from "@/utils/cn";
 import { SubmissionStatusBadge } from "./submission-status-badge";
 
@@ -159,7 +160,7 @@ function getFileTypeDetails(fileName: string) {
     return {
       icon: (
         <div className="h-10 w-10 rounded-xl bg-slate-700 flex items-center justify-center text-white shadow-xs">
-          <Code className="h-6 w-6 stroke-[2]" />
+          <AppIcon icon={Code} size="lg" color="inherit" strokeWidth={2} />
         </div>
       ),
       tag: ext.slice(0, 4),
@@ -177,7 +178,7 @@ function getFileTypeDetails(fileName: string) {
     return {
       icon: (
         <div className="h-10 w-10 rounded-xl bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-white shadow-xs">
-          <MediaImage className="h-6 w-6 stroke-[2]" />
+          <AppIcon icon={MediaImage} size="lg" color="inherit" strokeWidth={2} />
         </div>
       ),
       tag: "IMG",
@@ -187,7 +188,7 @@ function getFileTypeDetails(fileName: string) {
   return {
     icon: (
       <div className="h-10 w-10 rounded-xl bg-slate-600 flex items-center justify-center text-white shadow-xs">
-        <Page className="h-6 w-6 stroke-[2]" />
+        <AppIcon icon={Page} size="lg" color="inherit" strokeWidth={2} />
       </div>
     ),
     tag: ext.slice(0, 4),
@@ -425,7 +426,7 @@ export function DocumentUploadZone({
           role="alert"
           className="flex items-start gap-2.5 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200 shadow-2xs"
         >
-          <WarningCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <AppIcon icon={WarningCircle} size="md" color="active" className="mt-0.5" />
           <div>
             <span className="font-semibold block uppercase tracking-wider text-[10px] text-amber-800 dark:text-amber-300">
               Reviewer Feedback:
@@ -500,7 +501,7 @@ export function DocumentUploadZone({
                     <span>{formatBytes(selectedFile.size)}</span>
                     <span>•</span>
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
-                      <CheckCircle className="h-3 w-3" /> Ready to submit
+                      <AppIcon icon={CheckCircle} size="xs" color="inherit" /> Ready to submit
                     </span>
                   </div>
                 </div>
@@ -513,7 +514,7 @@ export function DocumentUploadZone({
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all cursor-pointer shadow-2xs active:scale-95"
                   title="Preview Document"
                 >
-                  <Eye className="h-3.5 w-3.5" />
+                  <AppIcon icon={Eye} size="sm" color="inherit" />
                   <span>Preview</span>
                 </button>
                 <button
@@ -532,7 +533,7 @@ export function DocumentUploadZone({
                   className="p-2 text-xs font-semibold rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-2xs active:scale-95"
                   title="Remove File"
                 >
-                  <Trash className="h-4 w-4" />
+                  <AppIcon icon={Trash} size="md" color="inherit" />
                 </button>
               </div>
             </div>
@@ -567,9 +568,9 @@ export function DocumentUploadZone({
               )}
             >
               {isUploading ? (
-                <SystemRestart className="h-6 w-6 animate-spin text-slate-600 dark:text-slate-400" />
+                <AppIcon icon={SystemRestart} size="lg" color="default" className="animate-spin" />
               ) : (
-                <CloudUpload className="h-6 w-6" />
+                <AppIcon icon={CloudUpload} size="lg" color="inherit" />
               )}
             </div>
 
@@ -620,7 +621,7 @@ export function DocumentUploadZone({
                   download={selectedFile.name}
                   className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all shadow-2xs"
                 >
-                  <OpenNewWindow className="h-3.5 w-3.5" />
+                  <AppIcon icon={OpenNewWindow} size="sm" color="inherit" />
                   <span>Download</span>
                 </a>
                 <button
@@ -629,7 +630,7 @@ export function DocumentUploadZone({
                   className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
                   aria-label="Close Preview"
                 >
-                  <Xmark className="h-5 w-5" />
+                  <AppIcon icon={Xmark} size="lg" color="inherit" />
                 </button>
               </div>
             </div>
@@ -703,7 +704,7 @@ export function DocumentUploadZone({
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 active:scale-95 text-white dark:text-slate-900 font-bold text-xs uppercase tracking-wider transition-all shadow-sm hover:shadow-md cursor-pointer"
                       >
-                        <Download className="w-4 h-4 stroke-[2.2] shrink-0 text-slate-950" />
+                        <AppIcon icon={Download} size="md" color="default" strokeWidth={2.2} />
                         <span className="text-slate-950">
                           Download &amp; View File
                         </span>
@@ -737,14 +738,14 @@ export function DocumentUploadZone({
           role="alert"
           className="flex items-center gap-2 rounded-xl border border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 px-3 py-2 text-xs text-rose-800 dark:text-rose-300 shadow-2xs animate-in fade-in slide-in-from-top-1"
         >
-          <WarningCircle className="h-3.5 w-3.5 shrink-0" />
+          <AppIcon icon={WarningCircle} size="sm" color="inherit" />
           <span>{validationError}</span>
         </div>
       )}
 
       <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
         <span className="flex items-center gap-1">
-          <Page className="h-3 w-3" />
+          <AppIcon icon={Page} size="xs" color="inherit" />
           <span>Max {maxSizeMb}MB • PDF / Scanned Copy</span>
         </span>
 
@@ -758,7 +759,7 @@ export function DocumentUploadZone({
             className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition focus-visible:outline-none"
             aria-label="Upload rules and information"
           >
-            <InfoCircle className="h-3 w-3" />
+            <AppIcon icon={InfoCircle} size="xs" color="inherit" />
             <span>Upload rules</span>
           </button>
 

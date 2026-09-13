@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ChatBubble, Download, Notes, OpenNewWindow, Page, Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { getFileType, getFileBrand } from "@/features/faculty-management/components/faculty-submission-panel";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
@@ -111,7 +112,7 @@ export function DocumentPreviewModal({
               {title}
             </h3>
             <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-              <Page className="h-3.5 w-3.5" />
+              <AppIcon icon={Page} size="sm" color="active" />
               Document Preview
             </span>
           </div>
@@ -121,7 +122,7 @@ export function DocumentPreviewModal({
             className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors shrink-0 ml-3 cursor-pointer shadow-2xs"
             aria-label="Close preview"
           >
-            <Xmark className="h-4 w-4" />
+            <AppIcon icon={Xmark} size="md" color="white" />
           </button>
         </div>
 
@@ -163,7 +164,7 @@ export function DocumentPreviewModal({
             {/* MY NOTE Section */}
             <div className="rounded-xl border border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 p-4">
               <div className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <ChatBubble className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
+                <AppIcon icon={ChatBubble} size="sm" color="active" />
                 <span>My Remarks / Note</span>
               </div>
               <div className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
@@ -181,7 +182,7 @@ export function DocumentPreviewModal({
             {submission.reviewedAt || adminFeedback ? (
               <div className="rounded-xl border border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 p-4">
                 <p className="text-xs font-bold text-[#0b5336] dark:text-emerald-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                  <Notes className="h-3.5 w-3.5 text-[#0b5336] dark:text-emerald-400" />
+                  <AppIcon icon={Notes} size="sm" color="success" />
                   <span>Admin Remarks</span>
                 </p>
                 <p className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
@@ -225,7 +226,7 @@ export function DocumentPreviewModal({
                 )
               }
             >
-              <OpenNewWindow className="h-4 w-4" />
+              <AppIcon icon={OpenNewWindow} size="md" color="inherit" />
               Full View
             </button>
           </div>

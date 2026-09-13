@@ -3,6 +3,7 @@
 import { useEffect, useState, useId } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Xmark } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { createClient } from "@/lib/supabase/client";
 import type { FacultyAccountFormInput } from "@/features/faculty-management/schemas/faculty-account.schema";
 
@@ -383,7 +384,7 @@ export function AddFacultyModal({
             className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-2xs"
             aria-label="Close modal"
           >
-            <Xmark className="w-5 h-5" />
+            <AppIcon icon={Xmark} size="lg" color="white" />
           </button>
         </div>
 
