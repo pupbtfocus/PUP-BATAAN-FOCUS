@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CheckCircle, Clock, EditPencil, Eye, Filter, NavArrowLeft, NavArrowRight, Page, Refresh, Search, Settings, ShieldAlert, Trash, Upload, UserBadgeCheck, UserPlus, UserXmark, Xmark, XmarkCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
+import { ModalHeader } from "@/components/ui/modal-header";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -98,17 +99,17 @@ function getActionBadgeStyle(action: string): ActionBadgeStyle {
   };
 }
 
-function getActionIcon(action: string): React.ReactNode {
-  if (action.includes("upload")) return <AppIcon icon={Upload} size="md" color="info" />;
-  if (action.includes("approve") || action.includes("validated")) return <AppIcon icon={CheckCircle} size="md" color="success" />;
-  if (action.includes("reject")) return <AppIcon icon={XmarkCircle} size="md" color="danger" />;
-  if (action.includes("create") || action.includes("invite")) return <AppIcon icon={UserPlus} size="md" color="success" />;
-  if (action.includes("delete")) return <AppIcon icon={Trash} size="md" color="danger" />;
-  if (action.includes("activate")) return <AppIcon icon={UserBadgeCheck} size="md" color="success" />;
-  if (action.includes("deactivate")) return <AppIcon icon={UserXmark} size="md" color="active" />;
-  if (action.includes("update")) return <AppIcon icon={EditPencil} size="md" color="active" />;
-  if (action.includes("window")) return <AppIcon icon={Settings} size="md" color="active" />;
-  return <AppIcon icon={Page} size="md" color="default" />;
+function getActionIcon(action: string) {
+  if (action.includes("upload")) return Upload;
+  if (action.includes("approve") || action.includes("validated")) return CheckCircle;
+  if (action.includes("reject")) return XmarkCircle;
+  if (action.includes("create") || action.includes("invite")) return UserPlus;
+  if (action.includes("delete")) return Trash;
+  if (action.includes("activate")) return UserBadgeCheck;
+  if (action.includes("deactivate")) return UserXmark;
+  if (action.includes("update")) return EditPencil;
+  if (action.includes("window")) return Settings;
+  return Page;
 }
 
 function formatActionLabel(action: string): string {
@@ -135,28 +136,13 @@ function MetadataModal({
         className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-400 dark:border-slate-800 px-6 py-4">
-          <div className="flex items-center gap-3">
-            {getActionIcon(entry.action)}
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300 font-semibold">
-                Audit Log Detail
-              </p>
-              <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-slate-100">
-                {formatActionLabel(entry.action)}
-              </h3>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
-            aria-label="Close"
-          >
-            <AppIcon icon={Xmark} size="md" color="inherit" />
-          </button>
-        </div>
+        <ModalHeader
+          title={formatActionLabel(entry.action)}
+          subtitle="Audit Log Detail"
+          icon={getActionIcon(entry.action)}
+          onClose={onClose}
+          closeAriaLabel="Close"
+        />
 
         {/* Body */}
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5 space-y-4">
@@ -460,7 +446,7 @@ export function AuditLogsPanel() {
 
                   {/* Action Badge */}
                   <div className="flex items-center gap-2">
-                    {getActionIcon(entry.action)}
+                    <AppIcon icon={getActionIcon(entry.action)} size="md" color="default" />
                     <span
                       className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold tracking-wide ${badge.bg} ${badge.text}`}
                     >

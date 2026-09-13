@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy } from "iconoir-react";
+import { Check, Copy, Key, SendMail } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
+import { ModalHeader } from "@/components/ui/modal-header";
 
 export interface InviteStatusModalProps {
   isOpen: boolean;
@@ -47,12 +48,13 @@ export function InviteStatusModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 backdrop-blur">
-        <p className={`text-xs uppercase tracking-[0.28em] font-semibold ${inviteWasSent ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
-          {inviteWasSent ? "Invitation Sent" : "Invite Link Generated"}
-        </p>
-        <h3 className="mt-2 text-xl font-bold text-slate-900 dark:text-slate-100">
-          {inviteWasSent ? "Email Sent Successfully" : "Email Delivery Failed"}
-        </h3>
+        <ModalHeader
+          icon={inviteWasSent ? SendMail : Key}
+          title={inviteWasSent ? "Email Sent Successfully" : "Invite Link Generated"}
+          subtitle={inviteWasSent ? "Invitation Sent" : "Manual Activation Required"}
+          onClose={onClose}
+          className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+        />
         <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-400">
           {inviteModalMessage}
         </p>

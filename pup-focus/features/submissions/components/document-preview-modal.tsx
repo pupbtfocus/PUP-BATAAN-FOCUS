@@ -3,6 +3,7 @@
 import React from "react";
 import { ChatBubble, Download, Notes, OpenNewWindow, Page, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import { getFileType, getFileBrand } from "@/features/faculty-management/components/faculty-submission-panel";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
@@ -103,28 +104,13 @@ export function DocumentPreviewModal({
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
-          <div className="flex-1 min-w-0">
-            <h3
-              id="document-preview-modal-title"
-              className="text-xl font-bold text-slate-900 dark:text-slate-100 truncate"
-            >
-              {title}
-            </h3>
-            <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-              <AppIcon icon={Page} size="sm" color="active" />
-              Document Preview
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors shrink-0 ml-3 cursor-pointer shadow-2xs"
-            aria-label="Close preview"
-          >
-            <AppIcon icon={Xmark} size="md" color="white" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={Page}
+          title={title}
+          subtitle="Document Preview"
+          onClose={onClose}
+          closeAriaLabel="Close preview"
+        />
 
         {/* Content Body */}
         <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">

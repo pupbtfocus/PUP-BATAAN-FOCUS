@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Xmark } from "iconoir-react";
+import { User, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import { Button } from "@/components/ui/button";
 import { buildFacultyInitials, parseFullNameFallback } from "@/lib/faculty-profile";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
@@ -208,17 +209,13 @@ export function EditFacultyModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-6 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Faculty Details</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
-            aria-label="Close modal"
-          >
-            <AppIcon icon={Xmark} size="md" color="white" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={User}
+          title="Faculty Details"
+          subtitle="View and manage faculty profile and department assignments"
+          onClose={onClose}
+          className="-mx-6 -mt-6 mb-5 rounded-t-xl"
+        />
 
         <div className="space-y-4">
           <article className="rounded-xl border border-slate-200/80 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50 p-4">

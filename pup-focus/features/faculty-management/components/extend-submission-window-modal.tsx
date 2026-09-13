@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Calendar, Check, CheckCircle, Clock, NavArrowDown, Refresh, Search, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import { Button } from "@/components/ui/button";
 
 export interface FacultyOption {
@@ -326,29 +327,13 @@ export function ExtendSubmissionWindowModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto text-slate-900 dark:text-slate-100">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <AppIcon icon={Clock} size="lg" color="default" />
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Extend & Re-open Submission Window</h3>
-            </div>
-            <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-              Grant a deadline extension for{" "}
-              <span className="font-semibold text-slate-900 dark:text-slate-300">
-                {academicYear && semester ? `${academicYear} • ${semester}` : "Active Term"}
-              </span>.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition cursor-pointer shadow-2xs"
-            aria-label="Close modal"
-          >
-            <AppIcon icon={Xmark} size="md" color="inherit" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={Clock}
+          title="Extend & Re-open Submission Window"
+          subtitle={`Grant a deadline extension for ${academicYear && semester ? `${academicYear} • ${semester}` : "Active Term"}.`}
+          onClose={onClose}
+          closeDisabled={isSubmitting}
+        />
 
         {error ? (
           <div className="flex items-center gap-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 p-3 text-xs text-rose-700 dark:text-rose-400">

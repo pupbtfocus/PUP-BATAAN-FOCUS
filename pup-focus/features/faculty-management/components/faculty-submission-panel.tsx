@@ -46,6 +46,7 @@ import {
 } from "@/features/submissions/components/submission-skeletons";
 import { Activity, Archive, Calendar, Check, CheckCircle, Clock, ClockRotateRight, CloudUpload, Download, Eye, Hourglass, Menu, NavArrowRight, OpenNewWindow, Page, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
@@ -1854,7 +1855,7 @@ function FacultySubmissionPanelContent({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white cursor-pointer shadow-2xs transition-colors"
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700/60 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer shadow-2xs"
               >
                 <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
@@ -2551,22 +2552,13 @@ function FacultySubmissionPanelContent({
                       className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 p-6 shadow-2xl my-auto"
                       onClick={(event) => event.stopPropagation()}
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <h3
-                          id="submission-guide-title"
-                          className="text-2xl font-semibold text-slate-900 dark:text-slate-100"
-                        >
-                          Submission Guide
-                        </h3>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setIsGuideOpen(false)}
-                        >
-                          Close
-                        </Button>
-                      </div>
+                      <ModalHeader
+                        icon={Page}
+                        title="Submission Guide"
+                        subtitle="Instructions and guidelines for uploading compliance documents"
+                        onClose={() => setIsGuideOpen(false)}
+                        className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
+                      />
                       <div className="mt-5 space-y-3 text-sm text-slate-600 dark:text-slate-300">
                         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
                           <p className="font-medium text-slate-900 dark:text-slate-100">
@@ -2990,37 +2982,26 @@ function FacultySubmissionPanelContent({
                   onClick={(event) => event.stopPropagation()}
                 >
                   {/* Modal Header (Pinned Top) */}
-                  <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-4 shrink-0 bg-white dark:bg-slate-900">
-                    <div>
-                      <h3
-                        id="upload-modal-title"
-                        className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"
-                      >
-                        {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected") ? (
-                          <>
-                            <AppIcon icon={WarningCircle} size="lg" color="active" />
-                            <span>Resubmit Revision: {REQUIREMENT_LABEL[selectedRequirementForUpload]}</span>
-                          </>
-                        ) : (
-                          <span>Upload {REQUIREMENT_LABEL[selectedRequirementForUpload]}</span>
-                        )}
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
-                          ? "Upload your revised compliance document addressing the reviewer's feedback below."
-                          : "Upload your compliance document for admin review and validation."}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={closeDirectUploadModal}
-                      disabled={isUploadingDirect}
-                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors cursor-pointer"
-                      aria-label="Close upload modal"
-                    >
-                      <AppIcon icon={Xmark} size="md" color="inherit" />
-                    </button>
-                  </div>
+                  <ModalHeader
+                    icon={
+                      isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                        ? WarningCircle
+                        : Upload
+                    }
+                    title={
+                      isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                        ? `Resubmit Revision: ${REQUIREMENT_LABEL[selectedRequirementForUpload]}`
+                        : `Upload ${REQUIREMENT_LABEL[selectedRequirementForUpload]}`
+                    }
+                    subtitle={
+                      isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
+                        ? "Upload your revised compliance document addressing the reviewer's feedback below."
+                        : "Upload your compliance document for admin review and validation."
+                    }
+                    onClose={closeDirectUploadModal}
+                    closeDisabled={isUploadingDirect}
+                    closeAriaLabel="Close upload modal"
+                  />
 
                   {/* Modal Form with Scrollable Content */}
                   <form
@@ -3242,22 +3223,13 @@ function FacultySubmissionPanelContent({
                   className="relative w-full max-w-7xl mx-auto flex max-h-[90vh] flex-col rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5">
-                    <h3
-                      id="submission-history-title"
-                      className="text-xl font-semibold text-slate-900 dark:text-slate-100"
-                    >
-                      Validation History
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={closeHistoryModal}
-                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors cursor-pointer"
-                      aria-label="Close history modal"
-                    >
-                      <AppIcon icon={Xmark} size="md" color="inherit" />
-                    </button>
-                  </div>
+                  <ModalHeader
+                    title="Validation History"
+                    titleId="submission-history-title"
+                    icon={ClockRotateRight}
+                    onClose={closeHistoryModal}
+                    closeAriaLabel="Close history modal"
+                  />
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-6 py-3">
                     <div className="flex flex-wrap items-center gap-4">
                       <div className="flex items-center gap-2">
@@ -3383,25 +3355,13 @@ function FacultySubmissionPanelContent({
                   className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="flex items-start justify-between border-b border-slate-300 dark:border-slate-800 px-6 py-5 shrink-0 bg-white dark:bg-slate-900">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 truncate">
-                        {previewSubmission.title}
-                      </h3>
-                      <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                        <AppIcon icon={Page} size="sm" color="inherit" />
-                        Document Preview
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={closeSubmissionPreview}
-                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors shrink-0 ml-3 cursor-pointer"
-                      aria-label="Close preview"
-                    >
-                      <AppIcon icon={Xmark} size="md" color="inherit" />
-                    </button>
-                  </div>
+                  <ModalHeader
+                    title={previewSubmission.title}
+                    subtitle="Document Preview"
+                    icon={Page}
+                    onClose={closeSubmissionPreview}
+                    closeAriaLabel="Close preview"
+                  />
                   <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)] flex-1 overflow-y-auto min-h-0">
                     <div className="min-h-[60vh] overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 shadow-xs flex items-center justify-center p-4">
                       {(() => {
@@ -3556,31 +3516,18 @@ function FacultySubmissionPanelContent({
                 aria-modal="true"
                 aria-labelledby="incomplete-requirements-title"
               >
-                <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200 my-auto">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold mb-3">
-                        <AppIcon icon={WarningCircle} size="sm" color="inherit" />
-                        <span>Action Required</span>
-                      </div>
-                      <h3
-                        id="incomplete-requirements-title"
-                        className="text-base font-semibold text-slate-900 dark:text-slate-100 tracking-tight"
-                      >
-                        Requirements Pending Submission
-                      </h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={dismissIncompleteRequirementsAlert}
-                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition cursor-pointer shadow-2xs"
-                      aria-label="Close alert"
-                    >
-                      <AppIcon icon={Xmark} size="md" color="inherit" />
-                    </button>
-                  </div>
-                  <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    You have documents awaiting submission or revision for this
+                <div className="w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl relative animate-in fade-in zoom-in-95 duration-200 my-auto">
+                  <ModalHeader
+                    title="Requirements Pending Submission"
+                    subtitle="Action Required"
+                    icon={WarningCircle}
+                    onClose={dismissIncompleteRequirementsAlert}
+                    closeAriaLabel="Close alert"
+                    titleId="incomplete-requirements-title"
+                  />
+                  <div className="p-6 overflow-y-auto">
+                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                      You have documents awaiting submission or revision for this
                     semester. Please submit the missing requirements before the
                     deadline.
                   </p>
@@ -3628,6 +3575,7 @@ function FacultySubmissionPanelContent({
                       Go to Requirements Management
                     </button>
                   </div>
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -3659,18 +3607,12 @@ function FacultySubmissionPanelContent({
             {isMounted && isSubmitModalOpen && (
               <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm">
                 <div className="w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl my-auto">
-                  <div className="flex items-start justify-between border-b border-slate-300 dark:border-slate-700 px-6 py-5 shrink-0 bg-white dark:bg-slate-900">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-amber-300">
-                      Submit Requirement
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={closeSubmitModal}
-                      className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 shadow-2xs transition-colors cursor-pointer"
-                    >
-                      <AppIcon icon={Xmark} size="md" color="inherit" />
-                    </button>
-                  </div>
+                  <ModalHeader
+                    title="Submit Requirement"
+                    icon={Upload}
+                    onClose={closeSubmitModal}
+                    closeAriaLabel="Close submit modal"
+                  />
                   <div className="flex-1 overflow-y-auto p-6 min-h-0">
                     {isSubmissionAvailable ? (
                       <form className="space-y-4" onSubmit={handleSubmit}>
@@ -3836,24 +3778,15 @@ function FacultySubmissionPanelContent({
             {/* Extension Details Modal */}
             {showExtensionDetailsModal && pendingExtensionData && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="w-full max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                    <div className="flex items-center gap-2">
-                      <AppIcon icon={Clock} size="lg" color="active" />
-                      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                        Extension Request Status
-                      </h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowExtensionDetailsModal(false)}
-                      className="rounded-lg border border-slate-200 dark:border-slate-800 p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer"
-                    >
-                      <AppIcon icon={Xmark} size="md" color="inherit" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-3 text-xs">
+                <div className="w-full max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
+                  <ModalHeader
+                    title="Extension Request Status"
+                    icon={Clock}
+                    onClose={() => setShowExtensionDetailsModal(false)}
+                    closeAriaLabel="Close extension request status modal"
+                  />
+                  <div className="p-6 space-y-4">
+                    <div className="space-y-3 text-xs">
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
                       <span className="font-semibold text-slate-600 dark:text-slate-400">Status</span>
                       <span className="px-2.5 py-0.5 rounded-full font-bold bg-amber-500 text-slate-950 text-[11px]">
@@ -3896,6 +3829,7 @@ function FacultySubmissionPanelContent({
                     >
                       Close
                     </button>
+                  </div>
                   </div>
                 </div>
               </div>

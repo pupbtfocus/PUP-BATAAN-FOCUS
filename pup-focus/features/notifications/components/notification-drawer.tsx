@@ -386,14 +386,18 @@ export function NotificationDrawer() {
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-3 shrink-0">
                 {/* Left Side: Title & Badge */}
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <AppIcon icon={Bell} size="lg" color="active" />
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">Notifications</h3>
-                  {unreadCount > 0 && (
-                    <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                      {unreadCount} unread
-                    </span>
-                  )}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
+                    <AppIcon icon={Bell} size="lg" color="default" />
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        {unreadCount} unread
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Right Side: Actions & Close */}
@@ -435,7 +439,7 @@ export function NotificationDrawer() {
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700/60 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0 cursor-pointer shadow-2xs"
                     aria-label="Close notifications"
                   >
                     <AppIcon icon={Xmark} size="md" color="inherit" />
@@ -453,7 +457,7 @@ export function NotificationDrawer() {
                   <button
                     type="button"
                     onClick={() => setToastMessage(null)}
-                    className="rounded-md border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1 transition-colors cursor-pointer shadow-2xs"
+                    className="p-1 rounded-md border border-slate-200 dark:border-slate-700/60 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer shadow-2xs"
                     aria-label="Dismiss toast"
                   >
                     <AppIcon icon={Xmark} size="sm" color="inherit" />

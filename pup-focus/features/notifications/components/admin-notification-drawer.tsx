@@ -249,9 +249,9 @@ export function AdminNotificationDrawer({
             <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-full sm:max-w-md md:max-w-lg flex-col bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250">
               {/* Header Bar */}
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md px-4 sm:px-5 py-3.5 shrink-0">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 dark:text-amber-400">
-                    <AppIcon icon={Bell} size="md" color="inherit" />
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
+                    <AppIcon icon={Bell} size="lg" color="default" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -259,7 +259,7 @@ export function AdminNotificationDrawer({
                         Notifications
                       </h3>
                       {unreadCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                        <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-400">
                           {unreadCount} unread
                         </span>
                       )}
@@ -285,7 +285,7 @@ export function AdminNotificationDrawer({
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700/60 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0 cursor-pointer shadow-2xs"
                     aria-label="Close notifications"
                   >
                     <AppIcon icon={Xmark} size="md" color="inherit" />

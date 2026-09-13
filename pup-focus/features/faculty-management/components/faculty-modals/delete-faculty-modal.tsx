@@ -1,6 +1,8 @@
 "use client";
 
+import { Trash, UserBadgeCheck, UserXmark } from "iconoir-react";
 import { Button } from "@/components/ui/button";
+import { ModalHeader } from "@/components/ui/modal-header";
 import type { FacultyAccount, PendingFacultyAction } from "@/features/faculty-management/types/faculty-dashboard.types";
 
 export interface DeleteFacultyModalProps {
@@ -23,20 +25,31 @@ export function DeleteFacultyModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-        <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400 font-semibold">
-          {pendingFacultyAction.kind === "delete"
-            ? "Confirm Delete"
-            : pendingFacultyAction.kind === "activate"
-              ? "Confirm Activate"
-              : "Confirm Deactivate"}
-        </p>
-        <h3 className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">
-          {pendingFacultyAction.kind === "delete"
-            ? "Delete Faculty Account?"
-            : pendingFacultyAction.kind === "activate"
+        <ModalHeader
+          icon={
+            pendingFacultyAction.kind === "delete"
+              ? Trash
+              : pendingFacultyAction.kind === "activate"
+              ? UserBadgeCheck
+              : UserXmark
+          }
+          title={
+            pendingFacultyAction.kind === "delete"
+              ? "Delete Faculty Account?"
+              : pendingFacultyAction.kind === "activate"
               ? "Activate Faculty Account?"
-              : "Deactivate Faculty Account?"}
-        </h3>
+              : "Deactivate Faculty Account?"
+          }
+          subtitle={
+            pendingFacultyAction.kind === "delete"
+              ? "Confirm Account Deletion"
+              : pendingFacultyAction.kind === "activate"
+              ? "Confirm Account Activation"
+              : "Confirm Account Deactivation"
+          }
+          onClose={onCancel}
+          className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
+        />
         <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
           {pendingFaculty ? (
             <>

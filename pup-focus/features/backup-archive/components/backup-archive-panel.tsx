@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Archive, Calendar, Check, CheckCircle, Clock, Database, Download, Eye, HardDrive, MultiplePages, Plus, Refresh, Trash, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import type {
   SystemBackup,
   ArchivedTermSummary,
@@ -678,11 +679,11 @@ export function BackupArchivePanel() {
       {isArchiveModalOpen && selectedTermToArchive && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-center gap-3 text-amber-500 mb-3">
-              <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800">
-                <AppIcon icon={WarningTriangle} size="lg" color="inherit" />
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
+                <AppIcon icon={WarningTriangle} size="lg" color="default" />
               </div>
-              <h3 className="text-base font-bold">Archive Academic Term?</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Archive Academic Term?</h3>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400">
               You are about to archive{" "}
@@ -718,25 +719,14 @@ export function BackupArchivePanel() {
       {/* Backup Inspection Modal */}
       {inspectedBackup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                  <AppIcon icon={Database} size="md" color="inherit" />
-                </div>
-                <h3 className="text-sm font-bold truncate">{inspectedBackup.backup_name}</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setInspectedBackup(null)}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
-                aria-label="Close"
-              >
-                <AppIcon icon={Xmark} size="md" color="inherit" />
-              </button>
-            </div>
-
-            <div className="py-4 space-y-3 text-xs">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-hidden flex flex-col">
+            <ModalHeader
+              title={inspectedBackup.backup_name}
+              icon={Database}
+              onClose={() => setInspectedBackup(null)}
+              closeAriaLabel="Close"
+            />
+            <div className="p-6 overflow-y-auto flex-1 space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3 p-4 rounded-lg bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800">
                 <div>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Created Date</span>
@@ -799,7 +789,7 @@ export function BackupArchivePanel() {
               <button
                 type="button"
                 onClick={() => setInspectedBackup(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-xs"
               >
                 Close
               </button>
@@ -811,23 +801,15 @@ export function BackupArchivePanel() {
       {/* Term Vault Inspection Modal */}
       {inspectedTerm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-2 text-emerald-500">
-                <AppIcon icon={Archive} size="lg" color="inherit" />
-                <h3 className="text-base font-bold">Archive Vault Inspection</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setInspectedTerm(null)}
-                className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs"
-                aria-label="Close"
-              >
-                <AppIcon icon={Xmark} size="md" color="inherit" />
-              </button>
-            </div>
-
-            <div className="py-4 space-y-3 text-xs">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+            <ModalHeader
+              title="Archive Vault Inspection"
+              icon={Archive}
+              onClose={() => setInspectedTerm(null)}
+              closeAriaLabel="Close"
+            />
+            <div className="p-6">
+              <div className="space-y-3 text-xs">
               <div className="p-4 rounded-lg bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-slate-500 dark:text-slate-400">Academic Year:</span>
@@ -869,10 +851,11 @@ export function BackupArchivePanel() {
               <button
                 type="button"
                 onClick={() => setInspectedTerm(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-xs"
               >
                 Close
               </button>
+            </div>
             </div>
           </div>
         </div>
@@ -882,11 +865,11 @@ export function BackupArchivePanel() {
       {backupToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-center gap-3 text-red-500 mb-3">
-              <div className="p-2 rounded-xl bg-red-500/10">
-                <AppIcon icon={WarningTriangle} size="lg" color="inherit" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
+                <AppIcon icon={WarningTriangle} size="lg" color="default" />
               </div>
-              <h3 className="text-base font-bold">Delete Backup Record</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Delete Backup Record</h3>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400">
               Are you sure you want to delete backup log <span className="font-semibold text-slate-900 dark:text-slate-100">"{backupToDelete.backup_name}"</span>?
@@ -895,7 +878,7 @@ export function BackupArchivePanel() {
               <button
                 type="button"
                 onClick={() => setBackupToDelete(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>

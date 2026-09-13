@@ -12,6 +12,7 @@ import {
   Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ModalHeader } from "@/components/ui/modal-header";
 import {
   REQUIREMENT_LABEL,
   type RequirementCode,
@@ -163,33 +164,13 @@ export function FacultyExtensionRequestModal({
         aria-labelledby="extension-modal-title"
       >
         {/* Fixed Header */}
-        <div className="shrink-0 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 bg-slate-50/70 dark:bg-slate-950/50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-2xs">
-              <AppIcon icon={Clock} size="lg" color="inherit" />
-            </div>
-            <div>
-              <h3
-                id="extension-modal-title"
-                className="text-base font-bold text-slate-900 dark:text-slate-100"
-              >
-                Request Deadline Extension
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                A.Y. {academicYear} • {semester}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors shrink-0 ml-3 cursor-pointer shadow-2xs"
-            aria-label="Close modal"
-          >
-            <AppIcon icon={Xmark} size="md" color="inherit" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={Clock}
+          title="Request Deadline Extension"
+          subtitle={`A.Y. ${academicYear} • ${semester}`}
+          onClose={onClose}
+          closeDisabled={isSubmitting}
+        />
 
         {/* Content Body */}
         {successState ? (
