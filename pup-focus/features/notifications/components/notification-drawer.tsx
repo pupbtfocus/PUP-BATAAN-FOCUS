@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCircle, Clock, DoubleCheck, InfoCircle, Notes, OpenNewWindow, SystemRestart, Trash, WarningCircle, WarningTriangle, Xmark, XmarkCircle } from "iconoir-react";
+import { Bell, CheckCircle, DoubleCheck, Hourglass, InfoCircle, Notes, OpenNewWindow, SystemRestart, Trash, WarningCircle, WarningTriangle, Xmark, XmarkCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
@@ -52,7 +52,7 @@ function getNotificationTypeCategory(notification: AppNotification): {
   ) {
     return {
       category: "DEADLINE_ALERT",
-      Icon: Clock,
+      Icon: Hourglass,
       colorClasses: "text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-800/60 dark:bg-amber-950/40",
       badgeBg: "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/80",
     };
@@ -541,7 +541,7 @@ export function NotificationDrawer() {
                           <div className="mt-2 flex items-center gap-2">
                             {isDeadlineAlert && (
                               <span className="inline-flex items-center gap-1 rounded border border-amber-500/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
-                                <AppIcon icon={Clock} size="xs" color="inherit" />
+                                <AppIcon icon={Hourglass} size="xs" color="inherit" />
                                 Deadline Alert
                               </span>
                             )}

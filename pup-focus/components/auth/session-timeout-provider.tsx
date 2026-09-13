@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Clock, LogOut, Refresh, ShieldAlert } from "iconoir-react";
+import { Hourglass, LogOut, Refresh, ShieldAlert } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 
 interface SessionTimeoutContextType {
@@ -292,7 +292,7 @@ export function SessionTimeoutProvider({
             {/* Header Icon & Title */}
             <div className="flex items-center gap-3.5 border-b border-slate-400 dark:border-slate-800/80 pb-4 mb-4">
               <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
-                <AppIcon icon={Clock} size="lg" color="default" />
+                <AppIcon icon={Hourglass} size="lg" color="default" />
               </div>
               <div>
                 <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
@@ -310,7 +310,7 @@ export function SessionTimeoutProvider({
                 For your security, your session will automatically terminate in:
               </p>
               <div className="inline-flex items-center justify-center gap-2 font-mono font-bold text-2xl text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 border border-amber-500/30 dark:border-amber-800/60 px-4 py-1.5 rounded-lg">
-                <AppIcon icon={Clock} size="md" color="active" className="animate-spin" />
+                <AppIcon icon={Hourglass} size="md" color="active" className="animate-pulse" />
                 <span>{secondsLeft}s</span>
               </div>
             </div>

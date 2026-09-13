@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Archive, Calendar, Check, CheckCircle, Clock, Database, Download, Eye, HardDrive, MultiplePages, Plus, Refresh, Trash, WarningTriangle, Xmark } from "iconoir-react";
+import { Archive, Calendar, Check, CheckCircle, Database, Download, Eye, HardDrive, Hourglass, MultiplePages, Plus, Refresh, Trash, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import type {
@@ -321,7 +321,7 @@ export function BackupArchivePanel() {
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Last Backup Date</span>
-            <Clock className="h-5 w-5 text-slate-400" strokeWidth={2} />
+            <Hourglass className="h-5 w-5 text-slate-400" strokeWidth={2} />
           </div>
           <div className="mt-2">
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight truncate">

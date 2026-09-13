@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Calendar, Check, CheckCircle, Clock, NavArrowDown, Refresh, Search, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
+import { Calendar, Check, CheckCircle, Hourglass, NavArrowDown, Refresh, Search, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { Button } from "@/components/ui/button";
@@ -328,7 +328,7 @@ export function ExtendSubmissionWindowModal({
       <div className="w-full max-w-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto text-slate-900 dark:text-slate-100">
         {/* Header */}
         <ModalHeader
-          icon={Clock}
+          icon={Hourglass}
           title="Extend & Re-open Submission Window"
           subtitle={`Grant a deadline extension for ${academicYear && semester ? `${academicYear} • ${semester}` : "Active Term"}.`}
         />

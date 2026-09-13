@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import {
   Calendar,
   CheckCircle,
-  Clock,
+  Hourglass,
   InfoCircle,
   SystemRestart,
   WarningCircle,
@@ -165,7 +165,7 @@ export function FacultyExtensionRequestModal({
       >
         {/* Fixed Header */}
         <ModalHeader
-          icon={Clock}
+          icon={Hourglass}
           title="Request Deadline Extension"
           subtitle={`A.Y. ${academicYear} • ${semester}`}
         />
@@ -356,7 +356,7 @@ export function FacultyExtensionRequestModal({
                   </>
                 ) : (
                   <>
-                    <AppIcon icon={Clock} size="sm" color="inherit" />
+                    <AppIcon icon={Hourglass} size="sm" color="inherit" />
                     <span>Submit Extension Request</span>
                   </>
                 )}

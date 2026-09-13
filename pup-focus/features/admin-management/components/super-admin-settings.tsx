@@ -9,11 +9,11 @@ import {
   Camera,
   Check,
   Circle,
-  Clock,
   EditPencil,
   Eye,
   EyeClosed,
   FloppyDisk,
+  Hourglass,
   Refresh,
   Shield,
   ShieldAlert,
@@ -1119,7 +1119,7 @@ export function SuperAdminSettings({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg transition-colors">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <AppIcon icon={Clock} size="md" color="active" />
+                <AppIcon icon={Hourglass} size="md" color="active" />
                 <span className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
                   Session Timeout Duration
                 </span>

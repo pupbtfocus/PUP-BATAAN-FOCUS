@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { LazyLottie } from "@/components/ui/lazy-lottie";
 import { Button } from "@/components/ui/button";
 import loadingAnimation from "@/assets/icons animations/lottieflow-loading-08-000000-easey.json";
-import { Check, CheckCircle, Clock, Eye, EyeClosed, Lock, Mail, WarningCircle, WarningTriangle } from "iconoir-react";
+import { Check, CheckCircle, Eye, EyeClosed, Hourglass, Lock, Mail, WarningCircle, WarningTriangle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 
 export interface NoticeBanner {
@@ -149,7 +149,7 @@ export function LoginForm({
             }`}
           >
             {notice.type === "timeout" ? (
-              <AppIcon icon={Clock} size="md" color="active" className="mt-0.5" />
+              <AppIcon icon={Hourglass} size="md" color="active" className="mt-0.5" />
             ) : notice.type === "success" ? (
               <AppIcon icon={CheckCircle} size="md" color="success" className="mt-0.5" />
             ) : (

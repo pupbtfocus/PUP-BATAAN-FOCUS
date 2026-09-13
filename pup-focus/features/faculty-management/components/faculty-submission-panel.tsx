@@ -44,7 +44,7 @@ import {
   DashboardMetricsSkeleton,
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
-import { Activity, Archive, Calendar, Check, CheckCircle, Clock, ClockRotateRight, CloudUpload, Download, Eye, Hourglass, Menu, NavArrowRight, OpenNewWindow, Page, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, Eye, Hourglass, Menu, NavArrowRight, OpenNewWindow, Page, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { LogoutButton } from "@/components/shared/logout-button";
@@ -347,7 +347,7 @@ function getStatusIcon(
   if (status === "Rejected") return <AppIcon icon={WarningCircle} size="xs" color="white" />;
   if (status === "Not Submitted")
     return <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />;
-  return <AppIcon icon={Clock} size="xs" color="inherit" />;
+  return <AppIcon icon={Hourglass} size="xs" color="inherit" />;
 }
 function getStatusText(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
@@ -2255,7 +2255,7 @@ function FacultySubmissionPanelContent({
                                             onClick={() => setShowExtensionDetailsModal(true)}
                                             className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                                           >
-                                            <AppIcon icon={Clock} size="sm" color="active" />
+                                            <AppIcon icon={Hourglass} size="sm" color="active" />
                                             <span>Extension Pending</span>
                                           </button>
                                         ) : (
@@ -2266,7 +2266,7 @@ function FacultySubmissionPanelContent({
                                             }
                                             className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                           >
-                                            <AppIcon icon={Clock} size="sm" color="inherit" />
+                                            <AppIcon icon={Hourglass} size="sm" color="inherit" />
                                             <span>Request Extension</span>
                                           </button>
                                         )
@@ -2722,7 +2722,7 @@ function FacultySubmissionPanelContent({
                         {hasPendingExtensionRequest && (
                           <div className="mt-2 flex flex-wrap items-center gap-2">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 text-[11px] font-bold">
-                              <AppIcon icon={Clock} size="xs" color="active" />
+                              <AppIcon icon={Hourglass} size="xs" color="active" />
                               Extension Request Pending Admin Review ({pendingExtensionData?.requested_preset || "+3 Days"})
                             </span>
                             {pendingExtensionData?.reason && (
@@ -2742,7 +2742,7 @@ function FacultySubmissionPanelContent({
                             onClick={() => setShowExtensionDetailsModal(true)}
                             className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/40 font-bold px-3.5 py-2 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                           >
-                            <AppIcon icon={Clock} size="sm" color="inherit" />
+                            <AppIcon icon={Hourglass} size="sm" color="inherit" />
                             <span>View Request Details</span>
                           </button>
                         ) : (
@@ -2751,7 +2751,7 @@ function FacultySubmissionPanelContent({
                             onClick={() => openExtensionRequestModal()}
                             className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                           >
-                            <AppIcon icon={Clock} size="sm" color="inherit" />
+                            <AppIcon icon={Hourglass} size="sm" color="inherit" />
                             <span>Request Extension</span>
                           </button>
                         )}
@@ -2866,7 +2866,7 @@ function FacultySubmissionPanelContent({
                                       onClick={() => setShowExtensionDetailsModal(true)}
                                       className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                                     >
-                                      <AppIcon icon={Clock} size="sm" color="active" />
+                                      <AppIcon icon={Hourglass} size="sm" color="active" />
                                       <span>Extension Pending</span>
                                     </button>
                                   ) : (
@@ -2875,7 +2875,7 @@ function FacultySubmissionPanelContent({
                                       onClick={() => openExtensionRequestModal(req.code)}
                                       className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                     >
-                                      <AppIcon icon={Clock} size="sm" color="inherit" />
+                                      <AppIcon icon={Hourglass} size="sm" color="inherit" />
                                       <span>Request Extension</span>
                                     </button>
                                   )
@@ -2900,7 +2900,7 @@ function FacultySubmissionPanelContent({
                                       onClick={() => setShowExtensionDetailsModal(true)}
                                       className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                                     >
-                                      <AppIcon icon={Clock} size="sm" color="active" />
+                                      <AppIcon icon={Hourglass} size="sm" color="active" />
                                       <span>Extension Pending</span>
                                     </button>
                                   ) : (
@@ -2909,7 +2909,7 @@ function FacultySubmissionPanelContent({
                                       onClick={() => openExtensionRequestModal(req.code)}
                                       className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                     >
-                                      <AppIcon icon={Clock} size="sm" color="inherit" />
+                                      <AppIcon icon={Hourglass} size="sm" color="inherit" />
                                       <span>Request Extension</span>
                                     </button>
                                   )
@@ -3765,7 +3765,7 @@ function FacultySubmissionPanelContent({
                 <div className="w-full max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
                   <ModalHeader
                     title="Extension Request Status"
-                    icon={Clock}
+                    icon={Hourglass}
                   />
                   <div className="p-6 space-y-4">
                     <div className="space-y-3 text-xs">

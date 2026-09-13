@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Activity, Archive, Calendar, ClipboardCheck, Clock, Eye, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, UserBadgeCheck, ViewGrid } from "iconoir-react";
+import { Activity, Archive, Calendar, ClipboardCheck, Eye, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, UserBadgeCheck, ViewGrid } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { extractFirstName } from "@/lib/faculty-profile";
 
@@ -322,7 +322,7 @@ export function SidebarContent({
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
-                <AppIcon icon={Clock} size="sm" color={isTermsActive ? "active" : "default"} />
+                <AppIcon icon={Hourglass} size="sm" color={isTermsActive ? "active" : "default"} />
                 <span>Academic Terms</span>
               </button>
               <button

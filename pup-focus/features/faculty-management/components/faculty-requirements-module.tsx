@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, CheckCircle, Clock, Eye, Notes, Page, Refresh, SystemRestart, Upload, WarningCircle, Xmark } from "iconoir-react";
+import { Calendar, CheckCircle, Eye, Hourglass, Notes, Page, Refresh, SystemRestart, Upload, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -661,7 +661,7 @@ export function FacultyRequirementsModule({
                     </div>
 
                     <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                      <AppIcon icon={Clock} size="sm" color="inherit" />
+                      <AppIcon icon={Hourglass} size="sm" color="inherit" />
                       <span>
                         {item?.submittedAt
                           ? `Submitted: ${formatSubmittedDateTime(item.submittedAt)}`
