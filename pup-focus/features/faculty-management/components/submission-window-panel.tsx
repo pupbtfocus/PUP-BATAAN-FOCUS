@@ -1111,16 +1111,6 @@ export function SubmissionWindowPanel({
                 ));
               })()}
             </div>
-
-            <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setShowRequestsModal(false)}
-                className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 px-4 py-2 text-xs font-semibold rounded-lg transition cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
           </div>
         </div>
       ) : null}
@@ -1133,10 +1123,6 @@ export function SubmissionWindowPanel({
               icon={WarningCircle}
               title="Decline Extension Request"
               subtitle={`Faculty: ${selectedRequestForReject.faculty_name} • ${selectedRequestForReject.requested_preset || "+3 Days"}`}
-              onClose={() => {
-                setSelectedRequestForReject(null);
-                setRejectRemarks("");
-              }}
               className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
             />
 
@@ -1161,7 +1147,7 @@ export function SubmissionWindowPanel({
                   setRejectRemarks("");
                 }}
                 disabled={isReviewingRequest}
-                className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer"
+                className="px-4 py-2 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
@@ -1258,16 +1244,6 @@ export function SubmissionWindowPanel({
                 ))
               )}
             </div>
-
-            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowLogsModal(false)}
-                className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
-              >
-                Close Logs
-              </button>
-            </div>
           </div>
         </div>
       ) : null}
@@ -1280,7 +1256,6 @@ export function SubmissionWindowPanel({
               icon={Calendar}
               title="Save Submission Schedule?"
               subtitle="Confirm Window Schedule"
-              onClose={() => setShowSaveConfirmation(false)}
               className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
             />
             <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
@@ -1322,7 +1297,6 @@ export function SubmissionWindowPanel({
               icon={WarningTriangle}
               title="Close Submissions Now?"
               subtitle="Immediate Closure & Schedule Reset"
-              onClose={() => setShowCloseConfirmation(false)}
               className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
             />
             <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">

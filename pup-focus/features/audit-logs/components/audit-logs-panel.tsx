@@ -140,8 +140,6 @@ function MetadataModal({
           title={formatActionLabel(entry.action)}
           subtitle="Audit Log Detail"
           icon={getActionIcon(entry.action)}
-          onClose={onClose}
-          closeAriaLabel="Close"
         />
 
         {/* Body */}

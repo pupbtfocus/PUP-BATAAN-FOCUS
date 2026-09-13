@@ -504,8 +504,6 @@ export function RequirementTemplatesPanel({
               icon={Trash}
               title="Delete Requirement Template"
               subtitle="Confirm Permanent Template Deletion"
-              onClose={() => setTemplateToDelete(null)}
-              closeAriaLabel="Close dialog"
               className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
             />
 

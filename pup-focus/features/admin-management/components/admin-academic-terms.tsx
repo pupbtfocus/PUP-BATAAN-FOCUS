@@ -509,8 +509,6 @@ export function AdminAcademicTerms({
               title="Create Next Academic Year"
               subtitle="Automatically generate terms for the upcoming academic cycle."
               icon={Calendar}
-              onClose={() => setIsCreateModalOpen(false)}
-              closeAriaLabel="Close modal"
             />
             <div className="p-6">
               <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4">
@@ -556,7 +554,7 @@ export function AdminAcademicTerms({
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
                   disabled={isSaving}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
+                  className="px-4 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
                 >
                   Cancel
                 </button>

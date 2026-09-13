@@ -1429,7 +1429,7 @@ export function SuperAdminDashboard({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700/60 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer shadow-2xs"
+                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs"
                 aria-label="Close navigation"
               >
                 <AppIcon icon={Xmark} size="lg" color="inherit" />
@@ -2077,7 +2077,6 @@ export function SuperAdminDashboard({
               title={inviteWasSent ? "Email sent successfully" : "Email delivery failed"}
               subtitle={inviteWasSent ? "Invitation Sent" : "Invite Link Generated"}
               icon={inviteWasSent ? SendMail : Key}
-              onClose={() => setInviteModalOpen(false)}
             />
             <div className="p-6">
               <p className="whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-400">
@@ -2088,7 +2087,7 @@ export function SuperAdminDashboard({
                 <button
                   type="button"
                   onClick={() => setInviteModalOpen(false)}
-                  className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer"
+                  className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer shadow-xs"
                 >
                   OK
                 </button>
@@ -2352,8 +2351,6 @@ function AdminDetailsModal({
         <ModalHeader
           title={canEdit ? "Edit Admin Account" : "View Admin Account"}
           icon={User}
-          onClose={onClose}
-          closeAriaLabel="Close"
         />
         <div className="p-6 overflow-y-auto">
 

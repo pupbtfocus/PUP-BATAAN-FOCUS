@@ -167,7 +167,6 @@ export function RequirementTemplateModal({
           icon={Page}
           title={isEditing ? "Edit Requirement Template" : "Add Requirement Template"}
           subtitle="Configure document compliance parameters, upload limits, and visibility."
-          onClose={onClose}
           className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
         />
 

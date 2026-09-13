@@ -52,7 +52,6 @@ export function InviteStatusModal({
           icon={inviteWasSent ? SendMail : Key}
           title={inviteWasSent ? "Email Sent Successfully" : "Invite Link Generated"}
           subtitle={inviteWasSent ? "Invitation Sent" : "Manual Activation Required"}
-          onClose={onClose}
           className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
         />
         <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-400">
@@ -104,8 +103,9 @@ export function InviteStatusModal({
 
           <Button
             type="button"
+            variant="maroon"
             onClick={onClose}
-            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-5 py-2 rounded-xl transition cursor-pointer"
+            className="cursor-pointer"
           >
             Done
           </Button>

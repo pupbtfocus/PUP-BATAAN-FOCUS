@@ -331,8 +331,6 @@ export function ExtendSubmissionWindowModal({
           icon={Clock}
           title="Extend & Re-open Submission Window"
           subtitle={`Grant a deadline extension for ${academicYear && semester ? `${academicYear} • ${semester}` : "Active Term"}.`}
-          onClose={onClose}
-          closeDisabled={isSubmitting}
         />
 
         {error ? (

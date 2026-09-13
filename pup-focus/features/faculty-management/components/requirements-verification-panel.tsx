@@ -1258,7 +1258,7 @@ function FacultyVerificationDrawer({
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-750 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer shadow-2xs"
+            className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs"
             aria-label="Close modal"
           >
             <AppIcon icon={Xmark} size="md" color="inherit" />
@@ -2169,7 +2169,6 @@ function FacultyVerificationDrawer({
               icon={WarningCircle}
               title="Request Requirement Revision"
               subtitle={`${revisionModalData.reqLabel} • ${faculty.fullName}`}
-              onClose={() => setRevisionModalData(null)}
               className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
             />
 
@@ -2271,7 +2270,6 @@ function FacultyVerificationDrawer({
               icon={CheckCircle}
               title="Validate Requirement"
               subtitle={`${validateModalData.reqLabel} • ${faculty.fullName}`}
-              onClose={() => setValidateModalData(null)}
               className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
             />
 
@@ -2420,7 +2418,7 @@ function FacultyVerificationDrawer({
                     <button
                       type="button"
                       onClick={() => setPreviewingDoc(null)}
-                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer shadow-2xs"
+                      className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs"
                       aria-label="Close preview"
                     >
                       <AppIcon icon={Xmark} size="md" color="inherit" />
@@ -2536,7 +2534,6 @@ function FacultyVerificationDrawer({
             <ModalHeader
               icon={InfoCircle}
               title={noticeModalData.title}
-              onClose={() => setNoticeModalData(null)}
               className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
             />
 
@@ -2550,7 +2547,7 @@ function FacultyVerificationDrawer({
               <button
                 type="button"
                 onClick={() => setNoticeModalData(null)}
-                className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
+                className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Got It
               </button>
@@ -2578,13 +2575,6 @@ function FacultyVerificationDrawer({
               icon={CheckCircle}
               title="Confirm Bulk Validation"
               subtitle={`Validate all ${pendingSubmissionsCount} pending requirements for ${faculty.fullName}`}
-              onClose={() => {
-                if (!isValidatingAll) {
-                  setIsValidateModalOpen(false);
-                  setBulkValidateNotes("");
-                }
-              }}
-              closeDisabled={isValidatingAll}
               className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
             />
 
@@ -2682,7 +2672,6 @@ function FacultyVerificationDrawer({
             <ModalHeader
               icon={Package}
               title={zipProgressData.title}
-              onClose={zipProgressData.status !== "zipping" ? () => setZipProgressData(null) : undefined}
               className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
             />
 
@@ -2737,7 +2726,7 @@ function FacultyVerificationDrawer({
                 <button
                   type="button"
                   onClick={() => setZipProgressData(null)}
-                  className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
+                  className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
                 >
                   Done
                 </button>

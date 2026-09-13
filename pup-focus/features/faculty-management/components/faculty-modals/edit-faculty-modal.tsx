@@ -213,7 +213,6 @@ export function EditFacultyModal({
           icon={User}
           title="Faculty Details"
           subtitle="View and manage faculty profile and department assignments"
-          onClose={onClose}
           className="-mx-6 -mt-6 mb-5 rounded-t-xl"
         />
 

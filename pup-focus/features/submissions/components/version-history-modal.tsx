@@ -231,8 +231,6 @@ export function VersionHistoryModal({
           icon={ClockRotateRight}
           title="Version History"
           subtitle={requirementLabel}
-          onClose={onClose}
-          closeAriaLabel="Close version history"
         />
 
         {/* Content */}
