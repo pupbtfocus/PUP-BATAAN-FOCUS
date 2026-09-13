@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, Clock, EditPencil, GraduationCap, Mail, ShieldCheck, User, WarningCircle, Xmark } from "iconoir-react";
+import { CheckCircle, EditPencil, GraduationCap, Hourglass, Mail, ShieldCheck, User, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
@@ -305,7 +305,7 @@ export function FacultyDetailsModal({
                         </span>
                       ) : status === "uploaded" ? (
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
-                          <AppIcon icon={Clock} size="xs" color="inherit" />
+                          <AppIcon icon={Hourglass} size="xs" color="inherit" />
                           Uploaded
                         </span>
                       ) : (

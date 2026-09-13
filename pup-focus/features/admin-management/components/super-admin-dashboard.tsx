@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
-import { Activity, CheckCircle, Clock, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
+import { Activity, CheckCircle, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";

@@ -8,8 +8,9 @@ import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
-import { CheckCircle, Clock, Group, Menu, NavArrowRight, Refresh, Xmark } from "iconoir-react";
+import { CheckCircle, Group, Hourglass, Menu, NavArrowRight, Refresh, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import {
@@ -750,7 +751,7 @@ export function AdminFacultyDashboard({
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Submissions Verified</span>
-                          <CheckCircle className="h-5 w-5 text-emerald-500" strokeWidth={2} />
+                          <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -764,7 +765,7 @@ export function AdminFacultyDashboard({
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Pending Verification</span>
-                          <Clock className="h-5 w-5 text-amber-500" strokeWidth={2} />
+                          <Hourglass className="h-5 w-5 text-slate-400" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
@@ -783,7 +784,7 @@ export function AdminFacultyDashboard({
                       <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Active Faculty</span>
-                          <Group className="h-5 w-5 text-blue-500" strokeWidth={2} />
+                          <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -893,19 +894,16 @@ export function AdminFacultyDashboard({
                             </div>
                           ) : (
                             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                              {recentActivity.slice(0, 5).map((act) => (
+                              {recentActivity.slice(0, 3).map((act) => (
                                 <div key={act.id} className="py-3 space-y-1">
                                   <div className="flex items-center justify-between gap-2">
                                     <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
                                       {act.facultyName}
                                     </span>
-                                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                                      act.decision === "validated"
-                                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30"
-                                    }`}>
-                                      {act.decision === "validated" ? "Validated" : "Revision Requested"}
-                                    </span>
+                                    <SubmissionStatusBadge
+                                      status={act.decision === "validated" ? "Validated" : "Revision Requested"}
+                                      size="sm"
+                                    />
                                   </div>
                                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                                     {act.requirementTitle}

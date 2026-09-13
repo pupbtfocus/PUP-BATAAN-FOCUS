@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChatBubble, Clock, ClockRotateRight, Download, Page, ShieldCheck, SystemRestart, WarningCircle, Xmark } from "iconoir-react";
+import { ChatBubble, ClockRotateRight, Download, Hourglass, Page, ShieldCheck, SystemRestart, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { Button } from "@/components/ui/button";
@@ -390,7 +390,7 @@ export function VersionHistoryModal({
 
                           {/* Timestamp */}
                           <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                            <AppIcon icon={Clock} size="sm" color="muted" />
+                            <AppIcon icon={Hourglass} size="sm" color="muted" />
                             <span>{formatTimestamp(createdAt)}</span>
                           </div>
                         </div>

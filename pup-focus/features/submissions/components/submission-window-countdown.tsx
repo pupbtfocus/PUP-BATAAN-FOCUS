@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Calendar, Clock, Lock, LockSlash, Timer, WarningTriangle } from "iconoir-react";
+import { Calendar, Hourglass, Lock, LockSlash, Timer, WarningTriangle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 type SubmissionWindowState = {
   isConfigured: boolean;
@@ -211,7 +211,7 @@ export function SubmissionWindowCountdown({
     },
     Upcoming: {
       label: "Opening Soon",
-      icon: <AppIcon icon={Clock} size="xs" color="inherit" />,
+      icon: <AppIcon icon={Hourglass} size="xs" color="inherit" />,
       dotClass: "bg-amber-500",
       borderClass: "border-amber-200/80 dark:border-amber-800/60",
       bgClass: "bg-amber-50/70 text-amber-900 dark:bg-amber-950/40 dark:text-amber-300",

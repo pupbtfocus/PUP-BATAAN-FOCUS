@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle, Clock, WarningCircle } from "iconoir-react";
+import { CheckCircle, Hourglass, WarningCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { cn } from "@/utils/cn";
 
@@ -8,6 +8,7 @@ export type NormalizedSubmissionStatus =
   | "Approved"
   | "Rejected"
   | "Needs Revision"
+  | "Revision Requested"
   | "Revision Under Review"
   | "Pending"
   | "Pending Review"
@@ -15,6 +16,7 @@ export type NormalizedSubmissionStatus =
 
 interface SubmissionStatusBadgeProps {
   status?: string | null;
+  label?: string;
   size?: "sm" | "md" | "lg";
   className?: string;
   showDot?: boolean;
@@ -23,11 +25,12 @@ interface SubmissionStatusBadgeProps {
 
 export function getNormalizedStatus(
   status?: string | null,
-): "Validated" | "Needs Revision" | "Revision Under Review" | "Pending Review" | "Not Submitted" {
+): "Validated" | "Needs Revision" | "Revision Requested" | "Revision Under Review" | "Pending Review" | "Not Submitted" {
   if (!status) return "Not Submitted";
   const s = status.toLowerCase().trim();
 
   if (s === "validated" || s === "approved") return "Validated";
+  if (s === "revision requested" || s === "revision_requested") return "Revision Requested";
   if (s === "rejected" || s === "needs revision" || s === "needs_revision")
     return "Needs Revision";
   if (
@@ -52,6 +55,7 @@ export function getNormalizedStatus(
 
 export function SubmissionStatusBadge({
   status,
+  label,
   size = "md",
   className,
   showDot = true,
@@ -74,19 +78,26 @@ export function SubmissionStatusBadge({
       dotClass: "bg-rose-300",
       icon: <AppIcon icon={WarningCircle} color="white" className="shrink-0" />,
     },
+    "Revision Requested": {
+      label: "Revision Requested",
+      containerClass:
+        "bg-[#780000] text-white border border-[#5e0000]",
+      dotClass: "bg-rose-300",
+      icon: <AppIcon icon={WarningCircle} color="white" className="shrink-0" />,
+    },
     "Revision Under Review": {
       label: "Revision Under Review",
       containerClass:
         "bg-amber-500 text-slate-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-slate-950 dark:border-amber-400",
       dotClass: "bg-slate-950",
-      icon: <AppIcon icon={Clock} color="inherit" className="shrink-0 text-slate-950" strokeWidth={2.2} />,
+      icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-slate-950" strokeWidth={2.2} />,
     },
     "Pending Review": {
       label: "Pending Review",
       containerClass:
         "bg-white text-amber-700 border border-slate-200/90 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800",
       dotClass: "bg-amber-500 dark:bg-amber-400",
-      icon: <AppIcon icon={Clock} color="active" className="shrink-0" />,
+      icon: <AppIcon icon={Hourglass} color="active" className="shrink-0" />,
     },
     "Not Submitted": {
       label: "Not Submitted",
@@ -106,7 +117,7 @@ export function SubmissionStatusBadge({
   return (
     <span
       role="status"
-      aria-label={`Status: ${config.label}`}
+      aria-label={`Status: ${label || config.label}`}
       className={cn(
         "inline-flex items-center rounded-full border font-semibold tracking-wide transition-colors whitespace-nowrap shadow-2xs",
         config.containerClass,
@@ -121,7 +132,7 @@ export function SubmissionStatusBadge({
         />
       )}
       {showIcon && config.icon}
-      <span>{config.label}</span>
+      <span>{label || config.label}</span>
     </span>
   );
 }

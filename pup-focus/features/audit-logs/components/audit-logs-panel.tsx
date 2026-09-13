@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle, Clock, EditPencil, Eye, Filter, NavArrowLeft, NavArrowRight, Page, Refresh, Search, Settings, ShieldAlert, Trash, Upload, UserBadgeCheck, UserPlus, UserXmark, Xmark, XmarkCircle } from "iconoir-react";
+import { CheckCircle, EditPencil, Eye, Filter, Hourglass, NavArrowLeft, NavArrowRight, Page, Refresh, Search, Settings, ShieldAlert, Trash, Upload, UserBadgeCheck, UserPlus, UserXmark, Xmark, XmarkCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -426,7 +426,7 @@ export function AuditLogsPanel() {
                 >
                   {/* Timestamp */}
                   <div className="flex items-center gap-2 lg:gap-0">
-                    <AppIcon icon={Clock} size="sm" color="muted" />
+                    <AppIcon icon={Hourglass} size="sm" color="muted" />
                     <p className="text-xs text-slate-700 dark:text-slate-300 font-mono">
                       {formatTimestamp(entry.createdAt)}
                     </p>

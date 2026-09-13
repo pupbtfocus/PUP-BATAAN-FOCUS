@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check, CheckCircle, Clock, Download, Eye, Notes, Page, WarningCircle } from "iconoir-react";
+import { Check, CheckCircle, Download, Eye, Notes, Page, WarningCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { SubmissionStatusBadge } from "./submission-status-badge";

@@ -4,10 +4,10 @@ import React, { useState } from "react";
 import {
   Check,
   CheckCircle,
-  Clock,
   Copy,
   Eye,
   EyeClosed,
+  Hourglass,
   Key,
   Mail,
   NavArrowRight,
@@ -912,7 +912,7 @@ export function DevPreviewPanel() {
                 onClick={handleTriggerSystemLoading}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 transition cursor-pointer"
               >
-                <AppIcon icon={Clock} size="sm" color="active" />
+                <AppIcon icon={Hourglass} size="sm" color="active" />
                 <span>Preview System Loading Screen</span>
               </button>
             </div>
@@ -1250,7 +1250,7 @@ export function DevPreviewPanel() {
                 onClick={handleTriggerSystemLoading}
                 className="px-4 py-2 rounded-xl border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-800 dark:text-amber-300 font-semibold text-xs transition cursor-pointer flex items-center gap-1.5"
               >
-                <AppIcon icon={Clock} size="md" color="active" />
+                <AppIcon icon={Hourglass} size="md" color="active" />
                 <span>Preview System Loading Screen</span>
               </button>
             </div>
@@ -1275,7 +1275,7 @@ export function DevPreviewPanel() {
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                  <AppIcon icon={Clock} size="lg" color="inherit" />
+                  <AppIcon icon={Hourglass} size="lg" color="inherit" />
                   <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                     Extension Audit Logs
                   </h4>
@@ -1462,7 +1462,7 @@ export function DevPreviewPanel() {
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <AppIcon icon={Clock} size="lg" color="active" />
+                  <AppIcon icon={Hourglass} size="lg" color="active" />
                   <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                     System Loading Screen
                   </h4>
@@ -1551,7 +1551,7 @@ export function DevPreviewPanel() {
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
-                  <AppIcon icon={Clock} size="md" color="default" />
+                  <AppIcon icon={Hourglass} size="md" color="default" />
                 </div>
                 <h3 className="text-base font-bold">Extension Audit Logs</h3>
               </div>

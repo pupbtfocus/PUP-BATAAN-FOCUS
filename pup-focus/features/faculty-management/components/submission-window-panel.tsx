@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Calendar, CheckCircle, Clock, ClockRotateRight, EditPencil, FloppyDisk, NavArrowRight, ShieldAlert, SystemRestart, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Calendar, CheckCircle, ClockRotateRight, EditPencil, FloppyDisk, Hourglass, NavArrowRight, ShieldAlert, SystemRestart, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { Button } from "@/components/ui/button";
@@ -629,7 +629,7 @@ export function SubmissionWindowPanel({
 
         {/* Real-Time Countdown Timer Display */}
         <div className="flex items-center gap-2.5 bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 px-3 py-1.5 rounded-lg shadow-xs">
-          <AppIcon icon={Clock} size="md" color="default" />
+          <AppIcon icon={Hourglass} size="md" color="default" />
           <div className="text-right">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               {isWindowOpen ? "Time Remaining" : isUpcoming ? "Opens In" : "Status"}
@@ -658,7 +658,7 @@ export function SubmissionWindowPanel({
         <div className="rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/30 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0">
-              <AppIcon icon={Clock} size="lg" color="inherit" />
+              <AppIcon icon={Hourglass} size="lg" color="inherit" />
             </div>
             <div>
               <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
@@ -730,7 +730,7 @@ export function SubmissionWindowPanel({
                     onClick={() => setOpenDateTime(toDateTimeLocal(new Date()))}
                     className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
                   >
-                    <AppIcon icon={Clock} size="sm" color="default" />
+                    <AppIcon icon={Hourglass} size="sm" color="default" />
                     <span>Set to Now / Today</span>
                   </button>
                 </div>
@@ -847,7 +847,7 @@ export function SubmissionWindowPanel({
               }}
               className="relative flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer shadow-2xs"
             >
-              <AppIcon icon={Clock} size="sm" color="active" />
+              <AppIcon icon={Hourglass} size="sm" color="active" />
               <span>Extension Requests</span>
               {pendingRequestsCount > 0 ? (
                 <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 animate-pulse">
@@ -940,7 +940,7 @@ export function SubmissionWindowPanel({
                   disabled={isLoading || isSaving}
                   className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 text-sm rounded-lg transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                 >
-                  <AppIcon icon={Clock} size="sm" color="inherit" className="text-slate-950" />
+                  <AppIcon icon={Hourglass} size="sm" color="inherit" className="text-slate-950" />
                   <span>Extend Window</span>
                 </button>
               </>
@@ -977,7 +977,7 @@ export function SubmissionWindowPanel({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-900 dark:text-slate-100">
             <ModalHeader
-              icon={Clock}
+              icon={Hourglass}
               title="Faculty Extension Requests"
               subtitle="Review and approve faculty deadline extension requests"
               onClose={() => setShowRequestsModal(false)}
