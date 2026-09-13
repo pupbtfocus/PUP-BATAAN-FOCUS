@@ -62,7 +62,7 @@ export function LoginForm({
     <>
       <style>{`
         .pup-login-input {
-          background-color: #2b0000 !important;
+          background-color: #360000 !important;
           color: #fff7ed !important;
           -webkit-text-fill-color: #fff7ed !important;
           caret-color: #f59e0b !important;
@@ -71,8 +71,8 @@ export function LoginForm({
 
         .pup-login-input::placeholder,
         .pup-login-input::-webkit-input-placeholder {
-          color: rgba(253, 230, 138, 0.4) !important;
-          -webkit-text-fill-color: rgba(253, 230, 138, 0.4) !important;
+          color: rgba(253, 230, 138, 0.45) !important;
+          -webkit-text-fill-color: rgba(253, 230, 138, 0.45) !important;
           opacity: 1 !important;
         }
 
@@ -103,12 +103,12 @@ export function LoginForm({
         .dark .pup-login-input:autofill:hover,
         .dark .pup-login-input:autofill:focus,
         .dark .pup-login-input:autofill:active {
-          -webkit-box-shadow: 0 0 0 1000px #2b0000 inset !important;
-          box-shadow: 0 0 0 1000px #2b0000 inset !important;
+          -webkit-box-shadow: 0 0 0 1000px #360000 inset !important;
+          box-shadow: 0 0 0 1000px #360000 inset !important;
           -webkit-text-fill-color: #fff7ed !important;
           caret-color: #f59e0b !important;
           color: #fff7ed !important;
-          background-color: #2b0000 !important;
+          background-color: #360000 !important;
           transition: background-color 999999s ease-in-out 0s !important;
         }
 
@@ -122,8 +122,8 @@ export function LoginForm({
         .pup-login-input:-moz-autofill:focus,
         .dark .pup-login-input:-moz-autofill,
         .dark .pup-login-input:-moz-autofill:focus {
-          box-shadow: 0 0 0 1000px #2b0000 inset !important;
-          background-color: #2b0000 !important;
+          box-shadow: 0 0 0 1000px #360000 inset !important;
+          background-color: #360000 !important;
           color: #fff7ed !important;
           -webkit-text-fill-color: #fff7ed !important;
         }
@@ -142,9 +142,9 @@ export function LoginForm({
           <div
             className={`rounded-xl p-3.5 text-xs flex items-start gap-2.5 border transition-all ${
               notice.type === "timeout"
-                ? "bg-amber-500/15 border-amber-400/30 text-amber-200"
+                ? "bg-amber-500/15 border-amber-500/30 text-amber-200"
                 : notice.type === "success"
-                ? "bg-emerald-500/15 border-emerald-400/30 text-emerald-200"
+                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-200"
                 : "bg-rose-500/15 border-rose-500/30 text-rose-200"
             }`}
           >
@@ -166,7 +166,7 @@ export function LoginForm({
 
         <div className="space-y-1.5">
           <label
-            className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/75"
+            className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/85"
             htmlFor="email"
           >
             Email Address
@@ -176,7 +176,7 @@ export function LoginForm({
               icon={Mail}
               size="md"
               color="inherit"
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 !text-amber-400/80"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 !text-amber-400/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
             />
             <input
               id="email"
@@ -187,14 +187,14 @@ export function LoginForm({
               onChange={(event) => setEmail(event.target.value)}
               required
               placeholder="faculty@pup.edu.ph"
-              className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-10 pr-4 py-3.5 text-sm !text-amber-50 shadow-inner outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/60 focus:!border-amber-400 focus:!ring-2 focus:!ring-amber-400/40"
+              className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#360000] pl-10 pr-4 py-3.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
           <label
-            className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/75"
+            className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/85"
             htmlFor="password"
           >
             Password
@@ -204,7 +204,7 @@ export function LoginForm({
               icon={Lock}
               size="md"
               color="inherit"
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 !text-amber-400/80"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 !text-amber-400/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
             />
             <input
               id="password"
@@ -230,7 +230,7 @@ export function LoginForm({
               onBlur={() => setIsCapsLockOn(false)}
               required
               placeholder="Your password"
-              className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-10 pr-12 py-3.5 text-sm !text-amber-50 shadow-inner outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/60 focus:!border-amber-400 focus:!ring-2 focus:!ring-amber-400/40"
+              className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#360000] pl-10 pr-12 py-3.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
             />
 
             <button
@@ -269,12 +269,12 @@ export function LoginForm({
               <div
                 className={`w-4 h-4 rounded border transition-all flex items-center justify-center shadow-xs ${
                   activeRememberMe
-                    ? "bg-amber-500 border-amber-400"
-                    : "bg-[#2b0000] border-amber-500/50 group-hover:border-amber-400"
+                    ? "bg-amber-500 border-amber-400 shadow-xs"
+                    : "bg-[#360000] border-amber-500/50 group-hover:border-amber-400 shadow-inner"
                 }`}
               >
                 {activeRememberMe && (
-                  <AppIcon icon={Check} size="xs" color="inherit" className="text-[#2b0000] stroke-[3.5] transition-transform duration-150 scale-100" />
+                  <AppIcon icon={Check} size="xs" color="inherit" className="text-[#360000] stroke-[3.5] transition-transform duration-150 scale-100" />
                 )}
               </div>
             </div>
@@ -292,7 +292,7 @@ export function LoginForm({
         </div>
 
         <Button
-          className="mt-6 h-13 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-black text-[#3d0000] tracking-widest uppercase text-sm sm:text-base transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-lg"
+          className="mt-6 h-12 sm:h-13 w-full rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-500 font-black text-[#3d0000] tracking-widest uppercase text-sm sm:text-base transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-[0.98] cursor-pointer shadow-lg shadow-black/50 hover:shadow-black/60 border border-amber-300/30 flex items-center justify-center gap-2"
           type="submit"
           disabled={isLoading}
         >
