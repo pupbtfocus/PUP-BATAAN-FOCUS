@@ -44,7 +44,7 @@ import {
   DashboardMetricsSkeleton,
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
-import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, Eye, Hourglass, Menu, NavArrowRight, OpenNewWindow, Page, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, Eye, Hourglass, Lock, Menu, NavArrowRight, OpenNewWindow, Page, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { LogoutButton } from "@/components/shared/logout-button";
@@ -1204,9 +1204,13 @@ function FacultySubmissionPanelContent({
   const validatedCount = displayedStatusCounts?.validated ?? 0;
   const isAllValidated =
     totalRequirements > 0 && validatedCount === totalRequirements;
+  const isWindowConfigured = Boolean(submissionWindow?.isConfigured);
   const isSubmissionAvailable =
     !isLoadingSubmissionWindow && Boolean(submissionWindow?.isOpen);
-  const isWindowClosed = !isSubmissionAvailable;
+  // Only considered closed if a schedule was actually configured in the database
+  const isWindowClosed = isWindowConfigured && !isSubmissionAvailable;
+  // True when admin has not configured any schedule (e.g. schedules deleted from database)
+  const isWindowNotConfigured = !isLoadingSubmissionWindow && !isWindowConfigured;
   const hasLackings = !isAllValidated && totalRequirements > 0;
   const lackingRequirements = useMemo(() => {
     return displayedRequirementStatuses
@@ -1271,6 +1275,7 @@ function FacultySubmissionPanelContent({
   ]);
 
   function openExtensionRequestModal(code?: RequirementCode) {
+    if (!isWindowConfigured) return;
     setSelectedExtensionReqCode(code || null);
     setIsExtensionModalOpen(true);
   }
@@ -2061,7 +2066,7 @@ function FacultySubmissionPanelContent({
                       <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                         Window Status
                       </span>
-                      {hasActiveSchedule && !isWindowClosed ? (
+                      {isWindowNotConfigured || (hasActiveSchedule && !isWindowClosed) ? (
                         <Calendar className="h-5 w-5 text-slate-400" strokeWidth={2} />
                       ) : (
                         <Hourglass className="h-5 w-5 text-slate-400" strokeWidth={2} />
@@ -2071,8 +2076,8 @@ function FacultySubmissionPanelContent({
                       <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {isAllValidated
                           ? "Done All for This Sem"
-                          : !hasActiveSchedule
-                            ? "No Active Window"
+                          : isWindowNotConfigured
+                            ? "Schedule Not Set"
                             : isWindowClosed
                               ? "Window Closed"
                               : "Submission Open"}
@@ -2082,15 +2087,17 @@ function FacultySubmissionPanelContent({
                           ? "All requirements completed for this term"
                           : windowDeadlineDisplay
                             ? `Deadline: ${windowDeadlineDisplay}`
-                            : "Schedule not configured"}
+                            : "Awaiting admin schedule"}
                       </p>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       {isAllValidated
                         ? "Requirements locked in validated status"
-                        : hasActiveSchedule && !isWindowClosed
+                        : isSubmissionAvailable
                           ? "Uploads and resubmissions are currently enabled"
-                          : "Document submissions are currently locked"}
+                          : isWindowNotConfigured
+                            ? "Submissions will unlock when scheduled"
+                            : "Document submissions are currently locked"}
                     </p>
                   </div>
                   {/* Card 3: Action Required */}
@@ -2213,7 +2220,17 @@ function FacultySubmissionPanelContent({
                                       )}
                                     </div>
                                     <div className="shrink-0 flex items-center gap-1.5">
-                                      {isWindowClosed ? (
+                                      {isWindowNotConfigured ? (
+                                        <button
+                                          type="button"
+                                          disabled
+                                          className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium px-3 py-1.5 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                          title="Submissions will open once the administration announces the submission schedule."
+                                        >
+                                          <AppIcon icon={Calendar} size="sm" color="inherit" />
+                                          <span>Awaiting Schedule</span>
+                                        </button>
+                                      ) : isWindowClosed ? (
                                         hasPendingExtensionRequest ? (
                                           <button
                                             type="button"
@@ -2582,7 +2599,11 @@ function FacultySubmissionPanelContent({
                     </div>
                     <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 font-normal">
                       A.Y. {activeAY} • {activeSem}
-                      {!hasActiveSchedule && !isAllValidated ? (
+                      {isWindowNotConfigured && !isAllValidated ? (
+                        <span className="ml-2 text-slate-500 dark:text-slate-400 font-medium">
+                          • (Awaiting Schedule)
+                        </span>
+                      ) : isWindowClosed && !isAllValidated ? (
                         <span className="ml-2 text-slate-500 dark:text-slate-400 font-medium">
                           • (Submission Window Closed)
                         </span>
@@ -2674,9 +2695,34 @@ function FacultySubmissionPanelContent({
                   </div>
                 )}
 
-                {/* Closed Window Banner with Request Extension Button */}
-                {(!hasActiveSchedule || isWindowClosed) && !isAllValidated && (
-                  <div className="p-3 sm:p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
+                {/* 1. Schedule Not Set Banner (No Schedule Configured in Database) */}
+                {isWindowNotConfigured && !isAllValidated && (
+                  <div className="p-3 sm:p-4 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
+                    <div className="flex items-start sm:items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
+                        <AppIcon icon={Calendar} size="md" color="inherit" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-200 mr-1.5">
+                          Submission Schedule Not Set:
+                        </span>
+                        <span className="text-slate-600 dark:text-slate-400">
+                          There is currently no active academic schedule set for document submissions. Uploads will unlock once the administrator announces the submission schedule.
+                        </span>
+                      </div>
+                    </div>
+                    <div className="shrink-0 flex items-center">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 text-xs font-semibold">
+                        <AppIcon icon={Lock} size="xs" color="inherit" />
+                        <span>Awaiting Schedule</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Closed Window Banner with Request Extension Button (Schedule was set and has now expired) */}
+                {isWindowClosed && !isAllValidated && (
+                  <div className="p-3 sm:p-4 rounded-xl border border-amber-300 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
                     <div className="flex items-start sm:items-center gap-2.5">
                       <div className="p-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
                         <AppIcon icon={Hourglass} size="md" color="inherit" />
@@ -2686,9 +2732,7 @@ function FacultySubmissionPanelContent({
                           <span className="font-bold text-amber-900 dark:text-amber-300 mr-1.5">
                             Submission Window Closed:
                           </span>
-                          {!hasActiveSchedule
-                            ? "There is currently no active academic schedule set for document submissions. Document uploads are locked."
-                            : "Submission Window is currently closed. Document uploads are locked for this term."}
+                          Submission Window is currently closed. Document uploads are locked for this term.
                         </div>
                         {hasPendingExtensionRequest && (
                           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -2830,7 +2874,17 @@ function FacultySubmissionPanelContent({
                             <div className="flex items-center gap-1.5">
                               {/* Submit Button for Not Submitted */}
                               {req.status === "Not Submitted" && (
-                                isWindowClosed ? (
+                                isWindowNotConfigured ? (
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium px-3.5 py-1.5 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                    title="Submissions will open once the administration announces the submission schedule."
+                                  >
+                                    <AppIcon icon={Calendar} size="sm" color="inherit" />
+                                    <span>Awaiting Schedule</span>
+                                  </button>
+                                ) : isWindowClosed ? (
                                   hasPendingExtensionRequest ? (
                                     <button
                                       type="button"
@@ -2864,7 +2918,17 @@ function FacultySubmissionPanelContent({
                               )}
                               {/* Resubmit Button for Rejected */}
                               {req.status === "Rejected" && (
-                                isWindowClosed ? (
+                                isWindowNotConfigured ? (
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium px-3.5 py-1.5 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                    title="Submissions will open once the administration announces the submission schedule."
+                                  >
+                                    <AppIcon icon={Calendar} size="sm" color="inherit" />
+                                    <span>Awaiting Schedule</span>
+                                  </button>
+                                ) : isWindowClosed ? (
                                   hasPendingExtensionRequest ? (
                                     <button
                                       type="button"
