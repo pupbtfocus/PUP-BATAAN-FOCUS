@@ -192,9 +192,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (
-      !DEFAULT_REQUIREMENTS.includes(payload.requirementCode as RequirementCode)
-    ) {
+    // Validate requirement code against database templates or defaults
+    const { data: matchedTpl } = await supabaseAdmin
+      .from("requirement_templates")
+      .select("id, code, is_active")
+      .eq("code", payload.requirementCode)
+      .maybeSingle();
+
+    if (matchedTpl) {
+      if (!matchedTpl.is_active) {
+        return NextResponse.json(
+          { error: "This requirement is currently inactive or hidden from submissions." },
+          { status: 400 },
+        );
+      }
+    } else if (!DEFAULT_REQUIREMENTS.includes(payload.requirementCode as RequirementCode)) {
       return NextResponse.json(
         { error: "Invalid requirement code" },
         { status: 400 },

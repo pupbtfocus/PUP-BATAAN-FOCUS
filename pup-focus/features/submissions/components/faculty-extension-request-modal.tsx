@@ -20,7 +20,7 @@ import {
 import { SubmissionStatusBadge } from "./submission-status-badge";
 
 export interface LackingRequirementItem {
-  code: RequirementCode;
+  code: RequirementCode | string;
   status: "Not Submitted" | "Rejected" | "Pending";
   label?: string;
   adminRemarks?: string | null;
@@ -33,7 +33,7 @@ export interface FacultyExtensionRequestModalProps {
   academicYear: string;
   semester: string;
   lackings: LackingRequirementItem[];
-  preSelectedCode?: RequirementCode | null;
+  preSelectedCode?: RequirementCode | string | null;
 }
 
 type ExtensionPreset = "+24 Hours" | "+48 Hours" | "+3 Days" | "+1 Week" | "Custom";
@@ -47,7 +47,7 @@ export function FacultyExtensionRequestModal({
   lackings,
   preSelectedCode,
 }: FacultyExtensionRequestModalProps) {
-  const [selectedCodes, setSelectedCodes] = useState<RequirementCode[]>([]);
+  const [selectedCodes, setSelectedCodes] = useState<(RequirementCode | string)[]>([]);
   const [preset, setPreset] = useState<ExtensionPreset>("+3 Days");
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("17:00");
@@ -80,7 +80,7 @@ export function FacultyExtensionRequestModal({
 
   if (!isOpen) return null;
 
-  function toggleCodeSelection(code: RequirementCode) {
+  function toggleCodeSelection(code: RequirementCode | string) {
     setSelectedCodes((prev) =>
       prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
     );
@@ -221,7 +221,10 @@ export function FacultyExtensionRequestModal({
                   <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto pr-1">
                     {lackings.map((item) => {
                       const isSelected = selectedCodes.includes(item.code);
-                      const label = REQUIREMENT_LABEL[item.code] || item.code;
+                      const label =
+                        item.label ||
+                        (REQUIREMENT_LABEL as Record<string, string>)[item.code] ||
+                        item.code;
                       return (
                         <div
                           key={item.code}

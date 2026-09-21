@@ -541,9 +541,9 @@ export async function GET(request: NextRequest) {
 
     // 6. Map requirement statuses safely, strictly scoped to active term
     const statusMap = new Map<string, RequirementStatus>();
-    for (const code of DEFAULT_REQUIREMENTS) {
-      statusMap.set(code, {
-        code,
+    for (const tpl of activeTemplateRows) {
+      statusMap.set(tpl.code, {
+        code: tpl.code,
         status: "Not Submitted",
       });
     }

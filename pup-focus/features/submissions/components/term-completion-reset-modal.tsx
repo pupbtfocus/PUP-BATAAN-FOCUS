@@ -21,7 +21,8 @@ import {
 } from "@/config/compliance";
 
 export interface ValidatedRequirementItem {
-  code: RequirementCode;
+  code: RequirementCode | string;
+  title?: string | null;
   submittedAt?: string | null;
   reviewedAt?: string | null;
 }
@@ -88,7 +89,7 @@ export function TermCompletionResetModal({
               </span>
             </div>
             <p className="text-xs text-slate-700 dark:text-slate-300">
-              All 6 required faculty documents for this semester have been validated by
+              All compliance requirements for this semester have been validated by
               the administration. As long as the school year or term is not changed, all your validated documents remain active and visible in Requirements Management.
             </p>
           </div>
@@ -96,11 +97,19 @@ export function TermCompletionResetModal({
           {/* Validated Requirements List */}
           <div>
             <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
-              Verified Compliance Checklist (6/6):
+              Verified Compliance Checklist ({requirements?.length || DEFAULT_REQUIREMENTS.length}/{requirements?.length || DEFAULT_REQUIREMENTS.length}):
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
-              {DEFAULT_REQUIREMENTS.map((code) => {
-                const label = REQUIREMENT_LABEL[code];
+              {(requirements && requirements.length > 0
+                ? requirements.map((r) => ({
+                    code: r.code,
+                    label: r.title || (REQUIREMENT_LABEL as Record<string, string>)[r.code] || r.code,
+                  }))
+                : DEFAULT_REQUIREMENTS.map((code) => ({
+                    code,
+                    label: REQUIREMENT_LABEL[code],
+                  }))
+              ).map(({ code, label }) => {
                 return (
                   <div
                     key={code}

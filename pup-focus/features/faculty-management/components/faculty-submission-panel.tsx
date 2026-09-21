@@ -29,7 +29,10 @@ import {
   getTodayInManila,
   buildAcademicYearOptions,
 } from "@/features/submissions/services/submission-window.service";
-import type { FacultyInitialData } from "@/features/submissions/services/faculty-data.service";
+import type {
+  FacultyInitialData,
+  RequirementTemplateData,
+} from "@/features/submissions/services/faculty-data.service";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import { DocumentUploadZone } from "@/features/submissions/components/document-upload-zone";
 import JSZip from "jszip";
@@ -159,7 +162,7 @@ export const getFileBrand = (
   };
 };
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
-const REQUIREMENT_DESCRIPTIONS: Record<RequirementCode, string> = {
+const REQUIREMENT_DESCRIPTIONS: Record<string, string> = {
   grade_sheet: "Official signed grade sheets for assigned course sections.",
   enhanced_syllabus:
     "Course syllabus adhering to outcome-based education standards.",
@@ -184,7 +187,7 @@ const LOGIN_PAGE_IMAGES = [
 export type PanelView = (typeof PANEL_VIEWS)[number];
 type HistorySubmissionStatus = "Pending" | "Validated" | "Rejected";
 type RequirementStatus = {
-  code: RequirementCode;
+  code: RequirementCode | string;
   status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
   reviewedAt?: string;
   feedback?: string;
@@ -203,7 +206,7 @@ type RequirementStatus = {
   hasPriorRevision?: boolean;
 };
 type SubmissionPreview = {
-  code: RequirementCode;
+  code: RequirementCode | string;
   title: string;
   fileName?: string;
   storagePath?: string;
@@ -221,7 +224,7 @@ type PastSubmission = {
   id: string;
   academicYear: string;
   semester: (typeof SEMESTER_OPTIONS)[number];
-  requirementCode: RequirementCode;
+  requirementCode: RequirementCode | string;
   status: HistorySubmissionStatus;
   submittedAt: string;
   updatedAt?: string;
@@ -244,7 +247,7 @@ type PastSubmission = {
 type SubmissionFormState = {
   academicYear: string;
   semester: (typeof SEMESTER_OPTIONS)[number];
-  requirementCode: RequirementCode;
+  requirementCode: RequirementCode | string;
   fileName: string;
   remarks: string;
 };
@@ -538,7 +541,9 @@ function FacultySubmissionPanelContent({
     semester:
       (initialData?.semester as (typeof SEMESTER_OPTIONS)[number]) ||
       "1st Semester",
-    requirementCode: REQUIREMENT_CODE.MIDTERM_PACKAGE as RequirementCode,
+    requirementCode:
+      initialData?.requirementTemplates?.[0]?.code ||
+      REQUIREMENT_CODE.GRADE_SHEET,
     fileName: "",
     remarks: "",
   });
@@ -562,6 +567,9 @@ function FacultySubmissionPanelContent({
   const [requirementStatuses, setRequirementStatuses] = useState<
     RequirementStatus[]
   >(() => (initialData?.requirementStatuses as RequirementStatus[]) || []);
+  const [requirementTemplates, setRequirementTemplates] = useState<
+    RequirementTemplateData[]
+  >(() => (initialData?.requirementTemplates as RequirementTemplateData[]) || []);
   const [previewSubmission, setPreviewSubmission] =
     useState<SubmissionPreview | null>(null);
   const [viewedSubmissionIds, setViewedSubmissionIds] = useState<Set<string>>(
@@ -629,7 +637,7 @@ function FacultySubmissionPanelContent({
   const [selectedSemester, setSelectedSemester] =
     useState<(typeof SEMESTER_OPTIONS)[number]>("1st Semester");
   const [selectedRequirementForUpload, setSelectedRequirementForUpload] =
-    useState<RequirementCode | null>(null);
+    useState<RequirementCode | string | null>(null);
   const [isRevisionUpload, setIsRevisionUpload] = useState(false);
   const [directUploadFile, setDirectUploadFile] = useState<File | null>(null);
   const [directUploadRemarks, setDirectUploadRemarks] = useState("");
@@ -651,7 +659,7 @@ function FacultySubmissionPanelContent({
   // ─── Extension Request & Term Completion Reset States ─────────────
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
   const [selectedExtensionReqCode, setSelectedExtensionReqCode] =
-    useState<RequirementCode | null>(null);
+    useState<RequirementCode | string | null>(null);
   const [isTermCompletionModalOpen, setIsTermCompletionModalOpen] =
     useState(false);
   const [isTermResetAcknowledged, setIsTermResetAcknowledged] = useState(false);
@@ -836,6 +844,9 @@ function FacultySubmissionPanelContent({
         const data = await response.json();
         const statuses: RequirementStatus[] = data.requirementStatuses || [];
         setRequirementStatuses(statuses);
+        if (Array.isArray(data.requirementTemplates) && data.requirementTemplates.length > 0) {
+          setRequirementTemplates(data.requirementTemplates);
+        }
         setStatusCounts(data.counts || null);
         if (data.academicYear) setStatusAcademicYear(data.academicYear);
         if (data.semester) setStatusSemester(data.semester);
@@ -1099,10 +1110,44 @@ function FacultySubmissionPanelContent({
     form.semester,
   ]);
 
+  const activeTemplates = useMemo<RequirementTemplateData[]>(() => {
+    if (requirementTemplates && requirementTemplates.length > 0) {
+      return requirementTemplates;
+    }
+    return DEFAULT_REQUIREMENTS.map((code) => ({
+      code,
+      title: REQUIREMENT_LABEL[code] || code,
+      is_mandatory: true,
+      max_size_mb: 10,
+      allowed_formats: ["PDF", "DOCX", "XLSX"],
+    }));
+  }, [requirementTemplates]);
+
+  const templateTitleMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of activeTemplates) {
+      map.set(t.code, t.title);
+    }
+    return map;
+  }, [activeTemplates]);
+
+  const getRequirementTitle = useCallback(
+    (code: string) => {
+      return (
+        templateTitleMap.get(code) ||
+        (REQUIREMENT_LABEL as Record<string, string>)[code] ||
+        code
+      );
+    },
+    [templateTitleMap],
+  );
+
   const displayedRequirementStatuses = useMemo<RequirementStatus[]>(() => {
     const normActiveAY = normalizeAcademicYear(activeAY);
     const normActiveSem = normalizeSemester(activeSem);
-    return DEFAULT_REQUIREMENTS.map((code) => {
+    const activeCodes = activeTemplates.map((t) => t.code);
+
+    return activeCodes.map((code) => {
       const live = requirementStatuses.find((r) => r.code === code);
       if (live && live.status !== "Not Submitted") {
         return live;
@@ -1182,9 +1227,10 @@ function FacultySubmissionPanelContent({
     activeSem,
     pastSubmissions,
     requirementStatuses,
+    activeTemplates,
   ]);
   const displayedStatusCounts = useMemo(() => {
-    const total = DEFAULT_REQUIREMENTS.length;
+    const total = activeTemplates.length;
     const validated = displayedRequirementStatuses.filter(
       (r) => r.status === "Validated",
     ).length;
@@ -1198,9 +1244,9 @@ function FacultySubmissionPanelContent({
       (r) => r.status === "Not Submitted",
     ).length;
     return { total, validated, rejected, pending, notSubmitted };
-  }, [displayedRequirementStatuses]);
+  }, [displayedRequirementStatuses, activeTemplates.length]);
   const totalRequirements =
-    displayedStatusCounts?.total ?? DEFAULT_REQUIREMENTS.length;
+    displayedStatusCounts?.total ?? activeTemplates.length;
   const validatedCount = displayedStatusCounts?.validated ?? 0;
   const isAllValidated =
     totalRequirements > 0 && validatedCount === totalRequirements;
@@ -1218,10 +1264,10 @@ function FacultySubmissionPanelContent({
       .map((r) => ({
         code: r.code,
         status: r.status as "Not Submitted" | "Rejected",
-        label: REQUIREMENT_LABEL[r.code],
+        label: getRequirementTitle(r.code),
         adminRemarks: r.adminRemarks || r.admin_remarks || r.feedback,
       }));
-  }, [displayedRequirementStatuses]);
+  }, [displayedRequirementStatuses, getRequirementTitle]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -1274,7 +1320,7 @@ function FacultySubmissionPanelContent({
     hasPromptedTermCompletion,
   ]);
 
-  function openExtensionRequestModal(code?: RequirementCode) {
+  function openExtensionRequestModal(code?: RequirementCode | string) {
     if (!isWindowConfigured) return;
     setSelectedExtensionReqCode(code || null);
     setIsExtensionModalOpen(true);
@@ -1339,7 +1385,7 @@ function FacultySubmissionPanelContent({
     displayedStatusCounts !== null &&
     displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected > 0;
   function openDirectUploadModal(
-    code: RequirementCode,
+    code: RequirementCode | string,
     isRevision: boolean = false,
   ) {
     if (isAllValidated) return;
@@ -1466,10 +1512,10 @@ function FacultySubmissionPanelContent({
   ) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
-  function getRequirementStatus(code: RequirementCode) {
+  function getRequirementStatus(code: RequirementCode | string) {
     return requirementStatuses.find((r) => r.code === code)?.status;
   }
-  function getRequirementStatusItem(code: RequirementCode) {
+  function getRequirementStatusItem(code: RequirementCode | string) {
     return requirementStatuses.find((r) => r.code === code);
   }
   function markSubmissionViewed(submissionId: string) {
@@ -1519,7 +1565,7 @@ function FacultySubmissionPanelContent({
       undefined;
     setPreviewSubmission({
       code: item.code,
-      title: REQUIREMENT_LABEL[item.code],
+      title: getRequirementTitle(item.code),
       fileName,
       storagePath: item.storagePath || undefined,
       submittedAt: item.submittedAt,
@@ -1561,7 +1607,7 @@ function FacultySubmissionPanelContent({
       undefined;
     setPreviewSubmission({
       code: submission.requirementCode,
-      title: REQUIREMENT_LABEL[submission.requirementCode],
+      title: getRequirementTitle(submission.requirementCode),
       fileName,
       storagePath: submission.storagePath || undefined,
       submittedAt: submission.submittedAt,
@@ -1583,8 +1629,8 @@ function FacultySubmissionPanelContent({
           submissionId?: string;
           id?: string;
           latestSubmissionId?: string;
-          requirementCode?: RequirementCode;
-          code?: RequirementCode;
+          requirementCode?: RequirementCode | string;
+          code?: RequirementCode | string;
         },
   ) {
     const code =
@@ -1616,7 +1662,7 @@ function FacultySubmissionPanelContent({
     if (!finalSubmissionId) return;
     setVersionHistorySubmissionId(finalSubmissionId);
     setVersionHistoryLabel(
-      code ? REQUIREMENT_LABEL[code] || code : "Version History",
+      code ? getRequirementTitle(code) : "Version History",
     );
     setVersionHistoryCode(code || "");
   }
@@ -1625,7 +1671,7 @@ function FacultySubmissionPanelContent({
     setVersionHistoryLabel("");
     setVersionHistoryCode("");
   }
-  function startRevision(requirementCode: RequirementCode) {
+  function startRevision(requirementCode: RequirementCode | string) {
     updateField("requirementCode", requirementCode);
     openSubmitModal();
   }
@@ -1688,7 +1734,7 @@ function FacultySubmissionPanelContent({
       }
       const result = await response.json();
       setSubmissionMessage(
-        `Successfully submitted ${REQUIREMENT_LABEL[form.requirementCode]} for S.Y. ${form.academicYear} ${form.semester}. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
+        `Successfully submitted ${getRequirementTitle(form.requirementCode)} for S.Y. ${form.academicYear} ${form.semester}. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
       );
       // Optimistically mark this requirement as pending so the UI disables re-submission
       setRequirementStatuses((prev) => {
@@ -1704,7 +1750,7 @@ function FacultySubmissionPanelContent({
       router.refresh();
       setForm((prev) => ({
         ...prev,
-        requirementCode: DEFAULT_REQUIREMENTS[0],
+        requirementCode: activeTemplates[0]?.code || "grade_sheet",
         fileName: "",
         remarks: "",
       }));
@@ -2150,7 +2196,7 @@ function FacultySubmissionPanelContent({
                           onClick={() => navigateToView("status")}
                           className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium transition cursor-pointer"
                         >
-                          <span>View all 6</span>
+                          <span>View all {displayedStatusCounts.total}</span>
                           <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
                         </button>
                       </div>
@@ -2171,7 +2217,7 @@ function FacultySubmissionPanelContent({
                                 Great job! No pending requirements.
                               </h3>
                               <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
-                                All 6 required faculty documents have been
+                                All {displayedStatusCounts.total} required faculty documents have been
                                 submitted or validated for this semester.
                               </p>
                               <button
@@ -2198,7 +2244,7 @@ function FacultySubmissionPanelContent({
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2">
                                         <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate">
-                                          {REQUIREMENT_LABEL[req.code]}
+                                          {getRequirementTitle(req.code)}
                                         </h4>
                                         <SubmissionStatusBadge
                                           status={req.status}
@@ -2311,7 +2357,7 @@ function FacultySubmissionPanelContent({
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium text-slate-900 dark:text-slate-200 truncate">
-                                  {REQUIREMENT_LABEL[sub.requirementCode]}
+                                  {getRequirementTitle(sub.requirementCode)}
                                 </p>
                                 <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
                                   Status:{" "}
@@ -2377,19 +2423,19 @@ function FacultySubmissionPanelContent({
                         onChange={(event) =>
                           updateField(
                             "requirementCode",
-                            event.target.value as RequirementCode,
+                            event.target.value,
                           )
                         }
                       >
-                        {DEFAULT_REQUIREMENTS.map((code) => {
-                          const status = getRequirementStatus(code);
+                        {activeTemplates.map((tpl) => {
+                          const status = getRequirementStatus(tpl.code);
                           const disabled =
                             status &&
                             status !== "Not Submitted" &&
                             status !== "Rejected";
                           return (
-                            <option key={code} value={code} disabled={disabled}>
-                              {REQUIREMENT_LABEL[code]}
+                            <option key={tpl.code} value={tpl.code} disabled={disabled}>
+                              {tpl.title}
                             </option>
                           );
                         })}
@@ -2402,8 +2448,14 @@ function FacultySubmissionPanelContent({
                           setDirectUploadFile(file);
                           updateField("fileName", file?.name ?? "");
                         }}
-                        maxSizeMb={10}
-                        allowedFormats={["PDF", "DOCX", "XLSX", "JPG", "PNG"]}
+                        maxSizeMb={
+                          activeTemplates.find((t) => t.code === form.requirementCode)
+                            ?.max_size_mb || 10
+                        }
+                        allowedFormats={
+                          activeTemplates.find((t) => t.code === form.requirementCode)
+                            ?.allowed_formats || ["PDF", "DOCX", "XLSX", "JPG", "PNG"]
+                        }
                         currentStatus={getRequirementStatus(
                           form.requirementCode,
                         )}
@@ -2798,11 +2850,11 @@ function FacultySubmissionPanelContent({
                                 All Requirements Completed & Validated
                               </span>
                               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0b5336] dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                                6 of 6 Validated
+                                {`${displayedStatusCounts.validated} of ${displayedStatusCounts.total} Validated`}
                               </span>
                             </div>
                             <p className="text-slate-600 dark:text-slate-300 text-xs mt-0.5">
-                              All 6 compliance requirements for A.Y. {activeAY} • {activeSem} are completed. Your submissions remain active and viewable below.
+                              All {displayedStatusCounts.total} compliance requirements for A.Y. {activeAY} • {activeSem} are completed. Your submissions remain active and viewable below.
                             </p>
                           </div>
                         </div>
@@ -2828,7 +2880,7 @@ function FacultySubmissionPanelContent({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                {REQUIREMENT_LABEL[req.code]}
+                                {getRequirementTitle(req.code)}
                               </h4>
                             </div>
                             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
@@ -3025,8 +3077,8 @@ function FacultySubmissionPanelContent({
                     }
                     title={
                       isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
-                        ? `Resubmit Revision: ${REQUIREMENT_LABEL[selectedRequirementForUpload]}`
-                        : `Upload ${REQUIREMENT_LABEL[selectedRequirementForUpload]}`
+                        ? `Resubmit Revision: ${selectedRequirementForUpload ? getRequirementTitle(selectedRequirementForUpload) : ""}`
+                        : `Upload ${selectedRequirementForUpload ? getRequirementTitle(selectedRequirementForUpload) : ""}`
                     }
                     subtitle={
                       isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
@@ -3671,23 +3723,23 @@ function FacultySubmissionPanelContent({
                             onChange={(event) =>
                               updateField(
                                 "requirementCode",
-                                event.target.value as RequirementCode,
+                                event.target.value,
                               )
                             }
                           >
-                            {DEFAULT_REQUIREMENTS.map((code) => {
-                              const status = getRequirementStatus(code);
+                            {activeTemplates.map((tpl) => {
+                              const status = getRequirementStatus(tpl.code);
                               const disabled =
                                 status &&
                                 status !== "Not Submitted" &&
                                 status !== "Rejected";
                               return (
                                 <option
-                                  key={code}
-                                  value={code}
+                                  key={tpl.code}
+                                  value={tpl.code}
                                   disabled={disabled}
                                 >
-                                  {REQUIREMENT_LABEL[code]}
+                                  {tpl.title}
                                 </option>
                               );
                             })}
