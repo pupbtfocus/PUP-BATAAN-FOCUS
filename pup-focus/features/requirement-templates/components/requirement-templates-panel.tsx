@@ -412,17 +412,13 @@ export function RequirementTemplatesPanel({
                   </td>
 
                   {/* Column 2: Allowed Formats */}
-                  <td className="py-3 px-4">
-                    <div className="flex flex-wrap gap-1">
-                      {tpl.allowed_formats.map((fmt) => (
-                        <span
-                          key={fmt}
-                          className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
-                        >
-                          {fmt}
-                        </span>
-                      ))}
-                    </div>
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 whitespace-nowrap"
+                      title={tpl.allowed_formats.join(", ")}
+                    >
+                      {tpl.allowed_formats.join(", ")}
+                    </span>
                   </td>
 
                   {/* Column 3: Max Size */}

@@ -48,6 +48,10 @@ export function BackupArchivePanel() {
   const [isGeneratingBackup, setIsGeneratingBackup] = useState(false);
   const [exportingTermKey, setExportingTermKey] = useState<string | null>(null);
   const [exportProgress, setExportProgress] = useState<string | null>(null);
+
+  // Separate state for row-level ZIP downloads (independent from filter bar)
+  const [rowExportingKey, setRowExportingKey] = useState<string | null>(null);
+  const [rowExportProgress, setRowExportProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -66,6 +70,7 @@ export function BackupArchivePanel() {
   const [inspectedTerm, setInspectedTerm] = useState<ArchivedTermSummary | null>(null);
   const [backupToDelete, setBackupToDelete] = useState<SystemBackup | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteCountdown, setDeleteCountdown] = useState<number>(10);
 
   const loadBackupData = async () => {
     try {
@@ -98,6 +103,19 @@ export function BackupArchivePanel() {
   useEffect(() => {
     void loadBackupData();
   }, []);
+
+  // 10-second countdown timer for delete confirmation
+  useEffect(() => {
+    if (!backupToDelete) {
+      setDeleteCountdown(10);
+      return;
+    }
+    setDeleteCountdown(10);
+    const timer = setInterval(() => {
+      setDeleteCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [backupToDelete]);
 
   // Handle click outside to close searchable faculty dropdown
   useEffect(() => {
@@ -319,6 +337,61 @@ export function BackupArchivePanel() {
     }
   };
 
+  // Separate ZIP handler for table row buttons — uses independent state
+  const handleRowDownloadZip = async (ay: string, sem: string, fac: string) => {
+    const key = `${ay}__${sem}__${fac}`;
+    try {
+      setRowExportingKey(key);
+      setRowExportProgress("Preparing... 20%");
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (ay && ay !== "all") params.set("academic_year", ay);
+      if (sem && sem !== "all") params.set("semester", sem);
+      if (fac && fac !== "all") params.set("faculty_id", fac);
+
+      const t1 = setTimeout(() => setRowExportProgress("Zipping documents... 60%"), 600);
+      const t2 = setTimeout(() => setRowExportProgress("Finalizing... 90%"), 1400);
+
+      const res = await fetch(`/api/admin/backups/export-zip?${params.toString()}`);
+      clearTimeout(t1);
+      clearTimeout(t2);
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to generate document vault ZIP");
+      }
+
+      setRowExportProgress("Done! 100%");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+
+      const safeAY = ay && ay !== "all" ? ay.replace(/[^a-zA-Z0-9]/g, "_") : "All_AY";
+      const safeSem = sem && sem !== "all" ? sem.replace(/[^a-zA-Z0-9]/g, "_") : "All_Sem";
+      const facultyObj = facultyList.find((f) => f.id === fac);
+      const safeFac = facultyObj
+        ? `${facultyObj.name.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20)}_`
+        : "";
+
+      a.download = `PUP_FOCUS_Document_Vault_${safeFac}${safeAY}_${safeSem}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setSuccess(`Document Vault ZIP downloaded successfully!`);
+      setTimeout(() => setSuccess(null), 4000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error exporting document vault ZIP");
+    } finally {
+      setRowExportingKey(null);
+      setRowExportProgress(null);
+    }
+  };
+
   const handleDeleteBackup = async () => {
     if (!backupToDelete) return;
 
@@ -370,15 +443,15 @@ export function BackupArchivePanel() {
     <div className="space-y-6">
       {/* Top 3 Stat Cards */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
+        <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Total Backups Generated
             </span>
             <HardDrive className="h-5 w-5 text-slate-400" strokeWidth={2} />
           </div>
           <div className="mt-2">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               {stats.total_backups}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -387,15 +460,15 @@ export function BackupArchivePanel() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
+        <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Archived Academic Years
             </span>
-            <Archive className="h-5 w-5 text-slate-400" strokeWidth={2} />
+            <span className="w-2 h-2 rounded-full bg-[#0b5336]" />
           </div>
           <div className="mt-2">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               {stats.archived_academic_years}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -404,9 +477,9 @@ export function BackupArchivePanel() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
+        <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Last Backup Date
             </span>
             <Hourglass className="h-5 w-5 text-slate-400" strokeWidth={2} />
@@ -427,8 +500,8 @@ export function BackupArchivePanel() {
       <AlertPopup type="success" message={success} onClose={() => setSuccess(null)} />
 
       {/* SECTION 1: Scope Selector & Backup Generator Bar */}
-      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4 transition-colors">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+      <section className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs transition-colors space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <AppIcon icon={Database} size="md" color="default" />
@@ -627,9 +700,9 @@ export function BackupArchivePanel() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
           {/* Scope Indicator Pill */}
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
-              <span className="font-semibold text-slate-900 dark:text-slate-100">Active Scope:</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-xs font-medium text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              <span className="font-semibold text-amber-900 dark:text-amber-200">Active Scope:</span>
               <span>
                 {selectedAcademicYear === "all" ? "All A.Y." : selectedAcademicYear}
               </span>
@@ -647,7 +720,7 @@ export function BackupArchivePanel() {
               <button
                 type="button"
                 onClick={resetFilters}
-                className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline cursor-pointer transition"
+                className="text-xs text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200 underline cursor-pointer transition"
               >
                 Reset to Full System
               </button>
@@ -661,11 +734,11 @@ export function BackupArchivePanel() {
               type="button"
               disabled={Boolean(exportingTermKey) || isGeneratingBackup}
               onClick={() => void handleDownloadZip()}
-              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-xl text-xs sm:text-sm px-3.5 py-2 transition border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-white hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold rounded-xl text-xs sm:text-sm px-3.5 py-2 transition border border-slate-300 dark:border-slate-700 cursor-pointer disabled:opacity-50 shadow-2xs"
             >
               {exportingTermKey === `${selectedAcademicYear}__${selectedSemester}__${selectedFacultyId}` ? (
                 <>
-                  <AppIcon icon={Refresh} size="md" color="default" className="animate-spin" />
+                  <Refresh className="w-3.5 h-3.5 animate-spin text-amber-500" />
                   <span>{exportProgress || "Zipping documents..."}</span>
                 </>
               ) : (
@@ -681,16 +754,16 @@ export function BackupArchivePanel() {
               type="button"
               disabled={isGeneratingBackup || Boolean(exportingTermKey)}
               onClick={() => void handleGenerateBackup()}
-              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold rounded-xl text-xs sm:text-sm px-4 py-2 transition shadow-sm cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-bold rounded-xl text-xs sm:text-sm px-4 py-2 transition shadow-xs cursor-pointer disabled:opacity-50"
             >
               {isGeneratingBackup ? (
                 <>
-                  <AppIcon icon={Refresh} size="md" color="inherit" className="animate-spin" />
+                  <Refresh className="w-3.5 h-3.5 animate-spin" />
                   <span>Generating Snapshot...</span>
                 </>
               ) : (
                 <>
-                  <AppIcon icon={Plus} size="md" color="inherit" />
+                  <Plus className="w-3.5 h-3.5" />
                   <span>Generate Snapshot (.JSON)</span>
                 </>
               )}
@@ -716,25 +789,25 @@ export function BackupArchivePanel() {
         </div>
 
         {/* Backups Table */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden transition-colors">
+        <div className="w-full overflow-x-auto rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+              <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
+                <tr>
                   <th className="py-3.5 px-4">Backup Name</th>
                   <th className="py-3.5 px-4">Scope</th>
-                  <th className="py-3.5 px-4">Date & Time</th>
+                  <th className="py-3.5 px-4">Date &amp; Time</th>
                   <th className="py-3.5 px-4">File Size</th>
                   <th className="py-3.5 px-4">Total Records</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/80">
+              <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60">
                 {isLoading ? (
                   <tr>
                     <td colSpan={7} className="py-12 text-center text-slate-500">
-                      <AppIcon icon={Refresh} size="lg" color="default" className="animate-spin mx-auto mb-2" />
+                      <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
                       Loading backup records...
                     </td>
                   </tr>
@@ -807,17 +880,17 @@ export function BackupArchivePanel() {
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {bk.status === "completed" ? (
-                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span className="inline-flex items-center gap-1.5 bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
                               Completed
                             </span>
                           ) : bk.status === "failed" ? (
-                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            <span className="inline-flex items-center gap-1.5 bg-[#780000] text-white border border-[#5e0000] px-2 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-300" />
                               Failed
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md">
+                            <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-900 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-400/30 px-2 py-0.5 text-xs font-semibold rounded-md">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                               Processing
                             </span>
@@ -838,7 +911,7 @@ export function BackupArchivePanel() {
                             <a
                               href={`/api/admin/backups/download?id=${bk.id}`}
                               download
-                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1 shadow-sm"
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer flex items-center gap-1 shadow-xs"
                               title="Download JSON Snapshot"
                             >
                               <AppIcon icon={Download} size="xs" color="inherit" />
@@ -847,11 +920,37 @@ export function BackupArchivePanel() {
 
                             <button
                               type="button"
+                              disabled={Boolean(rowExportingKey) || isGeneratingBackup}
+                              onClick={() =>
+                                void handleRowDownloadZip(
+                                  scopeAy ?? "all",
+                                  scopeSem ?? "all",
+                                  bk.metadata?.scope?.faculty_id ?? "all"
+                                )
+                              }
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition cursor-pointer flex items-center gap-1 shadow-2xs disabled:opacity-50"
+                              title="Download Document Vault (.ZIP)"
+                            >
+                              {rowExportingKey === `${scopeAy ?? "all"}__${scopeSem ?? "all"}__${bk.metadata?.scope?.faculty_id ?? "all"}` ? (
+                                <>
+                                  <Refresh className="w-3 h-3 animate-spin text-amber-500" />
+                                  <span>{rowExportProgress || "Zipping..."}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <AppIcon icon={Archive} size="xs" color="default" />
+                                  <span>ZIP</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
                               onClick={() => setBackupToDelete(bk)}
-                              className="p-1 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                              className="p-1 text-red-500 hover:bg-red-500/10 border border-transparent hover:border-red-200 dark:hover:border-red-900/60 rounded-lg transition cursor-pointer"
                               title="Delete backup log"
                             >
-                              <AppIcon icon={Trash} size="sm" color="default" />
+                              <AppIcon icon={Trash} size="sm" color="inherit" />
                             </button>
                           </div>
                         </td>
@@ -878,19 +977,19 @@ export function BackupArchivePanel() {
         </div>
 
         {/* Archived Terms Table */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden transition-colors">
+        <div className="w-full overflow-x-auto rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                  <th className="py-3.5 px-4">Academic Year & Semester</th>
+              <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="py-3.5 px-4">Academic Year &amp; Semester</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">Preserved Documents</th>
                   <th className="py-3.5 px-4">Archive Date</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/80">
+              <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60">
                 {archivedTerms.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-10 text-center text-slate-500">
@@ -923,8 +1022,8 @@ export function BackupArchivePanel() {
                         </div>
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                        <span className="inline-flex items-center gap-1.5 bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
                           Archived
                         </span>
                       </td>
@@ -958,12 +1057,12 @@ export function BackupArchivePanel() {
                                 "all"
                               )
                             }
-                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer inline-flex items-center gap-1 shadow-sm disabled:opacity-50"
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer inline-flex items-center gap-1 shadow-xs disabled:opacity-50"
                             title="Download Document Vault (.ZIP)"
                           >
                             {exportingTermKey === `${term.academic_year}__${term.semester}__all` ? (
                               <>
-                                <AppIcon icon={Refresh} size="xs" color="inherit" className="animate-spin" />
+                                <Refresh className="w-3 h-3 animate-spin" />
                                 <span>{exportProgress || "Zipping..."}</span>
                               </>
                             ) : (
@@ -1103,7 +1202,7 @@ export function BackupArchivePanel() {
               <a
                 href={`/api/admin/backups/download?id=${inspectedBackup.id}`}
                 download
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 shadow-xs"
               >
                 <AppIcon icon={Download} size="sm" color="inherit" />
                 <span>Download JSON</span>
@@ -1168,11 +1267,11 @@ export function BackupArchivePanel() {
                     "all"
                   )
                 }
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow-xs"
               >
                 {exportingTermKey === `${inspectedTerm.academic_year}__${inspectedTerm.semester}__all` ? (
                   <>
-                    <AppIcon icon={Refresh} size="sm" color="inherit" className="animate-spin" />
+                    <Refresh className="w-3.5 h-3.5 animate-spin" />
                     <span>{exportProgress || "Zipping..."}</span>
                   </>
                 ) : (
@@ -1197,37 +1296,63 @@ export function BackupArchivePanel() {
       {/* Delete Backup Confirmation Modal */}
       {backupToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
-                <AppIcon icon={WarningTriangle} size="lg" color="default" />
+          <div className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+            {/* Modal Header */}
+            <ModalHeader
+              icon={Trash}
+              title="Delete Backup Record"
+              subtitle="Confirm Permanent Backup Deletion"
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
+
+            {/* Description & Warnings */}
+            <div className="space-y-3">
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to permanently delete backup log{" "}
+                <strong className="text-slate-900 dark:text-slate-100">
+                  "{backupToDelete.backup_name}"
+                </strong>
+                ?
+              </p>
+
+              <div className="rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-400 space-y-1">
+                <p className="font-semibold">Safety Notice:</p>
+                <p>
+                  Deleting this record will permanently remove the backup log entry. The action cannot be undone. If you need this snapshot, download the JSON file first before deleting.
+                </p>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                Delete Backup Record
-              </h3>
+
+              {deleteCountdown > 0 ? (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  Safety lock active. The confirmation button will be available in{" "}
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {deleteCountdown} seconds
+                  </span>
+                  .
+                </p>
+              ) : null}
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              Are you sure you want to delete backup log{" "}
-              <span className="font-semibold text-slate-900 dark:text-slate-100">
-                "{backupToDelete.backup_name}"
-              </span>
-              ?
-            </p>
-            <div className="flex items-center justify-end gap-2 mt-6">
+
+            {/* Footer Actions */}
+            <div className="mt-6 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setBackupToDelete(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={isDeleting}
+                disabled={isDeleting || deleteCountdown > 0}
                 onClick={() => void handleDeleteBackup()}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer disabled:opacity-50 shadow-xs"
+                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
               >
-                {isDeleting ? "Deleting..." : "Confirm Delete"}
+                {isDeleting
+                  ? "Deleting..."
+                  : deleteCountdown > 0
+                  ? `Confirm Delete (${deleteCountdown}s)`
+                  : "Confirm Delete"}
               </button>
             </div>
           </div>
