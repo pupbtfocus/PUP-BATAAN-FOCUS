@@ -3,6 +3,7 @@ import { FACULTY_PROFILE_IMAGE_BUCKET } from "@/lib/faculty-profile";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_CODE,
+  REQUIREMENT_LABEL,
   type RequirementCode,
 } from "@/config/compliance";
 import {
@@ -214,7 +215,7 @@ export async function getFacultyInitialData(
   // 3. Requirement Templates
   let activeTemplates: RequirementTemplateData[] = DEFAULT_REQUIREMENTS.map((code) => ({
     code,
-    title: code,
+    title: (REQUIREMENT_LABEL as Record<string, string>)[code] || code,
     is_mandatory: true,
     max_size_mb: 10,
     allowed_formats: ["PDF", "DOCX", "XLSX"],

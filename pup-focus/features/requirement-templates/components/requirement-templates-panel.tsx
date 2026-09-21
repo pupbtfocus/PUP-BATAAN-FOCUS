@@ -41,7 +41,7 @@ export function RequirementTemplatesPanel({
   const [countdown, setCountdown] = useState<number>(10);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState<string | null>(null);
-  const [isRestoringDefaults, setIsRestoringDefaults] = useState(false);
+  const [isAcquiringCurrent, setIsAcquiringCurrent] = useState(false);
 
   const loadTemplates = async () => {
     try {
@@ -147,32 +147,31 @@ export function RequirementTemplatesPanel({
     }
   };
 
-  const handleRestoreDefaults = async () => {
+  const handleAcquireCurrent = async () => {
     try {
-      setIsRestoringDefaults(true);
+      setIsAcquiringCurrent(true);
       setError(null);
       const res = await fetch("/api/admin/requirement-templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "restore_defaults" }),
+        body: JSON.stringify({ action: "acquire_current" }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to restore default requirement templates");
+        throw new Error(data.error || "Failed to acquire current requirement templates");
       }
 
       setSuccess(
-        data.restoredCount > 0
-          ? `Restored ${data.restoredCount} default requirement templates.`
-          : "All standard faculty & admin requirement templates are already intact."
+        data.message ||
+          "Standard requirements successfully acquired and synchronized with system specifications."
       );
-      setTimeout(() => setSuccess(null), 4000);
+      setTimeout(() => setSuccess(null), 5000);
       await loadTemplates();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error restoring default templates");
+      setError(err instanceof Error ? err.message : "Error acquiring current templates");
     } finally {
-      setIsRestoringDefaults(false);
+      setIsAcquiringCurrent(false);
     }
   };
 
@@ -305,12 +304,13 @@ export function RequirementTemplatesPanel({
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           <button
             type="button"
-            onClick={() => void handleRestoreDefaults()}
-            disabled={isRestoringDefaults || isLoading}
-            className="px-3 py-2 rounded-xl text-xs font-medium border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition cursor-pointer disabled:opacity-50"
-            title="Restore default faculty/admin requirement files if missing"
+            onClick={() => void handleAcquireCurrent()}
+            disabled={isAcquiringCurrent || isLoading}
+            className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
+            title="Acquire & synchronize official compliance requirements from system specifications"
           >
-            {isRestoringDefaults ? "Restoring..." : "Restore Defaults"}
+            <Refresh className={`h-3.5 w-3.5 ${isAcquiringCurrent ? "animate-spin text-amber-500" : ""}`} strokeWidth={2} />
+            <span>{isAcquiringCurrent ? "Acquiring..." : "Acquire Current Requirements"}</span>
           </button>
 
           <button
@@ -492,7 +492,17 @@ export function RequirementTemplatesPanel({
       <RequirementTemplateModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSaved={() => void loadTemplates()}
+        onSaved={(savedTitle?: string, isNew?: boolean) => {
+          if (savedTitle) {
+            setSuccess(
+              isNew
+                ? `Requirement template "${savedTitle}" created successfully.`
+                : `Requirement template "${savedTitle}" updated successfully.`
+            );
+            setTimeout(() => setSuccess(null), 4000);
+          }
+          void loadTemplates();
+        }}
         templateToEdit={templateToEdit}
       />
 

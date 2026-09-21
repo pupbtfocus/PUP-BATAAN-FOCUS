@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ROLE } from "@/config/roles";
+import {
+  REQUIREMENT_CODE,
+  REQUIREMENT_LABEL,
+} from "@/config/compliance";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import type { RequirementTemplate } from "@/features/requirement-templates/types/requirement-template.types";
@@ -9,8 +13,8 @@ export const revalidate = 0;
 
 const DEFAULT_SEEDS: Array<Omit<RequirementTemplate, "id" | "created_at" | "updated_at">> = [
   {
-    title: "Grade Sheets",
-    code: "grade_sheet",
+    title: REQUIREMENT_LABEL[REQUIREMENT_CODE.GRADE_SHEET],
+    code: REQUIREMENT_CODE.GRADE_SHEET,
     description: "Official academic grade sheets signed and certified for the semester.",
     allowed_formats: ["PDF", "XLSX", "DOCX"],
     max_size_mb: 10,
@@ -18,8 +22,8 @@ const DEFAULT_SEEDS: Array<Omit<RequirementTemplate, "id" | "created_at" | "upda
     is_active: true,
   },
   {
-    title: "Enhanced Course Syllabus",
-    code: "enhanced_syllabus",
+    title: REQUIREMENT_LABEL[REQUIREMENT_CODE.ENHANCED_SYLLABUS],
+    code: REQUIREMENT_CODE.ENHANCED_SYLLABUS,
     description: "OBE-compliant syllabus including course outcomes, grading system, and weekly schedule.",
     allowed_formats: ["PDF", "DOCX"],
     max_size_mb: 5,
@@ -27,8 +31,8 @@ const DEFAULT_SEEDS: Array<Omit<RequirementTemplate, "id" | "created_at" | "upda
     is_active: true,
   },
   {
-    title: "Class Orientation Documentation",
-    code: "class_orientation",
+    title: REQUIREMENT_LABEL[REQUIREMENT_CODE.CLASS_ORIENTATION],
+    code: REQUIREMENT_CODE.CLASS_ORIENTATION,
     description: "Narrative report and photo documentation of the initial class orientation.",
     allowed_formats: ["PDF", "DOCX", "PNG", "JPG"],
     max_size_mb: 10,
@@ -36,8 +40,8 @@ const DEFAULT_SEEDS: Array<Omit<RequirementTemplate, "id" | "created_at" | "upda
     is_active: true,
   },
   {
-    title: "Midterm Examination Package",
-    code: "midterm_package",
+    title: REQUIREMENT_LABEL[REQUIREMENT_CODE.MIDTERM_PACKAGE],
+    code: REQUIREMENT_CODE.MIDTERM_PACKAGE,
     description: "Copy of midterm examinations with Table of Specifications (TOS) and Answer Key.",
     allowed_formats: ["PDF", "DOCX"],
     max_size_mb: 10,
@@ -45,8 +49,8 @@ const DEFAULT_SEEDS: Array<Omit<RequirementTemplate, "id" | "created_at" | "upda
     is_active: true,
   },
   {
-    title: "Final Examination Package",
-    code: "final_package",
+    title: REQUIREMENT_LABEL[REQUIREMENT_CODE.FINAL_PACKAGE],
+    code: REQUIREMENT_CODE.FINAL_PACKAGE,
     description: "Copy of final examinations with Table of Specifications (TOS) and Answer Key.",
     allowed_formats: ["PDF", "DOCX"],
     max_size_mb: 10,
@@ -54,8 +58,8 @@ const DEFAULT_SEEDS: Array<Omit<RequirementTemplate, "id" | "created_at" | "upda
     is_active: true,
   },
   {
-    title: "Class Records",
-    code: "class_records",
+    title: REQUIREMENT_LABEL[REQUIREMENT_CODE.CLASS_RECORDS],
+    code: REQUIREMENT_CODE.CLASS_RECORDS,
     description: "Official class records showing midterm and final grade computations.",
     allowed_formats: ["PDF", "XLSX"],
     max_size_mb: 10,
@@ -157,22 +161,59 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Handle restore defaults action
-    if (body.action === "restore_defaults") {
-      const { data: existingRows } = await supabase
+    // Handle acquire current requirements / restore defaults action
+    if (
+      body.action === "restore_defaults" ||
+      body.action === "acquire_current" ||
+      body.action === "sync_current"
+    ) {
+      const { data: existingRows, error: fetchErr } = await supabase
         .from("requirement_templates")
-        .select("code");
+        .select("id, code, title");
 
-      const existingCodes = new Set((existingRows || []).map((r: { code: string }) => r.code));
-      const missingSeeds = DEFAULT_SEEDS.filter((s) => !existingCodes.has(s.code));
+      if (fetchErr) {
+        return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+      }
 
-      if (missingSeeds.length > 0) {
-        const { error: seedError } = await supabase
-          .from("requirement_templates")
-          .insert(missingSeeds);
+      const existingMap = new Map<string, { id: string; code: string; title: string }>(
+        (existingRows || []).map((r: { id: string; code: string; title: string }) => [r.code, r])
+      );
 
-        if (seedError) {
-          return NextResponse.json({ error: seedError.message }, { status: 400 });
+      let syncedCount = 0;
+      let insertedCount = 0;
+
+      for (const seed of DEFAULT_SEEDS) {
+        const existing = existingMap.get(seed.code);
+        if (existing) {
+          // Update existing standard template to match current system specifications
+          const { error: updateErr } = await supabase
+            .from("requirement_templates")
+            .update({
+              title: seed.title,
+              description: seed.description,
+              allowed_formats: seed.allowed_formats,
+              max_size_mb: seed.max_size_mb,
+              is_mandatory: seed.is_mandatory,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existing.id);
+
+          if (!updateErr) {
+            syncedCount++;
+          }
+        } else {
+          // Insert missing standard template
+          const { error: insertErr } = await supabase
+            .from("requirement_templates")
+            .insert({
+              ...seed,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+
+          if (!insertErr) {
+            insertedCount++;
+          }
         }
       }
 
@@ -183,9 +224,18 @@ export async function POST(request: NextRequest) {
         .order("is_mandatory", { ascending: false })
         .order("created_at", { ascending: true });
 
+      const totalUpdated = syncedCount + insertedCount;
+      const message =
+        totalUpdated > 0
+          ? `Successfully acquired and synchronized ${totalUpdated} compliance requirement templates with current system specifications.`
+          : "All standard compliance requirements are already up-to-date.";
+
       return NextResponse.json({
         success: true,
-        restoredCount: missingSeeds.length,
+        syncedCount,
+        insertedCount,
+        restoredCount: totalUpdated,
+        message,
         templates: allTemplates || [],
       });
     }
