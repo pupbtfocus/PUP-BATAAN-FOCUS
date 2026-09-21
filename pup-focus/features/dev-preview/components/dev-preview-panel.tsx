@@ -845,96 +845,207 @@ export function DevPreviewPanel() {
             </button>
           </div>
 
-          {/* Interactive Card */}
-          <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-slate-950 p-6 sm:p-12 flex items-center justify-center min-h-[500px]">
-            <section className="w-full max-w-md rounded-3xl border border-[rgba(255,215,0,0.25)] bg-[#4d0000] p-8 shadow-2xl shadow-black/50 text-[#fff8e7]">
-              <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700] font-bold">
-                ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
-              </p>
-              <h2 className="mt-3 text-2xl font-bold text-amber-100">Set a new password</h2>
-              <p className="mt-2 text-xs text-[#f3d9b3] leading-relaxed">
-                Create a permanent personal password to secure your institutional account.
-              </p>
+          {/* Interactive Card with Login Screen Background */}
+          <div className="relative rounded-2xl border border-slate-300 dark:border-slate-800 bg-[#5f0000] p-4 sm:p-10 flex items-center justify-center overflow-hidden min-h-[580px]">
+            {/* Campus photo background matching the login screen */}
+            <div
+              className="absolute inset-0 bg-cover bg-center pointer-events-none"
+              style={{ backgroundImage: "url('/images/attachments/IMG_9399.jpeg')" }}
+            />
+            {/* Overlay with Blur and Gradient matching Login Screen */}
+            <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px] pointer-events-none" />
+            <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/50 via-black/20 to-black/30 pointer-events-none" />
 
-              <form className="mt-6 space-y-4" onSubmit={handleSimulatePasswordSubmit}>
-                <div>
-                  <label className="block text-xs font-medium text-[#fff8e7] mb-1">
-                    New password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showNewPass ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      minLength={8}
-                      placeholder="Minimum 8 characters"
-                      className="w-full rounded-xl border border-[rgba(255,215,0,0.25)] bg-black/30 px-4 py-2.5 text-xs text-white outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPass(!showNewPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-200/70 hover:text-amber-100 cursor-pointer"
-                    >
-                      {showNewPass ? <AppIcon icon={EyeClosed} size="md" color="inherit" /> : <AppIcon icon={Eye} size="md" color="inherit" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-[#fff8e7] mb-1">
-                    Confirm password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPass ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      minLength={8}
-                      placeholder="Re-enter your new password"
-                      className="w-full rounded-xl border border-[rgba(255,215,0,0.25)] bg-black/30 px-4 py-2.5 text-xs text-white outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPass(!showConfirmPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-200/70 hover:text-amber-100 cursor-pointer"
-                    >
-                      {showConfirmPass ? <AppIcon icon={EyeClosed} size="md" color="inherit" /> : <AppIcon icon={Eye} size="md" color="inherit" />}
-                    </button>
-                  </div>
-                </div>
-
-                {changePassError ? (
-                  <p className="text-xs text-red-300 flex items-center gap-1.5">
-                    <AppIcon icon={WarningCircle} size="sm" color="inherit" />
-                    <span>{changePassError}</span>
-                  </p>
-                ) : null}
-
-                {changePassSuccess ? (
-                  <p className="text-xs text-emerald-300 flex items-center gap-1.5">
-                    <AppIcon icon={CheckCircle} size="sm" color="inherit" />
-                    <span>{changePassSuccess}</span>
-                  </p>
-                ) : null}
-
-                <button
-                  type="submit"
-                  disabled={isSimulatingSave}
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-amber-200 text-slate-950 font-bold text-xs transition cursor-pointer shadow-md disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
+            <div className="relative z-10 w-full max-w-[390px] sm:max-w-md mx-auto my-auto drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)] text-[#fff8e7]">
+              {/* Curved Card Top Header SVG with 3D Golden Crest Lighting */}
+              <div className="relative">
+                <svg
+                  viewBox="0 0 400 64"
+                  className="w-full h-auto block -mb-1 pointer-events-none overflow-visible"
                 >
-                  {isSimulatingSave ? (
-                    <>
-                      <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
-                      <span>Saving password...</span>
-                    </>
-                  ) : (
-                    <span>Set new password & Proceed</span>
-                  )}
-                </button>
-              </form>
-            </section>
+                  <defs>
+                    <linearGradient id="changePassPreviewTopGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#8a0c0c" />
+                      <stop offset="40%" stopColor="#780000" />
+                      <stop offset="85%" stopColor="#680000" />
+                      <stop offset="100%" stopColor="#680000" />
+                    </linearGradient>
+                    <linearGradient id="changePassPreviewTopGoldCrest" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#D97706" stopOpacity="0.8" />
+                      <stop offset="15%" stopColor="#F59E0B" stopOpacity="0.95" />
+                      <stop offset="35%" stopColor="#FDE68A" stopOpacity="1" />
+                      <stop offset="50%" stopColor="#FFFBEB" stopOpacity="1" />
+                      <stop offset="65%" stopColor="#FDE68A" stopOpacity="1" />
+                      <stop offset="85%" stopColor="#F59E0B" stopOpacity="0.95" />
+                      <stop offset="100%" stopColor="#D97706" stopOpacity="0.8" />
+                    </linearGradient>
+                    <linearGradient id="changePassPreviewTopAmbientSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.65" />
+                      <stop offset="60%" stopColor="#F59E0B" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="#780000" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+
+                  <path
+                    d="M 0,64 L 0,20 Q 0,0 20,0 L 142,0 C 158,0 162,37 200,37 C 238,37 242,0 258,0 L 380,0 Q 400,0 400,20 L 400,64 Z"
+                    fill="url(#changePassPreviewTopGrad)"
+                  />
+                  <path
+                    d="M 2,20 Q 2,2 20,2 L 142,2 C 158,2 162,37 200,37 C 238,37 242,2 258,2 L 380,2 Q 398,2 398,20"
+                    fill="none"
+                    stroke="url(#changePassPreviewTopAmbientSheen)"
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 1,64 L 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20 L 399,64"
+                    fill="none"
+                    stroke="rgba(245, 158, 11, 0.75)"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20"
+                    fill="none"
+                    stroke="url(#changePassPreviewTopGoldCrest)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 25,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 375,1"
+                    fill="none"
+                    stroke="rgba(255, 255, 255, 0.5)"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
+                  <Logo size={115} className="mb-0 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]" />
+                </div>
+              </div>
+
+              {/* Card Body - Vibrant PUP Brand Maroon matching Login Screen */}
+              <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 bg-gradient-to-b from-[#680000] via-[#5e0000] to-[#4d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-xl">
+                <div className="mt-2 mb-6 sm:mb-7 text-center">
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    Set New Password
+                  </h2>
+                  <div className="mx-auto my-3 h-0.5 w-14 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                  <p className="text-amber-100/90 text-xs sm:text-sm font-medium tracking-wide">
+                    Create a permanent password to secure your institutional account
+                  </p>
+                </div>
+
+                <form className="space-y-4" onSubmit={handleSimulatePasswordSubmit}>
+                  {/* New Password Field */}
+                  <div className="space-y-1.5 text-left">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1.5">
+                        <AppIcon icon={Key} size="sm" color="active" />
+                        <span>New Password</span>
+                      </label>
+                      <span className="text-[10px] text-amber-200/70 font-medium">Min. 8 characters</span>
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        type={showNewPass ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        minLength={8}
+                        placeholder="Enter new password"
+                        autoComplete="new-password"
+                        className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-4 pr-11 py-3 text-xs sm:text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPass(!showNewPass)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-amber-400/80 hover:text-amber-300 transition-colors cursor-pointer"
+                        title={showNewPass ? "Hide password" : "Show password"}
+                        aria-label={showNewPass ? "Hide password" : "Show password"}
+                      >
+                        {showNewPass ? (
+                          <AppIcon icon={EyeClosed} size="sm" color="inherit" />
+                        ) : (
+                          <AppIcon icon={Eye} size="sm" color="inherit" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password Field */}
+                  <div className="space-y-1.5 text-left">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1.5">
+                        <AppIcon icon={Key} size="sm" color="active" />
+                        <span>Confirm Password</span>
+                      </label>
+                      <span className="text-[10px] text-amber-200/70 font-medium">Must match</span>
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        type={showConfirmPass ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={8}
+                        placeholder="Confirm new password"
+                        autoComplete="new-password"
+                        className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-4 pr-11 py-3 text-xs sm:text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPass(!showConfirmPass)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-amber-400/80 hover:text-amber-300 transition-colors cursor-pointer"
+                        title={showConfirmPass ? "Hide password" : "Show password"}
+                        aria-label={showConfirmPass ? "Hide password" : "Show password"}
+                      >
+                        {showConfirmPass ? (
+                          <AppIcon icon={EyeClosed} size="sm" color="inherit" />
+                        ) : (
+                          <AppIcon icon={Eye} size="sm" color="inherit" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Error Notification */}
+                  {changePassError ? (
+                    <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-left flex items-start gap-2.5 text-xs text-rose-200">
+                      <AppIcon icon={WarningCircle} size="sm" color="danger" className="shrink-0 mt-0.5" />
+                      <span>{changePassError}</span>
+                    </div>
+                  ) : null}
+
+                  {/* Success Notification */}
+                  {changePassSuccess ? (
+                    <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3 text-left flex items-start gap-2.5 text-xs text-emerald-200">
+                      <AppIcon icon={CheckCircle} size="sm" color="success" className="shrink-0 mt-0.5" />
+                      <span>{changePassSuccess}</span>
+                    </div>
+                  ) : null}
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={isSimulatingSave}
+                    className="mt-2 h-11 sm:h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isSimulatingSave ? (
+                      <>
+                        <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                        <span>Saving Password...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Set Password & Proceed</span>
+                        <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </section>
+            </div>
           </div>
         </div>
       )}
@@ -1580,57 +1691,205 @@ export function DevPreviewPanel() {
 
       {/* FULLSCREEN PASSWORD CHANGE MODAL */}
       {isPasswordModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in overflow-y-auto"
+          onClick={() => setIsPasswordModalOpen(false)}
+        >
+          {/* Campus photo background matching the login screen */}
           <div
-            className="relative w-full max-w-md"
+            className="absolute inset-0 bg-cover bg-center pointer-events-none"
+            style={{ backgroundImage: "url('/images/attachments/IMG_9399.jpeg')" }}
+          />
+          {/* Overlay with Blur and Gradient matching Login Screen */}
+          <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px] pointer-events-none" />
+          <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/60 via-black/30 to-black/40 pointer-events-none" />
+
+          <div
+            className="relative z-10 w-full max-w-[390px] sm:max-w-md my-auto drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)] text-[#fff8e7]"
             onClick={(e) => e.stopPropagation()}
           >
-            <section className="w-full rounded-3xl border border-[rgba(255,215,0,0.25)] bg-[#4d0000] p-8 shadow-2xl text-[#fff8e7]">
-              <p className="text-xs uppercase tracking-[0.28em] text-[#ffd700] font-bold">
-                ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
-              </p>
-              <h2 className="mt-3 text-2xl font-bold text-amber-100">Set a new password</h2>
-              <p className="mt-2 text-xs text-[#f3d9b3]">
-                Create a permanent password to secure your institutional account.
-              </p>
-              <form className="mt-6 space-y-4" onSubmit={handleSimulatePasswordSubmit}>
-                <div>
-                  <label className="block text-xs font-medium text-[#fff8e7] mb-1">New password</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-xs text-white placeholder-slate-400 focus:border-amber-400 outline-none"
-                    required
-                  />
+            {/* Curved Card Top Header SVG with 3D Golden Crest Lighting */}
+            <div className="relative">
+              <svg
+                viewBox="0 0 400 64"
+                className="w-full h-auto block -mb-1 pointer-events-none overflow-visible"
+              >
+                <defs>
+                  <linearGradient id="changePassModalTopGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#8a0c0c" />
+                    <stop offset="40%" stopColor="#780000" />
+                    <stop offset="85%" stopColor="#680000" />
+                    <stop offset="100%" stopColor="#680000" />
+                  </linearGradient>
+                  <linearGradient id="changePassModalTopGoldCrest" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#D97706" stopOpacity="0.8" />
+                    <stop offset="15%" stopColor="#F59E0B" stopOpacity="0.95" />
+                    <stop offset="35%" stopColor="#FDE68A" stopOpacity="1" />
+                    <stop offset="50%" stopColor="#FFFBEB" stopOpacity="1" />
+                    <stop offset="65%" stopColor="#FDE68A" stopOpacity="1" />
+                    <stop offset="85%" stopColor="#F59E0B" stopOpacity="0.95" />
+                    <stop offset="100%" stopColor="#D97706" stopOpacity="0.8" />
+                  </linearGradient>
+                  <linearGradient id="changePassModalTopAmbientSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.65" />
+                    <stop offset="60%" stopColor="#F59E0B" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#780000" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+
+                <path
+                  d="M 0,64 L 0,20 Q 0,0 20,0 L 142,0 C 158,0 162,37 200,37 C 238,37 242,0 258,0 L 380,0 Q 400,0 400,20 L 400,64 Z"
+                  fill="url(#changePassModalTopGrad)"
+                />
+                <path
+                  d="M 2,20 Q 2,2 20,2 L 142,2 C 158,2 162,37 200,37 C 238,37 242,2 258,2 L 380,2 Q 398,2 398,20"
+                  fill="none"
+                  stroke="url(#changePassModalTopAmbientSheen)"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 1,64 L 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20 L 399,64"
+                  fill="none"
+                  stroke="rgba(245, 158, 11, 0.75)"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20"
+                  fill="none"
+                  stroke="url(#changePassModalTopGoldCrest)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 25,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 375,1"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.5)"
+                  strokeWidth="1"
+                  strokeLinecap="round"
+                />
+              </svg>
+
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
+                <Logo size={115} className="mb-0 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]" />
+              </div>
+            </div>
+
+            {/* Card Body - Vibrant PUP Brand Maroon matching Login Screen */}
+            <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 bg-gradient-to-b from-[#680000] via-[#5e0000] to-[#4d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-xl">
+              <div className="mt-2 mb-6 sm:mb-7 text-center">
+                <h2 className="text-2xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                  Set New Password
+                </h2>
+                <div className="mx-auto my-3 h-0.5 w-14 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                <p className="text-amber-100/90 text-xs sm:text-sm font-medium tracking-wide">
+                  Create a permanent password to secure your institutional account
+                </p>
+              </div>
+
+              <form className="space-y-4" onSubmit={handleSimulatePasswordSubmit}>
+                {/* New Password Field */}
+                <div className="space-y-1.5 text-left">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1.5">
+                      <AppIcon icon={Key} size="sm" color="active" />
+                      <span>New Password</span>
+                    </label>
+                    <span className="text-[10px] text-amber-200/70 font-medium">Min. 8 characters</span>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input
+                      type={showNewPass ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      autoComplete="new-password"
+                      className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-4 pr-11 py-3 text-xs sm:text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+                      required
+                      minLength={8}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-amber-400/80 hover:text-amber-300 transition-colors cursor-pointer"
+                      title={showNewPass ? "Hide password" : "Show password"}
+                      aria-label={showNewPass ? "Hide password" : "Show password"}
+                    >
+                      {showNewPass ? (
+                        <AppIcon icon={EyeClosed} size="sm" color="inherit" />
+                      ) : (
+                        <AppIcon icon={Eye} size="sm" color="inherit" />
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#fff8e7] mb-1">Confirm new password</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Re-enter new password"
-                    className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-xs text-white placeholder-slate-400 focus:border-amber-400 outline-none"
-                    required
-                  />
+
+                {/* Confirm Password Field */}
+                <div className="space-y-1.5 text-left">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1.5">
+                      <AppIcon icon={Key} size="sm" color="active" />
+                      <span>Confirm Password</span>
+                    </label>
+                    <span className="text-[10px] text-amber-200/70 font-medium">Must match</span>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input
+                      type={showConfirmPass ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      autoComplete="new-password"
+                      className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-4 pr-11 py-3 text-xs sm:text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+                      required
+                      minLength={8}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPass(!showConfirmPass)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-amber-400/80 hover:text-amber-300 transition-colors cursor-pointer"
+                      title={showConfirmPass ? "Hide password" : "Show password"}
+                      aria-label={showConfirmPass ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPass ? (
+                        <AppIcon icon={EyeClosed} size="sm" color="inherit" />
+                      ) : (
+                        <AppIcon icon={Eye} size="sm" color="inherit" />
+                      )}
+                    </button>
+                  </div>
                 </div>
-                {changePassError ? <p className="text-xs text-red-300">{changePassError}</p> : null}
-                {changePassSuccess ? <p className="text-xs text-emerald-300">{changePassSuccess}</p> : null}
+
+                {/* Error Notification */}
+                {changePassError ? (
+                  <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-left flex items-start gap-2.5 text-xs text-rose-200">
+                    <AppIcon icon={WarningCircle} size="sm" color="danger" className="shrink-0 mt-0.5" />
+                    <span>{changePassError}</span>
+                  </div>
+                ) : null}
+
+                {/* Success Notification */}
+                {changePassSuccess ? (
+                  <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3 text-left flex items-start gap-2.5 text-xs text-emerald-200">
+                    <AppIcon icon={CheckCircle} size="sm" color="success" className="shrink-0 mt-0.5" />
+                    <span>{changePassSuccess}</span>
+                  </div>
+                ) : null}
+
                 <div className="flex items-center gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setIsPasswordModalOpen(false)}
-                    className="flex-1 py-2 text-xs font-semibold rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
+                    className="flex-1 py-2.5 text-xs font-semibold rounded-xl bg-slate-900/80 hover:bg-slate-900 text-slate-300 border border-white/15 transition cursor-pointer shadow-xs"
                   >
                     Close Preview
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-2 text-xs font-bold rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 transition cursor-pointer"
+                    disabled={isSimulatingSave}
+                    className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 transition cursor-pointer shadow-md disabled:opacity-50"
                   >
-                    Save & Test
+                    {isSimulatingSave ? "Saving..." : "Save & Test"}
                   </button>
                 </div>
               </form>
