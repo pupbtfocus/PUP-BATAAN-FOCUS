@@ -51,6 +51,7 @@ import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
 export function getFileType(fileNameOrUrl: string): {
   type: DetectedFileType;
@@ -1716,36 +1717,9 @@ function FacultySubmissionPanelContent({
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
       {/* ─── Initial page-load overlay ─────────────────────────────── */}
-      <div
-        className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950 transition-opacity duration-500 ${
-          isPageLoading ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
-        aria-hidden={!isPageLoading}
-      >
-        {/* PUP Logo */}
-        <div className="relative mb-3">
-          <BrandMark size={64} className="rounded-full" />
-        </div>
-        {/* App Title */}
-        <h1 className="text-xl font-bold tracking-wider text-amber-300">
-          ᜉᜓᜉ᜔ ᜉ᜔ᜂᜃ᜔ᜂᜐ᜔
-        </h1>
-        {/* Animated hourglass loader */}
-        <div className="my-4 flex items-center justify-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/loading.svg"
-            alt="Loading"
-            width={96}
-            height={96}
-            className="h-24 w-24"
-          />
-        </div>
-        {/* Subtext */}
-        <p className="text-xs font-medium tracking-wide text-slate-400">
-          Loading academic portal...
-        </p>
-      </div>
+      {isPageLoading && (
+        <SystemLoadingScreen text="Loading faculty academic portal..." />
+      )}
       {/* Mobile Menu Button (visible only on small screens when drawer is closed) */}
       {!isMobileMenuOpen && (
         <button

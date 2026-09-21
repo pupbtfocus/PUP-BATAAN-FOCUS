@@ -351,21 +351,18 @@ function AuthConfirmContent() {
             {/* 1. Loading State */}
             {status === "loading" && (
               <div className="py-4 flex flex-col items-center justify-center text-center">
-                <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-amber-400/60 shadow-inner my-2">
-                  <img
-                    src={
-                      typeof loadingIcon === "string"
-                        ? loadingIcon
-                        : (loadingIcon as any)?.src ?? "/icons-animations/loading.svg"
-                    }
-                    alt="Verifying"
-                    className="h-14 w-14 object-contain"
-                  />
+                <div className="relative flex items-center justify-center my-2">
+                  <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-amber-400/60 shadow-inner">
+                    <div className="absolute inset-2 rounded-full border-2 border-amber-400/20 border-t-amber-400 border-r-amber-400/60 animate-spin" />
+                    <Logo size={44} className="relative z-10" />
+                  </div>
                 </div>
                 <h2 className="mt-3 text-2xl font-black uppercase tracking-wider text-amber-300">
                   Verifying Link
                 </h2>
-                <div className="mx-auto my-3 h-0.5 w-14 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                <div className="relative w-36 h-1 rounded-full bg-amber-950/80 overflow-hidden border border-amber-400/25 shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)] my-3">
+                  <div className="absolute inset-y-0 w-2/5 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-300 to-amber-500/20 animate-pup-shimmer shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                </div>
                 <p className="text-amber-100/90 text-xs sm:text-sm font-medium tracking-wide max-w-[280px]">
                   {statusMessage || "Verifying your invitation link with campus directory..."}
                 </p>

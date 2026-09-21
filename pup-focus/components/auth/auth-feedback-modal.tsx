@@ -7,6 +7,7 @@ import failedIcon from "@/assets/icons animations/fail.svg";
 import loadingIcon from "@/assets/icons animations/loading.svg";
 import { Refresh, SystemRestart, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { Logo } from "@/components/ui/logo";
 
 export interface AuthModalState {
   title: string;
@@ -109,14 +110,19 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
                   : "border-emerald-500/50"
               }`}
             >
-              <img
-                key={animationKey}
-                src={`${
-                  isLoading ? loadingSrc : isSuccess ? successSrc : failedSrc
-                }?v=${animationKey}`}
-                alt={isLoading ? "Loading" : isSuccess ? "Success" : "Failed"}
-                className="h-14 w-14 sm:h-16 sm:w-16 object-contain"
-              />
+              {isLoading ? (
+                <div className="relative flex items-center justify-center w-full h-full">
+                  <div className="absolute inset-2 rounded-full border-2 border-amber-400/20 border-t-amber-400 border-r-amber-400/60 animate-spin" />
+                  <Logo size={44} className="relative z-10" />
+                </div>
+              ) : (
+                <img
+                  key={animationKey}
+                  src={`${isSuccess ? successSrc : failedSrc}?v=${animationKey}`}
+                  alt={isSuccess ? "Success" : "Failed"}
+                  className="h-14 w-14 sm:h-16 sm:w-16 object-contain"
+                />
+              )}
             </div>
           </div>
 
@@ -133,14 +139,20 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
               : modal.title || "Login Failed"}
           </h3>
 
-          {/* Sleek Golden or Rose Divider */}
-          <div
-            className={`h-0.5 w-12 rounded-full my-2 ${
-              isError
-                ? "bg-gradient-to-r from-transparent via-rose-500/70 to-transparent"
-                : "bg-gradient-to-r from-transparent via-amber-400/70 to-transparent"
-            }`}
-          />
+          {/* Progress Shimmer or Divider */}
+          {isLoading ? (
+            <div className="relative w-36 h-1 rounded-full bg-amber-950/80 overflow-hidden border border-amber-400/25 shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)] my-2.5">
+              <div className="absolute inset-y-0 w-2/5 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-300 to-amber-500/20 animate-pup-shimmer shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+            </div>
+          ) : (
+            <div
+              className={`h-0.5 w-12 rounded-full my-2 ${
+                isError
+                  ? "bg-gradient-to-r from-transparent via-rose-500/70 to-transparent"
+                  : "bg-gradient-to-r from-transparent via-amber-400/70 to-transparent"
+              }`}
+            />
+          )}
 
           {/* Context Message */}
           <p
