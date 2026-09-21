@@ -543,6 +543,63 @@ export async function GET(request: NextRequest) {
       archive.byteOffset + archive.byteLength
     ) as ArrayBuffer;
 
+    // --- Persist ZIP download to system_backups so it appears in the backup list ---
+    const archiveSizeKb = Math.max(1, Math.round(archiveBuffer.byteLength / 1024));
+    const dateStr = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const backupName = safeFac
+      ? `Vault_ZIP_${safeFac}_${safeAY}_${safeSem}_${dateStr}`
+      : `Vault_ZIP_${safeAY}_${safeSem}_${dateStr}`;
+
+    // Resolve creator profile ID for created_by FK
+    let creatorProfileId: string | null = null;
+    try {
+      const { data: prof } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (prof?.id) creatorProfileId = prof.id;
+    } catch {
+      // ignore — FK mismatch handled by retry below
+    }
+
+    const scopeMeta = {
+      academic_year: targetAcademicYear && targetAcademicYear !== "all" ? targetAcademicYear : null,
+      semester: targetSemester && targetSemester !== "all" ? targetSemester : null,
+      faculty_id: targetFacultyId && targetFacultyId !== "all" ? targetFacultyId : null,
+      faculty_name: targetFacultyName || null,
+    };
+
+    const zipBackupPayload = {
+      backup_name: backupName,
+      academic_year: scopeMeta.academic_year,
+      total_records: fileCount,
+      file_size_kb: archiveSizeKb,
+      status: "completed" as const,
+      created_by: creatorProfileId,
+      metadata: {
+        type: "document_vault_zip",
+        scope: scopeMeta,
+        file_count: fileCount,
+        zip_name: zipName,
+      },
+    };
+
+    try {
+      const { error: insertErr } = await supabaseAdmin
+        .from("system_backups")
+        .insert(zipBackupPayload);
+
+      if (insertErr && creatorProfileId) {
+        // Retry without created_by if FK constraint fails
+        await supabaseAdmin
+          .from("system_backups")
+          .insert({ ...zipBackupPayload, created_by: null });
+      }
+    } catch {
+      // ignore — backup record failure must not block the file download
+    }
+
     // Audit log: ZIP vault exported
     await logAudit({
       actorId: user.id,
