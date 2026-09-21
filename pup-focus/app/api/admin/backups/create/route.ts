@@ -3,6 +3,7 @@ import { ROLE } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import type { BackupSnapshotData } from "@/features/backup-archive/types/backup-archive.types";
+import { logAudit, AUDIT_ACTION } from "@/lib/audit/log-audit";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -459,6 +460,22 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Audit log: backup created
+    await logAudit({
+      actorId: user.id,
+      action: AUDIT_ACTION.BACKUP_CREATE,
+      entityType: "system_backup",
+      entityId: backupRecord.id,
+      metadata: {
+        backup_name: backupName,
+        scope: scopeMetadata,
+        total_records: totalRecords,
+        users_count: users.length,
+        submissions_count: submissions.length,
+        file_size_kb: fileSizeKb,
+      },
+    });
 
     return NextResponse.json({
       success: true,

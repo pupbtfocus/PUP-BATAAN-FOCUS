@@ -20,6 +20,12 @@ const ACTION_CATEGORY_FILTERS: Record<string, string[]> = {
     "submission_window.update",
     "submission_window.close",
   ],
+  backup: [
+    "backup.create",
+    "backup.download",
+    "backup.export_zip",
+    "backup.delete",
+  ],
 };
 
 export async function GET(request: NextRequest) {

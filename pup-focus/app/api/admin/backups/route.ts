@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ROLE } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { logAudit, AUDIT_ACTION } from "@/lib/audit/log-audit";
 import type {
   SystemBackup,
   ArchivedTermSummary,
@@ -350,6 +351,15 @@ export async function DELETE(request: NextRequest) {
     if (deleteError) {
       return NextResponse.json({ error: deleteError.message }, { status: 400 });
     }
+
+    // Audit log: backup deleted
+    await logAudit({
+      actorId: user.id,
+      action: AUDIT_ACTION.BACKUP_DELETE,
+      entityType: "system_backup",
+      entityId: id,
+      metadata: { deleted_backup_id: id },
+    });
 
     return NextResponse.json({ success: true, message: "Backup log deleted." });
   } catch (error) {

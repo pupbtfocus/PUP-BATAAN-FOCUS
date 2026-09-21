@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ROLE } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { logAudit, AUDIT_ACTION } from "@/lib/audit/log-audit";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -52,6 +53,18 @@ export async function GET(request: NextRequest) {
 
     const fileName = `${backupRecord.backup_name.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`;
     const jsonStr = JSON.stringify(snapshot, null, 2);
+
+    // Audit log: snapshot downloaded
+    await logAudit({
+      actorId: user.id,
+      action: AUDIT_ACTION.BACKUP_DOWNLOAD,
+      entityType: "system_backup",
+      entityId: id,
+      metadata: {
+        backup_name: backupRecord.backup_name,
+        file_name: fileName,
+      },
+    });
 
     return new NextResponse(jsonStr, {
       status: 200,

@@ -4,6 +4,7 @@ import { ROLE } from "@/config/roles";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { logAudit, AUDIT_ACTION } from "@/lib/audit/log-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -541,6 +542,24 @@ export async function GET(request: NextRequest) {
       archive.byteOffset,
       archive.byteOffset + archive.byteLength
     ) as ArrayBuffer;
+
+    // Audit log: ZIP vault exported
+    await logAudit({
+      actorId: user.id,
+      action: AUDIT_ACTION.BACKUP_EXPORT_ZIP,
+      entityType: "document_vault",
+      entityId: null,
+      metadata: {
+        zip_name: zipName,
+        file_count: fileCount,
+        scope: {
+          academic_year: targetAcademicYear ?? "all",
+          semester: targetSemester ?? "all",
+          faculty_id: targetFacultyId ?? "all",
+          faculty_name: targetFacultyName ?? "all",
+        },
+      },
+    });
 
     return new NextResponse(archiveBuffer, {
       status: 200,
