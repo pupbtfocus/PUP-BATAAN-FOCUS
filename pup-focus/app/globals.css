@@ -292,3 +292,17 @@ a[class*="from-amber-"][class*="text-slate-950"] svg,
   color: #020617 !important;
 }
 
+/* PUP System Loading Shimmer Bar */
+@keyframes pupLoadingShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.animate-pup-shimmer {
+  animation: pupLoadingShimmer 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+

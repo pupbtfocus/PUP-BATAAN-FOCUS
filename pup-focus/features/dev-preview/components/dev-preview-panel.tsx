@@ -2050,7 +2050,7 @@ export function DevPreviewPanel() {
           <button
             type="button"
             onClick={() => setShowSystemLoadingScreen(false)}
-            className="fixed top-6 right-6 z-50 px-3.5 py-1.5 rounded-full bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold backdrop-blur-md border border-[#5e0000] transition cursor-pointer flex items-center gap-1.5 shadow-lg"
+            className="fixed top-6 right-6 z-50 px-3.5 py-1.5 rounded-full bg-[#680000]/90 hover:bg-[#580000] text-amber-200 text-xs font-semibold backdrop-blur-md border border-amber-400/40 transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-black/50"
           >
             <AppIcon icon={Xmark} size="sm" color="inherit" />
             <span>Dismiss Preview</span>
