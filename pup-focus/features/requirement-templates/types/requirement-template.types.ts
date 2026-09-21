@@ -1,4 +1,4 @@
-export type AllowedFormat = "PDF" | "DOCX" | "XLSX" | "PNG" | "JPG";
+export type AllowedFormat = "PDF" | "DOCX" | "XLSX" | "PNG" | "JPG" | "ZIP";
 
 export const ALLOWED_FORMAT_OPTIONS: { label: string; value: AllowedFormat; mimeType: string }[] = [
   { label: "PDF Document", value: "PDF", mimeType: "application/pdf" },
@@ -6,6 +6,7 @@ export const ALLOWED_FORMAT_OPTIONS: { label: string; value: AllowedFormat; mime
   { label: "Excel (XLSX)", value: "XLSX", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
   { label: "PNG Image", value: "PNG", mimeType: "image/png" },
   { label: "JPG Image", value: "JPG", mimeType: "image/jpeg" },
+  { label: "ZIP Archive", value: "ZIP", mimeType: "application/zip" },
 ];
 
 export const MAX_SIZE_OPTIONS: { label: string; value: number }[] = [
@@ -13,6 +14,8 @@ export const MAX_SIZE_OPTIONS: { label: string; value: number }[] = [
   { label: "5 MB", value: 5 },
   { label: "10 MB", value: 10 },
   { label: "20 MB", value: 20 },
+  { label: "25 MB", value: 25 },
+  { label: "50 MB", value: 50 },
 ];
 
 export interface RequirementTemplate {

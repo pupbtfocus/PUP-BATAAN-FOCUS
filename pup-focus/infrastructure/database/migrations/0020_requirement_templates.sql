@@ -30,7 +30,7 @@ values
     true
   ),
   (
-    'Enhanced Course Syllabus',
+    'Enhanced Course Syllabus (if not yet submitted)',
     'enhanced_syllabus',
     'OBE-compliant syllabus including course outcomes, grading system, and weekly schedule.',
     array['PDF', 'DOCX'],
@@ -39,7 +39,7 @@ values
     true
   ),
   (
-    'Class Orientation Documentation',
+    'Class Orientation Documentation (photos and narrative report)',
     'class_orientation',
     'Narrative report and photo documentation of the initial class orientation.',
     array['PDF', 'DOCX', 'PNG', 'JPG'],
@@ -48,7 +48,7 @@ values
     true
   ),
   (
-    'Midterm Examination Package',
+    'Copy of Midterm Examinations with TOS and Answer Key',
     'midterm_package',
     'Copy of midterm examinations with Table of Specifications (TOS) and Answer Key.',
     array['PDF', 'DOCX'],
@@ -57,7 +57,7 @@ values
     true
   ),
   (
-    'Final Examination Package',
+    'Copy of Final Examinations with TOS and Answer Key',
     'final_package',
     'Copy of final examinations with Table of Specifications (TOS) and Answer Key.',
     array['PDF', 'DOCX'],
@@ -66,7 +66,7 @@ values
     true
   ),
   (
-    'Class Records',
+    'Class Records (midterm and final computations)',
     'class_records',
     'Official class records showing midterm and final grade computations.',
     array['PDF', 'XLSX'],
@@ -74,4 +74,10 @@ values
     true,
     true
   )
-on conflict (code) do nothing;
+on conflict (code) do update set
+  title = excluded.title,
+  description = excluded.description,
+  allowed_formats = excluded.allowed_formats,
+  max_size_mb = excluded.max_size_mb,
+  is_mandatory = excluded.is_mandatory,
+  updated_at = now();

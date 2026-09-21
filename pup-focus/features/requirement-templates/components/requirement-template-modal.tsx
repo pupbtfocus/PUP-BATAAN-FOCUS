@@ -15,7 +15,7 @@ import {
 interface RequirementTemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (title?: string, isNew?: boolean) => void;
   templateToEdit: RequirementTemplate | null;
 }
 
@@ -152,7 +152,7 @@ export function RequirementTemplateModal({
       }
 
       setIsSubmitting(false);
-      onSaved();
+      onSaved(cleanTitle, !isEditing);
       onClose();
     } catch {
       setError("Unexpected error while saving requirement template.");
