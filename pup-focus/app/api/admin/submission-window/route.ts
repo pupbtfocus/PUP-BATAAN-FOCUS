@@ -221,20 +221,22 @@ export async function PUT(request: NextRequest) {
         term.academic_year === academicYear && term.semester === semester,
     );
 
-    if (termAlreadyUsed) {
-      const isSameCurrentTerm =
-        currentTerm?.academicYear === academicYear &&
-        currentTerm?.semester === semester;
+    const isActiveAcademicTerm =
+      currentTermResult.data?.academic_year?.trim() === academicYear &&
+      normalizeSemester(currentTermResult.data?.semester) === semester;
 
-      if (!isSameCurrentTerm) {
-        return NextResponse.json(
-          {
-            error:
-              "The selected academic year and semester have already been used for a submission window.",
-          },
-          { status: 400 },
-        );
-      }
+    const isSameCurrentTerm =
+      currentTerm?.academicYear === academicYear &&
+      currentTerm?.semester === semester;
+
+    if (termAlreadyUsed && !isActiveAcademicTerm && !isSameCurrentTerm) {
+      return NextResponse.json(
+        {
+          error:
+            "The selected academic year and semester have already been used for a submission window.",
+        },
+        { status: 400 },
+      );
     }
 
     const startTime24 = convert12HourTo24Hour(startTime);
