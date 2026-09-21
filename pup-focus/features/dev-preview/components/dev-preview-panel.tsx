@@ -27,6 +27,7 @@ import { Logo } from "@/components/ui/logo";
 import {
   buildInviteEmailHtml,
   buildTempPasswordEmailHtml,
+  buildForgotPasswordEmailHtml,
   buildSubmissionWindowNotificationEmailHtml,
 } from "@/lib/email/email-templates";
 import { ROLE, type AppRole } from "@/config/roles";
@@ -58,10 +59,12 @@ export function DevPreviewPanel() {
   const [isSimulatingLoginSequence, setIsSimulatingLoginSequence] = useState(false);
 
   // Email Preview State
-  const [emailTemplate, setEmailTemplate] = useState<"invite" | "temp-password" | "window">("invite");
+  const [emailTemplate, setEmailTemplate] = useState<"invite" | "temp-credentials" | "forgot-password" | "window">("invite");
   const [emailRole, setEmailRole] = useState<AppRole>(ROLE.ADMIN);
   const [recipientName, setRecipientName] = useState("Jane Doe");
+  const [recipientEmail, setRecipientEmail] = useState("preview@pupfocus.dev");
   const [emailCopied, setEmailCopied] = useState(false);
+  const [credentialsCopiedField, setCredentialsCopiedField] = useState<"email" | "password" | "all" | null>(null);
   const [gmailStarred, setGmailStarred] = useState(false);
 
   // Verification Screen Preview State
@@ -85,30 +88,55 @@ export function DevPreviewPanel() {
   >(null);
   const [safetyCountdown, setSafetyCountdown] = useState(10);
 
+  // Extract first name only for faculty/admin display
+  const recipientFirstName = recipientName.trim().split(/\s+/)[0] || "User";
+
   // Generate Email HTML
   const getRenderedEmailHtml = () => {
     if (emailTemplate === "invite") {
       return buildInviteEmailHtml({
         fullName: recipientName,
+        firstName: recipientFirstName,
         link: "#preview-invite-link",
         invitedRole: emailRole,
       });
     }
-    if (emailTemplate === "temp-password") {
+    if (emailTemplate === "temp-credentials") {
       return buildTempPasswordEmailHtml({
         fullName: recipientName,
+        firstName: recipientFirstName,
+        email: recipientEmail,
         tempPassword: "PupFocus_TempPass_9823#",
         signInHref: "#preview-signin",
       });
     }
+    if (emailTemplate === "forgot-password") {
+      return buildForgotPasswordEmailHtml({
+        fullName: recipientName,
+        firstName: recipientFirstName,
+        email: recipientEmail,
+        resetLink: "#preview-reset-password",
+      });
+    }
     return buildSubmissionWindowNotificationEmailHtml({
       fullName: recipientName,
+      firstName: recipientFirstName,
       startDate: "September 10, 2026",
       endDate: "September 24, 2026",
       startTimeLabel: "08:00 AM",
       endTimeLabel: "11:59 PM",
       actionHref: "#preview-window",
     });
+  };
+
+  const copyCredentialsText = async (text: string, field: "email" | "password" | "all") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCredentialsCopiedField(field);
+      setTimeout(() => setCredentialsCopiedField(null), 2500);
+    } catch {
+      // ignore
+    }
   };
 
   const copyEmailHtml = async () => {
@@ -296,97 +324,208 @@ export function DevPreviewPanel() {
       {activeTab === "gmail" && (
         <div className="space-y-4">
           {/* Controls Bar */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Template:
-              </span>
-              <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-50 dark:bg-slate-950 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setEmailTemplate("invite")}
-                  className={`px-3 py-1 rounded-md font-medium cursor-pointer transition ${
-                    emailTemplate === "invite"
-                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  Account Invitation
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEmailTemplate("temp-password")}
-                  className={`px-3 py-1 rounded-md font-medium cursor-pointer transition ${
-                    emailTemplate === "temp-password"
-                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  Temporary Password
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEmailTemplate("window")}
-                  className={`px-3 py-1 rounded-md font-medium cursor-pointer transition ${
-                    emailTemplate === "window"
-                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  Submission Window Announcement
-                </button>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Template:
+                </span>
+                <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-50 dark:bg-slate-950 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setEmailTemplate("invite")}
+                    className={`px-3 py-1 rounded-md font-medium cursor-pointer transition ${
+                      emailTemplate === "invite"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold"
+                        : "text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    Account Invitation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmailTemplate("temp-credentials")}
+                    className={`px-3 py-1 rounded-md font-medium cursor-pointer transition ${
+                      emailTemplate === "temp-credentials"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold"
+                        : "text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    Temporary Credentials
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmailTemplate("forgot-password")}
+                    className={`px-3 py-1 rounded-md font-medium cursor-pointer transition ${
+                      emailTemplate === "forgot-password"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold"
+                        : "text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    Forgot Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmailTemplate("window")}
+                    className={`px-3 py-1 rounded-md font-medium cursor-pointer transition ${
+                      emailTemplate === "window"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold"
+                        : "text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    Submission Window Announcement
+                  </button>
+                </div>
+
+                {emailTemplate === "invite" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Role:
+                    </span>
+                    <select
+                      value={emailRole}
+                      onChange={(e) => setEmailRole(e.target.value as AppRole)}
+                      className="text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1 text-slate-800 dark:text-slate-200 outline-none"
+                    >
+                      <option value={ROLE.ADMIN}>Admin</option>
+                      <option value={ROLE.FACULTY}>Faculty</option>
+                      <option value={ROLE.SUPER_ADMIN}>Super Admin</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
-              {emailTemplate === "invite" && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Role:
-                  </span>
-                  <select
-                    value={emailRole}
-                    onChange={(e) => setEmailRole(e.target.value as AppRole)}
-                    className="text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1 text-slate-800 dark:text-slate-200 outline-none"
-                  >
-                    <option value={ROLE.ADMIN}>Admin</option>
-                    <option value={ROLE.FACULTY}>Faculty</option>
-                    <option value={ROLE.SUPER_ADMIN}>Super Admin</option>
-                  </select>
-                </div>
-              )}
-
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Recipient:
+                <button
+                  type="button"
+                  onClick={copyEmailHtml}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition cursor-pointer"
+                >
+                  {emailCopied ? <AppIcon icon={Check} size="sm" color="success" /> : <AppIcon icon={Copy} size="sm" color="inherit" />}
+                  <span>{emailCopied ? "HTML Copied!" : "Copy Raw HTML"}</span>
+                </button>
+                <a
+                  href="/email-preview"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-2xs"
+                >
+                  <span>Open in Popout Tab</span>
+                  <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+                </a>
+              </div>
+            </div>
+
+            {/* Recipient Details Filter Row */}
+            <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-slate-100 dark:border-slate-800/60 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  Full Name:
                 </span>
                 <input
                   type="text"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   placeholder="Recipient Name"
-                  className="text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1 text-slate-800 dark:text-slate-200 outline-none w-36"
+                  className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1 text-slate-800 dark:text-slate-200 outline-none w-36"
+                />
+                <span className="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md font-medium">
+                  Greeting uses first name: <strong>Hello {recipientFirstName},</strong>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  Email Address:
+                </span>
+                <input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  placeholder="Email Address"
+                  className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1 text-slate-800 dark:text-slate-200 outline-none w-48"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={copyEmailHtml}
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition cursor-pointer"
-              >
-                {emailCopied ? <AppIcon icon={Check} size="sm" color="success" /> : <AppIcon icon={Copy} size="sm" color="inherit" />}
-                <span>{emailCopied ? "HTML Copied!" : "Copy Raw HTML"}</span>
-              </button>
-              <a
-                href="/email-preview"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-2xs"
-              >
-                <span>Open in Popout Tab</span>
-                <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
-              </a>
-            </div>
+            {/* Interactive Temporary Credentials Quick Bar (when temp-credentials is selected) */}
+            {emailTemplate === "temp-credentials" && (
+              <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-400/40 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300 flex items-center gap-1.5 text-[11px]">
+                    <AppIcon icon={Key} size="sm" color="warning" />
+                    <span>Temporary Credentials:</span>
+                  </span>
+                  <div className="flex items-center gap-1 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-500 text-[10px] uppercase font-bold">Email:</span>
+                    <span className="font-mono text-slate-800 dark:text-slate-200 font-semibold">{recipientEmail}</span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-500 text-[10px] uppercase font-bold">Password:</span>
+                    <span className="font-mono text-amber-700 dark:text-amber-400 font-bold">PupFocus_TempPass_9823#</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <button
+                    type="button"
+                    onClick={() => copyCredentialsText(recipientEmail, "email")}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-medium transition cursor-pointer"
+                  >
+                    {credentialsCopiedField === "email" ? (
+                      <>
+                        <AppIcon icon={Check} size="xs" color="success" />
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Email Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <AppIcon icon={Copy} size="xs" color="inherit" />
+                        <span>Copy Email</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => copyCredentialsText("PupFocus_TempPass_9823#", "password")}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-medium transition cursor-pointer"
+                  >
+                    {credentialsCopiedField === "password" ? (
+                      <>
+                        <AppIcon icon={Check} size="xs" color="success" />
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Password Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <AppIcon icon={Copy} size="xs" color="inherit" />
+                        <span>Copy Password</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyCredentialsText(
+                        `Email: ${recipientEmail}\nTemporary Password: PupFocus_TempPass_9823#`,
+                        "all"
+                      )
+                    }
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition cursor-pointer shadow-2xs"
+                  >
+                    {credentialsCopiedField === "all" ? (
+                      <>
+                        <AppIcon icon={Check} size="xs" color="inherit" />
+                        <span>All Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <AppIcon icon={Copy} size="xs" color="inherit" />
+                        <span>Copy Both</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Realistic Gmail Webmail Mockup */}
@@ -401,7 +540,7 @@ export function DevPreviewPanel() {
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 pl-2">
                   <AppIcon icon={Mail} size="md" color="danger" />
-                  <span>Gmail Inbox • preview@pupfocus.dev</span>
+                  <span>Gmail Inbox • {recipientEmail}</span>
                 </div>
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -412,7 +551,7 @@ export function DevPreviewPanel() {
             {/* Email Header inside Gmail */}
             <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-600/20 text-amber-700 dark:text-amber-400 font-bold flex items-center justify-center text-sm shrink-0">
+                <div className="w-10 h-10 rounded-full bg-[#4d0000] border-2 border-amber-400/80 text-amber-300 font-extrabold flex items-center justify-center text-xs shrink-0 shadow-sm">
                   PF
                 </div>
                 <div>
@@ -420,8 +559,10 @@ export function DevPreviewPanel() {
                     <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       {emailTemplate === "invite"
                         ? "Welcome to PUP FOCUS — Account Access"
-                        : emailTemplate === "temp-password"
-                        ? "Your Temporary Password for PUP FOCUS"
+                        : emailTemplate === "temp-credentials"
+                        ? "Your Temporary Credentials for PUP FOCUS"
+                        : emailTemplate === "forgot-password"
+                        ? "Reset your PUP FOCUS Password"
                         : "PUP FOCUS — Submission Window Schedule Announcement"}
                     </h3>
                     <button
@@ -439,7 +580,7 @@ export function DevPreviewPanel() {
                     </button>
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    From: <span className="font-medium text-slate-700 dark:text-slate-300">PUP FOCUS System</span> &lt;no-reply@pupfocus.edu.ph&gt; • To: {recipientName} &lt;preview@pupfocus.dev&gt;
+                    From: <span className="font-medium text-slate-700 dark:text-slate-300">PUP FOCUS System</span> &lt;no-reply@pupfocus.edu.ph&gt; • To: {recipientFirstName} &lt;{recipientEmail}&gt;
                   </div>
                 </div>
               </div>
@@ -457,17 +598,37 @@ export function DevPreviewPanel() {
               />
             </div>
 
-            {/* Email Footer Bar with CTA to test Verification Tab */}
+            {/* Email Footer Bar with Contextual CTA */}
             <div className="p-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
               <span className="text-slate-600 dark:text-slate-400">
-                Clicking the button in the invitation email takes the user directly to the <strong>/auth/confirm</strong> verification tab.
+                {emailTemplate === "invite"
+                  ? "Clicking the button in the invitation email takes the user directly to the /auth/confirm verification tab."
+                  : emailTemplate === "temp-credentials"
+                  ? "Clicking 'Sign in to PUP FOCUS' directs the user to sign in with their temporary credentials, prompting a first-time password change."
+                  : emailTemplate === "forgot-password"
+                  ? "Clicking 'Reset Password' directs the user to /auth/change-password with a secure institutional reset token."
+                  : "Submission window emails inform faculty about active deadlines with direct links to their document dashboard."}
               </span>
               <button
                 type="button"
-                onClick={() => setActiveTab("verification")}
+                onClick={() =>
+                  setActiveTab(
+                    emailTemplate === "invite"
+                      ? "verification"
+                      : emailTemplate === "temp-credentials" || emailTemplate === "forgot-password"
+                      ? "change-password"
+                      : "gmail"
+                  )
+                }
                 className="inline-flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
               >
-                <span>Switch to Verify Tab Screen Preview</span>
+                <span>
+                  {emailTemplate === "invite"
+                    ? "Switch to Verify Tab Screen Preview"
+                    : emailTemplate === "temp-credentials" || emailTemplate === "forgot-password"
+                    ? "Switch to Password Change Screen Preview"
+                    : "Refresh Email Preview"}
+                </span>
                 <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
               </button>
             </div>

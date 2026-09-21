@@ -6,6 +6,7 @@ import {
   buildEmailLayout,
   buildInviteEmailHtml,
   buildTempPasswordEmailHtml,
+  buildForgotPasswordEmailHtml,
   buildSubmissionWindowNotificationEmailHtml,
 } from "./email-templates";
 
@@ -169,6 +170,7 @@ type SendTempPasswordOpts = {
   to: string;
   tempPassword: string;
   fullName: string;
+  firstName?: string;
   from?: string;
 };
 
@@ -176,6 +178,7 @@ export async function sendTempPasswordEmail({
   to,
   tempPassword,
   fullName,
+  firstName,
   from,
 }: SendTempPasswordOpts) {
   const host = normalizeSmtpValue(process.env.EMAIL_SMTP_HOST);
@@ -203,10 +206,17 @@ export async function sendTempPasswordEmail({
     from || process.env.EMAIL_FROM || user,
   );
 
-  const subject = "PUP FOCUS - Login details";
-  const text = `Hello ${fullName},\n\nYour account is ready. Use the temporary password below to sign in to PUP FOCUS:\n\n${tempPassword}\n\nPlease sign in and change your password after logging in.`;
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
+
+  const subject = "PUP FOCUS - Temporary Credentials";
+  const text = `Hello ${resolvedFirstName},\n\nYour account credentials are ready. Use the details below to sign in to PUP FOCUS:\n\nEmail: ${to}\nTemporary Password: ${tempPassword}\n\nPlease sign in and change your password after logging in.`;
   const html = buildTempPasswordEmailHtml({
     fullName,
+    firstName: resolvedFirstName,
+    email: to,
     tempPassword,
     signInHref: buildAppUrl("/auth/sign-in"),
   });
@@ -221,3 +231,69 @@ export async function sendTempPasswordEmail({
 
   return info;
 }
+
+type SendForgotPasswordOpts = {
+  to: string;
+  resetLink: string;
+  fullName?: string;
+  firstName?: string;
+  from?: string;
+};
+
+export async function sendForgotPasswordEmail({
+  to,
+  resetLink,
+  fullName,
+  firstName,
+  from,
+}: SendForgotPasswordOpts) {
+  const host = normalizeSmtpValue(process.env.EMAIL_SMTP_HOST);
+  const port = normalizeSmtpValue(process.env.EMAIL_SMTP_PORT);
+  const user = normalizeSmtpValue(process.env.EMAIL_SMTP_USER);
+  const pass = normalizeSmtpPassword(process.env.EMAIL_SMTP_PASS);
+
+  if (!host || !port || !user || !pass) {
+    throw new Error(
+      "SMTP configuration missing (EMAIL_SMTP_HOST/PORT/USER/PASS)",
+    );
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number(port),
+    secure: Number(port) === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const fromAddress = normalizeEmailAddress(
+    from || process.env.EMAIL_FROM || user,
+  );
+
+  const resolvedFirstName =
+    firstName?.trim() ||
+    fullName?.trim().split(/\s+/)[0] ||
+    "there";
+
+  const subject = "PUP FOCUS - Password Reset Request";
+  const text = `Hello ${resolvedFirstName},\n\nA password reset was requested for your PUP FOCUS account (${to}).\n\nUse the link below to set a new password:\n\n${resetLink}\n\nIf you did not request this, you can ignore this message.`;
+  const html = buildForgotPasswordEmailHtml({
+    fullName,
+    firstName: resolvedFirstName,
+    email: to,
+    resetLink,
+  });
+
+  const info = await transporter.sendMail({
+    from: formatDisplayFromAddress(fromAddress),
+    to: normalizeEmailAddress(to),
+    subject,
+    text,
+    html,
+  });
+
+  return info;
+}
+
