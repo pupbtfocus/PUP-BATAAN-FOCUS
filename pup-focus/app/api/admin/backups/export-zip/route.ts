@@ -110,8 +110,9 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const targetAcademicYear = searchParams.get("academic_year")?.trim();
-    const targetSemester = searchParams.get("semester")?.trim();
+    const targetAcademicYear = searchParams.get("academic_year")?.trim() || "";
+    const targetSemester = searchParams.get("semester")?.trim() || "";
+    const targetFacultyId = searchParams.get("faculty_id")?.trim() || "";
 
     // 1. Use Service Role / Admin client to bypass RLS
     const supabaseAdmin = getServiceRoleClient();
@@ -131,6 +132,43 @@ export async function GET(request: NextRequest) {
     } catch {
       // ignore
     }
+
+    // 2b. Fetch faculty_program_assignments for exact term mapping
+    const assignmentMap = new Map<string, { academicYear: string; semester: string }>();
+    try {
+      const { data: assignments } = await supabaseAdmin
+        .from("faculty_program_assignments")
+        .select("id, academic_year, term");
+
+      if (assignments) {
+        for (const a of assignments) {
+          if (a.id) {
+            const semNorm = a.term?.toLowerCase().includes("2nd")
+              ? "2nd Semester"
+              : a.term?.toLowerCase().includes("summer")
+              ? "Summer Term"
+              : "1st Semester";
+            assignmentMap.set(a.id, {
+              academicYear: a.academic_year,
+              semester: semNorm,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("faculty_program_assignments query note in export-zip:", err);
+    }
+
+    const getTermInfo = (sub: {
+      faculty_assignment_id?: string | null;
+      submitted_at?: string | null;
+      created_at?: string | null;
+    }): { academicYear: string; semester: string } => {
+      if (sub.faculty_assignment_id && assignmentMap.has(sub.faculty_assignment_id)) {
+        return assignmentMap.get(sub.faculty_assignment_id)!;
+      }
+      return toAcademicYearAndSemester(sub.submitted_at || sub.created_at);
+    };
 
     // 3. Query multiple profile sources via supabaseAdmin into a unified map
     const profileMap = new Map<string, ProfileRow>();
@@ -166,22 +204,64 @@ export async function GET(request: NextRequest) {
       if (profileId) profileMap.set(profileId, row);
     };
 
-    // 3a. Query faculty_profiles table
-    try {
-      const { data: facultyProfiles } = await supabaseAdmin
-        .from("faculty_profiles")
-        .select("*");
+    function isAdministrativeAccount(account: {
+      id?: string | null;
+      user_id?: string | null;
+      name?: string | null;
+      full_name?: string | null;
+      email?: string | null;
+    }): boolean {
+      const email = (account.email || "").toLowerCase().trim();
+      const name = (account.name || account.full_name || "").toLowerCase().trim();
 
-      if (facultyProfiles && Array.isArray(facultyProfiles)) {
-        for (const fp of facultyProfiles) {
-          recordProfile(fp as Record<string, unknown>);
+      if (
+        email === "pupbataanfocus.superadmin@gmail.com" ||
+        email === "preview@pupfocus.dev" ||
+        email === "christianjaycmandani@iskolarngbayan.pup.edu.ph" ||
+        email.includes("superadmin") ||
+        email.includes("admin@") ||
+        email.endsWith("@pupfocus.dev")
+      ) {
+        return true;
+      }
+
+      if (
+        name.includes("super admin") ||
+        name.includes("developer preview") ||
+        name === "pup focus super admin" ||
+        name.includes("system administrator")
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
+    // Identify admin and superadmin accounts via auth users
+    const adminUserIds = new Set<string>();
+    const adminEmails = new Set<string>();
+
+    try {
+      const { data: authData } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      for (const u of authData?.users || []) {
+        const r = ((u.user_metadata?.role as string) || (u.app_metadata?.role as string) || "").toLowerCase().trim();
+        const em = (u.email || "").toLowerCase().trim();
+
+        if (
+          r === "admin" ||
+          r === "super_admin" ||
+          r === "superadmin" ||
+          isAdministrativeAccount(u)
+        ) {
+          adminUserIds.add(u.id);
+          if (em) adminEmails.add(em);
         }
       }
     } catch (err) {
-      console.warn("faculty_profiles table query note:", err);
+      console.warn("Error checking auth users in export-zip route:", err);
     }
 
-    // 3b. Query profiles table
+    // 3. Query profiles table (recording genuine faculty only)
     try {
       const { data: profiles, error: pError } = await supabaseAdmin
         .from("profiles")
@@ -191,14 +271,21 @@ export async function GET(request: NextRequest) {
         console.warn("profiles query note:", pError.message);
       } else if (profiles && Array.isArray(profiles)) {
         for (const p of profiles) {
+          const em = (p.email || "").toLowerCase().trim();
+          if (
+            adminUserIds.has(p.id) ||
+            (p.user_id && adminUserIds.has(p.user_id)) ||
+            adminEmails.has(em) ||
+            isAdministrativeAccount(p)
+          ) {
+            continue;
+          }
           recordProfile(p as Record<string, unknown>);
         }
       }
     } catch (profileErr) {
       console.warn("profiles table query note:", profileErr);
     }
-
-
 
     // 4. Fetch Submissions
     const { data: submissions, error: subError } = await supabaseAdmin
@@ -235,22 +322,58 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Filter submissions by Academic Year & Semester if specified
+    // Filter submissions by Academic Year, Semester, and Faculty if specified
     const filteredSubmissions = (submissions || []).filter((sub) => {
-      if (!targetAcademicYear) return true;
+      const rawSub = sub as Record<string, unknown>;
+      const targetId =
+        (typeof rawSub.faculty_id === "string" ? rawSub.faculty_id : null) ||
+        (typeof rawSub.faculty_profile_id === "string" ? rawSub.faculty_profile_id : null) ||
+        (typeof rawSub.user_id === "string" ? rawSub.user_id : null) ||
+        (typeof rawSub.created_by === "string" ? rawSub.created_by : null) ||
+        (typeof rawSub.profile_id === "string" ? rawSub.profile_id : null);
 
-      const inferred = toAcademicYearAndSemester(sub.submitted_at || sub.created_at);
-      const ayMatch =
-        inferred.academicYear === targetAcademicYear ||
-        inferred.academicYear.replace(/[^0-9]/g, "") === targetAcademicYear.replace(/[^0-9]/g, "");
+      // Exclude submissions belonging to administrative accounts
+      if (targetId && adminUserIds.has(targetId)) {
+        return false;
+      }
+      if (sub.faculty_profile_id && adminUserIds.has(sub.faculty_profile_id)) {
+        return false;
+      }
 
-      if (!ayMatch) return false;
+      // 1. Faculty Filter
+      if (targetFacultyId && targetFacultyId !== "all") {
+        const matchesDirect = targetId === targetFacultyId || sub.faculty_profile_id === targetFacultyId;
+        const matchedProf = targetId ? profileMap.get(targetId) : null;
+        const matchesProf = Boolean(
+          matchedProf && (
+            matchedProf.id === targetFacultyId ||
+            matchedProf.user_id === targetFacultyId ||
+            matchedProf.faculty_id === targetFacultyId ||
+            matchedProf.profile_id === targetFacultyId
+          )
+        );
 
-      if (targetSemester) {
+        if (!matchesDirect && !matchesProf) {
+          return false;
+        }
+      }
+
+      // 2. Academic Year & Semester Filter
+      const termInfo = getTermInfo(sub);
+
+      if (targetAcademicYear && targetAcademicYear !== "all") {
+        const ayMatch =
+          termInfo.academicYear.toLowerCase() === targetAcademicYear.toLowerCase() ||
+          termInfo.academicYear.replace(/[^0-9]/g, "") === targetAcademicYear.replace(/[^0-9]/g, "");
+
+        if (!ayMatch) return false;
+      }
+
+      if (targetSemester && targetSemester !== "all") {
         const semMatch =
-          inferred.semester.toLowerCase().includes(targetSemester.toLowerCase()) ||
-          targetSemester.toLowerCase().includes(inferred.semester.toLowerCase());
-        return semMatch;
+          termInfo.semester.toLowerCase().includes(targetSemester.toLowerCase()) ||
+          targetSemester.toLowerCase().includes(termInfo.semester.toLowerCase());
+        if (!semMatch) return false;
       }
 
       return true;
@@ -261,7 +384,7 @@ export async function GET(request: NextRequest) {
 
     // Build hierarchical folders inside ZIP: [Academic Year - Semester] / [Faculty Full Name] / [Requirement Title]_[Filename]
     for (const sub of filteredSubmissions) {
-      const termInfo = toAcademicYearAndSemester(sub.submitted_at || sub.created_at);
+      const termInfo = getTermInfo(sub);
       const termFolderName = sanitizeSegment(`${termInfo.academicYear} - ${termInfo.semester}`);
       
       // Multi-Field Foreign Key Resolution with console.log debugging
@@ -272,14 +395,6 @@ export async function GET(request: NextRequest) {
         (typeof rawSub.user_id === "string" ? rawSub.user_id : null) ||
         (typeof rawSub.created_by === "string" ? rawSub.created_by : null) ||
         (typeof rawSub.profile_id === "string" ? rawSub.profile_id : null);
-
-      console.log("Submission FKs:", {
-        faculty_id: rawSub.faculty_id,
-        faculty_profile_id: rawSub.faculty_profile_id,
-        user_id: rawSub.user_id,
-        created_by: rawSub.created_by,
-        targetId: targetId,
-      });
 
       let matchedProfile = targetId ? profileMap.get(targetId) : null;
 
@@ -387,13 +502,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Resolve target faculty name if scoped
+    let targetFacultyName = "";
+    if (targetFacultyId && targetFacultyId !== "all") {
+      const targetProf = profileMap.get(targetFacultyId);
+      targetFacultyName = formatFacultyName(targetProf, targetFacultyId);
+    }
+
     // Add root vault index readme
     const readmeContent = [
       `PUP FOCUS INSTITUTIONAL DOCUMENT VAULT`,
       `=====================================`,
       `Export Timestamp: ${new Date().toISOString()}`,
-      `Filter Academic Year: ${targetAcademicYear || "All Academic Years"}`,
-      `Filter Semester: ${targetSemester || "All Semesters"}`,
+      `Filter Academic Year: ${targetAcademicYear && targetAcademicYear !== "all" ? targetAcademicYear : "All Academic Years"}`,
+      `Filter Semester: ${targetSemester && targetSemester !== "all" ? targetSemester : "All Semesters"}`,
+      `Filter Faculty: ${targetFacultyName || "All Faculty Members"}`,
       `Total Document Records: ${fileCount}`,
       `Generated by: ${user.email || "Super Admin"}`,
       `\nDirectory Hierarchy Structure:`,
@@ -407,9 +530,12 @@ export async function GET(request: NextRequest) {
       compression: "DEFLATE",
     });
 
-    const safeAY = targetAcademicYear ? sanitizeSegment(targetAcademicYear) : "All_AY";
-    const safeSem = targetSemester ? sanitizeSegment(targetSemester) : "All_Sem";
-    const zipName = `PUP_FOCUS_Document_Vault_${safeAY}_${safeSem}.zip`;
+    const safeAY = targetAcademicYear && targetAcademicYear !== "all" ? sanitizeSegment(targetAcademicYear) : "All_AY";
+    const safeSem = targetSemester && targetSemester !== "all" ? sanitizeSegment(targetSemester) : "All_Sem";
+    const safeFac = targetFacultyName ? sanitizeSegment(targetFacultyName).replace(/\s+/g, "_") : "";
+    const zipName = safeFac
+      ? `PUP_FOCUS_Document_Vault_${safeFac}_${safeAY}_${safeSem}.zip`
+      : `PUP_FOCUS_Document_Vault_${safeAY}_${safeSem}.zip`;
 
     const archiveBuffer = archive.buffer.slice(
       archive.byteOffset,

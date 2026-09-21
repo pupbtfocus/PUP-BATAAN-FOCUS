@@ -1,7 +1,25 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { Archive, Calendar, Check, CheckCircle, Database, Download, Eye, HardDrive, Hourglass, MultiplePages, Plus, Refresh, Trash, WarningTriangle, Xmark } from "iconoir-react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import {
+  Archive,
+  Calendar,
+  Check,
+  Database,
+  Download,
+  Eye,
+  HardDrive,
+  Hourglass,
+  MultiplePages,
+  NavArrowDown,
+  Plus,
+  Refresh,
+  Search,
+  Trash,
+  User,
+  WarningTriangle,
+  Xmark,
+} from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -10,13 +28,15 @@ import type {
   ArchivedTermSummary,
   AvailableAcademicTerm,
   BackupStats,
-  BackupSnapshotData,
+  FacultyOption,
 } from "@/features/backup-archive/types/backup-archive.types";
 
 export function BackupArchivePanel() {
   const [backups, setBackups] = useState<SystemBackup[]>([]);
   const [archivedTerms, setArchivedTerms] = useState<ArchivedTermSummary[]>([]);
   const [availableTerms, setAvailableTerms] = useState<AvailableAcademicTerm[]>([]);
+  const [academicYears, setAcademicYears] = useState<string[]>([]);
+  const [facultyList, setFacultyList] = useState<FacultyOption[]>([]);
   const [stats, setStats] = useState<BackupStats>({
     total_backups: 0,
     archived_academic_years: 0,
@@ -31,10 +51,15 @@ export function BackupArchivePanel() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Archiving selection state
-  const [selectedTermToArchive, setSelectedTermToArchive] = useState<string>("");
-  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
-  const [isArchiving, setIsArchiving] = useState(false);
+  // Scope filter states
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>("all");
+  const [selectedSemester, setSelectedSemester] = useState<string>("all");
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>("all");
+
+  // Searchable faculty dropdown state
+  const [isFacultyDropdownOpen, setIsFacultyDropdownOpen] = useState(false);
+  const [facultySearchQuery, setFacultySearchQuery] = useState("");
+  const facultyDropdownRef = useRef<HTMLDivElement>(null);
 
   // Vault / Snapshot inspection modal
   const [inspectedBackup, setInspectedBackup] = useState<SystemBackup | null>(null);
@@ -54,14 +79,14 @@ export function BackupArchivePanel() {
       setBackups(data.backups || []);
       setArchivedTerms(data.archivedTerms || []);
       setAvailableTerms(data.availableTerms || []);
+      if (data.academicYears && Array.isArray(data.academicYears)) {
+        setAcademicYears(data.academicYears);
+      }
+      if (data.facultyList && Array.isArray(data.facultyList)) {
+        setFacultyList(data.facultyList);
+      }
       if (data.stats) {
         setStats(data.stats);
-      }
-
-      // Preselect first unarchived term if available
-      const unarchived = (data.availableTerms || []).find((t: AvailableAcademicTerm) => !t.is_archived);
-      if (unarchived) {
-        setSelectedTermToArchive(`${unarchived.academic_year}__${unarchived.semester}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error loading backup data");
@@ -74,14 +99,96 @@ export function BackupArchivePanel() {
     void loadBackupData();
   }, []);
 
+  // Handle click outside to close searchable faculty dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        facultyDropdownRef.current &&
+        !facultyDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsFacultyDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const isAdministrativeFacultyOption = (fac: FacultyOption) => {
+    const email = (fac.email || "").toLowerCase().trim();
+    const name = (fac.name || "").toLowerCase().trim();
+    if (
+      email === "pupbataanfocus.superadmin@gmail.com" ||
+      email === "preview@pupfocus.dev" ||
+      email === "christianjaycmandani@iskolarngbayan.pup.edu.ph" ||
+      email.includes("superadmin") ||
+      email.includes("admin@") ||
+      email.endsWith("@pupfocus.dev")
+    ) {
+      return true;
+    }
+    if (
+      name.includes("super admin") ||
+      name.includes("developer preview") ||
+      name === "pup focus super admin" ||
+      name.includes("system administrator")
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  const verifiedFacultyList = useMemo(() => {
+    return facultyList.filter((fac) => !isAdministrativeFacultyOption(fac));
+  }, [facultyList]);
+
+  const isScopeFiltered = useMemo(() => {
+    return (
+      selectedAcademicYear !== "all" ||
+      selectedSemester !== "all" ||
+      selectedFacultyId !== "all"
+    );
+  }, [selectedAcademicYear, selectedSemester, selectedFacultyId]);
+
+  const selectedFacultyObj = useMemo(() => {
+    if (selectedFacultyId === "all") return null;
+    return verifiedFacultyList.find((f) => f.id === selectedFacultyId) || null;
+  }, [selectedFacultyId, verifiedFacultyList]);
+
+  const filteredFacultyList = useMemo(() => {
+    const q = facultySearchQuery.trim().toLowerCase();
+    if (!q) return verifiedFacultyList;
+    return verifiedFacultyList.filter((f) => {
+      const nameMatch = f.name.toLowerCase().includes(q);
+      const deptMatch = f.department ? f.department.toLowerCase().includes(q) : false;
+      const emailMatch = f.email ? f.email.toLowerCase().includes(q) : false;
+      return nameMatch || deptMatch || emailMatch;
+    });
+  }, [verifiedFacultyList, facultySearchQuery]);
+
+  const resetFilters = () => {
+    setSelectedAcademicYear("all");
+    setSelectedSemester("all");
+    setSelectedFacultyId("all");
+    setFacultySearchQuery("");
+    setIsFacultyDropdownOpen(false);
+  };
+
   const handleGenerateBackup = async () => {
     try {
       setIsGeneratingBackup(true);
       setError(null);
+
+      const payload = {
+        academic_year: selectedAcademicYear !== "all" ? selectedAcademicYear : undefined,
+        semester: selectedSemester !== "all" ? selectedSemester : undefined,
+        faculty_id: selectedFacultyId !== "all" ? selectedFacultyId : undefined,
+        faculty_name: selectedFacultyObj ? selectedFacultyObj.name : undefined,
+      };
+
       const res = await fetch("/api/admin/backups/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -103,7 +210,13 @@ export function BackupArchivePanel() {
         }));
       }
 
-      setSuccess("Backup generated and saved successfully!");
+      const scopeDesc = [
+        selectedAcademicYear !== "all" ? selectedAcademicYear : "All A.Y.",
+        selectedSemester !== "all" ? selectedSemester : "All Sem",
+        selectedFacultyObj ? selectedFacultyObj.name : "All Faculty",
+      ].join(" • ");
+
+      setSuccess(`Backup snapshot (${scopeDesc}) generated successfully!`);
       setTimeout(() => setSuccess(null), 5000);
 
       // Trigger automatic browser download of snapshot
@@ -120,7 +233,7 @@ export function BackupArchivePanel() {
         URL.revokeObjectURL(url);
       }
 
-      // Re-trigger fetch to sync updated list
+      // Sync updated list
       await loadBackupData();
     } catch (err) {
       setError(
@@ -133,16 +246,25 @@ export function BackupArchivePanel() {
     }
   };
 
-  const handleDownloadZip = async (academicYear?: string, semester?: string) => {
-    const key = `${academicYear || "all"}__${semester || "all"}`;
+  const handleDownloadZip = async (
+    targetAY?: string,
+    targetSem?: string,
+    targetFaculty?: string
+  ) => {
+    const ay = targetAY !== undefined ? targetAY : selectedAcademicYear;
+    const sem = targetSem !== undefined ? targetSem : selectedSemester;
+    const fac = targetFaculty !== undefined ? targetFaculty : selectedFacultyId;
+
+    const key = `${ay || "all"}__${sem || "all"}__${fac || "all"}`;
     try {
       setExportingTermKey(key);
-      setExportProgress("Zipping documents... 25%");
+      setExportProgress("Preparing files... 20%");
       setError(null);
 
       const params = new URLSearchParams();
-      if (academicYear) params.set("academic_year", academicYear);
-      if (semester) params.set("semester", semester);
+      if (ay && ay !== "all") params.set("academic_year", ay);
+      if (sem && sem !== "all") params.set("semester", sem);
+      if (fac && fac !== "all") params.set("faculty_id", fac);
 
       const timer1 = setTimeout(() => {
         setExportProgress("Zipping documents... 60%");
@@ -167,53 +289,33 @@ export function BackupArchivePanel() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const safeAY = academicYear ? academicYear.replace(/[^a-zA-Z0-9]/g, "_") : "All_AY";
-      const safeSem = semester ? semester.replace(/[^a-zA-Z0-9]/g, "_") : "All_Sem";
-      a.download = `PUP_FOCUS_Document_Vault_${safeAY}_${safeSem}.zip`;
+
+      const safeAY = ay && ay !== "all" ? ay.replace(/[^a-zA-Z0-9]/g, "_") : "All_AY";
+      const safeSem = sem && sem !== "all" ? sem.replace(/[^a-zA-Z0-9]/g, "_") : "All_Sem";
+      const facultyObj = facultyList.find((f) => f.id === fac);
+      const safeFac = facultyObj
+        ? `${facultyObj.name.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20)}_`
+        : "";
+
+      a.download = `PUP_FOCUS_Document_Vault_${safeFac}${safeAY}_${safeSem}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      setSuccess(
-        `Document Vault ZIP for ${academicYear || "all terms"} ${semester ? `(${semester})` : ""} downloaded successfully!`
-      );
+      const scopeDesc = [
+        ay && ay !== "all" ? ay : "All A.Y.",
+        sem && sem !== "all" ? sem : "All Sem",
+        facultyObj ? facultyObj.name : "All Faculty",
+      ].join(" • ");
+
+      setSuccess(`Document Vault ZIP (${scopeDesc}) downloaded successfully!`);
       setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error exporting document vault ZIP");
     } finally {
       setExportingTermKey(null);
       setExportProgress(null);
-    }
-  };
-
-  const handleArchiveTermConfirm = async () => {
-    if (!selectedTermToArchive) return;
-    const [academicYear, semester] = selectedTermToArchive.split("__");
-
-    try {
-      setIsArchiving(true);
-      setError(null);
-      const res = await fetch("/api/admin/backups/archive-term", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ academic_year: academicYear, semester }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to archive term");
-      }
-
-      const data = await res.json();
-      setSuccess(data.message || `Archived ${academicYear} (${semester}) successfully.`);
-      setTimeout(() => setSuccess(null), 5000);
-      setIsArchiveModalOpen(false);
-      await loadBackupData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error archiving term");
-    } finally {
-      setIsArchiving(false);
     }
   };
 
@@ -264,18 +366,15 @@ export function BackupArchivePanel() {
     return `${(kb / 1024).toFixed(2)} MB`;
   };
 
-  const activeTermsToArchive = useMemo(() => {
-    return availableTerms.filter((t) => !t.is_archived && t.status !== "Archived");
-  }, [availableTerms]);
-
   return (
     <div className="space-y-6">
-
       {/* Top 3 Stat Cards */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Backups Generated</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Total Backups Generated
+            </span>
             <HardDrive className="h-5 w-5 text-slate-400" strokeWidth={2} />
           </div>
           <div className="mt-2">
@@ -290,7 +389,9 @@ export function BackupArchivePanel() {
 
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Archived Academic Years</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Archived Academic Years
+            </span>
             <Archive className="h-5 w-5 text-slate-400" strokeWidth={2} />
           </div>
           <div className="mt-2">
@@ -305,7 +406,9 @@ export function BackupArchivePanel() {
 
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Last Backup Date</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Last Backup Date
+            </span>
             <Hourglass className="h-5 w-5 text-slate-400" strokeWidth={2} />
           </div>
           <div className="mt-2">
@@ -320,60 +423,260 @@ export function BackupArchivePanel() {
       </section>
 
       {/* Notifications */}
-      <AlertPopup
-        type="error"
-        message={error}
-        onClose={() => setError(null)}
-      />
+      <AlertPopup type="error" message={error} onClose={() => setError(null)} />
+      <AlertPopup type="success" message={success} onClose={() => setSuccess(null)} />
 
-      <AlertPopup
-        type="success"
-        message={success}
-        onClose={() => setSuccess(null)}
-      />
-
-      {/* SECTION 1: System Backup Manager */}
-      <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+      {/* SECTION 1: Scope Selector & Backup Generator Bar */}
+      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <AppIcon icon={Database} size="md" color="active" />
-              <span>System Backup Manager</span>
+              <AppIcon icon={Database} size="md" color="default" />
+              <span>Institutional Backup & Document Vault</span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Create full database snapshots containing users, compliance submissions, terms, and audit records.
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Generate full snapshots (.JSON) or download document vaults (.ZIP) filtered by academic year, semester, or faculty member.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => void loadBackupData()}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition cursor-pointer"
-              title="Refresh backups"
-            >
-              <Refresh className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-            </button>
+          <button
+            type="button"
+            onClick={() => void loadBackupData()}
+            className="self-start sm:self-auto p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition cursor-pointer"
+            title="Refresh backups and terms"
+          >
+            <Refresh className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
 
+        {/* 3 Scope Filters: Academic Year, Semester, Faculty with Search */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Academic Year Filter */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <AppIcon icon={Calendar} size="xs" color="default" />
+              <span>Academic Year</span>
+            </label>
+            <select
+              value={selectedAcademicYear}
+              onChange={(e) => setSelectedAcademicYear(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-400 transition cursor-pointer font-medium"
+            >
+              <option value="all">All Academic Years</option>
+              {academicYears.map((ay) => (
+                <option key={ay} value={ay}>
+                  A.Y. {ay}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Semester Filter */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <AppIcon icon={MultiplePages} size="xs" color="default" />
+              <span>Semester</span>
+            </label>
+            <select
+              value={selectedSemester}
+              onChange={(e) => setSelectedSemester(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-400 transition cursor-pointer font-medium"
+            >
+              <option value="all">All Semesters</option>
+              <option value="1st Semester">1st Semester</option>
+              <option value="2nd Semester">2nd Semester</option>
+            </select>
+          </div>
+
+          {/* Faculty Member Filter with Search Bar */}
+          <div className="space-y-1.5 relative" ref={facultyDropdownRef}>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <AppIcon icon={User} size="xs" color="default" />
+              <span>Faculty Member</span>
+            </label>
+
+            {/* Custom Searchable Trigger Button */}
+            <div
+              onClick={() => setIsFacultyDropdownOpen((prev) => !prev)}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs transition cursor-pointer flex items-center justify-between gap-2 select-none"
+            >
+              <div className="flex items-center gap-2 truncate min-w-0">
+                <AppIcon icon={User} size="xs" color="default" />
+                <span className="truncate font-medium">
+                  {selectedFacultyObj
+                    ? `${selectedFacultyObj.name} ${
+                        selectedFacultyObj.department ? `(${selectedFacultyObj.department})` : ""
+                      }`
+                    : "All Faculty Members"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0">
+                {selectedFacultyId !== "all" && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFacultyId("all");
+                      setFacultySearchQuery("");
+                    }}
+                    className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition"
+                    title="Clear faculty filter"
+                  >
+                    <AppIcon icon={Xmark} size="xs" color="default" />
+                  </button>
+                )}
+                <NavArrowDown
+                  className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
+                    isFacultyDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* Searchable Dropdown Popover */}
+            {isFacultyDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 z-40 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2.5 space-y-2">
+                {/* Search Bar Input */}
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={facultySearchQuery}
+                    onChange={(e) => setFacultySearchQuery(e.target.value)}
+                    placeholder="Search faculty by name, email, or dept..."
+                    autoFocus
+                    className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-slate-400 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                  />
+                  {facultySearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setFacultySearchQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      <AppIcon icon={Xmark} size="xs" color="default" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Options List */}
+                <div className="max-h-52 overflow-y-auto space-y-0.5 divide-y divide-slate-100 dark:divide-slate-800/60">
+                  {/* "All Faculty Members" option */}
+                  <div
+                    onClick={() => {
+                      setSelectedFacultyId("all");
+                      setIsFacultyDropdownOpen(false);
+                      setFacultySearchQuery("");
+                    }}
+                    className={`p-2 rounded-lg text-xs cursor-pointer flex items-center justify-between transition ${
+                      selectedFacultyId === "all"
+                        ? "bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100"
+                        : "hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    <span>All Faculty Members</span>
+                    {selectedFacultyId === "all" && (
+                      <AppIcon icon={Check} size="xs" color="default" />
+                    )}
+                  </div>
+
+                  {/* Filtered Faculty Members */}
+                  {filteredFacultyList.length === 0 ? (
+                    <div className="py-3 text-center text-xs text-slate-400">
+                      No faculty found matching "{facultySearchQuery}"
+                    </div>
+                  ) : (
+                    filteredFacultyList.map((fac) => {
+                      const isSelected = selectedFacultyId === fac.id;
+                      return (
+                        <div
+                          key={fac.id}
+                          onClick={() => {
+                            setSelectedFacultyId(fac.id);
+                            setIsFacultyDropdownOpen(false);
+                            setFacultySearchQuery("");
+                          }}
+                          className={`p-2 rounded-lg text-xs cursor-pointer flex items-center justify-between transition ${
+                            isSelected
+                              ? "bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          <div className="truncate pr-2">
+                            <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
+                              {fac.name}
+                            </div>
+                            <div className="text-[10px] text-slate-400 truncate">
+                              {fac.department ? fac.department : fac.email || "Faculty Account"}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <AppIcon icon={Check} size="xs" color="default" />
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Active Scope Summary & Action Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+          {/* Scope Indicator Pill */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
+              <span className="font-semibold text-slate-900 dark:text-slate-100">Active Scope:</span>
+              <span>
+                {selectedAcademicYear === "all" ? "All A.Y." : selectedAcademicYear}
+              </span>
+              <span>•</span>
+              <span>
+                {selectedSemester === "all" ? "All Semesters" : selectedSemester}
+              </span>
+              <span>•</span>
+              <span className="truncate max-w-[200px]">
+                {selectedFacultyObj ? selectedFacultyObj.name : "All Faculty"}
+              </span>
+            </div>
+
+            {isScopeFiltered && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline cursor-pointer transition"
+              >
+                Reset to Full System
+              </button>
+            )}
+          </div>
+
+          {/* Action Trigger Buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Download Vault ZIP */}
             <button
               type="button"
               disabled={Boolean(exportingTermKey) || isGeneratingBackup}
               onClick={() => void handleDownloadZip()}
               className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-xl text-xs sm:text-sm px-3.5 py-2 transition border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50"
             >
-              {exportingTermKey === "all__all" ? (
+              {exportingTermKey === `${selectedAcademicYear}__${selectedSemester}__${selectedFacultyId}` ? (
                 <>
-                  <AppIcon icon={Refresh} size="md" color="active" className="animate-spin" />
+                  <AppIcon icon={Refresh} size="md" color="default" className="animate-spin" />
                   <span>{exportProgress || "Zipping documents..."}</span>
                 </>
               ) : (
                 <>
-                  <AppIcon icon={Archive} size="md" color="active" />
+                  <AppIcon icon={Archive} size="md" color="default" />
                   <span>Download Document Vault (.ZIP)</span>
                 </>
               )}
             </button>
 
+            {/* Generate Snapshot JSON */}
             <button
               type="button"
               disabled={isGeneratingBackup || Boolean(exportingTermKey)}
@@ -388,11 +691,28 @@ export function BackupArchivePanel() {
               ) : (
                 <>
                   <AppIcon icon={Plus} size="md" color="inherit" />
-                  <span>Generate Full Backup Snapshot</span>
+                  <span>Generate Snapshot (.JSON)</span>
                 </>
               )}
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* SECTION 2: System Backup History Manager */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              System Recovery Snapshots
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Historical database snapshots archived and available for recovery inspection.
+            </p>
+          </div>
+          <span className="text-xs text-slate-500">
+            {backups.length} snapshot{backups.length === 1 ? "" : "s"} recorded
+          </span>
         </div>
 
         {/* Backups Table */}
@@ -402,6 +722,7 @@ export function BackupArchivePanel() {
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                   <th className="py-3.5 px-4">Backup Name</th>
+                  <th className="py-3.5 px-4">Scope</th>
                   <th className="py-3.5 px-4">Date & Time</th>
                   <th className="py-3.5 px-4">File Size</th>
                   <th className="py-3.5 px-4">Total Records</th>
@@ -412,105 +733,131 @@ export function BackupArchivePanel() {
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800/80">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500">
-                      <AppIcon icon={Refresh} size="lg" color="active" className="animate-spin mx-auto mb-2" />
+                    <td colSpan={7} className="py-12 text-center text-slate-500">
+                      <AppIcon icon={Refresh} size="lg" color="default" className="animate-spin mx-auto mb-2" />
                       Loading backup records...
                     </td>
                   </tr>
                 ) : backups.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500">
+                    <td colSpan={7} className="py-12 text-center text-slate-500">
                       <AppIcon icon={HardDrive} size="xl" color="muted" className="mx-auto mb-2" />
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">No backup records found</p>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">
+                        No backup records found
+                      </p>
                       <p className="text-xs text-slate-500 mt-1">
-                        Click "+ Generate Full Backup Snapshot" to create your first recovery snapshot.
+                        Use the control bar above to generate your first recovery snapshot.
                       </p>
                     </td>
                   </tr>
                 ) : (
-                  backups.map((bk) => (
-                    <tr
-                      key={bk.id}
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
-                    >
-                      <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
-                        <div className="flex items-center gap-2.5">
-                          <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
-                            <AppIcon icon={Database} size="sm" color="inherit" />
-                          </div>
-                          <div>
-                            <span className="font-mono text-xs">{bk.backup_name}</span>
-                            {bk.academic_year && (
-                              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                                {bk.academic_year}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
-                        {formatDateTime(bk.created_at)}
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300">
-                        {formatFileSize(bk.file_size_kb)}
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px]">
-                          {bk.total_records.toLocaleString()} rows
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {bk.status === "completed" ? (
-                          <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/80 px-2 py-0.5 text-xs font-semibold rounded-md">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            Completed
-                          </span>
-                        ) : bk.status === "failed" ? (
-                          <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800/80 px-2 py-0.5 text-xs font-semibold rounded-md">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                            Failed
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/80 px-2 py-0.5 text-xs font-semibold rounded-md">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            Processing
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="inline-flex items-center gap-2 justify-end">
-                          <button
-                            type="button"
-                            onClick={() => setInspectedBackup(bk)}
-                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer flex items-center gap-1"
-                            title="Inspect details"
-                          >
-                            <AppIcon icon={Eye} size="xs" color="inherit" />
-                            <span>Inspect</span>
-                          </button>
+                  backups.map((bk) => {
+                    const scope = bk.metadata?.scope;
+                    const hasScope = Boolean(
+                      scope?.academic_year ||
+                        scope?.semester ||
+                        scope?.faculty_name ||
+                        bk.academic_year ||
+                        bk.metadata?.semester ||
+                        bk.metadata?.faculty_name
+                    );
 
-                          <a
-                            href={`/api/admin/backups/download?id=${bk.id}`}
-                            download
-                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1 shadow-sm"
-                            title="Download JSON Snapshot"
-                          >
-                            <AppIcon icon={Download} size="xs" color="inherit" />
-                            <span>JSON</span>
-                          </a>
+                    const scopeAy = scope?.academic_year || bk.academic_year || null;
+                    const scopeSem = scope?.semester || bk.metadata?.semester || null;
+                    const scopeFac = scope?.faculty_name || bk.metadata?.faculty_name || null;
 
-                          <button
-                            type="button"
-                            onClick={() => setBackupToDelete(bk)}
-                            className="p-1 text-red-500 hover:bg-red-500/10 rounded-lg transition cursor-pointer"
-                            title="Delete backup log"
-                          >
-                            <AppIcon icon={Trash} size="sm" color="inherit" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                    return (
+                      <tr
+                        key={bk.id}
+                        className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                      >
+                        <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
+                              <AppIcon icon={Database} size="sm" color="default" />
+                            </div>
+                            <span className="font-mono text-xs truncate max-w-[240px]">
+                              {bk.backup_name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {hasScope ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium text-[11px]">
+                              {scopeAy ? scopeAy : "All A.Y."}
+                              {scopeSem ? ` • ${scopeSem}` : ""}
+                              {scopeFac ? ` • ${scopeFac}` : ""}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[11px]">
+                              Full System
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {formatDateTime(bk.created_at)}
+                        </td>
+                        <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          {formatFileSize(bk.file_size_kb)}
+                        </td>
+                        <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px]">
+                            {bk.total_records.toLocaleString()} rows
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {bk.status === "completed" ? (
+                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Completed
+                            </span>
+                          ) : bk.status === "failed" ? (
+                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              Failed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              Processing
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-2 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setInspectedBackup(bk)}
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer flex items-center gap-1"
+                              title="Inspect details"
+                            >
+                              <AppIcon icon={Eye} size="xs" color="default" />
+                              <span>Inspect</span>
+                            </button>
+
+                            <a
+                              href={`/api/admin/backups/download?id=${bk.id}`}
+                              download
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1 shadow-sm"
+                              title="Download JSON Snapshot"
+                            >
+                              <AppIcon icon={Download} size="xs" color="inherit" />
+                              <span>JSON</span>
+                            </a>
+
+                            <button
+                              type="button"
+                              onClick={() => setBackupToDelete(bk)}
+                              className="p-1 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                              title="Delete backup log"
+                            >
+                              <AppIcon icon={Trash} size="sm" color="default" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -518,47 +865,16 @@ export function BackupArchivePanel() {
         </div>
       </section>
 
-      {/* SECTION 2: Academic Year Archiving Vault */}
-      <section className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <AppIcon icon={Archive} size="md" color="success" />
-              <span>Academic Year Archiving Vault</span>
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Preserve and freeze completed semester compliance cycles into the permanent historical archive.
-            </p>
-          </div>
-
-          {/* Archiving Selector Box */}
-          <div className="flex items-center gap-2">
-            <select
-              value={selectedTermToArchive}
-              onChange={(e) => setSelectedTermToArchive(e.target.value)}
-              className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-amber-500 transition cursor-pointer"
-            >
-              {activeTermsToArchive.length === 0 ? (
-                <option value="">No Active Terms to Archive</option>
-              ) : (
-                activeTermsToArchive.map((t) => (
-                  <option key={`${t.academic_year}__${t.semester}`} value={`${t.academic_year}__${t.semester}`}>
-                    {t.academic_year} ({t.semester})
-                  </option>
-                ))
-              )}
-            </select>
-
-            <button
-              type="button"
-              disabled={!selectedTermToArchive || activeTermsToArchive.length === 0}
-              onClick={() => setIsArchiveModalOpen(true)}
-              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-950 font-semibold rounded-xl text-xs px-3.5 py-1.5 transition shadow-sm cursor-pointer disabled:opacity-40 whitespace-nowrap"
-            >
-              <AppIcon icon={Archive} size="sm" color="inherit" />
-              <span>Archive Selected Term</span>
-            </button>
-          </div>
+      {/* SECTION 3: Institutional Compliance Archive Vault */}
+      <section className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+        <div>
+          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <AppIcon icon={Archive} size="md" color="default" />
+            <span>Institutional Compliance Archive Vault</span>
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Historical academic cycles archived and retained in permanent institutional storage.
+          </p>
         </div>
 
         {/* Archived Terms Table */}
@@ -579,9 +895,11 @@ export function BackupArchivePanel() {
                   <tr>
                     <td colSpan={5} className="py-10 text-center text-slate-500">
                       <AppIcon icon={Archive} size="md" color="muted" className="mx-auto mb-2" />
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">No archived academic terms</p>
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">
+                        No archived academic terms
+                      </p>
                       <p className="text-xs text-slate-500 mt-1">
-                        Select an active academic term above to archive and freeze submissions.
+                        Completed terms archived in Academic Term Management will appear here.
                       </p>
                     </td>
                   </tr>
@@ -593,8 +911,8 @@ export function BackupArchivePanel() {
                     >
                       <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
                         <div className="flex items-center gap-2.5">
-                          <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-                            <AppIcon icon={Calendar} size="sm" color="inherit" />
+                          <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
+                            <AppIcon icon={Calendar} size="sm" color="default" />
                           </div>
                           <div>
                             <span className="font-bold text-xs">{term.academic_year}</span>
@@ -611,8 +929,8 @@ export function BackupArchivePanel() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
-                          <AppIcon icon={Check} size="sm" color="inherit" />
+                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                          <AppIcon icon={Check} size="sm" color="default" />
                           <span>Protected & Retained</span>
                         </span>
                       </td>
@@ -626,18 +944,24 @@ export function BackupArchivePanel() {
                             onClick={() => setInspectedTerm(term)}
                             className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer inline-flex items-center gap-1"
                           >
-                            <AppIcon icon={Eye} size="xs" color="inherit" />
+                            <AppIcon icon={Eye} size="xs" color="default" />
                             <span>Details</span>
                           </button>
 
                           <button
                             type="button"
                             disabled={Boolean(exportingTermKey)}
-                            onClick={() => void handleDownloadZip(term.academic_year, term.semester)}
+                            onClick={() =>
+                              void handleDownloadZip(
+                                term.academic_year,
+                                term.semester,
+                                "all"
+                              )
+                            }
                             className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer inline-flex items-center gap-1 shadow-sm disabled:opacity-50"
                             title="Download Document Vault (.ZIP)"
                           >
-                            {exportingTermKey === `${term.academic_year}__${term.semester}` ? (
+                            {exportingTermKey === `${term.academic_year}__${term.semester}__all` ? (
                               <>
                                 <AppIcon icon={Refresh} size="xs" color="inherit" className="animate-spin" />
                                 <span>{exportProgress || "Zipping..."}</span>
@@ -660,107 +984,122 @@ export function BackupArchivePanel() {
         </div>
       </section>
 
-      {/* Archive Warning Modal */}
-      {isArchiveModalOpen && selectedTermToArchive && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
-                <AppIcon icon={WarningTriangle} size="lg" color="default" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Archive Academic Term?</h3>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              You are about to archive{" "}
-              <span className="font-semibold text-slate-900 dark:text-slate-100">
-                {selectedTermToArchive.replace("__", " - ")}
-              </span>
-              .
-            </p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-              Archiving will freeze active faculty submissions for this cycle into the historical compliance vault. The term will no longer accept active submissions.
-            </p>
-            <div className="flex items-center justify-end gap-2 mt-6">
-              <button
-                type="button"
-                onClick={() => setIsArchiveModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer shadow-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isArchiving}
-                onClick={() => void handleArchiveTermConfirm()}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer disabled:opacity-50"
-              >
-                {isArchiving ? "Archiving..." : "Confirm & Archive Term"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Backup Inspection Modal */}
       {inspectedBackup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-hidden flex flex-col">
-            <ModalHeader
-              title={inspectedBackup.backup_name}
-              icon={Database}
-            />
+            <ModalHeader title={inspectedBackup.backup_name} icon={Database} />
             <div className="p-6 overflow-y-auto flex-1 space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3 p-4 rounded-lg bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800">
                 <div>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Created Date</span>
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">{formatDateTime(inspectedBackup.created_at)}</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    Created Date
+                  </span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {formatDateTime(inspectedBackup.created_at)}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block">File Size</span>
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">{formatFileSize(inspectedBackup.file_size_kb)}</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    File Size
+                  </span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {formatFileSize(inspectedBackup.file_size_kb)}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Total Records</span>
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">{inspectedBackup.total_records.toLocaleString()} items</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    Total Records
+                  </span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {inspectedBackup.total_records.toLocaleString()} items
+                  </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Status</span>
-                  <span className="font-semibold text-emerald-600 capitalize">{inspectedBackup.status}</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    Status
+                  </span>
+                  <span className="font-semibold capitalize text-slate-800 dark:text-slate-200">
+                    {inspectedBackup.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Scope Breakdown */}
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                  Snapshot Scope Filter
+                </span>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Academic Year</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {inspectedBackup.metadata?.scope?.academic_year ||
+                        inspectedBackup.academic_year ||
+                        "All Academic Years"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Semester</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {inspectedBackup.metadata?.scope?.semester ||
+                        inspectedBackup.metadata?.semester ||
+                        "All Semesters"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Faculty</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">
+                      {inspectedBackup.metadata?.scope?.faculty_name ||
+                        inspectedBackup.metadata?.faculty_name ||
+                        "All Faculty Members"}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               {inspectedBackup.metadata && (
-                <div className="space-y-1.5 pt-2">
+                <div className="space-y-1.5 pt-1">
                   <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Snapshot Data Breakdown
                   </h4>
                   <ul className="divide-y divide-slate-200 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden text-xs">
                     <li className="p-2.5 flex justify-between bg-slate-50/50 dark:bg-slate-950/40">
-                      <span className="text-slate-600 dark:text-slate-400">User Profiles & Accounts:</span>
-                      <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{inspectedBackup.metadata.users_count ?? 0}</span>
+                      <span className="text-slate-600 dark:text-slate-400">Faculty Profiles & Accounts:</span>
+                      <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                        {inspectedBackup.metadata.users_count ?? 0}
+                      </span>
                     </li>
                     <li className="p-2.5 flex justify-between bg-slate-50/50 dark:bg-slate-950/40">
                       <span className="text-slate-600 dark:text-slate-400">Academic Terms:</span>
-                      <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{inspectedBackup.metadata.terms_count ?? 0}</span>
+                      <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                        {inspectedBackup.metadata.terms_count ?? 0}
+                      </span>
                     </li>
                     <li className="p-2.5 flex justify-between bg-slate-50/50 dark:bg-slate-950/40">
                       <span className="text-slate-600 dark:text-slate-400">Faculty Submissions:</span>
-                      <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{inspectedBackup.metadata.submissions_count ?? 0}</span>
+                      <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                        {inspectedBackup.metadata.submissions_count ?? 0}
+                      </span>
                     </li>
                     <li className="p-2.5 flex justify-between bg-slate-50/50 dark:bg-slate-950/40">
                       <span className="text-slate-600 dark:text-slate-400">Requirement Templates:</span>
-                      <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{inspectedBackup.metadata.templates_count ?? 0}</span>
+                      <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                        {inspectedBackup.metadata.templates_count ?? 0}
+                      </span>
                     </li>
                     <li className="p-2.5 flex justify-between bg-slate-50/50 dark:bg-slate-950/40">
                       <span className="text-slate-600 dark:text-slate-400">System Audit Logs:</span>
-                      <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{inspectedBackup.metadata.audit_logs_count ?? 0}</span>
+                      <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                        {inspectedBackup.metadata.audit_logs_count ?? 0}
+                      </span>
                     </li>
                   </ul>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-800">
               <a
                 href={`/api/admin/backups/download?id=${inspectedBackup.id}`}
                 download
@@ -785,24 +1124,32 @@ export function BackupArchivePanel() {
       {inspectedTerm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
-            <ModalHeader
-              title="Archive Vault Inspection"
-              icon={Archive}
-            />
-            <div className="p-6">
-              <div className="space-y-3 text-xs">
+            <ModalHeader title="Archive Vault Inspection" icon={Archive} />
+            <div className="p-6 space-y-3 text-xs">
               <div className="p-4 rounded-lg bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-slate-500 dark:text-slate-400">Academic Year:</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{inspectedTerm.academic_year}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {inspectedTerm.academic_year}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 dark:text-slate-400">Semester:</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{inspectedTerm.semester}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {inspectedTerm.semester}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 dark:text-slate-400">Vault Status:</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">Archived & Retained</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    Archived & Retained
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Archive Date:</span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {formatDateTime(inspectedTerm.archived_at)}
+                  </span>
                 </div>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -810,17 +1157,23 @@ export function BackupArchivePanel() {
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 disabled={Boolean(exportingTermKey)}
-                onClick={() => void handleDownloadZip(inspectedTerm.academic_year, inspectedTerm.semester)}
+                onClick={() =>
+                  void handleDownloadZip(
+                    inspectedTerm.academic_year,
+                    inspectedTerm.semester,
+                    "all"
+                  )
+                }
                 className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
-                {exportingTermKey === `${inspectedTerm.academic_year}__${inspectedTerm.semester}` ? (
+                {exportingTermKey === `${inspectedTerm.academic_year}__${inspectedTerm.semester}__all` ? (
                   <>
                     <AppIcon icon={Refresh} size="sm" color="inherit" className="animate-spin" />
-                    <span>{exportProgress || "Zipping documents..."}</span>
+                    <span>{exportProgress || "Zipping..."}</span>
                   </>
                 ) : (
                   <>
@@ -837,7 +1190,6 @@ export function BackupArchivePanel() {
                 Close
               </button>
             </div>
-            </div>
           </div>
         </div>
       )}
@@ -847,13 +1199,19 @@ export function BackupArchivePanel() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
+              <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/60 shadow-2xs shrink-0 flex items-center justify-center">
                 <AppIcon icon={WarningTriangle} size="lg" color="default" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Delete Backup Record</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                Delete Backup Record
+              </h3>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400">
-              Are you sure you want to delete backup log <span className="font-semibold text-slate-900 dark:text-slate-100">"{backupToDelete.backup_name}"</span>?
+              Are you sure you want to delete backup log{" "}
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
+                "{backupToDelete.backup_name}"
+              </span>
+              ?
             </p>
             <div className="flex items-center justify-end gap-2 mt-6">
               <button

@@ -74,8 +74,8 @@ export function RequirementTemplateDetailsModal({
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 text-slate-800 dark:text-slate-200">
           {/* Top Banner Overview Card */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-5">
-            <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0 flex items-center justify-center">
-              <AppIcon icon={Page} size="lg" color="inherit" />
+            <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-center">
+              <AppIcon icon={Page} size="lg" color="default" />
             </div>
 
             <div className="flex-1 min-w-0">
