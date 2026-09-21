@@ -269,14 +269,23 @@ export function buildSubmissionWindowNotificationEmailHtml({
     "there";
   const safeFirstName = escapeHtml(resolvedFirstName);
 
+  const isAlwaysOpen =
+    endDate.startsWith("2099") ||
+    endDate.toLowerCase().includes("indefinite") ||
+    endDate.toLowerCase().includes("always open");
+
+  const bodyText = isAlwaysOpen
+    ? `The submission window is now open starting ${escapeHtml(startDate)} ${escapeHtml(startTimeLabel)} with no closing deadline (Always Open). You can submit your requirements at any time.`
+    : `The submission window is now open from ${escapeHtml(startDate)} ${escapeHtml(startTimeLabel)} to ${escapeHtml(endDate)} ${escapeHtml(endTimeLabel)}. Please submit any pending requirements through your dashboard before the deadline.`;
+
   return buildEmailLayout({
     title: "Submission Window Opened",
     intro: `Hello ${safeFirstName}, the faculty submission window has been scheduled.`,
-    body: `The submission window is now open from ${escapeHtml(startDate)} ${escapeHtml(startTimeLabel)} to ${escapeHtml(endDate)} ${escapeHtml(endTimeLabel)}. Please submit any pending requirements through your dashboard before the deadline.`,
+    body: bodyText,
     actionLabel: "Open Faculty Dashboard",
     actionHref,
     footerNote:
-      "If you have already submitted all requirements, thank you. Otherwise, please complete your outstanding submissions on time.",
+      "If you have already submitted all requirements, thank you. Otherwise, please complete your outstanding submissions at your earliest convenience.",
     pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
     focusLogoSrc: buildAppUrl("/icons/pup-focus-emblem-logo.png"),
   });

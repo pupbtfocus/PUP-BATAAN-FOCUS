@@ -178,6 +178,13 @@ export function SubmissionWindowCountdown({
     windowState;
   const startTimeLabel = windowState.startTimeLabel ?? startTime;
   const endTimeLabel = windowState.endTimeLabel ?? endTime;
+  const isAlwaysOpen = Boolean(
+    windowState?.endDate && (
+      windowState.endDate.startsWith("2099") ||
+      new Date(windowState.endDate).getFullYear() >= 2099
+    )
+  );
+
   // ── Status badge config ──
   const badges: Record<
     typeof status,
@@ -192,7 +199,7 @@ export function SubmissionWindowCountdown({
     }
   > = {
     Open: {
-      label: "Window Open",
+      label: isAlwaysOpen ? "Always Open" : "Window Open",
       icon: <AppIcon icon={LockSlash} size="xs" color="inherit" />,
       dotClass: "bg-emerald-500 pulse-dot",
       borderClass: "border-emerald-200 dark:border-emerald-800/60",
@@ -249,7 +256,17 @@ export function SubmissionWindowCountdown({
         </div>
       ) : null}
       {/* Countdown ticker (Open or Upcoming) */}
-      {remaining && status !== "Closed" ? (
+      {isAlwaysOpen && status === "Open" ? (
+        <div className="mt-2.5 text-center py-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-900 dark:text-emerald-200 border border-emerald-500/30 text-[10px] font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Submissions Open Indefinitely</span>
+          </div>
+          <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
+            No closing deadline configured for this term.
+          </p>
+        </div>
+      ) : remaining && status !== "Closed" ? (
         <div className="mt-3">
           <div className="flex items-center justify-center gap-1 mb-1.5">
             <AppIcon icon={Timer} size="xs" color="muted" />

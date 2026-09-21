@@ -134,6 +134,7 @@ export function SubmissionWindowPanel({
 }: SubmissionWindowPanelProps) {
   const [openDateTime, setOpenDateTime] = useState("");
   const [closeDateTime, setCloseDateTime] = useState("");
+  const [isAlwaysOpen, setIsAlwaysOpen] = useState(false);
 
   const [windowStatus, setWindowStatus] = useState<SubmissionWindowResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -208,6 +209,9 @@ export function SubmissionWindowPanel({
   const isUpcoming = Boolean(startDateObj && now < startDateObj);
 
   const formattedCountdownTime = useMemo(() => {
+    if (isAlwaysOpen || (endDateObj && endDateObj.getFullYear() >= 2099)) {
+      return "Always Open (No Deadline)";
+    }
     if (isWindowOpen && endDateObj) {
       const diff = endDateObj.getTime() - now.getTime();
       return formatTimeDifference(diff);
@@ -221,7 +225,7 @@ export function SubmissionWindowPanel({
       return `Expired ${formatTimeAgo(diff)}`;
     }
     return "Not Configured";
-  }, [isWindowOpen, isUpcoming, startDateObj, endDateObj, now]);
+  }, [isAlwaysOpen, isWindowOpen, isUpcoming, startDateObj, endDateObj, now]);
 
   const nowIso = getNowIsoLocal();
 
@@ -245,12 +249,17 @@ export function SubmissionWindowPanel({
   }
 
   function validateSchedule(): boolean {
-    if (!openDateTime || !closeDateTime) {
-      setError("Opening and closing schedule date and time are required.");
+    if (!openDateTime) {
+      setError("Opening schedule date and time are required.");
       return false;
     }
 
-    if (openDateTime >= closeDateTime) {
+    if (!isAlwaysOpen && !closeDateTime) {
+      setError("Closing schedule date and time are required.");
+      return false;
+    }
+
+    if (!isAlwaysOpen && openDateTime >= closeDateTime) {
       setError("The closing schedule must be later than the opening schedule.");
       return false;
     }
@@ -324,7 +333,13 @@ export function SubmissionWindowPanel({
       if (data.status === "Closed") {
         setOpenDateTime("");
         setCloseDateTime("");
+        setIsAlwaysOpen(false);
       } else {
+        const isAlwaysOpenWindow = Boolean(
+          data.endDate && (data.endDate.startsWith("2099") || new Date(data.endDate).getFullYear() >= 2099)
+        );
+        setIsAlwaysOpen(isAlwaysOpenWindow);
+
         if (data.startDate && data.startTimeLabel) {
           const time24 = toTimeInputValue(data.startTimeLabel);
           setOpenDateTime(time24 ? `${data.startDate}T${time24}` : `${data.startDate}T09:00`);
@@ -334,7 +349,9 @@ export function SubmissionWindowPanel({
           setOpenDateTime("");
         }
 
-        if (data.endDate && data.endTimeLabel) {
+        if (isAlwaysOpenWindow) {
+          setCloseDateTime("2099-12-31T23:59");
+        } else if (data.endDate && data.endTimeLabel) {
           const time24 = toTimeInputValue(data.endTimeLabel);
           setCloseDateTime(time24 ? `${data.endDate}T${time24}` : `${data.endDate}T17:00`);
         } else if (data.endDate) {
@@ -382,7 +399,7 @@ export function SubmissionWindowPanel({
   }, [showCloseConfirmation, closeCountdown]);
 
   useEffect(() => {
-    if (!closeDateTime) return;
+    if (!closeDateTime || isAlwaysOpen || closeDateTime.startsWith("2099")) return;
 
     const checkExpiration = () => {
       const nowLocal = getNowIsoLocal();
@@ -404,7 +421,7 @@ export function SubmissionWindowPanel({
     checkExpiration();
     const interval = setInterval(checkExpiration, 5000);
     return () => clearInterval(interval);
-  }, [closeDateTime, onWindowChange]);
+  }, [closeDateTime, isAlwaysOpen, onWindowChange]);
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -430,10 +447,12 @@ export function SubmissionWindowPanel({
     setSuccess(null);
 
     const [startDate, startTime24] = openDateTime.split("T");
-    const [endDate, endTime24] = closeDateTime.split("T");
+    const [endDate, endTime24] = isAlwaysOpen
+      ? ["2099-12-31", "23:59"]
+      : closeDateTime.split("T");
 
     const startTimeLabel = toTimeLabel(startTime24);
-    const endTimeLabel = toTimeLabel(endTime24);
+    const endTimeLabel = isAlwaysOpen ? "11:59 PM" : toTimeLabel(endTime24);
 
     try {
       const response = await fetch("/api/admin/submission-window", {
@@ -610,7 +629,7 @@ export function SubmissionWindowPanel({
             <span className={`w-2 h-2 rounded-full ${
               isWindowOpen ? "bg-emerald-500 animate-pulse" : isUpcoming ? "bg-amber-500 animate-ping" : "bg-slate-400 dark:bg-slate-500"
             }`} />
-            <span>{isWindowOpen ? "Live Submission Window" : isUpcoming ? "Scheduled Window" : "Window Closed"}</span>
+            <span>{isAlwaysOpen ? "Always Open Window" : isWindowOpen ? "Live Submission Window" : isUpcoming ? "Scheduled Window" : "Window Closed"}</span>
           </div>
 
           {/* Current Academic Term Badge */}
@@ -738,16 +757,53 @@ export function SubmissionWindowPanel({
               : "bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800"
           }`}>
             <div>
-              <label htmlFor="closing-schedule" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                Closing Date & Deadline
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <label htmlFor="closing-schedule" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Closing Date & Deadline
+                </label>
+                {isEditingSchedule ? (
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer select-none bg-amber-500/10 dark:bg-amber-500/20 border border-amber-400/50 px-2.5 py-0.5 rounded-md hover:bg-amber-500/20 transition">
+                    <input
+                      type="checkbox"
+                      checked={isAlwaysOpen}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setIsAlwaysOpen(checked);
+                        if (checked) {
+                          setCloseDateTime("2099-12-31T23:59");
+                        } else {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 7);
+                          d.setHours(23, 59, 0, 0);
+                          setCloseDateTime(toDateTimeLocal(d));
+                        }
+                      }}
+                      disabled={!isEditingSchedule || isLoading || isSaving}
+                      className="h-3.5 w-3.5 rounded border-amber-400 text-amber-500 focus:ring-amber-400 cursor-pointer"
+                    />
+                    <span className="text-amber-900 dark:text-amber-200">Always Open</span>
+                  </label>
+                ) : null}
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                Current active deadline for faculty compliance document uploads.
+                {isAlwaysOpen
+                  ? "Submissions will remain open indefinitely for this semester with no closing deadline."
+                  : "Current active deadline for faculty compliance document uploads."}
               </p>
             </div>
 
             <div>
-              {!isEditingSchedule && windowStatus?.endDate && windowStatus?.endTimeLabel ? (
+              {!isEditingSchedule && (isAlwaysOpen || (windowStatus?.endDate && windowStatus.endDate.startsWith("2099"))) ? (
+                <div className="flex items-center justify-between bg-white border border-emerald-300 text-slate-900 dark:bg-slate-900 dark:border-emerald-800/80 dark:text-slate-100 px-3.5 py-2 text-sm rounded-lg shadow-2xs">
+                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-semibold">
+                    <AppIcon icon={CheckCircle} size="md" color="inherit" />
+                    <span>Always Open (No Closing Deadline)</span>
+                  </div>
+                  <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 px-2 py-0.5 text-xs font-bold rounded-md">
+                    Indefinite
+                  </span>
+                </div>
+              ) : !isEditingSchedule && windowStatus?.endDate && windowStatus?.endTimeLabel ? (
                 <div className="flex items-center justify-between bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 px-3.5 py-2 text-sm rounded-lg">
                   <div className="flex items-center gap-2">
                     <AppIcon icon={Calendar} size="md" color="default" />
@@ -757,6 +813,23 @@ export function SubmissionWindowPanel({
                   </div>
                   <span className="bg-slate-200/80 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md">
                     Configured Deadline
+                  </span>
+                </div>
+              ) : isAlwaysOpen ? (
+                <div className="rounded-xl border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/30 p-3.5 flex items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                        Always Open Option Active
+                      </p>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-300/80">
+                        Faculty can upload compliance documents indefinitely without an expiration deadline.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-600 text-white shadow-2xs">
+                    No Deadline
                   </span>
                 </div>
               ) : (
@@ -819,6 +892,16 @@ export function SubmissionWindowPanel({
                         className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
                       >
                         <span>+2 Weeks</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAlwaysOpen(true);
+                          setCloseDateTime("2099-12-31T23:59");
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-2xs"
+                      >
+                        <span>Always Open</span>
                       </button>
                     </div>
                   ) : null}
