@@ -1039,26 +1039,9 @@ export function DevPreviewPanel() {
                     Welcome back to PUP FOCUS. Securing institutional session...
                   </p>
 
-                  <div className="mt-4 w-full flex flex-col items-center gap-2">
-                    <div className="flex items-center justify-center gap-2 text-xs font-semibold tracking-wide text-amber-300/90 py-0.5">
-                      <AppIcon icon={SystemRestart} size="sm" color="active" className="animate-spin" />
-                      <span>Redirecting to your portal...</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setAuthFeedbackModal({
-                          title: "Login Successful",
-                          message: "Welcome back, Developer Preview!",
-                          actionLabel: "Continue",
-                          variant: "success",
-                        })
-                      }
-                      className="mt-1 h-10 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 cursor-pointer flex items-center justify-center gap-2 shadow-md"
-                    >
-                      <span>Continue</span>
-                      <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
-                    </button>
+                  <div className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold tracking-wide text-amber-300/90 py-1">
+                    <AppIcon icon={SystemRestart} size="sm" color="active" className="animate-spin" />
+                    <span>Redirecting to your portal...</span>
                   </div>
                 </div>
               </div>
