@@ -310,60 +310,60 @@ export function SidebarContent({
 
           {/* Child Sub-items (Indented with left border indicator) */}
           {isAcademicCycleOpen && (
-            <div className="ml-3 pl-2 border-l border-slate-200 dark:border-slate-800 flex flex-col gap-1 mt-1">
+            <div className="ml-2.5 pl-1.5 border-l border-slate-200 dark:border-slate-800 flex flex-col gap-1 mt-1">
               <button
                 type="button"
                 onClick={() =>
                   handleSelect(isSuperAdmin ? "terms" : "academicTerms")
                 }
-                className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
+                className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                   isTermsActive
                     ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
                 <AppIcon icon={Calendar} size="sm" color={isTermsActive ? "active" : "default"} />
-                <span>Academic Terms</span>
+                <span className="whitespace-nowrap">Academic Terms</span>
               </button>
               <button
                 type="button"
                 onClick={() =>
                   handleSelect(isSuperAdmin ? "window" : "submissionWindow")
                 }
-                className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
+                className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                   isWindowActive
                     ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
                 <AppIcon icon={Hourglass} size="sm" color={isWindowActive ? "active" : "default"} />
-                <span>Submission Window</span>
+                <span className="whitespace-nowrap">Submission Window</span>
               </button>
               {isSuperAdmin && (
                 <>
                   <button
                     type="button"
                     onClick={() => handleSelect("templates")}
-                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
+                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                       isTemplatesActive
                         ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
                     <AppIcon icon={Page} size="sm" color={isTemplatesActive ? "active" : "default"} />
-                    <span>Requirement Templates</span>
+                    <span className="whitespace-nowrap">Requirement Templates</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSelect("backups")}
-                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
+                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                       isBackupsActive
                         ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
                     <AppIcon icon={Archive} size="sm" color={isBackupsActive ? "active" : "default"} />
-                    <span>Backups & Archive</span>
+                    <span className="whitespace-nowrap">Backups & Archive</span>
                   </button>
                 </>
               )}
@@ -405,7 +405,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 p-2.5 shadow-sm z-30 transition-colors duration-200">
+    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto rounded-none bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 p-2.5 shadow-sm z-30 transition-colors duration-200">
       <SidebarContent {...props} />
     </aside>
   );
