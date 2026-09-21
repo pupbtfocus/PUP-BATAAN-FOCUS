@@ -351,9 +351,8 @@ export default function Home() {
 
     setIsSubmitting(false);
     setAuthModal({
-      title: "Welcome back",
-      message: `You are signed in as ${ROLE_LABEL[signedInRole]}.`,
-      actionLabel: "Continue",
+      title: "Login Successful",
+      message: `Welcome back! You are signed in as ${ROLE_LABEL[signedInRole]}.`,
       variant: "success",
       redirectTo: nextTarget,
     });

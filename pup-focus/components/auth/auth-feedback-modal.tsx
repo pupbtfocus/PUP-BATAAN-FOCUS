@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import successfullyIcon from "@/assets/icons animations/successfully.svg";
 import failedIcon from "@/assets/icons animations/fail.svg";
 import loadingIcon from "@/assets/icons animations/loading.svg";
-import { NavArrowRight, Refresh, SystemRestart, Xmark } from "iconoir-react";
+import { Refresh, SystemRestart, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 
 export interface AuthModalState {
@@ -61,8 +61,10 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200 cursor-pointer"
-      onClick={onClose}
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200 ${
+        isSuccess ? "cursor-default" : "cursor-pointer"
+      }`}
+      onClick={isSuccess ? undefined : onClose}
     >
       <div
         className={`relative w-full max-w-[360px] sm:max-w-[380px] overflow-hidden rounded-[2rem] border bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 sm:p-8 text-[#fff8e7] backdrop-blur-xl shadow-2xl shadow-black/50 transition-all duration-300 animate-in zoom-in-95 cursor-default ${
@@ -83,15 +85,17 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
           }`}
         />
 
-        {/* Top-Right Dismiss 'X' Button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-3.5 right-3.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-xs"
-          aria-label="Close modal"
-        >
-          <AppIcon icon={Xmark} size="md" color="inherit" />
-        </button>
+        {/* Top-Right Dismiss 'X' Button (hidden on success) */}
+        {!isSuccess && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3.5 right-3.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-xs"
+            aria-label="Close modal"
+          >
+            <AppIcon icon={Xmark} size="md" color="inherit" />
+          </button>
+        )}
 
         <div className="flex flex-col items-center justify-center text-center">
           {/* Circular Icon Container */}
@@ -125,7 +129,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
             {isLoading
               ? modal.title || "Authenticating..."
               : isSuccess
-              ? "Login Successful"
+              ? modal.title || "Login Successful"
               : modal.title || "Login Failed"}
           </h3>
 
@@ -161,19 +165,9 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
               </div>
             </div>
           ) : isSuccess ? (
-            <div className="mt-5 w-full flex flex-col items-center gap-2">
-              <div className="flex items-center justify-center gap-2 text-xs font-semibold tracking-wide text-amber-300/90 py-0.5">
-                <AppIcon icon={SystemRestart} size="sm" color="active" className="animate-spin" />
-                <span>Redirecting to your portal...</span>
-              </div>
-              <Button
-                type="button"
-                className="mt-1 h-11 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2"
-                onClick={onClose}
-              >
-                <span>Continue</span>
-                <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
-              </Button>
+            <div className="mt-4 flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold tracking-wide text-amber-300/90 py-1">
+              <AppIcon icon={SystemRestart} size="sm" color="active" className="animate-spin" />
+              <span>Redirecting to your portal...</span>
             </div>
           ) : (
             <div className="mt-5 w-full">
