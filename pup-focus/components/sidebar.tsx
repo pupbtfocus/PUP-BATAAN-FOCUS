@@ -322,7 +322,7 @@ export function SidebarContent({
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
                 }`}
               >
-                <AppIcon icon={Hourglass} size="sm" color={isTermsActive ? "active" : "default"} />
+                <AppIcon icon={Calendar} size="sm" color={isTermsActive ? "active" : "default"} />
                 <span>Academic Terms</span>
               </button>
               <button
