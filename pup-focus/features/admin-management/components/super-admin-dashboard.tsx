@@ -1839,9 +1839,17 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "backups" ? (
-              <div className="p-2 sm:p-4 md:p-5">
+              <article className="p-2 sm:p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      Backups & Archive
+                    </h3>
+                  </div>
+                </div>
+
                 <BackupArchivePanel />
-              </div>
+              </article>
             ) : null}
 
             {activeSection === "audit" ? (
