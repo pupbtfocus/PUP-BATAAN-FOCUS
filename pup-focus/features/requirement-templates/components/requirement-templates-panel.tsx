@@ -18,6 +18,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import type { RequirementTemplate } from "@/features/requirement-templates/types/requirement-template.types";
 import { RequirementTemplateModal } from "./requirement-template-modal";
+import { RequirementTemplateDetailsModal } from "./requirement-template-details-modal";
 import { AlertPopup } from "@/components/ui/alert-popup";
 
 interface RequirementTemplatesPanelProps {
@@ -36,6 +37,7 @@ export function RequirementTemplatesPanel({
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [templateToView, setTemplateToView] = useState<RequirementTemplate | null>(null);
   const [templateToEdit, setTemplateToEdit] = useState<RequirementTemplate | null>(null);
   const [templateToDelete, setTemplateToDelete] = useState<RequirementTemplate | null>(null);
   const [countdown, setCountdown] = useState<number>(10);
@@ -139,6 +141,18 @@ export function RequirementTemplatesPanel({
           : `Requirement "${tpl.title}" is now hidden from faculty submission.`
       );
       setTimeout(() => setSuccess(null), 4000);
+      setTemplates((prev) =>
+        prev.map((t) =>
+          t.id === tpl.id
+            ? { ...t, is_active: willBeActive, updated_at: new Date().toISOString() }
+            : t,
+        ),
+      );
+      setTemplateToView((prev) =>
+        prev && prev.id === tpl.id
+          ? { ...prev, is_active: willBeActive, updated_at: new Date().toISOString() }
+          : prev,
+      );
       await loadTemplates();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error updating template visibility");
@@ -366,13 +380,23 @@ export function RequirementTemplatesPanel({
                   {/* Column 1: Document Title & Description */}
                   <td className="py-3 px-4">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 mt-0.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setTemplateToView(tpl)}
+                        title="Click to view details"
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 mt-0.5 shrink-0 transition-colors cursor-pointer"
+                      >
                         <Page className="h-4 w-4" strokeWidth={2} />
-                      </div>
+                      </button>
                       <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                        <button
+                          type="button"
+                          onClick={() => setTemplateToView(tpl)}
+                          title="Click to view details"
+                          className="text-left font-semibold text-slate-900 dark:text-slate-100 hover:text-amber-600 dark:hover:text-amber-400 text-xs sm:text-sm transition-colors cursor-pointer block truncate max-w-md"
+                        >
                           {tpl.title}
-                        </p>
+                        </button>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="font-mono text-[10px] px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded">
                             {tpl.code}
@@ -439,11 +463,22 @@ export function RequirementTemplatesPanel({
                   {/* Column 6: Actions */}
                   <td className="py-3 px-4 text-right">
                     <div className="inline-flex items-center gap-1.5 justify-end">
+                      {/* View Details Button */}
+                      <button
+                        type="button"
+                        onClick={() => setTemplateToView(tpl)}
+                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                        title="View requirement details"
+                      >
+                        <Eye className="h-3.5 w-3.5" strokeWidth={2} />
+                        <span>View</span>
+                      </button>
+
                       {/* Edit Button */}
                       <button
                         type="button"
                         onClick={() => handleOpenEditModal(tpl)}
-                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1"
+                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                       >
                         <EditPencil className="h-3.5 w-3.5" strokeWidth={2} />
                         <span>Edit</span>
@@ -454,7 +489,7 @@ export function RequirementTemplatesPanel({
                         type="button"
                         disabled={isTogglingStatus === tpl.id}
                         onClick={() => void handleToggleHide(tpl)}
-                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1"
+                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                         title={tpl.is_active ? "Hide requirement from faculty" : "Unhide requirement for faculty"}
                       >
                         {tpl.is_active ? (
@@ -487,6 +522,19 @@ export function RequirementTemplatesPanel({
           </tbody>
         </table>
       </div>
+
+      {/* View Details Modal */}
+      <RequirementTemplateDetailsModal
+        isOpen={Boolean(templateToView)}
+        onClose={() => setTemplateToView(null)}
+        template={templateToView}
+        onEdit={(tpl) => {
+          setTemplateToView(null);
+          handleOpenEditModal(tpl);
+        }}
+        onToggleHide={(tpl) => void handleToggleHide(tpl)}
+        isTogglingStatus={Boolean(isTogglingStatus)}
+      />
 
       {/* Add / Edit Modal */}
       <RequirementTemplateModal
