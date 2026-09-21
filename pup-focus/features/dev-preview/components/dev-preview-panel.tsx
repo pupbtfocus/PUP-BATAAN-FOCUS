@@ -39,6 +39,8 @@ import successfullyIcon from "@/assets/icons animations/successfully.svg";
 import failedIcon from "@/assets/icons animations/fail.svg";
 import loadingIcon from "@/assets/icons animations/loading.svg";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
+import { ForgotPasswordModal } from "@/components/auth/forgot-password-modal";
+import { AlertPopup } from "@/components/ui/alert-popup";
 
 type PreviewTab =
   | "gmail"
@@ -77,10 +79,13 @@ export function DevPreviewPanel() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
-  const [changePassError, setChangePassError] = useState<string | null>(null);
-  const [changePassSuccess, setChangePassSuccess] = useState<string | null>(null);
   const [isSimulatingSave, setIsSimulatingSave] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
+  const [devToast, setDevToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   // Modals Showcase State
   const [activeShowcaseModal, setActiveShowcaseModal] = useState<
@@ -161,24 +166,31 @@ export function DevPreviewPanel() {
 
   const handleSimulatePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setChangePassError(null);
-    setChangePassSuccess(null);
+    setDevToast(null);
 
     if (newPassword.length < 8) {
-      setChangePassError("Password must be at least 8 characters long.");
+      setDevToast({
+        type: "error",
+        message: "Password must be at least 8 characters long.",
+      });
       return;
     }
     if (newPassword !== confirmPassword) {
-      setChangePassError("Password confirmation does not match.");
+      setDevToast({
+        type: "error",
+        message: "Password confirmation does not match.",
+      });
       return;
     }
 
     setIsSimulatingSave(true);
     setTimeout(() => {
       setIsSimulatingSave(false);
-      setChangePassSuccess("Password updated successfully! Redirecting to dashboard...");
+      setDevToast({
+        type: "success",
+        message: "Password updated successfully! Redirecting to dashboard...",
+      });
       setTimeout(() => {
-        setChangePassSuccess(null);
         setNewPassword("");
         setConfirmPassword("");
         if (isPasswordModalOpen) setIsPasswordModalOpen(false);
@@ -404,6 +416,16 @@ export function DevPreviewPanel() {
                   {emailCopied ? <AppIcon icon={Check} size="sm" color="success" /> : <AppIcon icon={Copy} size="sm" color="inherit" />}
                   <span>{emailCopied ? "HTML Copied!" : "Copy Raw HTML"}</span>
                 </button>
+                {emailTemplate === "forgot-password" && (
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotPasswordModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-[#3d0000] transition cursor-pointer shadow-2xs"
+                  >
+                    <AppIcon icon={Key} size="sm" color="inherit" />
+                    <span>Launch "Forgot Password" Modal</span>
+                  </button>
+                )}
                 <a
                   href="/email-preview"
                   target="_blank"
@@ -987,20 +1009,56 @@ export function DevPreviewPanel() {
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-0.5">
               <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                First-Time Login Security Gate (/auth/change-password)
+                First-Time Login Security Gate & Password Recovery
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                When an account is flagged with <code className="text-amber-700 dark:text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">must_change_password: true</code>, the application automatically redirects them to set a personal password before granting dashboard access.
+                Preview the first-time login change password screen, the official PUP FOCUS password recovery modal, and top-right solid alerts.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsPasswordModalOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-2xs"
-            >
-              <AppIcon icon={Eye} size="sm" color="inherit" />
-              <span>Launch as Fullscreen Modal</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsForgotPasswordModalOpen(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-[#3d0000] transition cursor-pointer shadow-2xs"
+              >
+                <AppIcon icon={Key} size="sm" color="inherit" />
+                <span>Launch "Forgot Password" Modal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-2xs"
+              >
+                <AppIcon icon={Eye} size="sm" color="inherit" />
+                <span>Launch Fullscreen Gate Modal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setDevToast({
+                    type: "success",
+                    message: "Password reset email sent! Please check your institutional inbox.",
+                  })
+                }
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#0b5336] hover:bg-[#0e6341] text-white transition cursor-pointer shadow-2xs border border-emerald-400/80"
+              >
+                <AppIcon icon={CheckCircle} size="sm" color="inherit" />
+                <span>Test Solid Green Toast</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setDevToast({
+                    type: "error",
+                    message: "Auth session missing! Please request a new password reset link.",
+                  })
+                }
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-2xs border border-amber-400/80"
+              >
+                <AppIcon icon={WarningCircle} size="sm" color="inherit" />
+                <span>Test Solid Maroon Toast</span>
+              </button>
+            </div>
           </div>
 
           {/* Interactive Card with Login Screen Background */}
@@ -1167,21 +1225,7 @@ export function DevPreviewPanel() {
                     </div>
                   </div>
 
-                  {/* Error Notification */}
-                  {changePassError ? (
-                    <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-left flex items-start gap-2.5 text-xs text-rose-200">
-                      <AppIcon icon={WarningCircle} size="sm" color="danger" className="shrink-0 mt-0.5" />
-                      <span>{changePassError}</span>
-                    </div>
-                  ) : null}
 
-                  {/* Success Notification */}
-                  {changePassSuccess ? (
-                    <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3 text-left flex items-start gap-2.5 text-xs text-emerald-200">
-                      <AppIcon icon={CheckCircle} size="sm" color="success" className="shrink-0 mt-0.5" />
-                      <span>{changePassSuccess}</span>
-                    </div>
-                  ) : null}
 
                   {/* Submit Button */}
                   <button
@@ -1836,6 +1880,69 @@ export function DevPreviewPanel() {
                 Launch System Loading Screen
               </button>
             </div>
+
+            {/* Modal Card 9: Forgot Password Modal (PUP System Aesthetic) */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-amber-500">
+                  <AppIcon icon={Key} size="lg" color="active" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Forgot Password Modal
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Inspect the redesigned PUP FOCUS password reset modal featuring brand maroon gradient, 3D curved top gold crest, centered logo badge, and high-contrast labels.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsForgotPasswordModalOpen(true)}
+                className="w-full py-2 px-3 text-xs font-bold rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-[#3d0000] transition cursor-pointer shadow-2xs"
+              >
+                Launch Forgot Password Modal
+              </button>
+            </div>
+
+            {/* Modal Card 10: Top-Right Solid Toast Popups (AlertPopup) */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                  <AppIcon icon={CheckCircle} size="lg" color="inherit" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Top-Right Solid Alerts
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Inspect top-right solid popups replacing inline banners: solid vibrant green for success and solid rich maroon for errors (such as Auth session missing).
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDevToast({
+                      type: "success",
+                      message: "Password reset email sent! Please check your institutional inbox.",
+                    })
+                  }
+                  className="flex-1 py-2 px-2.5 text-[11px] font-bold rounded-lg bg-[#0b5336] hover:bg-[#0e6341] text-white transition cursor-pointer shadow-2xs border border-emerald-400/80 text-center"
+                >
+                  Test Solid Green
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDevToast({
+                      type: "error",
+                      message: "Auth session missing! Please request a new password reset link.",
+                    })
+                  }
+                  className="flex-1 py-2 px-2.5 text-[11px] font-bold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-2xs border border-amber-400/80 text-center"
+                >
+                  Test Solid Maroon
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -2011,21 +2118,7 @@ export function DevPreviewPanel() {
                   </div>
                 </div>
 
-                {/* Error Notification */}
-                {changePassError ? (
-                  <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-left flex items-start gap-2.5 text-xs text-rose-200">
-                    <AppIcon icon={WarningCircle} size="sm" color="danger" className="shrink-0 mt-0.5" />
-                    <span>{changePassError}</span>
-                  </div>
-                ) : null}
 
-                {/* Success Notification */}
-                {changePassSuccess ? (
-                  <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3 text-left flex items-start gap-2.5 text-xs text-emerald-200">
-                    <AppIcon icon={CheckCircle} size="sm" color="success" className="shrink-0 mt-0.5" />
-                    <span>{changePassSuccess}</span>
-                  </div>
-                ) : null}
 
                 <div className="flex items-center gap-3 pt-2">
                   <button
@@ -2214,6 +2307,24 @@ export function DevPreviewPanel() {
         modal={authFeedbackModal}
         onClose={() => setAuthFeedbackModal(null)}
       />
+
+      {/* FORGOT PASSWORD MODAL (PUP BRANDED AESTHETIC) */}
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordModalOpen}
+        onClose={() => setIsForgotPasswordModalOpen(false)}
+        initialEmail={recipientEmail}
+      />
+
+      {/* TOP-RIGHT SOLID ALERT POPUP (GREEN SUCCESS / MAROON ERROR) */}
+      {devToast && (
+        <AlertPopup
+          type={devToast.type}
+          message={devToast.message}
+          onClose={() => setDevToast(null)}
+          position="top-right"
+          autoCloseMs={5000}
+        />
+      )}
     </div>
   );
 }

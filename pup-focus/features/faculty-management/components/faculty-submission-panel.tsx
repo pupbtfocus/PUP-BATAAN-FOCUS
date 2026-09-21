@@ -1357,6 +1357,7 @@ function FacultySubmissionPanelContent({
   }
   const windowDeadlineDisplay = useMemo(() => {
     if (!submissionWindow?.endDate) return null;
+    if (submissionWindow.endDate.startsWith("2099")) return "Always Open (No Deadline)";
     const parsed = new Date(
       `${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}`,
     );
@@ -1369,6 +1370,7 @@ function FacultySubmissionPanelContent({
   }, [submissionWindow]);
   const windowDaysRemaining = useMemo(() => {
     if (!submissionWindow?.endDate) return null;
+    if (submissionWindow.endDate.startsWith("2099")) return null;
     const targetMs = new Date(
       `${submissionWindow.endDate}T${submissionWindow.endTime || "23:59:59"}`,
     ).getTime();
@@ -2308,7 +2310,7 @@ function FacultySubmissionPanelContent({
                                             )
                                           }
                                           disabled={!hasActiveSchedule}
-                                          className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-3 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                          className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                                         >
                                           <AppIcon icon={Upload} size="sm" color="inherit" />
                                           <span>
