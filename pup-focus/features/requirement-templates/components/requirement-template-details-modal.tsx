@@ -150,21 +150,15 @@ export function RequirementTemplateDetailsModal({
                   {template.allowed_formats.length} format{template.allowed_formats.length === 1 ? "" : "s"}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {template.allowed_formats.map((fmt) => {
-                  const formatOption = ALLOWED_FORMAT_OPTIONS.find((opt) => opt.value === fmt);
-                  return (
-                    <span
-                      key={fmt}
-                      className="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shadow-2xs"
-                      title={formatOption?.label || fmt}
-                    >
-                      {fmt}
-                    </span>
-                  );
-                })}
+              <div className="pt-1">
+                <span
+                  className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                  title={template.allowed_formats.map((f) => ALLOWED_FORMAT_OPTIONS.find((o) => o.value === f)?.label || f).join(", ")}
+                >
+                  {template.allowed_formats.join(", ")}
+                </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Submissions in other file formats will be automatically blocked by the validator.
               </p>
             </div>
