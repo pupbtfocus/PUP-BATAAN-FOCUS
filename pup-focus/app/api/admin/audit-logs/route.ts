@@ -168,3 +168,77 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const sessionClient = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await sessionClient.auth.getUser();
+
+    const requesterRole =
+      (user?.user_metadata?.role as string | undefined) ??
+      (user?.app_metadata?.role as string | undefined);
+
+    if (
+      !user ||
+      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const url = new URL(request.url);
+    const singleId = url.searchParams.get("id")?.trim();
+    const bulkIds = url.searchParams.get("ids")?.trim();
+
+    const supabase = getServiceRoleClient();
+
+    if (singleId) {
+      const { error } = await supabase
+        .from("audit_logs")
+        .delete()
+        .eq("id", singleId);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+
+      return NextResponse.json({ success: true, deleted: 1 });
+    }
+
+    if (bulkIds) {
+      const ids = bulkIds
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
+
+      if (ids.length === 0) {
+        return NextResponse.json({ error: "No valid IDs provided" }, { status: 400 });
+      }
+
+      const { error } = await supabase
+        .from("audit_logs")
+        .delete()
+        .in("id", ids);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+
+      return NextResponse.json({ success: true, deleted: ids.length });
+    }
+
+    return NextResponse.json(
+      { error: "Provide ?id= or ?ids= parameter" },
+      { status: 400 },
+    );
+  } catch (error) {
+    logger.error("audit_logs_delete_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
