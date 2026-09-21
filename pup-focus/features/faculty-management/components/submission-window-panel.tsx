@@ -602,29 +602,21 @@ export function SubmissionWindowPanel({
 
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs dark:shadow-none space-y-6 transition-colors">
-      {/* 1. Header & Status Section */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              Submission Window Manager
-            </h4>
-          </div>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-            Current term: <span className="font-semibold text-slate-900 dark:text-slate-200">{currentTermLabel}</span>
-          </p>
-        </div>
-      </div>
-
       {/* Real-time Status Banner */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800 transition-colors">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Status Badge */}
           <div className="flex items-center gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-2.5 py-1 text-xs font-semibold rounded-md shadow-2xs">
             <span className={`w-2 h-2 rounded-full ${
               isWindowOpen ? "bg-emerald-500 animate-pulse" : isUpcoming ? "bg-amber-500 animate-ping" : "bg-slate-400 dark:bg-slate-500"
             }`} />
             <span>{isWindowOpen ? "Live Submission Window" : isUpcoming ? "Scheduled Window" : "Window Closed"}</span>
+          </div>
+
+          {/* Current Academic Term Badge */}
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-md shadow-2xs">
+            <span>Current Term:</span>
+            <span className="font-semibold text-slate-900 dark:text-slate-200">{currentTermLabel}</span>
           </div>
         </div>
 
