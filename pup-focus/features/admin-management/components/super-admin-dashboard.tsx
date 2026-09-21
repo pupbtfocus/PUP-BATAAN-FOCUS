@@ -1450,7 +1450,7 @@ export function SuperAdminDashboard({
         </div>
       )}
 
-      <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
+      <div className="md:ml-60 flex min-h-full w-full md:w-[calc(100%-15rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
           <div className="min-h-0 flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeSection === "dashboard" ? (
