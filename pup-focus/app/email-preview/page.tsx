@@ -1,6 +1,7 @@
 import {
   buildInviteEmailHtml,
   buildTempPasswordEmailHtml,
+  buildForgotPasswordEmailHtml,
 } from "../../lib/email/email-templates";
 import { ROLE } from "../../config/roles";
 
@@ -13,7 +14,14 @@ export default function EmailPreviewPage() {
 
   const tempPasswordHtml = buildTempPasswordEmailHtml({
     fullName: "Jane Doe",
+    email: "faculty@pup.edu.ph",
     tempPassword: "TempPass123!",
+  });
+
+  const forgotPasswordHtml = buildForgotPasswordEmailHtml({
+    fullName: "Jane Doe",
+    email: "faculty@pup.edu.ph",
+    resetLink: "https://pup-focus.local/auth/change-password",
   });
 
   return (
@@ -42,10 +50,11 @@ export default function EmailPreviewPage() {
           }}
         >
           <h1 style={{ margin: "0 0 18px", color: "#4d0000" }}>
-            Invite Email Preview
+            Account Invitation Email Preview
           </h1>
           <div dangerouslySetInnerHTML={{ __html: inviteHtml }} />
         </section>
+
         <section
           style={{
             background: "#fff",
@@ -55,11 +64,26 @@ export default function EmailPreviewPage() {
           }}
         >
           <h1 style={{ margin: "0 0 18px", color: "#4d0000" }}>
-            Temporary Password Email Preview
+            Temporary Credentials Email Preview
           </h1>
           <div dangerouslySetInnerHTML={{ __html: tempPasswordHtml }} />
+        </section>
+
+        <section
+          style={{
+            background: "#fff",
+            borderRadius: "16px",
+            padding: "24px",
+            boxShadow: "0 10px 24px rgba(77,0,0,0.12)",
+          }}
+        >
+          <h1 style={{ margin: "0 0 18px", color: "#4d0000" }}>
+            Forgot Password (Reset) Email Preview
+          </h1>
+          <div dangerouslySetInnerHTML={{ __html: forgotPasswordHtml }} />
         </section>
       </div>
     </main>
   );
 }
+
