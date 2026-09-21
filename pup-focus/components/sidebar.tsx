@@ -371,11 +371,11 @@ export function SidebarContent({
           )}
         </div>
 
-        {/* 5. Audit Trail & System Logs (Admin Module) */}
+        {/* 5. Audit Logs (Admin Module) */}
         {isSuperAdmin && (
           <SidebarButton
             active={isAuditActive}
-            title="Audit Trail"
+            title="Audit Logs"
             Icon={Activity}
             onClick={() => handleSelect("audit")}
           />

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle, EditPencil, Eye, Filter, Hourglass, NavArrowLeft, NavArrowRight, Page, Refresh, Search, Settings, ShieldAlert, Trash, Upload, UserBadgeCheck, UserPlus, UserXmark, Xmark, XmarkCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
-import { Button } from "@/components/ui/button";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
 
@@ -28,7 +27,7 @@ type AuditLogsResponse = {
   totalPages: number;
 };
 
-type ActionCategory = "" | "uploads" | "reviews" | "user_management" | "submission_windows";
+type ActionCategory = "" | "uploads" | "reviews" | "user_management" | "submission_windows" | "backup";
 
 const ACTION_CATEGORY_OPTIONS: { value: ActionCategory; label: string }[] = [
   { value: "", label: "All Actions" },
@@ -36,6 +35,7 @@ const ACTION_CATEGORY_OPTIONS: { value: ActionCategory; label: string }[] = [
   { value: "reviews", label: "Reviews" },
   { value: "user_management", label: "User Management" },
   { value: "submission_windows", label: "Submission Windows" },
+  { value: "backup", label: "Backup & Archive" },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -65,39 +65,34 @@ type ActionBadgeStyle = {
 };
 
 function getActionBadgeStyle(action: string): ActionBadgeStyle {
-  if (action.includes("approve") || action.includes("validated") || action.includes("create") || action.includes("activate")) {
-    return {
-      bg: "bg-emerald-50 border-emerald-300 dark:bg-emerald-500/15 dark:border-emerald-500/30",
-      text: "text-emerald-800 dark:text-emerald-400",
-      icon: <AppIcon icon={CheckCircle} size="xs" color="inherit" />,
-    };
+  if (action === "backup.create") {
+    return { bg: "bg-[#0b5336] border-[#08412a]", text: "text-white", icon: <AppIcon icon={CheckCircle} size="xs" color="inherit" /> };
+  }
+  if (action === "backup.delete") {
+    return { bg: "bg-[#780000] border-[#5e0000]", text: "text-white", icon: <AppIcon icon={Trash} size="xs" color="inherit" /> };
+  }
+  if (action === "backup.download") {
+    return { bg: "bg-amber-600 border-amber-700", text: "text-white", icon: <AppIcon icon={Page} size="xs" color="inherit" /> };
+  }
+  if (action === "backup.export_zip") {
+    return { bg: "bg-slate-600 border-slate-700", text: "text-white", icon: <AppIcon icon={Page} size="xs" color="inherit" /> };
+  }
+  if (action.includes("approve") || action.includes("validated") || action.includes("activate")) {
+    return { bg: "bg-[#0b5336] border-[#08412a]", text: "text-white", icon: <AppIcon icon={CheckCircle} size="xs" color="inherit" /> };
+  }
+  if (action.includes("create") || action.includes("invite")) {
+    return { bg: "bg-emerald-700 border-emerald-800", text: "text-white", icon: <AppIcon icon={UserPlus} size="xs" color="inherit" /> };
   }
   if (action.includes("reject") || action.includes("delete") || action.includes("deactivate")) {
-    return {
-      bg: "bg-rose-50 border-rose-300 dark:bg-rose-500/15 dark:border-rose-500/30",
-      text: "text-rose-800 dark:text-rose-400",
-      icon: <AppIcon icon={XmarkCircle} size="xs" color="inherit" />,
-    };
+    return { bg: "bg-[#780000] border-[#5e0000]", text: "text-white", icon: <AppIcon icon={XmarkCircle} size="xs" color="inherit" /> };
   }
   if (action.includes("upload")) {
-    return {
-      bg: "bg-blue-50 border-blue-300 dark:bg-blue-500/15 dark:border-blue-500/30",
-      text: "text-blue-800 dark:text-blue-400",
-      icon: <AppIcon icon={Upload} size="xs" color="inherit" />,
-    };
+    return { bg: "bg-blue-700 border-blue-800", text: "text-white", icon: <AppIcon icon={Upload} size="xs" color="inherit" /> };
   }
   if (action.includes("update") || action.includes("window")) {
-    return {
-      bg: "bg-amber-50 border-amber-300 dark:bg-amber-500/15 dark:border-amber-500/30",
-      text: "text-amber-900 dark:text-amber-400",
-      icon: <AppIcon icon={EditPencil} size="xs" color="inherit" />,
-    };
+    return { bg: "bg-amber-600 border-amber-700", text: "text-white", icon: <AppIcon icon={EditPencil} size="xs" color="inherit" /> };
   }
-  return {
-    bg: "bg-slate-100 border-slate-400 dark:bg-slate-500/15 dark:border-slate-500/30",
-    text: "text-slate-800 dark:text-slate-400",
-    icon: <AppIcon icon={ShieldAlert} size="xs" color="inherit" />,
-  };
+  return { bg: "bg-slate-600 border-slate-700", text: "text-white", icon: <AppIcon icon={ShieldAlert} size="xs" color="inherit" /> };
 }
 
 function getActionIcon(action: string) {
@@ -262,6 +257,12 @@ export function AuditLogsPanel() {
   const [actionCategory, setActionCategory] = useState<ActionCategory>("");
   const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(null);
 
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false); // row checkboxes visible
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmEntry, setDeleteConfirmEntry] = useState<AuditLogEntry | null>(null); // per-row confirmation
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -274,6 +275,9 @@ export function AuditLogsPanel() {
   const fetchLogs = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+    setDeleteConfirmEntry(null);
 
     try {
       const params = new URLSearchParams({ page: String(page), limit: "20" });
@@ -313,6 +317,75 @@ export function AuditLogsPanel() {
     setPage(1);
   }
 
+  // ── Selection helpers ──
+  const allCurrentIds = logs.map((l) => l.id);
+  const isAllSelected = allCurrentIds.length > 0 && allCurrentIds.every((id) => selectedIds.has(id));
+  const isIndeterminate = allCurrentIds.some((id) => selectedIds.has(id)) && !isAllSelected;
+
+  function toggleSelectAll() {
+    if (!selectionMode) {
+      // First click: enter selection mode and check all
+      setSelectionMode(true);
+      setSelectedIds(new Set(allCurrentIds));
+    } else if (isAllSelected) {
+      // All selected → deselect all + exit selection mode
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+    } else {
+      // Some/none selected → select all
+      setSelectedIds(new Set(allCurrentIds));
+    }
+  }
+
+  function toggleSelectOne(id: string) {
+    setSelectionMode(true); // entering selection mode on any row click
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // ── Delete ──
+  async function handleDeleteOne(id: string) {
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/audit-logs?id=${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? "Failed to delete log entry");
+      }
+      setDeleteConfirmEntry(null);
+      await fetchLogs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  async function handleDeleteSelected() {
+    if (selectedIds.size === 0) return;
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const ids = Array.from(selectedIds).join(",");
+      const res = await fetch(`/api/admin/audit-logs?ids=${encodeURIComponent(ids)}`, { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? "Failed to delete selected logs");
+      }
+      setSelectedIds(new Set());
+      await fetchLogs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Bulk delete failed");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <div className="mt-4 space-y-4">
       {/* ── Filter Bar ── */}
@@ -320,7 +393,9 @@ export function AuditLogsPanel() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Search */}
           <div className="relative flex-1">
-            <AppIcon icon={Search} size="sm" color="muted" />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <AppIcon icon={Search} size="sm" color="muted" />
+            </span>
             <input
               type="text"
               placeholder="Search actions, entity types…"
@@ -330,10 +405,12 @@ export function AuditLogsPanel() {
             />
           </div>
 
-          {/* Category Filter */}
+          {/* Category Filter + Refresh */}
           <div className="flex items-center gap-2">
             <div className="relative">
-              <AppIcon icon={Filter} size="sm" color="muted" />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <AppIcon icon={Filter} size="sm" color="muted" />
+              </span>
               <select
                 value={actionCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
@@ -353,9 +430,7 @@ export function AuditLogsPanel() {
               disabled={isLoading}
               className="flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
             >
-              <Refresh
-                className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
-              />
+              <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
               {isLoading ? "Loading…" : "Refresh"}
             </button>
           </div>
@@ -369,6 +444,34 @@ export function AuditLogsPanel() {
         </p>
       </div>
 
+      {/* ── Bulk Action Bar (visible when selection > 0) ── */}
+      {selectedIds.size > 0 && (
+        <div className="rounded-2xl border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/20 px-4 py-2.5 flex items-center justify-between gap-3 shadow-sm">
+          <p className="text-xs font-semibold text-red-700 dark:text-red-400">
+            {selectedIds.size} {selectedIds.size === 1 ? "entry" : "entries"} selected
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 transition cursor-pointer"
+            >
+              <AppIcon icon={Xmark} size="xs" color="inherit" />
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleDeleteSelected()}
+              disabled={isDeleting}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] px-3 py-1 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-xs"
+            >
+              <AppIcon icon={Trash} size="xs" color="inherit" />
+              Delete {selectedIds.size} selected
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Error State ── */}
       <AlertPopup
         type="error"
@@ -378,23 +481,26 @@ export function AuditLogsPanel() {
 
       {/* ── Data Table ── */}
       <div className="w-full overflow-x-auto rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-        {/* Table Header */}
-        <div className="hidden lg:grid lg:grid-cols-[160px_1fr_1.2fr_1fr_80px] gap-2 border-b border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-4 py-2.5">
-          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-700 dark:text-slate-400">
-            Timestamp
-          </p>
-          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-700 dark:text-slate-400">
-            Actor
-          </p>
-          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-700 dark:text-slate-400">
-            Action
-          </p>
-          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-700 dark:text-slate-400">
-            Entity
-          </p>
-          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-700 dark:text-slate-400 text-center">
-            Details
-          </p>
+        {/* Table Header — neutral */}
+        <div className="hidden lg:grid lg:grid-cols-[80px_160px_1fr_1.2fr_1fr_120px] gap-2 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-4 py-2.5 items-center">
+          {/* Select All Checkbox */}
+          <div className="flex items-center justify-center gap-1.5 col-span-1">
+            <input
+              type="checkbox"
+              checked={isAllSelected}
+              ref={(el) => { if (el) el.indeterminate = isIndeterminate; }}
+              onChange={toggleSelectAll}
+              disabled={logs.length === 0}
+              className="w-3.5 h-3.5 rounded border-slate-400 dark:border-slate-600 accent-[#780000] cursor-pointer"
+              title="Select all"
+            />
+            <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-600 dark:text-slate-400">Select</span>
+          </div>
+          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-600 dark:text-slate-400">Timestamp</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-600 dark:text-slate-400">Actor</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-600 dark:text-slate-400">Action</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-600 dark:text-slate-400">Entity</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-slate-600 dark:text-slate-400 text-center">Actions</p>
         </div>
 
         {/* Table Body */}
@@ -416,66 +522,130 @@ export function AuditLogsPanel() {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-400 dark:divide-slate-800">
+          <div className="divide-y divide-slate-200 dark:divide-slate-800">
             {logs.map((entry) => {
               const badge = getActionBadgeStyle(entry.action);
+              const isSelected = selectedIds.has(entry.id);
+              const isPendingDelete = deleteConfirmEntry?.id === entry.id;
 
               return (
-                <div
-                  key={entry.id}
-                  className="group grid gap-2 px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-400 dark:border-slate-800 transition hover:bg-slate-50 dark:hover:bg-slate-800/40 lg:grid-cols-[160px_1fr_1.2fr_1fr_80px] items-center"
-                >
-                  {/* Timestamp */}
-                  <div className="flex items-center gap-2 lg:gap-0">
-                    <AppIcon icon={Hourglass} size="sm" color="muted" />
-                    <p className="text-xs text-slate-700 dark:text-slate-300 font-mono">
-                      {formatTimestamp(entry.createdAt)}
-                    </p>
+                <>
+                  <div
+                    key={entry.id}
+                    className={`group grid gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-800 transition items-center lg:grid-cols-[80px_160px_1fr_1.2fr_1fr_120px] ${
+                      isPendingDelete
+                        ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40"
+                        : isSelected
+                        ? "bg-red-50/60 dark:bg-red-950/20"
+                        : "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    }`}
+                  >
+                    {/* Row Checkbox — only visible in selection mode */}
+                    <div className="flex items-center justify-center">
+                      {selectionMode || isSelected ? (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelectOne(entry.id)}
+                          className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 accent-[#780000] cursor-pointer"
+                        />
+                      ) : (
+                        <span className="w-3.5 h-3.5" />
+                      )}
+                    </div>
+
+                    {/* Timestamp */}
+                    <div className="flex items-center gap-1.5">
+                      <AppIcon icon={Hourglass} size="xs" color="muted" />
+                      <p className="text-xs text-slate-700 dark:text-slate-300 font-mono leading-tight">
+                        {formatTimestamp(entry.createdAt)}
+                      </p>
+                    </div>
+
+                    {/* Actor */}
+                    <div>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                        {entry.actorName ?? "System"}
+                      </p>
+                      <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">
+                        {truncateId(entry.actorId)}
+                      </p>
+                    </div>
+
+                    {/* Action Badge */}
+                    <div className="flex items-center">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold tracking-wide shadow-xs ${badge.bg} ${badge.text}`}
+                      >
+                        {badge.icon}
+                        {formatActionLabel(entry.action)}
+                      </span>
+                    </div>
+
+                    {/* Entity */}
+                    <div>
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200 capitalize">
+                        {entry.entityType.replace(/_/g, " ")}
+                      </p>
+                      <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">
+                        {truncateId(entry.entityId)}
+                      </p>
+                    </div>
+
+                    {/* Actions — View + Delete */}
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEntry(entry)}
+                        className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
+                        title="View details"
+                      >
+                        <AppIcon icon={Eye} size="xs" color="inherit" />
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirmEntry(isPendingDelete ? null : entry)}
+                        disabled={isDeleting}
+                        className={`p-1 border rounded-lg transition cursor-pointer disabled:opacity-50 ${
+                          isPendingDelete
+                            ? "text-amber-600 bg-amber-100 border-amber-300 dark:bg-amber-950/40 dark:border-amber-700"
+                            : "text-red-500 hover:bg-red-500/10 border-transparent hover:border-red-200 dark:hover:border-red-900/60"
+                        }`}
+                        title={isPendingDelete ? "Cancel delete" : "Delete this log entry"}
+                      >
+                        <AppIcon icon={isPendingDelete ? Xmark : Trash} size="sm" color="inherit" />
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Actor */}
-                  <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                      {entry.actorName ?? "System"}
-                    </p>
-                    <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">
-                      {truncateId(entry.actorId)}
-                    </p>
-                  </div>
-
-                  {/* Action Badge */}
-                  <div className="flex items-center gap-2">
-                    <AppIcon icon={getActionIcon(entry.action)} size="md" color="default" />
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold tracking-wide ${badge.bg} ${badge.text}`}
-                    >
-                      {badge.icon}
-                      {formatActionLabel(entry.action)}
-                    </span>
-                  </div>
-
-                  {/* Entity */}
-                  <div>
-                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200 capitalize">
-                      {entry.entityType.replace(/_/g, " ")}
-                    </p>
-                    <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">
-                      {truncateId(entry.entityId)}
-                    </p>
-                  </div>
-
-                  {/* Details Button */}
-                  <div className="flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedEntry(entry)}
-                      className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
-                    >
-                      <AppIcon icon={Eye} size="xs" color="inherit" />
-                      View
-                    </button>
-                  </div>
-                </div>
+                  {/* Inline Confirmation Bar */}
+                  {isPendingDelete && (
+                    <div className="px-4 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900/40 flex items-center justify-between gap-3">
+                      <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                        ⚠ Delete this audit log entry? This cannot be undone.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmEntry(null)}
+                          className="px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isDeleting}
+                          onClick={() => void handleDeleteOne(entry.id)}
+                          className="px-3 py-1 text-xs font-bold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                        >
+                          <AppIcon icon={Trash} size="xs" color="inherit" />
+                          {isDeleting ? "Deleting…" : "Confirm Delete"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               );
             })}
           </div>
