@@ -329,6 +329,9 @@ export function BackupArchivePanel() {
 
       setSuccess(`Document Vault ZIP (${scopeDesc}) downloaded successfully!`);
       setTimeout(() => setSuccess(null), 5000);
+
+      // Refresh list so the newly created system_backups record appears
+      await loadBackupData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error exporting document vault ZIP");
     } finally {
@@ -384,6 +387,9 @@ export function BackupArchivePanel() {
 
       setSuccess(`Document Vault ZIP downloaded successfully!`);
       setTimeout(() => setSuccess(null), 4000);
+
+      // Refresh list so the newly created system_backups record appears
+      await loadBackupData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error exporting document vault ZIP");
     } finally {
