@@ -132,6 +132,167 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 4. Fetch faculty list for scoped backups (Strictly faculty only - exclude admin & superadmin)
+    const facultyList: Array<{
+      id: string;
+      user_id?: string | null;
+      name: string;
+      email?: string | null;
+      department?: string | null;
+    }> = [];
+    const seenFacultyIds = new Set<string>();
+
+    function isAdministrativeAccount(account: {
+      id?: string | null;
+      user_id?: string | null;
+      name?: string | null;
+      full_name?: string | null;
+      email?: string | null;
+    }): boolean {
+      const email = (account.email || "").toLowerCase().trim();
+      const name = (account.name || account.full_name || "").toLowerCase().trim();
+
+      if (
+        email === "pupbataanfocus.superadmin@gmail.com" ||
+        email === "preview@pupfocus.dev" ||
+        email === "christianjaycmandani@iskolarngbayan.pup.edu.ph" ||
+        email.includes("superadmin") ||
+        email.includes("admin@") ||
+        email.endsWith("@pupfocus.dev")
+      ) {
+        return true;
+      }
+
+      if (
+        name.includes("super admin") ||
+        name.includes("developer preview") ||
+        name === "pup focus super admin" ||
+        name.includes("system administrator")
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
+    // 4a. Query auth users to detect authoritative administrative accounts and faculty accounts
+    const adminUserIds = new Set<string>();
+    const adminEmails = new Set<string>();
+    const facultyAuthUserIds = new Set<string>();
+
+    try {
+      const { data: authData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      for (const u of authData?.users || []) {
+        const r = ((u.user_metadata?.role as string) || (u.app_metadata?.role as string) || "").toLowerCase().trim();
+        const em = (u.email || "").toLowerCase().trim();
+
+        if (
+          r === "admin" ||
+          r === "super_admin" ||
+          r === "superadmin" ||
+          isAdministrativeAccount(u)
+        ) {
+          adminUserIds.add(u.id);
+          if (em) adminEmails.add(em);
+        } else if (r === "faculty") {
+          facultyAuthUserIds.add(u.id);
+        }
+      }
+    } catch (err) {
+      console.warn("Error listing auth users for backup role check:", err);
+    }
+
+    // 4b. Identify profiles with faculty role in user_roles
+    const verifiedFacultyProfileIds = new Set<string>();
+    try {
+      const { data: facultyRole } = await supabase
+        .from("roles")
+        .select("id")
+        .eq("code", "faculty")
+        .maybeSingle();
+
+      if (facultyRole?.id) {
+        const { data: fUserRoles } = await supabase
+          .from("user_roles")
+          .select("profile_id")
+          .eq("role_id", facultyRole.id);
+
+        if (fUserRoles) {
+          for (const ur of fUserRoles) {
+            if (ur.profile_id) verifiedFacultyProfileIds.add(ur.profile_id);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Error querying faculty roles in backups route:", err);
+    }
+
+    // 4c. Query profiles and filter strictly for faculty members
+    try {
+      const { data: profs, error: profsErr } = await supabase
+        .from("profiles")
+        .select("id, user_id, full_name, email")
+        .order("full_name", { ascending: true });
+
+      if (!profsErr && profs && Array.isArray(profs)) {
+        for (const p of profs) {
+          const email = (p.email || "").toLowerCase().trim();
+
+          // Exclude any administrative account
+          if (
+            adminUserIds.has(p.id) ||
+            (p.user_id && adminUserIds.has(p.user_id)) ||
+            adminEmails.has(email) ||
+            isAdministrativeAccount(p)
+          ) {
+            continue;
+          }
+
+          // Must be recognized as faculty either via user_roles or auth metadata
+          const isFaculty =
+            verifiedFacultyProfileIds.has(p.id) ||
+            (p.user_id && verifiedFacultyProfileIds.has(p.user_id)) ||
+            (p.user_id && facultyAuthUserIds.has(p.user_id)) ||
+            facultyAuthUserIds.has(p.id);
+
+          if (!isFaculty) {
+            continue;
+          }
+
+          const name = p.full_name?.trim() || p.email?.split("@")[0] || "Faculty Member";
+          const key = p.id || p.user_id;
+
+          if (key && !seenFacultyIds.has(key)) {
+            seenFacultyIds.add(key);
+            facultyList.push({
+              id: p.id,
+              user_id: p.user_id || null,
+              name,
+              email: p.email || null,
+              department: null,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Error querying profiles in backups route:", err);
+    }
+
+    facultyList.sort((a, b) => a.name.localeCompare(b.name));
+
+    // 5. Extract unique Academic Years
+    const academicYears = Array.from(
+      new Set(
+        termsRows
+          .map((t) => t.academic_year)
+          .filter((ay): ay is string => Boolean(ay && ay.trim()))
+      )
+    ).sort((a, b) => b.localeCompare(a));
+
+    if (academicYears.length === 0) {
+      academicYears.push("2026-2027", "2025-2026", "2024-2025");
+    }
+
     // Compute stats
     const uniqueArchivedAYs = new Set(archivedTerms.map((t) => t.academic_year));
     const lastBackup = backups.length > 0 ? backups[0].created_at : null;
@@ -147,6 +308,8 @@ export async function GET(request: NextRequest) {
       backups,
       archivedTerms,
       availableTerms,
+      academicYears,
+      facultyList,
       stats,
     });
   } catch (error) {
