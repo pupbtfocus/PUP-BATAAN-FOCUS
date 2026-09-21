@@ -403,12 +403,7 @@ export function AdminAcademicTerms({
   return (
     <div className="w-full space-y-4">
       {/* Top Header Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">
-            Manage academic years and active term status across the campus system.
-          </p>
-        </div>
+      <div className="flex items-center justify-end gap-3">
         <button
           type="button"
           onClick={() => setIsCreateModalOpen(true)}

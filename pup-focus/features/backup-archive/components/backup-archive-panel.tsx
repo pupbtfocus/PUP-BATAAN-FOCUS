@@ -269,23 +269,7 @@ export function BackupArchivePanel() {
   }, [availableTerms]);
 
   return (
-    <article className="space-y-6">
-      {/* Header Banner */}
-      <section className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-sm transition-colors">
-        <div className="relative z-10 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400">
-              System Administration & Compliance
-            </span>
-          </div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-            Automated Data Archiving & Backup Manager
-          </h1>
-          <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
-            Safeguard institutional compliance data, generate system recovery snapshots, and manage historical academic archives.
-          </p>
-        </div>
-      </section>
+    <div className="space-y-6">
 
       {/* Top 3 Stat Cards */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -891,6 +875,6 @@ export function BackupArchivePanel() {
           </div>
         </div>
       )}
-    </article>
+    </div>
   );
 }
