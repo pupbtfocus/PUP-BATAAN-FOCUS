@@ -51,10 +51,10 @@ export function buildEmailLayout({
   focusLogoSrc?: string;
 }) {
   const safeActionLabel = actionLabel ? escapeHtml(actionLabel) : "";
-  const safeActionHref = actionHref ? escapeHtml(actionHref) : "";
+  const safeActionHref = actionHref ? escapeHtml(actionHref.replace(/&amp;/g, "&")) : "";
   const safeFooterNote = footerNote ? escapeHtml(footerNote) : "";
-  const safePupLogoSrc = escapeHtml(pupLogoSrc || logoSrc || buildAppUrl("/icons/pup-seal.png"));
-  const safeFocusLogoSrc = escapeHtml(focusLogoSrc || buildAppUrl("/icons/pup-focus-emblem-logo.png"));
+  const safePupLogoSrc = escapeHtml((pupLogoSrc || logoSrc || buildAppUrl("/icons/pup-seal.png")).replace(/&amp;/g, "&"));
+  const safeFocusLogoSrc = escapeHtml((focusLogoSrc || buildAppUrl("/icons/pup-focus-emblem-logo.png")).replace(/&amp;/g, "&"));
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -232,7 +232,6 @@ export function buildForgotPasswordEmailHtml({
     fullName?.trim().split(/\s+/)[0] ||
     "there";
   const safeFirstName = escapeHtml(resolvedFirstName);
-  const safeResetLink = escapeHtml(resetLink);
   const safeEmail = email ? escapeHtml(email) : "";
 
   return buildEmailLayout({
@@ -240,7 +239,7 @@ export function buildForgotPasswordEmailHtml({
     intro: `Hello ${safeFirstName}, we received a request to reset your PUP FOCUS password.`,
     body: `A password reset was requested for your institutional account${safeEmail ? ` (${safeEmail})` : ""}. Click the button below to securely set a new password. This link is valid for 1 hour.`,
     actionLabel: "Reset Password",
-    actionHref: safeResetLink,
+    actionHref: resetLink,
     footerNote: `If you did not request a password reset, you can safely ignore this email. Your current password will remain active.`,
     pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
     focusLogoSrc: buildAppUrl("/icons/pup-focus-emblem-logo.png"),

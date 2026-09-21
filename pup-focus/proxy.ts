@@ -133,9 +133,16 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.searchParams.has("error") ||
     request.nextUrl.searchParams.has("access_token");
 
+  const isChangePasswordPage =
+    pathname === "/auth/change-password" ||
+    pathname === "/change-password" ||
+    pathname === "/auth/set-password" ||
+    pathname === "/reset-password";
+
   const isAuthOrLandingPage =
     !isAuthCallbackOrConfirm &&
     !hasInviteOrAuthParams &&
+    !isChangePasswordPage &&
     (pathname === "/" ||
       pathname === "/sign-in" ||
       AUTH_ROUTES.some(
@@ -146,12 +153,6 @@ export async function proxy(request: NextRequest) {
     const mustChangePassword =
       user.user_metadata?.must_change_password === true ||
       user.user_metadata?.force_password_change === true;
-
-    const isChangePasswordPage =
-      pathname === "/auth/change-password" ||
-      pathname === "/change-password" ||
-      pathname === "/auth/set-password" ||
-      pathname === "/reset-password";
 
     if (
       mustChangePassword &&

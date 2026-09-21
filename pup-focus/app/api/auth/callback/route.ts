@@ -24,6 +24,32 @@ export async function GET(request: NextRequest) {
   }
 
   if (!code && !tokenHash) {
+    if (
+      type === "recovery" ||
+      next === "/auth/change-password" ||
+      next === "/change-password"
+    ) {
+      const targetPath = next || "/auth/change-password";
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting to Password Reset...</title>
+  <script>
+    var hash = window.location.hash || '';
+    var search = window.location.search || '';
+    window.location.replace('${targetPath}' + search + hash);
+  </script>
+</head>
+<body style="background:#4d0000;color:#fef3c7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+  <p>Redirecting to password reset...</p>
+</body>
+</html>`;
+      return new NextResponse(html, {
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
+
     return NextResponse.redirect(
       new URL("/sign-in?error=missing_code", request.url),
     );
