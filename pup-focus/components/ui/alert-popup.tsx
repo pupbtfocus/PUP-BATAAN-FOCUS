@@ -42,12 +42,12 @@ export function AlertPopup({
   const iconColor = isSuccess ? "white" : isError ? "white" : isWarning ? "inherit" : "white";
 
   const colorStyles = isSuccess
-    ? "bg-[#0b5336] text-white border border-[#08412a] shadow-lg shadow-[#0b5336]/30"
+    ? "bg-[#0b5336] text-white border-2 border-emerald-400/90 shadow-2xl shadow-black/50 font-semibold tracking-wide"
     : isError
-    ? "bg-[#780000] text-white border border-[#5e0000] shadow-lg shadow-[#780000]/30"
+    ? "bg-[#780000] text-white border-2 border-amber-400/80 shadow-2xl shadow-black/50 font-semibold tracking-wide"
     : isWarning
-    ? "bg-amber-500 text-slate-950 border border-amber-600 font-bold shadow-lg shadow-amber-500/25 dark:bg-amber-500 dark:text-slate-950 dark:border-amber-400"
-    : "bg-slate-900 text-white border border-slate-700 shadow-lg dark:bg-slate-800 dark:text-white dark:border-slate-700";
+    ? "bg-amber-500 text-slate-950 border-2 border-amber-600 font-bold shadow-2xl shadow-amber-500/30"
+    : "bg-slate-900 text-white border-2 border-slate-700 shadow-2xl";
 
   const closeButtonHover = isSuccess || isError || !isWarning
     ? "hover:bg-white/20 text-white/90 hover:text-white"
@@ -55,9 +55,9 @@ export function AlertPopup({
 
   const positionStyles =
     position === "top-right"
-      ? "fixed top-5 right-5 sm:right-6 z-[100] max-w-md w-[calc(100vw-2.5rem)] sm:w-auto shadow-2xl animate-in fade-in slide-in-from-top-3 duration-200"
+      ? "fixed top-5 right-5 sm:right-6 z-[9999] max-w-md w-[calc(100vw-2.5rem)] sm:w-auto shadow-2xl animate-in fade-in slide-in-from-top-3 duration-200"
       : position === "top-center"
-      ? "fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[calc(100vw-2.5rem)] sm:w-auto shadow-2xl animate-in fade-in slide-in-from-top-3 duration-200"
+      ? "fixed top-5 left-1/2 -translate-x-1/2 z-[9999] max-w-md w-[calc(100vw-2.5rem)] sm:w-auto shadow-2xl animate-in fade-in slide-in-from-top-3 duration-200"
       : "w-full animate-in fade-in zoom-in-98 duration-150";
 
   return (
