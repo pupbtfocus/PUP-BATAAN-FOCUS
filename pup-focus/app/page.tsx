@@ -366,7 +366,7 @@ export default function Home() {
 
       <div className="relative z-10 w-full max-w-4xl lg:max-w-5xl mx-auto my-auto py-2 sm:py-3">
         {/* Wide Open-Book Card Container */}
-        <div className="relative w-full mx-auto">
+        <div className="relative w-full mx-auto opacity-[0.88]">
           {/* Desktop Curved Card Top Header SVG (>= md) */}
           <div className="hidden md:block relative -mb-[8px] z-10">
             <svg
@@ -414,7 +414,7 @@ export default function Home() {
                 strokeLinecap="round"
               />
 
-              {/* 3. Base Golden Border */}
+              {/* 3. Base Golden Border (top curve + sides extending into card) */}
               <path
                 d="M 2,86 L 2,20 Q 2,2 20,2 L 380,2 C 398,2 404,44 450,44 C 496,44 502,2 520,2 L 880,2 Q 898,2 898,20 L 898,86"
                 fill="none"
@@ -442,7 +442,7 @@ export default function Home() {
             </svg>
 
             {/* Logo of PUP positioned precisely inside the curved arch in top center */}
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-20">
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-30">
               <Logo size={120} className="mb-0 drop-shadow-[0_12px_24px_rgba(0,0,0,0.7)]" />
             </div>
           </div>
@@ -491,7 +491,7 @@ export default function Home() {
                 strokeLinecap="round"
               />
 
-              {/* 3. Base Golden Border */}
+              {/* 3. Base Golden Border (top curve + sides extending into card) */}
               <path
                 d="M 2,82 L 2,20 Q 2,2 20,2 L 142,2 C 158,2 162,37 200,37 C 238,37 242,2 258,2 L 380,2 Q 398,2 398,20 L 398,82"
                 fill="none"
@@ -524,11 +524,17 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Continuous Center Spine Separator Line (Desktop) */}
+          <div
+            className="hidden md:block absolute left-1/2 -translate-x-1/2 w-[2px] bg-amber-400/40 pointer-events-none z-20"
+            style={{ top: "90px", bottom: "4px" }}
+          />
+
           {/* Card Body - Official PUP Brand Maroon (#800000) with 2-Sided Open Book Layout */}
           <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-4 border-b-4 border-amber-400 bg-[#800000] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)]">
             <div className="grid grid-cols-1 md:grid-cols-12 items-stretch min-h-[380px] sm:min-h-[420px]">
               {/* Left Side (Page 1): Login Form (Swapped) */}
-              <div className="md:col-span-6 relative flex flex-col justify-center p-5 sm:p-7 md:p-8 border-b-2 md:border-b-0 md:border-r-2 border-amber-400/40 bg-[#800000]">
+              <div className="md:col-span-6 relative flex flex-col justify-center p-5 sm:p-7 md:p-8 border-b-2 md:border-b-0 border-amber-400/40 bg-transparent">
                 {/* Form Header */}
                 <div className="mb-3 sm:mb-4 text-center">
                   <h2 className="text-2xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
@@ -558,7 +564,7 @@ export default function Home() {
               </div>
 
               {/* Right Side (Page 2): Centered PUP FOCUS and Faculty Online Compliance and Uploading System with Pylon Background */}
-              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center p-5 sm:p-7 md:p-8 min-h-[380px] sm:min-h-[420px] bg-[#800000] overflow-hidden">
+              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center p-5 sm:p-7 md:p-8 min-h-[380px] sm:min-h-[420px] bg-transparent overflow-hidden">
                 {/* Pylon Monument Background (pylon.png) */}
                 <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                   <Image
