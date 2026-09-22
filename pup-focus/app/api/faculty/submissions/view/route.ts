@@ -281,58 +281,62 @@ export async function GET(request: NextRequest) {
       size_bytes?: number | null;
     } | null = null;
 
-    if (versionId) {
-      const { data: specificVer } = await adminClient
-        .from("document_versions")
-        .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
-        .eq("id", versionId)
-        .maybeSingle();
-      docVer = specificVer;
-    }
-
-    if (!docVer) {
-      const { data: latestVer } = await adminClient
-        .from("document_versions")
-        .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
-        .or(`submission_id.eq.${submissionId},id.eq.${submissionId}`)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      docVer = latestVer;
-    }
-
-    // If sub was null, but docVer has submission_id, fetch sub from parent
-    if (!sub && docVer?.submission_id) {
-      const { data: parentSub } = await adminClient
-        .from("submissions")
-        .select("id, requirement_code, status, faculty_profile_id")
-        .eq("id", docVer.submission_id)
-        .maybeSingle();
-      sub = parentSub;
-    }
-
-    // 3. Fallback search across same faculty's requirement submissions if still missing
-    if (!docVer?.storage_path && sub?.faculty_profile_id && sub?.requirement_code) {
-      const { data: siblingSubmissions } = await adminClient
-        .from("submissions")
-        .select("id")
-        .eq("faculty_profile_id", sub.faculty_profile_id)
-        .eq("requirement_code", sub.requirement_code);
-
-      if (siblingSubmissions && siblingSubmissions.length > 0) {
-        const subIds = siblingSubmissions.map((s) => s.id);
-        const { data: siblingVer } = await adminClient
+    try {
+      if (versionId) {
+        const { data: specificVer } = await adminClient
           .from("document_versions")
           .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
-          .in("submission_id", subIds)
+          .eq("id", versionId)
+          .maybeSingle();
+        docVer = specificVer;
+      }
+
+      if (!docVer) {
+        const { data: latestVer } = await adminClient
+          .from("document_versions")
+          .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
+          .or(`submission_id.eq.${submissionId},id.eq.${submissionId}`)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
+        docVer = latestVer;
+      }
 
-        if (siblingVer?.storage_path) {
-          docVer = siblingVer;
+      // If sub was null, but docVer has submission_id, fetch sub from parent
+      if (!sub && docVer?.submission_id) {
+        const { data: parentSub } = await adminClient
+          .from("submissions")
+          .select("id, requirement_code, status, faculty_profile_id")
+          .eq("id", docVer.submission_id)
+          .maybeSingle();
+        sub = parentSub;
+      }
+
+      // 3. Fallback search across same faculty's requirement submissions if still missing
+      if (!docVer?.storage_path && sub?.faculty_profile_id && sub?.requirement_code) {
+        const { data: siblingSubmissions } = await adminClient
+          .from("submissions")
+          .select("id")
+          .eq("faculty_profile_id", sub.faculty_profile_id)
+          .eq("requirement_code", sub.requirement_code);
+
+        if (siblingSubmissions && siblingSubmissions.length > 0) {
+          const subIds = siblingSubmissions.map((s) => s.id);
+          const { data: siblingVer } = await adminClient
+            .from("document_versions")
+            .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
+            .in("submission_id", subIds)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (siblingVer?.storage_path) {
+            docVer = siblingVer;
+          }
         }
       }
+    } catch {
+      // document_versions table missing, proceed to storage discovery
     }
 
     const targetFileName = filename || docVer?.file_name || undefined;

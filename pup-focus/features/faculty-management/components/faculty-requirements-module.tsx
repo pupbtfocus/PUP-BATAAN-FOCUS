@@ -474,10 +474,27 @@ export function FacultyRequirementsModule({
         {message && (
           <div
             role="status"
-            className="flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 text-xs text-slate-700 dark:text-slate-300 shadow-2xs"
+            className={`flex items-center gap-2.5 rounded-xl border p-3 text-xs sm:text-sm font-semibold shadow-xs ${
+              message.toLowerCase().includes("error") ||
+              message.toLowerCase().includes("failed") ||
+              message.toLowerCase().includes("please")
+                ? "bg-[#780000] text-white border-[#5e0000]"
+                : "bg-[#0b5336] text-white border-[#08412a]"
+            }`}
           >
-            <AppIcon icon={WarningCircle} size="md" color="active" />
-            <span>{message}</span>
+            <AppIcon
+              icon={
+                message.toLowerCase().includes("error") ||
+                message.toLowerCase().includes("failed") ||
+                message.toLowerCase().includes("please")
+                  ? WarningCircle
+                  : CheckCircle
+              }
+              size="md"
+              color="white"
+              className="shrink-0"
+            />
+            <span className="leading-snug">{message}</span>
           </div>
         )}
 

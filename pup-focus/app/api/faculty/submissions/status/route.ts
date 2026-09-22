@@ -458,22 +458,26 @@ export async function GET(request: NextRequest) {
       Array<{ id: string; storage_path?: string; mime_type?: string }>
     >();
     if (submissionIds.length > 0) {
-      const { data: docVersions } = await supabase
-        .from("document_versions")
-        .select("id, submission_id, storage_path, mime_type")
-        .in("submission_id", submissionIds)
-        .order("version_number", { ascending: false });
+      try {
+        const { data: docVersions } = await supabase
+          .from("document_versions")
+          .select("id, submission_id, storage_path, mime_type")
+          .in("submission_id", submissionIds)
+          .order("version_number", { ascending: false });
 
-      if (docVersions) {
-        for (const doc of docVersions) {
-          const list = docVersionsMap.get(doc.submission_id) || [];
-          list.push({
-            id: doc.id,
-            storage_path: doc.storage_path,
-            mime_type: doc.mime_type,
-          });
-          docVersionsMap.set(doc.submission_id, list);
+        if (docVersions) {
+          for (const doc of docVersions) {
+            const list = docVersionsMap.get(doc.submission_id) || [];
+            list.push({
+              id: doc.id,
+              storage_path: doc.storage_path,
+              mime_type: doc.mime_type,
+            });
+            docVersionsMap.set(doc.submission_id, list);
+          }
         }
+      } catch {
+        // document_versions table not available
       }
     }
 
@@ -535,7 +539,11 @@ export async function GET(request: NextRequest) {
       is_read: s.is_read,
       viewed_at: s.viewed_at,
       faculty_assignment_id: s.faculty_assignment_id,
-      document_versions: docVersionsMap.get(s.id) || [],
+      document_versions:
+        docVersionsMap.get(s.id) ||
+        (s.submitted_at || s.status === "uploaded" || s.status === "submitted" || s.status === "validated"
+          ? [{ id: s.id, storage_path: `faculty-submissions/${profileRow?.id || user.id}/${s.id}` }]
+          : []),
       review_decisions: reviewDecisionsMap.get(s.id) || [],
     }));
 

@@ -222,21 +222,25 @@ export async function GET() {
     const reviewDecisionsMap = new Map<string, ReviewDecision[]>();
 
     if (submissionIds.length > 0) {
-      const { data: docVersions } = await supabase
-        .from("document_versions")
-        .select("submission_id, storage_path, mime_type")
-        .in("submission_id", submissionIds)
-        .order("version_number", { ascending: false });
+      try {
+        const { data: docVersions } = await supabase
+          .from("document_versions")
+          .select("submission_id, storage_path, mime_type")
+          .in("submission_id", submissionIds)
+          .order("version_number", { ascending: false });
 
-      if (docVersions) {
-        for (const doc of docVersions) {
-          if (!docVersionsMap.has(doc.submission_id)) {
-            docVersionsMap.set(doc.submission_id, {
-              storage_path: doc.storage_path,
-              mime_type: doc.mime_type,
-            });
+        if (docVersions) {
+          for (const doc of docVersions) {
+            if (!docVersionsMap.has(doc.submission_id)) {
+              docVersionsMap.set(doc.submission_id, {
+                storage_path: doc.storage_path,
+                mime_type: doc.mime_type,
+              });
+            }
           }
         }
+      } catch {
+        // document_versions table not available
       }
 
       const { data: decisions } = await supabase

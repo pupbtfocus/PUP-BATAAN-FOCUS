@@ -180,37 +180,41 @@ export async function GET(
     }
 
     if (!realReqCode) {
-      // Check document_versions table directly
-      const { data: docVers } = await adminClient
-        .from("document_versions")
-        .select(
-          "id, submission_id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_by, created_at",
-        )
-        .or(`id.eq.${submissionId},submission_id.eq.${submissionId}`)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      try {
+        // Check document_versions table directly if exists
+        const { data: docVers } = await adminClient
+          .from("document_versions")
+          .select(
+            "id, submission_id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_by, created_at",
+          )
+          .or(`id.eq.${submissionId},submission_id.eq.${submissionId}`)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (docVers) {
-        targetDocVersion = docVers as DocumentVersionRow;
+        if (docVers) {
+          targetDocVersion = docVers as DocumentVersionRow;
 
-        if (docVers.submission_id) {
-          const { data: parentSub } = await adminClient
-            .from("submissions")
-            .select(SUBMISSION_COLUMNS)
-            .eq("id", docVers.submission_id)
-            .maybeSingle();
+          if (docVers.submission_id) {
+            const { data: parentSub } = await adminClient
+              .from("submissions")
+              .select(SUBMISSION_COLUMNS)
+              .eq("id", docVers.submission_id)
+              .maybeSingle();
 
-          if (parentSub) {
-            targetSub = parentSub;
-            realReqCode = parentSub.requirement_code;
-            targetFacultyId = parentSub.faculty_profile_id || targetFacultyId;
+            if (parentSub) {
+              targetSub = parentSub;
+              realReqCode = parentSub.requirement_code;
+              targetFacultyId = parentSub.faculty_profile_id || targetFacultyId;
+            }
+          }
+
+          if (!realReqCode && docVers.storage_path) {
+            realReqCode = matchRequirementCode(docVers.storage_path);
           }
         }
-
-        if (!realReqCode && docVers.storage_path) {
-          realReqCode = matchRequirementCode(docVers.storage_path);
-        }
+      } catch {
+        // document_versions table not available
       }
     }
 
@@ -299,19 +303,18 @@ export async function GET(
     );
 
     // 4. Query All document_versions for these Submission IDs
-    const { data: docVersions, error: verErr } = await adminClient
-      .from("document_versions")
-      .select(
-        "id, submission_id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_by, created_at",
-      )
-      .in("submission_id", allSubmissionIds)
-      .order("created_at", { ascending: true });
-
-    if (verErr) {
-      logger.error("document_versions_fetch_failed", {
-        submissionIds: allSubmissionIds,
-        error: verErr.message,
-      });
+    let docVersions: any[] | null = null;
+    try {
+      const { data } = await adminClient
+        .from("document_versions")
+        .select(
+          "id, submission_id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_by, created_at",
+        )
+        .in("submission_id", allSubmissionIds)
+        .order("created_at", { ascending: true });
+      docVersions = data;
+    } catch {
+      // document_versions table not available
     }
 
     const fetchedVersions = (docVersions || []) as DocumentVersionRow[];

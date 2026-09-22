@@ -21,10 +21,12 @@ type ReviewDecision = {
 type DocumentVersionRow = {
   id: string;
   storage_path: string;
+  submission_id?: string;
   mime_type?: string | null;
   size_bytes?: number | null;
   created_at?: string | null;
   version_number?: number | null;
+  checksum_sha256?: string | null;
 };
 
 type SubmissionRow = {
@@ -34,6 +36,7 @@ type SubmissionRow = {
   submitted_at?: string | null;
   created_at?: string | null;
   remarks?: string | null;
+  faculty_profile_id?: string | null;
   document_versions?: DocumentVersionRow[] | null;
   review_decisions?: ReviewDecision[] | null;
 };
@@ -46,11 +49,13 @@ function isMissingRemarksColumnError(
 }
 
 function hasDocumentVersion(row: {
+  status?: string | null;
   document_versions?: Array<{ id: string }> | null;
 }): boolean {
-  return Array.isArray(row.document_versions)
-    ? row.document_versions.length > 0
-    : false;
+  if (Array.isArray(row.document_versions) && row.document_versions.length > 0) {
+    return true;
+  }
+  return Boolean(row.status);
 }
 
 function toAcademicYearAndSemester(dateInput: string | null | undefined): {
@@ -74,28 +79,24 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined): {
 
 function toHistoryStatus(
   submissionStatus: string | null,
-  latestReview?: ReviewDecision,
-): "Validated" | "Rejected" | "Pending" {
-  if (
-    latestReview?.decision === "validated" ||
-    submissionStatus === "validated"
-  ) {
-    return "Validated";
+  latestReview?: { decision?: string | null; created_at?: string | null } | null,
+): "Validated" | "Rejected" | "Pending" | "Not Submitted" {
+  if (latestReview?.decision) {
+    const dec = latestReview.decision.toLowerCase();
+    if (dec === "validated" || dec === "approved") return "Validated";
+    if (dec === "rejected") return "Rejected";
   }
 
-  if (
-    latestReview?.decision === "rejected" ||
-    submissionStatus === "rejected"
-  ) {
-    return "Rejected";
-  }
-
-  return "Pending";
+  const raw = (submissionStatus || "").toLowerCase();
+  if (raw === "validated" || raw === "approved") return "Validated";
+  if (raw === "rejected" || raw === "returned" || raw === "revision_required") return "Rejected";
+  if (raw === "pending" || raw === "submitted" || raw === "uploaded") return "Pending";
+  return "Not Submitted";
 }
 
-function sanitizeFileName(value: string): string {
-  return value
-    .replace(/[\\/:*?"<>|]+/g, "-")
+function sanitizeFileName(name: string): string {
+  return name
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -120,7 +121,20 @@ function getLatestDocumentVersion(
     return bTime - aTime;
   });
 
-  return versions[0] ?? null;
+  if (versions[0]?.storage_path) {
+    return versions[0];
+  }
+
+  return {
+    id: row.id,
+    submission_id: row.id,
+    version_number: 1,
+    storage_path: `faculty-submissions/${row.faculty_profile_id}/${row.id}`,
+    mime_type: "application/pdf",
+    size_bytes: null,
+    checksum_sha256: null,
+    created_at: row.submitted_at || row.created_at || null,
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -314,9 +328,21 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      let resolvedDownloadPath = fileEntry.storagePath.replace(/^faculty-submissions\//, "");
+      // If path points to a directory or does not have extension, discover file inside
+      if (!/\.[a-zA-Z0-9]+$/.test(resolvedDownloadPath)) {
+        const { data: listed } = await supabase.storage
+          .from("faculty-submissions")
+          .list(resolvedDownloadPath, { limit: 5 });
+        const valid = (listed || []).find((f) => f.name && !f.name.startsWith("."));
+        if (valid) {
+          resolvedDownloadPath = `${resolvedDownloadPath}/${valid.name}`;
+        }
+      }
+
       const { data: fileBlob, error: downloadError } = await supabase.storage
         .from("faculty-submissions")
-        .download(fileEntry.storagePath);
+        .download(resolvedDownloadPath);
 
       if (downloadError || !fileBlob) {
         return NextResponse.json(

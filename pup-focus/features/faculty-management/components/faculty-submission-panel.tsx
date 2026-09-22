@@ -637,6 +637,7 @@ function FacultySubmissionPanelContent({
   const [directUploadFile, setDirectUploadFile] = useState<File | null>(null);
   const [directUploadRemarks, setDirectUploadRemarks] = useState("");
   const [isUploadingDirect, setIsUploadingDirect] = useState(false);
+  const [directUploadPercent, setDirectUploadPercent] = useState(0);
   const [directUploadMessage, setDirectUploadMessage] = useState<string | null>(
     null,
   );
@@ -646,6 +647,7 @@ function FacultySubmissionPanelContent({
   function handleCloseModalAndRefresh() {
     setIsSubmittingModalOpen(false);
     setIsSubmitSuccess(false);
+    setDirectUploadPercent(0);
     closeDirectUploadModal();
     router.refresh();
     void fetchStatuses();
@@ -1399,6 +1401,7 @@ function FacultySubmissionPanelContent({
     setDirectUploadFile(null);
     setDirectUploadRemarks("");
     setDirectUploadMessage(null);
+    setDirectUploadPercent(0);
   }
   async function handleDirectUploadSubmit(
     event: React.FormEvent<HTMLFormElement>,
@@ -1415,7 +1418,10 @@ function FacultySubmissionPanelContent({
     setIsUploadingDirect(true);
     setIsSubmittingModalOpen(true);
     setIsSubmitSuccess(false);
+    setDirectUploadPercent(10);
     setDirectUploadMessage(null);
+
+    let progressTimer: NodeJS.Timeout | null = null;
     try {
       const activeAY =
         submissionWindow?.academicYear ||
@@ -1435,25 +1441,53 @@ function FacultySubmissionPanelContent({
       formData.append("requirement_type", selectedRequirementForUpload);
       formData.append("remarks", directUploadRemarks);
       formData.append("notes", directUploadRemarks);
-      const response = await fetch("/api/faculty/submissions/create", {
-        method: "POST",
-        body: formData,
+
+      // Smooth progress ticker for realistic UX progression
+      let currentProgress = 15;
+      progressTimer = setInterval(() => {
+        currentProgress = Math.min(94, currentProgress + Math.floor(Math.random() * 8 + 4));
+        setDirectUploadPercent((prev) => Math.max(prev, currentProgress));
+      }, 150);
+
+      const result = await new Promise<{ submissionId: string }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/faculty/submissions/create");
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable && event.total > 0) {
+            const rawPercent = Math.min(95, Math.round((event.loaded / event.total) * 95));
+            setDirectUploadPercent((prev) => Math.max(prev, rawPercent));
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const res = JSON.parse(xhr.responseText);
+              resolve(res);
+            } catch {
+              reject(new Error("Invalid response from server"));
+            }
+          } else {
+            try {
+              const err = JSON.parse(xhr.responseText);
+              reject(new Error(err.error || `Failed to submit requirement (HTTP ${xhr.status})`));
+            } catch {
+              reject(new Error(`Failed to submit requirement (HTTP ${xhr.status})`));
+            }
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error during document upload"));
+        xhr.onabort = () => reject(new Error("Upload cancelled"));
+
+        xhr.send(formData);
       });
-      if (!response.ok) {
-        setIsSubmittingModalOpen(false);
-        try {
-          const errorData = await response.json();
-          setDirectUploadMessage(
-            `Error: ${errorData.error || "Failed to submit requirement"}`,
-          );
-        } catch {
-          setDirectUploadMessage(
-            `Error: Failed to submit requirement (HTTP ${response.status})`,
-          );
-        }
-        return;
-      }
-      const result = await response.json();
+
+      if (progressTimer) clearInterval(progressTimer);
+      setDirectUploadPercent(100);
+      await new Promise((resolve) => setTimeout(resolve, 380));
+
       setSubmissionMessage(
         isRevisionUpload
           ? `Revision submitted successfully for review. Reference ID: ${String(result.submissionId).slice(0, 8)}...`
@@ -1495,11 +1529,14 @@ function FacultySubmissionPanelContent({
       void fetchStatuses();
       void fetchHistory();
     } catch (error) {
+      if (progressTimer) clearInterval(progressTimer);
       setIsSubmittingModalOpen(false);
+      setDirectUploadPercent(0);
       setDirectUploadMessage(
         `Error: ${error instanceof Error ? error.message : "An unexpected error occurred"}`,
       );
     } finally {
+      if (progressTimer) clearInterval(progressTimer);
       setIsUploadingDirect(false);
     }
   }
@@ -2635,9 +2672,13 @@ function FacultySubmissionPanelContent({
                     Loading requirement statuses...
                   </p>
                 ) : statusError ? (
-                  <p className="text-sm text-red-500 dark:text-red-400 py-4">
-                    {statusError}
-                  </p>
+                  <div
+                    role="alert"
+                    className="p-3.5 my-3 rounded-xl bg-[#780000] text-white border border-[#5e0000] flex items-center gap-2.5 text-xs font-semibold shadow-xs"
+                  >
+                    <AppIcon icon={WarningCircle} size="md" color="white" className="shrink-0" />
+                    <span className="leading-snug">{statusError}</span>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {isAllValidated && (
@@ -2938,6 +2979,7 @@ function FacultySubmissionPanelContent({
                           selectedFile={directUploadFile}
                           onFileSelect={setDirectUploadFile}
                           isUploading={isUploadingDirect}
+                          uploadProgress={directUploadPercent}
                           maxSizeMb={10}
                           allowedFormats={["PDF", "DOCX", "XLSX", "JPG", "PNG"]}
                           currentStatus={
@@ -2983,15 +3025,32 @@ function FacultySubmissionPanelContent({
                       </div>
 
                       {directUploadMessage && (
-                        <p
-                          className={`text-sm rounded-xl p-3 border ${
-                            directUploadMessage.startsWith("Error")
-                              ? "border-red-500/30 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300"
-                            : "border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+                        <div
+                          role="alert"
+                          className={`rounded-xl p-3 text-xs sm:text-sm font-semibold flex items-center gap-2.5 shadow-xs ${
+                            directUploadMessage.toLowerCase().includes("error") ||
+                            directUploadMessage.toLowerCase().includes("failed") ||
+                            directUploadMessage.toLowerCase().includes("please") ||
+                            directUploadMessage.toLowerCase().includes("exceeds")
+                              ? "bg-[#780000] text-white border border-[#5e0000]"
+                              : "bg-[#0b5336] text-white border border-[#08412a]"
                           }`}
                         >
-                          {directUploadMessage}
-                        </p>
+                          <AppIcon
+                            icon={
+                              directUploadMessage.toLowerCase().includes("error") ||
+                              directUploadMessage.toLowerCase().includes("failed") ||
+                              directUploadMessage.toLowerCase().includes("please") ||
+                              directUploadMessage.toLowerCase().includes("exceeds")
+                                ? WarningCircle
+                                : CheckCircle
+                            }
+                            size="md"
+                            color="white"
+                            className="shrink-0"
+                          />
+                          <span className="leading-snug">{directUploadMessage}</span>
+                        </div>
                       )}
                     </div>
 
@@ -3037,39 +3096,90 @@ function FacultySubmissionPanelContent({
             )}
             {/* SUBMITTING & SUCCESS MODAL POPUPS */}
             {isMounted && isSubmittingModalOpen && (
-              <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4 sm:p-6 flex min-h-full items-center justify-center animate-in fade-in">
-                <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4 my-auto">
+              <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-7 max-w-sm w-full text-center shadow-2xl space-y-5 my-auto animate-in zoom-in-95 duration-200">
                   {isUploadingDirect ? (
-                    <>
-                      <AppIcon icon={SystemRestart} size="md" color="active" className="animate-spin mx-auto" />
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                        Submitting Document...
-                      </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Please wait while your file is being uploaded to the
-                        system.
-                      </p>
-                    </>
-                  ) : isSubmitSuccess ? (
-                    <>
-                      <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 animate-in zoom-in">
-                        <AppIcon icon={CheckCircle} size="md" color="inherit" />
+                    <div className="space-y-4">
+                      {/* Animated Badge Icon */}
+                      <div className="relative mx-auto w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-2xs">
+                        <AppIcon icon={Upload} size="lg" color="inherit" className="animate-pulse" />
+                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500" />
+                        </span>
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                        Submitted Successfully!
-                      </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Your requirement has been uploaded and sent for
-                        validation.
-                      </p>
+
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                          {isRevisionUpload ? "Submitting Revision..." : "Submitting Document..."}
+                        </h3>
+                        {directUploadFile ? (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium truncate px-2" title={directUploadFile.name}>
+                            {directUploadFile.name}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Please wait while your file is being uploaded.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Percentage & Progress Bar Section */}
+                      <div className="space-y-2.5 pt-1">
+                        <div className="flex items-baseline justify-between px-1">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            {directUploadPercent < 35
+                              ? "Uploading file..."
+                              : directUploadPercent < 75
+                                ? "Sending to storage..."
+                                : directUploadPercent < 100
+                                  ? "Validating submission..."
+                                  : "Upload complete!"}
+                          </span>
+                          <span className="text-2xl font-black font-mono tracking-tight text-amber-600 dark:text-amber-400">
+                            {directUploadPercent}%
+                          </span>
+                        </div>
+
+                        {/* Progress Bar Track */}
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700/80 p-0.5 shadow-inner">
+                          <div
+                            className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-200 ease-out shadow-xs"
+                            style={{ width: `${Math.max(5, directUploadPercent)}%` }}
+                          />
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 pt-0.5">
+                          Please keep this window open until upload completes.
+                        </p>
+                      </div>
+                    </div>
+                  ) : isSubmitSuccess ? (
+                    <div className="space-y-4">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0b5336]/10 dark:bg-[#0b5336]/25 border border-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 shadow-xs animate-in zoom-in">
+                        <AppIcon icon={CheckCircle} size="lg" color="inherit" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                          Submitted Successfully!
+                        </h3>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed px-1">
+                          Your requirement has been uploaded and queued for admin validation.
+                        </p>
+                      </div>
+                      {directUploadFile && (
+                        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2.5 text-xs text-slate-700 dark:text-slate-300 font-medium truncate">
+                          📄 {directUploadFile.name}
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={handleCloseModalAndRefresh}
-                        className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-bold rounded-xl shadow-sm transition-colors cursor-pointer"
+                        className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 font-bold text-xs rounded-xl shadow-xs transition cursor-pointer active:scale-[0.98]"
                       >
-                        Okay
+                        Okay, got it
                       </button>
-                    </>
+                    </div>
                   ) : null}
                 </div>
               </div>
@@ -3226,9 +3336,13 @@ function FacultySubmissionPanelContent({
                     {isLoadingHistory ? (
                       <SubmissionHistorySkeleton count={4} />
                     ) : historyError ? (
-                      <p className="text-sm text-red-500 dark:text-red-400">
-                        {historyError}
-                      </p>
+                      <div
+                        role="alert"
+                        className="p-3.5 my-3 rounded-xl bg-[#780000] text-white border border-[#5e0000] flex items-center gap-2.5 text-xs font-semibold shadow-xs"
+                      >
+                        <AppIcon icon={WarningCircle} size="md" color="white" className="shrink-0" />
+                        <span className="leading-snug">{historyError}</span>
+                      </div>
                     ) : (
                       <SubmissionHistoryList
                         submissions={filteredPastSubmissions}
@@ -3623,9 +3737,30 @@ function FacultySubmissionPanelContent({
                           </button>
                         </div>
                         {submissionMessage && (
-                          <p className="text-sm text-slate-700 dark:text-slate-300">
-                            {submissionMessage}
-                          </p>
+                          <div
+                            role="alert"
+                            className={`rounded-xl p-3 text-xs sm:text-sm font-semibold flex items-center gap-2.5 shadow-xs ${
+                              submissionMessage.toLowerCase().includes("please") ||
+                              submissionMessage.toLowerCase().includes("failed") ||
+                              submissionMessage.toLowerCase().includes("error")
+                                ? "bg-[#780000] text-white border border-[#5e0000]"
+                                : "bg-[#0b5336] text-white border border-[#08412a]"
+                            }`}
+                          >
+                            <AppIcon
+                              icon={
+                                submissionMessage.toLowerCase().includes("please") ||
+                                submissionMessage.toLowerCase().includes("failed") ||
+                                submissionMessage.toLowerCase().includes("error")
+                                  ? WarningCircle
+                                  : CheckCircle
+                              }
+                              size="md"
+                              color="white"
+                              className="shrink-0"
+                            />
+                            <span className="leading-snug">{submissionMessage}</span>
+                          </div>
                         )}
                       </form>
                     ) : (

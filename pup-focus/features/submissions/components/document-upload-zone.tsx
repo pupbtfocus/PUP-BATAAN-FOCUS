@@ -736,10 +736,10 @@ export function DocumentUploadZone({
       {validationError && (
         <div
           role="alert"
-          className="flex items-center gap-2 rounded-xl border border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 px-3 py-2 text-xs text-rose-800 dark:text-rose-300 shadow-2xs animate-in fade-in slide-in-from-top-1"
+          className="flex items-center gap-2 rounded-xl border border-[#5e0000] bg-[#780000] px-3.5 py-2.5 text-xs text-white font-semibold shadow-xs animate-in fade-in slide-in-from-top-1"
         >
-          <AppIcon icon={WarningCircle} size="sm" color="inherit" />
-          <span>{validationError}</span>
+          <AppIcon icon={WarningCircle} size="sm" color="white" className="shrink-0" />
+          <span className="leading-snug">{validationError}</span>
         </div>
       )}
 
