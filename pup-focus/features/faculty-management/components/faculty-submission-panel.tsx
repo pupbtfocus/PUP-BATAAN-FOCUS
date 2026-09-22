@@ -11,6 +11,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
+import { Logo } from "@/components/ui/logo";
 import { FacultySettingsPanel } from "@/features/faculty-management/components/faculty-settings-panel";
 import { SubmissionWindowCountdown } from "@/features/submissions/components/submission-window-countdown";
 import { SubmissionLockBanner } from "@/features/submissions/components/submission-lock-banner";
@@ -2586,10 +2587,10 @@ function FacultySubmissionPanelContent({
             {activeView === "status" && (
               <article className="space-y-5 p-2 sm:p-4 md:p-5">
                 {/* Minimalist Header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 dark:border-slate-800/80 pb-4">
-                  <div>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800/80 pb-4">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+                      <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         Documents to be Submitted
                       </h1>
                       {isAllValidated && (
@@ -2599,7 +2600,10 @@ function FacultySubmissionPanelContent({
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 font-normal">
+                    <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                      View, upload, and track the status of your required faculty compliance documents for this academic term.
+                    </p>
+                    <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
                       A.Y. {activeAY} • {activeSem}
                       {isWindowNotConfigured && !isAllValidated ? (
                         <span className="ml-2 text-slate-500 dark:text-slate-400 font-medium">
@@ -2612,15 +2616,15 @@ function FacultySubmissionPanelContent({
                       ) : null}
                     </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 self-end lg:self-center ml-auto">
                     <button
                       type="button"
                       onClick={openHistoryModal}
-                      className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
+                      className="inline-flex items-center gap-1.5 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-xs"
                       title="View validated documents history"
                     >
-                      <AppIcon icon={CheckCircle} size="sm" color="success" />
-                      Validation History
+                      <AppIcon icon={CheckCircle} size="sm" color="white" />
+                      <span>Validation History</span>
                     </button>
                     <button
                       type="button"
@@ -2631,20 +2635,20 @@ function FacultySubmissionPanelContent({
                           "noopener,noreferrer",
                         )
                       }
-                      className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
+                      className="inline-flex items-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-xs"
                     >
-                      <AppIcon icon={Calendar} size="sm" color="inherit" />
-                      University Calendar
+                      <Logo size={14} className="shrink-0" />
+                      <span>University Calendar</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => void fetchStatuses()}
                       disabled={isLoadingStatuses}
                       title="Refresh status"
-                      className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                      className="inline-flex items-center justify-center rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 p-2 text-slate-950 transition disabled:opacity-50 cursor-pointer shadow-xs"
                     >
                       <Refresh
-                        className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin text-amber-500" : ""}`}
+                        className={`h-3.5 w-3.5 text-slate-950 ${isLoadingStatuses ? "animate-spin" : ""}`}
                       />
                       <span className="sr-only">Refresh</span>
                     </button>
@@ -2817,9 +2821,9 @@ function FacultySubmissionPanelContent({
                         <table className="w-full text-left text-sm min-w-[640px]">
                           <thead>
                             <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
-                              <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-[55%]">Document</th>
-                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[20%]">Status</th>
-                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[25%]">Actions</th>
+                              <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-[50%]">Document</th>
+                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[30%]">Actions</th>
+                              <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center sm:text-right w-[20%]">Status</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -2866,19 +2870,6 @@ function FacultySubmissionPanelContent({
                                       </p>
                                     )}
                                   </div>
-                                </td>
-
-                                {/* Status column */}
-                                <td className="px-4 py-3.5 align-middle text-center">
-                                  <SubmissionStatusBadge
-                                    status={
-                                      req.status === "Pending" &&
-                                      (req.hasPriorRevision || req.isRevision)
-                                        ? "Revision Under Review"
-                                        : req.status
-                                    }
-                                    size="sm"
-                                  />
                                 </td>
 
                                 {/* Actions column */}
@@ -2996,6 +2987,21 @@ function FacultySubmissionPanelContent({
                                         </button>
                                       )
                                     )}
+                                  </div>
+                                </td>
+
+                                {/* Status column */}
+                                <td className="px-5 py-3.5 align-middle text-center sm:text-right">
+                                  <div className="flex items-center justify-center sm:justify-end">
+                                    <SubmissionStatusBadge
+                                      status={
+                                        req.status === "Pending" &&
+                                        (req.hasPriorRevision || req.isRevision)
+                                          ? "Revision Under Review"
+                                          : req.status
+                                      }
+                                      size="sm"
+                                    />
                                   </div>
                                 </td>
                               </tr>
@@ -3197,9 +3203,9 @@ function FacultySubmissionPanelContent({
                       <button
                         type="button"
                         onClick={handleCloseModalAndRefresh}
-                        className="w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-medium rounded-xl shadow-sm transition-colors"
+                        className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-bold rounded-xl shadow-sm transition-colors cursor-pointer"
                       >
-                        Done
+                        Okay
                       </button>
                     </>
                   ) : null}
@@ -3239,9 +3245,9 @@ function FacultySubmissionPanelContent({
                         });
                         navigateToView("status");
                       }}
-                      className="w-full max-w-xs rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 font-semibold text-white dark:text-slate-900 py-2.5"
+                      className="w-full max-w-xs rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-bold py-2.5 shadow-sm transition-colors cursor-pointer"
                     >
-                      Back to Requirements
+                      Okay
                     </Button>
                   </div>
                 </div>

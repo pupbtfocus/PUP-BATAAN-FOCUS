@@ -77,10 +77,7 @@ export function AlertPopup({
         <button
           type="button"
           onClick={onClose}
-          className={cn(
-            "p-1 rounded-lg transition-colors cursor-pointer shrink-0 border border-transparent hover:border-black/10 dark:hover:border-white/10",
-            closeButtonHover,
-          )}
+          className="p-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shrink-0 shadow-xs"
           aria-label="Close alert"
         >
           <AppIcon icon={Xmark} size="sm" color="inherit" />

@@ -1441,11 +1441,11 @@ function FacultyVerificationDrawer({
                     type="button"
                     disabled={isRefreshing || isLoading}
                     onClick={handleRefresh}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
                     title="Refresh current submissions"
                   >
                     <SystemRestart
-                      className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-emerald-500 dark:text-emerald-400" : ""}`}
+                      className={`h-3.5 w-3.5 text-slate-950 ${isRefreshing ? "animate-spin" : ""}`}
                     />
                     <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                   </button>
@@ -1870,11 +1870,11 @@ function FacultyVerificationDrawer({
                     type="button"
                     disabled={isRefreshing || isLoadingHistory}
                     onClick={handleRefresh}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 text-xs font-semibold px-3.5 py-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold px-3.5 py-1.5 transition cursor-pointer disabled:opacity-50 shadow-xs"
                     title="Refresh history"
                   >
                     <SystemRestart
-                      className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-emerald-500 dark:text-emerald-400" : ""}`}
+                      className={`h-3.5 w-3.5 text-slate-950 ${isRefreshing ? "animate-spin" : ""}`}
                     />
                     <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                   </button>
