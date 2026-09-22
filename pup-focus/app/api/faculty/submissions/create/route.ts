@@ -462,83 +462,8 @@ export async function POST(request: NextRequest) {
         new Set([targetSubmissionId, ...matchingSubmissions.map((s) => s.id)]),
       );
 
-      // 1. Query existing rows in document_versions for all matching submission IDs
-      const { data: existingVersions, error: fetchVerError } =
-        await supabaseAdmin
-          .from("document_versions")
-          .select(
-            "id, version_number, storage_path, mime_type, size_bytes, checksum_sha256, created_at",
-          )
-          .in("submission_id", allRelatedSubmissionIds)
-          .order("created_at", { ascending: true });
-
-      console.log("[RESUBMIT_DEBUG] Target Submission ID:", targetSubmissionId);
-      console.log(
-        "[RESUBMIT_DEBUG] Existing Versions Count:",
-        existingVersions?.length || 0,
-      );
-      console.log("[RESUBMIT_DEBUG] Existing Versions Data:", existingVersions);
-
-      if (fetchVerError) {
-        console.error(
-          "[CRITICAL] Failed to query existing document_versions:",
-          fetchVerError,
-        );
-      }
-
-      // 2. Determine Next Version Number & Archive Version 1 if missing
-      let nextVersionNumber = 1;
-
-      if (!existingVersions || existingVersions.length === 0) {
-        // Version 1 was missing in document_versions! Archive prior submission file as Version 1
-        const oldStoragePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v1_${payload.requirementCode}`;
-        const oldCreatedAt =
-          existingSubmission.submitted_at ||
-          existingSubmission.created_at ||
-          new Date().toISOString();
-
-        const { error: v1ArchiveErr } = await supabaseAdmin
-          .from("document_versions")
-          .insert({
-            submission_id: targetSubmissionId,
-            version_number: 1,
-            storage_path: oldStoragePath,
-            mime_type: "application/octet-stream",
-            size_bytes: 0,
-            checksum_sha256: "archived_v1_checksum",
-            created_by: user.id,
-            created_at: oldCreatedAt,
-          });
-
-        if (v1ArchiveErr) {
-          console.error(
-            "[CRITICAL] Failed to archive Version 1:",
-            v1ArchiveErr,
-          );
-          return NextResponse.json(
-            {
-              error: `Archive Version 1 failed: ${v1ArchiveErr.message}`,
-              details: v1ArchiveErr,
-            },
-            { status: 500 },
-          );
-        }
-
-        nextVersionNumber = 2;
-      } else {
-        const maxVer = Math.max(
-          ...existingVersions.map((v) => v.version_number || 1),
-        );
-        nextVersionNumber = Math.max(maxVer + 1, 2);
-      }
-
-      console.log(
-        "[RESUBMIT_DEBUG] Calculated Next Version Number:",
-        nextVersionNumber,
-      );
-
       const timestamp = Date.now();
-      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v${nextVersionNumber}_${timestamp}_${fileName}`;
+      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/${timestamp}_${fileName}`;
 
       // Upload new file to Supabase Storage
       const { error: uploadError } = await supabaseAdmin.storage
@@ -559,12 +484,17 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Insert NEW version record into document_versions using supabaseAdmin (Strictly Append-Only)
+      // Maintain single document record (strictly no versioning): delete prior document records and insert single active file
+      await supabaseAdmin
+        .from("document_versions")
+        .delete()
+        .eq("submission_id", targetSubmissionId);
+
       const { data: newDocVer, error: docVersionError } = await supabaseAdmin
         .from("document_versions")
         .insert({
           submission_id: targetSubmissionId,
-          version_number: nextVersionNumber,
+          version_number: 1,
           storage_path: storagePath,
           mime_type: file.type || "application/octet-stream",
           size_bytes: fileBuffer.byteLength,
@@ -577,10 +507,10 @@ export async function POST(request: NextRequest) {
 
       if (docVersionError) {
         console.error(
-          "[CRITICAL_DOC_VER_ERR] Failed to insert new document version into document_versions:",
+          "[CRITICAL_DOC_VER_ERR] Failed to insert document record:",
           docVersionError,
         );
-        logger.error("document_version_increment_failed", {
+        logger.error("document_record_failed", {
           submissionId: targetSubmissionId,
           error: docVersionError.message,
         });
@@ -644,7 +574,7 @@ export async function POST(request: NextRequest) {
       targetSubmissionId = crypto.randomUUID();
 
       const timestamp = Date.now();
-      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/v1_${timestamp}_${fileName}`;
+      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/${timestamp}_${fileName}`;
 
       const { error: uploadError } = await supabaseAdmin.storage
         .from("faculty-submissions")
