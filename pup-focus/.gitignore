@@ -84,3 +84,6 @@ temp/
 # System files
 .env.*.local
 
+# QA test scripts with credentials
+scripts/create-qa-accounts.mjs
+

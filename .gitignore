@@ -58,3 +58,7 @@ temp/
 .cache/
 "pup-focus/public/images/attachments/IMG_9399.jpeg"  
 "pup-focus/public/images/attachments/IMG_9402.jpeg"  
+
+# QA test scripts with credentials
+pup-focus/scripts/create-qa-accounts.mjs
+scripts/create-qa-accounts.mjs
