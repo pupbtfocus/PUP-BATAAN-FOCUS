@@ -2705,9 +2705,10 @@ function FacultySubmissionPanelContent({
                           <button
                             type="button"
                             onClick={openHistoryModal}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-semibold cursor-pointer shadow-2xs transition"
+                            className="inline-flex items-center gap-1.5 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+                            title="View validated documents history"
                           >
-                            <AppIcon icon={CheckCircle} size="sm" color="success" />
+                            <AppIcon icon={CheckCircle} size="sm" color="white" />
                             <span>Validation History</span>
                           </button>
                         </div>
@@ -3260,28 +3261,29 @@ function FacultySubmissionPanelContent({
                 onClick={closeHistoryModal}
               >
                 <div
-                  className="relative w-full max-w-7xl mx-auto flex max-h-[90vh] flex-col rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+                  className="relative w-full max-w-7xl mx-auto flex max-h-[90vh] flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <ModalHeader
                     title="Validation History"
+                    subtitle="Official verified submissions and reviewer remarks"
                     titleId="submission-history-title"
                     icon={ClockRotateRight}
                     onClose={closeHistoryModal}
                     closeAriaLabel="Close history modal"
                   />
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-6 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-6 py-3.5">
                     <div className="flex flex-wrap items-center gap-4">
                       <div className="flex items-center gap-2">
                         <label
                           htmlFor="modalHistoryAcademicYear"
-                          className="text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 font-medium"
+                          className="text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 font-bold"
                         >
                           School Year:
                         </label>
                         <select
                           id="modalHistoryAcademicYear"
-                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#0b5336]/20 focus:border-[#0b5336] shadow-2xs"
                           value={historyAcademicYear}
                           onChange={(event) =>
                             setHistoryAcademicYear(event.target.value)
@@ -3299,13 +3301,13 @@ function FacultySubmissionPanelContent({
                       <div className="flex items-center gap-2">
                         <label
                           htmlFor="modalHistorySemester"
-                          className="text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 font-medium"
+                          className="text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 font-bold"
                         >
                           Semester:
                         </label>
                         <select
                           id="modalHistorySemester"
-                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#0b5336]/20 focus:border-[#0b5336] shadow-2xs"
                           value={historySemester}
                           onChange={(event) =>
                             setHistorySemester(
@@ -3323,42 +3325,40 @@ function FacultySubmissionPanelContent({
                         </select>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
+                    <div className="flex items-center gap-2.5">
+                      <button
                         type="button"
-                        variant="secondary"
-                        size="sm"
                         onClick={handleBulkDownload}
                         disabled={
                           isBulkDownloading ||
                           filteredPastSubmissions.length === 0
                         }
-                        className="inline-flex items-center gap-1.5 border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold shadow-xs transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-2 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] disabled:opacity-50 disabled:pointer-events-none text-white font-bold text-xs px-4 py-2 shadow-xs transition-all cursor-pointer active:scale-95"
                         title="Download all validated requirements in current view as ZIP"
                       >
                         {isBulkDownloading ? (
-                          <AppIcon icon={SystemRestart} size="sm" color="inherit" className="text-slate-950 animate-spin" />
+                          <AppIcon icon={SystemRestart} size="sm" color="white" className="animate-spin" />
                         ) : (
-                          <AppIcon icon={Download} size="sm" color="inherit" className="text-slate-950" />
+                          <AppIcon icon={Download} size="sm" color="white" />
                         )}
                         <span>
                           {isBulkDownloading
                             ? bulkDownloadProgressText
-                            : "Download All"}
+                            : "Download All (ZIP)"}
                         </span>
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         type="button"
-                        variant="secondary"
-                        size="sm"
                         onClick={() => void fetchHistory()}
                         disabled={isLoadingHistory || isBulkDownloading}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-2 text-xs shadow-xs active:scale-[0.98] transition cursor-pointer disabled:opacity-50"
                       >
-                        {isLoadingHistory ? "Refreshing..." : "Refresh"}
-                      </Button>
+                        <AppIcon icon={Refresh} size="sm" color="inherit" className={isLoadingHistory ? "animate-spin text-slate-950" : "text-slate-950"} />
+                        <span>{isLoadingHistory ? "Refreshing..." : "Refresh"}</span>
+                      </button>
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-6">
+                  <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-slate-50/50 dark:bg-slate-950/40">
                     {isLoadingHistory ? (
                       <SubmissionHistorySkeleton count={4} />
                     ) : historyError ? (
