@@ -35,10 +35,7 @@ export default function DashboardLayout({
               <span className="font-bold text-white text-sm sm:text-base tracking-tight whitespace-nowrap leading-tight">
                 PUP FOCUS
               </span>
-              <span
-                className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0"
-                aria-hidden="true"
-              />
+              <span className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0" aria-hidden="true" />
               <span className="text-[10px] sm:text-xs md:text-sm font-medium text-amber-200/90 tracking-wide leading-tight truncate">
                 Faculty Online Compliance and Uploading System
               </span>
@@ -55,7 +52,7 @@ export default function DashboardLayout({
       {/* Body Wrapper */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex w-56 flex-col bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 shrink-0 p-2.5 shadow-md">
+        <aside className="hidden md:flex w-72 flex-col bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 shrink-0 p-3.5 shadow-md">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={setActiveSection}
@@ -69,7 +66,7 @@ export default function DashboardLayout({
               className="fixed inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <aside className="relative w-64 max-w-[80%] bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 h-full p-3 flex flex-col justify-between z-10 shadow-2xl">
+            <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 h-full p-4 flex flex-col justify-between z-10 shadow-2xl">
               <SidebarContent
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}

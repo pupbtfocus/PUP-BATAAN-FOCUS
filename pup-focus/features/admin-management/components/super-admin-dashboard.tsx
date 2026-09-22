@@ -1424,9 +1424,9 @@ export function SuperAdminDashboard({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-64 max-w-[80%] bg-[#800000] text-amber-50 h-full p-3 border-r-2 border-amber-400/60 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
+          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 h-full p-4 border-r-2 border-amber-400/60 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
             <div className="flex items-center justify-between pb-3 border-b border-amber-400/50">
-              <span className="text-xs font-semibold uppercase tracking-wider text-white">Navigation</span>
+              <span className="text-sm font-semibold uppercase tracking-wider text-white">Navigation</span>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -1450,8 +1450,8 @@ export function SuperAdminDashboard({
         </div>
       )}
 
-      <div className="md:ml-60 flex min-h-full w-full md:w-[calc(100%-15rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
+      <div className="md:ml-72 flex min-h-full w-full md:w-[calc(100%-18rem)] flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l-0 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
           <div className="min-h-0 flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
