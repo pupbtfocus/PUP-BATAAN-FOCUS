@@ -719,17 +719,34 @@ export function DocumentUploadZone({
       )}
 
       {isUploading && (
-        <div className="space-y-1.5" aria-label="Upload progress">
-          <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
-            <span>Uploading document…</span>
-            <span className="font-mono font-medium">{uploadProgress}%</span>
+        <div className="flex flex-col items-center justify-center py-3 space-y-2 bg-slate-50/80 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800" aria-label="Upload progress">
+          <div className="relative w-14 h-14 flex items-center justify-center">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+              <path
+                className="text-slate-200 dark:text-slate-800"
+                strokeWidth="3"
+                stroke="currentColor"
+                fill="none"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path
+                className="text-amber-500 transition-all duration-300 ease-out"
+                strokeDasharray={`${uploadProgress}, 100`}
+                strokeWidth="3"
+                strokeLinecap="round"
+                stroke="currentColor"
+                fill="none"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+            </svg>
+            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-500 animate-spin pointer-events-none" />
+            <span className="absolute font-mono font-bold text-xs text-amber-600 dark:text-amber-400">
+              {uploadProgress}%
+            </span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-            <div
-              className="h-full rounded-full bg-slate-900 dark:bg-slate-300 transition-all duration-300 ease-out"
-              style={{ width: `${uploadProgress}%` }}
-            />
-          </div>
+          <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+            Uploading document…
+          </span>
         </div>
       )}
 

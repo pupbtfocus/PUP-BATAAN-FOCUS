@@ -3097,88 +3097,109 @@ function FacultySubmissionPanelContent({
             {/* SUBMITTING & SUCCESS MODAL POPUPS */}
             {isMounted && isSubmittingModalOpen && (
               <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-7 max-w-sm w-full text-center shadow-2xl space-y-5 my-auto animate-in zoom-in-95 duration-200">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 max-w-lg w-full text-center shadow-2xl space-y-6 my-auto animate-in zoom-in-95 duration-200">
                   {isUploadingDirect ? (
-                    <div className="space-y-4">
-                      {/* Animated Badge Icon */}
-                      <div className="relative mx-auto w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-2xs">
-                        <AppIcon icon={Upload} size="lg" color="inherit" className="animate-pulse" />
-                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500" />
-                        </span>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                          {isRevisionUpload ? "Submitting Revision..." : "Submitting Document..."}
-                        </h3>
-                        {directUploadFile ? (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium truncate px-2" title={directUploadFile.name}>
-                            {directUploadFile.name}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Please wait while your file is being uploaded.
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Percentage & Progress Bar Section */}
-                      <div className="space-y-2.5 pt-1">
-                        <div className="flex items-baseline justify-between px-1">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            {directUploadPercent < 35
-                              ? "Uploading file..."
-                              : directUploadPercent < 75
-                                ? "Sending to storage..."
-                                : directUploadPercent < 100
-                                  ? "Validating submission..."
-                                  : "Upload complete!"}
-                          </span>
-                          <span className="text-2xl font-black font-mono tracking-tight text-amber-600 dark:text-amber-400">
+                    <div className="space-y-6">
+                      {/* Circular Loading Spinner with Percent in the Middle */}
+                      <div className="relative mx-auto w-28 h-28 flex items-center justify-center">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
+                          {/* Background Track */}
+                          <circle
+                            className="text-slate-100 dark:text-slate-800"
+                            strokeWidth="3.5"
+                            stroke="currentColor"
+                            fill="none"
+                            cx="22"
+                            cy="22"
+                            r="18"
+                          />
+                          {/* Progress Stroke */}
+                          <circle
+                            className="text-[#0b5336] transition-all duration-300 ease-out"
+                            strokeWidth="3.5"
+                            strokeDasharray={113.1}
+                            strokeDashoffset={113.1 - (113.1 * Math.max(5, directUploadPercent)) / 100}
+                            strokeLinecap="round"
+                            stroke="currentColor"
+                            fill="none"
+                            cx="22"
+                            cy="22"
+                            r="18"
+                          />
+                        </svg>
+                        {/* Rotating Spinner Accent Ring */}
+                        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#0b5336] border-r-emerald-500 animate-spin pointer-events-none" />
+                        {/* Percent in the Middle of Loading */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-2xl font-black font-mono tracking-tight text-[#0b5336] dark:text-emerald-400">
                             {directUploadPercent}%
                           </span>
                         </div>
+                      </div>
 
-                        {/* Progress Bar Track */}
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700/80 p-0.5 shadow-inner">
-                          <div
-                            className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-200 ease-out shadow-xs"
-                            style={{ width: `${Math.max(5, directUploadPercent)}%` }}
-                          />
-                        </div>
-
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 pt-0.5">
-                          Please keep this window open until upload completes.
+                      <div className="space-y-2">
+                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                          {isRevisionUpload ? "Submitting Revision..." : "Submitting Document..."}
+                        </h3>
+                        {directUploadFile ? (
+                          <p className="text-sm text-slate-600 dark:text-slate-400 font-medium truncate px-4" title={directUploadFile.name}>
+                            {directUploadFile.name}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-slate-500 dark:text-slate-400">
+                            Please wait while your file is being uploaded to the system.
+                          </p>
+                        )}
+                        <p className="text-sm font-bold text-[#0b5336] dark:text-emerald-400 pt-1">
+                          {directUploadPercent < 35
+                            ? "Uploading file..."
+                            : directUploadPercent < 75
+                              ? "Sending to storage..."
+                              : directUploadPercent < 100
+                                ? "Validating submission..."
+                                : "Upload complete!"}
                         </p>
                       </div>
+
+                      <p className="text-xs text-slate-400 dark:text-slate-500 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        Please keep this window open until upload completes.
+                      </p>
                     </div>
                   ) : isSubmitSuccess ? (
-                    <div className="space-y-4">
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0b5336]/10 dark:bg-[#0b5336]/25 border border-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 shadow-xs animate-in zoom-in">
-                        <AppIcon icon={CheckCircle} size="lg" color="inherit" />
+                    <div className="space-y-6 py-2">
+                      {/* Large Solid PUP Green Icon Badge */}
+                      <div className="mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
+                        <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 stroke-[2.5]" />
                       </div>
-                      <div className="space-y-1">
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+
+                      {/* Title & Description */}
+                      <div className="space-y-2">
+                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                           Submitted Successfully!
                         </h3>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed px-1">
+                        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto px-2">
                           Your requirement has been uploaded and queued for admin validation.
                         </p>
                       </div>
+
+                      {/* File Card Pill */}
                       {directUploadFile && (
-                        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2.5 text-xs text-slate-700 dark:text-slate-300 font-medium truncate">
-                          📄 {directUploadFile.name}
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3.5 sm:p-4 text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2.5 shadow-xs">
+                          <Page className="w-5 h-5 text-[#0b5336] dark:text-emerald-400 shrink-0" />
+                          <span className="truncate max-w-[280px] sm:max-w-[360px]">{directUploadFile.name}</span>
                         </div>
                       )}
-                      <button
-                        type="button"
-                        onClick={handleCloseModalAndRefresh}
-                        className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 font-bold text-xs rounded-xl shadow-xs transition cursor-pointer active:scale-[0.98]"
-                      >
-                        Okay, got it
-                      </button>
+
+                      {/* Action Button: Solid PUP Green & Large */}
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          onClick={handleCloseModalAndRefresh}
+                          className="w-full py-3.5 sm:py-4 px-6 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] font-bold text-base rounded-2xl shadow-lg shadow-[#0b5336]/25 hover:shadow-xl transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                        >
+                          Okay, got it
+                        </button>
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -3186,7 +3207,7 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && successModalData.isOpen && (
               <div
-                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
+                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="success-modal-title"
@@ -3195,20 +3216,25 @@ function FacultySubmissionPanelContent({
                 }
               >
                 <div
-                  className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 text-center shadow-2xl my-auto"
+                  className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 sm:p-10 text-center shadow-2xl my-auto space-y-6 animate-in zoom-in-95 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-500/50 text-emerald-600 dark:text-emerald-400 mb-4">
-                    <AppIcon icon={CheckCircle} size="md" color="inherit" />
+                  <div className="mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
+                    <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 stroke-[2.5]" />
                   </div>
-                  <h3
-                    id="success-modal-title"
-                    className="text-xl font-bold text-slate-900 dark:text-slate-100"
-                  >
-                    Upload Successful
-                  </h3>
-                  <div className="mt-6 flex justify-center">
-                    <Button
+                  <div className="space-y-2">
+                    <h3
+                      id="success-modal-title"
+                      className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight"
+                    >
+                      Upload Successful!
+                    </h3>
+                    <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto px-2">
+                      Your requirement has been uploaded and queued for admin validation.
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <button
                       type="button"
                       onClick={() => {
                         setSuccessModalData({
@@ -3217,10 +3243,10 @@ function FacultySubmissionPanelContent({
                         });
                         navigateToView("status");
                       }}
-                      className="w-full max-w-xs rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-bold py-2.5 shadow-sm transition-colors cursor-pointer"
+                      className="w-full py-3.5 sm:py-4 px-6 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] font-bold text-base rounded-2xl shadow-lg shadow-[#0b5336]/25 hover:shadow-xl transition-all duration-200 cursor-pointer active:scale-[0.98]"
                     >
-                      Okay
-                    </Button>
+                      Okay, got it
+                    </button>
                   </div>
                 </div>
               </div>
