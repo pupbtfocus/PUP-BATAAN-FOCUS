@@ -90,7 +90,7 @@ export function TermCompletionResetModal({
             </div>
             <p className="text-xs text-slate-700 dark:text-slate-300">
               All compliance requirements for this semester have been validated by
-              the administration. As long as the school year or term is not changed, all your validated documents remain active and visible in Requirements Management.
+              the administration. As long as the school year or term is not changed, all your validated documents remain active and visible in Documents to be Submitted.
             </p>
           </div>
 

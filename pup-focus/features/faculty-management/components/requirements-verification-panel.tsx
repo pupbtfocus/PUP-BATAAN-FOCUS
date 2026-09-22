@@ -1643,7 +1643,7 @@ function FacultyVerificationDrawer({
                                           {fileSize ? <span>{fileSize}</span> : null}
                                           {isRevisionUploaded ? (
                                             <span className="font-sans font-bold text-amber-600 dark:text-amber-400">
-                                              • v{versionNum} (Revision)
+                                              • (Revised)
                                             </span>
                                           ) : null}
                                         </div>
@@ -1984,9 +1984,6 @@ function FacultyVerificationDrawer({
                                           className="flex items-center justify-between gap-2 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-2.5 py-1 text-xs"
                                         >
                                           <div className="flex items-center gap-1.5 min-w-0">
-                                            <span className="rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1 py-0.2 text-[9px] font-bold text-slate-600 dark:text-slate-300">
-                                              {versionLabel}
-                                            </span>
                                             <span
                                               className="truncate font-medium text-slate-800 dark:text-slate-200 text-xs max-w-[150px] xl:max-w-[200px]"
                                               title={rawName}
@@ -2398,60 +2395,6 @@ function FacultyVerificationDrawer({
                     </button>
                   </div>
                 </div>
-
-                {/* Interactive Revision / Version Switcher Tabs */}
-                {versions.length > 1 ? (
-                  <div className="flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 px-4 py-2 text-xs overflow-x-auto">
-                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mr-1 flex items-center gap-1 shrink-0">
-                      <AppIcon icon={Hourglass} size="sm" color="inherit" /> File Versions:
-                    </span>
-                    {versions.map((ver, idx) => {
-                      const isLatest = idx === 0;
-                      const isActive = idx === activeIndex;
-                      const vNum = ver.version_number ?? (versions.length - idx);
-                      const isUploadedRevision = isLatest && (previewingDoc.isRevision || versions.length > 1);
-
-                      return (
-                        <button
-                          key={ver.id || idx}
-                          type="button"
-                          onClick={() => {
-                            setPreviewingDoc((prev) =>
-                              prev ? { ...prev, activeVersionIndex: idx } : null
-                            );
-                          }}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
-                            isActive
-                              ? isUploadedRevision
-                                ? "bg-amber-500 text-slate-950 shadow-xs ring-1 ring-amber-600 font-bold"
-                                : "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-xs"
-                              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700"
-                          }`}
-                        >
-                          <span>
-                            {isUploadedRevision
-                              ? `v${vNum} (Uploaded Revision)`
-                              : `v${vNum} ${isLatest ? "(Current)" : "(Initial Submission)"}`}
-                          </span>
-                          {ver.created_at ? (
-                            <span className="text-[10px] opacity-75 font-mono">
-                              ({new Date(ver.created_at).toLocaleDateString()})
-                            </span>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : previewingDoc.isRevision ? (
-                  <div className="flex items-center gap-2 border-b border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/40 px-4 py-2 text-xs text-amber-900 dark:text-amber-200">
-                    <span className="inline-flex items-center gap-1 font-bold text-[10.5px] px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-900/80 text-amber-950 dark:text-amber-100">
-                      Uploaded Revision
-                    </span>
-                    <span className="text-[11px]">
-                      This is the resubmitted revision file awaiting verification.
-                    </span>
-                  </div>
-                ) : null}
 
                 {/* Preview Content Area */}
                 <div className="relative flex-1 overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center p-4">

@@ -14,7 +14,6 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import { FacultySettingsPanel } from "@/features/faculty-management/components/faculty-settings-panel";
 import { SubmissionWindowCountdown } from "@/features/submissions/components/submission-window-countdown";
 import { SubmissionLockBanner } from "@/features/submissions/components/submission-lock-banner";
-import { VersionHistoryModal } from "@/features/submissions/components/version-history-modal";
 import { FacultyExtensionRequestModal } from "@/features/submissions/components/faculty-extension-request-modal";
 import { TermCompletionResetModal } from "@/features/submissions/components/term-completion-reset-modal";
 import { extractFirstName, buildFacultyInitials } from "@/lib/faculty-profile";
@@ -599,11 +598,6 @@ function FacultySubmissionPanelContent({
   );
   const [isLoadingSubmissionWindow, setIsLoadingSubmissionWindow] =
     useState(!initialData);
-  const [versionHistorySubmissionId, setVersionHistorySubmissionId] = useState<
-    string | null
-  >(null);
-  const [versionHistoryLabel, setVersionHistoryLabel] = useState("");
-  const [versionHistoryCode, setVersionHistoryCode] = useState("");
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(() => {
     if (initialView === "history") return true;
     const hist = searchParams?.get("history");
@@ -1623,56 +1617,6 @@ function FacultySubmissionPanelContent({
       latestSubmissionId: submission.id,
     });
   }
-  function openVersionHistory(
-    item:
-      | RequirementStatus
-      | PastSubmission
-      | {
-          submissionId?: string;
-          id?: string;
-          latestSubmissionId?: string;
-          requirementCode?: RequirementCode | string;
-          code?: RequirementCode | string;
-        },
-  ) {
-    const code =
-      "code" in item && item.code
-        ? item.code
-        : "requirementCode" in item && item.requirementCode
-          ? item.requirementCode
-          : undefined;
-    let targetSubmissionId =
-      "latestSubmissionId" in item && item.latestSubmissionId
-        ? item.latestSubmissionId
-        : "submissionId" in item && item.submissionId
-          ? item.submissionId
-          : "id" in item && item.id
-            ? item.id
-            : undefined;
-    if (!targetSubmissionId && code) {
-      const match = pastSubmissions.find(
-        (s) =>
-          s.requirementCode === code ||
-          (s as unknown as { requirement_type?: string }).requirement_type ===
-            code,
-      );
-      if (match?.id) {
-        targetSubmissionId = match.id;
-      }
-    }
-    const finalSubmissionId = targetSubmissionId || code;
-    if (!finalSubmissionId) return;
-    setVersionHistorySubmissionId(finalSubmissionId);
-    setVersionHistoryLabel(
-      code ? getRequirementTitle(code) : "Version History",
-    );
-    setVersionHistoryCode(code || "");
-  }
-  function closeVersionHistory() {
-    setVersionHistorySubmissionId(null);
-    setVersionHistoryLabel("");
-    setVersionHistoryCode("");
-  }
   function startRevision(requirementCode: RequirementCode | string) {
     updateField("requirementCode", requirementCode);
     openSubmitModal();
@@ -1832,7 +1776,7 @@ function FacultySubmissionPanelContent({
             { key: "dashboard", label: "Dashboard", Icon: ViewGrid },
             {
               key: "status",
-              label: "Requirements Management",
+              label: "Documents to be Submitted",
               Icon: TaskList,
             },
             { key: "settings", label: "Settings", Icon: Settings },
@@ -1939,7 +1883,7 @@ function FacultySubmissionPanelContent({
                 { key: "dashboard", label: "Dashboard", Icon: ViewGrid },
                 {
                   key: "status",
-                  label: "Requirements Management",
+                  label: "Documents to be Submitted",
                   Icon: TaskList,
                 },
                 { key: "settings", label: "Settings", Icon: Settings },
@@ -2646,7 +2590,7 @@ function FacultySubmissionPanelContent({
                   <div>
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
-                        Requirements Management
+                        Documents to be Submitted
                       </h1>
                       {isAllValidated && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b5336] text-white text-xs font-bold shadow-2xs">
@@ -2970,7 +2914,7 @@ function FacultySubmissionPanelContent({
                                     className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                                   >
                                     <AppIcon icon={Upload} size="sm" color="inherit" />
-                                    Submit
+                                    Upload
                                   </button>
                                 )
                               )}
@@ -3014,44 +2958,33 @@ function FacultySubmissionPanelContent({
                                     className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                                   >
                                     <AppIcon icon={Upload} size="sm" color="inherit" />
-                                    Resubmit
+                                    Upload Revision
                                   </button>
                                 )
                               )}
-                              {/* View File & History Buttons */}
+                              {/* View File Button */}
                               {req.status !== "Not Submitted" &&
                               req.latestSubmissionId ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => openSubmissionPreview(req)}
-                                    className="relative inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
-                                  >
-                                    {Boolean(
-                                      req.feedback &&
-                                      !viewedSubmissionIds.has(
-                                        req.latestSubmissionId,
-                                      ) &&
-                                      req.is_read !== true,
-                                    ) ? (
-                                      <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-                                      </span>
-                                    ) : null}
-                                    <AppIcon icon={Eye} size="sm" color="inherit" />
-                                    View File
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => openVersionHistory(req)}
-                                    className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
-                                    title="View file versions"
-                                  >
-                                    <AppIcon icon={ClockRotateRight} size="sm" color="inherit" />
-                                    Versions
-                                  </button>
-                                </>
+                                <button
+                                  type="button"
+                                  onClick={() => openSubmissionPreview(req)}
+                                  className="relative inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+                                >
+                                  {Boolean(
+                                    req.feedback &&
+                                    !viewedSubmissionIds.has(
+                                      req.latestSubmissionId,
+                                    ) &&
+                                    req.is_read !== true,
+                                  ) ? (
+                                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                                    </span>
+                                  ) : null}
+                                  <AppIcon icon={Eye} size="sm" color="inherit" />
+                                  View File
+                                </button>
                               ) : null}
                             </div>
                           </div>
@@ -3204,15 +3137,15 @@ function FacultySubmissionPanelContent({
                             <AppIcon icon={SystemRestart} size="md" color="inherit" className="animate-spin" />
                             <span>
                               {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
-                                ? "Submitting Revision..."
+                                ? "Uploading Revision..."
                                 : "Uploading..."}
                             </span>
                           </>
                         ) : (
                           <span>
                             {isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
-                              ? "Resubmit Revision"
-                              : "Submit File"}
+                              ? "Upload Revision"
+                              : "Upload File"}
                           </span>
                         )}
                       </Button>
@@ -3582,14 +3515,6 @@ function FacultySubmissionPanelContent({
                 </div>
               </div>
             ) : null}
-            {isMounted && versionHistorySubmissionId && (
-              <VersionHistoryModal
-                submissionId={versionHistorySubmissionId}
-                requirementLabel={versionHistoryLabel}
-                requirementCode={versionHistoryCode}
-                onClose={closeVersionHistory}
-              />
-            )}
             {isMounted && showIncompleteRequirementsModal ? (
               <div
                 className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
@@ -3651,7 +3576,7 @@ function FacultySubmissionPanelContent({
                       }}
                       className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                     >
-                      Go to Requirements Management
+                      Go to Documents to be Submitted
                     </button>
                   </div>
                   </div>
