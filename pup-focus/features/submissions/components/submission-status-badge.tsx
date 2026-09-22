@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle, Hourglass, WarningCircle } from "iconoir-react";
+import { Check, Hourglass, Minus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { cn } from "@/utils/cn";
 
@@ -21,6 +21,7 @@ interface SubmissionStatusBadgeProps {
   className?: string;
   showDot?: boolean;
   showIcon?: boolean;
+  iconOnly?: boolean;
 }
 
 export function getNormalizedStatus(
@@ -60,6 +61,7 @@ export function SubmissionStatusBadge({
   className,
   showDot = true,
   showIcon = true,
+  iconOnly = false,
 }: SubmissionStatusBadgeProps) {
   const normalized = getNormalizedStatus(status);
 
@@ -69,21 +71,21 @@ export function SubmissionStatusBadge({
       containerClass:
         "bg-[#0b5336] text-white border border-[#08412a]",
       dotClass: "bg-emerald-300",
-      icon: <AppIcon icon={CheckCircle} color="white" className="shrink-0" />,
+      icon: <AppIcon icon={Check} color="white" className="shrink-0" strokeWidth={2.5} />,
     },
     "Needs Revision": {
       label: "Needs Revision",
       containerClass:
         "bg-[#780000] text-white border border-[#5e0000]",
       dotClass: "bg-rose-300",
-      icon: <AppIcon icon={WarningCircle} color="white" className="shrink-0" />,
+      icon: <AppIcon icon={Xmark} color="white" className="shrink-0" strokeWidth={2.5} />,
     },
     "Revision Requested": {
       label: "Revision Requested",
       containerClass:
         "bg-[#780000] text-white border border-[#5e0000]",
       dotClass: "bg-rose-300",
-      icon: <AppIcon icon={WarningCircle} color="white" className="shrink-0" />,
+      icon: <AppIcon icon={Xmark} color="white" className="shrink-0" strokeWidth={2.5} />,
     },
     "Revision Under Review": {
       label: "Revision Under Review",
@@ -102,11 +104,35 @@ export function SubmissionStatusBadge({
     "Not Submitted": {
       label: "Not Submitted",
       containerClass:
-        "bg-white text-slate-600 border border-slate-200/90 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800",
+        "bg-slate-100 text-slate-500 border border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
       dotClass: "bg-slate-400 dark:bg-slate-500",
-      icon: null,
+      icon: <AppIcon icon={Minus} color="inherit" className="shrink-0 text-slate-400 dark:text-slate-500" strokeWidth={2.5} />,
     },
   }[normalized];
+
+  if (iconOnly) {
+    const iconOnlySizes = {
+      sm: "h-6 w-6 [&>svg]:h-3.5 [&>svg]:w-3.5",
+      md: "h-7 w-7 [&>svg]:h-4 [&>svg]:w-4",
+      lg: "h-8 w-8 [&>svg]:h-4.5 [&>svg]:w-4.5",
+    }[size];
+
+    return (
+      <span
+        role="status"
+        title={label || config.label}
+        aria-label={`Status: ${label || config.label}`}
+        className={cn(
+          "inline-flex items-center justify-center rounded-full border font-semibold shrink-0 shadow-2xs transition-transform hover:scale-110 cursor-help",
+          config.containerClass,
+          iconOnlySizes,
+          className,
+        )}
+      >
+        {config.icon}
+      </span>
+    );
+  }
 
   const sizeClasses = {
     sm: "px-2.5 py-0.5 text-[11px] gap-1.5 [&>svg]:h-3 [&>svg]:w-3",
