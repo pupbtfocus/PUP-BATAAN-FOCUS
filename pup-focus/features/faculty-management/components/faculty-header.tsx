@@ -20,27 +20,36 @@ export function FacultyHeader({
   nav = [],
 }: FacultyHeaderProps) {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-[rgba(255,215,0,0.18)] bg-[#4d0000]/85 backdrop-blur">
-      <div className="flex w-full items-center justify-between pl-4 pr-6 py-4">
+    <header className="fixed inset-x-0 top-0 z-50 border-t-2 border-amber-500 border-b border-amber-500/30 bg-gradient-to-r from-[#5a0000] via-[#480000] to-[#360000] shadow-md backdrop-blur">
+      <div className="flex w-full items-center justify-between pl-4 pr-6 py-3">
         <div className="flex items-center gap-3">
-          <BrandMark
-            size={42}
-            className="shrink-0 rounded-full ring-2 ring-[#ffd700]/40"
-          />
-          <div>
-            <h1 className="text-xl font-semibold text-[#fff8e7]">{title}</h1>
-            {subtitle ? (
-              <p className="text-sm text-[#f3d9b3]">{subtitle}</p>
+          <BrandMark size={38} className="shrink-0" />
+          <div className="flex flex-col md:flex-row md:items-center md:gap-2.5 min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white whitespace-nowrap leading-tight">{title}</h1>
+            {title === "PUP FOCUS" ? (
+              <>
+                <span className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0" aria-hidden="true" />
+                <span className="text-[10px] sm:text-xs md:text-sm font-medium text-amber-200/90 tracking-wide leading-tight truncate">
+                  Faculty Online Compliance and Uploading System
+                </span>
+              </>
+            ) : subtitle ? (
+              <>
+                <span className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0" aria-hidden="true" />
+                <span className="text-[10px] sm:text-xs md:text-sm font-medium text-amber-200/90 tracking-wide leading-tight truncate">
+                  {subtitle}
+                </span>
+              </>
             ) : null}
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <nav className="flex items-center gap-2">
             {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-md border border-[rgba(255,215,0,0.18)] bg-[#6d0000]/60 px-3 py-2 text-sm text-[#fff8e7] hover:bg-[#850000]"
+                className="rounded-xl border border-amber-500/30 bg-[#7a0000]/60 px-3 py-1.5 text-xs font-medium text-amber-100 hover:bg-[#8d0000] transition-colors shadow-2xs"
               >
                 {item.label}
               </Link>

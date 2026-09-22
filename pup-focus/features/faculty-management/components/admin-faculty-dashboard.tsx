@@ -631,28 +631,31 @@ export function AdminFacultyDashboard({
   }
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-200">
+    <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans transition-colors duration-200">
       {/* Consolidated Top Header (All Views) - Fixed 56px matching Faculty AppShell */}
-      <header className="fixed inset-x-0 top-0 h-14 z-50 border-t-2 border-amber-600 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex items-center transition-colors duration-200">
+      <header className="fixed inset-x-0 top-0 h-14 z-50 border-t-2 border-amber-500 border-b border-amber-500/30 bg-gradient-to-r from-[#5a0000] via-[#480000] to-[#360000] shadow-md flex items-center transition-colors duration-200">
         <div className="flex w-full items-center justify-between pl-4 pr-3 sm:pr-6">
           {/* Left: Mobile Menu Trigger & Title */}
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+              className="md:hidden p-1.5 text-amber-300 hover:bg-amber-500/20 rounded-xl transition-all"
               aria-label="Open Navigation Menu"
             >
               <AppIcon icon={Menu} size="lg" color="inherit" />
             </button>
 
-            <BrandMark
-              size={32}
-              className="shrink-0 rounded-full ring-2 ring-amber-500/40"
-            />
-            <span className="text-base sm:text-lg md:text-xl font-bold tracking-wide text-slate-900 dark:text-slate-100 whitespace-nowrap">
-              PUP FOCUS
-            </span>
+            <BrandMark size={38} className="shrink-0" />
+            <div className="flex flex-col md:flex-row md:items-center md:gap-2.5 min-w-0">
+              <span className="text-base sm:text-lg font-bold tracking-tight text-white whitespace-nowrap leading-tight">
+                PUP FOCUS
+              </span>
+              <span className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0" aria-hidden="true" />
+              <span className="text-[10px] sm:text-xs md:text-sm font-medium text-amber-200/90 tracking-wide leading-tight truncate">
+                Faculty Online Compliance and Uploading System
+              </span>
+            </div>
           </div>
 
           {/* Right: Actions */}

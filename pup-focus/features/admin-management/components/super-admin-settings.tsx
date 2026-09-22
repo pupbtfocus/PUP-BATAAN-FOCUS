@@ -483,9 +483,9 @@ export function SuperAdminSettings({
     }
   }
 
-  const DEFAULT_SUPER_ADMIN_AVATAR = "/icons/pup-focus-emblem-logo.png";
+  const DEFAULT_SUPER_ADMIN_AVATAR = "/icons/pup-seal.png";
 
-  // Active avatar resolution: defaults to FOCUS emblem logo
+  // Active avatar resolution: defaults to PUP logo
   const displayedProfileImage = isAvatarMarkedForRemoval
     ? DEFAULT_SUPER_ADMIN_AVATAR
     : profileImagePreviewUrl || avatarUrl || DEFAULT_SUPER_ADMIN_AVATAR;
