@@ -389,7 +389,7 @@ export async function GET(request: NextRequest) {
       const { data: termSubmissions, error: fetchSubError } = await supabase
         .from("submissions")
         .select(
-          "id, requirement_code, status, submitted_at, faculty_assignment_id, document_versions(id)",
+          "id, requirement_code, status, submitted_at, faculty_assignment_id",
         )
         .eq("faculty_profile_id", facultyProfileId)
         .in("faculty_assignment_id", filteredAssignmentIds)

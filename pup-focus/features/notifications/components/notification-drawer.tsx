@@ -54,7 +54,7 @@ function getNotificationTypeCategory(notification: AppNotification): {
     return {
       category: "DEADLINE_ALERT",
       Icon: Hourglass,
-      colorClasses: "text-white bg-amber-600 border-amber-600 shadow-xs",
+      colorClasses: "text-amber-600 bg-amber-500/15 border-amber-500/30",
       badgeBg: "bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
     };
   }
@@ -68,7 +68,7 @@ function getNotificationTypeCategory(notification: AppNotification): {
     return {
       category: "APPROVED",
       Icon: CheckCircle,
-      colorClasses: "text-white bg-emerald-600 border-emerald-600 shadow-xs",
+      colorClasses: "text-emerald-600 bg-emerald-500/15 border-emerald-500/30",
       badgeBg: "bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800",
     };
   }
@@ -81,7 +81,7 @@ function getNotificationTypeCategory(notification: AppNotification): {
     return {
       category: "REVISION_REQUESTED",
       Icon: WarningTriangle,
-      colorClasses: "text-slate-950 bg-amber-500 border-amber-600 shadow-xs",
+      colorClasses: "text-amber-600 bg-amber-500/15 border-amber-500/30",
       badgeBg: "bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
     };
   }
@@ -94,7 +94,7 @@ function getNotificationTypeCategory(notification: AppNotification): {
     return {
       category: "REJECTED",
       Icon: XmarkCircle,
-      colorClasses: "text-white bg-rose-600 border-rose-600 shadow-xs",
+      colorClasses: "text-rose-600 bg-rose-500/15 border-rose-500/30",
       badgeBg: "bg-rose-100 text-rose-900 border border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800",
     };
   }
@@ -102,7 +102,7 @@ function getNotificationTypeCategory(notification: AppNotification): {
   return {
     category: "INFO",
     Icon: InfoCircle,
-    colorClasses: "text-white bg-slate-700 border-slate-700 shadow-xs",
+    colorClasses: "text-slate-600 bg-slate-100 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
     badgeBg: "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
   };
 }
@@ -478,10 +478,8 @@ export function NotificationDrawer() {
               {/* Header Top Bar */}
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 sm:px-5 py-3.5 shrink-0">
                 {/* Left: Icon, Title & Unread Pill */}
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-xl bg-amber-500 text-slate-950 border border-amber-600/50 shadow-xs shrink-0 flex items-center justify-center">
-                    <AppIcon icon={Bell} size="lg" color="inherit" />
-                  </div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <AppIcon icon={Bell} size="lg" className="text-amber-500 shrink-0" />
                   <div className="flex items-center gap-2 min-w-0">
                     <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                       Notifications
@@ -495,11 +493,11 @@ export function NotificationDrawer() {
                   </div>
                 </div>
 
-                {/* Right: Close Button in PUP Maroon */}
+                {/* Right: Close Button */}
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors shrink-0 cursor-pointer shadow-xs"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
                   aria-label="Close notifications"
                 >
                   <AppIcon icon={Xmark} size="md" color="inherit" />
