@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/utils/cn";
 import { createClient } from "@/lib/supabase/client";
 
-export function LogoutButton() {
+export function LogoutButton({ className }: { className?: string }) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -20,15 +20,16 @@ export function LogoutButton() {
   }
 
   return (
-    <Button
+    <button
       type="button"
-      variant="secondary"
-      size="sm"
       onClick={handleLogout}
       disabled={isLoggingOut}
-      className="border border-slate-400 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors font-semibold"
+      className={cn(
+        "inline-flex items-center justify-center rounded-xl border border-amber-500/30 bg-[#7a0000]/70 hover:bg-[#8d0000] hover:border-amber-400/50 text-amber-100 hover:text-white px-3.5 py-1.5 text-xs font-semibold transition-colors shadow-2xs cursor-pointer disabled:opacity-50",
+        className,
+      )}
     >
       {isLoggingOut ? "Logging out..." : "Logout"}
-    </Button>
+    </button>
   );
 }

@@ -2587,8 +2587,8 @@ function FacultySubmissionPanelContent({
             {activeView === "status" && (
               <article className="space-y-5 p-2 sm:p-4 md:p-5">
                 {/* Minimalist Header */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800/80 pb-4">
-                  <div className="flex-1 min-w-0">
+                <div className="border-b border-slate-300 dark:border-slate-800/80 pb-4 space-y-3">
+                  <div>
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         Documents to be Submitted
@@ -2603,7 +2603,10 @@ function FacultySubmissionPanelContent({
                     <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
                       View, upload, and track the status of your required faculty compliance documents for this academic term.
                     </p>
-                    <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
                       A.Y. {activeAY} • {activeSem}
                       {isWindowNotConfigured && !isAllValidated ? (
                         <span className="ml-2 text-slate-500 dark:text-slate-400 font-medium">
@@ -2615,43 +2618,44 @@ function FacultySubmissionPanelContent({
                         </span>
                       ) : null}
                     </p>
-                  </div>
-                  <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 self-end lg:self-center ml-auto">
-                    <button
-                      type="button"
-                      onClick={openHistoryModal}
-                      className="inline-flex items-center gap-1.5 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-xs"
-                      title="View validated documents history"
-                    >
-                      <AppIcon icon={CheckCircle} size="sm" color="white" />
-                      <span>Validation History</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        window.open(
-                          "https://www.pup.edu.ph/about/calendar",
-                          "_blank",
-                          "noopener,noreferrer",
-                        )
-                      }
-                      className="inline-flex items-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-xs"
-                    >
-                      <Logo size={14} className="shrink-0" />
-                      <span>University Calendar</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void fetchStatuses()}
-                      disabled={isLoadingStatuses}
-                      title="Refresh status"
-                      className="inline-flex items-center justify-center rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 p-2 text-slate-950 transition disabled:opacity-50 cursor-pointer shadow-xs"
-                    >
-                      <Refresh
-                        className={`h-3.5 w-3.5 text-slate-950 ${isLoadingStatuses ? "animate-spin" : ""}`}
-                      />
-                      <span className="sr-only">Refresh</span>
-                    </button>
+
+                    <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 sm:ml-auto">
+                      <button
+                        type="button"
+                        onClick={openHistoryModal}
+                        className="inline-flex items-center gap-1.5 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+                        title="View validated documents history"
+                      >
+                        <AppIcon icon={CheckCircle} size="sm" color="white" />
+                        <span>Validation History</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          window.open(
+                            "https://www.pup.edu.ph/about/calendar",
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
+                        className="inline-flex items-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+                      >
+                        <Logo size={14} className="shrink-0" />
+                        <span>University Calendar</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void fetchStatuses()}
+                        disabled={isLoadingStatuses}
+                        title="Refresh status"
+                        className="inline-flex items-center justify-center rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 p-2 text-slate-950 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                      >
+                        <Refresh
+                          className={`h-3.5 w-3.5 text-slate-950 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                        />
+                        <span className="sr-only">Refresh</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {/* Clean Header Progress & Status Counts */}
@@ -2823,7 +2827,7 @@ function FacultySubmissionPanelContent({
                             <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
                               <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-[50%]">Document</th>
                               <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[30%]">Actions</th>
-                              <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center sm:text-right w-[20%]">Status</th>
+                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[20%]">Status</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -2991,8 +2995,8 @@ function FacultySubmissionPanelContent({
                                 </td>
 
                                 {/* Status column */}
-                                <td className="px-5 py-3.5 align-middle text-center sm:text-right">
-                                  <div className="flex items-center justify-center sm:justify-end">
+                                <td className="px-4 py-3.5 align-middle text-center">
+                                  <div className="flex items-center justify-center">
                                     <SubmissionStatusBadge
                                       status={
                                         req.status === "Pending" &&
