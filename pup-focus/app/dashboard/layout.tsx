@@ -17,23 +17,29 @@ export default function DashboardLayout({
   const [activeSection, setActiveSection] = useState("dashboard");
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans">
       {/* Consolidated Top Header (All Views) */}
-      <header className="w-full bg-gradient-to-r from-[#400000] via-[#2a0000] to-[#1a0000] border-t-2 border-amber-600 border-b border-amber-500/20 px-4 py-3 flex items-center justify-between shrink-0 z-40">
+      <header className="w-full bg-gradient-to-r from-[#5a0000] via-[#480000] to-[#360000] border-t-2 border-amber-500 border-b border-amber-500/30 px-4 py-3 flex items-center justify-between shrink-0 z-40 shadow-md">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(true)}
-            className="md:hidden p-2 text-amber-300 hover:bg-amber-500/10 rounded-xl transition-all"
+            className="md:hidden p-2 text-amber-300 hover:bg-amber-500/20 rounded-xl transition-all"
             aria-label="Open Navigation Menu"
           >
             <AppIcon icon={Menu} size="lg" color="inherit" />
           </button>
-          <div className="flex items-center gap-2">
-            <BrandMark size={28} className="shrink-0" />
-            <span className="font-bold text-slate-100 text-sm sm:text-base tracking-wide">
-              PUP FOCUS
-            </span>
+          <div className="flex items-center gap-2.5">
+            <BrandMark size={36} className="shrink-0" />
+            <div className="flex flex-col md:flex-row md:items-center md:gap-2.5 min-w-0">
+              <span className="font-bold text-white text-sm sm:text-base tracking-tight whitespace-nowrap leading-tight">
+                PUP FOCUS
+              </span>
+              <span className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0" aria-hidden="true" />
+              <span className="text-[10px] sm:text-xs md:text-sm font-medium text-amber-200/90 tracking-wide leading-tight truncate">
+                Faculty Online Compliance and Uploading System
+              </span>
+            </div>
           </div>
         </div>
 

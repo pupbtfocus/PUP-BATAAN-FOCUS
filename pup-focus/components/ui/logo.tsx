@@ -14,7 +14,7 @@ export function Logo({ size = 115, className = "" }: LogoProps) {
       className={`relative inline-flex items-center justify-center shrink-0 ${className}`}
     >
       <div
-        className="relative flex items-center justify-center rounded-full bg-[#4d0000] p-1.5 shadow-xl border-2 border-[#FBBF24] shrink-0"
+        className="relative flex items-center justify-center rounded-full bg-[#4d0000] p-1.5 shadow-xl shrink-0"
         style={{ width: size, height: size }}
       >
         {/* Curved Baybayin & PUP FOCUS text along top & bottom inside border circle */}

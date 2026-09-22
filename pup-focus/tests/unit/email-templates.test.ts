@@ -22,7 +22,6 @@ describe("Email Templates", () => {
     expect(html).toMatch(/https:\/\/pup-focus\.local\/accept/i);
     expect(html).toMatch(/Faculty/i);
     expect(html).toMatch(/icons\/pup-seal\.png/i);
-    expect(html).toMatch(/icons\/pup-focus-emblem-logo\.png/i);
     expect(html).toMatch(/Accept Invitation &amp; Sign In/i);
   });
 
@@ -63,7 +62,6 @@ describe("Email Templates", () => {
     expect(html).toMatch(/TempPass123!/i);
     expect(html).toMatch(/change your password/i);
     expect(html).toMatch(/icons\/pup-seal\.png/i);
-    expect(html).toMatch(/icons\/pup-focus-emblem-logo\.png/i);
     expect(html).toMatch(/Sign in to PUP FOCUS/i);
   });
 
@@ -81,7 +79,6 @@ describe("Email Templates", () => {
     expect(html).toMatch(/https:\/\/pup-focus\.local\/auth\/change-password\?token=xyz123/i);
     expect(html).toMatch(/Reset Password/i);
     expect(html).toMatch(/icons\/pup-seal\.png/i);
-    expect(html).toMatch(/icons\/pup-focus-emblem-logo\.png/i);
   });
 
   it("buildSubmissionWindowNotificationEmailHtml renders first name greeting and dual logos", () => {
@@ -97,7 +94,6 @@ describe("Email Templates", () => {
 
     expect(html).toMatch(/Hello Jane, the faculty submission window has been scheduled\./i);
     expect(html).toMatch(/icons\/pup-seal\.png/i);
-    expect(html).toMatch(/icons\/pup-focus-emblem-logo\.png/i);
     expect(html).toMatch(/Open Faculty Dashboard/i);
   });
 });

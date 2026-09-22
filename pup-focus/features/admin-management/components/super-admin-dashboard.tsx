@@ -223,7 +223,7 @@ export function SuperAdminDashboard({
 
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
   const [superAdminAvatarUrl, setSuperAdminAvatarUrl] = useState<string | null>(
-    "/icons/pup-focus-emblem-logo.png"
+    "/icons/pup-seal.png"
   );
   const [isAvatarImageError, setIsAvatarImageError] = useState<boolean>(false);
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());

@@ -42,7 +42,7 @@ export default function AboutPage() {
             <div className="md:col-span-7 flex justify-center items-center gap-6 sm:gap-8 py-2">
               {/* PUP Seal Circle Badge */}
               <div
-                className="relative flex items-center justify-center rounded-full bg-[#4d0000] p-1.5 shadow-xl border-2 border-[#FBBF24] shrink-0"
+                className="relative flex items-center justify-center rounded-full bg-[#4d0000] p-1.5 shadow-xl shrink-0"
                 style={{ width: 130, height: 130 }}
               >
                 <img

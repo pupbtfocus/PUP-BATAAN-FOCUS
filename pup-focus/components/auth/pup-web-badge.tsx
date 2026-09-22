@@ -36,7 +36,7 @@ export function PupWebBadge() {
           title="PUP Official Website"
           aria-label="PUP Official Website"
         >
-          <div className="relative w-full h-full rounded-full overflow-hidden border border-amber-400/60 shadow-xs">
+          <div className="relative w-full h-full rounded-full overflow-hidden shadow-xs">
             <Image
               src="/icons/pup-seal.png"
               alt="PUP Seal"
@@ -97,7 +97,7 @@ export function PupWebBadge() {
                 rel="noopener noreferrer"
                 className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-[#2b0000] hover:bg-[#3a0000] hover:border-amber-400 py-2.5 text-center text-xs font-bold text-amber-100 transition-all cursor-pointer shadow-inner active:scale-95"
               >
-                <div className="relative h-4 w-4 rounded-full overflow-hidden shrink-0 border border-amber-400/70 shadow-xs">
+                <div className="relative h-4 w-4 rounded-full overflow-hidden shrink-0 shadow-xs">
                   <Image
                     src="/icons/pup-seal.png"
                     alt="PUP Seal"

@@ -9,20 +9,20 @@ type BrandMarkProps = {
 export function BrandMark({
   size = 44,
   className,
-  src = "/icons/pup-focus-emblem-logo.png",
+  src = "/icons/pup-seal.png",
 }: BrandMarkProps) {
   return (
     <div
-      className={`relative rounded-full overflow-hidden border-2 border-[#FBBF24] shadow-sm ${className ?? ""}`}
+      className={`relative rounded-full overflow-hidden shrink-0 ${className ?? ""}`}
       style={{ width: size, height: size, position: "relative" }}
       aria-hidden="true"
     >
       <Image
         src={src}
-        alt="PUP FOCUS logo"
+        alt="PUP logo"
         fill
         sizes={`${size}px`}
-        className="rounded-full object-cover mx-auto scale-[1.18] rotate-[1.8deg] transition-transform duration-300"
+        className="rounded-full object-contain mx-auto transition-transform duration-300"
         priority
       />
     </div>

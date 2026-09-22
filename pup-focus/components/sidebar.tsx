@@ -168,18 +168,18 @@ export function SidebarContent({
             <img
               src={profileImageUrl}
               alt={adminName ?? "User"}
-              className={`w-12 h-12 rounded-full border-2 border-amber-500/40 shadow-md ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500 transition-colors ${
-                profileImageUrl.includes("pup-focus-emblem-logo.png")
+              className={`w-12 h-12 rounded-full border-2 border-amber-500/40 shadow-md ring-2 ring-white group-hover:border-amber-500 transition-colors ${
+                profileImageUrl.includes("pup-seal.png") || profileImageUrl.includes("pup-focus-emblem-logo.png")
                   ? "object-contain p-1 bg-slate-900"
-                  : "object-cover bg-slate-100 dark:bg-slate-950"
+                  : "object-cover bg-slate-100"
               }`}
               onError={() => setHasAvatarError(true)}
             />
           ) : isSuperAdmin ? (
             <img
-              src="/icons/pup-focus-emblem-logo.png"
-              alt="PUP FOCUS"
-              className="w-12 h-12 rounded-full object-contain p-1 border-2 border-amber-500/40 bg-slate-900 shadow-md ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500 transition-colors"
+              src="/icons/pup-seal.png"
+              alt="PUP"
+              className="w-12 h-12 rounded-full object-contain p-1 bg-slate-900 shadow-md transition-transform"
             />
           ) : (
             <div className="w-12 h-12 rounded-full bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500/60 transition-colors">
