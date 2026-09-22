@@ -744,7 +744,7 @@ export function FacultyRequirementsModule({
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-xl max-h-[90vh] flex flex-col rounded-3xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+            className="w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
             onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
@@ -760,6 +760,8 @@ export function FacultyRequirementsModule({
               }
               titleId="submit-modal-title"
               icon={isRevisionModal || selectedReqStatus?.status === "Rejected" ? WarningCircle : Upload}
+              onClose={closeModal}
+              closeAriaLabel="Close submission modal"
             />
 
             {/* Modal Form with Scrollable Content */}
