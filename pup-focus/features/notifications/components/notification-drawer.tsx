@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCircle, DoubleCheck, Hourglass, InfoCircle, Notes, OpenNewWindow, SystemRestart, Trash, WarningCircle, WarningTriangle, Xmark, XmarkCircle } from "iconoir-react";
+import { Bell, CheckCircle, DoubleCheck, Hourglass, InfoCircle, Notes, OpenNewWindow, Page, SystemRestart, Trash, WarningCircle, WarningTriangle, Xmark, XmarkCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
-import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
+import { REQUIREMENT_CODE, REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import type { AppNotification } from "@/features/notifications/services/notification.service";
 
 function formatRelativeTime(dateString: string): string {
@@ -107,12 +107,48 @@ function getNotificationTypeCategory(notification: AppNotification): {
   };
 }
 
-function extractRequirementCode(notification: AppNotification): RequirementCode | null {
-  if (notification.metadata?.requirementCode) {
-    return notification.metadata.requirementCode as RequirementCode;
+function getNotificationFileInfo(notification: AppNotification): {
+  submissionId: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+} {
+  const metadata = notification.metadata || {};
+  const submissionId =
+    metadata.submissionId ||
+    metadata.submission_id ||
+    metadata.submission?.id ||
+    (notification.type?.toLowerCase().includes("submission") ? metadata.id : null) ||
+    null;
+
+  let fileUrl: string | null = null;
+  if (submissionId) {
+    fileUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(submissionId)}`;
+  } else if (metadata.fileUrl || metadata.file_url) {
+    fileUrl = metadata.fileUrl || metadata.file_url;
+  } else if (metadata.storagePath || metadata.storage_path) {
+    fileUrl = `/api/storage/download?path=${encodeURIComponent(metadata.storagePath || metadata.storage_path)}`;
   }
-  if (notification.metadata?.requirement_code) {
-    return notification.metadata.requirement_code as RequirementCode;
+
+  const fileName =
+    metadata.fileName ||
+    metadata.file_name ||
+    metadata.originalName ||
+    metadata.original_name ||
+    (fileUrl ? fileUrl.split("/").pop()?.split("?")[0] : null) ||
+    null;
+
+  return {
+    submissionId: submissionId ? String(submissionId) : null,
+    fileUrl,
+    fileName,
+  };
+}
+
+function extractRequirementCode(notification: AppNotification): RequirementCode | null {
+  const metadata = notification.metadata || {};
+  const candidate = metadata.requirementCode || metadata.requirement_code;
+  if (candidate && Object.values(REQUIREMENT_CODE).includes(candidate as RequirementCode)) {
+    return candidate as RequirementCode;
   }
 
   const textToScan = `${notification.title} ${notification.message}`.toLowerCase();
@@ -123,6 +159,26 @@ function extractRequirementCode(notification: AppNotification): RequirementCode 
     ) {
       return code as RequirementCode;
     }
+  }
+
+  // Common aliases and keywords
+  if (textToScan.includes("syllabus") || textToScan.includes("course guide")) {
+    return REQUIREMENT_CODE.ENHANCED_SYLLABUS;
+  }
+  if (textToScan.includes("grade") || textToScan.includes("gradesheet") || textToScan.includes("sheet")) {
+    return REQUIREMENT_CODE.GRADE_SHEET;
+  }
+  if (textToScan.includes("orientation")) {
+    return REQUIREMENT_CODE.CLASS_ORIENTATION;
+  }
+  if (textToScan.includes("midterm")) {
+    return REQUIREMENT_CODE.MIDTERM_PACKAGE;
+  }
+  if (textToScan.includes("final") || textToScan.includes("finals")) {
+    return REQUIREMENT_CODE.FINAL_PACKAGE;
+  }
+  if (textToScan.includes("class record") || textToScan.includes("record")) {
+    return REQUIREMENT_CODE.CLASS_RECORDS;
   }
 
   return null;
@@ -315,19 +371,26 @@ export function NotificationDrawer() {
       }
     }
 
+    const fileInfo = getNotificationFileInfo(notification);
     const requirementCode = extractRequirementCode(notification);
     setIsOpen(false);
 
+    // If there is an associated file, open it immediately in a new tab
+    if (fileInfo.fileUrl) {
+      window.open(fileInfo.fileUrl, "_blank", "noopener,noreferrer");
+    }
+
+    // Scroll to and highlight where the notification is coming from
     if (requirementCode) {
       const targetElementId = `requirement-${requirementCode}`;
       const element = document.getElementById(targetElementId);
 
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
-        element.classList.add("ring-2", "ring-amber-400", "bg-amber-500/10");
+        element.classList.add("ring-4", "ring-amber-400", "bg-amber-500/10", "transition-all", "duration-500");
         setTimeout(() => {
-          element.classList.remove("ring-2", "ring-amber-400", "bg-amber-500/10");
-        }, 3500);
+          element.classList.remove("ring-4", "ring-amber-400", "bg-amber-500/10", "transition-all", "duration-500");
+        }, 4000);
       } else {
         router.push(`/faculty/dashboard?view=status&highlight=${requirementCode}&requirement=${requirementCode}#${targetElementId}`);
       }
@@ -344,6 +407,8 @@ export function NotificationDrawer() {
       } else {
         router.push("/faculty/dashboard?view=status#requirements");
       }
+    } else if (!fileInfo.fileUrl) {
+      router.push("/faculty/dashboard?view=status");
     }
   };
 
@@ -557,6 +622,15 @@ export function NotificationDrawer() {
                     const isDeadlineAlert =
                       category === "DEADLINE_ALERT" ||
                       notification.type === "deadline_alert";
+                    const fileInfo = getNotificationFileInfo(notification);
+                    const actionLabel = fileInfo.fileUrl
+                      ? "View File"
+                      : reqCode
+                      ? "View requirement"
+                      : isDeadlineAlert
+                      ? "View deadlines"
+                      : "View in dashboard";
+                    const ActionIcon = fileInfo.fileUrl ? Page : OpenNewWindow;
 
                     const reviewerName =
                       notification.metadata?.reviewerName ??
@@ -645,16 +719,18 @@ export function NotificationDrawer() {
 
                           {/* Item Footer: Solid Action Buttons */}
                           <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-850">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 shadow-xs transition-colors">
-                              <span>
-                                {reqCode
-                                  ? "View requirement"
-                                  : isDeadlineAlert
-                                  ? "View deadlines"
-                                  : "View in dashboard"}
-                              </span>
-                              <AppIcon icon={OpenNewWindow} size="xs" color="inherit" />
-                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleNotificationClick(notification);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 shadow-xs transition-colors cursor-pointer"
+                              title={fileInfo.fileName ? `View ${fileInfo.fileName}` : actionLabel}
+                            >
+                              <span>{actionLabel}</span>
+                              <AppIcon icon={ActionIcon} size="xs" color="inherit" />
+                            </button>
 
                             {isUnread && (
                               <button
