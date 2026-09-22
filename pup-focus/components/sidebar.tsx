@@ -47,8 +47,8 @@ export function SidebarButton({
       onClick={onClick}
       className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
         active
-          ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
-          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+          ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+          : "text-amber-100/80 hover:bg-white/10 hover:text-white"
       }`}
     >
       {Icon && (
@@ -60,8 +60,8 @@ export function SidebarButton({
           <p
             className={`mt-0.5 text-[10px] font-normal truncate ${
               active
-                ? "text-amber-800/80 dark:text-amber-300/80"
-                : "text-slate-500 dark:text-slate-400"
+                ? "text-amber-200/90"
+                : "text-amber-200/60"
             }`}
           >
             {description}
@@ -157,7 +157,7 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 bg-slate-50 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800 p-4 rounded-xl text-center flex flex-col items-center transition-colors">
+      <div className="my-1.5 bg-[#6b0000]/80 border border-amber-400/40 p-4 rounded-xl text-center flex flex-col items-center transition-colors shadow-xs">
         <button
           type="button"
           onClick={() => handleSelect("settings")}
@@ -168,7 +168,7 @@ export function SidebarContent({
             <img
               src={profileImageUrl}
               alt={adminName ?? "User"}
-              className={`w-12 h-12 rounded-full border-2 border-amber-500/40 shadow-md ring-2 ring-white group-hover:border-amber-500 transition-colors ${
+              className={`w-12 h-12 rounded-full border-2 border-amber-400/60 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors ${
                 profileImageUrl.includes("pup-seal.png") || profileImageUrl.includes("pup-focus-emblem-logo.png")
                   ? "object-contain p-1 bg-slate-900"
                   : "object-cover bg-slate-100"
@@ -182,28 +182,30 @@ export function SidebarContent({
               className="w-12 h-12 rounded-full object-contain p-1 bg-slate-900 shadow-md transition-transform"
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500/60 transition-colors">
+            <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
               {getSidebarInitials(adminName, "AD")}
             </div>
           )}
           <span
-            className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
+            className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#800000]"
             title="Active"
           />
         </button>
 
-        <p className="mt-0.5 font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
+        <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
           {extractFirstName(adminName, roleTitle)}
         </p>
 
-        <div className="my-1.5 h-px w-full bg-slate-300 dark:bg-slate-800" />
+        <div className="my-1.5 h-px w-full bg-amber-400/50" />
 
         <span
-          className="mt-0.5 inline-flex items-center justify-center bg-slate-200/70 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full"
+          className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full"
         >
           {roleTitle}
         </span>
       </div>
+
+      <div className="my-1.5 h-px w-full bg-amber-400/50" />
 
       <nav className="mt-1.5 space-y-1 flex-1 overflow-y-auto">
         {/* 1. Dashboard */}
@@ -222,8 +224,8 @@ export function SidebarContent({
               onClick={() => setIsUserManagementOpen((prev) => !prev)}
               className={`flex w-full items-center justify-between gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
                 isUserManagementActive
-                  ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                  ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                  : "text-amber-100/80 hover:bg-white/10 hover:text-white"
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
@@ -239,14 +241,14 @@ export function SidebarContent({
 
             {/* Child Sub-items (Indented with left border indicator) */}
             {isUserManagementOpen && (
-              <div className="ml-3 pl-2 border-l border-slate-200 dark:border-slate-800 flex flex-col gap-1 mt-1">
+              <div className="ml-3 pl-2 border-l border-amber-400/40 flex flex-col gap-1 mt-1">
                 <button
                   type="button"
                   onClick={() => handleSelect("accounts")}
                   className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                     isAccountsActive
-                      ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                      ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                      : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   <AppIcon icon={UserBadgeCheck} size="sm" color={isAccountsActive ? "active" : "default"} />
@@ -257,8 +259,8 @@ export function SidebarContent({
                   onClick={() => handleSelect("faculty")}
                   className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
                     isFacultyActive
-                      ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                      ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                      : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   <AppIcon icon={Group} size="sm" color={isFacultyActive ? "active" : "default"} />
@@ -293,8 +295,8 @@ export function SidebarContent({
             onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
             className={`flex w-full items-center justify-between gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
               isAcademicCycleActive
-                ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                : "text-amber-100/80 hover:bg-white/10 hover:text-white"
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
@@ -310,7 +312,7 @@ export function SidebarContent({
 
           {/* Child Sub-items (Indented with left border indicator) */}
           {isAcademicCycleOpen && (
-            <div className="ml-2.5 pl-1.5 border-l border-slate-200 dark:border-slate-800 flex flex-col gap-1 mt-1">
+            <div className="ml-2.5 pl-1.5 border-l border-amber-400/40 flex flex-col gap-1 mt-1">
               <button
                 type="button"
                 onClick={() =>
@@ -318,8 +320,8 @@ export function SidebarContent({
                 }
                 className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                   isTermsActive
-                    ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                    ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                    : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <AppIcon icon={Calendar} size="sm" color={isTermsActive ? "active" : "default"} />
@@ -332,8 +334,8 @@ export function SidebarContent({
                 }
                 className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                   isWindowActive
-                    ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                    ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                    : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <AppIcon icon={Hourglass} size="sm" color={isWindowActive ? "active" : "default"} />
@@ -346,8 +348,8 @@ export function SidebarContent({
                     onClick={() => handleSelect("templates")}
                     className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                       isTemplatesActive
-                        ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                        ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                        : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <AppIcon icon={Page} size="sm" color={isTemplatesActive ? "active" : "default"} />
@@ -358,8 +360,8 @@ export function SidebarContent({
                     onClick={() => handleSelect("backups")}
                     className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                       isBackupsActive
-                        ? "bg-amber-500/10 text-amber-900 font-semibold border-l-2 border-amber-600 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                        ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                        : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <AppIcon icon={Archive} size="sm" color={isBackupsActive ? "active" : "default"} />
@@ -405,7 +407,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto rounded-none bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 p-2.5 shadow-sm z-30 transition-colors duration-200">
+    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-2.5 shadow-md z-30 transition-colors duration-200">
       <SidebarContent {...props} />
     </aside>
   );

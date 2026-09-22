@@ -1785,8 +1785,8 @@ function FacultySubmissionPanelContent({
         </button>
       )}
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 p-2.5 shadow-sm transition-colors duration-200">
-        <div className="my-1.5 bg-slate-50 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800 p-4 rounded-xl text-center flex flex-col items-center transition-colors">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-56 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-2.5 shadow-md transition-colors duration-200">
+        <div className="my-1.5 bg-[#6b0000]/80 border border-amber-400/40 p-4 rounded-xl text-center flex flex-col items-center transition-colors shadow-xs">
           <button
             type="button"
             onClick={() => navigateToView("settings")}
@@ -1797,34 +1797,36 @@ function FacultySubmissionPanelContent({
               <img
                 src={currentAvatarUrl}
                 alt={currentFacultyName || "Faculty Profile"}
-                className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500 transition-colors"
+                className="w-12 h-12 rounded-full object-cover border-2 border-amber-400/60 bg-slate-900 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
                 onError={() => setHasAvatarError(true)}
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-slate-500 transition-colors">
+              <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
                 {facultyInitials}
               </div>
             )}
             <span
-              className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
+              className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#800000]"
               title="Active"
             />
           </button>
-          <p className="mt-0.5 font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
+          <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
             {facultyFirstName}
           </p>
-          <div className="my-1.5 h-px w-full bg-slate-300 dark:bg-slate-800" />
-          <span className="mt-0.5 inline-flex items-center justify-center bg-slate-200/70 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full">
+          <div className="my-1.5 h-px w-full bg-amber-400/50" />
+          <span className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full">
             Faculty
           </span>
         </div>
-        <div className="my-2">
+        <div className="my-1.5 h-px w-full bg-amber-400/50" />
+        <div className="my-1.5">
           <SubmissionWindowCountdown
             window={submissionWindow}
             isLoading={isLoadingSubmissionWindow}
             onExpired={handleWindowExpired}
           />
         </div>
+        <div className="my-1.5 h-px w-full bg-amber-400/50" />
         <nav className="mt-1.5 space-y-1">
           {[
             { key: "dashboard", label: "Dashboard", Icon: ViewGrid },
@@ -1843,16 +1845,16 @@ function FacultySubmissionPanelContent({
                 onClick={() => navigateToView(key as PanelView)}
                 className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
                   isActive
-                    ? "bg-slate-200/70 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-400"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                    ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                    : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <Icon
                   strokeWidth={2}
                   className={`h-4 w-4 shrink-0 ${
                     isActive
-                      ? "text-amber-600 dark:text-amber-400 stroke-[2]"
-                      : "text-slate-500 dark:text-slate-400"
+                      ? "text-amber-300 stroke-[2]"
+                      : "text-amber-200/70"
                   }`}
                 />
                 <span className="truncate">{label}</span>
@@ -1873,22 +1875,22 @@ function FacultySubmissionPanelContent({
           onClick={() => setIsMobileMenuOpen(false)}
         >
           <aside
-            className="relative flex flex-col h-full w-64 bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 border-r border-slate-200 dark:border-slate-800 p-4 shadow-2xl transition-colors duration-200"
+            className="relative flex flex-col h-full w-64 bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-4 shadow-2xl transition-colors duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-2">
-              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">
+              <span className="text-xs font-semibold text-white">
                 Faculty Menu
               </span>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs"
+                className="p-1.5 rounded-lg border border-amber-400/40 bg-[#6b0000] hover:bg-[#580000] text-white transition-colors cursor-pointer shadow-xs"
               >
                 <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
-            <div className="my-1.5 bg-slate-50 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800 p-4 rounded-xl text-center flex flex-col items-center transition-colors">
+            <div className="my-1.5 bg-[#6b0000]/80 border border-amber-400/40 p-4 rounded-xl text-center flex flex-col items-center transition-colors shadow-xs">
               <button
                 type="button"
                 onClick={() => {
@@ -1902,34 +1904,36 @@ function FacultySubmissionPanelContent({
                   <img
                     src={currentAvatarUrl}
                     alt={currentFacultyName || "Faculty Profile"}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-900 group-hover:border-amber-500 transition-colors"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-amber-400/60 bg-slate-900 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
                     onError={() => setHasAvatarError(true)}
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-slate-900 group-hover:border-slate-500 transition-colors">
+                  <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
                     {facultyInitials}
                   </div>
                 )}
                 <span
-                  className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
+                  className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#800000]"
                   title="Active"
                 />
               </button>
-              <p className="mt-0.5 font-semibold text-slate-900 dark:text-slate-100 text-center text-xs sm:text-sm">
+              <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
                 {facultyFirstName}
               </p>
-              <div className="my-1.5 h-px w-full bg-slate-300 dark:bg-slate-800" />
-              <span className="mt-0.5 inline-flex items-center justify-center bg-slate-200/70 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full">
+              <div className="my-1.5 h-px w-full bg-amber-400/50" />
+              <span className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full">
                 Faculty
               </span>
             </div>
-            <div className="my-2">
+            <div className="my-1.5 h-px w-full bg-amber-400/50" />
+            <div className="my-1.5">
               <SubmissionWindowCountdown
                 window={submissionWindow}
                 isLoading={isLoadingSubmissionWindow}
                 onExpired={handleWindowExpired}
               />
             </div>
+            <div className="my-1.5 h-px w-full bg-amber-400/50" />
             <nav className="mt-1.5 space-y-1 flex-1">
               {[
                 { key: "dashboard", label: "Dashboard", Icon: ViewGrid },
@@ -1951,16 +1955,16 @@ function FacultySubmissionPanelContent({
                     }}
                     className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
                       isActive
-                        ? "bg-slate-200/70 text-slate-900 font-semibold border-l-2 border-slate-900 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-400"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+                        ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                        : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <Icon
                       strokeWidth={2}
                       className={`h-4 w-4 shrink-0 ${
                         isActive
-                          ? "text-amber-600 dark:text-amber-400 stroke-[2]"
-                          : "text-slate-500 dark:text-slate-400"
+                          ? "text-amber-300 stroke-[2]"
+                          : "text-amber-200/70"
                       }`}
                     />
                     <span className="truncate">{label}</span>
@@ -1977,7 +1981,7 @@ function FacultySubmissionPanelContent({
         </div>
       )}
       <div className="md:ml-56 flex min-h-full w-full md:w-[calc(100%-14rem)] flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l-0 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
           <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeView === "submit" ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800 pb-4 mb-6">

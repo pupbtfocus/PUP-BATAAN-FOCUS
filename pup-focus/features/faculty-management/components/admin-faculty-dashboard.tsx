@@ -669,7 +669,7 @@ export function AdminFacultyDashboard({
       {/* Body Wrapper */}
       <div className="flex flex-1 h-screen pt-14 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto rounded-none bg-white text-slate-900 border-r border-slate-200 dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 p-2.5 shadow-sm transition-colors duration-200">
+        <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-2.5 shadow-md transition-colors duration-200">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={handleSetActiveSection}
@@ -686,17 +686,17 @@ export function AdminFacultyDashboard({
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <aside
-              className="relative flex flex-col h-full w-64 bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 border-r border-slate-200 dark:border-slate-800 p-4 shadow-2xl overflow-y-auto transition-colors duration-200"
+              className="relative flex flex-col h-full w-64 bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-4 shadow-2xl overflow-y-auto transition-colors duration-200"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-2">
-                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+              <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">
+                <span className="text-xs font-semibold text-white">
                   Admin Menu
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs"
+                  className="p-1.5 rounded-lg border border-amber-400/40 bg-[#6b0000] hover:bg-[#580000] text-white transition-colors cursor-pointer shadow-xs"
                   aria-label="Close navigation"
                 >
                   <AppIcon icon={Xmark} size="md" color="inherit" />
