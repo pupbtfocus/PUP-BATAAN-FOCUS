@@ -229,7 +229,7 @@ export function SubmissionWindowCountdown({
   const badge = badges[status];
   return (
     <div
-      className={`rounded-xl border ${badge.borderClass} ${badge.bgClass} p-3 transition-colors duration-500 shadow-xs`}
+      className={`rounded-xl border ${badge.borderClass} ${badge.bgClass} p-3.5 transition-colors duration-500 shadow-xs`}
     >
       {/* Status badge */}
       <div className="flex items-center justify-between gap-2">
@@ -239,7 +239,7 @@ export function SubmissionWindowCountdown({
             aria-hidden="true"
           />
           <span
-            className={`text-[10px] font-bold uppercase tracking-[0.15em] ${badge.textClass}`}
+            className={`text-xs font-bold uppercase tracking-[0.15em] ${badge.textClass}`}
           >
             {badge.label}
           </span>
@@ -248,29 +248,29 @@ export function SubmissionWindowCountdown({
       </div>
       {/* Academic term */}
       {academicYear && semester ? (
-        <div className="mt-2 flex items-center gap-1.5">
-          <AppIcon icon={Calendar} size="xs" color="muted" />
-          <span className="text-[10px] tracking-wide text-amber-100/90 font-medium">
+        <div className="mt-2.5 flex items-center gap-2">
+          <AppIcon icon={Calendar} size="sm" color="muted" />
+          <span className="text-xs tracking-wide text-amber-100/90 font-medium">
             A.Y. {academicYear} | {semester}
           </span>
         </div>
       ) : null}
       {/* Countdown ticker (Open or Upcoming) */}
       {isAlwaysOpen && status === "Open" ? (
-        <div className="mt-2.5 text-center py-1">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 text-[10px] font-bold">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="mt-3 text-center py-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 text-xs font-bold">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>Submissions Open Indefinitely</span>
           </div>
-          <p className="mt-1 text-[9px] text-amber-200/70">
+          <p className="mt-1.5 text-[10px] text-amber-200/80">
             No closing deadline configured for this term.
           </p>
         </div>
       ) : remaining && status !== "Closed" ? (
         <div className="mt-3">
-          <div className="flex items-center justify-center gap-1 mb-1.5">
-            <AppIcon icon={Timer} size="xs" color="muted" />
-            <span className="text-[9px] uppercase tracking-[0.18em] text-amber-200/80 font-semibold">
+          <div className="flex items-center justify-center gap-1.5 mb-1.5">
+            <AppIcon icon={Timer} size="sm" color="muted" />
+            <span className="text-[10px] uppercase tracking-[0.18em] text-amber-200/80 font-semibold">
               {status === "Open" ? "Closes in" : "Opens in"}
             </span>
           </div>

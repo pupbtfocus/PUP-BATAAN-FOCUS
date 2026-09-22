@@ -669,7 +669,7 @@ export function AdminFacultyDashboard({
       {/* Body Wrapper */}
       <div className="flex flex-1 h-screen pt-14 overflow-hidden relative">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-2.5 shadow-md transition-colors duration-200">
+        <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-3.5 shadow-md transition-colors duration-200">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={handleSetActiveSection}
@@ -686,11 +686,11 @@ export function AdminFacultyDashboard({
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <aside
-              className="relative flex flex-col h-full w-64 bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-4 shadow-2xl overflow-y-auto transition-colors duration-200"
+              className="relative flex flex-col h-full w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-4 shadow-2xl overflow-y-auto transition-colors duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">
-                <span className="text-xs font-semibold text-white">
+                <span className="text-sm font-semibold text-white">
                   Admin Menu
                 </span>
                 <button
@@ -715,8 +715,8 @@ export function AdminFacultyDashboard({
         )}
 
         {/* Scrollable Main Content Area */}
-        <div className="md:ml-60 flex min-h-full w-full md:w-[calc(100%-15rem)] flex-col">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
+        <div className="md:ml-72 flex min-h-full w-full md:w-[calc(100%-18rem)] flex-col">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l-0 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
             <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
               <div className="max-w-7xl mx-auto w-full">
                 {activeSection === "dashboard" ? (

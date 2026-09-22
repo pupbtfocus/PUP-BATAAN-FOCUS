@@ -45,7 +45,7 @@ export function SidebarButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
+      className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
         active
           ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
           : "text-amber-100/80 hover:bg-white/10 hover:text-white"
@@ -58,7 +58,7 @@ export function SidebarButton({
         <p className="truncate">{title}</p>
         {description ? (
           <p
-            className={`mt-0.5 text-[10px] font-normal truncate ${
+            className={`mt-0.5 text-xs font-normal truncate ${
               active
                 ? "text-amber-200/90"
                 : "text-amber-200/60"
@@ -168,7 +168,7 @@ export function SidebarContent({
             <img
               src={profileImageUrl}
               alt={adminName ?? "User"}
-              className={`w-12 h-12 rounded-full border-2 border-amber-400/60 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors ${
+              className={`w-14 h-14 rounded-full border-2 border-amber-400/60 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors ${
                 profileImageUrl.includes("pup-seal.png") || profileImageUrl.includes("pup-focus-emblem-logo.png")
                   ? "object-contain p-1 bg-slate-900"
                   : "object-cover bg-slate-100"
@@ -179,35 +179,35 @@ export function SidebarContent({
             <img
               src="/icons/pup-seal.png"
               alt="PUP"
-              className="w-12 h-12 rounded-full object-contain p-1 bg-slate-900 shadow-md transition-transform"
+              className="w-14 h-14 rounded-full object-contain p-1 bg-slate-900 shadow-md transition-transform"
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
+            <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40 font-bold text-sm flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
               {getSidebarInitials(adminName, "AD")}
             </div>
           )}
           <span
-            className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#800000]"
+            className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#800000]"
             title="Active"
           />
         </button>
 
-        <p className="mt-0.5 font-semibold text-white text-center text-xs sm:text-sm">
+        <p className="mt-0.5 font-semibold text-white text-center text-sm sm:text-base">
           {extractFirstName(adminName, roleTitle)}
         </p>
 
-        <div className="my-1.5 h-px w-full bg-amber-400/50" />
+        <div className="my-2 h-px w-full bg-amber-400/50" />
 
         <span
-          className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full"
+          className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full"
         >
           {roleTitle}
         </span>
       </div>
 
-      <div className="my-1.5 h-px w-full bg-amber-400/50" />
+      <div className="my-2 h-px w-full bg-amber-400/50" />
 
-      <nav className="mt-1.5 space-y-1 flex-1 overflow-y-auto">
+      <nav className="mt-1.5 space-y-1.5 flex-1 overflow-y-auto">
         {/* 1. Dashboard */}
         <SidebarButton
           active={isDashboardActive}
@@ -222,7 +222,7 @@ export function SidebarContent({
             <button
               type="button"
               onClick={() => setIsUserManagementOpen((prev) => !prev)}
-              className={`flex w-full items-center justify-between gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
+              className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
                 isUserManagementActive
                   ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                   : "text-amber-100/80 hover:bg-white/10 hover:text-white"
@@ -293,7 +293,7 @@ export function SidebarContent({
           <button
             type="button"
             onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
-            className={`flex w-full items-center justify-between gap-2.5 px-3.5 py-2.5 text-left text-xs transition-colors cursor-pointer rounded-md ${
+            className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
               isAcademicCycleActive
                 ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                 : "text-amber-100/80 hover:bg-white/10 hover:text-white"
@@ -407,7 +407,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-2.5 shadow-md z-30 transition-colors duration-200">
+    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-3.5 shadow-md z-30 transition-colors duration-200">
       <SidebarContent {...props} />
     </aside>
   );
