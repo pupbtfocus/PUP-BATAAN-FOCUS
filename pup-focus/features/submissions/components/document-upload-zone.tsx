@@ -469,7 +469,7 @@ export function DocumentUploadZone({
 
           return (
             <div
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs flex items-center justify-between transition-all"
+              className="bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs flex items-center justify-between transition-all"
             >
               <div className="flex items-center gap-3.5 min-w-0 text-left">
                 {isImage && fileObjectUrl ? (
@@ -500,8 +500,8 @@ export function DocumentUploadZone({
                   <div className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
                     <span>{formatBytes(selectedFile.size)}</span>
                     <span>•</span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
-                      <AppIcon icon={CheckCircle} size="xs" color="inherit" /> Ready to submit
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-white bg-[#0b5336] px-2 py-0.5 rounded-md border border-[#08412a] shadow-2xs">
+                      <AppIcon icon={CheckCircle} size="xs" color="white" /> Ready to submit
                     </span>
                   </div>
                 </div>
@@ -511,7 +511,7 @@ export function DocumentUploadZone({
                 <button
                   type="button"
                   onClick={() => setIsPreviewOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all cursor-pointer shadow-2xs active:scale-95"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all cursor-pointer shadow-2xs active:scale-95"
                   title="Preview Document"
                 >
                   <AppIcon icon={Eye} size="sm" color="inherit" />
@@ -521,7 +521,7 @@ export function DocumentUploadZone({
                   type="button"
                   onClick={triggerFileInput}
                   disabled={isUploading}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all cursor-pointer shadow-2xs active:scale-95"
+                  className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all cursor-pointer shadow-2xs active:scale-95"
                 >
                   Replace
                 </button>
@@ -530,10 +530,10 @@ export function DocumentUploadZone({
                   aria-label="Remove selected file"
                   onClick={removeFile}
                   disabled={isUploading}
-                  className="p-2 text-xs font-semibold rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-2xs active:scale-95"
+                  className="p-1.5 text-xs font-semibold rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
                   title="Remove File"
                 >
-                  <AppIcon icon={Trash} size="md" color="inherit" />
+                  <AppIcon icon={Trash} size="sm" color="white" />
                 </button>
               </div>
             </div>
@@ -551,10 +551,10 @@ export function DocumentUploadZone({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={cn(
-            "relative group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-100 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950",
+            "relative group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950",
             isDragOver
-              ? "border-slate-900 bg-slate-100/80 dark:border-slate-100 dark:bg-slate-800/60 scale-[1.01] shadow-md ring-2 ring-slate-400/40"
-              : "border-slate-300 dark:border-slate-700 bg-slate-50/50 hover:border-slate-400 hover:bg-slate-100/50 dark:bg-slate-900/50 dark:hover:border-slate-600 dark:hover:bg-slate-800/40 transition-all shadow-xs",
+              ? "border-amber-500 bg-amber-50/60 dark:border-amber-400 dark:bg-amber-950/30 scale-[1.01] shadow-md ring-2 ring-amber-400/40"
+              : "border-slate-300 dark:border-slate-700 bg-slate-50/50 hover:border-amber-500/50 hover:bg-amber-50/20 dark:bg-slate-900/50 dark:hover:border-amber-500/40 dark:hover:bg-amber-950/20 transition-all shadow-xs",
             disabled && "opacity-50 cursor-not-allowed pointer-events-none",
           )}
         >
@@ -563,8 +563,8 @@ export function DocumentUploadZone({
               className={cn(
                 "flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-200 shadow-2xs",
                 isDragOver
-                  ? "border-slate-900 bg-slate-200 text-slate-900 dark:border-slate-100 dark:bg-slate-700 dark:text-slate-100 animate-bounce"
-                  : "border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:border-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300",
+                  ? "border-amber-500 bg-amber-200 text-amber-950 dark:border-amber-400 dark:bg-amber-900 dark:text-amber-100 animate-bounce"
+                  : "border border-slate-200 dark:border-slate-700/60 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:border-amber-500/40 group-hover:text-amber-600 dark:group-hover:text-amber-400",
               )}
             >
               {isUploading ? (
