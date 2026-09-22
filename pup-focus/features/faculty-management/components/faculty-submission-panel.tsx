@@ -2729,15 +2729,60 @@ function FacultySubmissionPanelContent({
                                 </td>
 
                                 {/* Actions column */}
-                                <td className="px-4 py-3.5 align-middle">
-                                  <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                <td className="px-4 py-3.5 align-middle text-center">
+                                  <div className="flex flex-col items-center justify-center gap-1.5">
+                                    {/* Upload Revision (Rejected - Primary Action on Top) */}
+                                    {req.status === "Rejected" && (
+                                      isWindowNotConfigured ? (
+                                        <button
+                                          type="button"
+                                          disabled
+                                          className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                          title="Submissions will open once the administration announces the submission schedule."
+                                        >
+                                          <AppIcon icon={Calendar} size="sm" color="inherit" />
+                                          <span>Awaiting Schedule</span>
+                                        </button>
+                                      ) : isWindowClosed ? (
+                                        hasPendingExtensionRequest ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => setShowExtensionDetailsModal(true)}
+                                            className="inline-flex items-center justify-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold w-36 h-8 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+                                          >
+                                            <AppIcon icon={Hourglass} size="sm" color="active" />
+                                            <span>Extension Pending</span>
+                                          </button>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => openExtensionRequestModal(req.code)}
+                                            className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-bold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+                                          >
+                                            <AppIcon icon={Hourglass} size="sm" color="inherit" />
+                                            <span>Request Extension</span>
+                                          </button>
+                                        )
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => openDirectUploadModal(req.code, true)}
+                                          disabled={!hasActiveSchedule}
+                                          className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <AppIcon icon={Upload} size="sm" color="inherit" />
+                                          <span>Upload Revision</span>
+                                        </button>
+                                      )
+                                    )}
+
                                     {/* View File */}
                                     {req.status !== "Not Submitted" &&
                                     req.latestSubmissionId ? (
                                       <button
                                         type="button"
                                         onClick={() => openSubmissionPreview(req)}
-                                        className="relative inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+                                        className="relative inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl w-36 h-8 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
                                       >
                                         {Boolean(
                                           req.feedback &&
@@ -2750,7 +2795,7 @@ function FacultySubmissionPanelContent({
                                           </span>
                                         ) : null}
                                         <AppIcon icon={Eye} size="sm" color="inherit" />
-                                        View File
+                                        <span>View File</span>
                                       </button>
                                     ) : null}
 
@@ -2760,7 +2805,7 @@ function FacultySubmissionPanelContent({
                                         <button
                                           type="button"
                                           disabled
-                                          className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium px-3.5 py-1.5 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                          className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
                                           title="Submissions will open once the administration announces the submission schedule."
                                         >
                                           <AppIcon icon={Calendar} size="sm" color="inherit" />
@@ -2771,7 +2816,7 @@ function FacultySubmissionPanelContent({
                                           <button
                                             type="button"
                                             onClick={() => setShowExtensionDetailsModal(true)}
-                                            className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+                                            className="inline-flex items-center justify-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold w-36 h-8 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                                           >
                                             <AppIcon icon={Hourglass} size="sm" color="active" />
                                             <span>Extension Pending</span>
@@ -2780,7 +2825,7 @@ function FacultySubmissionPanelContent({
                                           <button
                                             type="button"
                                             onClick={() => openExtensionRequestModal(req.code)}
-                                            className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                                            className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-bold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
                                           >
                                             <AppIcon icon={Hourglass} size="sm" color="inherit" />
                                             <span>Request Extension</span>
@@ -2791,55 +2836,10 @@ function FacultySubmissionPanelContent({
                                           type="button"
                                           onClick={() => openDirectUploadModal(req.code)}
                                           disabled={!hasActiveSchedule}
-                                          className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                          className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                                         >
                                           <AppIcon icon={Upload} size="sm" color="inherit" />
-                                          Upload
-                                        </button>
-                                      )
-                                    )}
-
-                                    {/* Upload Revision (Rejected) */}
-                                    {req.status === "Rejected" && (
-                                      isWindowNotConfigured ? (
-                                        <button
-                                          type="button"
-                                          disabled
-                                          className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium px-3.5 py-1.5 rounded-xl text-xs cursor-not-allowed opacity-80"
-                                          title="Submissions will open once the administration announces the submission schedule."
-                                        >
-                                          <AppIcon icon={Calendar} size="sm" color="inherit" />
-                                          <span>Awaiting Schedule</span>
-                                        </button>
-                                      ) : isWindowClosed ? (
-                                        hasPendingExtensionRequest ? (
-                                          <button
-                                            type="button"
-                                            onClick={() => setShowExtensionDetailsModal(true)}
-                                            className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
-                                          >
-                                            <AppIcon icon={Hourglass} size="sm" color="active" />
-                                            <span>Extension Pending</span>
-                                          </button>
-                                        ) : (
-                                          <button
-                                            type="button"
-                                            onClick={() => openExtensionRequestModal(req.code)}
-                                            className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
-                                          >
-                                            <AppIcon icon={Hourglass} size="sm" color="inherit" />
-                                            <span>Request Extension</span>
-                                          </button>
-                                        )
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={() => openDirectUploadModal(req.code, true)}
-                                          disabled={!hasActiveSchedule}
-                                          className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
-                                        >
-                                          <AppIcon icon={Upload} size="sm" color="inherit" />
-                                          Upload Revision
+                                          <span>Upload</span>
                                         </button>
                                       )
                                     )}
