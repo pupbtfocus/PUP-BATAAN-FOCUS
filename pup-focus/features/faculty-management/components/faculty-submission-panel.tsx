@@ -1996,7 +1996,7 @@ function FacultySubmissionPanelContent({
                   <div className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.14] mix-blend-luminosity overflow-hidden">
                     <Image
                       src={LOGIN_PAGE_IMAGES[0]}
-                      alt="PUP Bataan campus backdrop"
+                      alt="PUP campus backdrop"
                       fill
                       sizes="100vw"
                       className="object-cover object-center"

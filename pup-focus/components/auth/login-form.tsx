@@ -62,7 +62,7 @@ export function LoginForm({
     <>
       <style>{`
         .pup-login-input {
-          background-color: #360000 !important;
+          background-color: #660000 !important;
           color: #fff7ed !important;
           -webkit-text-fill-color: #fff7ed !important;
           caret-color: #f59e0b !important;
@@ -71,13 +71,13 @@ export function LoginForm({
 
         .pup-login-input::placeholder,
         .pup-login-input::-webkit-input-placeholder {
-          color: rgba(253, 230, 138, 0.45) !important;
-          -webkit-text-fill-color: rgba(253, 230, 138, 0.45) !important;
+          color: rgba(254, 240, 138, 0.55) !important;
+          -webkit-text-fill-color: rgba(254, 240, 138, 0.55) !important;
           opacity: 1 !important;
         }
 
         .pup-login-input::selection {
-          background-color: #780000 !important;
+          background-color: #800000 !important;
           color: #fef3c7 !important;
           -webkit-text-fill-color: #fef3c7 !important;
         }
@@ -103,12 +103,12 @@ export function LoginForm({
         .dark .pup-login-input:autofill:hover,
         .dark .pup-login-input:autofill:focus,
         .dark .pup-login-input:autofill:active {
-          -webkit-box-shadow: 0 0 0 1000px #360000 inset !important;
-          box-shadow: 0 0 0 1000px #360000 inset !important;
+          -webkit-box-shadow: 0 0 0 1000px #660000 inset !important;
+          box-shadow: 0 0 0 1000px #660000 inset !important;
           -webkit-text-fill-color: #fff7ed !important;
           caret-color: #f59e0b !important;
           color: #fff7ed !important;
-          background-color: #360000 !important;
+          background-color: #660000 !important;
           transition: background-color 999999s ease-in-out 0s !important;
         }
 
@@ -122,8 +122,8 @@ export function LoginForm({
         .pup-login-input:-moz-autofill:focus,
         .dark .pup-login-input:-moz-autofill,
         .dark .pup-login-input:-moz-autofill:focus {
-          box-shadow: 0 0 0 1000px #360000 inset !important;
-          background-color: #360000 !important;
+          box-shadow: 0 0 0 1000px #660000 inset !important;
+          background-color: #660000 !important;
           color: #fff7ed !important;
           -webkit-text-fill-color: #fff7ed !important;
         }
@@ -136,11 +136,11 @@ export function LoginForm({
         </div>
       ) : null}
 
-      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+      <form className="mt-3 space-y-2.5" onSubmit={onSubmit}>
         {/* Universal Alert Banner */}
         {notice ? (
           <div
-            className={`rounded-xl p-3.5 text-xs flex items-start gap-2.5 border transition-all ${
+            className={`rounded-xl p-3 text-xs flex items-start gap-2.5 border transition-all ${
               notice.type === "timeout"
                 ? "bg-amber-500/15 border-amber-500/30 text-amber-200"
                 : notice.type === "success"
@@ -158,13 +158,13 @@ export function LoginForm({
             <span className="leading-relaxed font-medium">{notice.message}</span>
           </div>
         ) : error ? (
-          <div className="rounded-xl p-3.5 text-xs flex items-start gap-2.5 border bg-rose-500/15 border-rose-500/30 text-rose-200 transition-all">
+          <div className="rounded-xl p-3 text-xs flex items-start gap-2.5 border bg-rose-500/15 border-rose-500/30 text-rose-200 transition-all">
             <AppIcon icon={WarningCircle} size="md" color="danger" className="mt-0.5" />
             <span className="leading-relaxed font-medium">{error}</span>
           </div>
         ) : null}
 
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <label
             className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/85"
             htmlFor="email"
@@ -187,12 +187,12 @@ export function LoginForm({
               onChange={(event) => setEmail(event.target.value)}
               required
               placeholder="faculty@pup.edu.ph"
-              className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#360000] pl-10 pr-4 py-3.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+              className="pup-login-input w-full rounded-xl border !border-amber-400/50 !bg-[#660000] pl-10 pr-4 py-2.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_0_rgba(255,215,0,0.15)] outline-none transition-all duration-200 placeholder:!text-amber-200/50 hover:!border-amber-400 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
             />
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <label
             className="ml-1 block text-[10px] font-bold uppercase tracking-widest text-[#f3d9b3]/85"
             htmlFor="password"
@@ -230,7 +230,7 @@ export function LoginForm({
               onBlur={() => setIsCapsLockOn(false)}
               required
               placeholder="Your password"
-              className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#360000] pl-10 pr-12 py-3.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+              className="pup-login-input w-full rounded-xl border !border-amber-400/50 !bg-[#660000] pl-10 pr-12 py-2.5 text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_0_rgba(255,215,0,0.15)] outline-none transition-all duration-200 placeholder:!text-amber-200/50 hover:!border-amber-400 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
             />
 
             <button
@@ -255,7 +255,7 @@ export function LoginForm({
         </div>
 
         {/* Remember me & Forgot password row */}
-        <div className="flex items-center justify-between mt-2 mb-6 text-xs">
+        <div className="flex items-center justify-between mt-1 mb-3 text-xs">
           <label className="flex items-center gap-2 cursor-pointer group select-none">
             <div className="relative flex items-center justify-center">
               <input
@@ -270,7 +270,7 @@ export function LoginForm({
                 className={`w-4 h-4 rounded border transition-all flex items-center justify-center shadow-xs ${
                   activeRememberMe
                     ? "bg-amber-500 border-amber-400 shadow-xs"
-                    : "bg-[#360000] border-amber-500/50 group-hover:border-amber-400 shadow-inner"
+                    : "bg-[#660000] border-amber-400/60 group-hover:border-amber-400 shadow-inner"
                 }`}
               >
                 {activeRememberMe && (

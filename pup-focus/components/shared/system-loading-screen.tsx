@@ -50,9 +50,6 @@ export function SystemLoadingScreen({
           <h2 className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-amber-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             PUP FOCUS
           </h2>
-          <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-200/60">
-            Bataan Campus
-          </p>
         </div>
 
         {/* Minimalist Indeterminate Golden Progress Shimmer Line */}
