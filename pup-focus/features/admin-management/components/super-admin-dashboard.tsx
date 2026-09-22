@@ -1424,13 +1424,13 @@ export function SuperAdminDashboard({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-64 max-w-[80%] bg-white dark:bg-slate-950 h-full p-3 border-r border-slate-200 dark:border-slate-800 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-              <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Navigation</span>
+          <aside className="relative w-64 max-w-[80%] bg-[#800000] text-amber-50 h-full p-3 border-r-2 border-amber-400/60 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
+            <div className="flex items-center justify-between pb-3 border-b border-amber-400/50">
+              <span className="text-xs font-semibold uppercase tracking-wider text-white">Navigation</span>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs"
+                className="p-1.5 rounded-lg border border-amber-400/40 bg-[#6b0000] hover:bg-[#580000] text-white transition cursor-pointer shadow-xs"
                 aria-label="Close navigation"
               >
                 <AppIcon icon={Xmark} size="lg" color="inherit" />

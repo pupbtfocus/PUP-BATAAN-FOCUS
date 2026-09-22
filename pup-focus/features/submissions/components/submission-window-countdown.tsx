@@ -201,35 +201,35 @@ export function SubmissionWindowCountdown({
     Open: {
       label: isAlwaysOpen ? "Always Open" : "Window Open",
       icon: <AppIcon icon={LockSlash} size="xs" color="inherit" />,
-      dotClass: "bg-emerald-500 pulse-dot",
-      borderClass: "border-emerald-200 dark:border-emerald-800/60",
-      bgClass: "bg-emerald-50/80 text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-200",
-      textClass: "text-emerald-800 dark:text-emerald-300",
-      numberClass: "text-emerald-950 font-bold dark:text-emerald-200",
+      dotClass: "bg-emerald-400 pulse-dot",
+      borderClass: "border-amber-400/40",
+      bgClass: "bg-[#6b0000]/80 text-emerald-200",
+      textClass: "text-emerald-300",
+      numberClass: "text-amber-100 font-bold",
     },
     Closed: {
       label: "Window Closed",
       icon: <AppIcon icon={Lock} size="xs" color="inherit" />,
-      dotClass: "bg-rose-500",
-      borderClass: "border-rose-200/80 dark:border-rose-800/60",
-      bgClass: "bg-rose-50/70 text-rose-900 dark:bg-rose-950/40 dark:text-rose-300",
-      textClass: "text-rose-800 dark:text-rose-400",
-      numberClass: "text-rose-950 font-bold dark:text-rose-300",
+      dotClass: "bg-rose-400",
+      borderClass: "border-amber-400/40",
+      bgClass: "bg-[#6b0000]/80 text-rose-200",
+      textClass: "text-rose-300",
+      numberClass: "text-amber-100 font-bold",
     },
     Upcoming: {
       label: "Opening Soon",
       icon: <AppIcon icon={Hourglass} size="xs" color="inherit" />,
-      dotClass: "bg-amber-500",
-      borderClass: "border-amber-200/80 dark:border-amber-800/60",
-      bgClass: "bg-amber-50/70 text-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
-      textClass: "text-amber-800 dark:text-amber-400",
-      numberClass: "text-amber-950 font-bold dark:text-amber-300",
+      dotClass: "bg-amber-400",
+      borderClass: "border-amber-400/40",
+      bgClass: "bg-[#6b0000]/80 text-amber-200",
+      textClass: "text-amber-300",
+      numberClass: "text-amber-100 font-bold",
     },
   };
   const badge = badges[status];
   return (
     <div
-      className={`rounded-xl border ${badge.borderClass} ${badge.bgClass} p-3 transition-colors duration-500 shadow-xs shadow-slate-300/40 dark:shadow-none`}
+      className={`rounded-xl border ${badge.borderClass} ${badge.bgClass} p-3 transition-colors duration-500 shadow-xs`}
     >
       {/* Status badge */}
       <div className="flex items-center justify-between gap-2">
@@ -250,7 +250,7 @@ export function SubmissionWindowCountdown({
       {academicYear && semester ? (
         <div className="mt-2 flex items-center gap-1.5">
           <AppIcon icon={Calendar} size="xs" color="muted" />
-          <span className="text-[10px] tracking-wide text-slate-600 dark:text-slate-400 font-medium">
+          <span className="text-[10px] tracking-wide text-amber-100/90 font-medium">
             A.Y. {academicYear} | {semester}
           </span>
         </div>
@@ -258,11 +258,11 @@ export function SubmissionWindowCountdown({
       {/* Countdown ticker (Open or Upcoming) */}
       {isAlwaysOpen && status === "Open" ? (
         <div className="mt-2.5 text-center py-1">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-900 dark:text-emerald-200 border border-emerald-500/30 text-[10px] font-bold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 text-[10px] font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Submissions Open Indefinitely</span>
           </div>
-          <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-[9px] text-amber-200/70">
             No closing deadline configured for this term.
           </p>
         </div>
@@ -270,7 +270,7 @@ export function SubmissionWindowCountdown({
         <div className="mt-3">
           <div className="flex items-center justify-center gap-1 mb-1.5">
             <AppIcon icon={Timer} size="xs" color="muted" />
-            <span className="text-[9px] uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400 font-semibold">
+            <span className="text-[9px] uppercase tracking-[0.18em] text-amber-200/80 font-semibold">
               {status === "Open" ? "Closes in" : "Opens in"}
             </span>
           </div>
