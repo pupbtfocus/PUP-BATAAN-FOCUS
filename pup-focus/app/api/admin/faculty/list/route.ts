@@ -52,11 +52,13 @@ function toRequirementStatus(rawStatus: string | null): RequirementStatus {
 }
 
 function hasDocumentVersion(submission: {
+  status?: string | null;
   document_versions?: Array<{ id: string }> | null;
 }): boolean {
-  return Array.isArray(submission.document_versions)
-    ? submission.document_versions.length > 0
-    : false;
+  if (Array.isArray(submission.document_versions)) {
+    return submission.document_versions.length > 0;
+  }
+  return Boolean(submission.status);
 }
 
 export async function GET(request: NextRequest) {
@@ -163,7 +165,7 @@ export async function GET(request: NextRequest) {
     const { data: submissionRows, error: submissionsError } = await supabase
       .from("submissions")
       .select(
-        "faculty_profile_id, requirement_code, status, submitted_at, document_versions(id)",
+        "faculty_profile_id, requirement_code, status, submitted_at",
       )
       .in("faculty_profile_id", profileIds)
       .order("submitted_at", { ascending: false })

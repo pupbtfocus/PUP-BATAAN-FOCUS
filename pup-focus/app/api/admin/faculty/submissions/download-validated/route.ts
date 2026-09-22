@@ -194,14 +194,6 @@ export async function GET(request: NextRequest) {
         submitted_at,
         created_at,
         remarks,
-        document_versions(
-          id,
-          version_number,
-          storage_path,
-          mime_type,
-          size_bytes,
-          created_at
-        ),
         review_decisions(
           decision,
           remarks,
@@ -225,14 +217,6 @@ export async function GET(request: NextRequest) {
           status,
           submitted_at,
           created_at,
-          document_versions(
-            id,
-            version_number,
-            storage_path,
-            mime_type,
-            size_bytes,
-            created_at
-          ),
           review_decisions(
             decision,
             remarks,

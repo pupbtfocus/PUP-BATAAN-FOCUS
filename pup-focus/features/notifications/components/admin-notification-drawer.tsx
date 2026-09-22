@@ -250,10 +250,8 @@ export function AdminNotificationDrawer({
             <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-full sm:max-w-md md:max-w-lg flex-col bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250">
               {/* Header Top Bar */}
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 sm:px-5 py-3.5 shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-xl bg-amber-500 text-slate-950 border border-amber-600/50 shadow-xs shrink-0 flex items-center justify-center">
-                    <AppIcon icon={Bell} size="lg" color="inherit" />
-                  </div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <AppIcon icon={Bell} size="lg" className="text-amber-500 shrink-0" />
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -277,17 +275,17 @@ export function AdminNotificationDrawer({
                     type="button"
                     onClick={() => void fetchNotifications()}
                     disabled={isLoading}
-                    className="p-1.5 rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-xs disabled:opacity-50"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer disabled:opacity-50"
                     title="Refresh notifications"
                     aria-label="Refresh notifications"
                   >
-                    <Refresh className={`h-4 w-4 text-slate-950 ${isLoading ? "animate-spin" : ""}`} />
+                    <Refresh className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors shrink-0 cursor-pointer shadow-xs"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
                     aria-label="Close notifications"
                   >
                     <AppIcon icon={Xmark} size="md" color="inherit" />
