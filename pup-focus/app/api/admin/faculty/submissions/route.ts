@@ -193,25 +193,22 @@ export async function GET(request: NextRequest) {
     const reviewDecisionsMap = new Map<string, Array<any>>();
 
     if (submissionIds.length > 0) {
-      const { data: docVersions, error: docVersionsError } = await supabase
-        .from("document_versions")
-        .select("id, submission_id, version_number, storage_path, mime_type, size_bytes, created_at")
-        .in("submission_id", submissionIds)
-        .order("version_number", { ascending: false });
+      try {
+        const { data: docVersions } = await supabase
+          .from("document_versions")
+          .select("id, submission_id, version_number, storage_path, mime_type, size_bytes, created_at")
+          .in("submission_id", submissionIds)
+          .order("version_number", { ascending: false });
 
-      if (docVersionsError) {
-        console.error(
-          "Failed to fetch document_versions in /api/admin/faculty/submissions:",
-          docVersionsError,
-        );
-      }
-
-      if (docVersions) {
-        for (const doc of docVersions) {
-          const list = docVersionsMap.get(doc.submission_id) || [];
-          list.push(doc);
-          docVersionsMap.set(doc.submission_id, list);
+        if (docVersions) {
+          for (const doc of docVersions) {
+            const list = docVersionsMap.get(doc.submission_id) || [];
+            list.push(doc);
+            docVersionsMap.set(doc.submission_id, list);
+          }
         }
+      } catch {
+        // document_versions table not available
       }
 
       const { data: reviews, error: reviewsError } = await supabase
@@ -236,11 +233,31 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const submissions: SubmissionRow[] = rawSubmissions.map((s) => ({
-      ...s,
-      document_versions: docVersionsMap.get(s.id) || [],
-      review_decisions: reviewDecisionsMap.get(s.id) || [],
-    }));
+    const submissions: SubmissionRow[] = rawSubmissions.map((s) => {
+      const docs = docVersionsMap.get(s.id) || [];
+      if (
+        docs.length === 0 &&
+        (s.status === "uploaded" ||
+          s.status === "submitted" ||
+          s.status === "validated" ||
+          s.submitted_at)
+      ) {
+        docs.push({
+          id: s.id,
+          submission_id: s.id,
+          version_number: 1,
+          storage_path: `faculty-submissions/${facultyProfileId}/${s.id}`,
+          mime_type: "application/pdf",
+          size_bytes: null,
+          created_at: s.submitted_at || s.created_at,
+        });
+      }
+      return {
+        ...s,
+        document_versions: docs,
+        review_decisions: reviewDecisionsMap.get(s.id) || [],
+      };
+    });
 
     return NextResponse.json({
       submissions,

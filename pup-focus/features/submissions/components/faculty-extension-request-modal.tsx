@@ -190,9 +190,9 @@ export function FacultyExtensionRequestModal({
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
               {/* Error Message */}
               {errorMessage && (
-                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-[#780000] dark:text-rose-400">
-                  <AppIcon icon={WarningCircle} size="md" color="inherit" className="mt-0.5" />
-                  <span>{errorMessage}</span>
+                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[#780000] border border-[#5e0000] text-xs text-white font-semibold shadow-xs">
+                  <AppIcon icon={WarningCircle} size="md" color="white" className="mt-0.5 shrink-0" />
+                  <span className="leading-snug">{errorMessage}</span>
                 </div>
               )}
 
