@@ -93,11 +93,11 @@ export function SubmissionStatusBadge({
       icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-slate-950" strokeWidth={2.2} />,
     },
     "Pending Review": {
-      label: "Pending Review",
+      label: status?.toLowerCase().trim() === "pending" ? "Pending" : "Pending Review",
       containerClass:
-        "bg-white text-amber-700 border border-slate-200/90 dark:bg-slate-900 dark:text-amber-400 dark:border-slate-800",
-      dotClass: "bg-amber-500 dark:bg-amber-400",
-      icon: <AppIcon icon={Hourglass} color="active" className="shrink-0" />,
+        "bg-amber-500 text-slate-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-slate-950 dark:border-amber-400",
+      dotClass: "bg-slate-950",
+      icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-slate-950" strokeWidth={2.2} />,
     },
     "Not Submitted": {
       label: "Not Submitted",

@@ -2652,47 +2652,39 @@ function FacultySubmissionPanelContent({
                 </div>
                 {/* Clean Header Progress & Status Counts */}
                 {displayedStatusCounts && !isLoadingStatuses && (
-                  <div className="space-y-2.5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                        {`${displayedStatusCounts.validated} of ${displayedStatusCounts.total} Completed (${Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100)}%)`}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+                    <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                      {`${displayedStatusCounts.validated} of ${displayedStatusCounts.total} Completed`}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-3.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                        <span>
+                          {displayedStatusCounts.validated} Validated
+                        </span>
                       </span>
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                        <span className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                          <span>
-                            {displayedStatusCounts.validated} Validated
-                          </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                        <span>
+                          {isAllValidated ? 0 : displayedStatusCounts.pending}{" "}
+                          Pending
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-blue-500" />
-                          <span>
-                            {isAllValidated ? 0 : displayedStatusCounts.pending}{" "}
-                            Pending
-                          </span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-[#780000] dark:bg-rose-500 shrink-0" />
+                        <span>
+                          {isAllValidated ? 0 : displayedStatusCounts.rejected} Revision
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-amber-500" />
-                          <span>{isAllValidated ? 0 : displayedStatusCounts.rejected} Revision</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-500 shrink-0" />
+                        <span>
+                          {isAllValidated
+                            ? 0
+                            : displayedStatusCounts.notSubmitted}{" "}
+                          Not Submitted
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-600" />
-                          <span>
-                            {isAllValidated
-                              ? 0
-                              : displayedStatusCounts.notSubmitted}{" "}
-                            Not Submitted
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
-                      <div
-                        className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
-                        style={{
-                          width: `${Math.min(100, Math.round((displayedStatusCounts.validated / (displayedStatusCounts.total || 1)) * 100))}%`,
-                        }}
-                      />
+                      </span>
                     </div>
                   </div>
                 )}
@@ -2820,176 +2812,197 @@ function FacultySubmissionPanelContent({
                         </div>
                       </div>
                     )}
-                    <div className="bg-white border border-slate-300 shadow-sm shadow-slate-300/50 dark:bg-slate-900 dark:border dark:border-slate-800 dark:shadow-none rounded-xl divide-y divide-slate-300 dark:divide-slate-800/60 overflow-hidden transition-colors">
-                      {displayedRequirementStatuses.map((req) => (
-                        <div
-                          key={req.code}
-                          id={`requirement-${req.code}`}
-                          className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/40 transition-colors"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                {getRequirementTitle(req.code)}
-                              </h4>
-                            </div>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
-                              {req.submittedAt &&
-                              formatSubmittedDateTime(req.submittedAt) ? (
-                                <span>
-                                  Submitted:{" "}
-                                  {formatSubmittedDateTime(req.submittedAt)}
-                                </span>
-                              ) : (
-                                <span>No submission recorded yet</span>
-                              )}
-                              {req.reviewedAt && (
-                                <span>• Reviewed: {req.reviewedAt}</span>
-                              )}
-                            </div>
-                            {/* Inline Revision Note */}
-                            {req.status === "Rejected" && (
-                              <p className="text-xs text-[#780000] dark:text-rose-400 flex items-center gap-1.5 mt-1 font-medium">
-                                <AppIcon icon={WarningCircle} size="sm" color="danger" />
-                                <span className="italic truncate">
-                                  &ldquo;
-                                  {req.adminRemarks ||
-                                    req.admin_remarks ||
-                                    req.feedback ||
-                                    "Revision requested. Please check and resubmit."}
-                                  &rdquo;
-                                </span>
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex shrink-0 flex-wrap items-center gap-3">
-                            <SubmissionStatusBadge
-                              status={
-                                req.status === "Pending" &&
-                                (req.hasPriorRevision || req.isRevision)
-                                  ? "Revision Under Review"
-                                  : req.status
-                              }
-                              size="sm"
-                            />
-                            {/* Action Buttons */}
-                            <div className="flex items-center gap-1.5">
-                              {/* Submit Button for Not Submitted */}
-                              {req.status === "Not Submitted" && (
-                                isWindowNotConfigured ? (
-                                  <button
-                                    type="button"
-                                    disabled
-                                    className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium px-3.5 py-1.5 rounded-xl text-xs cursor-not-allowed opacity-80"
-                                    title="Submissions will open once the administration announces the submission schedule."
-                                  >
-                                    <AppIcon icon={Calendar} size="sm" color="inherit" />
-                                    <span>Awaiting Schedule</span>
-                                  </button>
-                                ) : isWindowClosed ? (
-                                  hasPendingExtensionRequest ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowExtensionDetailsModal(true)}
-                                      className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
-                                    >
-                                      <AppIcon icon={Hourglass} size="sm" color="active" />
-                                      <span>Extension Pending</span>
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => openExtensionRequestModal(req.code)}
-                                      className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
-                                    >
-                                      <AppIcon icon={Hourglass} size="sm" color="inherit" />
-                                      <span>Request Extension</span>
-                                    </button>
-                                  )
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => openDirectUploadModal(req.code)}
-                                    disabled={!hasActiveSchedule}
-                                    className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
-                                  >
-                                    <AppIcon icon={Upload} size="sm" color="inherit" />
-                                    Upload
-                                  </button>
-                                )
-                              )}
-                              {/* Resubmit Button for Rejected */}
-                              {req.status === "Rejected" && (
-                                isWindowNotConfigured ? (
-                                  <button
-                                    type="button"
-                                    disabled
-                                    className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium px-3.5 py-1.5 rounded-xl text-xs cursor-not-allowed opacity-80"
-                                    title="Submissions will open once the administration announces the submission schedule."
-                                  >
-                                    <AppIcon icon={Calendar} size="sm" color="inherit" />
-                                    <span>Awaiting Schedule</span>
-                                  </button>
-                                ) : isWindowClosed ? (
-                                  hasPendingExtensionRequest ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowExtensionDetailsModal(true)}
-                                      className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
-                                    >
-                                      <AppIcon icon={Hourglass} size="sm" color="active" />
-                                      <span>Extension Pending</span>
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => openExtensionRequestModal(req.code)}
-                                      className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
-                                    >
-                                      <AppIcon icon={Hourglass} size="sm" color="inherit" />
-                                      <span>Request Extension</span>
-                                    </button>
-                                  )
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => openDirectUploadModal(req.code, true)}
-                                    disabled={!hasActiveSchedule}
-                                    className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
-                                  >
-                                    <AppIcon icon={Upload} size="sm" color="inherit" />
-                                    Upload Revision
-                                  </button>
-                                )
-                              )}
-                              {/* View File Button */}
-                              {req.status !== "Not Submitted" &&
-                              req.latestSubmissionId ? (
-                                <button
-                                  type="button"
-                                  onClick={() => openSubmissionPreview(req)}
-                                  className="relative inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
-                                >
-                                  {Boolean(
-                                    req.feedback &&
-                                    !viewedSubmissionIds.has(
-                                      req.latestSubmissionId,
-                                    ) &&
-                                    req.is_read !== true,
-                                  ) ? (
-                                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-                                    </span>
-                                  ) : null}
-                                  <AppIcon icon={Eye} size="sm" color="inherit" />
-                                  View File
-                                </button>
-                              ) : null}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="bg-white border border-slate-300 shadow-sm shadow-slate-300/50 dark:bg-slate-900 dark:border dark:border-slate-800 dark:shadow-none rounded-xl overflow-hidden transition-colors">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm min-w-[640px]">
+                          <thead>
+                            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
+                              <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-[55%]">Document</th>
+                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[20%]">Status</th>
+                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[25%]">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                            {displayedRequirementStatuses.map((req) => (
+                              <tr
+                                key={req.code}
+                                id={`requirement-${req.code}`}
+                                className="bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/40 transition-colors"
+                              >
+                                {/* Document column */}
+                                <td className="px-5 py-3.5 align-middle">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                        {getRequirementTitle(req.code)}
+                                      </h4>
+                                    </div>
+                                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
+                                      {req.submittedAt &&
+                                      formatSubmittedDateTime(req.submittedAt) ? (
+                                        <span>
+                                          Submitted:{" "}
+                                          {formatSubmittedDateTime(req.submittedAt)}
+                                        </span>
+                                      ) : (
+                                        <span>No submission recorded yet</span>
+                                      )}
+                                      {req.reviewedAt && (
+                                        <span>• Reviewed: {req.reviewedAt}</span>
+                                      )}
+                                    </div>
+                                    {/* Inline Revision Note */}
+                                    {req.status === "Rejected" && (
+                                      <p className="text-xs text-[#780000] dark:text-rose-400 flex items-center gap-1.5 mt-1 font-medium">
+                                        <AppIcon icon={WarningCircle} size="sm" color="danger" />
+                                        <span className="italic truncate">
+                                          &ldquo;
+                                          {req.adminRemarks ||
+                                            req.admin_remarks ||
+                                            req.feedback ||
+                                            "Revision requested. Please check and resubmit."}
+                                          &rdquo;
+                                        </span>
+                                      </p>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Status column */}
+                                <td className="px-4 py-3.5 align-middle text-center">
+                                  <SubmissionStatusBadge
+                                    status={
+                                      req.status === "Pending" &&
+                                      (req.hasPriorRevision || req.isRevision)
+                                        ? "Revision Under Review"
+                                        : req.status
+                                    }
+                                    size="sm"
+                                  />
+                                </td>
+
+                                {/* Actions column */}
+                                <td className="px-4 py-3.5 align-middle">
+                                  <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                    {/* View File */}
+                                    {req.status !== "Not Submitted" &&
+                                    req.latestSubmissionId ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => openSubmissionPreview(req)}
+                                        className="relative inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+                                      >
+                                        {Boolean(
+                                          req.feedback &&
+                                          !viewedSubmissionIds.has(req.latestSubmissionId) &&
+                                          req.is_read !== true,
+                                        ) ? (
+                                          <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                                          </span>
+                                        ) : null}
+                                        <AppIcon icon={Eye} size="sm" color="inherit" />
+                                        View File
+                                      </button>
+                                    ) : null}
+
+                                    {/* Upload (Not Submitted) */}
+                                    {req.status === "Not Submitted" && (
+                                      isWindowNotConfigured ? (
+                                        <button
+                                          type="button"
+                                          disabled
+                                          className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium px-3.5 py-1.5 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                          title="Submissions will open once the administration announces the submission schedule."
+                                        >
+                                          <AppIcon icon={Calendar} size="sm" color="inherit" />
+                                          <span>Awaiting Schedule</span>
+                                        </button>
+                                      ) : isWindowClosed ? (
+                                        hasPendingExtensionRequest ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => setShowExtensionDetailsModal(true)}
+                                            className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+                                          >
+                                            <AppIcon icon={Hourglass} size="sm" color="active" />
+                                            <span>Extension Pending</span>
+                                          </button>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => openExtensionRequestModal(req.code)}
+                                            className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                                          >
+                                            <AppIcon icon={Hourglass} size="sm" color="inherit" />
+                                            <span>Request Extension</span>
+                                          </button>
+                                        )
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => openDirectUploadModal(req.code)}
+                                          disabled={!hasActiveSchedule}
+                                          className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <AppIcon icon={Upload} size="sm" color="inherit" />
+                                          Upload
+                                        </button>
+                                      )
+                                    )}
+
+                                    {/* Upload Revision (Rejected) */}
+                                    {req.status === "Rejected" && (
+                                      isWindowNotConfigured ? (
+                                        <button
+                                          type="button"
+                                          disabled
+                                          className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium px-3.5 py-1.5 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                          title="Submissions will open once the administration announces the submission schedule."
+                                        >
+                                          <AppIcon icon={Calendar} size="sm" color="inherit" />
+                                          <span>Awaiting Schedule</span>
+                                        </button>
+                                      ) : isWindowClosed ? (
+                                        hasPendingExtensionRequest ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => setShowExtensionDetailsModal(true)}
+                                            className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+                                          >
+                                            <AppIcon icon={Hourglass} size="sm" color="active" />
+                                            <span>Extension Pending</span>
+                                          </button>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => openExtensionRequestModal(req.code)}
+                                            className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                                          >
+                                            <AppIcon icon={Hourglass} size="sm" color="inherit" />
+                                            <span>Request Extension</span>
+                                          </button>
+                                        )
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => openDirectUploadModal(req.code, true)}
+                                          disabled={!hasActiveSchedule}
+                                          className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <AppIcon icon={Upload} size="sm" color="inherit" />
+                                          Upload Revision
+                                        </button>
+                                      )
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 )}
