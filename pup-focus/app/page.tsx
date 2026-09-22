@@ -10,7 +10,6 @@ import {
   AuthFeedbackModal,
   type AuthModalState,
 } from "@/components/auth/auth-feedback-modal";
-import { CampusBackground } from "@/components/shared/campus-background";
 import { APP_CONFIG } from "@/config/app";
 import { getPublicEnvSafe } from "@/config/env";
 import { createClient } from "@/lib/supabase/client";
@@ -359,10 +358,27 @@ export default function Home() {
   }
 
   return (
-    <main className="relative h-screen min-h-screen max-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-2 text-[#fff8e7] overflow-hidden">
-      <CampusBackground />
-      {/* Soft ambient overlay on top of campus photo */}
-      <div className="absolute inset-0 z-0 bg-black/15 backdrop-blur-[4px]" />
+    <main className="relative h-screen min-h-screen max-h-screen w-full flex flex-col items-center justify-center px-3 sm:px-4 py-2 text-[#fff8e7] overflow-hidden bg-[#1c0406]">
+      {/* Campus Background Photos with Maroon Blur */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute -inset-2 bg-cover bg-center scale-105 filter blur-[4px]"
+          style={{
+            backgroundImage: 'url("/images/attachments/IMG_9399.jpeg")',
+            animation: 'backgroundFadeA 16s infinite linear',
+          }}
+        />
+        <div
+          className="absolute -inset-2 bg-cover bg-center scale-105 filter blur-[4px]"
+          style={{
+            backgroundImage: 'url("/images/attachments/IMG_9402.jpeg")',
+            animation: 'backgroundFadeB 16s infinite linear',
+          }}
+        />
+        {/* Soft maroon color wash & gentle depth (keeps image visible) */}
+        <div className="absolute inset-0 bg-[#6b0d18]/38" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#2a0408]/45 via-transparent to-[#1c0205]/60" />
+      </div>
 
       <div className="relative z-10 w-full max-w-4xl lg:max-w-5xl mx-auto my-auto py-2 sm:py-3">
         {/* Wide Open-Book Card Container */}
