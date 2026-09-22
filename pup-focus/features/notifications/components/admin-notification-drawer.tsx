@@ -275,11 +275,11 @@ export function AdminNotificationDrawer({
                     type="button"
                     onClick={() => void fetchNotifications()}
                     disabled={isLoading}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+                    className="p-1.5 rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-xs"
                     title="Refresh notifications"
                     aria-label="Refresh notifications"
                   >
-                    <Refresh className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                    <Refresh className={`h-4 w-4 text-slate-950 ${isLoading ? "animate-spin" : ""}`} />
                   </button>
 
                   <button
