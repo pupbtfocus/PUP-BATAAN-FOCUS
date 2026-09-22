@@ -35,7 +35,10 @@ export default function DashboardLayout({
               <span className="font-bold text-white text-sm sm:text-base tracking-tight whitespace-nowrap leading-tight">
                 PUP FOCUS
               </span>
-              <span className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0" aria-hidden="true" />
+              <span
+                className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0"
+                aria-hidden="true"
+              />
               <span className="text-[10px] sm:text-xs md:text-sm font-medium text-amber-200/90 tracking-wide leading-tight truncate">
                 Faculty Online Compliance and Uploading System
               </span>
