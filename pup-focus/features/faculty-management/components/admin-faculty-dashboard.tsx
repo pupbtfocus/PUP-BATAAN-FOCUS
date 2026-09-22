@@ -17,7 +17,6 @@ import {
   AdminNotificationDrawer,
   type AdminNotificationItem,
 } from "@/features/notifications/components/admin-notification-drawer";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { AdminSettings } from "@/features/admin-management/components/admin-settings";
@@ -658,7 +657,6 @@ export function AdminFacultyDashboard({
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <ThemeToggle />
             <AdminNotificationDrawer onNavigateToTarget={handleNotificationNavigate} />
             <LogoutButton />
           </div>

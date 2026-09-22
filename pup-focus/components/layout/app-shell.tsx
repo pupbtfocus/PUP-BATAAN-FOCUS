@@ -2,7 +2,6 @@ import Link from "next/link";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 
 type NavigationItem = {
   href: string;
@@ -62,7 +61,6 @@ export function AppShell({
                 </Link>
               ))}
             </nav>
-            <ThemeToggle />
             {showNotifications && <NotificationDrawer />}
             <LogoutButton />
           </div>
