@@ -381,7 +381,7 @@ export function SidebarContent({
                     isTermsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
                   }`}
                 />
-                <span className="whitespace-nowrap">Academic Terms</span>
+                <span className="whitespace-nowrap">Academic Year & Semester</span>
               </button>
               <button
                 type="button"
@@ -400,7 +400,7 @@ export function SidebarContent({
                     isWindowActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
                   }`}
                 />
-                <span className="whitespace-nowrap">Submission Window</span>
+                <span className="whitespace-nowrap">Submission Schedule</span>
               </button>
               {isSuperAdmin && (
                 <>

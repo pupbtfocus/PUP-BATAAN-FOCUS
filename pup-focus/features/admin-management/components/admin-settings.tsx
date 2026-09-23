@@ -711,25 +711,27 @@ export function AdminSettings({
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
             Settings
           </h1>
-          <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 font-normal">
+          <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
             Manage your administrator account details, security settings, and system preferences.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void refreshAccount()}
-          disabled={isRefreshing}
-          title="Refresh account details"
-          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-xs"
-        >
-          <Refresh className={`h-4 w-4 ${isRefreshing ? "animate-spin text-amber-500" : ""}`} />
-          <span className="sr-only">Refresh</span>
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+          <button
+            type="button"
+            onClick={() => void refreshAccount()}
+            disabled={isRefreshing}
+            title="Refresh account details"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+          >
+            <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Grid Layout (2-Column) */}
@@ -737,10 +739,10 @@ export function AdminSettings({
         {/* Profile Details Card */}
         <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
           <div className="pb-4 border-b border-slate-200 dark:border-slate-800">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-normal">
               Profile Details
             </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-normal">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 font-normal">
               View and update your administrator credentials and identity.
             </p>
           </div>
@@ -1055,10 +1057,10 @@ export function AdminSettings({
         <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
           <div className="pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-normal">
                 Change Password
               </h2>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-normal">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 font-normal">
                 Update your account password for security.
               </p>
             </div>
@@ -1273,10 +1275,10 @@ export function AdminSettings({
       <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
         <div className="pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-normal">
               System Preferences & Session Controls
             </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-normal">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 font-normal">
               Configure automated reminders, compliance notifications, and inactivity timeout.
             </p>
           </div>
