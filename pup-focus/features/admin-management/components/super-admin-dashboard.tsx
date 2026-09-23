@@ -336,6 +336,14 @@ export function SuperAdminDashboard({
   // Faculty Management State
   const [facultyAccounts, setFacultyAccounts] = useState<FacultyAccount[]>([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(null);
+
+  // Sync target faculty when URL parameter changes (e.g. notification click)
+  useEffect(() => {
+    const facultyParam = searchParams?.get("facultyId");
+    if (facultyParam && facultyParam !== selectedFacultyId) {
+      setSelectedFacultyId(facultyParam);
+    }
+  }, [searchParams, selectedFacultyId]);
   const [isLoadingFaculty, setIsLoadingFaculty] = useState(false);
   const [loadingFacultyIds, setLoadingFacultyIds] = useState<Set<string>>(new Set());
   const [deletingFacultyIds, setDeletingFacultyIds] = useState<Set<string>>(new Set());
@@ -1773,6 +1781,8 @@ export function SuperAdminDashboard({
                   selectedFaculty={selectedFaculty}
                   onSelectFaculty={setSelectedFacultyId}
                   resetTrigger={verificationResetTrigger}
+                  initialReviewFacultyId={searchParams?.get("facultyId") || null}
+                  initialRequirementCode={searchParams?.get("reqCode") || null}
                 />
               </article>
             ) : null}

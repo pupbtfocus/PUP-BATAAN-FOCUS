@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (targetAuthUserId && targetAuthUserId !== user.id) {
+      if (targetAuthUserId) {
         const reqCode = (submission?.requirement_code ?? "REQUIREMENT") as RequirementCode;
         const reqLabel = REQUIREMENT_LABEL[reqCode] || reqCode || "Requirement";
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   CheckCircle,
@@ -73,6 +74,7 @@ function formatRelativeTime(dateString: string): string {
 export function AdminNotificationDrawer({
   onNavigateToTarget,
 }: AdminNotificationDrawerProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<AdminNotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -200,7 +202,73 @@ export function AdminNotificationDrawer({
     }
 
     setIsOpen(false);
-    onNavigateToTarget?.(notification);
+    if (onNavigateToTarget) {
+      onNavigateToTarget(notification);
+    } else {
+      const isSuperAdminPath =
+        typeof window !== "undefined" &&
+        window.location.pathname.includes("super-admin");
+      const targetFacultyId =
+        notification.facultyId ||
+        notification.metadata?.faculty_id ||
+        notification.metadata?.faculty_profile_id;
+      const reqCode =
+        notification.requirementCode ||
+        notification.metadata?.requirement_code ||
+        notification.metadata?.requirementCode;
+
+      if (isSuperAdminPath) {
+        if (notification.isSubmission || reqCode) {
+          router.push(
+            `/super-admin/dashboard?tab=verification${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}${reqCode ? `&reqCode=${encodeURIComponent(reqCode)}` : ""}`
+          );
+        } else if (
+          notification.type?.includes("WINDOW") ||
+          notification.title?.toLowerCase().includes("window")
+        ) {
+          router.push("/super-admin/dashboard?tab=window");
+        } else if (
+          notification.type?.includes("TERM") ||
+          notification.title?.toLowerCase().includes("term")
+        ) {
+          router.push("/super-admin/dashboard?tab=terms");
+        } else if (
+          notification.type?.includes("FACULTY") ||
+          notification.title?.toLowerCase().includes("faculty")
+        ) {
+          router.push(
+            `/super-admin/dashboard?tab=faculty${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}`
+          );
+        } else {
+          router.push("/super-admin/dashboard?tab=verification");
+        }
+      } else {
+        if (notification.isSubmission || reqCode) {
+          router.push(
+            `/admin/dashboard?section=requirements${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}${reqCode ? `&reqCode=${encodeURIComponent(reqCode)}` : ""}`
+          );
+        } else if (
+          notification.type?.includes("WINDOW") ||
+          notification.title?.toLowerCase().includes("window")
+        ) {
+          router.push("/admin/dashboard?section=submissionWindow");
+        } else if (
+          notification.type?.includes("TERM") ||
+          notification.title?.toLowerCase().includes("term")
+        ) {
+          router.push("/admin/dashboard?section=academicTerms");
+        } else if (
+          notification.type?.includes("FACULTY") ||
+          notification.title?.toLowerCase().includes("faculty")
+        ) {
+          router.push(
+            `/admin/dashboard?section=facultyManagement${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}`
+          );
+        } else {
+          router.push("/admin/dashboard?section=requirements");
+        }
+      }
+    }
   };
 
   const filteredNotifications = useMemo(() => {

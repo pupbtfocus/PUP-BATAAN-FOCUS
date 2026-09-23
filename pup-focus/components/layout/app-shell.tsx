@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
+import { AdminNotificationDrawer } from "@/features/notifications/components/admin-notification-drawer";
 
 type NavigationItem = {
   href: string;
@@ -15,6 +19,7 @@ type AppShellProps = {
   children: React.ReactNode;
   fullBleed?: boolean;
   showNotifications?: boolean;
+  role?: "admin" | "super_admin" | "faculty";
 };
 
 export function AppShell({
@@ -24,7 +29,13 @@ export function AppShell({
   children,
   fullBleed = false,
   showNotifications = true,
+  role,
 }: AppShellProps) {
+  const pathname = usePathname() || "";
+  const isStaff =
+    role === "admin" ||
+    role === "super_admin" ||
+    (!role && (pathname.startsWith("/admin") || pathname.startsWith("/super-admin")));
   const mainClassName = fullBleed
     ? "mx-auto flex h-screen w-full max-w-none overflow-hidden px-0 pt-14"
     : "mx-auto w-full max-w-7xl px-6 py-8 pt-24 h-[calc(100vh-6rem)] overflow-hidden";
@@ -68,7 +79,8 @@ export function AppShell({
                 </Link>
               ))}
             </nav>
-            {showNotifications && <NotificationDrawer />}
+            {showNotifications &&
+              (isStaff ? <AdminNotificationDrawer /> : <NotificationDrawer />)}
             <LogoutButton />
           </div>
         </div>

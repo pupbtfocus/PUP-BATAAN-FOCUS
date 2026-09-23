@@ -318,7 +318,7 @@ export function NotificationDrawer() {
     setUnreadCount(0);
 
     try {
-      const response = await fetch("/api/notifications/clear-all", {
+      const response = await fetch("/api/faculty/notifications", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
@@ -329,21 +329,8 @@ export function NotificationDrawer() {
           setToastMessage(null);
         }, 3000);
       } else {
-        // Fallback retry using generic /api/faculty/notifications DELETE
-        const fallback = await fetch("/api/faculty/notifications", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-        });
-
-        if (fallback.ok) {
-          setToastMessage("All notifications cleared");
-          setTimeout(() => {
-            setToastMessage(null);
-          }, 3000);
-        } else {
-          setNotifications(prevNotifications);
-          setUnreadCount(prevUnread);
-        }
+        setNotifications(prevNotifications);
+        setUnreadCount(prevUnread);
       }
     } catch {
       setNotifications(prevNotifications);
