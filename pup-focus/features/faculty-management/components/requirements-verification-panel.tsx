@@ -11,8 +11,10 @@ import {
   Download,
   EditPencil,
   Eye,
+  Group,
   Hourglass,
   InfoCircle,
+  Minus,
   NavArrowDown,
   Notes,
   OpenNewWindow,
@@ -2925,7 +2927,7 @@ export function RequirementsPanel({
             placeholder="Search faculty by name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-56 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            className="w-full sm:w-60 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
           />
 
           {/* Custom Program Dropdown Filter */}
@@ -2933,10 +2935,10 @@ export function RequirementsPanel({
             <button
               type="button"
               onClick={() => setIsProgramDropdownOpen((prev) => !prev)}
-              className="flex w-full sm:w-auto items-center justify-between gap-2 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-200 outline-none transition hover:border-slate-500 dark:hover:border-slate-700 focus:border-amber-500 cursor-pointer"
+              className="flex w-full sm:w-auto items-center justify-between gap-2 rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-200 outline-none transition hover:border-slate-500 dark:hover:border-slate-700 focus:border-amber-500 cursor-pointer"
             >
               <span>{selectedProgram}</span>
-              <NavArrowDown className={`h-3.5 w-3.5 text-slate-500 dark:text-slate-400 transition-transform ${isProgramDropdownOpen ? "rotate-180" : ""}`} />
+              <NavArrowDown className={`h-4 w-4 text-slate-500 dark:text-slate-400 transition-transform ${isProgramDropdownOpen ? "rotate-180" : ""}`} />
             </button>
 
             {isProgramDropdownOpen && (
@@ -2945,14 +2947,14 @@ export function RequirementsPanel({
                   className="fixed inset-0 z-20"
                   onClick={() => setIsProgramDropdownOpen(false)}
                 />
-                <div className="absolute left-0 top-full mt-1.5 z-30 w-full sm:w-48 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-xl text-xs text-slate-900 dark:text-slate-200 overflow-hidden">
+                <div className="absolute left-0 top-full mt-1.5 z-30 w-full sm:w-48 rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-xl text-sm text-slate-900 dark:text-slate-200 overflow-hidden">
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedProgram("All Programs");
                       setIsProgramDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                    className={`w-full text-left px-3.5 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
                       selectedProgram === "All Programs"
                         ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
                         : "text-slate-700 dark:text-slate-300"
@@ -2968,7 +2970,7 @@ export function RequirementsPanel({
                         setSelectedProgram(prog);
                         setIsProgramDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                      className={`w-full text-left px-3.5 py-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
                         selectedProgram === prog
                           ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
                           : "text-slate-700 dark:text-slate-300"
@@ -2984,25 +2986,34 @@ export function RequirementsPanel({
         </div>
 
         {/* Active Term Indicator */}
-        <div className="text-slate-600 dark:text-slate-400 text-xs font-medium tracking-wide shrink-0">
+        <div className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm font-medium tracking-wide shrink-0">
           A.Y. {academicYear || "2026-2027"} &bull; {semester}
         </div>
       </div>
 
       {/* 1.5 Status Category Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+      <div className="flex items-center gap-2.5 overflow-x-auto pb-2 mb-4 scrollbar-none">
         <button
           type="button"
           onClick={() => setStatusFilter("all")}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 shadow-2xs ${
             statusFilter === "all"
               ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-xs"
               : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
           }`}
         >
+          <span
+            className={`inline-flex items-center justify-center h-5 w-5 rounded-full shrink-0 shadow-2xs ${
+              statusFilter === "all"
+                ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-950 border border-white/30 dark:border-slate-900/30"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
+            }`}
+          >
+            <AppIcon icon={Group} size="xs" color="inherit" />
+          </span>
           <span>All Faculty</span>
           <span
-            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+            className={`px-2 py-0.5 rounded-full text-xs font-bold ${
               statusFilter === "all"
                 ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-950"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
@@ -3015,16 +3026,24 @@ export function RequirementsPanel({
         <button
           type="button"
           onClick={() => setStatusFilter("completed")}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 shadow-2xs ${
             statusFilter === "completed"
               ? "bg-[#0b5336] text-white shadow-xs ring-1 ring-[#08412a]"
               : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20"
           }`}
         >
-          <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+          <span
+            className={`inline-flex items-center justify-center h-5 w-5 rounded-full shrink-0 shadow-2xs ${
+              statusFilter === "completed"
+                ? "bg-white/20 text-white border border-white/30"
+                : "bg-[#0b5336] text-white border border-[#08412a]"
+            }`}
+          >
+            <AppIcon icon={Check} size="xs" color="white" />
+          </span>
           <span>Completed / Validated</span>
           <span
-            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+            className={`px-2 py-0.5 rounded-full text-xs font-bold ${
               statusFilter === "completed"
                 ? "bg-white/20 text-white"
                 : "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300"
@@ -3037,16 +3056,24 @@ export function RequirementsPanel({
         <button
           type="button"
           onClick={() => setStatusFilter("pending_review")}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 shadow-2xs ${
             statusFilter === "pending_review"
               ? "bg-amber-500 text-slate-950 shadow-xs font-bold"
               : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 hover:bg-amber-50/40 dark:hover:bg-amber-950/20"
           }`}
         >
-          <span className="flex h-2 w-2 rounded-full bg-amber-500" />
+          <span
+            className={`inline-flex items-center justify-center h-5 w-5 rounded-full shrink-0 shadow-2xs ${
+              statusFilter === "pending_review"
+                ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
+                : "bg-amber-500 text-slate-950 border border-amber-600"
+            }`}
+          >
+            <AppIcon icon={Hourglass} size="xs" color="inherit" />
+          </span>
           <span>Pending Review</span>
           <span
-            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+            className={`px-2 py-0.5 rounded-full text-xs font-bold ${
               statusFilter === "pending_review"
                 ? "bg-slate-950/20 text-slate-950"
                 : "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300"
@@ -3059,16 +3086,24 @@ export function RequirementsPanel({
         <button
           type="button"
           onClick={() => setStatusFilter("needs_revision")}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 shadow-2xs ${
             statusFilter === "needs_revision"
               ? "bg-[#780000] text-white shadow-xs ring-1 ring-[#5e0000]"
               : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 hover:bg-rose-50/40 dark:hover:bg-rose-950/20"
           }`}
         >
-          <span className="flex h-2 w-2 rounded-full bg-rose-500" />
+          <span
+            className={`inline-flex items-center justify-center h-5 w-5 rounded-full shrink-0 shadow-2xs ${
+              statusFilter === "needs_revision"
+                ? "bg-white/20 text-white border border-white/30"
+                : "bg-[#780000] text-white border border-[#5e0000]"
+            }`}
+          >
+            <AppIcon icon={Xmark} size="xs" color="white" />
+          </span>
           <span>Needs Revision</span>
           <span
-            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+            className={`px-2 py-0.5 rounded-full text-xs font-bold ${
               statusFilter === "needs_revision"
                 ? "bg-white/20 text-white"
                 : "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300"
@@ -3081,16 +3116,24 @@ export function RequirementsPanel({
         <button
           type="button"
           onClick={() => setStatusFilter("not_submitted")}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 shadow-2xs ${
             statusFilter === "not_submitted"
               ? "bg-slate-700 text-white dark:bg-slate-300 dark:text-slate-950 shadow-xs"
               : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
           }`}
         >
-          <span className="flex h-2 w-2 rounded-full bg-slate-400" />
+          <span
+            className={`inline-flex items-center justify-center h-5 w-5 rounded-full shrink-0 shadow-2xs ${
+              statusFilter === "not_submitted"
+                ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-950 border border-white/30 dark:border-slate-900/30"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700"
+            }`}
+          >
+            <AppIcon icon={Minus} size="xs" color="inherit" />
+          </span>
           <span>Not Submitted</span>
           <span
-            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+            className={`px-2 py-0.5 rounded-full text-xs font-bold ${
               statusFilter === "not_submitted"
                 ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-950"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"

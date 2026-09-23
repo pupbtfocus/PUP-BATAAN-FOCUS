@@ -1745,22 +1745,27 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "verification" ? (
-              <article className="p-2 sm:p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-6">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                       Requirements Verification
-                    </h3>
+                    </h1>
+                    <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                      Review, validate, or request revisions for submitted faculty compliance documents for this academic term.
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void refreshCurrentPanel()}
-                    disabled={isLoadingFaculty}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
-                  >
-                    <Refresh className={`h-3.5 w-3.5 ${isLoadingFaculty ? "animate-spin" : ""}`} />
-                    <span>{isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
-                  </button>
+                  <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void refreshCurrentPanel()}
+                      disabled={isLoadingFaculty}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
+                    >
+                      <Refresh className={`h-3.5 w-3.5 ${isLoadingFaculty ? "animate-spin" : ""}`} />
+                      <span>{isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
+                    </button>
+                  </div>
                 </div>
 
                 <RequirementsPanel
