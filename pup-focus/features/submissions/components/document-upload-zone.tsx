@@ -11,6 +11,7 @@ import React, {
 import { Archive, CheckCircle, CloudUpload, Code, Download, Eye, InfoCircle, MediaImage, OpenNewWindow, Page, Reports, SystemRestart, Trash, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { cn } from "@/utils/cn";
+import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { SubmissionStatusBadge } from "./submission-status-badge";
 
 export interface DocumentUploadZoneProps {
@@ -742,35 +743,12 @@ export function DocumentUploadZone({
       )}
 
       {isUploading && (
-        <div className="flex flex-col items-center justify-center py-3 space-y-2 bg-slate-50/80 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800" aria-label="Upload progress">
-          <div className="relative w-14 h-14 flex items-center justify-center">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-              <path
-                className="text-slate-200 dark:text-slate-800"
-                strokeWidth="3"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-              <path
-                className="text-amber-500 transition-all duration-300 ease-out"
-                strokeDasharray={`${uploadProgress}, 100`}
-                strokeWidth="3"
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-            </svg>
-            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-500 animate-spin pointer-events-none" />
-            <span className="absolute font-mono font-bold text-xs text-amber-600 dark:text-amber-400">
-              {uploadProgress}%
-            </span>
-          </div>
-          <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-            Uploading document…
-          </span>
-        </div>
+        <SystemLoadingScreen
+          fullScreen={false}
+          className="min-h-[160px] py-4 rounded-2xl"
+          text="Uploading document..."
+          progress={uploadProgress}
+        />
       )}
 
       {validationError && (

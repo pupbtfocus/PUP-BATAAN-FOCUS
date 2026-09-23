@@ -14,6 +14,7 @@ import {
   getOfficeOnlineViewerUrl,
   resolveDirectSignedUrl,
 } from "@/lib/online-viewers";
+import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 
 export interface OnlineDocumentPreviewProps {
   fileName: string;
@@ -198,18 +199,13 @@ export function OnlineDocumentPreview({
         {/* Embedded Iframe Container */}
         <div className="relative flex-1 w-full bg-slate-950 flex flex-col">
           {(iframeLoading || isResolving) ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-xs z-10 gap-3">
-              <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex items-center justify-center">
-                <img
-                  src={isGoogle ? googleAppIcon : officeAppIcon}
-                  alt=""
-                  className="w-8 h-8 object-contain animate-pulse"
-                />
-              </div>
-              <span className="text-xs font-semibold text-slate-300 flex items-center gap-2">
-                <AppIcon icon={SystemRestart} size="sm" color="active" className="animate-spin" />
-                <span>Loading {isGoogle ? googleAppName : officeAppName} Preview...</span>
-              </span>
+            <div className="absolute inset-0 z-20">
+              <SystemLoadingScreen
+                fullScreen={false}
+                className="h-full min-h-0 rounded-b-2xl"
+                text={`Loading ${isGoogle ? googleAppName : officeAppName} Preview...`}
+                subtitle={displayName}
+              />
             </div>
           ) : null}
           <iframe

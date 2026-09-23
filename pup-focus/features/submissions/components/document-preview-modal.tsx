@@ -22,6 +22,7 @@ import {
   type ResolvedDirectFileResult,
   getGoogleDocsViewerUrl,
 } from "@/lib/online-viewers";
+import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 
 /* ─── Official Brand File Icons ─── */
@@ -343,6 +344,7 @@ export function DocumentPreviewModal({
 
   const [resolvedInfo, setResolvedInfo] = useState<ResolvedDirectFileResult | null>(null);
   const [isResolving, setIsResolving] = useState(true);
+  const [loadingPercent, setLoadingPercent] = useState(20);
 
   const fileUrl = submission.latestSubmissionId
     ? getPreviewUrl(submission.latestSubmissionId)
@@ -356,6 +358,18 @@ export function DocumentPreviewModal({
     }
 
     setIsResolving(true);
+    setLoadingPercent(20);
+
+    const interval = setInterval(() => {
+      if (!isMounted) return;
+      setLoadingPercent((prev) => {
+        if (prev < 45) return prev + 15;
+        if (prev < 75) return prev + 10;
+        if (prev < 92) return prev + 5;
+        return prev;
+      });
+    }, 70);
+
     resolveDirectFileInfo({
       storagePath: submission.storagePath,
       submissionId: submission.latestSubmissionId,
@@ -368,12 +382,19 @@ export function DocumentPreviewModal({
       })
       .finally(() => {
         if (isMounted) {
-          setIsResolving(false);
+          clearInterval(interval);
+          setLoadingPercent(100);
+          setTimeout(() => {
+            if (isMounted) {
+              setIsResolving(false);
+            }
+          }, 240);
         }
       });
 
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, [submission?.latestSubmissionId, submission?.storagePath, fileUrl]);
 
@@ -459,6 +480,17 @@ export function DocumentPreviewModal({
     window.open(effectiveUrl, "_blank", "noopener,noreferrer");
   }
 
+  if (isResolving) {
+    return (
+      <SystemLoadingScreen
+        text="Loading Document Preview..."
+        subtitle={documentTitle}
+        progress={loadingPercent}
+        fullScreen={true}
+      />
+    );
+  }
+
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm overflow-y-auto"
@@ -501,19 +533,12 @@ export function DocumentPreviewModal({
           {/* Main Viewer Area */}
           <div className="min-h-[500px] lg:min-h-[580px] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-950 shadow-inner flex items-center justify-center p-2 sm:p-3 relative">
             {typeInfo.isUnknown ? (
-              <div className="flex flex-col items-center justify-center h-full min-h-[480px] w-full text-center p-6">
-                <div className="relative mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center animate-pulse">
-                    <AppIcon icon={Page} size="lg" color="success" />
-                  </div>
-                </div>
-                <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-200">
-                  Loading Document...
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
-                  Verifying document format and preparing preview
-                </p>
-              </div>
+              <SystemLoadingScreen
+                fullScreen={false}
+                className="h-full min-h-[480px] rounded-xl"
+                text="Verifying document format..."
+                subtitle={documentTitle}
+              />
             ) : typeInfo.isImage ? (
               <div className="relative flex items-center justify-center w-full h-full min-h-[500px] lg:min-h-[580px] p-2 bg-slate-950/40 rounded-xl overflow-hidden group">
                 <img
