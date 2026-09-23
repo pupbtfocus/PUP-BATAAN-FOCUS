@@ -37,3 +37,25 @@ export const PUBLIC_ROUTES = [
   "/api/email/preview",
   ...AUTH_ROUTES,
 ];
+
+/**
+ * Resets all stored navigation and active tab states across Faculty, Admin, and Super Admin.
+ * Call this on login, logout, and password initialization so that every new session
+ * reliably lands on the Dashboard view as its starting point.
+ */
+export function resetDashboardNavigationState(): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem("pup_focus_faculty_active_view", "dashboard");
+    sessionStorage.removeItem("activeAdminTab");
+    sessionStorage.removeItem("activeAdminSection");
+    sessionStorage.removeItem("activeSuperAdminTab");
+    sessionStorage.removeItem("activeSuperAdminSection");
+    localStorage.removeItem("activeAdminTab");
+    localStorage.removeItem("activeAdminSection");
+    localStorage.removeItem("activeSuperAdminTab");
+    localStorage.removeItem("activeSuperAdminSection");
+  } catch {
+    // Safe fallback for private browsing or restricted environments
+  }
+}

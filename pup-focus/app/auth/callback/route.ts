@@ -3,6 +3,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { bootstrapInvitedAdminAccount } from "@/lib/auth/bootstrap-invited-admin";
 import { bootstrapInvitedFacultyAccount } from "@/lib/auth/bootstrap-invited-faculty";
+import { ROUTE_BY_ROLE } from "@/config/routes";
+import { ROLE, type AppRole } from "@/config/roles";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 function formatInviteErrorMessage(rawError: string): string {
@@ -186,6 +188,15 @@ export async function GET(request: NextRequest) {
         ),
       );
     }
+
+    const signedInRole =
+      (user.user_metadata?.role as AppRole | undefined) ??
+      (user.app_metadata?.role as AppRole | undefined) ??
+      ROLE.FACULTY;
+    const defaultRoute = ROUTE_BY_ROLE[signedInRole] || "/";
+    return NextResponse.redirect(
+      new URL(next && next !== "/" ? next : defaultRoute, request.url),
+    );
   }
 
   return NextResponse.redirect(new URL(next || "/", request.url));

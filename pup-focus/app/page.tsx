@@ -13,7 +13,7 @@ import {
 import { APP_CONFIG } from "@/config/app";
 import { getPublicEnvSafe } from "@/config/env";
 import { createClient } from "@/lib/supabase/client";
-import { ROUTE_BY_ROLE } from "@/config/routes";
+import { ROUTE_BY_ROLE, resetDashboardNavigationState } from "@/config/routes";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 
@@ -200,6 +200,7 @@ export default function Home() {
         (user.app_metadata?.role as AppRole | undefined) ??
         ROLE.FACULTY;
 
+      resetDashboardNavigationState();
       window.location.href = ROUTE_BY_ROLE[signedInRole];
     }
 
@@ -347,6 +348,9 @@ export default function Home() {
     } catch {
       // Ignore storage access errors
     }
+
+    // Always reset all role active views/tabs so every new session starts fresh on the Dashboard
+    resetDashboardNavigationState();
 
     setIsSubmitting(false);
     setAuthModal({

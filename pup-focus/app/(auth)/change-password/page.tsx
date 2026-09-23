@@ -20,6 +20,8 @@ import {
   WarningCircle,
 } from "iconoir-react";
 
+import { resetDashboardNavigationState } from "@/config/routes";
+
 const ROUTE_BY_ROLE: Record<AppRole, string> = {
   [ROLE.SUPER_ADMIN]: "/super-admin/dashboard",
   [ROLE.ADMIN]: "/admin/dashboard",
@@ -311,6 +313,7 @@ export default function ChangePasswordPage() {
         ROLE.ADMIN;
 
       const nextRoute = ROUTE_BY_ROLE[signedInRole] || "/sign-in";
+      resetDashboardNavigationState();
       setSuccess("Password updated successfully! Redirecting to your portal...");
       setIsSaving(false);
       window.setTimeout(() => {
