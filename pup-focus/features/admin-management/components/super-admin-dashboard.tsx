@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
-import { Activity, CheckCircle, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
+import { Activity, CheckCircle, EditPencil, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -2287,6 +2287,18 @@ function AdminDetailsModal({
   const [modalAvatarError, setModalAvatarError] = useState(false);
   const canEdit = Boolean(editable) && details?.role !== ROLE.SUPER_ADMIN;
 
+  const fullNameInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const [activeField, setActiveField] = useState<"fullName" | "email" | null>(null);
+
+  const initialFullName = details?.full_name ?? "";
+  const initialEmail = details?.email ?? "";
+
+  const hasChanges =
+    fullName.trim() !== initialFullName.trim() ||
+    email.trim() !== initialEmail.trim() ||
+    password.trim().length > 0;
+
   useEffect(() => {
     setFullName(details?.full_name ?? "");
     setEmail(details?.email ?? "");
@@ -2295,7 +2307,28 @@ function AdminDetailsModal({
     setSuccess(null);
     setShowPassword(false);
     setModalAvatarError(false);
+    setActiveField(null);
   }, [details]);
+
+  function handleFocusField(
+    fieldKey: "fullName" | "email",
+    ref: React.RefObject<HTMLInputElement | null>,
+  ) {
+    setActiveField(fieldKey);
+    setTimeout(() => {
+      if (ref.current) {
+        ref.current.focus();
+        const length = ref.current.value.length;
+        ref.current.setSelectionRange(length, length);
+      }
+    }, 0);
+  }
+
+  function handleCancelEdit(fieldKey: "fullName" | "email") {
+    if (fieldKey === "fullName") setFullName(initialFullName);
+    if (fieldKey === "email") setEmail(initialEmail);
+    setActiveField(null);
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -2332,8 +2365,8 @@ function AdminDetailsModal({
         },
         body: JSON.stringify({
           profileId: details.profile_id,
-          fullName,
-          email,
+          fullName: fullName.trim(),
+          email: email.trim(),
           ...(password ? { password } : {}),
         }),
       });
@@ -2348,6 +2381,7 @@ function AdminDetailsModal({
 
       setSuccess("Admin account updated successfully.");
       setPassword("");
+      setActiveField(null);
       if (data.details) {
         setFullName(data.details.full_name ?? fullName);
         setEmail(data.details.email ?? email);
@@ -2368,7 +2402,6 @@ function AdminDetailsModal({
           icon={User}
         />
         <div className="p-6 overflow-y-auto">
-
         {isLoading ? (
           <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Loading details...</p>
         ) : details ? (
@@ -2410,15 +2443,45 @@ function AdminDetailsModal({
                     >
                       Full Name
                     </label>
-                    <input
-                      id="adminFullName"
-                      type="text"
-                      value={fullName}
-                      onChange={(event) => setFullName(event.target.value)}
-                      readOnly={!canEdit}
-                      disabled={!canEdit}
-                      className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
-                    />
+                    <div className="relative flex items-center">
+                      <input
+                        id="adminFullName"
+                        ref={fullNameInputRef}
+                        type="text"
+                        value={fullName}
+                        onChange={(event) => setFullName(event.target.value)}
+                        readOnly={activeField !== "fullName"}
+                        onBlur={() => setActiveField(null)}
+                        className={`w-full rounded-xl border bg-white dark:bg-slate-950 pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                          activeField === "fullName"
+                            ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                            : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                        }`}
+                      />
+                      {activeField === "fullName" ? (
+                        <button
+                          type="button"
+                          title="Cancel edit"
+                          aria-label="Cancel edit"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleCancelEdit("fullName")}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={Xmark} size="xs" color="inherit" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          title="Edit full name"
+                          aria-label="Edit full name"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleFocusField("fullName", fullNameInputRef)}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -2428,15 +2491,45 @@ function AdminDetailsModal({
                     >
                       Email Address
                     </label>
-                    <input
-                      id="adminEmail"
-                      type="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      readOnly={!canEdit}
-                      disabled={!canEdit}
-                      className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
-                    />
+                    <div className="relative flex items-center">
+                      <input
+                        id="adminEmail"
+                        ref={emailInputRef}
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        readOnly={activeField !== "email"}
+                        onBlur={() => setActiveField(null)}
+                        className={`w-full rounded-xl border bg-white dark:bg-slate-950 pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                          activeField === "email"
+                            ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                            : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
+                        }`}
+                      />
+                      {activeField === "email" ? (
+                        <button
+                          type="button"
+                          title="Cancel edit"
+                          aria-label="Cancel edit"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleCancelEdit("email")}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={Xmark} size="xs" color="inherit" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          title="Edit email address"
+                          aria-label="Edit email address"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleFocusField("email", emailInputRef)}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -2456,7 +2549,7 @@ function AdminDetailsModal({
                       disabled={!canEdit}
                       minLength={8}
                       placeholder="Leave blank to keep current password"
-                      className="w-full rounded-xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 pr-12 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 pr-12 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60 outline-none"
                     />
                     <PasswordToggleButton
                       shown={showPassword}
@@ -2465,7 +2558,7 @@ function AdminDetailsModal({
                   </div>
                 </div>
 
-                <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-400 md:grid-cols-2 p-3 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-400 md:grid-cols-2 p-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
                   <p>
                     <span className="font-semibold text-slate-700 dark:text-slate-300">Role:</span>{" "}
                     {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
@@ -2507,7 +2600,7 @@ function AdminDetailsModal({
                   onClose={() => setSuccess(null)}
                 />
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-400 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-300 dark:border-slate-800">
                   <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
                     <div>
                       Created{" "}
@@ -2540,8 +2633,8 @@ function AdminDetailsModal({
                     {canEdit ? (
                       <button
                         type="submit"
-                        disabled={isSaving}
-                        className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50"
+                        disabled={isSaving || !hasChanges || !fullName.trim() || !email.trim()}
+                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-xl px-5 py-2 text-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
                       >
                         {isSaving ? "Saving..." : "Save Changes"}
                       </button>
