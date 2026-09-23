@@ -38,6 +38,7 @@ import {
 } from "@/features/submissions/services/submission-window.service";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
+import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
 
@@ -1306,12 +1307,7 @@ function FacultyVerificationDrawer({
         {/* Body Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center space-y-2.5">
-              <AppIcon icon={SystemRestart} size="lg" color="muted" className="animate-spin" />
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Loading faculty requirements...
-              </p>
-            </div>
+            <SystemLoadingScreen fullScreen={false} text="Loading faculty requirements..." />
           ) : activeTab === "current" ? (
             /* Tab 1: Current Submissions */
             <div className="space-y-4">

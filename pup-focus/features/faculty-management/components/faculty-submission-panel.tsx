@@ -3101,76 +3101,16 @@ function FacultySubmissionPanelContent({
             )}
             {/* SUBMITTING & SUCCESS MODAL POPUPS */}
             {isMounted && isSubmittingModalOpen && (
-              <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 max-w-lg w-full text-center shadow-2xl space-y-6 my-auto animate-in zoom-in-95 duration-200">
-                  {isUploadingDirect ? (
-                    <div className="space-y-6">
-                      {/* Circular Loading Spinner with Percent in the Middle */}
-                      <div className="relative mx-auto w-28 h-28 flex items-center justify-center">
-                        <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
-                          {/* Background Track */}
-                          <circle
-                            className="text-slate-100 dark:text-slate-800"
-                            strokeWidth="3.5"
-                            stroke="currentColor"
-                            fill="none"
-                            cx="22"
-                            cy="22"
-                            r="18"
-                          />
-                          {/* Progress Stroke */}
-                          <circle
-                            className="text-[#0b5336] transition-all duration-300 ease-out"
-                            strokeWidth="3.5"
-                            strokeDasharray={113.1}
-                            strokeDashoffset={113.1 - (113.1 * Math.max(5, directUploadPercent)) / 100}
-                            strokeLinecap="round"
-                            stroke="currentColor"
-                            fill="none"
-                            cx="22"
-                            cy="22"
-                            r="18"
-                          />
-                        </svg>
-                        {/* Rotating Spinner Accent Ring */}
-                        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#0b5336] border-r-emerald-500 animate-spin pointer-events-none" />
-                        {/* Percent in the Middle of Loading */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-2xl font-black font-mono tracking-tight text-[#0b5336] dark:text-emerald-400">
-                            {directUploadPercent}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                          {isRevisionUpload ? "Submitting Revision..." : "Submitting Document..."}
-                        </h3>
-                        {directUploadFile ? (
-                          <p className="text-sm text-slate-600 dark:text-slate-400 font-medium truncate px-4" title={directUploadFile.name}>
-                            {directUploadFile.name}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Please wait while your file is being uploaded to the system.
-                          </p>
-                        )}
-                        <p className="text-sm font-bold text-[#0b5336] dark:text-emerald-400 pt-1">
-                          {directUploadPercent < 35
-                            ? "Uploading file..."
-                            : directUploadPercent < 75
-                              ? "Sending to storage..."
-                              : directUploadPercent < 100
-                                ? "Validating submission..."
-                                : "Upload complete!"}
-                        </p>
-                      </div>
-
-                      <p className="text-xs text-slate-400 dark:text-slate-500 pt-3 border-t border-slate-100 dark:border-slate-800">
-                        Please keep this window open until upload completes.
-                      </p>
-                    </div>
-                  ) : isSubmitSuccess ? (
+              isUploadingDirect ? (
+                <SystemLoadingScreen
+                  fullScreen={true}
+                  text={isRevisionUpload ? "Submitting Revision..." : "Submitting Document..."}
+                  subtitle={directUploadFile?.name}
+                  progress={directUploadPercent}
+                />
+              ) : isSubmitSuccess ? (
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 max-w-lg w-full text-center shadow-2xl space-y-6 my-auto animate-in zoom-in-95 duration-200">
                     <div className="space-y-6 py-2">
                       {/* Large Solid PUP Green Icon Badge */}
                       <div className="mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-3xl bg-[#0b5336] text-white shadow-xl shadow-[#0b5336]/30 border-2 border-[#08412a] animate-in zoom-in duration-300">
@@ -3206,9 +3146,9 @@ function FacultySubmissionPanelContent({
                         </button>
                       </div>
                     </div>
-                  ) : null}
+                  </div>
                 </div>
-              </div>
+              ) : null
             )}
             {isMounted && successModalData.isOpen && (
               <div
