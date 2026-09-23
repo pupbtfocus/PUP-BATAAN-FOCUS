@@ -331,14 +331,35 @@ function getStatusBadgeTone(
     return "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
   return "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60";
 }
-function getStatusIcon(
+function renderStatusIconBadge(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ) {
-  if (status === "Validated") return <AppIcon icon={CheckCircle} size="xs" color="white" />;
-  if (status === "Rejected") return <AppIcon icon={WarningCircle} size="xs" color="white" />;
-  if (status === "Not Submitted")
-    return <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />;
-  return <AppIcon icon={Hourglass} size="xs" color="inherit" />;
+  if (status === "Validated") {
+    return (
+      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#0b5336] text-white border border-[#08412a] shrink-0 shadow-2xs">
+        <AppIcon icon={Check} size="xs" color="white" />
+      </span>
+    );
+  }
+  if (status === "Rejected") {
+    return (
+      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+        <AppIcon icon={Xmark} size="xs" color="white" />
+      </span>
+    );
+  }
+  if (status === "Not Submitted") {
+    return (
+      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700 shrink-0 shadow-2xs">
+        <AppIcon icon={Minus} size="xs" color="inherit" />
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
+      <AppIcon icon={Hourglass} size="xs" color="inherit" />
+    </span>
+  );
 }
 function getStatusText(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
@@ -1046,7 +1067,7 @@ function FacultySubmissionPanelContent({
     const seen = new Set<string>();
     const list: PastSubmission[] = [];
     for (const sub of pastSubmissions) {
-      const key = `${sub.requirementCode}-${sub.status}-${sub.submittedAt}`;
+      const key = sub.requirementCode || sub.id;
       if (!seen.has(key)) {
         seen.add(key);
         list.push(sub);
@@ -1979,32 +2000,95 @@ function FacultySubmissionPanelContent({
               </div>
             ) : null}
             {activeView === "dashboard" && (
-              <article className="space-y-6">
-                {/* Top Hero Section */}
-                <section className="relative overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-sm shadow-slate-300/50 dark:shadow-none transition-colors">
-                  {/* Subtle Campus Photo Backdrop Overlay */}
-                  <div className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.14] mix-blend-luminosity overflow-hidden">
-                    <Image
-                      src={LOGIN_PAGE_IMAGES[0]}
-                      alt="PUP campus backdrop"
-                      fill
-                      sizes="100vw"
-                      className="object-cover object-center"
-                      priority
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/50 to-white/90 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950/90" />
-                  </div>
-                  <div className="relative z-10 space-y-1">
-                    <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
-                      Welcome back, {facultyFirstName}
-                    </h1>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
-                      {submissionWindow
-                        ? `A.Y. ${submissionWindow.academicYear} • ${submissionWindow.semester}`
-                        : "A.Y. 2026-2027 • 1st Semester"}
+              <article className="space-y-5 p-2 sm:p-4 md:p-5">
+                {/* Minimalist Header */}
+                <div className="border-b border-slate-300 dark:border-slate-800/80 pb-4 space-y-3">
+                  <div>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                        Dashboard
+                      </h1>
+                      {isAllValidated && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b5336] text-white text-xs font-bold shadow-2xs">
+                          <AppIcon icon={CheckCircle} size="sm" color="inherit" />
+                          Done All for This Semester
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                      Overview of your faculty compliance status, submission timeline, and recent document activity.
                     </p>
                   </div>
-                </section>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+                      A.Y. {activeAY} • {activeSem}
+                      {isWindowNotConfigured && !isAllValidated ? (
+                        <span className="ml-2 text-slate-500 dark:text-slate-400 font-medium">
+                          • (Awaiting Schedule)
+                        </span>
+                      ) : isWindowClosed && !isAllValidated ? (
+                        <span className="ml-2 text-slate-500 dark:text-slate-400 font-medium">
+                          • (Submission Window Closed)
+                        </span>
+                      ) : null}
+                    </p>
+
+                    <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 sm:ml-auto">
+                      <button
+                        type="button"
+                        onClick={() => void fetchStatuses()}
+                        disabled={isLoadingStatuses}
+                        title="Refresh dashboard"
+                        className="inline-flex items-center justify-center rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 p-2 text-slate-950 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                      >
+                        <Refresh
+                          className={`h-3.5 w-3.5 text-slate-950 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                        />
+                        <span className="sr-only">Refresh</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Clean Status Counts with Legend */}
+                {displayedStatusCounts && !isLoadingStatuses && (
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium pt-1">
+                      <span className="inline-flex items-center gap-1.5" title="Validated: Requirements verified and approved">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#0b5336] text-white border border-[#08412a] shrink-0 shadow-2xs">
+                          <AppIcon icon={Check} size="xs" color="white" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.validated}</strong> Validated
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5" title="Pending: Awaiting administration verification">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
+                          <AppIcon icon={Hourglass} size="xs" color="inherit" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.pending}</strong> Pending
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5" title="Needs Revision: Correction requested by reviewer">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+                          <AppIcon icon={Xmark} size="xs" color="white" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.rejected}</strong> Needs Revision
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5" title="Not Submitted: Requirement pending document upload">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700 shrink-0 shadow-2xs">
+                          <AppIcon icon={Minus} size="xs" color="inherit" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.notSubmitted}</strong> Not Submitted
+                        </span>
+                      </span>
+                    </div>
+                )}
+
                 {/* Term Completion Celebration Banner in Dashboard */}
                 {isAllValidated && (
                   <div className="p-4 sm:p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/30 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
@@ -2057,24 +2141,25 @@ function FacultySubmissionPanelContent({
                   message={extensionRequestToast}
                   onClose={() => setExtensionRequestToast(null)}
                 />
+
                 {/* Top Stat Summary Grid (3 Cards) */}
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
                   {/* Card 1: Overall Progress */}
-                  <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Overall Progress
                       </span>
-                      <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                      <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
                     </div>
                     <div>
                       <div className="flex items-baseline justify-between">
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                        <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           {isAllValidated
                             ? "Done All for This Semester"
                             : `${displayedStatusCounts?.validated ?? 0} of ${displayedStatusCounts?.total ?? 6} Validated`}
                         </h3>
-                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
                           {Math.round(
                             ((displayedStatusCounts?.validated ?? 0) /
                               (displayedStatusCounts?.total || 6)) *
@@ -2083,7 +2168,7 @@ function FacultySubmissionPanelContent({
                           %
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
                           ? "All 6/6 requirements completed and validated"
                           : `${(displayedStatusCounts?.total ?? 6) - (displayedStatusCounts?.validated ?? 0)} items awaiting completion`}
@@ -2098,10 +2183,11 @@ function FacultySubmissionPanelContent({
                       />
                     </div>
                   </div>
+
                   {/* Card 2: Submission Window Status */}
-                  <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Window Status
                       </span>
                       {isWindowNotConfigured || (hasActiveSchedule && !isWindowClosed) ? (
@@ -2111,7 +2197,7 @@ function FacultySubmissionPanelContent({
                       )}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {isAllValidated
                           ? "Done All for This Sem"
                           : isWindowNotConfigured
@@ -2120,7 +2206,7 @@ function FacultySubmissionPanelContent({
                               ? "Window Closed"
                               : "Submission Open"}
                       </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
                           ? "All requirements completed for this term"
                           : windowDeadlineDisplay
@@ -2128,7 +2214,7 @@ function FacultySubmissionPanelContent({
                             : "Awaiting admin schedule"}
                       </p>
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       {isAllValidated
                         ? "Requirements locked in validated status"
                         : isSubmissionAvailable
@@ -2138,28 +2224,29 @@ function FacultySubmissionPanelContent({
                             : "Document submissions are currently locked"}
                     </p>
                   </div>
+
                   {/* Card 3: Action Required */}
-                  <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
+                  <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Action Required
                       </span>
                       <TaskList className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {isAllValidated
                           ? "0 Items (Done All for This Sem)"
                           : `${(displayedStatusCounts?.notSubmitted ?? 0) +
                               (displayedStatusCounts?.rejected ?? 0)} Items`}
                       </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
                           ? "All 6/6 Requirements Validated"
                           : `${displayedStatusCounts?.notSubmitted ?? 0} Not Submitted • ${displayedStatusCounts?.rejected ?? 0} Needs Revision`}
                       </p>
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       {isAllValidated
                         ? "No further action needed for this semester"
                         : (displayedStatusCounts?.pending ?? 0) > 0
@@ -2168,18 +2255,19 @@ function FacultySubmissionPanelContent({
                     </p>
                   </div>
                 </section>
+
                 {/* Main Dashboard Body: Recent Activity */}
                 <section className="space-y-6">
                   {/* Activity Feed Card */}
-                  <div className="w-full max-w-md rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-4 transition-colors">
+                  <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         Recent Activity
                       </h3>
                       <button
                         type="button"
                         onClick={openHistoryModal}
-                        className="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer font-medium"
+                        className="text-xs sm:text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer font-semibold"
                       >
                         View all
                       </button>
@@ -2189,18 +2277,16 @@ function FacultySubmissionPanelContent({
                         {deduplicatedRecentActivities.map((sub) => (
                           <div
                             key={sub.id}
-                            className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 border border-slate-300 dark:border-slate-800/80 transition-colors"
+                            className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 border border-slate-300 dark:border-slate-800/80 transition-colors"
                           >
                             <div className="mt-0.5 shrink-0">
-                              <span
-                                className={`h-2 w-2 rounded-full block ${getStatusDotColor(sub.status)}`}
-                              />
+                              {renderStatusIconBadge(sub.status)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-slate-900 dark:text-slate-200 truncate">
+                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                                 {getRequirementTitle(sub.requirementCode)}
                               </p>
-                              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                                 Status:{" "}
                                 <span
                                   className={getStatusTextColor(sub.status)}
@@ -2208,7 +2294,7 @@ function FacultySubmissionPanelContent({
                                   {getStatusText(sub.status)}
                                 </span>
                               </p>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                 {formatSubmittedDateTime(sub.submittedAt) ??
                                   sub.submittedAt}
                               </p>
@@ -2217,7 +2303,7 @@ function FacultySubmissionPanelContent({
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 py-3 text-center">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 py-3 text-center">
                         No submission activity recorded yet.
                       </p>
                     )}
@@ -2549,11 +2635,7 @@ function FacultySubmissionPanelContent({
                 </div>
                 {/* Clean Header Progress & Status Counts with Legend */}
                 {displayedStatusCounts && !isLoadingStatuses && (
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
-                    <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                      {`${displayedStatusCounts.validated} of ${displayedStatusCounts.total} Completed`}
-                    </span>
-                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium pt-1">
                       <span className="inline-flex items-center gap-1.5" title="Validated: Requirements verified and approved">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#0b5336] text-white border border-[#08412a] shrink-0 shadow-2xs">
                           <AppIcon icon={Check} size="xs" color="white" />
@@ -2587,7 +2669,6 @@ function FacultySubmissionPanelContent({
                         </span>
                       </span>
                     </div>
-                  </div>
                 )}
 
                 {/* 1. Schedule Not Set Banner (No Schedule Configured in Database) */}
