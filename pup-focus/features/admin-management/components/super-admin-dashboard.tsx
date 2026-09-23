@@ -1605,7 +1605,7 @@ export function SuperAdminDashboard({
                           onClick={() => handleSetActiveSection("terms")}
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
-                          <span>Academic Terms</span>
+                          <span>Academic Year & Semester</span>
                           <AppIcon icon={NavArrowRight} size="md" color="muted" />
                         </button>
                         <button
@@ -1613,7 +1613,7 @@ export function SuperAdminDashboard({
                           onClick={() => handleSetActiveSection("window")}
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
-                          <span>Submission Window</span>
+                          <span>Submission Schedule</span>
                           <AppIcon icon={NavArrowRight} size="md" color="muted" />
                         </button>
                         <button
@@ -1778,21 +1778,26 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "terms" ? (
-              <article className="p-2 sm:p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-6">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                      Academic Term Management
-                    </h3>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      Academic Year and Semester
+                    </h1>
+                    <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                      Manage academic years, semester cycles, and activate the current operational term.
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void refreshCurrentPanel()}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
-                  >
-                    <AppIcon icon={Refresh} size="sm" color="inherit" />
-                    <span>Refresh</span>
-                  </button>
+                  <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void refreshCurrentPanel()}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                    >
+                      <AppIcon icon={Refresh} size="sm" color="inherit" />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
                 </div>
 
                 <AdminAcademicTerms adminName={adminName ?? "Super Admin"} />
@@ -1800,21 +1805,26 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "window" ? (
-              <article className="p-2 sm:p-4 md:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-400 dark:border-slate-800 pb-4 mb-4">
+              <article className="space-y-4 p-2 sm:p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-400 dark:border-slate-800 pb-4 mb-6">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                      Submission Window
-                    </h3>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      Submission Schedule
+                    </h1>
+                    <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                      Set and manage submission opening dates, closing deadlines, and faculty extension requests.
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void refreshCurrentPanel()}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
-                  >
-                    <AppIcon icon={Refresh} size="sm" color="inherit" />
-                    <span>Refresh</span>
-                  </button>
+                  <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void refreshCurrentPanel()}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                    >
+                      <AppIcon icon={Refresh} size="sm" color="inherit" />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
                 </div>
 
                 <SubmissionWindowPanel
@@ -1879,7 +1889,7 @@ export function SuperAdminDashboard({
             ) : null}
 
             {activeSection === "settings" ? (
-              <article className="space-y-6">
+              <article className="space-y-4 p-2 sm:p-4 md:p-5">
                 <SuperAdminSettings
                   adminName={currentAdminName}
                   adminEmail={currentAdminEmail}

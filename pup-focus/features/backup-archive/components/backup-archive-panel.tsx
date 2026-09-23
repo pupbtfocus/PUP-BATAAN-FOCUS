@@ -1004,7 +1004,7 @@ export function BackupArchivePanel() {
                         No archived academic terms
                       </p>
                       <p className="text-xs text-slate-500 mt-1">
-                        Completed terms archived in Academic Term Management will appear here.
+                        Completed terms archived in Academic Year and Semester will appear here.
                       </p>
                     </td>
                   </tr>

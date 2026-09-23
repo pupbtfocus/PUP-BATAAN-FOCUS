@@ -700,7 +700,7 @@ export function SubmissionWindowPanel({
           <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-100 border border-slate-200/90 dark:bg-slate-800/50 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs transition-all">
             <AppIcon icon={EditPencil} size="md" color="default" />
             <span>
-              <strong>Schedule Edit Mode Active:</strong> You can adjust the opening and closing schedules below. Remember to click <strong>Save Window Schedule</strong> to apply changes.
+              <strong>Schedule Edit Mode Active:</strong> You can adjust the opening and closing schedules below. Remember to click <strong>Save Schedule</strong> to apply changes.
             </span>
           </div>
         ) : null}
@@ -987,7 +987,7 @@ export function SubmissionWindowPanel({
                   ) : (
                     <AppIcon icon={FloppyDisk} size="sm" color="inherit" />
                   )}
-                  <span>{isSaving ? "Saving..." : "Save Window Schedule"}</span>
+                  <span>{isSaving ? "Saving..." : "Save Schedule"}</span>
                 </button>
               </>
             ) : (
