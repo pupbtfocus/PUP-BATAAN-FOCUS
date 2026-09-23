@@ -41,6 +41,7 @@ import loadingIcon from "@/assets/icons animations/loading.svg";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { ForgotPasswordModal } from "@/components/auth/forgot-password-modal";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { FacultyIncompleteRequirementsModal } from "@/features/faculty-management/components/faculty-incomplete-requirements-modal";
 
 type PreviewTab =
   | "gmail"
@@ -89,7 +90,7 @@ export function DevPreviewPanel() {
 
   // Modals Showcase State
   const [activeShowcaseModal, setActiveShowcaseModal] = useState<
-    "extension-logs" | "close-safety" | "warning-requirements" | null
+    "extension-logs" | "close-safety" | "warning-requirements" | "faculty-not-submitted" | null
   >(null);
   const [safetyCountdown, setSafetyCountdown] = useState(10);
 
@@ -1943,6 +1944,28 @@ export function DevPreviewPanel() {
                 </button>
               </div>
             </div>
+
+            {/* Modal Card 11: Faculty Incomplete Requirements Alert Modal */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-amber-500">
+                  <AppIcon icon={WarningCircle} size="lg" color="inherit" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Faculty Pending Requirements Alert
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Inspect the alert popup shown to faculty upon dashboard access for requirements that are Not Submitted, for Revise, or Pending for Validation.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveShowcaseModal("faculty-not-submitted")}
+                className="w-full py-2 px-3 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-xs active:scale-[0.98]"
+              >
+                Launch Faculty Pending Modal
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -2282,6 +2305,23 @@ export function DevPreviewPanel() {
           </div>
         </div>
       )}
+
+      {/* SHOWCASE MODAL 4: FACULTY INCOMPLETE / NOT SUBMITTED MODAL */}
+      <FacultyIncompleteRequirementsModal
+        isOpen={activeShowcaseModal === "faculty-not-submitted"}
+        onClose={() => setActiveShowcaseModal(null)}
+        onGoToSubmissions={() => {
+          setActiveShowcaseModal(null);
+          setDevToast({
+            type: "success",
+            message: "Navigation: Redirecting to Documents to be Submitted",
+          });
+        }}
+        notSubmittedCount={4}
+        rejectedCount={1}
+        pendingValidationCount={2}
+        deadlineDisplay="Oct 15, 2026, 11:59 PM"
+      />
 
       {/* FULL-SCREEN SYSTEM LOADING PREVIEW OVERLAY */}
       {showSystemLoadingScreen && (
