@@ -53,6 +53,7 @@ import { ModalHeader } from "@/components/ui/modal-header";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
+import { DocumentPreviewModal, type DocumentPreviewSubmission } from "@/features/submissions/components/document-preview-modal";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
@@ -205,21 +206,7 @@ type RequirementStatus = {
   isRevision?: boolean;
   hasPriorRevision?: boolean;
 };
-type SubmissionPreview = {
-  code: RequirementCode | string;
-  title: string;
-  fileName?: string;
-  storagePath?: string;
-  submittedAt?: string;
-  note?: string | null;
-  notes?: string | null;
-  remarks?: string | null;
-  feedback?: string;
-  admin_remarks?: string;
-  adminRemarks?: string | null;
-  reviewedAt?: string;
-  latestSubmissionId: string;
-};
+type SubmissionPreview = DocumentPreviewSubmission;
 type PastSubmission = {
   id: string;
   academicYear: string;
@@ -1597,6 +1584,16 @@ function FacultySubmissionPanelContent({
       (item as { file_name?: string }).file_name ||
       (item as { original_name?: string }).original_name ||
       undefined;
+    const activeAY =
+      submissionWindow?.academicYear ||
+      selectedAcademicYear ||
+      form.academicYear ||
+      "2025-2026";
+    const activeSem =
+      submissionWindow?.semester ||
+      selectedSemester ||
+      form.semester ||
+      "1st Semester";
     setPreviewSubmission({
       code: item.code,
       title: getRequirementTitle(item.code),
@@ -1611,6 +1608,11 @@ function FacultySubmissionPanelContent({
       adminRemarks: adminRemarks,
       reviewedAt: item.reviewedAt,
       latestSubmissionId: item.latestSubmissionId,
+      status: item.status,
+      academicYear: activeAY,
+      semester: activeSem,
+      hasPriorRevision: item.hasPriorRevision,
+      isRevision: item.isRevision,
     });
   }
   function openHistorySubmissionPreview(submission: PastSubmission) {
@@ -1651,8 +1653,11 @@ function FacultySubmissionPanelContent({
       feedback: adminRemarks || undefined,
       admin_remarks: adminRemarks || undefined,
       adminRemarks: adminRemarks,
-      reviewedAt: submission.reviewedAt,
+      reviewedAt: submission.reviewedAt || submission.dateValidated,
       latestSubmissionId: submission.id,
+      status: submission.status,
+      academicYear: submission.academicYear,
+      semester: submission.semester,
     });
   }
   function startRevision(requirementCode: RequirementCode | string) {
@@ -2824,7 +2829,7 @@ function FacultySubmissionPanelContent({
                                       <button
                                         type="button"
                                         onClick={() => openSubmissionPreview(req)}
-                                        className="relative inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl w-36 h-8 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+                                        className="relative inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl w-36 h-8 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
                                       >
                                         {Boolean(
                                           req.feedback &&
@@ -3382,159 +3387,12 @@ function FacultySubmissionPanelContent({
               </div>
             )}
             {isMounted && previewSubmission ? (
-              <div
-                className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
-                onClick={closeSubmissionPreview}
-              >
-                <div
-                  className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <ModalHeader
-                    title={previewSubmission.title}
-                    subtitle="Document Preview"
-                    icon={Page}
-                    onClose={closeSubmissionPreview}
-                    closeAriaLabel="Close preview"
-                  />
-                  <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)] flex-1 overflow-y-auto min-h-0">
-                    <div className="min-h-[60vh] overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 shadow-xs flex items-center justify-center p-4">
-                      {(() => {
-                        const fileUrl = getSubmissionPreviewUrl(
-                          previewSubmission.latestSubmissionId,
-                        );
-                        const fileIdentifier =
-                          previewSubmission.fileName ||
-                          previewSubmission.storagePath ||
-                          previewSubmission.title;
-                        const { isPdf, isImage, isExcel, isWord, extension } =
-                          getFileType(fileIdentifier);
-                        const fileExtension = extension || "file";
-                        if (isImage) {
-                          return (
-                            <img
-                              src={fileUrl}
-                              alt={fileIdentifier}
-                              className="max-h-[60vh] max-w-full object-contain rounded-xl mx-auto shadow-md"
-                            />
-                          );
-                        }
-                        // Ensure Fallback Card Renders BEFORE Mounting iframe
-                        if (
-                          isExcel ||
-                          isWord ||
-                          (!isPdf && !isImage && fileIdentifier.includes("."))
-                        ) {
-                          const brand = getFileBrand(
-                            fileExtension,
-                            isExcel,
-                            isWord,
-                          );
-                          return (
-                            <OnlineDocumentPreview
-                              fileName={fileIdentifier}
-                              fileUrl={fileUrl}
-                              storagePath={previewSubmission.storagePath}
-                              submissionId={previewSubmission.latestSubmissionId}
-                              fileExtension={fileExtension}
-                              isExcel={isExcel}
-                              isWord={isWord}
-                              brand={brand}
-                              onDownload={() =>
-                                window.open(
-                                  `${fileUrl}&download=true`,
-                                  "_blank",
-                                )
-                              }
-                            />
-                          );
-                        }
-                        return (
-                          <iframe
-                            title={`${previewSubmission.title} preview`}
-                            src={fileUrl}
-                            className="h-full min-h-[60vh] w-full rounded-xl border-0"
-                          />
-                        );
-                      })()}
-                    </div>
-                    <div className="space-y-4">
-                      <div className="rounded-xl border border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 p-4">
-                        <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                          MY NOTE
-                        </div>
-                        <div className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
-                          {previewSubmission.note ? (
-                            <span>
-                              &ldquo;
-                              {previewSubmission.note}
-                              &rdquo;
-                            </span>
-                          ) : (
-                            <span className="text-slate-500 not-italic">
-                              No note was added.
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {previewSubmission.reviewedAt ||
-                      previewSubmission.adminRemarks ||
-                      previewSubmission.admin_remarks ||
-                      previewSubmission.feedback ? (
-                        <div className="rounded-xl border border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 p-4">
-                          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                            Admin Remarks
-                          </p>
-                          <p className="mt-2 text-sm leading-6 italic text-slate-800 dark:text-slate-200">
-                            {previewSubmission.adminRemarks ||
-                              previewSubmission.admin_remarks ||
-                              previewSubmission.feedback ||
-                              "Validated with no additional remarks."}
-                          </p>
-                          {previewSubmission.reviewedAt ? (
-                            <p className="mt-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                              Reviewed On
-                            </p>
-                          ) : null}
-                          {previewSubmission.reviewedAt ? (
-                            <p className="mt-1 text-sm leading-6 text-slate-700 dark:text-slate-300">
-                              {previewSubmission.reviewedAt}
-                            </p>
-                          ) : null}
-                        </div>
-                      ) : null}
-                      {previewSubmission.submittedAt ? (
-                        <div className="rounded-xl border border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 p-4 text-sm text-slate-700 dark:text-slate-300">
-                          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                            Submitted On
-                          </p>
-                          <p className="mt-2 leading-6">
-                            {formatSubmittedDateTime(
-                              previewSubmission.submittedAt,
-                            ) ?? previewSubmission.submittedAt}
-                          </p>
-                        </div>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-medium rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 py-2.5 cursor-pointer"
-                        onClick={() =>
-                          window.open(
-                            getSubmissionPreviewUrl(
-                              previewSubmission.latestSubmissionId,
-                            ),
-                            "_blank",
-                            "noopener,noreferrer",
-                          )
-                        }
-                      >
-                        <AppIcon icon={OpenNewWindow} size="md" color="inherit" />
-                        Full View
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <DocumentPreviewModal
+                submission={previewSubmission}
+                isOpen={Boolean(previewSubmission)}
+                onClose={closeSubmissionPreview}
+                getPreviewUrl={getSubmissionPreviewUrl}
+              />
             ) : null}
             {isMounted && showIncompleteRequirementsModal ? (
               <div

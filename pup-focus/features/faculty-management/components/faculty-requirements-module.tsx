@@ -17,6 +17,7 @@ import {
   ComplianceListSkeleton,
   StatusMetricsSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
+import { DocumentPreviewModal, type DocumentPreviewSubmission } from "@/features/submissions/components/document-preview-modal";
 
 export type RequirementTemplateItem = {
   code: string;
@@ -37,6 +38,10 @@ export type RequirementStatusItem = {
   latestSubmissionId?: string;
   isRevision?: boolean;
   hasPriorRevision?: boolean;
+  fileName?: string;
+  storagePath?: string;
+  notes?: string;
+  remarks?: string;
 };
 
 export type StatusResponse = {
@@ -150,6 +155,8 @@ export function FacultyRequirementsModule({
     useState<SubmissionWindowState | null>(
       () => initialSubmissionWindow || null,
     );
+  const [previewSubmission, setPreviewSubmission] =
+    useState<DocumentPreviewSubmission | null>(null);
 
   const initialFormState: RequirementFormState = {
     academicYear:
@@ -617,16 +624,31 @@ export function FacultyRequirementsModule({
                           )}
                           {(status === "Pending" || status === "Validated") &&
                             item?.latestSubmissionId && (
-                              <a
-                                href={`/api/faculty/submissions/view?submissionId=${encodeURIComponent(item.latestSubmissionId)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreviewSubmission({
+                                    code: code,
+                                    title: req.title,
+                                    fileName: item.fileName,
+                                    storagePath: item.storagePath,
+                                    submittedAt: item.submittedAt,
+                                    reviewedAt: item.reviewedAt,
+                                    note: item.notes || item.remarks,
+                                    feedback: item.adminRemarks || item.admin_remarks || item.feedback,
+                                    adminRemarks: item.adminRemarks || item.admin_remarks || item.feedback,
+                                    latestSubmissionId: item.latestSubmissionId!,
+                                    status: status,
+                                    academicYear: submissionWindow?.academicYear || form.academicYear,
+                                    semester: submissionWindow?.semester || form.semester,
+                                  });
+                                }}
                                 aria-label={`View submitted file for ${req.title}`}
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 transition cursor-pointer shadow-2xs active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                               >
                                 <AppIcon icon={Eye} size="sm" color="inherit" />
                                 View
-                              </a>
+                              </button>
                             )}
                         </td>
                       </tr>
@@ -731,16 +753,31 @@ export function FacultyRequirementsModule({
                       )}
                       {(status === "Pending" || status === "Validated") &&
                         item?.latestSubmissionId && (
-                          <a
-                            href={`/api/faculty/submissions/view?submissionId=${encodeURIComponent(item.latestSubmissionId)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewSubmission({
+                                code: code,
+                                title: req.title,
+                                fileName: item.fileName,
+                                storagePath: item.storagePath,
+                                submittedAt: item.submittedAt,
+                                reviewedAt: item.reviewedAt,
+                                note: item.notes || item.remarks,
+                                feedback: item.adminRemarks || item.admin_remarks || item.feedback,
+                                adminRemarks: item.adminRemarks || item.admin_remarks || item.feedback,
+                                latestSubmissionId: item.latestSubmissionId!,
+                                status: status,
+                                academicYear: submissionWindow?.academicYear || form.academicYear,
+                                semester: submissionWindow?.semester || form.semester,
+                              });
+                            }}
                             aria-label={`View uploaded file for ${req.title}`}
-                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 transition cursor-pointer active:scale-95"
                           >
                             <AppIcon icon={Eye} size="sm" color="inherit" />
                             View Uploaded File
-                          </a>
+                          </button>
                         )}
                     </div>
                   </article>
@@ -1023,6 +1060,15 @@ export function FacultyRequirementsModule({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Redesigned Document Preview Modal */}
+      {previewSubmission && (
+        <DocumentPreviewModal
+          submission={previewSubmission}
+          isOpen={Boolean(previewSubmission)}
+          onClose={() => setPreviewSubmission(null)}
+        />
       )}
     </div>
   );
