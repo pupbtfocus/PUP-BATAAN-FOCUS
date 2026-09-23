@@ -1822,7 +1822,10 @@ function FacultySubmissionPanelContent({
               title="Active"
             />
           </button>
-          <p className="mt-0.5 font-semibold text-white text-center text-sm sm:text-base">
+          <span className="text-xs font-medium text-amber-200/90 tracking-wide">
+            Welcome,
+          </span>
+          <p className="mt-0.5 font-bold text-white text-center text-sm sm:text-base tracking-tight">
             {facultyFirstName}
           </p>
           <div className="my-2 h-px w-full bg-amber-400/50" />
@@ -1929,7 +1932,10 @@ function FacultySubmissionPanelContent({
                   title="Active"
                 />
               </button>
-              <p className="mt-0.5 font-semibold text-white text-center text-sm sm:text-base">
+              <span className="text-xs font-medium text-amber-200/90 tracking-wide">
+                Welcome,
+              </span>
+              <p className="mt-0.5 font-bold text-white text-center text-sm sm:text-base tracking-tight">
                 {facultyFirstName}
               </p>
               <div className="my-2 h-px w-full bg-amber-400/50" />

@@ -199,7 +199,10 @@ export function SidebarContent({
           />
         </button>
 
-        <p className="mt-0.5 font-semibold text-white text-center text-sm sm:text-base">
+        <span className="text-xs font-medium text-amber-200/90 tracking-wide">
+          Welcome,
+        </span>
+        <p className="mt-0.5 font-bold text-white text-center text-sm sm:text-base tracking-tight">
           {extractFirstName(adminName, roleTitle)}
         </p>
 
