@@ -93,19 +93,19 @@ export async function bootstrapInvitedAdminAccount(user: {
     throw new Error(userRoleError.message);
   }
 
-  const { error: adminTableError } = await serviceRoleClient
-    .from("admins")
-    .upsert(
-      {
-        profile_id: profile.id,
-        full_name: fullName,
-        email,
-        is_active: true,
-      },
-      { onConflict: "email" },
-    );
-
-  if (adminTableError) {
-    throw new Error(adminTableError.message);
+  try {
+    await serviceRoleClient
+      .from("admins")
+      .upsert(
+        {
+          profile_id: profile.id,
+          full_name: fullName,
+          email,
+          is_active: true,
+        },
+        { onConflict: "email" },
+      );
+  } catch {
+    // Optional table
   }
 }
