@@ -205,31 +205,33 @@ export async function POST() {
 
 
 
-    const { data: existingAdmin } = await supabase
-      .from("admins")
-      .select("id")
-      .eq("profile_id", profileId)
-      .maybeSingle();
+    // 6. Optionally sync with admins table if present in schema
+    try {
+      const { data: existingAdmin, error: adminSelectError } = await supabase
+        .from("admins")
+        .select("id")
+        .eq("profile_id", profileId)
+        .maybeSingle();
 
-    const adminPayload = {
-      profile_id: profileId,
-      full_name: SUPER_ADMIN_FULL_NAME,
-      email: SUPER_ADMIN_EMAIL,
-      is_active: true,
-    };
+      if (!adminSelectError) {
+        const adminPayload = {
+          profile_id: profileId,
+          full_name: SUPER_ADMIN_FULL_NAME,
+          email: SUPER_ADMIN_EMAIL,
+          is_active: true,
+        };
 
-    const { error: adminTableError } = existingAdmin
-      ? await supabase
-          .from("admins")
-          .update(adminPayload)
-          .eq("id", existingAdmin.id)
-      : await supabase.from("admins").insert(adminPayload);
-
-    if (adminTableError) {
-      return NextResponse.json(
-        { error: adminTableError.message },
-        { status: 400 },
-      );
+        if (existingAdmin) {
+          await supabase
+            .from("admins")
+            .update(adminPayload)
+            .eq("id", existingAdmin.id);
+        } else {
+          await supabase.from("admins").insert(adminPayload);
+        }
+      }
+    } catch {
+      // Optional table: ignore if admins table does not exist in schema cache
     }
 
     await supabase.auth.admin.updateUserById(authUserId, {
