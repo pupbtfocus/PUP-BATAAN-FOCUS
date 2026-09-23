@@ -540,38 +540,55 @@ export function FacultySettingsPanel({
     isCurrentPasswordFilled && isLengthValid && isMatching;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+      <div className="border-b border-slate-300 dark:border-slate-800/80 pb-4 space-y-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
-            Settings
-          </h1>
-          <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 font-normal">
-            Manage your faculty account details and security settings.
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+              Settings
+            </h1>
+          </div>
+          <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+            Manage your faculty account details, personal information, and security preferences.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void refreshAccount()}
-          disabled={isRefreshing}
-          title="Refresh account details"
-          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60 p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition disabled:opacity-50 cursor-pointer shadow-xs"
-        >
-          <Refresh className={`h-4 w-4 ${isRefreshing ? "animate-spin text-amber-500" : ""}`} />
-          <span className="sr-only">Refresh</span>
-        </button>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            {account.program?.name || account.program?.code ? (
+              <>Department: {account.program.code ? `${account.program.code} — ` : ""}{account.program.name}</>
+            ) : (
+              <>Faculty Account Management</>
+            )}
+          </p>
+
+          <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 sm:ml-auto">
+            <button
+              type="button"
+              onClick={() => void refreshAccount()}
+              disabled={isRefreshing}
+              title="Refresh account details"
+              className="inline-flex items-center justify-center rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 p-2 text-slate-950 transition disabled:opacity-50 cursor-pointer shadow-xs"
+            >
+              <Refresh
+                className={`h-3.5 w-3.5 text-slate-950 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              <span className="sr-only">Refresh</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Grid Layout */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-start">
         {/* Profile Details Card */}
-        <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
-          <div className="pb-4 border-b border-slate-200 dark:border-slate-800">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+        <article className="rounded-2xl border border-slate-300 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs transition-colors">
+          <div className="pb-4 border-b border-slate-300 dark:border-slate-800/80">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               Profile Details
             </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-normal">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 font-normal">
               View and update your personal information.
             </p>
           </div>
@@ -592,9 +609,9 @@ export function FacultySettingsPanel({
                 }}
                 aria-label="Profile photo options"
               >
-                <div className="relative h-20 w-20 rounded-full border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-950 overflow-hidden flex items-center justify-center text-lg font-semibold text-slate-800 dark:text-slate-200 shadow-xs">
+                <div className="relative h-20 w-20 sm:h-22 sm:w-22 rounded-full border border-slate-300 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-950 overflow-hidden flex items-center justify-center text-xl font-bold text-slate-800 dark:text-slate-200 shadow-xs">
                   {/* Clean initials rendered immediately */}
-                  <span className="select-none font-semibold text-slate-700 dark:text-slate-300">
+                  <span className="select-none font-bold text-slate-700 dark:text-slate-300">
                     {buildFacultyInitials(account.fullName || "Faculty")}
                   </span>
 
@@ -620,7 +637,7 @@ export function FacultySettingsPanel({
 
                 {/* Persistent Floating Camera Badge */}
                 <div
-                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900 transition-transform group-hover:scale-110 pointer-events-none"
+                  className="absolute bottom-0 right-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900 transition-transform group-hover:scale-110 pointer-events-none"
                   aria-hidden="true"
                 >
                   <AppIcon icon={Camera} size="sm" color="inherit" />
@@ -628,10 +645,10 @@ export function FacultySettingsPanel({
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
                   {account.fullName || "Faculty Member"}
                 </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 truncate mt-0.5">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 truncate mt-0.5">
                   {account.email || "No email on record"}
                 </p>
               </div>
@@ -649,7 +666,7 @@ export function FacultySettingsPanel({
             </div>
 
             {profileImageFile && (
-              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 px-3.5 py-2 text-xs text-amber-800 dark:text-amber-300 font-medium">
+              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 px-3.5 py-2.5 text-xs sm:text-sm text-amber-800 dark:text-amber-300 font-medium">
                 <span className="truncate">New image selected: {profileImageFile.name}</span>
                 <button
                   type="button"
@@ -671,7 +688,7 @@ export function FacultySettingsPanel({
               <div>
                 <label
                   htmlFor="faculty-first-name"
-                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                  className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
                 >
                   First Name
                 </label>
@@ -680,10 +697,10 @@ export function FacultySettingsPanel({
                     id="faculty-first-name"
                     ref={firstNameInputRef}
                     readOnly={activeField !== "firstName"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full h-11 sm:h-12 bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "firstName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.firstName}
                     onChange={(e) => {
@@ -698,7 +715,7 @@ export function FacultySettingsPanel({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleCancelEdit("firstName")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={Xmark} size="sm" color="inherit" />
                       <span>Cancel</span>
@@ -708,7 +725,7 @@ export function FacultySettingsPanel({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleFocusField("firstName", firstNameInputRef)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={EditPencil} size="sm" color="inherit" />
                       <span>Edit</span>
@@ -720,7 +737,7 @@ export function FacultySettingsPanel({
               <div>
                 <label
                   htmlFor="faculty-middle-name"
-                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                  className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
                 >
                   Middle Name
                 </label>
@@ -729,10 +746,10 @@ export function FacultySettingsPanel({
                     id="faculty-middle-name"
                     ref={middleNameInputRef}
                     readOnly={activeField !== "middleName"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full h-11 sm:h-12 bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "middleName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.middleName}
                     onChange={(e) => {
@@ -747,7 +764,7 @@ export function FacultySettingsPanel({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleCancelEdit("middleName")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={Xmark} size="sm" color="inherit" />
                       <span>Cancel</span>
@@ -757,7 +774,7 @@ export function FacultySettingsPanel({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleFocusField("middleName", middleNameInputRef)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={EditPencil} size="sm" color="inherit" />
                       <span>Edit</span>
@@ -769,7 +786,7 @@ export function FacultySettingsPanel({
               <div className="sm:col-span-2">
                 <label
                   htmlFor="faculty-last-name"
-                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                  className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
                 >
                   Last Name
                 </label>
@@ -778,10 +795,10 @@ export function FacultySettingsPanel({
                     id="faculty-last-name"
                     ref={lastNameInputRef}
                     readOnly={activeField !== "lastName"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                    className={`w-full h-11 sm:h-12 bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
                       activeField === "lastName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 cursor-default"
                     }`}
                     value={form.lastName}
                     onChange={(e) => {
@@ -796,7 +813,7 @@ export function FacultySettingsPanel({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleCancelEdit("lastName")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={Xmark} size="sm" color="inherit" />
                       <span>Cancel</span>
@@ -806,7 +823,7 @@ export function FacultySettingsPanel({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleFocusField("lastName", lastNameInputRef)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={EditPencil} size="sm" color="inherit" />
                       <span>Edit</span>
@@ -816,11 +833,11 @@ export function FacultySettingsPanel({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                   Email Address
                 </label>
                 <input
-                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
+                  className="w-full h-11 sm:h-12 bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 text-sm font-medium"
                   value={account.email || ""}
                   disabled
                   readOnly
@@ -828,11 +845,11 @@ export function FacultySettingsPanel({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+                <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                   Department / Program
                 </label>
                 <input
-                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
+                  className="w-full h-11 sm:h-12 bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 text-sm font-medium"
                   value={
                     account.program
                       ? `${account.program.code} — ${account.program.name}`
@@ -851,7 +868,7 @@ export function FacultySettingsPanel({
                 type="button"
                 onClick={handleResetForm}
                 disabled={!isProfileChanged || isSaving}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800/80 cursor-pointer active:scale-[0.98]"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs sm:text-sm font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800/80 cursor-pointer active:scale-[0.98]"
               >
                 <AppIcon icon={Refresh} size="sm" color="inherit" />
                 <span>Reset</span>
@@ -859,7 +876,7 @@ export function FacultySettingsPanel({
               <button
                 type="submit"
                 disabled={isSaving || !isProfileChanged}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isSaving ? "Saving..." : "Save Profile Changes"}
               </button>
@@ -868,13 +885,13 @@ export function FacultySettingsPanel({
         </article>
 
         {/* Change Password Card */}
-        <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
-          <div className="pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <article className="rounded-2xl border border-slate-300 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs transition-colors">
+          <div className="pb-4 border-b border-slate-300 dark:border-slate-800/80 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                 Change Password
               </h2>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-normal">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 font-normal">
                 Update your account password for security.
               </p>
             </div>
@@ -882,7 +899,7 @@ export function FacultySettingsPanel({
               <button
                 type="button"
                 onClick={handleEnablePasswordEditing}
-                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="Change Password"
                 aria-label="Change Password"
               >
@@ -898,7 +915,7 @@ export function FacultySettingsPanel({
                   setNewPassword("");
                   setConfirmPassword("");
                 }}
-                className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="Cancel Change Password"
                 aria-label="Cancel Change Password"
               >
@@ -910,7 +927,7 @@ export function FacultySettingsPanel({
 
           <form className="mt-5 space-y-4" onSubmit={handleChangePasswordSubmit}>
             <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+              <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 Current Password
               </label>
               <div className="relative flex items-center">
@@ -919,10 +936,10 @@ export function FacultySettingsPanel({
                   type={showOldPassword ? "text" : "password"}
                   autoComplete="current-password"
                   readOnly={!isPasswordEditing}
-                  className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
+                  className={`w-full h-11 sm:h-12 px-4 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
                     !isPasswordEditing
-                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
-                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-300 dark:border-slate-800/80 cursor-not-allowed opacity-80"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   }`}
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
@@ -945,7 +962,7 @@ export function FacultySettingsPanel({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+              <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 New Password
               </label>
               <div className="relative flex items-center">
@@ -953,10 +970,10 @@ export function FacultySettingsPanel({
                   type={showNewPassword ? "text" : "password"}
                   autoComplete="new-password"
                   readOnly={!isPasswordEditing}
-                  className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
+                  className={`w-full h-11 sm:h-12 px-4 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
                     !isPasswordEditing
-                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
-                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-300 dark:border-slate-800/80 cursor-not-allowed opacity-80"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   }`}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -979,7 +996,7 @@ export function FacultySettingsPanel({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
+              <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 Confirm New Password
               </label>
               <div className="relative flex items-center">
@@ -987,10 +1004,10 @@ export function FacultySettingsPanel({
                   type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
                   readOnly={!isPasswordEditing}
-                  className={`w-full h-11 px-3.5 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
+                  className={`w-full h-11 sm:h-12 px-4 pr-11 rounded-xl text-sm transition-all outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border ${
                     !isPasswordEditing
-                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 cursor-not-allowed opacity-80"
-                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
+                      ? "bg-slate-100/70 dark:bg-slate-900/50 border-slate-300 dark:border-slate-800/80 cursor-not-allowed opacity-80"
+                      : "bg-slate-50 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60"
                   }`}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -1013,11 +1030,11 @@ export function FacultySettingsPanel({
             </div>
 
             {/* Live Password Requirement Indicators */}
-            <div className="bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 p-4 rounded-lg space-y-2">
-              <p className="text-slate-900 dark:text-slate-100 font-semibold text-xs">
+            <div className="bg-slate-50 border border-slate-300 dark:bg-slate-950/60 dark:border-slate-800 p-4 rounded-xl space-y-2.5">
+              <p className="text-slate-900 dark:text-slate-100 font-bold text-xs sm:text-sm">
                 Password Requirements
               </p>
-              <ul className="space-y-1.5 text-xs">
+              <ul className="space-y-1.5 text-xs sm:text-sm">
                 <li
                   className={`flex items-center gap-2 transition-colors ${
                     isCurrentPasswordFilled
@@ -1069,7 +1086,7 @@ export function FacultySettingsPanel({
               <button
                 type="submit"
                 disabled={!isPasswordEditing || !isPasswordFormValid || isChangingPassword}
-                className="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none cursor-pointer"
               >
                 {isChangingPassword ? (
                   <>
@@ -1092,7 +1109,7 @@ export function FacultySettingsPanel({
           onClick={() => setFeedbackModal(null)}
         >
           <div
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-2xl rounded-3xl p-7 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800/80 shadow-2xl rounded-3xl p-7 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
             onClick={(event) => event.stopPropagation()}
           >
             {feedbackModal.type === "error" ? (
@@ -1152,7 +1169,7 @@ export function FacultySettingsPanel({
           onClick={() => setIsProfileImageMenuOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
@@ -1168,11 +1185,11 @@ export function FacultySettingsPanel({
                   setIsProfileImageMenuOpen(false);
                   profileImageInputRef.current?.click();
                 }}
-                className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+                className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-400 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
               >
                 <div>
-                  <p className="text-xs font-semibold">Upload Photo</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+                  <p className="text-xs sm:text-sm font-semibold">Upload Photo</p>
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
                     Select a new image file from your device
                   </p>
                 </div>
@@ -1186,11 +1203,11 @@ export function FacultySettingsPanel({
                     setIsProfileImageMenuOpen(false);
                     setIsFullImageOpen(true);
                   }}
-                  className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/60 px-4 py-3.5 text-left text-slate-800 dark:text-slate-200 transition hover:border-slate-400 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 cursor-pointer"
                 >
                   <div>
-                    <p className="text-xs font-semibold">View Full Image</p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+                    <p className="text-xs sm:text-sm font-semibold">View Full Image</p>
+                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
                       Preview your current profile picture in full size
                     </p>
                   </div>
@@ -1209,7 +1226,7 @@ export function FacultySettingsPanel({
           onClick={() => setIsFullImageOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            className="w-full max-w-lg rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
             onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
@@ -1219,7 +1236,7 @@ export function FacultySettingsPanel({
               closeAriaLabel="Close"
             />
             <div className="p-6 flex items-center justify-center">
-              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60vh]">
+              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60vh]">
                 <img
                   src={displayedProfileImage}
                   alt={account.fullName || "Profile"}

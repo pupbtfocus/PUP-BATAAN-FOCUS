@@ -3402,7 +3402,7 @@ function FacultySubmissionPanelContent({
               </div>
             ) : null}
             {activeView === "settings" && (
-              <article className="space-y-6">
+              <article className="space-y-5 p-2 sm:p-4 md:p-5">
                 <FacultySettingsPanel
                   initialFacultyName={currentFacultyName || facultyName}
                   initialFacultyEmail={facultyEmail}
