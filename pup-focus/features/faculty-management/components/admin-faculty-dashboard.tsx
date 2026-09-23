@@ -933,8 +933,11 @@ export function AdminFacultyDashboard({
                         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           Faculty Management
                         </h1>
+                        <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                          View, manage, and monitor faculty profiles, department assignments, and account statuses.
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
                         <button
                           type="button"
                           onClick={() => {
