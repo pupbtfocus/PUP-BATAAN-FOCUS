@@ -110,28 +110,52 @@ function getFileTypeDetails(fileName: string) {
 
   if (extLower === "pdf") {
     return {
-      icon: <PdfBrandIcon className="h-10 w-10 drop-shadow-xs" />,
+      icon: (
+        <img
+          src="/icons/adobe-pdf.svg"
+          alt="PDF"
+          className="h-10 w-10 object-contain select-none drop-shadow-xs"
+        />
+      ),
       tag: "PDF",
       type: "Adobe PDF Document",
     };
   }
   if (extLower === "xlsx" || extLower === "xls" || extLower === "csv") {
     return {
-      icon: <ExcelBrandIcon className="h-10 w-10 drop-shadow-xs" />,
+      icon: (
+        <img
+          src="/icons/microsoft-excel.svg"
+          alt="Excel"
+          className="h-10 w-10 object-contain select-none drop-shadow-xs"
+        />
+      ),
       tag: ext === "CSV" ? "CSV" : "XLSX",
       type: "Microsoft Excel Spreadsheet",
     };
   }
   if (extLower === "docx" || extLower === "doc") {
     return {
-      icon: <WordBrandIcon className="h-10 w-10 drop-shadow-xs" />,
+      icon: (
+        <img
+          src="/icons/microsoft-word.svg"
+          alt="Word"
+          className="h-10 w-10 object-contain select-none drop-shadow-xs"
+        />
+      ),
       tag: "DOCX",
       type: "Microsoft Word Document",
     };
   }
   if (extLower === "pptx" || extLower === "ppt") {
     return {
-      icon: <PowerPointBrandIcon className="h-10 w-10 drop-shadow-xs" />,
+      icon: (
+        <img
+          src="/icons/microsoft-powerpoint.svg"
+          alt="PowerPoint"
+          className="h-10 w-10 object-contain select-none drop-shadow-xs"
+        />
+      ),
       tag: "PPTX",
       type: "Microsoft PowerPoint Presentation",
     };
@@ -206,7 +230,7 @@ export const getFileBrand = (
   if (ext === "pdf") {
     return {
       label: "Adobe PDF Document",
-      iconUrl: "https://api.iconify.design/vscode-icons:file-type-pdf2.svg",
+      iconUrl: "/icons/adobe-pdf.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
       badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
@@ -214,7 +238,7 @@ export const getFileBrand = (
   if (isExcel || ["xlsx", "xls", "csv"].includes(ext)) {
     return {
       label: "Microsoft Excel Spreadsheet",
-      iconUrl: "https://api.iconify.design/vscode-icons:file-type-excel.svg",
+      iconUrl: "/icons/microsoft-excel.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
       badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
@@ -222,7 +246,7 @@ export const getFileBrand = (
   if (isWord || ["docx", "doc"].includes(ext)) {
     return {
       label: "Microsoft Word Document",
-      iconUrl: "https://api.iconify.design/vscode-icons:file-type-word.svg",
+      iconUrl: "/icons/microsoft-word.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
       badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };
@@ -230,8 +254,7 @@ export const getFileBrand = (
   if (["pptx", "ppt"].includes(ext)) {
     return {
       label: "Microsoft PowerPoint Presentation",
-      iconUrl:
-        "https://api.iconify.design/vscode-icons:file-type-powerpoint.svg",
+      iconUrl: "/icons/microsoft-powerpoint.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
       badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
     };

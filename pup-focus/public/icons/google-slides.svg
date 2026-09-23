@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 47 65" width="47" height="65">
+  <defs>
+    <path id="a" d="M29.375 0H4.406C1.983 0 0 1.994 0 4.432v56.136C0 63.006 1.983 65 4.406 65h38.188C45.017 65 47 63.006 47 60.568v-42.84z"/>
+    <linearGradient id="d" x1="50%" x2="50%" y1="8.586%" y2="100%">
+      <stop offset="0%" stop-color="#E65100" stop-opacity=".2"/>
+      <stop offset="100%" stop-color="#E65100" stop-opacity=".02"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" fill-rule="evenodd">
+    <path fill="#FBBC04" fill-rule="nonzero" d="M29.375 0H4.406C1.983 0 0 1.994 0 4.432v56.136C0 63.006 1.983 65 4.406 65h38.188C45.017 65 47 63.006 47 60.568v-42.84L36.719 10.34z"/>
+    <path fill="url(#d)" fill-rule="nonzero" d="M30.664 16.431 47 32.858V17.727z"/>
+    <!-- Slide screen inside Google Slides -->
+    <rect x="11.5" y="27" width="24" height="17" rx="2" fill="#FFFFFF"/>
+    <rect x="14.5" y="30" width="18" height="11" rx="1" fill="#F29900"/>
+    <g>
+      <path fill="#FFE082" fill-rule="nonzero" d="M29.375 0v13.295c0 2.449 1.972 4.432 4.406 4.432H47z"/>
+    </g>
+  </g>
+</svg>

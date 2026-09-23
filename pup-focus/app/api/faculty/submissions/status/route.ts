@@ -455,13 +455,13 @@ export async function GET(request: NextRequest) {
     // Fetch document_versions separately
     const docVersionsMap = new Map<
       string,
-      Array<{ id: string; storage_path?: string; mime_type?: string }>
+      Array<{ id: string; storage_path?: string; mime_type?: string; file_name?: string }>
     >();
     if (submissionIds.length > 0) {
       try {
         const { data: docVersions } = await supabase
           .from("document_versions")
-          .select("id, submission_id, storage_path, mime_type")
+          .select("id, submission_id, storage_path, mime_type, file_name")
           .in("submission_id", submissionIds)
           .order("version_number", { ascending: false });
 
@@ -472,6 +472,7 @@ export async function GET(request: NextRequest) {
               id: doc.id,
               storage_path: doc.storage_path,
               mime_type: doc.mime_type,
+              file_name: doc.file_name,
             });
             docVersionsMap.set(doc.submission_id, list);
           }
@@ -693,7 +694,7 @@ export async function GET(request: NextRequest) {
       const docList = docVersionsMap.get(submission.id) || [];
       const primaryDoc = docList[0];
       const storagePath = primaryDoc?.storage_path;
-      const fileName = storagePath ? storagePath.split("/").pop() : undefined;
+      const fileName = primaryDoc?.file_name || (storagePath ? storagePath.split("/").pop() : undefined);
       const isRevision = Boolean((hasPriorRejection || docList.length > 1) && status === "Pending");
 
       statusMap.set(matchedCode, {

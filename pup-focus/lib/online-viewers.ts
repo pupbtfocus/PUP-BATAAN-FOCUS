@@ -22,15 +22,21 @@ export function getOfficeOnlineViewerUrl(directUrl: string, embedded = false): s
   return `https://view.officeapps.live.com/op/${endpoint}?src=${encodeURIComponent(directUrl)}`;
 }
 
+export interface ResolvedDirectFileResult {
+  url: string;
+  storagePath?: string | null;
+  mimeType?: string | null;
+  fileName?: string | null;
+}
+
 /**
- * Resolves a direct, publicly accessible Supabase signed URL so Google Docs and Office Online
- * can fetch and render the document without needing browser session cookies.
+ * Resolves full direct file information including signed URL, storage path, and mimeType.
  */
-export async function resolveDirectSignedUrl({
+export async function resolveDirectFileInfo({
   storagePath,
   submissionId,
   currentUrl,
-}: OnlineViewerOptions): Promise<string | null> {
+}: OnlineViewerOptions): Promise<ResolvedDirectFileResult | null> {
   // 1. If we have storagePath, call /api/storage/download with json=true
   if (storagePath) {
     try {
@@ -40,8 +46,13 @@ export async function resolveDirectSignedUrl({
       );
       if (res.ok) {
         const data = await res.json();
-        if (data.signedUrl || data.url) {
-          return data.signedUrl || data.url;
+        const url = data.signedUrl || data.url;
+        if (url) {
+          return {
+            url,
+            storagePath: data.storagePath || storagePath,
+            mimeType: data.mimeType || null,
+          };
         }
       }
     } catch (err) {
@@ -58,8 +69,14 @@ export async function resolveDirectSignedUrl({
       );
       if (res.ok) {
         const data = await res.json();
-        if (data.downloadUrl || data.signedUrl) {
-          return data.downloadUrl || data.signedUrl;
+        const url = data.downloadUrl || data.signedUrl;
+        if (url) {
+          return {
+            url,
+            storagePath: data.storagePath || null,
+            mimeType: data.mimeType || null,
+            fileName: data.fileName || null,
+          };
         }
       }
     } catch (err) {
@@ -69,16 +86,27 @@ export async function resolveDirectSignedUrl({
 
   // 3. If currentUrl is already an absolute HTTP/HTTPS URL and not an internal /api path
   if (currentUrl && /^https?:\/\//i.test(currentUrl) && !currentUrl.includes("/api/")) {
-    return currentUrl;
+    return { url: currentUrl };
   }
 
   // 4. Fallback to currentUrl
   if (currentUrl) {
-    if (typeof window !== "undefined" && currentUrl.startsWith("/")) {
-      return `${window.location.origin}${currentUrl}`;
-    }
-    return currentUrl;
+    const url =
+      typeof window !== "undefined" && currentUrl.startsWith("/")
+        ? `${window.location.origin}${currentUrl}`
+        : currentUrl;
+    return { url };
   }
 
   return null;
 }
+
+/**
+ * Resolves a direct, publicly accessible Supabase signed URL so Google Docs and Office Online
+ * can fetch and render the document without needing browser session cookies.
+ */
+export async function resolveDirectSignedUrl(options: OnlineViewerOptions): Promise<string | null> {
+  const result = await resolveDirectFileInfo(options);
+  return result ? result.url : null;
+}
+

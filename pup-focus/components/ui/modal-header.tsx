@@ -5,6 +5,8 @@ import { AppIcon } from "@/components/ui/app-icon";
 export interface ModalHeaderProps {
   /** The icon component to display inside the squircle badge */
   icon?: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
+  /** Optional custom icon element to render directly */
+  iconNode?: React.ReactNode;
   /** Primary title of the modal */
   title: React.ReactNode;
   /** Optional id for the title heading for accessibility */
@@ -72,6 +74,7 @@ export function ModalCloseButton({
  */
 export function ModalHeader({
   icon: Icon,
+  iconNode,
   title,
   titleId,
   subtitle,
@@ -86,7 +89,11 @@ export function ModalHeader({
       className={`shrink-0 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 bg-slate-50/70 dark:bg-slate-950/50 ${className}`}
     >
       <div className="flex items-center gap-3 min-w-0">
-        {Icon && <ModalHeaderIcon icon={Icon} />}
+        {iconNode ? (
+          <div className="shrink-0 flex items-center justify-center">{iconNode}</div>
+        ) : Icon ? (
+          <ModalHeaderIcon icon={Icon} />
+        ) : null}
         <div className="min-w-0">
           {typeof title === "string" ? (
             <h3 id={titleId} className="text-base font-bold text-slate-900 dark:text-slate-100 truncate">
