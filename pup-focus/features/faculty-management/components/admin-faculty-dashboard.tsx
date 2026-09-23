@@ -8,7 +8,7 @@ import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
-import { CheckCircle, Group, Hourglass, Menu, NavArrowRight, Refresh, Xmark } from "iconoir-react";
+import { Calendar, Check, CheckCircle, Group, Hourglass, Menu, Minus, NavArrowRight, Refresh, TaskList, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import { LogoutButton } from "@/components/shared/logout-button";
@@ -284,6 +284,15 @@ export function AdminFacultyDashboard({
   }
 
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [windowStatus, setWindowStatus] = useState<{
+    isOpen?: boolean;
+    isAlwaysOpen?: boolean;
+    status?: string;
+    startDate?: string | null;
+    endDate?: string | null;
+    startTimeLabel?: string | null;
+    endTimeLabel?: string | null;
+  } | null>(null);
   const [pendingQueue, setPendingQueue] = useState<PendingQueueItem[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
@@ -291,14 +300,25 @@ export function AdminFacultyDashboard({
   async function loadDashboardStats() {
     try {
       setIsLoadingStats(true);
-      const res = await fetch(`/api/admin/dashboard/stats?_t=${Date.now()}`, {
-        cache: "no-store",
-      });
+      const [res, winRes] = await Promise.all([
+        fetch(`/api/admin/dashboard/stats?_t=${Date.now()}`, { cache: "no-store" }),
+        fetch(`/api/admin/submission-window?_t=${Date.now()}`, { cache: "no-store", credentials: "include" }),
+      ]);
       if (res.ok) {
         const data = await res.json();
         setDashboardStats(data.stats || null);
         setPendingQueue(data.pendingQueue || []);
         setRecentActivity(data.recentActivity || []);
+      }
+      if (winRes.ok) {
+        const winData = await winRes.json();
+        const isAlwaysOpenWindow = Boolean(
+          winData.endDate && (winData.endDate.startsWith("2099") || new Date(winData.endDate).getFullYear() >= 2099)
+        );
+        setWindowStatus({
+          ...winData,
+          isAlwaysOpen: isAlwaysOpenWindow,
+        });
       }
     } catch (err) {
       console.warn("Failed to load dashboard stats:", err);
@@ -724,56 +744,167 @@ export function AdminFacultyDashboard({
             <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
               <div className="max-w-7xl mx-auto w-full">
                 {activeSection === "dashboard" ? (
-                  <article className="space-y-6">
-                    {/* TIER 1: Welcome Banner with subtle campus artwork backdrop */}
-                    <section className="relative overflow-hidden rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-sm shadow-slate-300/50 dark:shadow-none transition-colors">
-                      {/* Subtle Campus Photo Backdrop Overlay */}
-                      <div className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.14] mix-blend-luminosity overflow-hidden">
-                        <Image
-                          src="/images/attachments/IMG_9402.jpeg"
-                          alt="PUP campus backdrop"
-                          fill
-                          sizes="100vw"
-                          className="object-cover object-center"
-                          priority
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/50 to-white/90 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950/90" />
-                      </div>
-
-                      <div className="relative z-10 space-y-1">
-                        <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
-                          Welcome back, {extractFirstName(currentAdminName || adminName, "Admin")}
-                        </h1>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 font-normal">
-                          Admin Dashboard • A.Y. {dashboardStats?.currentAcademicYear || "2026-2027"} • {dashboardStats?.currentSemester || "1st Semester"}
+                  <article className="space-y-5 p-2 sm:p-4 md:p-5">
+                    {/* Minimalist Header */}
+                    <div className="border-b border-slate-300 dark:border-slate-800/80 pb-4 space-y-3">
+                      <div>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                            Dashboard
+                          </h1>
+                        </div>
+                        <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                          Overview of faculty compliance progress, submission verification, and recent document activity.
                         </p>
                       </div>
-                    </section>
 
-                    {/* TIER 2: 3-Column Stat Grid */}
-                    <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                      {/* Card 1: Faculty Submissions Verified */}
-                      <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+                          A.Y. {dashboardStats?.currentAcademicYear || "2026-2027"} • {dashboardStats?.currentSemester || "1st Semester"}
+                          {windowStatus && (windowStatus.status === "Closed" || !windowStatus.isOpen) ? (
+                            <span className="ml-2 text-slate-500 dark:text-slate-400 font-medium">
+                              • (Submission Window Closed)
+                            </span>
+                          ) : null}
+                        </p>
+
+                        <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 sm:ml-auto">
+                          <button
+                            type="button"
+                            onClick={() => void loadDashboardStats()}
+                            disabled={isLoadingStats}
+                            title="Refresh dashboard"
+                            className="inline-flex items-center justify-center rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 p-2 text-slate-950 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                          >
+                            <Refresh
+                              className={`h-3.5 w-3.5 text-slate-950 ${isLoadingStats ? "animate-spin" : ""}`}
+                            />
+                            <span className="sr-only">Refresh</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Clean Status Counts with Legend Strip */}
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium pt-1">
+                      <span className="inline-flex items-center gap-1.5" title="Validated: Requirements reviewed and approved">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#0b5336] text-white border border-[#08412a] shrink-0 shadow-2xs">
+                          <AppIcon icon={Check} size="xs" color="white" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.verified ?? 0}</strong> Validated
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5" title="Pending: Awaiting administration verification">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
+                          <AppIcon icon={Hourglass} size="xs" color="inherit" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.pending ?? 0}</strong> Pending Review
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5" title="Needs Revision: Correction requested by reviewer">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+                          <AppIcon icon={Xmark} size="xs" color="white" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{dashboardStats?.revisions ?? 0}</strong> Needs Revision
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5" title="Active Faculty: Registered and active faculty members">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 shrink-0 shadow-2xs">
+                          <AppIcon icon={Group} size="xs" color="inherit" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">
+                            {dashboardStats && dashboardStats.totalFaculty > 0 ? dashboardStats.activeFaculty : facultyAccounts.filter((f) => f.is_active).length}
+                          </strong> Active Faculty
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Top Stat Summary Grid (3 Cards) */}
+                    <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                      {/* Card 1: Overall Progress */}
+                      <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Submissions Verified</span>
-                          <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Overall Progress
+                          </span>
+                          <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                            {isLoadingStats ? "..." : `${dashboardStats?.verified ?? 0} Verified`}
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Faculty submissions reviewed and validated</p>
+                          <div className="flex items-baseline justify-between">
+                            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                              {isLoadingStats ? "..." : `${dashboardStats?.verified ?? 0} Validated`}
+                            </h3>
+                            <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                              {(() => {
+                                const total = (dashboardStats?.verified ?? 0) + (dashboardStats?.pending ?? 0) + (dashboardStats?.revisions ?? 0);
+                                return total > 0 ? Math.round(((dashboardStats?.verified ?? 0) / total) * 100) : 0;
+                              })()}%
+                            </span>
+                          </div>
+                          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                            {isLoadingStats
+                              ? "Loading compliance status..."
+                              : `${dashboardStats?.verified ?? 0} verified • ${dashboardStats?.pending ?? 0} pending review`}
+                          </p>
+                        </div>
+                        <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
+                          <div
+                            className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
+                            style={{
+                              width: `${(() => {
+                                const total = (dashboardStats?.verified ?? 0) + (dashboardStats?.pending ?? 0) + (dashboardStats?.revisions ?? 0);
+                                return total > 0 ? Math.min(100, Math.round(((dashboardStats?.verified ?? 0) / total) * 100)) : 0;
+                              })()}%`,
+                            }}
+                          />
                         </div>
                       </div>
 
-                      {/* Card 2: Pending Verification */}
-                      <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
+                      {/* Card 2: Submission Schedule / Window Status */}
+                      <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Pending Verification</span>
-                          <Hourglass className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Window Status
+                          </span>
+                          <Calendar className="h-5 w-5 text-slate-400" strokeWidth={2} />
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                            {windowStatus?.isAlwaysOpen
+                              ? "Always Open"
+                              : windowStatus?.isOpen
+                                ? "Submission Open"
+                                : windowStatus?.status === "Upcoming"
+                                  ? "Scheduled"
+                                  : "Window Closed"}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                            {windowStatus?.endDate && windowStatus?.endTimeLabel
+                              ? `Deadline: ${windowStatus.endDate} • ${windowStatus.endTimeLabel}`
+                              : "Awaiting schedule configuration"}
+                          </p>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {windowStatus?.isOpen
+                            ? "Faculty can upload and submit compliance documents"
+                            : "Document submissions are currently locked"}
+                        </p>
+                      </div>
+
+                      {/* Card 3: Action Required */}
+                      <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Action Required
+                          </span>
+                          <TaskList className="h-5 w-5 text-slate-400" strokeWidth={2} />
+                        </div>
+                        <div>
+                          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
                             <span>{isLoadingStats ? "..." : `${dashboardStats?.pending ?? 0} Pending`}</span>
                             {!isLoadingStats && dashboardStats && dashboardStats.revisions > 0 && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
@@ -781,87 +912,80 @@ export function AdminFacultyDashboard({
                               </span>
                             )}
                           </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Submissions awaiting admin review</p>
-                        </div>
-                      </div>
-
-                      {/* Card 3: Total Active Faculty */}
-                      <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 space-y-3 transition-colors">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Active Faculty</span>
-                          <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                            {isLoadingStats && facultyAccounts.length === 0
-                              ? "..."
-                              : `${dashboardStats && dashboardStats.totalFaculty > 0 ? dashboardStats.activeFaculty : facultyAccounts.filter((f) => f.is_active).length} Active`}
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            {dashboardStats && dashboardStats.totalFaculty > 0
-                              ? dashboardStats.totalFaculty
-                              : facultyAccounts.length} total faculty accounts
+                          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                            Submissions awaiting administrator verification
                           </p>
                         </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {(dashboardStats?.pending ?? 0) > 0
+                            ? `${dashboardStats?.pending} item(s) ready for review in queue`
+                            : "All submitted documents are reviewed"}
+                        </p>
                       </div>
                     </section>
 
-                    {/* TIER 3: 2-Column Main Body */}
+                    {/* Main Dashboard Body: 2-Column Layout */}
                     <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                       {/* Left Column (2-Span) — Pending Verification Queue */}
                       <div className="lg:col-span-2 space-y-4">
-                        <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 sm:p-6 transition-colors">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-300 dark:border-slate-800">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">
-                                  Pending Submissions Verification Queue
-                                </h2>
-                                {pendingQueue.length > 0 && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
-                                    {pendingQueue.length}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Faculty submissions awaiting your review and validation.</p>
+                        <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
+                          <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                                Pending Submissions Verification Queue
+                              </h3>
+                              {pendingQueue.length > 0 && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
+                                  {pendingQueue.length}
+                                </span>
+                              )}
                             </div>
                             <button
                               type="button"
                               onClick={() => handleSetActiveSection("requirements")}
-                              className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition cursor-pointer"
+                              className="text-xs sm:text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer font-semibold"
                             >
-                              <span>View all</span>
-                              <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
+                              View all
                             </button>
                           </div>
 
                           {pendingQueue.length === 0 ? (
                             <div className="py-8 text-center space-y-2">
-                              <AppIcon icon={CheckCircle} size="xl" color="success" className="mx-auto" />
-                              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">All submissions up to date</p>
+                              <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-1">
+                                <AppIcon icon={CheckCircle} size="lg" color="inherit" />
+                              </div>
+                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">All submissions up to date</p>
                               <p className="text-xs text-slate-500 dark:text-slate-400">No pending submissions awaiting review.</p>
                             </div>
                           ) : (
-                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <div className="space-y-3">
                               {pendingQueue.slice(0, 5).map((item) => (
-                                <div key={item.id} className="py-3.5 flex items-center justify-between gap-4">
-                                  <div className="min-w-0 flex-1">
+                                <div
+                                  key={item.id}
+                                  className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 border border-slate-300 dark:border-slate-800/80 transition-colors"
+                                >
+                                  <div className="mt-0.5 shrink-0">
+                                    <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/40">
+                                      <AppIcon icon={Hourglass} size="sm" color="inherit" />
+                                    </span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                                         {item.facultyName}
-                                      </span>
+                                      </p>
                                       {item.isRevision && (
-                                        <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+                                        <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-bold">
                                           Revision
                                         </span>
                                       )}
                                     </div>
-                                    <p className="text-xs text-slate-600 dark:text-slate-400 truncate mt-0.5">
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 truncate">
                                       {item.requirementTitle}
                                     </p>
-                                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                       Submitted: {new Date(item.submittedAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                                    </span>
+                                    </p>
                                   </div>
                                   <button
                                     type="button"
@@ -875,7 +999,7 @@ export function AdminFacultyDashboard({
                                       }
                                       handleSetActiveSection("requirements");
                                     }}
-                                    className="shrink-0 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                    className="shrink-0 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                                   >
                                     Review
                                   </button>
@@ -886,36 +1010,60 @@ export function AdminFacultyDashboard({
                         </div>
                       </div>
 
-                      {/* Right Column (1-Span) — Recent Activity */}
+                      {/* Right Column (1-Span) — Recent Admin Actions / Activity */}
                       <div className="space-y-4">
-                        <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none p-5 transition-colors">
-                          <div className="pb-3 border-b border-slate-300 dark:border-slate-800">
-                            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-normal">Recent Admin Actions</h2>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Latest reviews and validation activity.</p>
+                        <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
+                          <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
+                            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                              Recent Activity
+                            </h3>
+                            <button
+                              type="button"
+                              onClick={() => handleSetActiveSection("requirements")}
+                              className="text-xs sm:text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition cursor-pointer font-semibold"
+                            >
+                              View all
+                            </button>
                           </div>
                           {recentActivity.length === 0 ? (
-                            <div className="py-6 text-center">
+                            <div className="py-8 text-center">
                               <p className="text-xs text-slate-500 dark:text-slate-400">No recent activity to display.</p>
                             </div>
                           ) : (
-                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                              {recentActivity.slice(0, 3).map((act) => (
-                                <div key={act.id} className="py-3 space-y-1">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                      {act.facultyName}
-                                    </span>
-                                    <SubmissionStatusBadge
-                                      status={act.decision === "validated" ? "Validated" : "Revision Requested"}
-                                      size="sm"
-                                    />
+                            <div className="space-y-3">
+                              {recentActivity.slice(0, 4).map((act) => (
+                                <div
+                                  key={act.id}
+                                  className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-950/60 dark:hover:bg-slate-950/90 border border-slate-300 dark:border-slate-800/80 transition-colors"
+                                >
+                                  <div className="mt-0.5 shrink-0">
+                                    {act.decision === "validated" ? (
+                                      <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/40">
+                                        <AppIcon icon={Check} size="sm" color="inherit" />
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/40">
+                                        <AppIcon icon={Xmark} size="sm" color="inherit" />
+                                      </span>
+                                    )}
                                   </div>
-                                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                    {act.requirementTitle}
-                                  </p>
-                                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                                    {new Date(act.createdAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                        {act.facultyName}
+                                      </p>
+                                      <SubmissionStatusBadge
+                                        status={act.decision === "validated" ? "Validated" : "Revision Requested"}
+                                        size="sm"
+                                      />
+                                    </div>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 truncate">
+                                      {act.requirementTitle}
+                                    </p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                      {new Date(act.createdAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                    </p>
+                                  </div>
                                 </div>
                               ))}
                             </div>
