@@ -290,21 +290,15 @@ export function FacultyDetailsModal({
             </div>
 
             {/* Documents to be Submitted Section (Matching Faculty Documents View) */}
-            <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3.5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/70 dark:border-slate-800/80 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 rounded-lg bg-[#800000]/10 dark:bg-[#800000]/20 text-[#800000] dark:text-amber-400">
-                    <AppIcon icon={Page} size="sm" color="inherit" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                      Documents to be Submitted
-                    </h4>
-                  </div>
+            <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0">
+                  <AppIcon icon={Page} size="sm" color="default" />
+                  <span>Documents to be Submitted</span>
                 </div>
 
-                {/* Status counts with circular icon badges (matching Documents to be Submitted) */}
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                {/* Status counts with circular icon badges in 1 straight horizontal line */}
+                <div className="flex items-center gap-2 sm:gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium shrink-0 whitespace-nowrap">
                   <span className="inline-flex items-center gap-1.5" title="Validated">
                     <span className="inline-flex items-center justify-center h-4.5 w-4.5 rounded-full bg-[#0b5336] text-white border border-[#08412a] shrink-0 shadow-2xs">
                       <AppIcon icon={Check} size="xs" color="white" />

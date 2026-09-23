@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { User, Xmark } from "iconoir-react";
+import { useEffect, useRef, useState } from "react";
+import { EditPencil, User, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,21 @@ export function EditFacultyModal({
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const firstNameInputRef = useRef<HTMLInputElement>(null);
+  const middleNameInputRef = useRef<HTMLInputElement>(null);
+  const lastNameInputRef = useRef<HTMLInputElement>(null);
+
+  const [activeField, setActiveField] = useState<
+    "firstName" | "middleName" | "lastName" | null
+  >(null);
+
+  const [initialValues, setInitialValues] = useState({
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    programId: "",
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -106,15 +121,25 @@ export function EditFacultyModal({
         (targetProgramCode && opt.code.toUpperCase() === targetProgramCode),
     );
 
+    let resolvedProgramId = "";
     if (matchedOption) {
-      setProgramId(matchedOption.id);
+      resolvedProgramId = matchedOption.id;
     } else if (targetProgramId) {
-      setProgramId(targetProgramId);
+      resolvedProgramId = targetProgramId;
     } else if (targetProgramCode) {
-      setProgramId(targetProgramCode);
+      resolvedProgramId = targetProgramCode;
     } else {
-      setProgramId("");
+      resolvedProgramId = "";
     }
+    setProgramId(resolvedProgramId);
+
+    setInitialValues({
+      firstName: directFirstName,
+      middleName: directMiddleName,
+      lastName: directLastName,
+      programId: resolvedProgramId,
+    });
+    setActiveField(null);
 
     setProfileImageFile(null);
     setProfileImagePreviewUrl(selectedFaculty.profileImageUrl);
@@ -138,6 +163,27 @@ export function EditFacultyModal({
     };
   }, [profileImageFile, selectedFaculty]);
 
+  function handleFocusField(
+    fieldKey: "firstName" | "middleName" | "lastName",
+    ref: React.RefObject<HTMLInputElement | null>,
+  ) {
+    setActiveField(fieldKey);
+    setTimeout(() => {
+      if (ref.current) {
+        ref.current.focus();
+        const length = ref.current.value.length;
+        ref.current.setSelectionRange(length, length);
+      }
+    }, 0);
+  }
+
+  function handleCancelEdit(fieldKey: "firstName" | "middleName" | "lastName") {
+    if (fieldKey === "firstName") setFirstName(initialValues.firstName);
+    if (fieldKey === "middleName") setMiddleName(initialValues.middleName);
+    if (fieldKey === "lastName") setLastName(initialValues.lastName);
+    setActiveField(null);
+  }
+
   if (!selectedFaculty) {
     return null;
   }
@@ -148,6 +194,15 @@ export function EditFacultyModal({
     month: "long",
     day: "numeric",
   });
+
+  const hasChanges =
+    firstName.trim() !== initialValues.firstName.trim() ||
+    middleName.trim() !== initialValues.middleName.trim() ||
+    lastName.trim() !== initialValues.lastName.trim() ||
+    programId !== initialValues.programId ||
+    Boolean(profileImageFile);
+
+  const isNameValid = firstName.trim().length > 0 && lastName.trim().length > 0;
 
   async function handleSaveChanges() {
     setIsSaving(true);
@@ -163,12 +218,12 @@ export function EditFacultyModal({
     try {
       const formData = new FormData();
       formData.append("facultyProfileId", selectedFaculty.id);
-      formData.append("firstName", firstName);
-      formData.append("middleName", middleName);
-      formData.append("lastName", lastName);
-      formData.append("first_name", firstName);
-      formData.append("middle_name", middleName);
-      formData.append("last_name", lastName);
+      formData.append("firstName", firstName.trim());
+      formData.append("middleName", middleName.trim());
+      formData.append("lastName", lastName.trim());
+      formData.append("first_name", firstName.trim());
+      formData.append("middle_name", middleName.trim());
+      formData.append("last_name", lastName.trim());
       if (programId) {
         formData.append("programId", programId);
         formData.append("program_id", programId);
@@ -193,6 +248,14 @@ export function EditFacultyModal({
         );
       }
 
+      setInitialValues({
+        firstName: firstName.trim(),
+        middleName: middleName.trim(),
+        lastName: lastName.trim(),
+        programId,
+      });
+      setProfileImageFile(null);
+      setActiveField(null);
       setSaveMessage("Faculty details updated successfully.");
       await onSave();
     } catch (error) {
@@ -235,7 +298,7 @@ export function EditFacultyModal({
                     )}
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
                       Profile Picture
                     </p>
                     <button
@@ -250,92 +313,222 @@ export function EditFacultyModal({
                       Change Photo
                     </button>
                     {profileImageFile ? (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                        {profileImageFile.name}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-amber-600 dark:text-amber-400 truncate max-w-[140px]">
+                          {profileImageFile.name}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProfileImageFile(null);
+                            const input = document.getElementById(
+                              "facultyProfileImageInput",
+                            ) as HTMLInputElement | null;
+                            if (input) input.value = "";
+                          }}
+                          className="text-xs text-rose-500 hover:text-rose-600 hover:underline cursor-pointer font-medium"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     ) : null}
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="faculty-first-name"
+                      className="block text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold"
+                    >
                       First Name
-                    </p>
-                    <input
-                      value={firstName}
-                      onChange={(event) => setFirstName(event.target.value)}
-                      className="mt-2 w-full rounded-md border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
-                    />
-                  </label>
-                  <label className="block">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        id="faculty-first-name"
+                        ref={firstNameInputRef}
+                        readOnly={activeField !== "firstName"}
+                        className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                          activeField === "firstName"
+                            ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                            : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                        }`}
+                        value={firstName}
+                        onChange={(event) => setFirstName(event.target.value)}
+                        onBlur={() => setActiveField(null)}
+                        placeholder="First name"
+                      />
+                      {activeField === "firstName" ? (
+                        <button
+                          type="button"
+                          title="Cancel edit"
+                          aria-label="Cancel edit"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleCancelEdit("firstName")}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={Xmark} size="xs" color="inherit" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          title="Edit first name"
+                          aria-label="Edit first name"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleFocusField("firstName", firstNameInputRef)}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="faculty-middle-name"
+                      className="block text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold"
+                    >
                       Middle Name
-                    </p>
-                    <input
-                      value={middleName}
-                      onChange={(event) => setMiddleName(event.target.value)}
-                      className="mt-2 w-full rounded-md border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
-                    />
-                  </label>
-                  <label className="block sm:col-span-2">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        id="faculty-middle-name"
+                        ref={middleNameInputRef}
+                        readOnly={activeField !== "middleName"}
+                        className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                          activeField === "middleName"
+                            ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                            : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                        }`}
+                        value={middleName}
+                        onChange={(event) => setMiddleName(event.target.value)}
+                        onBlur={() => setActiveField(null)}
+                        placeholder="Middle name"
+                      />
+                      {activeField === "middleName" ? (
+                        <button
+                          type="button"
+                          title="Cancel edit"
+                          aria-label="Cancel edit"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleCancelEdit("middleName")}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={Xmark} size="xs" color="inherit" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          title="Edit middle name"
+                          aria-label="Edit middle name"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleFocusField("middleName", middleNameInputRef)}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label
+                      htmlFor="faculty-last-name"
+                      className="block text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold"
+                    >
                       Last Name
-                    </p>
-                    <input
-                      value={lastName}
-                      onChange={(event) => setLastName(event.target.value)}
-                      className="mt-2 w-full rounded-md border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
-                    />
-                  </label>
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        id="faculty-last-name"
+                        ref={lastNameInputRef}
+                        readOnly={activeField !== "lastName"}
+                        className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl pl-3.5 pr-9 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                          activeField === "lastName"
+                            ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                            : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                        }`}
+                        value={lastName}
+                        onChange={(event) => setLastName(event.target.value)}
+                        onBlur={() => setActiveField(null)}
+                        placeholder="Last name"
+                      />
+                      {activeField === "lastName" ? (
+                        <button
+                          type="button"
+                          title="Cancel edit"
+                          aria-label="Cancel edit"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleCancelEdit("lastName")}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={Xmark} size="xs" color="inherit" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          title="Edit last name"
+                          aria-label="Edit last name"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleFocusField("lastName", lastNameInputRef)}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      Department / Program
-                    </p>
-                    <select
-                      value={programId}
-                      onChange={(e) => setProgramId(e.target.value)}
-                      disabled={isLoadingPrograms}
-                      className="mt-2 w-full rounded-md border border-slate-400 bg-slate-50 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring focus:ring-amber-300/30"
-                    >
-                      <option value="">-- Select Program / Department --</option>
-                      {degreePrograms.length > 0 && (
-                        <optgroup label="Degree Programs">
-                          {degreePrograms.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.code} — {p.name}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      {diplomaCourses.length > 0 && (
-                        <optgroup label="Diploma Courses">
-                          {diplomaCourses.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.code} — {p.name}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </select>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="faculty-department-program"
+                    className="block text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold"
+                  >
+                    Department / Program
                   </label>
+                  <select
+                    id="faculty-department-program"
+                    value={programId}
+                    onChange={(e) => setProgramId(e.target.value)}
+                    disabled={isLoadingPrograms}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/80 dark:focus:ring-amber-500/60 transition-all cursor-pointer"
+                  >
+                    <option value="">-- Select Program / Department --</option>
+                    {degreePrograms.length > 0 && (
+                      <optgroup label="Degree Programs">
+                        {degreePrograms.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.code} — {p.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {diplomaCourses.length > 0 && (
+                      <optgroup label="Diploma Courses">
+                        {diplomaCourses.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.code} — {p.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
                     Email
                   </p>
-                  <p className="text-sm text-slate-200">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
                     {selectedFaculty.email}
                   </p>
                 </div>
 
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
                       Account Status
                     </p>
                     <p
@@ -349,7 +542,7 @@ export function EditFacultyModal({
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
                       Created Date
                     </p>
                     <p className="text-sm text-slate-900 dark:text-slate-200">{formattedDate}</p>
@@ -370,10 +563,10 @@ export function EditFacultyModal({
 
                 <div className="space-y-3">
                   {saveMessage ? (
-                    <p className="text-sm text-green-300">{saveMessage}</p>
+                    <p className="text-sm text-green-600 dark:text-green-400 font-medium">{saveMessage}</p>
                   ) : null}
                   {saveError ? (
-                    <p className="text-sm text-red-400">{saveError}</p>
+                    <p className="text-sm text-red-600 dark:text-red-400 font-medium">{saveError}</p>
                   ) : null}
                 </div>
 
@@ -381,7 +574,8 @@ export function EditFacultyModal({
                   <Button
                     type="button"
                     onClick={handleSaveChanges}
-                    disabled={isSaving}
+                    disabled={isSaving || !hasChanges || !isNameValid}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {isSaving ? "Saving..." : "Save Changes"}
                   </Button>
