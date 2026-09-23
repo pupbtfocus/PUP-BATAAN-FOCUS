@@ -14,6 +14,7 @@ import {
   SystemRestart,
   Trash,
   Upload,
+  User,
   WarningTriangle,
   Xmark,
   XmarkCircle,
@@ -247,7 +248,7 @@ export function AdminNotificationDrawer({
             />
 
             {/* Sheet Drawer */}
-            <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-full sm:max-w-md md:max-w-lg flex-col bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250">
+            <div className="fixed inset-y-0 right-0 z-[100] flex h-full w-full sm:max-w-lg md:max-w-xl flex-col bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 shadow-2xl animate-in slide-in-from-right duration-250">
               {/* Header Top Bar */}
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 sm:px-5 py-3.5 shrink-0">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -294,13 +295,13 @@ export function AdminNotificationDrawer({
               </div>
 
               {/* Sub-Header / Inbox Actions Toolbar */}
-              <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/70 text-xs shrink-0">
-                <div className="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800 p-0.5 rounded-lg">
+              <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/70 text-xs shrink-0 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800 p-0.5 rounded-lg shrink-0">
                   <button
                     type="button"
                     onClick={() => setFilterTab("all")}
                     className={cn(
-                      "px-2.5 py-1 rounded-md font-semibold text-xs transition cursor-pointer",
+                      "px-2.5 py-1 rounded-md font-semibold text-xs transition cursor-pointer whitespace-nowrap",
                       filterTab === "all"
                         ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -312,7 +313,7 @@ export function AdminNotificationDrawer({
                     type="button"
                     onClick={() => setFilterTab("submissions")}
                     className={cn(
-                      "px-2.5 py-1 rounded-md font-semibold text-xs transition cursor-pointer",
+                      "px-2.5 py-1 rounded-md font-semibold text-xs transition cursor-pointer whitespace-nowrap",
                       filterTab === "submissions"
                         ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -324,7 +325,7 @@ export function AdminNotificationDrawer({
                     type="button"
                     onClick={() => setFilterTab("unread")}
                     className={cn(
-                      "px-2.5 py-1 rounded-md font-semibold text-xs transition cursor-pointer",
+                      "px-2.5 py-1 rounded-md font-semibold text-xs transition cursor-pointer whitespace-nowrap",
                       filterTab === "unread"
                         ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -334,13 +335,13 @@ export function AdminNotificationDrawer({
                   </button>
                 </div>
 
-                <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   {unreadCount > 0 && (
                     <button
                       type="button"
                       onClick={handleMarkAllAsRead}
                       disabled={isMarkingAll || isClearingAll}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 transition-colors shadow-xs disabled:opacity-50 cursor-pointer whitespace-nowrap shrink-0"
                       title="Mark all notifications as read"
                     >
                       {isMarkingAll ? (
@@ -357,7 +358,7 @@ export function AdminNotificationDrawer({
                       type="button"
                       onClick={handleClearAll}
                       disabled={isClearingAll || isMarkingAll}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-colors shadow-xs disabled:opacity-50 cursor-pointer whitespace-nowrap shrink-0"
                       title="Clear all notifications"
                     >
                       {isClearingAll ? (
@@ -426,7 +427,7 @@ export function AdminNotificationDrawer({
                         key={notif.id}
                         onClick={() => void handleItemClick(notif)}
                         className={cn(
-                          "group relative flex items-start gap-3.5 px-4 sm:px-5 py-4 transition-all duration-150 cursor-pointer text-left",
+                          "group relative flex items-start gap-3.5 px-4 sm:px-5 pt-3.5 pb-3 transition-all duration-150 cursor-pointer text-left",
                           isUnread
                             ? "bg-amber-500/[0.04] hover:bg-amber-500/[0.08] dark:bg-amber-500/[0.06] dark:hover:bg-amber-500/[0.12] border-l-4 border-l-amber-500"
                             : "bg-white hover:bg-slate-50/90 dark:bg-slate-950 dark:hover:bg-slate-900/60 border-l-4 border-l-transparent"
@@ -467,7 +468,7 @@ export function AdminNotificationDrawer({
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           {/* Subject line + Time + Unread indicator */}
-                          <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start justify-between gap-3">
                             <h4
                               className={cn(
                                 "text-sm tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-snug",
@@ -511,7 +512,7 @@ export function AdminNotificationDrawer({
                             ) : null}
 
                             {reqLabel && (
-                              <span className="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/70 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate max-w-[200px]">
+                              <span className="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/70 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate max-w-[260px] sm:max-w-xs">
                                 {reqLabel}
                               </span>
                             )}
@@ -523,11 +524,14 @@ export function AdminNotificationDrawer({
                           </p>
 
                           {/* Footer / Actions */}
-                          <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                            <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                              {notif.facultyName ? `Faculty: ${notif.facultyName}` : "Click to view changes"}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 shadow-xs transition-colors">
+                          <div className="mt-2.5 flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/60">
+                            <div className="flex items-center gap-1.5 min-w-0 text-slate-500 dark:text-slate-400">
+                              <AppIcon icon={User} size="xs" color="muted" className="shrink-0" />
+                              <span className="text-xs font-medium truncate">
+                                {notif.facultyName ? notif.facultyName : "System Notification"}
+                              </span>
+                            </div>
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 shadow-xs transition-colors shrink-0">
                               <span>Review submission</span>
                               <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
                             </span>
