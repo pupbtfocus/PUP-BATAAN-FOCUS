@@ -695,19 +695,10 @@ function FacultySubmissionPanelContent({
   >(() => {
     return ["All", ...SEMESTER_OPTIONS];
   }, []);
-  const [
-    hasSeenIncompleteRequirementsModal,
-    setHasSeenIncompleteRequirementsModal,
-  ] = useState(false);
+  const [isRequirementAlertOpen, setIsRequirementAlertOpen] = useState(false);
+  const [hasTriggeredRequirementAlert, setHasTriggeredRequirementAlert] = useState(false);
   useEffect(() => {
     setIsMounted(true);
-    try {
-      if (sessionStorage.getItem("dismissed_requirement_alert") === "true") {
-        setHasSeenIncompleteRequirementsModal(true);
-      }
-    } catch {
-      // safe
-    }
     try {
       const cached = localStorage.getItem("pup_focus_viewed_submission_ids");
       if (cached) {
@@ -721,12 +712,7 @@ function FacultySubmissionPanelContent({
     }
   }, []);
   function dismissIncompleteRequirementsAlert() {
-    setHasSeenIncompleteRequirementsModal(true);
-    try {
-      sessionStorage.setItem("dismissed_requirement_alert", "true");
-    } catch {
-      // safe
-    }
+    setIsRequirementAlertOpen(false);
   }
   async function fetchHistory() {
     try {
@@ -1384,13 +1370,31 @@ function FacultySubmissionPanelContent({
     if (diffMs <= 0) return 0;
     return Math.floor(diffMs / (1000 * 60 * 60 * 24));
   }, [submissionWindow]);
-  const showIncompleteRequirementsModal =
-    isMounted &&
-    activeView === "dashboard" &&
-    !hasSeenIncompleteRequirementsModal &&
-    Boolean(submissionWindow?.isConfigured && submissionWindow?.isOpen) &&
-    displayedStatusCounts !== null &&
-    displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected + displayedStatusCounts.pending > 0;
+  // Show the alert once per page load when there are actionable items.
+  // Waits for isLoadingStatuses=false so we use fresh API data, not stale SSR counts.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (
+      !hasTriggeredRequirementAlert &&
+      isMounted &&
+      !isLoadingStatuses &&
+      activeView === "dashboard" &&
+      Boolean(submissionWindow?.isConfigured && submissionWindow?.isOpen) &&
+      displayedStatusCounts !== null &&
+      displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected + displayedStatusCounts.pending > 0
+    ) {
+      setHasTriggeredRequirementAlert(true);
+      setIsRequirementAlertOpen(true);
+    }
+  }, [
+    hasTriggeredRequirementAlert,
+    isMounted,
+    isLoadingStatuses,
+    activeView,
+    submissionWindow,
+    displayedStatusCounts,
+  ]);
+  const showIncompleteRequirementsModal = isMounted && isRequirementAlertOpen;
   function openDirectUploadModal(
     code: RequirementCode | string,
     isRevision: boolean = false,
