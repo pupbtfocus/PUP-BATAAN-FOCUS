@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/utils/cn";
 import { createClient } from "@/lib/supabase/client";
+import { resetDashboardNavigationState } from "@/config/routes";
 
 export function LogoutButton({ className }: { className?: string }) {
   const router = useRouter();
@@ -11,6 +12,8 @@ export function LogoutButton({ className }: { className?: string }) {
 
   async function handleLogout() {
     setIsLoggingOut(true);
+
+    resetDashboardNavigationState();
 
     const supabase = createClient();
     await supabase.auth.signOut();

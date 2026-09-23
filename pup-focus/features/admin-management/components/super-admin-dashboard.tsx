@@ -287,14 +287,16 @@ export function SuperAdminDashboard({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Restore stored tab if no URL param was provided, then mark mounted
+  // Restore stored tab within current session if no URL param was provided, then mark mounted
   useEffect(() => {
     const tabParam = searchParams?.get("tab") || searchParams?.get("section");
     if (!tabParam) {
       try {
+        localStorage.removeItem("activeSuperAdminTab");
+        localStorage.removeItem("activeSuperAdminSection");
         const stored =
-          localStorage.getItem("activeSuperAdminTab") ||
-          localStorage.getItem("activeSuperAdminSection");
+          sessionStorage.getItem("activeSuperAdminTab") ||
+          sessionStorage.getItem("activeSuperAdminSection");
         const fromStorage = normalizeSuperAdminSection(stored);
         if (fromStorage && fromStorage !== activeSection) {
           setActiveSection(fromStorage);
@@ -320,8 +322,10 @@ export function SuperAdminDashboard({
     setActiveSection(section);
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem("activeSuperAdminTab", section);
-        localStorage.setItem("activeSuperAdminSection", section);
+        sessionStorage.setItem("activeSuperAdminTab", section);
+        sessionStorage.setItem("activeSuperAdminSection", section);
+        localStorage.removeItem("activeSuperAdminTab");
+        localStorage.removeItem("activeSuperAdminSection");
         const url = new URL(window.location.href);
         url.searchParams.set("tab", section);
         window.history.replaceState(null, "", url.toString());

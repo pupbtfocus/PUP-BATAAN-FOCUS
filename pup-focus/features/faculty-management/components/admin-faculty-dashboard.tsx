@@ -94,7 +94,7 @@ export function AdminFacultyDashboard({
     const fromParams = normalizeAdminSection(tabParam);
     if (fromParams) return fromParams;
 
-    return "facultyManagement";
+    return "dashboard";
   });
 
   const [currentAdminName, setCurrentAdminName] = useState<string>(
@@ -114,14 +114,16 @@ export function AdminFacultyDashboard({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Restore stored tab if no URL param was provided, then mark mounted
+  // Restore stored tab within current session if no URL param was provided, then mark mounted
   useEffect(() => {
     const tabParam = searchParams?.get("tab") || searchParams?.get("section");
     if (!tabParam) {
       try {
+        localStorage.removeItem("activeAdminTab");
+        localStorage.removeItem("activeAdminSection");
         const stored =
-          localStorage.getItem("activeAdminTab") ||
-          localStorage.getItem("activeAdminSection");
+          sessionStorage.getItem("activeAdminTab") ||
+          sessionStorage.getItem("activeAdminSection");
         const fromStorage = normalizeAdminSection(stored);
         if (fromStorage && fromStorage !== activeSection) {
           setActiveSection(fromStorage);
@@ -147,8 +149,10 @@ export function AdminFacultyDashboard({
     setActiveSection(section);
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem("activeAdminTab", section);
-        localStorage.setItem("activeAdminSection", section);
+        sessionStorage.setItem("activeAdminTab", section);
+        sessionStorage.setItem("activeAdminSection", section);
+        localStorage.removeItem("activeAdminTab");
+        localStorage.removeItem("activeAdminSection");
         const url = new URL(window.location.href);
         url.searchParams.set("tab", section);
         window.history.replaceState(null, "", url.toString());
