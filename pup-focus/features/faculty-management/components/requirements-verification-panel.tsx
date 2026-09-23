@@ -21,6 +21,7 @@ import {
   Package,
   Page,
   Reports,
+  SendMail,
   SystemRestart,
   WarningCircle,
   WarningTriangle,
@@ -1279,7 +1280,7 @@ function FacultyVerificationDrawer({
             <button
               type="button"
               onClick={() => setActiveTab("current")}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold transition cursor-pointer ${
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition cursor-pointer ${
                 activeTab === "current"
                   ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-bold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -1287,15 +1288,20 @@ function FacultyVerificationDrawer({
             >
               <span>Current Submissions</span>
               {pendingSubmissionsCount > 0 ? (
-                <span className="inline-flex items-center justify-center rounded-full bg-amber-500 text-slate-950 px-1.5 py-0.5 text-[10px] font-bold leading-none">
+                <span className="inline-flex items-center justify-center rounded-full bg-amber-500 text-slate-950 px-2 py-0.5 text-xs font-bold leading-none">
                   {pendingSubmissionsCount}
                 </span>
               ) : null}
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("history")}
-              className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition cursor-pointer ${
+              onClick={() => {
+                setActiveTab("history");
+                if (historySubmissions.length === 0) {
+                  setIsLoadingHistory(true);
+                }
+              }}
+              className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition cursor-pointer ${
                 activeTab === "history"
                   ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-bold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -1308,27 +1314,36 @@ function FacultyVerificationDrawer({
 
         {/* Body Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
-          {isLoading ? (
+          {activeTab === "current" && isLoading ? (
             <SystemLoadingScreen fullScreen={false} text="Loading faculty requirements..." />
           ) : activeTab === "current" ? (
             /* Tab 1: Current Submissions */
             <div className="space-y-4">
               {/* Bulk Actions & Filter Toolbar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-3 shadow-2xs">
+              <div className="flex items-center justify-between gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-2 sm:p-2.5 shadow-2xs overflow-x-auto">
                 {/* Filter Chips */}
-                <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => setFilterMode("all")}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                       filterMode === "all"
-                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs font-bold"
-                        : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
+                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs font-bold"
+                        : "bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800"
                     }`}
                   >
+                    <span
+                      className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
+                        filterMode === "all"
+                          ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-950 border border-white/30 dark:border-slate-900/30"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
+                      }`}
+                    >
+                      <AppIcon icon={Page} size="xs" color="inherit" />
+                    </span>
                     <span>All Files</span>
                     <span
-                      className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                      className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                         filterMode === "all"
                           ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
@@ -1340,19 +1355,27 @@ function FacultyVerificationDrawer({
                   <button
                     type="button"
                     onClick={() => setFilterMode("pending")}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                       filterMode === "pending"
-                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs font-bold"
-                        : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
+                        ? "bg-amber-500 text-slate-950 shadow-xs font-bold"
+                        : "bg-white text-slate-600 hover:border-amber-500/50 hover:bg-amber-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800"
                     }`}
                   >
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
+                    <span
+                      className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
+                        filterMode === "pending"
+                          ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
+                          : "bg-amber-500 text-slate-950 border border-amber-600"
+                      }`}
+                    >
+                      <AppIcon icon={Hourglass} size="xs" color="inherit" />
+                    </span>
                     <span>Need Review</span>
                     <span
-                      className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                      className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                         filterMode === "pending"
-                          ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                          ? "bg-slate-950/20 text-slate-950"
+                          : "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300"
                       }`}
                     >
                       {pendingSubmissionsCount}
@@ -1362,21 +1385,24 @@ function FacultyVerificationDrawer({
                     <button
                       type="button"
                       onClick={() => setFilterMode("revision_uploaded")}
-                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                         filterMode === "revision_uploaded"
-                          ? "bg-amber-500 text-slate-950 font-bold shadow-2xs"
-                          : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
+                          ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
+                          : "bg-white text-slate-600 hover:border-amber-500/50 hover:bg-amber-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800"
                       }`}
                     >
-                      <AppIcon
-                        icon={WarningCircle}
-                        size="sm"
-                        color={filterMode === "revision_uploaded" ? "inherit" : "active"}
-                        className={filterMode === "revision_uploaded" ? "text-slate-950" : ""}
-                      />
+                      <span
+                        className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
+                          filterMode === "revision_uploaded"
+                            ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
+                            : "bg-amber-500 text-slate-950 border border-amber-600"
+                        }`}
+                      >
+                        <AppIcon icon={WarningCircle} size="xs" color="inherit" />
+                      </span>
                       <span>Revisions Uploaded</span>
                       <span
-                        className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                        className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                           filterMode === "revision_uploaded"
                             ? "bg-slate-950/20 text-slate-950"
                             : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
@@ -1389,19 +1415,27 @@ function FacultyVerificationDrawer({
                   <button
                     type="button"
                     onClick={() => setFilterMode("validated")}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                       filterMode === "validated"
-                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs font-bold"
-                        : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
+                        ? "bg-[#0b5336] text-white shadow-xs ring-1 ring-[#08412a] font-bold"
+                        : "bg-white text-slate-600 hover:border-emerald-500/50 hover:bg-emerald-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/20 border border-slate-200 dark:border-slate-800"
                     }`}
                   >
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    <span
+                      className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
+                        filterMode === "validated"
+                          ? "bg-white/20 text-white border border-white/30"
+                          : "bg-[#0b5336] text-white border border-[#08412a]"
+                      }`}
+                    >
+                      <AppIcon icon={Check} size="xs" color="white" strokeWidth={2.5} />
+                    </span>
                     <span>Validated</span>
                     <span
-                      className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                      className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                         filterMode === "validated"
-                          ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                          ? "bg-white/20 text-white"
+                          : "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300"
                       }`}
                     >
                       {validatedSubmissionsCount}
@@ -1411,19 +1445,27 @@ function FacultyVerificationDrawer({
                     <button
                       type="button"
                       onClick={() => setFilterMode("revision")}
-                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
                         filterMode === "revision"
-                          ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs font-bold"
-                          : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
+                          ? "bg-[#780000] text-white shadow-xs ring-1 ring-[#5e0000] font-bold"
+                          : "bg-white text-slate-600 hover:border-rose-500/50 hover:bg-rose-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-rose-950/20 border border-slate-200 dark:border-slate-800"
                       }`}
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0" />
+                      <span
+                        className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
+                          filterMode === "revision"
+                            ? "bg-white/20 text-white border border-white/30"
+                            : "bg-[#780000] text-white border border-[#5e0000]"
+                        }`}
+                      >
+                        <AppIcon icon={Xmark} size="xs" color="white" strokeWidth={2.5} />
+                      </span>
                       <span>Needs Revision</span>
                       <span
-                        className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                        className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
                           filterMode === "revision"
-                            ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                            ? "bg-white/20 text-white"
+                            : "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300"
                         }`}
                       >
                         {revisionSubmissionsCount}
@@ -1433,12 +1475,12 @@ function FacultyVerificationDrawer({
                 </div>
 
                 {/* Bulk Actions */}
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     disabled={isRefreshing || isLoading}
                     onClick={handleRefresh}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-xs transition cursor-pointer disabled:opacity-50"
                     title="Refresh current submissions"
                   >
                     <SystemRestart
@@ -1451,22 +1493,26 @@ function FacultyVerificationDrawer({
                     type="button"
                     disabled={isValidatingAll || pendingSubmissionsCount === 0}
                     onClick={triggerValidateAllPendingModal}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <AppIcon icon={CheckCircle} size="sm" color="white" />
-                    {isValidatingAll
-                      ? "Validating..."
-                      : `Validate All Pending (${pendingSubmissionsCount})`}
+                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-white/20 text-white border border-white/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                      <AppIcon icon={Check} size="xs" color="white" strokeWidth={2.5} />
+                    </span>
+                    <span>
+                      {isValidatingAll
+                        ? "Validating..."
+                        : `Validate All Pending (${pendingSubmissionsCount})`}
+                    </span>
                   </button>
 
                   <button
                     type="button"
                     disabled={isDownloadingZip}
                     onClick={handleDownloadZip}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
                   >
-                    <AppIcon icon={Download} size="sm" color="inherit" className="text-slate-950" />
-                    {isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}
+                    <AppIcon icon={Download} size="xs" color="inherit" className="text-slate-950" />
+                    <span>{isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}</span>
                   </button>
                 </div>
               </div>
@@ -1697,8 +1743,10 @@ function FacultyVerificationDrawer({
                                   <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
                                     {facultyNote ? (
                                       <div className="flex items-start gap-1.5 leading-snug">
-                                        <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <AppIcon icon={ChatBubble} size="xs" color="active" />
+                                        <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                            <AppIcon icon={ChatBubble} size="xs" color="active" />
+                                          </span>
                                           {isRevisionUploaded ? "Faculty Remarks (Revision):" : "Faculty Remarks:"}
                                         </span>
                                         <p
@@ -1712,8 +1760,10 @@ function FacultyVerificationDrawer({
 
                                     {isRevisionUploaded && priorRejectionNote ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <AppIcon icon={WarningCircle} size="xs" color="danger" />
+                                        <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#780000]/15 dark:bg-[#780000]/30 text-[#780000] dark:text-rose-400 border border-[#780000]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                            <AppIcon icon={Xmark} size="xs" color="danger" strokeWidth={2.5} />
+                                          </span>
                                           Prior Revision Request:
                                         </span>
                                         <p
@@ -1725,9 +1775,11 @@ function FacultyVerificationDrawer({
                                       </div>
                                     ) : isRevisionRequested ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <AppIcon icon={WarningCircle} size="xs" color="danger" />
-                                          Revision:
+                                        <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#780000]/15 dark:bg-[#780000]/30 text-[#780000] dark:text-rose-400 border border-[#780000]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                            <AppIcon icon={Xmark} size="xs" color="danger" strokeWidth={2.5} />
+                                          </span>
+                                          Revision Sent:
                                         </span>
                                         <p
                                           className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
@@ -1739,9 +1791,11 @@ function FacultyVerificationDrawer({
                                       </div>
                                     ) : isValidated && adminNote ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <AppIcon icon={Notes} size="xs" color="success" />
-                                          Your Remarks:
+                                        <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#0b5336]/15 dark:bg-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 border border-[#0b5336]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                            <AppIcon icon={Check} size="xs" color="success" strokeWidth={2.5} />
+                                          </span>
+                                          Validated Remarks:
                                         </span>
                                         <p
                                           className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
@@ -1759,15 +1813,15 @@ function FacultyVerificationDrawer({
                                 )}
                               </td>
 
-                              {/* Column 4: Status / Action (Centered Vertically and Horizontally) */}
+                              {/* Column 4: Status / Action (Matching Documents to be Submitted badges & check/x button icons) */}
                               <td className="px-4 py-3.5 align-middle text-center">
                                 {isValidated ? (
                                   <div className="flex items-center justify-center">
-                                    <SubmissionStatusBadge status="Validated" size="sm" />
+                                    <SubmissionStatusBadge status="Validated" size="md" />
                                   </div>
                                 ) : isRevisionRequested ? (
                                   <div className="flex items-center justify-center">
-                                    <SubmissionStatusBadge status="Needs Revision" size="sm" />
+                                    <SubmissionStatusBadge status="Needs Revision" size="md" />
                                   </div>
                                 ) : matchingSubmission ? (
                                   <div className="flex items-center justify-center gap-2 whitespace-nowrap">
@@ -1786,10 +1840,11 @@ function FacultyVerificationDrawer({
                                           reqLabel
                                         )
                                       }
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                                      title="Validate Requirement"
+                                      aria-label="Validate Requirement"
+                                      className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white shadow-2xs transition-all hover:scale-110 active:scale-95 disabled:opacity-50 cursor-pointer"
                                     >
-                                      <AppIcon icon={Check} size="sm" color="white" />
-                                      <span>Validate</span>
+                                      <AppIcon icon={Check} size="sm" color="white" strokeWidth={2.5} />
                                     </button>
                                     <button
                                       type="button"
@@ -1806,17 +1861,20 @@ function FacultyVerificationDrawer({
                                           reqLabel
                                         )
                                       }
-                                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                                      title="Request Revision"
+                                      aria-label="Request Revision"
+                                      className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white shadow-2xs transition-all hover:scale-110 active:scale-95 disabled:opacity-50 cursor-pointer"
                                     >
-                                      <AppIcon icon={WarningCircle} size="sm" color="white" />
-                                      <span>Revision</span>
+                                      <AppIcon icon={Xmark} size="sm" color="white" strokeWidth={2.5} />
                                     </button>
                                   </div>
                                 ) : (
                                   <div className="flex items-center justify-center">
-                                    <span className="text-xs text-slate-400 dark:text-slate-500 italic whitespace-nowrap">
-                                      Awaiting Submission
-                                    </span>
+                                    <SubmissionStatusBadge
+                                      status="Not Submitted"
+                                      label="Awaiting Submission"
+                                      size="md"
+                                    />
                                   </div>
                                 )}
                               </td>
@@ -1840,7 +1898,10 @@ function FacultyVerificationDrawer({
                   </span>
                   <select
                     value={selectedHistoryAy}
-                    onChange={(e) => setSelectedHistoryAy(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedHistoryAy(e.target.value);
+                      setIsLoadingHistory(true);
+                    }}
                     className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500"
                   >
                     {historyAcademicYears.map((year) => (
@@ -1852,9 +1913,10 @@ function FacultyVerificationDrawer({
 
                   <select
                     value={selectedHistorySem}
-                    onChange={(e) =>
-                      setSelectedHistorySem(e.target.value as SemesterOption)
-                    }
+                    onChange={(e) => {
+                      setSelectedHistorySem(e.target.value as SemesterOption);
+                      setIsLoadingHistory(true);
+                    }}
                     className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500"
                   >
                     <option value="1st Semester">1st Semester</option>
@@ -1893,13 +1955,11 @@ function FacultyVerificationDrawer({
 
 
               {/* Past Submissions Compressed List Table */}
-              {isLoadingHistory ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center space-y-2">
-                  <AppIcon icon={SystemRestart} size="lg" color="muted" className="animate-spin" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Loading history submissions...
-                  </p>
-                </div>
+              {isLoadingHistory || !selectedHistoryAy ? (
+                <SystemLoadingScreen
+                  fullScreen={false}
+                  text="Loading verification history..."
+                />
               ) : (
                 <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
                   <div className="overflow-x-auto">
@@ -2044,8 +2104,10 @@ function FacultyVerificationDrawer({
                                   <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
                                     {facultyNote ? (
                                       <div className="flex items-start gap-1.5 leading-snug">
-                                        <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <AppIcon icon={ChatBubble} size="xs" color="active" />
+                                        <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                            <AppIcon icon={ChatBubble} size="xs" color="active" />
+                                          </span>
                                           Faculty Remarks:
                                         </span>
                                         <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={facultyNote}>
@@ -2055,9 +2117,11 @@ function FacultyVerificationDrawer({
                                     ) : null}
                                     {adminNote ? (
                                       <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1">
-                                          <AppIcon icon={Notes} size="xs" color="success" />
-                                          Your Remarks:
+                                        <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#0b5336]/15 dark:bg-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 border border-[#0b5336]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                            <AppIcon icon={Check} size="xs" color="success" strokeWidth={2.5} />
+                                          </span>
+                                          Validated Remarks:
                                         </span>
                                         <p className="text-slate-700 dark:text-slate-300 italic line-clamp-2" title={adminNote}>
                                           &ldquo;{adminNote}&rdquo;
@@ -2073,7 +2137,7 @@ function FacultyVerificationDrawer({
                               {/* Status */}
                               <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap">
                                 <div className="flex items-center justify-center">
-                                  <SubmissionStatusBadge status={rawStatus} size="sm" />
+                                  <SubmissionStatusBadge status={rawStatus} size="md" />
                                 </div>
                               </td>
 
@@ -2133,7 +2197,7 @@ function FacultyVerificationDrawer({
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
-              icon={WarningCircle}
+              icon={Xmark}
               title="Request Requirement Revision"
               subtitle={`${revisionModalData.reqLabel} • ${faculty.fullName}`}
               className="-mx-6 -mt-6 mb-4 rounded-t-3xl"
@@ -2213,8 +2277,8 @@ function FacultyVerificationDrawer({
                   </>
                 ) : (
                   <>
-                    <AppIcon icon={WarningCircle} size="sm" color="white" />
-                    Send Revision Request
+                    <AppIcon icon={SendMail} size="sm" color="white" />
+                    <span>Send Revision Request</span>
                   </>
                 )}
               </button>
@@ -2280,8 +2344,8 @@ function FacultyVerificationDrawer({
                   </>
                 ) : (
                   <>
-                    <AppIcon icon={Check} size="sm" color="white" />
-                    Confirm &amp; Validate
+                    <AppIcon icon={Check} size="sm" color="white" strokeWidth={2.5} />
+                    <span>Confirm &amp; Validate</span>
                   </>
                 )}
               </button>
@@ -2560,7 +2624,10 @@ function FacultyVerificationDrawer({
                 ) : validateTimerSeconds > 0 ? (
                   `Confirm (${validateTimerSeconds}s)`
                 ) : (
-                  `Confirm & Validate All (${pendingSubmissionsCount})`
+                  <>
+                    <AppIcon icon={Check} size="sm" color="white" strokeWidth={2.5} />
+                    <span>Confirm &amp; Validate All ({pendingSubmissionsCount})</span>
+                  </>
                 )}
               </button>
             </div>
@@ -3248,7 +3315,15 @@ export function RequirementsPanel({
                           </span>
                         ) : (
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusBadgeClass}`}>
-                            {isCompleted ? <AppIcon icon={CheckCircle} size="sm" color="white" /> : null}
+                            {overallStatus === "Completed / Validated" ? (
+                              <AppIcon icon={CheckCircle} size="sm" color="white" />
+                            ) : overallStatus === "Needs Revision" ? (
+                              <AppIcon icon={Xmark} size="sm" color="white" strokeWidth={2.5} />
+                            ) : overallStatus === "Pending Review" ? (
+                              <AppIcon icon={Hourglass} size="sm" color="inherit" />
+                            ) : (
+                              <AppIcon icon={Minus} size="sm" color="inherit" />
+                            )}
                             <span>{overallStatus}</span>
                           </span>
                         )}
