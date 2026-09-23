@@ -84,7 +84,7 @@ export const getFileBrand = (
   if (ext === "pdf") {
     return {
       label: "Adobe PDF Document",
-      iconUrl: "https://api.iconify.design/vscode-icons:file-type-pdf2.svg",
+      iconUrl: "/icons/adobe-pdf.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
       badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Drive",
@@ -96,7 +96,7 @@ export const getFileBrand = (
   if (isExcel || ["xlsx", "xls", "csv"].includes(ext)) {
     return {
       label: "Microsoft Excel Spreadsheet",
-      iconUrl: "https://api.iconify.design/vscode-icons:file-type-excel.svg",
+      iconUrl: "/icons/microsoft-excel.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
       badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Sheets",
@@ -108,7 +108,7 @@ export const getFileBrand = (
   if (isWord || ["docx", "doc"].includes(ext)) {
     return {
       label: "Microsoft Word Document",
-      iconUrl: "https://api.iconify.design/vscode-icons:file-type-word.svg",
+      iconUrl: "/icons/microsoft-word.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
       badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Docs",
@@ -120,8 +120,7 @@ export const getFileBrand = (
   if (["pptx", "ppt"].includes(ext)) {
     return {
       label: "Microsoft PowerPoint Presentation",
-      iconUrl:
-        "https://api.iconify.design/vscode-icons:file-type-powerpoint.svg",
+      iconUrl: "/icons/microsoft-powerpoint.svg",
       borderColor: "border-slate-200 dark:border-slate-800",
       badgeBg: "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-100",
       googleApp: "Google Slides",

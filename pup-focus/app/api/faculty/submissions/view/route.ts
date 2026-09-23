@@ -373,6 +373,7 @@ export async function GET(request: NextRequest) {
         downloadUrl: signResult.signedUrl,
         storagePath: signResult.resolvedPath,
         mimeType: docVer?.mime_type || signResult.mimeType,
+        fileName: docVer?.file_name || undefined,
         sizeBytes: docVer?.size_bytes || null,
       });
     }
