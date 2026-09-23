@@ -52,7 +52,14 @@ export function SidebarButton({
       }`}
     >
       {Icon && (
-        <AppIcon icon={Icon} size="md" color={active ? "active" : "default"} />
+        <Icon
+          strokeWidth={2}
+          className={`h-5 w-5 shrink-0 ${
+            active
+              ? "text-amber-300 stroke-[2]"
+              : "text-amber-200/70"
+          }`}
+        />
       )}
       <div className="min-w-0 flex-1">
         <p className="truncate">{title}</p>
@@ -179,7 +186,7 @@ export function SidebarContent({
             <img
               src="/icons/pup-seal.png"
               alt="PUP"
-              className="w-14 h-14 rounded-full object-contain p-1 bg-slate-900 shadow-md transition-transform"
+              className="w-14 h-14 rounded-full object-contain p-1 bg-slate-900 shadow-md border-2 border-amber-400/60 ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
             />
           ) : (
             <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40 font-bold text-sm flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
@@ -207,7 +214,7 @@ export function SidebarContent({
 
       <div className="my-2 h-px w-full bg-amber-400/50" />
 
-      <nav className="mt-1.5 space-y-1.5 flex-1 overflow-y-auto">
+      <nav className="mt-1.5 space-y-1.5 flex-1">
         {/* 1. Dashboard */}
         <SidebarButton
           active={isDashboardActive}
@@ -228,42 +235,69 @@ export function SidebarContent({
                   : "text-amber-100/80 hover:bg-white/10 hover:text-white"
               }`}
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <AppIcon icon={Group} size="md" color={isUserManagementActive ? "active" : "default"} />
+              <div className="flex items-center gap-3 min-w-0">
+                <Group
+                  strokeWidth={2}
+                  className={`h-5 w-5 shrink-0 ${
+                    isUserManagementActive
+                      ? "text-amber-300 stroke-[2]"
+                      : "text-amber-200/70"
+                  }`}
+                />
                 <span className="truncate">User Management</span>
               </div>
               {isUserManagementOpen ? (
-                <AppIcon icon={NavArrowDown} size="sm" color={isUserManagementActive ? "active" : "muted"} className="ml-1" />
+                <NavArrowDown
+                  strokeWidth={2}
+                  className={`h-4 w-4 shrink-0 transition-transform ${
+                    isUserManagementActive ? "text-amber-300" : "text-amber-200/60"
+                  }`}
+                />
               ) : (
-                <AppIcon icon={NavArrowRight} size="sm" color={isUserManagementActive ? "active" : "muted"} className="ml-1" />
+                <NavArrowRight
+                  strokeWidth={2}
+                  className={`h-4 w-4 shrink-0 transition-transform ${
+                    isUserManagementActive ? "text-amber-300" : "text-amber-200/60"
+                  }`}
+                />
               )}
             </button>
 
             {/* Child Sub-items (Indented with left border indicator) */}
             {isUserManagementOpen && (
-              <div className="ml-3 pl-2 border-l border-amber-400/40 flex flex-col gap-1 mt-1">
+              <div className="ml-3 pl-2.5 border-l border-amber-400/40 flex flex-col gap-1 mt-1">
                 <button
                   type="button"
                   onClick={() => handleSelect("accounts")}
-                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md ${
                     isAccountsActive
                       ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                       : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
-                  <AppIcon icon={UserBadgeCheck} size="sm" color={isAccountsActive ? "active" : "default"} />
+                  <UserBadgeCheck
+                    strokeWidth={2}
+                    className={`h-4 w-4 shrink-0 ${
+                      isAccountsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                    }`}
+                  />
                   <span>Admin Management</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSelect("faculty")}
-                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer rounded-md ${
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md ${
                     isFacultyActive
                       ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                       : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
-                  <AppIcon icon={Group} size="sm" color={isFacultyActive ? "active" : "default"} />
+                  <Group
+                    strokeWidth={2}
+                    className={`h-4 w-4 shrink-0 ${
+                      isFacultyActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                    }`}
+                  />
                   <span>Faculty Management</span>
                 </button>
               </div>
@@ -299,32 +333,54 @@ export function SidebarContent({
                 : "text-amber-100/80 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <AppIcon icon={Calendar} size="md" color={isAcademicCycleActive ? "active" : "default"} />
+            <div className="flex items-center gap-3 min-w-0">
+              <Calendar
+                strokeWidth={2}
+                className={`h-5 w-5 shrink-0 ${
+                  isAcademicCycleActive
+                    ? "text-amber-300 stroke-[2]"
+                    : "text-amber-200/70"
+                }`}
+              />
               <span className="truncate">Academic Cycle</span>
             </div>
             {isAcademicCycleOpen ? (
-              <AppIcon icon={NavArrowDown} size="sm" color={isAcademicCycleActive ? "active" : "muted"} className="ml-1" />
+              <NavArrowDown
+                strokeWidth={2}
+                className={`h-4 w-4 shrink-0 transition-transform ${
+                  isAcademicCycleActive ? "text-amber-300" : "text-amber-200/60"
+                }`}
+              />
             ) : (
-              <AppIcon icon={NavArrowRight} size="sm" color={isAcademicCycleActive ? "active" : "muted"} className="ml-1" />
+              <NavArrowRight
+                strokeWidth={2}
+                className={`h-4 w-4 shrink-0 transition-transform ${
+                  isAcademicCycleActive ? "text-amber-300" : "text-amber-200/60"
+                }`}
+              />
             )}
           </button>
 
           {/* Child Sub-items (Indented with left border indicator) */}
           {isAcademicCycleOpen && (
-            <div className="ml-2.5 pl-1.5 border-l border-amber-400/40 flex flex-col gap-1 mt-1">
+            <div className="ml-3 pl-2.5 border-l border-amber-400/40 flex flex-col gap-1 mt-1">
               <button
                 type="button"
                 onClick={() =>
                   handleSelect(isSuperAdmin ? "terms" : "academicTerms")
                 }
-                className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                   isTermsActive
                     ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                     : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
-                <AppIcon icon={Calendar} size="sm" color={isTermsActive ? "active" : "default"} />
+                <Calendar
+                  strokeWidth={2}
+                  className={`h-4 w-4 shrink-0 ${
+                    isTermsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                  }`}
+                />
                 <span className="whitespace-nowrap">Academic Terms</span>
               </button>
               <button
@@ -332,13 +388,18 @@ export function SidebarContent({
                 onClick={() =>
                   handleSelect(isSuperAdmin ? "window" : "submissionWindow")
                 }
-                className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                   isWindowActive
                     ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                     : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
-                <AppIcon icon={Hourglass} size="sm" color={isWindowActive ? "active" : "default"} />
+                <Hourglass
+                  strokeWidth={2}
+                  className={`h-4 w-4 shrink-0 ${
+                    isWindowActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                  }`}
+                />
                 <span className="whitespace-nowrap">Submission Window</span>
               </button>
               {isSuperAdmin && (
@@ -346,25 +407,35 @@ export function SidebarContent({
                   <button
                     type="button"
                     onClick={() => handleSelect("templates")}
-                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                       isTemplatesActive
                         ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                         : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                     }`}
                   >
-                    <AppIcon icon={Page} size="sm" color={isTemplatesActive ? "active" : "default"} />
+                    <Page
+                      strokeWidth={2}
+                      className={`h-4 w-4 shrink-0 ${
+                        isTemplatesActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                      }`}
+                    />
                     <span className="whitespace-nowrap">Requirement Templates</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSelect("backups")}
-                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
                       isBackupsActive
                         ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                         : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                     }`}
                   >
-                    <AppIcon icon={Archive} size="sm" color={isBackupsActive ? "active" : "default"} />
+                    <Archive
+                      strokeWidth={2}
+                      className={`h-4 w-4 shrink-0 ${
+                        isBackupsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                      }`}
+                    />
                     <span className="whitespace-nowrap">Backups & Archive</span>
                   </button>
                 </>

@@ -3220,7 +3220,7 @@ export function RequirementsPanel({
                 <th className="px-4 py-3 font-semibold">Faculty Member</th>
                 <th className="px-4 py-3 font-semibold">Program</th>
                 <th className="px-4 py-3 font-semibold">Verification Progress</th>
-                <th className="px-4 py-3 font-semibold">Overall Status</th>
+                <th className="px-4 py-3 font-semibold text-center">Overall Status</th>
                 <th className="px-4 py-3 text-right font-semibold">Actions</th>
               </tr>
             </thead>
@@ -3308,24 +3308,26 @@ export function RequirementsPanel({
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-medium">
+                      <td className="px-4 py-3 font-medium text-center">
                         {isLoadingStatuses && !statusRecord ? (
-                          <span className="text-slate-500 dark:text-slate-400 italic text-[11px]">
+                          <span className="text-slate-500 dark:text-slate-400 italic text-[11px] block text-center">
                             ...
                           </span>
                         ) : (
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusBadgeClass}`}>
-                            {overallStatus === "Completed / Validated" ? (
-                              <AppIcon icon={CheckCircle} size="sm" color="white" />
-                            ) : overallStatus === "Needs Revision" ? (
-                              <AppIcon icon={Xmark} size="sm" color="white" strokeWidth={2.5} />
-                            ) : overallStatus === "Pending Review" ? (
-                              <AppIcon icon={Hourglass} size="sm" color="inherit" />
-                            ) : (
-                              <AppIcon icon={Minus} size="sm" color="inherit" />
-                            )}
-                            <span>{overallStatus}</span>
-                          </span>
+                          <div className="flex items-center justify-center">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusBadgeClass}`}>
+                              {overallStatus === "Completed / Validated" ? (
+                                <AppIcon icon={CheckCircle} size="sm" color="white" />
+                              ) : overallStatus === "Needs Revision" ? (
+                                <AppIcon icon={Xmark} size="sm" color="white" strokeWidth={2.5} />
+                              ) : overallStatus === "Pending Review" ? (
+                                <AppIcon icon={Hourglass} size="sm" color="inherit" />
+                              ) : (
+                                <AppIcon icon={Minus} size="sm" color="inherit" />
+                              )}
+                              <span>{overallStatus}</span>
+                            </span>
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
