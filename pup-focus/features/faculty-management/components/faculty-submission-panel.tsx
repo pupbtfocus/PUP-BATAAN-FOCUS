@@ -56,6 +56,7 @@ import { OnlineDocumentPreview } from "@/features/submissions/components/online-
 import { DocumentPreviewModal, type DocumentPreviewSubmission } from "@/features/submissions/components/document-preview-modal";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
+import { FacultyIncompleteRequirementsModal } from "./faculty-incomplete-requirements-modal";
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
 export function getFileType(fileNameOrUrl: string): {
   type: DetectedFileType;
@@ -1389,7 +1390,7 @@ function FacultySubmissionPanelContent({
     !hasSeenIncompleteRequirementsModal &&
     Boolean(submissionWindow?.isConfigured && submissionWindow?.isOpen) &&
     displayedStatusCounts !== null &&
-    displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected > 0;
+    displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected + displayedStatusCounts.pending > 0;
   function openDirectUploadModal(
     code: RequirementCode | string,
     isRevision: boolean = false,
@@ -3414,74 +3415,15 @@ function FacultySubmissionPanelContent({
                 getPreviewUrl={getSubmissionPreviewUrl}
               />
             ) : null}
-            {isMounted && showIncompleteRequirementsModal ? (
-              <div
-                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="incomplete-requirements-title"
-              >
-                <div className="w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl relative animate-in fade-in zoom-in-95 duration-200 my-auto">
-                  <ModalHeader
-                    title="Requirements Pending Submission"
-                    subtitle="Action Required"
-                    icon={WarningCircle}
-                    titleId="incomplete-requirements-title"
-                  />
-                  <div className="p-6 overflow-y-auto">
-                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                      You have documents awaiting submission or revision for this
-                    semester. Please submit the missing requirements before the
-                    deadline.
-                  </p>
-                  {/* Inner Stats Container */}
-                  <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800/80 rounded-xl p-4 my-4 flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-500" />
-                        <span>
-                          {displayedStatusCounts?.notSubmitted ?? 0} Not
-                          Submitted
-                        </span>
-                      </span>
-                      {(displayedStatusCounts?.rejected ?? 0) > 0 && (
-                        <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-semibold">
-                          <span className="h-2 w-2 rounded-full bg-amber-500" />
-                          <span>
-                            {displayedStatusCounts?.rejected} Revision
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                    {windowDeadlineDisplay && (
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Due: {windowDeadlineDisplay}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-end gap-2.5 mt-5">
-                    <button
-                      type="button"
-                      onClick={dismissIncompleteRequirementsAlert}
-                      className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-xs"
-                    >
-                      Dismiss
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        dismissIncompleteRequirementsAlert();
-                        navigateToView("status");
-                      }}
-                      className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
-                    >
-                      Go to Documents to be Submitted
-                    </button>
-                  </div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            <FacultyIncompleteRequirementsModal
+              isOpen={Boolean(isMounted && showIncompleteRequirementsModal)}
+              onClose={dismissIncompleteRequirementsAlert}
+              onGoToSubmissions={() => navigateToView("status")}
+              notSubmittedCount={displayedStatusCounts?.notSubmitted ?? 0}
+              rejectedCount={displayedStatusCounts?.rejected ?? 0}
+              pendingValidationCount={displayedStatusCounts?.pending ?? 0}
+              deadlineDisplay={windowDeadlineDisplay}
+            />
             {activeView === "settings" && (
               <article className="space-y-5 p-2 sm:p-4 md:p-5">
                 <FacultySettingsPanel
