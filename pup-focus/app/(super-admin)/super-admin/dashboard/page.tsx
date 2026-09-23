@@ -17,7 +17,7 @@ export default async function SuperAdminDashboardPage(props: {
   const initialTab = searchParams?.tab || searchParams?.section || null;
 
   return (
-    <AppShell title="PUP FOCUS" nav={[]} fullBleed>
+    <AppShell title="PUP FOCUS" nav={[]} fullBleed role="super_admin">
       <SuperAdminDashboard
         adminName={user?.fullName ?? null}
         adminEmail={user?.email ?? null}

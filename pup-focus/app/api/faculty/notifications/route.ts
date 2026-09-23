@@ -84,21 +84,28 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userRole =
+      (user.user_metadata?.role as string | undefined) ??
+      (user.app_metadata?.role as string | undefined);
+
     // Proactively clean up any errant submission alert notifications that were delivered to this faculty user
-    void (async () => {
-      try {
-        const supabase = getServiceRoleClient();
-        await supabase
-          .from("notifications")
-          .delete()
-          .eq("user_id", user.id)
-          .or(
-            "type.in.(NEW_SUBMISSION,SUBMISSION_CREATED,FACULTY_SUBMITTED,SUBMISSION_UPLOADED,SUBMISSION_RESUBMITTED,submission_uploaded,new_submission,submission_created,faculty_submitted),title.ilike.New Submission from%,title.ilike.Resubmission%from%,title.ilike.%submission from%"
-          );
-      } catch {
-        // Non-critical background cleanup
-      }
-    })();
+    // Strictly execute this cleanup only for faculty members so reviewer alerts for staff are never deleted
+    if (userRole === "faculty") {
+      void (async () => {
+        try {
+          const supabase = getServiceRoleClient();
+          await supabase
+            .from("notifications")
+            .delete()
+            .eq("user_id", user.id)
+            .or(
+              "type.in.(NEW_SUBMISSION,SUBMISSION_CREATED,FACULTY_SUBMITTED,SUBMISSION_UPLOADED,SUBMISSION_RESUBMITTED,submission_uploaded,new_submission,submission_created,faculty_submitted),title.ilike.New Submission from%,title.ilike.Resubmission%from%,title.ilike.%submission from%"
+            );
+        } catch {
+          // Non-critical background cleanup
+        }
+      })();
+    }
 
     const notifications = await getUserNotifications(
       user.id,

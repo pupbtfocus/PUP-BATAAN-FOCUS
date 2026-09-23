@@ -51,9 +51,24 @@ export async function GET(request: NextRequest) {
       data: { user },
     } = await sessionClient.auth.getUser();
 
-    const requesterRole =
+    let requesterRole =
       (user?.user_metadata?.role as string | undefined) ??
       (user?.app_metadata?.role as string | undefined);
+
+    const supabase = getServiceRoleClient();
+
+    if (user && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN) {
+      const { data: userRoleRow } = await supabase
+        .from("user_roles")
+        .select("roles!inner(code)")
+        .or(`profile_id.eq.${user.id}`)
+        .maybeSingle();
+
+      const dbCode = (userRoleRow?.roles as any)?.code;
+      if (dbCode === ROLE.ADMIN || dbCode === ROLE.SUPER_ADMIN) {
+        requesterRole = dbCode;
+      }
+    }
 
     if (
       !user ||
@@ -61,8 +76,6 @@ export async function GET(request: NextRequest) {
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-
-    const supabase = getServiceRoleClient();
 
     // 1. Fetch notifications for this admin user OR general submission alerts
     const { data: rows, error } = await supabase
@@ -72,7 +85,7 @@ export async function GET(request: NextRequest) {
         `user_id.eq.${user.id},type.in.(${SUBMISSION_ALERT_TYPES.map((t) => `"${t}"`).join(",")})`,
       )
       .order("created_at", { ascending: false })
-      .limit(60);
+      .limit(80);
 
     if (error) {
       console.error("[ADMIN_NOTIFS_GET_ERROR]", error);
@@ -80,6 +93,26 @@ export async function GET(request: NextRequest) {
         { error: "Failed to fetch notifications", details: error.message },
         { status: 500 },
       );
+    }
+
+    // Deduplicate notifications so identical submission alerts sent to multiple reviewers only show once
+    const seenKeys = new Set<string>();
+    const deduplicatedRows: typeof rows = [];
+
+    // Sort so user's own rows take precedence
+    const sortedRows = [...(rows || [])].sort((a, b) => {
+      if (a.user_id === user.id && b.user_id !== user.id) return -1;
+      if (a.user_id !== user.id && b.user_id === user.id) return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    for (const row of sortedRows) {
+      const timeBucket = Math.floor(new Date(row.created_at).getTime() / 120000);
+      const dedupeKey = `${row.title}|${row.message}|${timeBucket}`;
+      if (!seenKeys.has(dedupeKey)) {
+        seenKeys.add(dedupeKey);
+        deduplicatedRows.push(row);
+      }
     }
 
     // 2. Fetch all faculty profiles to enrich metadata
@@ -119,7 +152,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Enrich notifications with parsed details
-    const notifications = (rows || []).map((row) => {
+    const notifications = deduplicatedRows.map((row) => {
       const fullText = `${row.title || ""} ${row.message || ""}`;
       const reqCode =
         row.metadata?.requirement_code ||
@@ -208,9 +241,24 @@ export async function PATCH(request: NextRequest) {
       data: { user },
     } = await sessionClient.auth.getUser();
 
-    const requesterRole =
+    let requesterRole =
       (user?.user_metadata?.role as string | undefined) ??
       (user?.app_metadata?.role as string | undefined);
+
+    const supabase = getServiceRoleClient();
+
+    if (user && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN) {
+      const { data: userRoleRow } = await supabase
+        .from("user_roles")
+        .select("roles!inner(code)")
+        .or(`profile_id.eq.${user.id}`)
+        .maybeSingle();
+
+      const dbCode = (userRoleRow?.roles as any)?.code;
+      if (dbCode === ROLE.ADMIN || dbCode === ROLE.SUPER_ADMIN) {
+        requesterRole = dbCode;
+      }
+    }
 
     if (
       !user ||
@@ -225,16 +273,12 @@ export async function PATCH(request: NextRequest) {
       markAll?: boolean;
     };
 
-    const supabase = getServiceRoleClient();
-
     if (markAll) {
-      // Mark all read for this user or submission alerts
+      // Mark all read for this user
       await supabase
         .from("notifications")
         .update({ is_read: true })
-        .or(
-          `user_id.eq.${user.id},type.in.(${SUBMISSION_ALERT_TYPES.map((t) => `"${t}"`).join(",")})`,
-        );
+        .eq("user_id", user.id);
 
       return NextResponse.json({ success: true, message: "All notifications marked as read" });
     }
@@ -268,9 +312,24 @@ export async function DELETE(request: NextRequest) {
       data: { user },
     } = await sessionClient.auth.getUser();
 
-    const requesterRole =
+    let requesterRole =
       (user?.user_metadata?.role as string | undefined) ??
       (user?.app_metadata?.role as string | undefined);
+
+    const supabase = getServiceRoleClient();
+
+    if (user && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN) {
+      const { data: userRoleRow } = await supabase
+        .from("user_roles")
+        .select("roles!inner(code)")
+        .or(`profile_id.eq.${user.id}`)
+        .maybeSingle();
+
+      const dbCode = (userRoleRow?.roles as any)?.code;
+      if (dbCode === ROLE.ADMIN || dbCode === ROLE.SUPER_ADMIN) {
+        requesterRole = dbCode;
+      }
+    }
 
     if (
       !user ||
@@ -279,15 +338,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const supabase = getServiceRoleClient();
-
-    // Remove notifications for this user or submission alerts
+    // Remove notifications for this user
     await supabase
       .from("notifications")
       .delete()
-      .or(
-        `user_id.eq.${user.id},type.in.(${SUBMISSION_ALERT_TYPES.map((t) => `"${t}"`).join(",")})`,
-      );
+      .eq("user_id", user.id);
 
     return NextResponse.json({ success: true, message: "All notifications cleared" });
   } catch (error) {
