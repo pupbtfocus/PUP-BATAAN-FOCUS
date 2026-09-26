@@ -1790,7 +1790,7 @@ function FacultySubmissionPanelContent({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-3 top-2.5 z-[55] md:hidden p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+          className="fixed left-3 top-2.5 z-[55] md:hidden inline-flex items-center justify-center p-1.5 rounded-xl border border-amber-500/30 bg-[#7a0000]/70 hover:bg-[#8d0000] hover:border-amber-400/50 text-amber-100 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
           aria-label="Open Navigation Menu"
         >
           <AppIcon icon={Menu} size="lg" color="inherit" />
@@ -2595,24 +2595,38 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-                    <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
-                      A.Y. {activeAY} • {activeSem}
-                      {isWindowNotConfigured && !isAllValidated ? (
-                        <span className="ml-2 font-semibold">
-                          • (Awaiting Schedule)
-                        </span>
-                      ) : isWindowClosed && !isAllValidated ? (
-                        <span className="ml-2 font-semibold">
-                          • (Submission Window Closed)
-                        </span>
-                      ) : null}
-                    </p>
+                    <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
+                      <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
+                        A.Y. {activeAY} • {activeSem}
+                        {isWindowNotConfigured && !isAllValidated ? (
+                          <span className="ml-2 font-semibold">
+                            • (Awaiting Schedule)
+                          </span>
+                        ) : isWindowClosed && !isAllValidated ? (
+                          <span className="ml-2 font-semibold">
+                            • (Submission Window Closed)
+                          </span>
+                        ) : null}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void fetchStatuses()}
+                        disabled={isLoadingStatuses}
+                        title="Refresh status"
+                        className="sm:hidden h-9 w-9 inline-flex items-center justify-center rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
+                      >
+                        <Refresh
+                          className={`h-4 w-4 text-slate-950 dark:text-amber-100 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                        />
+                        <span className="sr-only">Refresh</span>
+                      </button>
+                    </div>
 
-                    <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0 sm:ml-auto">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 shrink-0 sm:ml-auto w-full sm:w-auto">
                       <button
                         type="button"
                         onClick={openHistoryModal}
-                        className="inline-flex items-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                         title="View validated documents history"
                       >
                         <AppIcon icon={CheckCircle} size="md" color="white" />
@@ -2627,7 +2641,7 @@ function FacultySubmissionPanelContent({
                             "noopener,noreferrer",
                           )
                         }
-                        className="inline-flex items-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                       >
                         <Logo size={18} className="shrink-0" />
                         <span>University Calendar</span>
@@ -2637,7 +2651,7 @@ function FacultySubmissionPanelContent({
                         onClick={() => void fetchStatuses()}
                         disabled={isLoadingStatuses}
                         title="Refresh status"
-                        className="h-10 w-10 inline-flex items-center justify-center rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                        className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                       >
                         <Refresh
                           className={`h-4.5 w-4.5 text-slate-950 dark:text-amber-100 ${isLoadingStatuses ? "animate-spin" : ""}`}

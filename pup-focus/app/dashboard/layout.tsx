@@ -24,7 +24,7 @@ export default function DashboardLayout({
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(true)}
-            className="md:hidden p-2 text-amber-300 hover:bg-amber-500/20 rounded-xl transition-all"
+            className="md:hidden inline-flex items-center justify-center p-1.5 rounded-xl border border-amber-500/30 bg-[#7a0000]/70 hover:bg-[#8d0000] hover:border-amber-400/50 text-amber-100 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
             aria-label="Open Navigation Menu"
           >
             <AppIcon icon={Menu} size="lg" color="inherit" />
