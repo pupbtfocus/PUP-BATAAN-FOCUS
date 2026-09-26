@@ -6,7 +6,7 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
-import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
+import { ROLE, ROLE_LABEL, type AppRole, canManageAdminAccount } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
 import { Activity, CheckCircle, EditPencil, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
@@ -248,6 +248,17 @@ export function SuperAdminDashboard({
     adminName || "Super Administrator"
   );
   const [currentAdminEmail, setCurrentAdminEmail] = useState(adminEmail || "");
+
+  useEffect(() => {
+    if (!currentAdminEmail) {
+      const supabase = createClient();
+      void supabase.auth.getUser().then((res: { data?: { user?: { email?: string } | null } }) => {
+        if (res?.data?.user?.email) {
+          setCurrentAdminEmail(res.data.user.email);
+        }
+      });
+    }
+  }, [currentAdminEmail]);
 
   const handleSuperAdminProfileUpdated = (updated: {
     fullName?: string;
@@ -1288,117 +1299,138 @@ export function SuperAdminDashboard({
       return null;
     }
 
-    return accounts.map((admin) => (
-      <div
-        key={admin.id}
-        className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-3">
-              {admin.profileImageUrl && !failedImageIds.has(admin.profile_id) ? (
-                <img
-                  src={admin.profileImageUrl}
-                  alt={admin.full_name}
-                  className="h-12 w-12 rounded-full border border-slate-400 dark:border-slate-700 object-cover bg-slate-100 dark:bg-slate-900 shadow-sm"
-                  onError={() => {
-                    setFailedImageIds((prev) => new Set(prev).add(admin.profile_id));
-                  }}
-                />
-              ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm">
-                  {getInitials(
-                    admin.full_name,
-                    admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
-                  )}
+    return accounts.map((admin) => {
+      const canEdit = canManageAdminAccount({
+        targetEmail: admin.email,
+        targetRole: admin.role,
+        actorEmail: currentAdminEmail,
+        action: "edit",
+      });
+      const canDeactivate = canManageAdminAccount({
+        targetEmail: admin.email,
+        targetRole: admin.role,
+        actorEmail: currentAdminEmail,
+        action: "deactivate",
+      });
+      const canDelete = canManageAdminAccount({
+        targetEmail: admin.email,
+        targetRole: admin.role,
+        actorEmail: currentAdminEmail,
+        action: "delete",
+      });
+
+      return (
+        <div
+          key={admin.id}
+          className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-3">
+                {admin.profileImageUrl && !failedImageIds.has(admin.profile_id) ? (
+                  <img
+                    src={admin.profileImageUrl}
+                    alt={admin.full_name}
+                    className="h-12 w-12 rounded-full border border-slate-400 dark:border-slate-700 object-cover bg-slate-100 dark:bg-slate-900 shadow-sm"
+                    onError={() => {
+                      setFailedImageIds((prev) => new Set(prev).add(admin.profile_id));
+                    }}
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm">
+                    {getInitials(
+                      admin.full_name,
+                      admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
+                    )}
+                  </div>
+                )}
+                <div>
+                  <p className="font-semibold text-slate-900 dark:text-slate-100">
+                    {admin.full_name}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
                 </div>
-              )}
-              <div>
-                <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {admin.full_name}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
               </div>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-slate-400 bg-slate-100 text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 px-3 py-1 text-xs font-semibold">
+                {ROLE_LABEL[admin.role]}
+              </span>
+              <span
+                className={`rounded-full border px-3 py-0.5 text-xs font-semibold shadow-2xs ${
+                  admin.is_active
+                    ? "border-[#08412a] bg-[#0b5336] text-white"
+                    : "border-[#5e0000] bg-[#780000] text-white"
+                }`}
+              >
+                {admin.is_active ? "Active" : "Inactive"}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-slate-400 bg-slate-100 text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 px-3 py-1 text-xs font-semibold">
-              {ROLE_LABEL[admin.role]}
-            </span>
-            <span
-              className={`rounded-full border px-3 py-0.5 text-xs font-semibold shadow-2xs ${
-                admin.is_active
-                  ? "border-[#08412a] bg-[#0b5336] text-white"
-                  : "border-[#5e0000] bg-[#780000] text-white"
-              }`}
-            >
-              {admin.is_active ? "Active" : "Inactive"}
-            </span>
+          <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-400">
+            {admin.department ? (
+              <span>Department: {admin.department}</span>
+            ) : null}
+            {admin.permissions && admin.permissions.length > 0 ? (
+              <span>Permissions: {admin.permissions.length}</span>
+            ) : null}
           </div>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-400">
-          {admin.department ? (
-            <span>Department: {admin.department}</span>
-          ) : null}
-          {admin.permissions && admin.permissions.length > 0 ? (
-            <span>Permissions: {admin.permissions.length}</span>
-          ) : null}
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {admin.role !== ROLE.SUPER_ADMIN ? (
-            admin.is_active ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {canDeactivate ? (
+              admin.is_active ? (
+                <button
+                  type="button"
+                  onClick={() => onDeactivateAdmin(admin.profile_id)}
+                  disabled={loadingAdminIds.has(admin.profile_id)}
+                  className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                >
+                  {loadingAdminIds.has(admin.profile_id)
+                    ? "Deactivating..."
+                    : "Deactivate"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onActivateAdmin(admin.profile_id)}
+                  disabled={loadingAdminIds.has(admin.profile_id)}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                >
+                  {loadingAdminIds.has(admin.profile_id)
+                    ? "Activating..."
+                    : "Activate"}
+                </button>
+              )
+            ) : null}
+            {canEdit ? (
               <button
                 type="button"
-                onClick={() => onDeactivateAdmin(admin.profile_id)}
+                onClick={() => onEditAdmin(admin.profile_id)}
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs"
+              >
+                Edit
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => onViewAdminDetails(admin.profile_id)}
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer"
+            >
+              View Details
+            </button>
+            {canDelete ? (
+              <button
+                type="button"
+                onClick={() => onDeleteAdmin(admin.profile_id)}
                 disabled={loadingAdminIds.has(admin.profile_id)}
                 className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-2xs"
               >
-                {loadingAdminIds.has(admin.profile_id)
-                  ? "Deactivating..."
-                  : "Deactivate"}
+                Delete
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onActivateAdmin(admin.profile_id)}
-                disabled={loadingAdminIds.has(admin.profile_id)}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-2xs"
-              >
-                {loadingAdminIds.has(admin.profile_id)
-                  ? "Activating..."
-                  : "Activate"}
-              </button>
-            )
-          ) : null}
-          {admin.role === ROLE.ADMIN ? (
-            <button
-              type="button"
-              onClick={() => onEditAdmin(admin.profile_id)}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs"
-            >
-              Edit
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => onViewAdminDetails(admin.profile_id)}
-            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer"
-          >
-            View Details
-          </button>
-          {admin.role !== ROLE.SUPER_ADMIN ? (
-            <button
-              type="button"
-              onClick={() => onDeleteAdmin(admin.profile_id)}
-              disabled={loadingAdminIds.has(admin.profile_id)}
-              className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-2xs"
-            >
-              Delete
-            </button>
-          ) : null}
+            ) : null}
+          </div>
         </div>
-      </div>
-    ));
+      );
+    });
   }
 
   if (!isMounted) {
@@ -1684,6 +1716,7 @@ export function SuperAdminDashboard({
                     setAccountActionError(null);
                     setAccountActionSuccess(null);
                   }}
+                  currentAdminEmail={currentAdminEmail}
                 />
               </article>
             ) : null}
@@ -2110,6 +2143,7 @@ export function SuperAdminDashboard({
           onClose={() => setAdminDetailsOpen(false)}
           onSaved={() => void loadAdminAccounts()}
           editable={adminDetailsEditable}
+          currentAdminEmail={currentAdminEmail}
         />
       ) : null}
 
@@ -2298,12 +2332,14 @@ function AdminDetailsModal({
   onClose,
   onSaved,
   editable,
+  currentAdminEmail,
 }: {
   details: AdminDetails | null;
   isLoading: boolean;
   onClose: () => void;
   onSaved: () => Promise<void> | void;
   editable?: boolean;
+  currentAdminEmail?: string | null;
 }) {
   const [fullName, setFullName] = useState(details?.full_name ?? "");
   const [email, setEmail] = useState(details?.email ?? "");
@@ -2313,7 +2349,14 @@ function AdminDetailsModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [modalAvatarError, setModalAvatarError] = useState(false);
-  const canEdit = Boolean(editable) && details?.role !== ROLE.SUPER_ADMIN;
+  const canEdit =
+    Boolean(editable) &&
+    canManageAdminAccount({
+      targetEmail: details?.email,
+      targetRole: details?.role,
+      actorEmail: currentAdminEmail,
+      action: "edit",
+    });
 
   const fullNameInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
@@ -2369,7 +2412,7 @@ function AdminDetailsModal({
     }
 
     if (!canEdit) {
-      setError("Super admin accounts are view-only.");
+      setError("You do not have permission to edit this account.");
       return;
     }
 
