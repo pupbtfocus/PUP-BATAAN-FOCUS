@@ -1798,38 +1798,38 @@ function FacultySubmissionPanelContent({
       )}
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-3.5 shadow-md transition-colors duration-200">
-        <div className="my-1.5 bg-[#6b0000]/80 border border-amber-400/40 p-4 rounded-xl text-center flex flex-col items-center transition-colors shadow-xs">
+        <div className="my-1.5 bg-[#6b0000]/80 border border-amber-400/40 p-4 sm:p-5 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
           <button
             type="button"
             onClick={() => navigateToView("settings")}
-            className="relative mb-2 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
+            className="relative mb-2.5 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
             title="Manage Profile & Settings"
           >
             {currentAvatarUrl && !hasAvatarError ? (
               <img
                 src={currentAvatarUrl}
                 alt={currentFacultyName || "Faculty Profile"}
-                className="w-14 h-14 rounded-full object-cover border-2 border-amber-400/60 bg-slate-900 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+                className="w-24 h-24 rounded-full object-cover border-2 border-amber-400/70 bg-slate-900 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
                 onError={() => setHasAvatarError(true)}
               />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40 font-bold text-sm flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
+              <div className="w-24 h-24 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/40 font-bold text-2xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
                 {facultyInitials}
               </div>
             )}
             <span
-              className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#800000]"
+              className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#6b0000] ring-1 ring-emerald-400/40"
               title="Active"
             />
           </button>
-          <span className="text-xs font-medium text-amber-200/90 tracking-wide">
+          <span className="text-sm sm:text-base font-semibold text-amber-200/90 tracking-wide">
             Welcome,
           </span>
-          <p className="mt-0.5 font-bold text-white text-center text-sm sm:text-base tracking-tight">
+          <p className="mt-1 font-extrabold text-white text-center text-xl sm:text-2xl tracking-tight leading-snug break-words max-w-full px-1">
             {facultyFirstName}
           </p>
-          <div className="my-2 h-px w-full bg-amber-400/50" />
-          <span className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full">
+          <div className="my-2.5 h-px w-full bg-amber-400/50" />
+          <span className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-3.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full shadow-2xs">
             Faculty
           </span>
         </div>
@@ -1905,41 +1905,41 @@ function FacultySubmissionPanelContent({
                 <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
-            <div className="my-1.5 bg-[#6b0000]/80 border border-amber-400/40 p-4 rounded-xl text-center flex flex-col items-center transition-colors shadow-xs">
+            <div className="my-1.5 bg-[#6b0000]/80 border border-amber-400/40 p-4 sm:p-5 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
               <button
                 type="button"
                 onClick={() => {
                   navigateToView("settings");
                   setIsMobileMenuOpen(false);
                 }}
-                className="relative mb-2 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
+                className="relative mb-2.5 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
                 title="Manage Profile & Settings"
               >
                 {currentAvatarUrl && !hasAvatarError ? (
                   <img
                     src={currentAvatarUrl}
                     alt={currentFacultyName || "Faculty Profile"}
-                    className="w-14 h-14 rounded-full object-cover border-2 border-amber-400/60 bg-slate-900 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+                    className="w-24 h-24 rounded-full object-cover border-2 border-amber-400/70 bg-slate-900 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
                     onError={() => setHasAvatarError(true)}
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40 font-bold text-sm flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
+                  <div className="w-24 h-24 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/40 font-bold text-2xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
                     {facultyInitials}
                   </div>
                 )}
                 <span
-                  className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#800000]"
+                  className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#6b0000] ring-1 ring-emerald-400/40"
                   title="Active"
                 />
               </button>
-              <span className="text-xs font-medium text-amber-200/90 tracking-wide">
+              <span className="text-sm sm:text-base font-semibold text-amber-200/90 tracking-wide">
                 Welcome,
               </span>
-              <p className="mt-0.5 font-bold text-white text-center text-sm sm:text-base tracking-tight">
+              <p className="mt-1 font-extrabold text-white text-center text-xl sm:text-2xl tracking-tight leading-snug break-words max-w-full px-1">
                 {facultyFirstName}
               </p>
-              <div className="my-2 h-px w-full bg-amber-400/50" />
-              <span className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full">
+              <div className="my-2.5 h-px w-full bg-amber-400/50" />
+              <span className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-3.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full shadow-2xs">
                 Faculty
               </span>
             </div>

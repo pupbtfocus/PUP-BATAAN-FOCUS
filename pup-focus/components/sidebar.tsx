@@ -162,20 +162,24 @@ export function SidebarContent({
     }
   };
 
+  const isFaculty = Boolean(
+    (roleTitle || "").toLowerCase().includes("faculty"),
+  );
+
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 bg-[#6b0000]/80 border border-amber-400/40 p-4 rounded-xl text-center flex flex-col items-center transition-colors shadow-xs">
+      <div className={`my-1.5 bg-[#6b0000]/80 border border-amber-400/40 ${isFaculty ? "p-4 sm:p-5 rounded-2xl" : "p-4 rounded-xl"} text-center flex flex-col items-center transition-colors shadow-xs`}>
         <button
           type="button"
           onClick={() => handleSelect("settings")}
-          className="relative mb-2 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
+          className={`relative ${isFaculty ? "mb-2.5" : "mb-2"} cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden`}
           title="Manage Profile & Settings"
         >
           {profileImageUrl && !hasAvatarError ? (
             <img
               src={profileImageUrl}
               alt={adminName ?? "User"}
-              className={`w-14 h-14 rounded-full border-2 border-amber-400/60 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors ${
+              className={`${isFaculty ? "w-24 h-24" : "w-14 h-14"} rounded-full border-2 border-amber-400/70 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors ${
                 profileImageUrl.includes("pup-seal.png") || profileImageUrl.includes("pup-focus-emblem-logo.png")
                   ? "object-contain p-1 bg-slate-900"
                   : "object-cover bg-slate-100"
@@ -186,30 +190,30 @@ export function SidebarContent({
             <img
               src="/icons/pup-seal.png"
               alt="PUP"
-              className="w-14 h-14 rounded-full object-contain p-1 bg-slate-900 shadow-md border-2 border-amber-400/60 ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+              className={`${isFaculty ? "w-24 h-24" : "w-14 h-14"} rounded-full object-contain p-1 bg-slate-900 shadow-md border-2 border-amber-400/60 ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors`}
             />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40 font-bold text-sm flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
+            <div className={`${isFaculty ? "w-24 h-24 text-2xl font-bold" : "w-14 h-14 text-sm font-bold"} rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/40 flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors`}>
               {getSidebarInitials(adminName, "AD")}
             </div>
           )}
           <span
-            className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#800000]"
+            className={`absolute ${isFaculty ? "bottom-1 right-1 w-4 h-4" : "bottom-0 right-0 w-3.5 h-3.5"} rounded-full bg-emerald-500 border-2 border-[#6b0000] ring-1 ring-emerald-400/40`}
             title="Active"
           />
         </button>
 
-        <span className="text-xs font-medium text-amber-200/90 tracking-wide">
+        <span className={`${isFaculty ? "text-sm sm:text-base font-semibold text-amber-200/90" : "text-xs font-medium text-amber-200/90"} tracking-wide`}>
           Welcome,
         </span>
-        <p className="mt-0.5 font-bold text-white text-center text-sm sm:text-base tracking-tight">
+        <p className={`mt-1 font-extrabold text-white text-center tracking-tight ${isFaculty ? "text-xl sm:text-2xl leading-snug break-words max-w-full px-1" : "text-sm sm:text-base"}`}>
           {extractFirstName(adminName, roleTitle)}
         </p>
 
-        <div className="my-2 h-px w-full bg-amber-400/50" />
+        <div className={`${isFaculty ? "my-2.5" : "my-2"} h-px w-full bg-amber-400/50`} />
 
         <span
-          className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full"
+          className={`mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 ${isFaculty ? "px-3.5 py-1 shadow-2xs" : "px-3 py-1"} text-xs font-bold uppercase tracking-wider rounded-full`}
         >
           {roleTitle}
         </span>
