@@ -2045,16 +2045,16 @@ function FacultySubmissionPanelContent({
                       ) : null}
                     </p>
 
-                    <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 sm:ml-auto">
+                    <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0 sm:ml-auto">
                       <button
                         type="button"
                         onClick={() => void fetchStatuses()}
                         disabled={isLoadingStatuses}
                         title="Refresh dashboard"
-                        className="inline-flex items-center justify-center rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 p-2 text-slate-950 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                        className="h-10 w-10 inline-flex items-center justify-center rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                       >
                         <Refresh
-                          className={`h-3.5 w-3.5 text-slate-950 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                          className={`h-4.5 w-4.5 text-slate-950 ${isLoadingStatuses ? "animate-spin" : ""}`}
                         />
                         <span className="sr-only">Refresh</span>
                       </button>
@@ -2605,14 +2605,14 @@ function FacultySubmissionPanelContent({
                       ) : null}
                     </p>
 
-                    <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 sm:ml-auto">
+                    <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0 sm:ml-auto">
                       <button
                         type="button"
                         onClick={openHistoryModal}
-                        className="inline-flex items-center gap-1.5 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+                        className="inline-flex items-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                         title="View validated documents history"
                       >
-                        <AppIcon icon={CheckCircle} size="sm" color="white" />
+                        <AppIcon icon={CheckCircle} size="md" color="white" />
                         <span>Validation History</span>
                       </button>
                       <button
@@ -2624,9 +2624,9 @@ function FacultySubmissionPanelContent({
                             "noopener,noreferrer",
                           )
                         }
-                        className="inline-flex items-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+                        className="inline-flex items-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                       >
-                        <Logo size={14} className="shrink-0" />
+                        <Logo size={18} className="shrink-0" />
                         <span>University Calendar</span>
                       </button>
                       <button
@@ -2634,10 +2634,10 @@ function FacultySubmissionPanelContent({
                         onClick={() => void fetchStatuses()}
                         disabled={isLoadingStatuses}
                         title="Refresh status"
-                        className="inline-flex items-center justify-center rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 p-2 text-slate-950 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                        className="h-10 w-10 inline-flex items-center justify-center rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                       >
                         <Refresh
-                          className={`h-3.5 w-3.5 text-slate-950 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                          className={`h-4.5 w-4.5 text-slate-950 ${isLoadingStatuses ? "animate-spin" : ""}`}
                         />
                         <span className="sr-only">Refresh</span>
                       </button>
@@ -2801,10 +2801,10 @@ function FacultySubmissionPanelContent({
                           <button
                             type="button"
                             onClick={openHistoryModal}
-                            className="inline-flex items-center gap-1.5 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+                            className="inline-flex items-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                             title="View validated documents history"
                           >
-                            <AppIcon icon={CheckCircle} size="sm" color="white" />
+                            <AppIcon icon={CheckCircle} size="md" color="white" />
                             <span>Validation History</span>
                           </button>
                         </div>
