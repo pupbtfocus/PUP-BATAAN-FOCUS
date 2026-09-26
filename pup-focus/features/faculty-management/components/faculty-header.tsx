@@ -26,17 +26,11 @@ export function FacultyHeader({
           <BrandMark size={44} className="shrink-0" />
           <div className="flex flex-col min-w-0">
             <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
-              {title}
+              PUP FOCUS
             </h1>
-            {title === "PUP FOCUS" ? (
-              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
-                Faculty Online Compliance and Uploading System
-              </span>
-            ) : subtitle ? (
-              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
-                {subtitle}
-              </span>
-            ) : null}
+            <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
+              {subtitle || "Faculty Online Compliance and Uploading System"}
+            </span>
           </div>
         </div>
 
