@@ -48,26 +48,18 @@ export function AppShell({
             <BrandMark size={44} className="shrink-0" />
             <div className="flex flex-col min-w-0">
               <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
-                {title}
+                PUP FOCUS
               </h1>
-              {title === "PUP FOCUS" ? (
-                <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
-                  Faculty Online Compliance and Uploading System
-                </span>
-              ) : subtitle ? (
-                <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
-                  {subtitle}
-                </span>
-              ) : null}
+              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
+                {subtitle || "Faculty Online Compliance and Uploading System"}
+              </span>
             </div>
           </div>
 
           {/* Centered System Title for Desktop */}
           <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-4">
             <span className="text-xs lg:text-sm xl:text-base font-semibold text-amber-200/95 tracking-wide text-center truncate max-w-[48vw]">
-              {title === "PUP FOCUS"
-                ? "Faculty Online Compliance and Uploading System"
-                : subtitle || null}
+              {subtitle || "Faculty Online Compliance and Uploading System"}
             </span>
           </div>
 
