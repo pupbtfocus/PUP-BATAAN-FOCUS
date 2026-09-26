@@ -43,14 +43,14 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-200">
       <header className="fixed inset-x-0 top-0 h-14 z-50 border-t-2 border-amber-500 border-b border-amber-500/30 bg-gradient-to-r from-[#5a0000] via-[#480000] to-[#360000] shadow-md flex items-center transition-colors duration-200">
-        <div className="relative flex w-full h-full items-center justify-between pl-14 sm:pl-14 md:pl-4 pr-3 sm:pr-6">
-          <div className="flex items-center gap-2.5 sm:gap-3 z-10">
-            <BrandMark size={44} className="shrink-0" />
+        <div className="relative flex w-full h-full items-center justify-between pl-12 sm:pl-14 md:pl-4 pr-3 sm:pr-6">
+          <div className="flex items-center gap-2 sm:gap-2.5 z-10 min-w-0 flex-1 mr-2">
+            <BrandMark size={40} className="shrink-0" />
             <div className="flex flex-col min-w-0">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
+              <h1 className="text-base sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
                 PUP FOCUS
               </h1>
-              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
+              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[120px] xs:max-w-[150px] sm:max-w-[200px]">
                 {subtitle || "Faculty Online Compliance and Uploading System"}
               </span>
             </div>
@@ -63,7 +63,7 @@ export function AppShell({
             </span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 z-10">
+          <div className="flex items-center gap-1.5 sm:gap-3 z-10 shrink-0">
             <nav className="flex items-center gap-2">
               {nav.map((item) => (
                 <Link

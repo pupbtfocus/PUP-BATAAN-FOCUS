@@ -293,7 +293,7 @@ export function AdminNotificationDrawer({
         type="button"
         onClick={handleOpenDrawer}
         aria-label={`Admin Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
-        className="relative flex items-center justify-center p-2 rounded-xl text-amber-100 hover:text-white bg-[#7a0000]/70 hover:bg-[#8d0000] hover:border-amber-400/50 border border-amber-500/30 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
+        className="relative flex items-center justify-center shrink-0 p-1.5 sm:p-2 rounded-xl text-amber-100 hover:text-white bg-[#7a0000]/70 hover:bg-[#8d0000] hover:border-amber-400/50 border border-amber-500/30 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
       >
         <AppIcon icon={Bell} size="lg" color="inherit" />
         {unreadCount > 0 && (
