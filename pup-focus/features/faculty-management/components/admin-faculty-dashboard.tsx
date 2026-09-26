@@ -780,12 +780,12 @@ export function AdminFacultyDashboard({
                             onClick={() => void loadDashboardStats()}
                             disabled={isLoadingStats}
                             title="Refresh dashboard"
-                            className="inline-flex items-center justify-center rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 p-2 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 px-3.5 py-2 sm:py-1.5 text-xs font-bold transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                           >
                             <Refresh
                               className={`h-3.5 w-3.5 text-slate-950 dark:text-amber-100 ${isLoadingStats ? "animate-spin" : ""}`}
                             />
-                            <span className="sr-only">Refresh</span>
+                            <span>{isLoadingStats ? "Refreshing..." : "Refresh"}</span>
                           </button>
                         </div>
                       </div>

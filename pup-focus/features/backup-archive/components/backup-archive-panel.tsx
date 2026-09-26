@@ -521,10 +521,12 @@ export function BackupArchivePanel() {
           <button
             type="button"
             onClick={() => void loadBackupData()}
-            className="self-start sm:self-auto p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition cursor-pointer"
+            disabled={isLoading}
+            className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer shadow-2xs disabled:opacity-50"
             title="Refresh backups and terms"
           >
-            <Refresh className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+            <Refresh className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+            <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
           </button>
         </div>
 

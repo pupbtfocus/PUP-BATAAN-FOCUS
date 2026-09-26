@@ -2048,18 +2048,18 @@ function FacultySubmissionPanelContent({
                       ) : null}
                     </p>
 
-                    <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0 sm:ml-auto">
+                    <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0 sm:ml-auto w-full sm:w-auto">
                       <button
                         type="button"
                         onClick={() => void fetchStatuses()}
                         disabled={isLoadingStatuses}
                         title="Refresh dashboard"
-                        className="h-10 w-10 inline-flex items-center justify-center rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 px-3.5 py-2 sm:py-1.5 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                       >
                         <Refresh
-                          className={`h-4.5 w-4.5 text-slate-950 dark:text-amber-100 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                          className={`h-3.5 w-3.5 text-slate-950 dark:text-amber-100 ${isLoadingStatuses ? "animate-spin" : ""}`}
                         />
-                        <span className="sr-only">Refresh</span>
+                        <span>{isLoadingStatuses ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
                   </div>
@@ -2613,12 +2613,12 @@ function FacultySubmissionPanelContent({
                         onClick={() => void fetchStatuses()}
                         disabled={isLoadingStatuses}
                         title="Refresh status"
-                        className="sm:hidden h-9 w-9 inline-flex items-center justify-center rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
+                        className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
                       >
                         <Refresh
-                          className={`h-4 w-4 text-slate-950 dark:text-amber-100 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                          className={`h-3.5 w-3.5 text-slate-950 dark:text-amber-100 ${isLoadingStatuses ? "animate-spin" : ""}`}
                         />
-                        <span className="sr-only">Refresh</span>
+                        <span>{isLoadingStatuses ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
 
@@ -2651,12 +2651,12 @@ function FacultySubmissionPanelContent({
                         onClick={() => void fetchStatuses()}
                         disabled={isLoadingStatuses}
                         title="Refresh status"
-                        className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                        className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                       >
                         <Refresh
-                          className={`h-4.5 w-4.5 text-slate-950 dark:text-amber-100 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                          className={`h-4 w-4 text-slate-950 dark:text-amber-100 ${isLoadingStatuses ? "animate-spin" : ""}`}
                         />
-                        <span className="sr-only">Refresh</span>
+                        <span>{isLoadingStatuses ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
                   </div>
