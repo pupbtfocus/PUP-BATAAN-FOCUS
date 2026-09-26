@@ -43,31 +43,35 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-200">
       <header className="fixed inset-x-0 top-0 h-14 z-50 border-t-2 border-amber-500 border-b border-amber-500/30 bg-gradient-to-r from-[#5a0000] via-[#480000] to-[#360000] shadow-md flex items-center transition-colors duration-200">
-        <div className="flex w-full items-center justify-between pl-12 sm:pl-14 md:pl-4 pr-3 sm:pr-6">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <BrandMark size={38} className="shrink-0" />
-            <div className="flex flex-col md:flex-row md:items-center md:gap-2.5 min-w-0">
-              <h1 className="text-base sm:text-lg font-bold tracking-tight text-white whitespace-nowrap leading-tight">
+        <div className="relative flex w-full h-full items-center justify-between pl-12 sm:pl-14 md:pl-4 pr-3 sm:pr-6">
+          <div className="flex items-center gap-2.5 sm:gap-3 z-10">
+            <BrandMark size={44} className="shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
                 {title}
               </h1>
               {title === "PUP FOCUS" ? (
-                <>
-                  <span className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0" aria-hidden="true" />
-                  <span className="text-[10px] sm:text-xs md:text-sm font-medium text-amber-200/90 tracking-wide leading-tight truncate">
-                    Faculty Online Compliance and Uploading System
-                  </span>
-                </>
+                <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
+                  Faculty Online Compliance and Uploading System
+                </span>
               ) : subtitle ? (
-                <>
-                  <span className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0" aria-hidden="true" />
-                  <span className="text-[10px] sm:text-xs md:text-sm font-medium text-amber-200/90 tracking-wide leading-tight truncate">
-                    {subtitle}
-                  </span>
-                </>
+                <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
+                  {subtitle}
+                </span>
               ) : null}
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+
+          {/* Centered System Title for Desktop */}
+          <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-4">
+            <span className="text-xs lg:text-sm xl:text-base font-semibold text-amber-200/95 tracking-wide text-center truncate max-w-[48vw]">
+              {title === "PUP FOCUS"
+                ? "Faculty Online Compliance and Uploading System"
+                : subtitle || null}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 z-10">
             <nav className="flex items-center gap-2">
               {nav.map((item) => (
                 <Link

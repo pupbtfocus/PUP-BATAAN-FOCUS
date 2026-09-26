@@ -19,8 +19,8 @@ export default function DashboardLayout({
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans">
       {/* Consolidated Top Header (All Views) */}
-      <header className="w-full bg-gradient-to-r from-[#5a0000] via-[#480000] to-[#360000] border-t-2 border-amber-500 border-b border-amber-500/30 px-4 py-3 flex items-center justify-between shrink-0 z-40 shadow-md">
-        <div className="flex items-center gap-3">
+      <header className="relative w-full bg-gradient-to-r from-[#5a0000] via-[#480000] to-[#360000] border-t-2 border-amber-500 border-b border-amber-500/30 px-4 py-2.5 flex items-center justify-between shrink-0 z-40 shadow-md">
+        <div className="flex items-center gap-3 z-10">
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(true)}
@@ -30,20 +30,26 @@ export default function DashboardLayout({
             <AppIcon icon={Menu} size="lg" color="inherit" />
           </button>
           <div className="flex items-center gap-2.5">
-            <BrandMark size={36} className="shrink-0" />
-            <div className="flex flex-col md:flex-row md:items-center md:gap-2.5 min-w-0">
-              <span className="font-bold text-white text-sm sm:text-base tracking-tight whitespace-nowrap leading-tight">
+            <BrandMark size={44} className="shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="font-extrabold text-white text-lg sm:text-xl md:text-2xl tracking-tight whitespace-nowrap leading-tight">
                 PUP FOCUS
               </span>
-              <span className="hidden md:inline-block h-3.5 w-px bg-amber-400/40 shrink-0" aria-hidden="true" />
-              <span className="text-[10px] sm:text-xs md:text-sm font-medium text-amber-200/90 tracking-wide leading-tight truncate">
+              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
                 Faculty Online Compliance and Uploading System
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Centered System Title for Desktop */}
+        <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-4">
+          <span className="text-xs lg:text-sm xl:text-base font-semibold text-amber-200/95 tracking-wide text-center truncate max-w-[48vw]">
+            Faculty Online Compliance and Uploading System
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 z-10">
           <NotificationDrawer />
           <LogoutButton />
         </div>
