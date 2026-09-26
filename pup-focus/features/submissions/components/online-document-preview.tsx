@@ -242,24 +242,24 @@ export function OnlineDocumentPreview({
     const currentExternalUrl = isGoogle ? googleViewerUrl : officeViewerUrl;
 
     return (
-      <div className="flex flex-col h-full w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl min-h-[500px] lg:min-h-[580px]">
+      <div className="flex flex-col h-full w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]">
         {/* Top Control Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-xs text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-xs text-xs">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setViewerMode("options")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer text-xs font-semibold shadow-2xs active:scale-95"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer text-xs font-semibold shadow-2xs active:scale-95"
             >
               <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
-              <span>Back to Options</span>
+              <span>Back</span>
             </button>
-            <span className="text-slate-400 font-mono text-[11px] truncate max-w-[200px] hidden sm:inline">
+            <span className="text-slate-400 font-mono text-[11px] truncate max-w-[120px] sm:max-w-[200px] hidden sm:inline">
               {displayName}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Toggle between Google & Office */}
             <button
               type="button"
@@ -267,7 +267,7 @@ export function OnlineDocumentPreview({
                 setIframeLoading(true);
                 setViewerMode(isGoogle ? "office" : "google");
               }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-700/80 bg-slate-800/60 hover:bg-slate-750 text-slate-300 transition cursor-pointer text-[11px]"
+              className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-700/80 bg-slate-800/60 hover:bg-slate-750 text-slate-300 transition cursor-pointer text-[11px]"
               title={isGoogle ? `Switch to ${officeAppName}` : `Switch to ${googleAppName}`}
             >
               <img
@@ -275,7 +275,8 @@ export function OnlineDocumentPreview({
                 alt=""
                 className="w-3.5 h-3.5 object-contain shrink-0"
               />
-              <span>{isGoogle ? `Switch to ${officeAppName}` : `Switch to ${googleAppName}`}</span>
+              <span className="hidden sm:inline">{isGoogle ? `Switch to ${officeAppName}` : `Switch to ${googleAppName}`}</span>
+              <span className="sm:hidden">{isGoogle ? "Office" : "Google"}</span>
             </button>
 
             {/* Open in external tab */}
@@ -283,14 +284,15 @@ export function OnlineDocumentPreview({
               href={currentExternalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/90 hover:bg-slate-750 text-slate-200 transition cursor-pointer font-medium text-[11px] shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/90 hover:bg-slate-750 text-slate-200 transition cursor-pointer font-medium text-[11px] shadow-2xs"
             >
               <img
                 src={isGoogle ? googleAppIcon : officeAppIcon}
                 alt=""
                 className="w-3.5 h-3.5 object-contain shrink-0"
               />
-              <span>Open in New Tab</span>
+              <span className="hidden sm:inline">Open in New Tab</span>
+              <span className="sm:hidden">Open</span>
               <AppIcon icon={OpenNewWindow} size="xs" color="inherit" className="ml-0.5" />
             </a>
           </div>
@@ -323,19 +325,19 @@ export function OnlineDocumentPreview({
   // Local document reader mode (for blob: URLs that cloud viewers can't fetch)
   if (viewerMode === "local_doc") {
     return (
-      <div className="flex flex-col h-full w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl min-h-[500px] lg:min-h-[580px]">
+      <div className="flex flex-col h-full w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]">
         {/* Top Control Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-xs text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-xs text-xs">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setViewerMode("options")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer text-xs font-semibold shadow-2xs active:scale-95"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer text-xs font-semibold shadow-2xs active:scale-95"
             >
               <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
-              <span>Back to Options</span>
+              <span>Back</span>
             </button>
-            <span className="text-slate-400 font-mono text-[11px] truncate max-w-[200px] hidden sm:inline">
+            <span className="text-slate-400 font-mono text-[11px] truncate max-w-[120px] sm:max-w-[200px] hidden sm:inline">
               {displayName}
             </span>
           </div>
@@ -412,24 +414,24 @@ export function OnlineDocumentPreview({
 
   // Default: Simple, clean card matching user request with official icons
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full max-w-lg mx-auto p-6 sm:p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-xs transition-all my-auto">
+    <div className="flex flex-col items-center justify-center w-full max-w-lg mx-auto p-4 sm:p-6 lg:p-7 text-center bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-xs transition-all">
       {/* File Brand Icon Badge (Using official Microsoft / Office App Icon) */}
-      <div className="relative p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 mb-3.5 shadow-2xs border border-slate-200 dark:border-slate-700/60 flex items-center justify-center">
+      <div className="relative p-2.5 sm:p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 mb-2.5 sm:mb-3.5 shadow-2xs border border-slate-200 dark:border-slate-700/60 flex items-center justify-center">
         <img
           src={officeAppIcon}
           alt={brand.label}
-          className="w-14 h-14 object-contain select-none drop-shadow-xs"
+          className="w-12 h-12 sm:w-14 sm:h-14 object-contain select-none drop-shadow-xs"
         />
-        <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-100 shadow-xs border border-slate-700 dark:border-slate-600">
+        <span className="absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-100 shadow-xs border border-slate-700 dark:border-slate-600">
           {ext.toUpperCase()}
         </span>
       </div>
 
-      <h4 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1.5 max-w-sm truncate" title={displayName}>
+      <h4 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1 max-w-sm truncate px-1" title={displayName}>
         {displayName}
       </h4>
 
-      <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 max-w-md leading-relaxed">
+      <p className="text-xs text-slate-600 dark:text-slate-400 mb-3.5 sm:mb-5 max-w-md leading-relaxed px-1">
         {isBlob ? (
           <>
             This file is <strong className="font-bold text-slate-800 dark:text-slate-200">selected but not yet uploaded</strong>. Cloud viewers become available after uploading. You can preview the document content directly below.
@@ -446,21 +448,21 @@ export function OnlineDocumentPreview({
       </p>
 
       {/* Online Viewer Action Cards */}
-      <div className="w-full space-y-3 max-w-md text-left">
+      <div className="w-full space-y-2.5 sm:space-y-3 max-w-md text-left">
         {/* Option 1: Google Sheets / Docs / Slides */}
         <a
           href={isBlob ? undefined : googleViewerUrl}
           onClick={isBlob ? (e) => e.preventDefault() : undefined}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center justify-between p-3.5 rounded-2xl border ${
+          className={`flex items-center justify-between p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border ${
             isBlob
               ? "border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 opacity-60 cursor-not-allowed"
               : "border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer active:scale-[0.99]"
           } transition-all group shadow-xs`}
         >
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="shrink-0 w-11 h-11 p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+          <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+            <div className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 p-1.5 sm:p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
               <img
                 src={googleAppIcon}
                 alt={googleAppName}
@@ -468,10 +470,10 @@ export function OnlineDocumentPreview({
               />
             </div>
             <div className="min-w-0">
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-slate-950 dark:group-hover:text-white transition-colors block">
+              <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-slate-950 dark:group-hover:text-white transition-colors block truncate">
                 Open in {googleAppName} (Drive)
               </span>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 {isBlob ? "Active once uploaded to cloud" : `View & import directly into ${googleAppName} online`}
               </p>
             </div>
@@ -490,14 +492,14 @@ export function OnlineDocumentPreview({
           onClick={isBlob ? (e) => e.preventDefault() : undefined}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center justify-between p-3.5 rounded-2xl border ${
+          className={`flex items-center justify-between p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border ${
             isBlob
               ? "border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 opacity-60 cursor-not-allowed"
               : "border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer active:scale-[0.99]"
           } transition-all group shadow-xs`}
         >
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="shrink-0 w-11 h-11 p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+          <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+            <div className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 p-1.5 sm:p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
               <img
                 src={officeAppIcon}
                 alt={officeAppName}
@@ -505,10 +507,10 @@ export function OnlineDocumentPreview({
               />
             </div>
             <div className="min-w-0">
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-slate-950 dark:group-hover:text-white transition-colors block">
+              <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-slate-950 dark:group-hover:text-white transition-colors block truncate">
                 Open in {officeAppName}
               </span>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 {isBlob ? "Active once uploaded to cloud" : "Render with official Microsoft 365 web fidelity"}
               </p>
             </div>
@@ -522,7 +524,7 @@ export function OnlineDocumentPreview({
         </a>
 
         {/* Bottom Action Row */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pt-1.5 sm:pt-2">
           {isBlob && (detectedIsWord || detectedIsExcel) ? (
             <button
               type="button"
@@ -541,7 +543,7 @@ export function OnlineDocumentPreview({
                 setLocalContent(lines);
                 setIsLoadingLocalContent(false);
               }}
-              className="col-span-2 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-white font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
+              className="col-span-1 sm:col-span-2 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-white font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
             >
               <AppIcon icon={Eye} size="sm" color="white" />
               <span>Preview Document Content</span>
@@ -553,7 +555,7 @@ export function OnlineDocumentPreview({
                 setIframeLoading(true);
                 setViewerMode("google");
               }}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
+              className="flex items-center justify-center gap-2 py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
             >
               <AppIcon icon={Eye} size="sm" color="default" />
               <span>Show Online Preview</span>
@@ -565,7 +567,7 @@ export function OnlineDocumentPreview({
               <button
                 type="button"
                 onClick={onDownload}
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
+                className="flex items-center justify-center gap-2 py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
               >
                 <AppIcon icon={Download} size="sm" color="default" />
                 <span>Download File</span>
@@ -576,7 +578,7 @@ export function OnlineDocumentPreview({
                 download={fileName}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
+                className="flex items-center justify-center gap-2 py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
               >
                 <AppIcon icon={Download} size="sm" color="default" />
                 <span>Download File</span>

@@ -576,14 +576,14 @@ export function DocumentPreviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/80 px-2 sm:px-4 py-3 sm:py-6 backdrop-blur-sm overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="document-preview-modal-title"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg sm:max-w-xl lg:max-w-5xl max-h-[96vh] sm:max-h-[92vh] flex flex-col rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200"
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}
@@ -605,7 +605,7 @@ export function DocumentPreviewModal({
         />
 
         {/* Subheader Metadata Bar (Matches Validation History design) */}
-        <div className="flex flex-wrap items-center gap-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-6 py-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-4 sm:px-6 py-2.5 sm:py-3">
           {isUpload ? (
             <>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-2xs">
@@ -628,26 +628,17 @@ export function DocumentPreviewModal({
               )}
               <SubmissionStatusBadge
                 status={normalizedStatus}
-                size="md"
-                iconOnly={true}
+                size="sm"
               />
             </>
           )}
         </div>
 
-        {/* Content Body: Left Viewer + Right Sidebar */}
-        <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)] flex-1 overflow-y-auto min-h-0">
+        {/* Content Body: stacks on mobile, side-by-side on lg */}
+        <div className="flex flex-col lg:grid lg:gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)] px-3 sm:px-6 py-3 sm:py-6 flex-1 overflow-y-auto min-h-0 gap-4">
           {/* Main Viewer Area */}
-          <div className="min-h-[500px] lg:min-h-[580px] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-950 shadow-inner flex items-center justify-center p-2 sm:p-3 relative">
-            {typeInfo.isImage ? (
-              <div className="relative flex items-center justify-center w-full h-full min-h-[500px] lg:min-h-[580px] p-2 bg-slate-950/40 rounded-xl overflow-hidden group">
-                <img
-                  src={displayUrl}
-                  alt={documentTitle}
-                  className="max-h-[70vh] max-w-full rounded-xl object-contain shadow-md"
-                />
-              </div>
-            ) : isOfficeDoc ? (
+          {isOfficeDoc ? (
+            <div className="w-full flex flex-col justify-start">
               <OnlineDocumentPreview
                 key={fileUrl}
                 fileName={effectiveFileName || documentTitle}
@@ -665,14 +656,26 @@ export function DocumentPreviewModal({
                 )}
                 onDownload={handleDownload}
               />
-            ) : (
-              <iframe
-                title={`${documentTitle} preview`}
-                src={displayUrl}
-                className="h-full min-h-[500px] lg:min-h-[580px] w-full rounded-xl border-0 bg-slate-900 shadow-xs"
-              />
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="min-h-[240px] sm:min-h-[360px] lg:min-h-[500px] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-950 shadow-inner flex items-center justify-center p-2 sm:p-3 relative">
+              {typeInfo.isImage ? (
+                <div className="relative flex items-center justify-center w-full h-full min-h-[240px] sm:min-h-[360px] lg:min-h-[500px] p-2 bg-slate-950/40 rounded-xl overflow-hidden group">
+                  <img
+                    src={displayUrl}
+                    alt={documentTitle}
+                    className="max-h-[45vh] sm:max-h-[60vh] lg:max-h-[70vh] max-w-full rounded-xl object-contain shadow-md"
+                  />
+                </div>
+              ) : (
+                <iframe
+                  title={`${documentTitle} preview`}
+                  src={displayUrl}
+                  className="h-full min-h-[240px] sm:min-h-[360px] lg:min-h-[500px] w-full rounded-xl border-0 bg-slate-900 shadow-xs"
+                />
+              )}
+            </div>
+          )}
 
           {/* Sidebar Area */}
           <div className="flex flex-col justify-between space-y-4">
@@ -865,7 +868,7 @@ export function DocumentPreviewModal({
             </div>
 
             {/* Action Buttons Area */}
-            <div className="pt-2 space-y-2.5">
+            <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-2.5">
               {/* Download Button (Matches Validation History download button) */}
               <button
                 type="button"
@@ -895,7 +898,7 @@ export function DocumentPreviewModal({
               {/* Close Button */}
               <button
                 type="button"
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs py-2.5 shadow-2xs transition cursor-pointer active:scale-95"
+                className="w-full col-span-1 sm:col-span-2 lg:col-span-1 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs py-2.5 shadow-2xs transition cursor-pointer active:scale-95"
                 onClick={onClose}
               >
                 <span>Close Preview</span>
