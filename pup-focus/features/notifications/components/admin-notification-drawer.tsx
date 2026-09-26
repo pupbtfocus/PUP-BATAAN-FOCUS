@@ -344,11 +344,12 @@ export function AdminNotificationDrawer({
                     type="button"
                     onClick={() => void fetchNotifications()}
                     disabled={isLoading}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition cursor-pointer disabled:opacity-50"
                     title="Refresh notifications"
                     aria-label="Refresh notifications"
                   >
-                    <Refresh className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                    <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-amber-500" : ""}`} />
+                    <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
                   </button>
 
                   <button
