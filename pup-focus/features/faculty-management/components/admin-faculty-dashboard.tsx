@@ -751,24 +751,24 @@ export function AdminFacultyDashboard({
               <div className="max-w-7xl mx-auto w-full">
                 {activeSection === "dashboard" ? (
                   <article className="space-y-5 p-2 sm:p-4 md:p-5">
-                    {/* Minimalist Header */}
-                    <div className="border-b border-slate-300 dark:border-slate-800/80 pb-4 space-y-3">
+                    {/* Gold Card Header */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
                       <div>
                         <div className="flex items-center gap-2.5 flex-wrap">
-                          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                             Dashboard
                           </h1>
                         </div>
-                        <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
                           Overview of faculty compliance progress, submission verification, and recent document activity.
                         </p>
                       </div>
 
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+                        <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
                           A.Y. {dashboardStats?.currentAcademicYear || "2026-2027"} • {dashboardStats?.currentSemester || "1st Semester"}
                           {windowStatus && (windowStatus.status === "Closed" || !windowStatus.isOpen) ? (
-                            <span className="ml-2 text-slate-500 dark:text-slate-400 font-medium">
+                            <span className="ml-2 font-semibold">
                               • (Submission Window Closed)
                             </span>
                           ) : null}
@@ -780,10 +780,10 @@ export function AdminFacultyDashboard({
                             onClick={() => void loadDashboardStats()}
                             disabled={isLoadingStats}
                             title="Refresh dashboard"
-                            className="inline-flex items-center justify-center rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 p-2 text-slate-950 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                            className="inline-flex items-center justify-center rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 p-2 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                           >
                             <Refresh
-                              className={`h-3.5 w-3.5 text-slate-950 ${isLoadingStats ? "animate-spin" : ""}`}
+                              className={`h-3.5 w-3.5 text-slate-950 dark:text-amber-100 ${isLoadingStats ? "animate-spin" : ""}`}
                             />
                             <span className="sr-only">Refresh</span>
                           </button>
@@ -1082,12 +1082,13 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "facultyManagement" ? (
                   <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800 pb-4 mb-6">
+                    {/* Gold Card Header */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                       <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                           Faculty Management
                         </h1>
-                        <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
                           View, manage, and monitor faculty profiles, department assignments, and account statuses.
                         </p>
                       </div>
@@ -1099,7 +1100,7 @@ export function AdminFacultyDashboard({
                             setCreateSuccess(null);
                             setAddFacultyModalOpen(true);
                           }}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-sm active:scale-[0.98] transition cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-slate-950 hover:bg-slate-800 text-white dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300 px-4 py-2 text-xs font-bold shadow-sm active:scale-[0.98] transition cursor-pointer"
                         >
                           + Add Faculty
                         </button>
@@ -1107,7 +1108,7 @@ export function AdminFacultyDashboard({
                           type="button"
                           onClick={() => void refreshCurrentPanel()}
                           disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                         >
                           <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                           <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
@@ -1146,12 +1147,13 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "requirements" ? (
                   <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800 pb-4 mb-6">
+                    {/* Gold Card Header */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                       <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                           Requirements Verification
                         </h1>
-                        <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
                           Review, validate, or request revisions for submitted faculty compliance documents for this academic term.
                         </p>
                       </div>
@@ -1160,7 +1162,7 @@ export function AdminFacultyDashboard({
                           type="button"
                           onClick={() => void refreshCurrentPanel()}
                           disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                         >
                           <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                           <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
@@ -1181,12 +1183,13 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "submissionWindow" ? (
                   <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800 pb-4 mb-6">
+                    {/* Gold Card Header */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                       <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                           Submission Schedule
                         </h1>
-                        <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
                           Set and manage submission opening dates, closing deadlines, and faculty extension requests.
                         </p>
                       </div>
@@ -1195,7 +1198,7 @@ export function AdminFacultyDashboard({
                           type="button"
                           onClick={() => void refreshCurrentPanel()}
                           disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                         >
                           <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                           <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
@@ -1214,12 +1217,13 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "academicTerms" ? (
                   <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-300 dark:border-slate-800 pb-4 mb-6">
+                    {/* Gold Card Header */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                       <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                           Academic Year and Semester
                         </h1>
-                        <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
                           Manage academic years, semester cycles, and activate the current operational term.
                         </p>
                       </div>
@@ -1228,7 +1232,7 @@ export function AdminFacultyDashboard({
                           type="button"
                           onClick={() => void refreshCurrentPanel()}
                           disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                         >
                           <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                           <span>{isLoading ? "Refreshing..." : "Refresh"}</span>

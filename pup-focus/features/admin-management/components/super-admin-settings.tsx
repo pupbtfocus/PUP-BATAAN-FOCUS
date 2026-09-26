@@ -517,13 +517,13 @@ export function SuperAdminSettings({
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">
+      {/* Top Header Gold Card */}
+      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
             Settings
           </h1>
-          <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+          <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
             Manage your super administrator account details, security settings, and system preferences.
           </p>
         </div>
@@ -533,7 +533,7 @@ export function SuperAdminSettings({
             onClick={() => void refreshAccount()}
             disabled={isRefreshing}
             title="Refresh account details"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer shadow-2xs"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
           >
             <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
             <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
