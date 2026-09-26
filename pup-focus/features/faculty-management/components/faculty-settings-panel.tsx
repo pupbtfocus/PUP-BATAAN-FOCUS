@@ -541,21 +541,21 @@ export function FacultySettingsPanel({
 
   return (
     <div className="space-y-5">
-      {/* Top Header */}
-      <div className="border-b border-slate-300 dark:border-slate-800/80 pb-4 space-y-3">
+      {/* Top Header Gold Card */}
+      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
               Settings
             </h1>
           </div>
-          <p className="mt-1.5 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
+          <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
             Manage your faculty account details, personal information, and security preferences.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+          <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
             {account.program?.name || account.program?.code ? (
               <>Department: {account.program.code ? `${account.program.code} — ` : ""}{account.program.name}</>
             ) : (
@@ -569,10 +569,10 @@ export function FacultySettingsPanel({
               onClick={() => void refreshAccount()}
               disabled={isRefreshing}
               title="Refresh account details"
-              className="inline-flex items-center justify-center rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 p-2 text-slate-950 transition disabled:opacity-50 cursor-pointer shadow-xs"
+              className="inline-flex items-center justify-center rounded-xl border border-amber-600/40 bg-white/95 hover:bg-white text-slate-950 dark:bg-slate-900 dark:text-amber-100 dark:border-amber-500/50 p-2 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <Refresh
-                className={`h-3.5 w-3.5 text-slate-950 ${isRefreshing ? "animate-spin" : ""}`}
+                className={`h-3.5 w-3.5 text-slate-950 dark:text-amber-100 ${isRefreshing ? "animate-spin" : ""}`}
               />
               <span className="sr-only">Refresh</span>
             </button>
