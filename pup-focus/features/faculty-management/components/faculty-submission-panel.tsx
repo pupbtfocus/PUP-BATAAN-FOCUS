@@ -1809,7 +1809,7 @@ function FacultySubmissionPanelContent({
               <img
                 src={currentAvatarUrl}
                 alt={currentFacultyName || "Faculty Profile"}
-                className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/70 bg-slate-900 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+                className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/70 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
                 onError={() => setHasAvatarError(true)}
               />
             ) : (
@@ -1919,7 +1919,7 @@ function FacultySubmissionPanelContent({
                   <img
                     src={currentAvatarUrl}
                     alt={currentFacultyName || "Faculty Profile"}
-                    className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/70 bg-slate-900 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/70 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
                     onError={() => setHasAvatarError(true)}
                   />
                 ) : (

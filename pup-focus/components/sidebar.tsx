@@ -175,18 +175,14 @@ export function SidebarContent({
             <img
               src={profileImageUrl}
               alt={adminName ?? "User"}
-              className={`w-20 h-20 rounded-full border-2 border-amber-400/70 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors ${
-                profileImageUrl.includes("pup-seal.png") || profileImageUrl.includes("pup-focus-emblem-logo.png")
-                  ? "object-contain p-1 bg-slate-900"
-                  : "object-cover bg-slate-100"
-              }`}
+              className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/70 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
               onError={() => setHasAvatarError(true)}
             />
           ) : isSuperAdmin ? (
             <img
               src="/icons/pup-seal.png"
               alt="PUP"
-              className="w-20 h-20 rounded-full object-contain p-2 bg-slate-900 shadow-md border-2 border-amber-400/60 ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+              className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/60 ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
             />
           ) : (
             <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/40 font-bold text-xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
