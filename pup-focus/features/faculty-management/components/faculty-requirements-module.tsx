@@ -947,20 +947,20 @@ export function FacultyRequirementsModule({
               </div>
 
               {/* Action Buttons (Pinned Bottom) */}
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/50">
+              <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/50">
                 <Button
                   type="button"
                   variant="maroon"
                   onClick={closeModal}
                   disabled={isSubmitting}
-                  className="cursor-pointer"
+                  className="w-full sm:w-auto cursor-pointer justify-center"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting || !selectedFile}
-                  className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">

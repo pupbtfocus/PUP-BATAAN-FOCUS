@@ -3028,7 +3028,7 @@ function FacultySubmissionPanelContent({
             )}
             {isMounted && selectedRequirementForUpload && (
               <div
-                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-4 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
+                className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="upload-modal-title"
@@ -3064,7 +3064,7 @@ function FacultySubmissionPanelContent({
                     onSubmit={handleDirectUploadSubmit}
                     className="flex flex-col flex-1 min-h-0 overflow-hidden"
                   >
-                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                       {/* Reviewer Feedback / Revision Request Alert Box */}
                       {(isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")) && (() => {
                         const statusItem = selectedRequirementForUpload
@@ -3169,19 +3169,19 @@ function FacultySubmissionPanelContent({
                     </div>
 
                     {/* Modal Footer (Pinned Bottom) */}
-                    <div className="flex items-center justify-end gap-2.5 px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50/70 dark:bg-slate-950/50">
+                    <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50/70 dark:bg-slate-950/50">
                       <button
                         type="button"
                         onClick={closeDirectUploadModal}
                         disabled={isUploadingDirect}
-                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                        className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] shadow-xs transition-colors cursor-pointer disabled:opacity-50 active:scale-[0.98]"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={isUploadingDirect || !directUploadFile}
-                        className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none active:scale-[0.98]"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 sm:py-2 rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-500 disabled:shadow-none active:scale-[0.98]"
                       >
                         {isUploadingDirect ? (
                           <>
