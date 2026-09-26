@@ -164,18 +164,18 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1.5 bg-[#6b0000]/80 border border-amber-400/40 p-4 sm:p-5 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
+      <div className="my-1 bg-[#6b0000]/80 border border-amber-400/40 p-3.5 sm:p-4 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
         <button
           type="button"
           onClick={() => handleSelect("settings")}
-          className="relative mb-2.5 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
+          className="relative mb-2 cursor-pointer transition-transform hover:scale-105 group focus:outline-hidden"
           title="Manage Profile & Settings"
         >
           {profileImageUrl && !hasAvatarError ? (
             <img
               src={profileImageUrl}
               alt={adminName ?? "User"}
-              className={`w-24 h-24 rounded-full border-2 border-amber-400/70 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors ${
+              className={`w-20 h-20 rounded-full border-2 border-amber-400/70 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors ${
                 profileImageUrl.includes("pup-seal.png") || profileImageUrl.includes("pup-focus-emblem-logo.png")
                   ? "object-contain p-1 bg-slate-900"
                   : "object-cover bg-slate-100"
@@ -186,30 +186,30 @@ export function SidebarContent({
             <img
               src="/icons/pup-seal.png"
               alt="PUP"
-              className="w-24 h-24 rounded-full object-contain p-2 bg-slate-900 shadow-md border-2 border-amber-400/60 ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+              className="w-20 h-20 rounded-full object-contain p-2 bg-slate-900 shadow-md border-2 border-amber-400/60 ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
             />
           ) : (
-            <div className="w-24 h-24 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/40 font-bold text-2xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
+            <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/40 font-bold text-xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
               {getSidebarInitials(adminName, "AD")}
             </div>
           )}
           <span
-            className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#6b0000] ring-1 ring-emerald-400/40"
+            className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#6b0000] ring-1 ring-emerald-400/40"
             title="Active"
           />
         </button>
 
-        <span className="text-sm sm:text-base font-semibold text-amber-200/90 tracking-wide">
+        <span className="text-xs sm:text-sm font-semibold text-amber-200/90 tracking-wide">
           Welcome,
         </span>
-        <p className="mt-1 font-extrabold text-white text-center tracking-tight text-xl sm:text-2xl leading-snug break-words max-w-full px-1">
+        <p className="mt-0.5 font-bold text-white text-center tracking-tight text-lg sm:text-xl leading-snug break-words max-w-full px-1">
           {extractFirstName(adminName, roleTitle)}
         </p>
 
-        <div className="my-2.5 h-px w-full bg-amber-400/50" />
+        <div className="my-2 h-px w-full bg-amber-400/50" />
 
         <span
-          className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-3.5 py-1 text-xs font-bold uppercase tracking-wider rounded-full shadow-2xs"
+          className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-3 py-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-full shadow-2xs"
         >
           {roleTitle}
         </span>
