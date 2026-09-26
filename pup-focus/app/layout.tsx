@@ -47,7 +47,10 @@ export default function RootLayout({
         />
         <link rel="apple-touch-icon" href="/icons/pup-seal.png?v=2" />
       </head>
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 transition-colors duration-200">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-slate-50 text-slate-900 transition-colors duration-200"
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
