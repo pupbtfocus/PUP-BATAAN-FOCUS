@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import JSZip from "jszip";
 import {
   Download,
   Eye,
   NavArrowLeft,
   OpenNewWindow,
+  Page,
   SystemRestart,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
@@ -15,6 +17,102 @@ import {
   resolveDirectSignedUrl,
 } from "@/lib/online-viewers";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
+
+async function extractDocxParagraphs(url: string): Promise<string[] | null> {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const zip = await JSZip.loadAsync(blob);
+    const xml = await zip.file("word/document.xml")?.async("string");
+    if (!xml) return null;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, "application/xml");
+    const pElements = doc.getElementsByTagName("w:p");
+    const paragraphs: string[] = [];
+    for (let i = 0; i < pElements.length; i++) {
+      const p = pElements[i];
+      const tElements = p.getElementsByTagName("w:t");
+      let line = "";
+      for (let j = 0; j < tElements.length; j++) {
+        line += tElements[j].textContent || "";
+      }
+      if (line.trim()) {
+        paragraphs.push(line.trim());
+      }
+    }
+    return paragraphs;
+  } catch (err) {
+    console.warn("Failed to extract docx paragraphs:", err);
+    return null;
+  }
+}
+
+async function extractTextFileLines(url: string): Promise<string[] | null> {
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    return text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  } catch (err) {
+    return null;
+  }
+}
+
+async function extractXlsxData(url: string): Promise<string[] | null> {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const zip = await JSZip.loadAsync(blob);
+
+    // Read shared strings table
+    const sharedStrings: string[] = [];
+    const ssXml = await zip.file("xl/sharedStrings.xml")?.async("string");
+    if (ssXml) {
+      const parser = new DOMParser();
+      const ssDoc = parser.parseFromString(ssXml, "application/xml");
+      const siEls = ssDoc.getElementsByTagName("si");
+      for (let i = 0; i < siEls.length; i++) {
+        const tEls = siEls[i].getElementsByTagName("t");
+        let text = "";
+        for (let j = 0; j < tEls.length; j++) text += tEls[j].textContent || "";
+        sharedStrings.push(text);
+      }
+    }
+
+    // Read first worksheet
+    const sheetXml = await zip.file("xl/worksheets/sheet1.xml")?.async("string");
+    if (!sheetXml) return null;
+
+    const parser = new DOMParser();
+    const sheetDoc = parser.parseFromString(sheetXml, "application/xml");
+    const rowEls = sheetDoc.getElementsByTagName("row");
+    const rows: string[] = [];
+
+    for (let i = 0; i < rowEls.length && i < 200; i++) {
+      const cellEls = rowEls[i].getElementsByTagName("c");
+      const cells: string[] = [];
+      for (let j = 0; j < cellEls.length; j++) {
+        const cell = cellEls[j];
+        const type = cell.getAttribute("t");
+        const vEl = cell.getElementsByTagName("v")[0];
+        let value = vEl?.textContent?.trim() || "";
+        if (type === "s" && sharedStrings.length > 0) {
+          value = sharedStrings[parseInt(value)] ?? value;
+        } else if (type === "b") {
+          value = value === "1" ? "TRUE" : "FALSE";
+        }
+        cells.push(value);
+      }
+      if (cells.some((c) => c.trim())) {
+        rows.push(cells.join("  |  "));
+      }
+    }
+
+    return rows.length > 0 ? rows : null;
+  } catch (err) {
+    console.warn("Failed to extract xlsx data:", err);
+    return null;
+  }
+}
 
 export interface OnlineDocumentPreviewProps {
   fileName: string;
@@ -52,8 +150,10 @@ export function OnlineDocumentPreview({
 }: OnlineDocumentPreviewProps) {
   const [directUrl, setDirectUrl] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(true);
-  const [viewerMode, setViewerMode] = useState<"options" | "google" | "office">("options");
+  const [viewerMode, setViewerMode] = useState<"options" | "google" | "office" | "local_doc">("options");
   const [iframeLoading, setIframeLoading] = useState(true);
+  const [localContent, setLocalContent] = useState<string[] | null>(null);
+  const [isLoadingLocalContent, setIsLoadingLocalContent] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -220,6 +320,96 @@ export function OnlineDocumentPreview({
     );
   }
 
+  // Local document reader mode (for blob: URLs that cloud viewers can't fetch)
+  if (viewerMode === "local_doc") {
+    return (
+      <div className="flex flex-col h-full w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl min-h-[500px] lg:min-h-[580px]">
+        {/* Top Control Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-xs text-xs">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setViewerMode("options")}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer text-xs font-semibold shadow-2xs active:scale-95"
+            >
+              <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
+              <span>Back to Options</span>
+            </button>
+            <span className="text-slate-400 font-mono text-[11px] truncate max-w-[200px] hidden sm:inline">
+              {displayName}
+            </span>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-900/40 border border-amber-700/50 text-amber-300 text-[11px] font-semibold">
+            <AppIcon icon={Page} size="xs" color="inherit" />
+            Document Reader
+          </span>
+        </div>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-5 bg-slate-950">
+          {isLoadingLocalContent ? (
+            <div className="flex items-center justify-center h-full py-16">
+              <SystemLoadingScreen
+                fullScreen={false}
+                className="h-full min-h-0 rounded-b-2xl"
+                text="Reading document content..."
+                subtitle={displayName}
+              />
+            </div>
+          ) : localContent && localContent.length > 0 ? (
+            <>
+              {detectedIsExcel && (
+                <div className="mb-3 px-3 py-2 rounded-lg bg-emerald-950/40 border border-emerald-800/50 text-emerald-400 text-[11px] font-mono">
+                  Spreadsheet data — columns separated by <span className="font-bold text-emerald-300"> | </span> · {localContent.length} rows
+                </div>
+              )}
+              <div className={detectedIsExcel ? "space-y-0.5" : "space-y-2"}>
+                {localContent.map((line, i) =>
+                  detectedIsExcel ? (
+                    <div
+                      key={i}
+                      className={`px-3 py-1.5 rounded text-[12px] font-mono text-slate-200 leading-snug whitespace-pre-wrap break-all ${
+                        i === 0
+                          ? "bg-slate-800 text-emerald-300 font-bold border border-emerald-900/50"
+                          : i % 2 === 0
+                          ? "bg-slate-900"
+                          : "bg-slate-950"
+                      }`}
+                    >
+                      {line}
+                    </div>
+                  ) : (
+                    <p key={i} className="text-slate-200 text-[13px] leading-relaxed">
+                      {line}
+                    </p>
+                  )
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full py-16 text-center gap-3">
+              <AppIcon icon={Page} size="xl" color="muted" />
+              <p className="text-slate-400 text-sm">
+                Could not extract readable content from this file.
+              </p>
+              <p className="text-slate-500 text-xs max-w-xs">
+                The file may be encrypted, binary, or use a format not supported by the client-side reader.
+              </p>
+            </div>
+          )}
+        </div>
+
+      </div>
+    );
+  }
+
+  // Detect if this is a local blob (upload draft) — cloud viewers cannot fetch these
+  const isBlob = Boolean(
+    effectiveUrl.startsWith("blob:") ||
+    fileUrl.startsWith("blob:") ||
+    effectiveUrl.startsWith("data:") ||
+    fileUrl.startsWith("data:")
+  );
+
   // Default: Simple, clean card matching user request with official icons
   return (
     <div className="flex flex-col items-center justify-center h-full w-full max-w-lg mx-auto p-6 sm:p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-xs transition-all my-auto">
@@ -240,21 +430,34 @@ export function OnlineDocumentPreview({
       </h4>
 
       <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 max-w-md leading-relaxed">
-        Direct browser preview is not supported for{" "}
-        <strong className="font-bold text-slate-800 dark:text-slate-200">
-          {brand.label}
-        </strong>
-        . You can open and view it online with Google Drive or Microsoft Office without downloading, or save it to your device.
+        {isBlob ? (
+          <>
+            This file is <strong className="font-bold text-slate-800 dark:text-slate-200">selected but not yet uploaded</strong>. Cloud viewers become available after uploading. You can preview the document content directly below.
+          </>
+        ) : (
+          <>
+            Direct browser preview is not supported for{" "}
+            <strong className="font-bold text-slate-800 dark:text-slate-200">
+              {brand.label}
+            </strong>
+            . You can open and view it online with Google Drive or Microsoft Office without downloading, or save it to your device.
+          </>
+        )}
       </p>
 
       {/* Online Viewer Action Cards */}
       <div className="w-full space-y-3 max-w-md text-left">
         {/* Option 1: Google Sheets / Docs / Slides */}
         <a
-          href={googleViewerUrl}
+          href={isBlob ? undefined : googleViewerUrl}
+          onClick={isBlob ? (e) => e.preventDefault() : undefined}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all group cursor-pointer shadow-xs active:scale-[0.99]"
+          className={`flex items-center justify-between p-3.5 rounded-2xl border ${
+            isBlob
+              ? "border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 opacity-60 cursor-not-allowed"
+              : "border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer active:scale-[0.99]"
+          } transition-all group shadow-xs`}
         >
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="shrink-0 w-11 h-11 p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
@@ -269,7 +472,7 @@ export function OnlineDocumentPreview({
                 Open in {googleAppName} (Drive)
               </span>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                View &amp; import directly into {googleAppName} online
+                {isBlob ? "Active once uploaded to cloud" : `View & import directly into ${googleAppName} online`}
               </p>
             </div>
           </div>
@@ -283,10 +486,15 @@ export function OnlineDocumentPreview({
 
         {/* Option 2: Microsoft Office Online */}
         <a
-          href={officeViewerUrl}
+          href={isBlob ? undefined : officeViewerUrl}
+          onClick={isBlob ? (e) => e.preventDefault() : undefined}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all group cursor-pointer shadow-xs active:scale-[0.99]"
+          className={`flex items-center justify-between p-3.5 rounded-2xl border ${
+            isBlob
+              ? "border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 opacity-60 cursor-not-allowed"
+              : "border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer active:scale-[0.99]"
+          } transition-all group shadow-xs`}
         >
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="shrink-0 w-11 h-11 p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
@@ -301,7 +509,7 @@ export function OnlineDocumentPreview({
                 Open in {officeAppName}
               </span>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                Render with official Microsoft 365 web fidelity
+                {isBlob ? "Active once uploaded to cloud" : "Render with official Microsoft 365 web fidelity"}
               </p>
             </div>
           </div>
@@ -313,40 +521,67 @@ export function OnlineDocumentPreview({
           />
         </a>
 
-        {/* Bottom Action Row: Show Online Preview & Download File */}
+        {/* Bottom Action Row */}
         <div className="grid grid-cols-2 gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => {
-              setIframeLoading(true);
-              setViewerMode("google");
-            }}
-            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
-          >
-            <AppIcon icon={Eye} size="sm" color="default" />
-            <span>Show Online Preview</span>
-          </button>
-
-          {onDownload ? (
+          {isBlob && (detectedIsWord || detectedIsExcel) ? (
             <button
               type="button"
-              onClick={onDownload}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
+              onClick={async () => {
+                setIsLoadingLocalContent(true);
+                setViewerMode("local_doc");
+                const url = effectiveUrl.startsWith("blob:") || effectiveUrl.startsWith("data:") ? effectiveUrl : fileUrl;
+                let lines: string[] | null = null;
+                if (detectedIsWord) {
+                  lines = await extractDocxParagraphs(url);
+                } else if (detectedIsExcel) {
+                  lines = await extractXlsxData(url);
+                } else {
+                  lines = await extractTextFileLines(url);
+                }
+                setLocalContent(lines);
+                setIsLoadingLocalContent(false);
+              }}
+              className="col-span-2 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-white font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
             >
-              <AppIcon icon={Download} size="sm" color="default" />
-              <span>Download File</span>
+              <AppIcon icon={Eye} size="sm" color="white" />
+              <span>Preview Document Content</span>
             </button>
           ) : (
-            <a
-              href={fileUrl}
-              download={fileName}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => {
+                setIframeLoading(true);
+                setViewerMode("google");
+              }}
               className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
             >
-              <AppIcon icon={Download} size="sm" color="default" />
-              <span>Download File</span>
-            </a>
+              <AppIcon icon={Eye} size="sm" color="default" />
+              <span>Show Online Preview</span>
+            </button>
+          )}
+
+          {!isBlob && (
+            onDownload ? (
+              <button
+                type="button"
+                onClick={onDownload}
+                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
+              >
+                <AppIcon icon={Download} size="sm" color="default" />
+                <span>Download File</span>
+              </button>
+            ) : (
+              <a
+                href={fileUrl}
+                download={fileName}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
+              >
+                <AppIcon icon={Download} size="sm" color="default" />
+                <span>Download File</span>
+              </a>
+            )
           )}
         </div>
       </div>
