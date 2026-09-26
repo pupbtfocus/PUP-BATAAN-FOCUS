@@ -13,6 +13,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { cn } from "@/utils/cn";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { SubmissionStatusBadge } from "./submission-status-badge";
+import { DocumentPreviewModal } from "./document-preview-modal";
 
 export interface DocumentUploadZoneProps {
   selectedFile: File | null;
@@ -610,137 +611,31 @@ export function DocumentUploadZone({
         </div>
       )}
 
-      {/* Document Preview Modal Overlay */}
-      {isPreviewOpen && selectedFile && fileObjectUrl && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-200"
-          onClick={() => setIsPreviewOpen(false)}
-        >
-          <div
-            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="shrink-0">{fileType?.icon}</div>
-                <div className="min-w-0">
-                  <h3
-                    className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate max-w-xs sm:max-w-md md:max-w-lg"
-                    title={selectedFile.name}
-                  >
-                    {selectedFile.name}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span>{formatBytes(selectedFile.size)}</span>
-                    <span>•</span>
-                    <span>{fileType?.type}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <a
-                  href={fileObjectUrl}
-                  download={selectedFile.name}
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all shadow-2xs"
-                >
-                  <AppIcon icon={OpenNewWindow} size="sm" color="inherit" />
-                  <span>Download</span>
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setIsPreviewOpen(false)}
-                  className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs"
-                  aria-label="Close Preview"
-                >
-                  <AppIcon icon={Xmark} size="md" color="inherit" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex-1 flex flex-col items-center justify-center min-h-[360px] bg-slate-100/50 dark:bg-slate-950/40">
-              {isImage ? (
-                <div className="flex items-center justify-center p-2 max-h-[65vh]">
-                  <img
-                    src={fileObjectUrl}
-                    alt={selectedFile.name}
-                    className="max-h-[60vh] max-w-full rounded-2xl object-contain shadow-md border border-slate-200 dark:border-slate-800"
-                  />
-                </div>
-              ) : selectedFile.name.toLowerCase().endsWith(".pdf") ? (
-                <iframe
-                  src={fileObjectUrl}
-                  title={selectedFile.name}
-                  className="w-full h-[65vh] rounded-2xl border border-slate-300 dark:border-slate-800 bg-white shadow-inner"
-                />
-              ) : (
-                (() => {
-                  const ext = selectedFile.name.split(".").pop() || "file";
-                  const isExcel = Boolean(
-                    fileType?.type?.toLowerCase().includes("sheet") ||
-                      selectedFile.name.toLowerCase().endsWith(".xlsx") ||
-                      selectedFile.name.toLowerCase().endsWith(".xls") ||
-                      selectedFile.name.toLowerCase().endsWith(".csv"),
-                  );
-                  const isWord = Boolean(
-                    selectedFile.name.toLowerCase().endsWith(".docx") ||
-                      selectedFile.name.toLowerCase().endsWith(".doc"),
-                  );
-                  const brand = getFileBrand(ext, isExcel, isWord);
-
-                  return (
-                    <div
-                      className="flex flex-col items-center justify-center h-full w-full p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs backdrop-blur-xs transition-all max-w-md"
-                    >
-                      {/* File Brand Icon Badge */}
-                      <div className="relative p-4 rounded-2xl bg-white/80 dark:bg-slate-800/80 mb-4 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700/60 flex items-center justify-center">
-                        <img
-                          src={brand.iconUrl}
-                          alt={brand.label}
-                          className="w-12 h-12 object-contain select-none"
-                          loading="lazy"
-                        />
-                        <span
-                          className={`absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider ${brand.badgeBg} shadow-sm`}
-                        >
-                          {ext}
-                        </span>
-                      </div>
-
-                      <h4 className="text-base font-bold text-slate-900 dark:text-amber-100 mb-1 max-w-sm truncate">
-                        {selectedFile.name}
-                      </h4>
-
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 max-w-xs leading-relaxed">
-                        Direct browser preview is not supported for{" "}
-                        <span className="font-bold text-slate-800 dark:text-slate-200">
-                          {brand.label}
-                        </span>
-                        . You can download or open the file to view its contents.
-                      </p>
-
-                      <a
-                        href={fileObjectUrl}
-                        download={selectedFile.name}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 active:scale-95 text-white dark:text-slate-900 font-bold text-xs uppercase tracking-wider transition-all shadow-sm hover:shadow-md cursor-pointer"
-                      >
-                        <AppIcon icon={Download} size="md" color="default" strokeWidth={2.2} />
-                        <span className="text-slate-950">
-                          Download &amp; View File
-                        </span>
-                      </a>
-                    </div>
-                  );
-                })()
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Document Preview Modal Overlay (Matches Existing DocumentPreviewModal) */}
+      {isPreviewOpen && selectedFile && fileObjectUrl ? (
+        <DocumentPreviewModal
+          isOpen={true}
+          isUploadPreview={true}
+          onClose={() => setIsPreviewOpen(false)}
+          submission={{
+            title: selectedFile.name,
+            fileName: selectedFile.name,
+            fileSize: selectedFile.size,
+            fileUrl: fileObjectUrl,
+            status: "Ready to Submit",
+            isUploadPreview: true,
+          }}
+          onDownload={() => {
+            if (!selectedFile || !fileObjectUrl) return;
+            const link = document.createElement("a");
+            link.href = fileObjectUrl;
+            link.download = selectedFile.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}
+        />
+      ) : null}
 
       {isUploading && (
         <SystemLoadingScreen
