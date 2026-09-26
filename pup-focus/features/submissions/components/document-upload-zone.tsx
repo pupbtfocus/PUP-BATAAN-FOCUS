@@ -493,9 +493,9 @@ export function DocumentUploadZone({
 
           return (
             <div
-              className="bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs flex items-center justify-between transition-all"
+              className="bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 sm:p-3.5 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-all"
             >
-              <div className="flex items-center gap-3.5 min-w-0 text-left">
+              <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 text-left">
                 {isImage && fileObjectUrl ? (
                   <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-amber-500/40 shadow-xs bg-slate-900/10">
                     <img
@@ -516,26 +516,26 @@ export function DocumentUploadZone({
                 )}
                 <div className="min-w-0 flex-1">
                   <p
-                    className="text-slate-900 dark:text-slate-100 font-bold text-sm truncate max-w-[240px] sm:max-w-[280px]"
+                    className="text-slate-900 dark:text-slate-100 font-bold text-sm truncate max-w-full sm:max-w-[280px]"
                     title={selectedFile.name}
                   >
                     {selectedFile.name}
                   </p>
-                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-1.5 sm:gap-2 mt-0.5">
                     <span>{formatBytes(selectedFile.size)}</span>
-                    <span>•</span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-white bg-[#0b5336] px-2 py-0.5 rounded-md border border-[#08412a] shadow-2xs">
+                    <span className="text-slate-300 dark:text-slate-600">•</span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-white bg-[#0b5336] px-2 py-0.5 rounded-md border border-[#08412a] shadow-2xs whitespace-nowrap">
                       <AppIcon icon={CheckCircle} size="xs" color="white" /> Ready to submit
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0 ml-3">
+              <div className="flex items-center gap-2 w-full sm:w-auto pt-2.5 sm:pt-0 border-t border-slate-200/80 dark:border-slate-800 sm:border-t-0 shrink-0 sm:ml-3">
                 <button
                   type="button"
                   onClick={() => setIsPreviewOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all cursor-pointer shadow-2xs active:scale-95"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all cursor-pointer shadow-2xs active:scale-95"
                   title="Preview Document"
                 >
                   <AppIcon icon={Eye} size="sm" color="inherit" />
@@ -545,7 +545,7 @@ export function DocumentUploadZone({
                   type="button"
                   onClick={triggerFileInput}
                   disabled={isUploading}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all cursor-pointer shadow-2xs active:scale-95"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all cursor-pointer shadow-2xs active:scale-95"
                 >
                   Replace
                 </button>
@@ -554,7 +554,7 @@ export function DocumentUploadZone({
                   aria-label="Remove selected file"
                   onClick={removeFile}
                   disabled={isUploading}
-                  className="p-1.5 text-xs font-semibold rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
+                  className="shrink-0 p-1.5 text-xs font-semibold rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50 flex items-center justify-center"
                   title="Remove File"
                 >
                   <AppIcon icon={Trash} size="sm" color="white" />
@@ -575,7 +575,7 @@ export function DocumentUploadZone({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={cn(
-            "relative group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950",
+            "relative group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-4 sm:p-6 text-center transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950",
             isDragOver
               ? "border-amber-500 bg-amber-50/60 dark:border-amber-400 dark:bg-amber-950/30 scale-[1.01] shadow-md ring-2 ring-amber-400/40"
               : "border-slate-300 dark:border-slate-700 bg-slate-50/50 hover:border-amber-500/50 hover:bg-amber-50/20 dark:bg-slate-900/50 dark:hover:border-amber-500/40 dark:hover:bg-amber-950/20 transition-all shadow-xs",
@@ -761,7 +761,7 @@ export function DocumentUploadZone({
         </div>
       )}
 
-      <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 dark:text-slate-500">
         <span className="flex items-center gap-1">
           <AppIcon icon={Page} size="xs" color="inherit" />
           <span>Max {maxSizeMb}MB • PDF / Scanned Copy</span>
