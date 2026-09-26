@@ -570,7 +570,7 @@ export function SuperAdminSettings({
                 }}
                 aria-label="Profile photo options"
               >
-                <div className="relative h-20 w-20 rounded-full border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-900 p-1.5 overflow-hidden flex items-center justify-center shadow-md">
+                <div className="relative h-20 w-20 rounded-full border-2 border-amber-500/40 overflow-hidden flex items-center justify-center shadow-md">
                   <img
                     src={displayedProfileImage}
                     alt="PUP FOCUS Super Administrator"
@@ -579,7 +579,7 @@ export function SuperAdminSettings({
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = DEFAULT_SUPER_ADMIN_AVATAR;
                     }}
-                    className="h-full w-full object-contain"
+                    className="absolute inset-0 h-full w-full object-cover"
                   />
                 </div>
 
