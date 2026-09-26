@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { EditPencil, Eye, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
-import { ROLE, type AppRole } from "@/config/roles";
+import { ROLE, type AppRole, canManageAdminAccount } from "@/config/roles";
 
 export interface AdminAccount {
   id?: string;
@@ -41,6 +41,7 @@ export interface AdminAccountsTableProps {
   accountActionError?: string | null;
   accountActionSuccess?: string | null;
   onClearMessages?: () => void;
+  currentAdminEmail?: string | null;
 }
 
 function getInitials(name?: string | null, fallback = "AD"): string {
@@ -213,6 +214,7 @@ export function AdminAccountsTable({
   accountActionError,
   accountActionSuccess,
   onClearMessages,
+  currentAdminEmail,
 }: AdminAccountsTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | string>("all");
@@ -340,6 +342,24 @@ export function AdminAccountsTable({
                 const isSuperAdmin = (admin.role || "").toLowerCase().includes("super");
                 const hasAvatar = admin.profileImageUrl && !failedImageIds.has(admin.profile_id);
                 const isLoadingAction = loadingAdminIds.has(admin.profile_id);
+                const canEdit = canManageAdminAccount({
+                  targetEmail: admin.email,
+                  targetRole: admin.role,
+                  actorEmail: currentAdminEmail,
+                  action: "edit",
+                });
+                const canDeactivate = canManageAdminAccount({
+                  targetEmail: admin.email,
+                  targetRole: admin.role,
+                  actorEmail: currentAdminEmail,
+                  action: "deactivate",
+                });
+                const canDelete = canManageAdminAccount({
+                  targetEmail: admin.email,
+                  targetRole: admin.role,
+                  actorEmail: currentAdminEmail,
+                  action: "delete",
+                });
 
                 return (
                   <tr
@@ -413,8 +433,8 @@ export function AdminAccountsTable({
                           <span>View Details</span>
                         </button>
 
-                        {/* Edit Button (Admin only) */}
-                        {!isSuperAdmin && (
+                        {/* Edit Button */}
+                        {canEdit && (
                           <button
                             type="button"
                             onClick={() => onEditAdmin(admin.profile_id)}
@@ -427,7 +447,7 @@ export function AdminAccountsTable({
                         )}
 
                         {/* Deactivate / Activate Button */}
-                        {!isSuperAdmin ? (
+                        {canDeactivate ? (
                           admin.is_active ? (
                             <button
                               type="button"
@@ -453,8 +473,8 @@ export function AdminAccountsTable({
                           )
                         ) : null}
 
-                        {/* Delete Button (Admin only) */}
-                        {!isSuperAdmin && (
+                        {/* Delete Button */}
+                        {canDelete && (
                           <button
                             type="button"
                             onClick={() => onDeleteAdmin(admin.profile_id)}

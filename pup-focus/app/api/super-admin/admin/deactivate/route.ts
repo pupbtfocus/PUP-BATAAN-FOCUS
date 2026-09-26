@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ROLE } from "@/config/roles";
+import { ROLE, canManageAdminAccount } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 
@@ -32,6 +32,37 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
+    const { data: targetAuthData, error: targetError } =
+      await supabase.auth.admin.getUserById(profileId);
+
+    if (targetError || !targetAuthData?.user) {
+      return NextResponse.json(
+        { error: "Target admin account not found" },
+        { status: 404 },
+      );
+    }
+
+    const targetUser = targetAuthData.user;
+    const targetEmail = targetUser.email ?? "";
+    const targetRole =
+      (targetUser.user_metadata?.role as string | undefined) ??
+      (targetUser.app_metadata?.role as string | undefined) ??
+      ROLE.ADMIN;
+
+    const allowed = canManageAdminAccount({
+      targetEmail,
+      targetRole,
+      actorEmail: user.email,
+      action: "deactivate",
+    });
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "You do not have permission to deactivate this admin account" },
+        { status: 403 },
+      );
+    }
+
     try {
       await supabase
         .from("profiles")
@@ -40,12 +71,9 @@ export async function POST(request: NextRequest) {
     } catch {}
 
     try {
-      const { data: userData } = await supabase.auth.admin.getUserById(profileId);
-      if (userData?.user) {
-        await supabase.auth.admin.updateUserById(profileId, {
-          user_metadata: { ...userData.user.user_metadata, is_active: false },
-        });
-      }
+      await supabase.auth.admin.updateUserById(profileId, {
+        user_metadata: { ...targetUser.user_metadata, is_active: false },
+      });
     } catch {}
 
     return NextResponse.json({ success: true });

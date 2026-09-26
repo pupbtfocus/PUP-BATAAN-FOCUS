@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ROLE } from "@/config/roles";
+import { ROLE, canManageAdminAccount } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 
@@ -31,6 +31,37 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getServiceRoleClient();
+
+    const { data: targetAuthData, error: targetError } =
+      await supabase.auth.admin.getUserById(profileId);
+
+    if (targetError || !targetAuthData?.user) {
+      return NextResponse.json(
+        { error: "Target admin account not found" },
+        { status: 404 },
+      );
+    }
+
+    const targetUser = targetAuthData.user;
+    const targetEmail = targetUser.email ?? "";
+    const targetRole =
+      (targetUser.user_metadata?.role as string | undefined) ??
+      (targetUser.app_metadata?.role as string | undefined) ??
+      ROLE.ADMIN;
+
+    const allowed = canManageAdminAccount({
+      targetEmail,
+      targetRole,
+      actorEmail: user.email,
+      action: "delete",
+    });
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "You do not have permission to delete this admin account" },
+        { status: 403 },
+      );
+    }
 
     try {
       await supabase.from("profiles").delete().eq("id", profileId);
