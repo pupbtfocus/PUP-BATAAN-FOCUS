@@ -1695,7 +1695,7 @@ export function SuperAdminDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingAccounts}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <Refresh className={`h-3.5 w-3.5 ${isLoadingAccounts ? "animate-spin" : ""}`} />
                       <span>{isLoadingAccounts ? "Refreshing..." : "Refresh"}</span>
@@ -1753,7 +1753,7 @@ export function SuperAdminDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingFaculty}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <Refresh className={`h-3.5 w-3.5 ${isLoadingFaculty ? "animate-spin" : ""}`} />
                       <span>{isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
@@ -1807,7 +1807,7 @@ export function SuperAdminDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingFaculty}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <Refresh className={`h-3.5 w-3.5 ${isLoadingFaculty ? "animate-spin" : ""}`} />
                       <span>{isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>

@@ -522,7 +522,7 @@ export function BackupArchivePanel() {
             type="button"
             onClick={() => void loadBackupData()}
             disabled={isLoading}
-            className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer shadow-2xs disabled:opacity-50"
+            className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs disabled:opacity-50 active:scale-[0.98]"
             title="Refresh backups and terms"
           >
             <Refresh className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
