@@ -115,16 +115,6 @@ export async function POST(request: NextRequest) {
       existingMetadata = (authUserData?.user?.user_metadata ??
         {}) as Record<string, unknown>;
 
-      if (
-        existingMetadata.created_via === "admin_faculty_panel" &&
-        requesterRole === ROLE.ADMIN &&
-        existingMetadata.created_by_admin_id !== user.id
-      ) {
-        return NextResponse.json(
-          { error: "You can only modify faculty accounts you created" },
-          { status: 403 },
-        );
-      }
 
       const { error: authUpdateError } =
         await supabase.auth.admin.updateUserById(profile.user_id, {
