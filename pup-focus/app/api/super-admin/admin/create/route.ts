@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SITE_URL ||
       process.env.NEXT_PUBLIC_APP_URL ||
       (request.url ? new URL(request.url).origin : "https://pupfocus.cjaayy.dev");
-    const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/confirm`;
+    const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/confirm?email=${encodeURIComponent(normalizedEmail)}`;
 
     const { data: genData, error: genError } =
       await supabase.auth.admin.generateLink({

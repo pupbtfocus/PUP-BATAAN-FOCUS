@@ -40,6 +40,7 @@ import failedIcon from "@/assets/icons animations/fail.svg";
 import loadingIcon from "@/assets/icons animations/loading.svg";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { ForgotPasswordModal } from "@/components/auth/forgot-password-modal";
+import { CancelledInviteModal } from "@/components/auth/cancelled-invite-modal";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { FacultyIncompleteRequirementsModal } from "@/features/faculty-management/components/faculty-incomplete-requirements-modal";
 
@@ -71,7 +72,8 @@ export function DevPreviewPanel() {
   const [gmailStarred, setGmailStarred] = useState(false);
 
   // Verification Screen Preview State
-  const [verifyStatus, setVerifyStatus] = useState<"loading" | "success" | "error">("success");
+  const [verifyStatus, setVerifyStatus] = useState<"loading" | "success" | "error" | "cancelled">("success");
+  const [showCancelledInviteModalPreview, setShowCancelledInviteModalPreview] = useState(false);
   const [verifyShowPassword, setVerifyShowPassword] = useState(false);
   const [copiedVerifyField, setCopiedVerifyField] = useState<"email" | "password" | "all" | null>(null);
 
@@ -427,6 +429,16 @@ export function DevPreviewPanel() {
                     <span>Launch "Forgot Password" Modal</span>
                   </button>
                 )}
+                {emailTemplate === "invite" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelledInviteModalPreview(true)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white transition cursor-pointer shadow-2xs"
+                  >
+                    <AppIcon icon={WarningTriangle} size="sm" color="inherit" />
+                    <span>Preview "Cancelled Invite" Modal</span>
+                  </button>
+                )}
                 <a
                   href="/email-preview"
                   target="_blank"
@@ -613,10 +625,37 @@ export function DevPreviewPanel() {
               </div>
             </div>
 
+            {/* Cancelled Invite Simulation Hint Banner */}
+            {emailTemplate === "invite" && (
+              <div className="mx-4 sm:mx-6 mt-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-rose-900 dark:text-rose-200">
+                  <AppIcon icon={WarningTriangle} size="sm" color="inherit" />
+                  <span>
+                    <strong>Interactive Preview:</strong> Click the <strong>&quot;Accept Invitation&quot;</strong> button inside the email below to test the <strong>Cancelled Invite Modal</strong> flow.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCancelledInviteModalPreview(true)}
+                  className="shrink-0 px-3 py-1 rounded-lg bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs cursor-pointer shadow-xs"
+                >
+                  Open Modal Directly
+                </button>
+              </div>
+            )}
+
             {/* Email Body Container */}
             <div className="p-4 sm:p-8 bg-[#f7efe7] dark:bg-slate-950/60 overflow-x-auto">
               <div
-                className="max-w-[620px] mx-auto transition-all"
+                className={`max-w-[620px] mx-auto transition-all ${emailTemplate === "invite" ? "cursor-pointer" : ""}`}
+                onClick={(e) => {
+                  const target = (e.target as HTMLElement).closest("a");
+                  if (target && emailTemplate === "invite") {
+                    e.preventDefault();
+                    setShowCancelledInviteModalPreview(true);
+                  }
+                }}
+                title={emailTemplate === "invite" ? "Click 'Accept Invitation' to preview Cancelled Invite Modal" : undefined}
                 dangerouslySetInnerHTML={{ __html: getRenderedEmailHtml() }}
               />
             </div>
@@ -632,28 +671,45 @@ export function DevPreviewPanel() {
                   ? "Clicking 'Reset Password' directs the user to /auth/change-password with a secure institutional reset token."
                   : "Submission window emails inform faculty about active deadlines with direct links to their document dashboard."}
               </span>
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveTab(
-                    emailTemplate === "invite"
-                      ? "verification"
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveTab(
+                      emailTemplate === "invite"
+                        ? "verification"
+                        : emailTemplate === "temp-credentials" || emailTemplate === "forgot-password"
+                        ? "change-password"
+                        : "gmail"
+                    )
+                  }
+                  className="inline-flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                >
+                  <span>
+                    {emailTemplate === "invite"
+                      ? "Switch to Verify Tab Screen Preview"
                       : emailTemplate === "temp-credentials" || emailTemplate === "forgot-password"
-                      ? "change-password"
-                      : "gmail"
-                  )
-                }
-                className="inline-flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
-              >
-                <span>
-                  {emailTemplate === "invite"
-                    ? "Switch to Verify Tab Screen Preview"
-                    : emailTemplate === "temp-credentials" || emailTemplate === "forgot-password"
-                    ? "Switch to Password Change Screen Preview"
-                    : "Refresh Email Preview"}
-                </span>
-                <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
-              </button>
+                      ? "Switch to Password Change Screen Preview"
+                      : "Refresh Email Preview"}
+                  </span>
+                  <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+                </button>
+
+                {emailTemplate === "invite" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("verification");
+                      setVerifyStatus("cancelled");
+                      setShowCancelledInviteModalPreview(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 font-bold text-rose-700 dark:text-rose-400 hover:underline cursor-pointer ml-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-lg px-2.5 py-1 text-xs"
+                  >
+                    <span>Test Accept Click if Cancelled (Modal)</span>
+                    <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -701,6 +757,20 @@ export function DevPreviewPanel() {
                   }`}
                 >
                   3. Error / Link Expired
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVerifyStatus("cancelled");
+                    setShowCancelledInviteModalPreview(true);
+                  }}
+                  className={`px-3 py-1.5 rounded-md font-semibold cursor-pointer transition ${
+                    verifyStatus === "cancelled"
+                      ? "bg-[#780000] text-white shadow-xs font-bold"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                  }`}
+                >
+                  4. Cancelled Invite Modal
                 </button>
               </div>
             </div>
@@ -850,6 +920,47 @@ export function DevPreviewPanel() {
                       type="button"
                       onClick={() => setVerifyStatus("success")}
                       className="mt-6 h-11 sm:h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2"
+                    >
+                      <span>Return to Sign In</span>
+                      <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+                    </button>
+                  </div>
+                )}
+
+                {/* 4. Cancelled State (Admin Revoked Invite) */}
+                {verifyStatus === "cancelled" && (
+                  <div className="py-4 flex flex-col items-center justify-center text-center">
+                    <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-rose-500/50 shadow-inner my-2">
+                      <img
+                        src={
+                          typeof failedIcon === "string"
+                            ? failedIcon
+                            : (failedIcon as any)?.src ?? "/icons-animations/fail.svg"
+                        }
+                        alt="Invitation Cancelled"
+                        className="h-14 w-14 object-contain"
+                      />
+                    </div>
+                    <h3 className="mt-3 text-2xl font-black uppercase tracking-wider text-rose-200">
+                      Invitation Cancelled
+                    </h3>
+                    <div className="mx-auto my-3 h-0.5 w-14 rounded-full bg-gradient-to-r from-transparent via-rose-500/70 to-transparent shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
+                    <p className="text-rose-100/90 text-xs sm:text-sm font-medium tracking-wide leading-relaxed max-w-[300px]">
+                      This invitation was cancelled by an institutional administrator. The link you clicked is no longer active.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowCancelledInviteModalPreview(true)}
+                      className="mt-4 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-900 to-rose-950 border border-rose-500/60 text-rose-200 text-xs font-bold hover:brightness-110 transition cursor-pointer shadow-md"
+                    >
+                      Open Cancelled Invite Modal
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("login-feedback")}
+                      className="mt-3 h-11 sm:h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2"
                     >
                       <span>Return to Sign In</span>
                       <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
@@ -1966,6 +2077,28 @@ export function DevPreviewPanel() {
                 Launch Faculty Pending Modal
               </button>
             </div>
+
+            {/* Modal Card 12: Cancelled Invitation Acceptance Modal */}
+            <div className="rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                  <AppIcon icon={WarningTriangle} size="lg" color="inherit" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Cancelled Invite Modal
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Inspect the warning modal displayed when an invited faculty or admin clicks the &quot;Accept Invitation&quot; email button after their invitation has been revoked or cancelled by an administrator.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCancelledInviteModalPreview(true)}
+                className="w-full py-2 px-3 text-xs font-bold rounded-lg bg-rose-700 hover:bg-rose-800 text-white transition cursor-pointer shadow-xs active:scale-[0.98]"
+              >
+                Launch Cancelled Invite Modal
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -2353,6 +2486,18 @@ export function DevPreviewPanel() {
         isOpen={isForgotPasswordModalOpen}
         onClose={() => setIsForgotPasswordModalOpen(false)}
         initialEmail={recipientEmail}
+      />
+
+      {/* CANCELLED INVITE MODAL PREVIEW */}
+      <CancelledInviteModal
+        isOpen={showCancelledInviteModalPreview}
+        email={recipientEmail}
+        fullName={recipientName}
+        onClose={() => setShowCancelledInviteModalPreview(false)}
+        onReturnToSignIn={() => {
+          setShowCancelledInviteModalPreview(false);
+          setActiveTab("login-feedback");
+        }}
       />
 
       {/* TOP-RIGHT SOLID ALERT POPUP (GREEN SUCCESS / MAROON ERROR) */}

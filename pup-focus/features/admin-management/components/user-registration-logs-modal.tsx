@@ -175,6 +175,18 @@ export function UserRegistrationLogsModal({
         setSelectedLogForDetails(null);
       }
 
+      // Optimistically remove the cancelled user from logs and decrement counts
+      setLogs((prev) =>
+        prev.filter(
+          (item) => item.email.toLowerCase() !== pendingCancelLog.email.toLowerCase()
+        )
+      );
+      setStats((prev) => ({
+        ...prev,
+        total: Math.max(0, prev.total - 1),
+        pending: Math.max(0, prev.pending - 1),
+      }));
+
       setPendingCancelLog(null);
       void fetchLogs();
       onInviteCancelled?.();
@@ -275,21 +287,21 @@ export function UserRegistrationLogsModal({
                   {stats.total}
                 </p>
               </div>
-              <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/30 p-3">
-                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3">
+                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   Accepted
                 </span>
-                <p className="text-xl font-bold text-emerald-900 dark:text-emerald-200 mt-0.5">
+                <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
                   {stats.accepted}
                 </p>
               </div>
-              <div className="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-950/30 p-3">
-                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3">
+                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
                   Pending
                 </span>
-                <p className="text-xl font-bold text-amber-900 dark:text-amber-200 mt-0.5">
+                <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
                   {stats.pending}
                 </p>
               </div>
@@ -475,8 +487,8 @@ export function UserRegistrationLogsModal({
                               <span>Accepted</span>
                             </span>
                           ) : (
-                            <span className="bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-700/60 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
-                              <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                            <span className="bg-amber-500 text-slate-950 border border-amber-600 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
+                              <Clock className="h-3 w-3 text-slate-950" />
                               <span>Pending</span>
                             </span>
                           )}
@@ -618,8 +630,8 @@ export function UserRegistrationLogsModal({
                         <span>Accepted</span>
                       </span>
                     ) : (
-                      <span className="bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-700/60 px-2 py-0.5 text-[10px] font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
-                        <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                      <span className="bg-amber-500 text-slate-950 border border-amber-600 px-2 py-0.5 text-[10px] font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
+                        <Clock className="h-3 w-3 text-slate-950" />
                         <span>Pending Acceptance</span>
                       </span>
                     )}

@@ -8,6 +8,7 @@ import { Logo } from "@/components/ui/logo";
 import { PupWebBadge } from "@/components/auth/pup-web-badge";
 import { CampusBackground } from "@/components/shared/campus-background";
 import { createClient } from "@/lib/supabase/client";
+import { CancelledInviteModal } from "@/components/auth/cancelled-invite-modal";
 import loadingIcon from "@/assets/icons animations/loading.svg";
 import successfullyIcon from "@/assets/icons animations/successfully.svg";
 import failedIcon from "@/assets/icons animations/fail.svg";
@@ -27,8 +28,12 @@ function readHashParams() {
 function formatInviteError(message: string) {
   const normalized = message.trim().toLowerCase();
 
+  if (normalized.includes("cancel")) {
+    return "This invitation was cancelled by an administrator. Please contact your institution if you need a new invite.";
+  }
+
   if (normalized.includes("access_denied")) {
-    return "This invite link was already used. Please ask an administrator to send a new invite or sign in if your account is already set up.";
+    return "This invite link was already used or revoked. Please ask an administrator to send a new invite or sign in if your account is already set up.";
   }
 
   if (normalized.includes("expired")) {
@@ -44,6 +49,7 @@ function AuthConfirmContent() {
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [statusMessage, setStatusMessage] = useState("Verifying your invitation link...");
+  const [showCancelledModal, setShowCancelledModal] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [userFullName, setUserFullName] = useState("");
   const [tempPassword, setTempPassword] = useState("");
@@ -88,10 +94,66 @@ function AuthConfirmContent() {
         hashParams.get("token_hash") ?? searchParams.get("token_hash");
       const token = hashParams.get("token") ?? searchParams.get("token");
       const error = hashParams.get("error") ?? searchParams.get("error");
+      const passedEmail =
+        searchParams.get("email") ?? hashParams.get("email") ?? "";
+
+      if (passedEmail) {
+        setUserEmail(passedEmail);
+      }
+
+      const isExplicitCancelled =
+        searchParams.get("cancelled") === "true" ||
+        searchParams.get("status") === "cancelled" ||
+        error?.toLowerCase().includes("cancel");
+
+      async function checkAndSetError(errorMessage: string) {
+        if (cancelled) return;
+        let isCancelled = false;
+        const checkEmail = userEmail || passedEmail;
+        try {
+          const checkUrl = checkEmail
+            ? `/api/auth/invite/check-cancelled?email=${encodeURIComponent(checkEmail)}`
+            : "/api/auth/invite/check-cancelled";
+          const checkRes = await fetch(checkUrl);
+          if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            if (checkData.isCancelled) {
+              isCancelled = true;
+              if (checkData.email) setUserEmail(checkData.email);
+              if (checkData.fullName) setUserFullName(checkData.fullName);
+            }
+          }
+        } catch {
+          // ignore check error
+        }
+
+        const isCancelledError =
+          isCancelled ||
+          isExplicitCancelled ||
+          errorMessage.toLowerCase().includes("cancel") ||
+          errorMessage.toLowerCase().includes("access_denied") ||
+          errorMessage.toLowerCase().includes("otp_expired") ||
+          errorMessage.toLowerCase().includes("revoked");
+
+        if (isCancelledError) {
+          setStatus("error");
+          setStatusMessage(
+            "This invitation was cancelled by an institutional administrator. The link you clicked is no longer valid."
+          );
+          setShowCancelledModal(true);
+        } else {
+          setStatus("error");
+          setStatusMessage(formatInviteError(errorMessage));
+        }
+      }
+
+      if (isExplicitCancelled) {
+        await checkAndSetError("cancelled");
+        return;
+      }
 
       if (error) {
-        setStatus("error");
-        setStatusMessage(formatInviteError(decodeURIComponent(error)));
+        await checkAndSetError(decodeURIComponent(error));
         return;
       }
 
@@ -126,8 +188,7 @@ function AuthConfirmContent() {
         if (cancelled) return;
 
         if (sessionError) {
-          setStatus("error");
-          setStatusMessage(formatInviteError(sessionError.message));
+          await checkAndSetError(sessionError.message);
           return;
         }
       }
@@ -139,8 +200,7 @@ function AuthConfirmContent() {
         if (cancelled) return;
 
         if (exchangeError) {
-          setStatus("error");
-          setStatusMessage(formatInviteError(exchangeError.message));
+          await checkAndSetError(exchangeError.message);
           return;
         }
       } else if (tokenHash) {
@@ -152,8 +212,7 @@ function AuthConfirmContent() {
         if (cancelled) return;
 
         if (verifyError) {
-          setStatus("error");
-          setStatusMessage(formatInviteError(verifyError.message));
+          await checkAndSetError(verifyError.message);
           return;
         }
       } else if (token) {
@@ -168,16 +227,14 @@ function AuthConfirmContent() {
         if (cancelled) return;
 
         if (verifyError) {
-          setStatus("error");
-          setStatusMessage(formatInviteError(verifyError.message));
+          await checkAndSetError(verifyError.message);
           return;
         }
       } else {
         const { data: userCheck } = await supabase.auth.getUser();
         if (!userCheck?.user) {
-          setStatus("error");
-          setStatusMessage(
-            "Missing invitation token. Please check your invitation email link.",
+          await checkAndSetError(
+            "Missing invitation token. Please check your invitation email link."
           );
           return;
         }
@@ -192,8 +249,9 @@ function AuthConfirmContent() {
       const userSession = user ?? (await supabase.auth.getSession()).data.session?.user;
 
       if (!userSession) {
-        setStatus("error");
-        setStatusMessage("Could not establish user session. Please try clicking the invitation link again.");
+        await checkAndSetError(
+          "Could not establish user session. Please try clicking the invitation link again."
+        );
         return;
       }
 
@@ -234,11 +292,10 @@ function AuthConfirmContent() {
       };
 
       if (!completeResponse.ok) {
-        setStatus("error");
-        setStatusMessage(
+        await checkAndSetError(
           completeBody.error ??
             completeBody.tempPasswordError ??
-            "Failed to complete invitation setup.",
+            "Failed to complete invitation setup."
         );
         return;
       }
@@ -276,6 +333,14 @@ function AuthConfirmContent() {
       {/* Overlay with Blur on top of the global body background */}
       <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px]" />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+      <CancelledInviteModal
+        isOpen={showCancelledModal}
+        email={userEmail || searchParams.get("email") || undefined}
+        fullName={userFullName || undefined}
+        onClose={() => setShowCancelledModal(false)}
+        onReturnToSignIn={() => router.push("/")}
+      />
 
       <div className="relative z-10 w-full max-w-[390px] sm:max-w-md mx-auto my-auto pt-6 sm:pt-10 pb-14 sm:pb-8">
         <div className="relative w-full mx-auto drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)]">
@@ -388,12 +453,25 @@ function AuthConfirmContent() {
                   />
                 </div>
                 <h2 className="mt-3 text-2xl font-black uppercase tracking-wider text-rose-200">
-                  Verification Notice
+                  {statusMessage.toLowerCase().includes("cancel") || showCancelledModal
+                    ? "Invitation Cancelled"
+                    : "Verification Notice"}
                 </h2>
                 <div className="mx-auto my-3 h-0.5 w-14 rounded-full bg-gradient-to-r from-transparent via-rose-500/70 to-transparent shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
                 <p className="text-rose-100/90 text-xs sm:text-sm font-medium tracking-wide leading-relaxed max-w-[300px]">
                   {statusMessage || "This invitation link was already used or has expired. Please request a new invite or sign in."}
                 </p>
+
+                {statusMessage.toLowerCase().includes("cancel") || showCancelledModal ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelledModal(true)}
+                    className="mt-4 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-900 to-rose-950 border border-rose-500/60 text-rose-200 text-xs font-bold hover:brightness-110 transition cursor-pointer shadow-md inline-flex items-center gap-1.5"
+                  >
+                    <span>View Cancellation Details</span>
+                    <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
+                  </button>
+                ) : null}
 
                 <button
                   type="button"
