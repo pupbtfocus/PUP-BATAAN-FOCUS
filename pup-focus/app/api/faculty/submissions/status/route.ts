@@ -686,10 +686,7 @@ export async function GET(request: NextRequest) {
           ? submission.remarks.trim()
           : undefined;
 
-      const facultyNote =
-        rawFacultyNote && rawFacultyNote !== adminFeedback?.trim()
-          ? rawFacultyNote
-          : undefined;
+      const facultyNote = rawFacultyNote || undefined;
 
       const docList = docVersionsMap.get(submission.id) || [];
       const primaryDoc = docList[0];

@@ -299,6 +299,7 @@ export interface DocumentPreviewSubmission {
   note?: string | null;
   notes?: string | null;
   remarks?: string | null;
+  facultyNote?: string | null;
   feedback?: string | null;
   admin_remarks?: string | null;
   adminRemarks?: string | null;
@@ -448,15 +449,10 @@ export function DocumentPreviewModal({
     null;
 
   const userNote =
-    (submission.note && submission.note !== adminFeedback
-      ? submission.note
-      : null) ||
-    (submission.notes && submission.notes !== adminFeedback
-      ? submission.notes
-      : null) ||
-    (submission.remarks && submission.remarks !== adminFeedback
-      ? submission.remarks
-      : null) ||
+    submission.note ||
+    submission.notes ||
+    submission.remarks ||
+    submission.facultyNote ||
     null;
 
   const normalizedStatus =

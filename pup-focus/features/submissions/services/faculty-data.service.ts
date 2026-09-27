@@ -424,10 +424,7 @@ export async function getFacultyInitialData(
       sub.admin_remarks?.trim() ||
       undefined;
 
-    const facultyNote =
-      sub.remarks && sub.remarks.trim() !== adminFeedback?.trim()
-        ? sub.remarks.trim()
-        : undefined;
+    const facultyNote = sub.remarks?.trim() || undefined;
 
     const isRevision = Boolean(hasPriorRejection && status === "Pending");
 
@@ -492,10 +489,7 @@ export async function getFacultyInitialData(
       row.created_at ||
       new Date().toISOString();
 
-    const facultyNote =
-      row.remarks && row.remarks.trim() !== adminFeedback?.trim()
-        ? row.remarks.trim()
-        : undefined;
+    const facultyNote = row.remarks?.trim() || undefined;
 
     pastSubmissions.push({
       id: row.id,

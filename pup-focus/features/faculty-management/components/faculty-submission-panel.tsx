@@ -1156,14 +1156,9 @@ function FacultySubmissionPanelContent({
           match.feedback ||
           null;
         const matchUserNote =
-          (match.note && match.note !== adminRemarks ? match.note : null) ||
-          ((match as { notes?: string }).notes &&
-          (match as { notes?: string }).notes !== adminRemarks
-            ? (match as { notes?: string }).notes
-            : null) ||
-          (match.remarks && match.remarks !== adminRemarks
-            ? match.remarks
-            : null) ||
+          match.note ||
+          (match as { notes?: string }).notes ||
+          match.remarks ||
           null;
         return {
           code: match.requirementCode || code,
@@ -1190,14 +1185,9 @@ function FacultySubmissionPanelContent({
           live.feedback ||
           null;
         const liveUserNote =
-          (live.note && live.note !== liveAdminRemarks ? live.note : null) ||
-          ((live as { notes?: string }).notes &&
-          (live as { notes?: string }).notes !== liveAdminRemarks
-            ? (live as { notes?: string }).notes
-            : null) ||
-          (live.remarks && live.remarks !== liveAdminRemarks
-            ? live.remarks
-            : null) ||
+          live.note ||
+          (live as { notes?: string }).notes ||
+          live.remarks ||
           null;
         return {
           ...live,
@@ -1596,12 +1586,9 @@ function FacultySubmissionPanelContent({
     const adminRemarks =
       item.adminRemarks || item.admin_remarks || item.feedback || null;
     const userNote =
-      (item.note && item.note !== adminRemarks ? item.note : null) ||
-      ((item as { notes?: string }).notes &&
-      (item as { notes?: string }).notes !== adminRemarks
-        ? (item as { notes?: string }).notes
-        : null) ||
-      (item.remarks && item.remarks !== adminRemarks ? item.remarks : null) ||
+      item.note ||
+      (item as { notes?: string }).notes ||
+      item.remarks ||
       null;
     const fileName =
       item.fileName ||
@@ -1648,16 +1635,9 @@ function FacultySubmissionPanelContent({
       submission.feedback ||
       null;
     const userNote =
-      (submission.note && submission.note !== adminRemarks
-        ? submission.note
-        : null) ||
-      ((submission as { notes?: string }).notes &&
-      (submission as { notes?: string }).notes !== adminRemarks
-        ? (submission as { notes?: string }).notes
-        : null) ||
-      (submission.remarks && submission.remarks !== adminRemarks
-        ? submission.remarks
-        : null) ||
+      submission.note ||
+      (submission as { notes?: string }).notes ||
+      submission.remarks ||
       null;
     const fileName =
       submission.fileName ||

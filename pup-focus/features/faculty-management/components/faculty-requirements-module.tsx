@@ -40,8 +40,10 @@ export type RequirementStatusItem = {
   hasPriorRevision?: boolean;
   fileName?: string;
   storagePath?: string;
-  notes?: string;
-  remarks?: string;
+  notes?: string | null;
+  remarks?: string | null;
+  note?: string | null;
+  facultyNote?: string | null;
 };
 
 export type StatusResponse = {
@@ -634,8 +636,10 @@ export function FacultyRequirementsModule({
                                     fileName: item.fileName,
                                     storagePath: item.storagePath,
                                     submittedAt: item.submittedAt,
-                                    reviewedAt: item.reviewedAt,
-                                    note: item.notes || item.remarks,
+                                    note: item.note || item.notes || item.remarks || (item as { facultyNote?: string }).facultyNote || null,
+                                    notes: item.notes || item.note || item.remarks || (item as { facultyNote?: string }).facultyNote || null,
+                                    remarks: item.remarks || item.note || item.notes || (item as { facultyNote?: string }).facultyNote || null,
+                                    facultyNote: (item as { facultyNote?: string }).facultyNote || item.note || item.notes || item.remarks || null,
                                     feedback: item.adminRemarks || item.admin_remarks || item.feedback,
                                     adminRemarks: item.adminRemarks || item.admin_remarks || item.feedback,
                                     latestSubmissionId: item.latestSubmissionId!,
@@ -764,7 +768,10 @@ export function FacultyRequirementsModule({
                                 storagePath: item.storagePath,
                                 submittedAt: item.submittedAt,
                                 reviewedAt: item.reviewedAt,
-                                note: item.notes || item.remarks,
+                                note: item.note || item.notes || item.remarks || (item as { facultyNote?: string }).facultyNote || null,
+                                notes: item.notes || item.note || item.remarks || (item as { facultyNote?: string }).facultyNote || null,
+                                remarks: item.remarks || item.note || item.notes || (item as { facultyNote?: string }).facultyNote || null,
+                                facultyNote: (item as { facultyNote?: string }).facultyNote || item.note || item.notes || item.remarks || null,
                                 feedback: item.adminRemarks || item.admin_remarks || item.feedback,
                                 adminRemarks: item.adminRemarks || item.admin_remarks || item.feedback,
                                 latestSubmissionId: item.latestSubmissionId!,
