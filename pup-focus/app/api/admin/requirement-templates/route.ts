@@ -266,10 +266,21 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existing) {
-      return NextResponse.json(
-        { error: `A requirement template with code "${code}" already exists.` },
-        { status: 400 }
-      );
+      const uniqueCode = `${code}_${Math.random().toString(36).substring(2, 6)}`;
+      const { data: stillExisting } = await supabase
+        .from("requirement_templates")
+        .select("id")
+        .eq("code", uniqueCode)
+        .maybeSingle();
+
+      if (!stillExisting) {
+        code = uniqueCode;
+      } else {
+        return NextResponse.json(
+          { error: `A requirement template with this title already exists.` },
+          { status: 400 }
+        );
+      }
     }
 
     const { data: created, error: insertError } = await supabase
