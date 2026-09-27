@@ -134,7 +134,7 @@ function MetadataModal({
       >
         <ModalHeader
           title={formatActionLabel(entry.action)}
-          subtitle="Audit Log Detail"
+          subtitle="Transaction Log Detail"
           icon={getActionIcon(entry.action)}
         />
 
@@ -298,7 +298,7 @@ export function AuditLogsPanel() {
       setTotal(data.total);
       setTotalPages(data.totalPages);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch audit logs");
+      setError(err instanceof Error ? err.message : "Failed to fetch transaction logs");
     } finally {
       setIsLoading(false);
     }
@@ -439,7 +439,7 @@ export function AuditLogsPanel() {
         {/* Result Count */}
         <p className="mt-2.5 text-xs text-slate-600 dark:text-slate-400">
           {isLoading
-            ? "Loading audit logs…"
+            ? "Loading transaction logs…"
             : `${total} ${total === 1 ? "record" : "records"} found`}
         </p>
       </div>
@@ -508,14 +508,14 @@ export function AuditLogsPanel() {
           <div className="px-4 py-12 text-center">
             <AppIcon icon={Refresh} size="lg" color="muted" className="animate-spin mx-auto" />
             <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-              Loading audit logs…
+              Loading transaction logs…
             </p>
           </div>
         ) : logs.length === 0 ? (
           <div className="px-4 py-12 text-center">
             <AppIcon icon={ShieldAlert} size="xl" color="muted" className="mx-auto" />
             <p className="mt-3 text-xs font-semibold text-slate-700 dark:text-slate-300">
-              No audit log entries found.
+              No transaction log entries found.
             </p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Try adjusting your search or filter criteria.
@@ -622,7 +622,7 @@ export function AuditLogsPanel() {
                   {isPendingDelete && (
                     <div className="px-4 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900/40 flex items-center justify-between gap-3">
                       <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                        ⚠ Delete this audit log entry? This cannot be undone.
+                        ⚠ Delete this transaction log entry? This cannot be undone.
                       </p>
                       <div className="flex items-center gap-2">
                         <button

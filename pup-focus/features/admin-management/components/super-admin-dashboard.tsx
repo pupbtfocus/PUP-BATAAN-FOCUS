@@ -1689,7 +1689,7 @@ export function SuperAdminDashboard({
                           onClick={() => handleSetActiveSection("audit")}
                           className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
                         >
-                          <span>Audit Logs</span>
+                          <span>Transaction Log</span>
                           <AppIcon icon={NavArrowRight} size="md" color="muted" />
                         </button>
                       </div>
@@ -1995,7 +1995,7 @@ export function SuperAdminDashboard({
                 <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
-                      Audit Logs
+                      Transaction Log
                     </h1>
                     <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
                       Track and inspect real-time security events, administrator actions, and user session activity.
