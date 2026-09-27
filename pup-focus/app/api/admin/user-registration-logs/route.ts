@@ -95,12 +95,30 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 4. Fetch audit logs for invite events
+    // 4. Fetch audit logs for invite events and cancellations
     const { data: inviteAuditLogs } = await supabase
       .from("audit_logs")
       .select("id, actor_id, action, entity_id, metadata, created_at")
       .in("action", ["faculty.create", "admin.create", "user.invite"])
       .order("created_at", { ascending: false });
+
+    const { data: cancelledAuditLogs } = await supabase
+      .from("audit_logs")
+      .select("id, metadata, created_at")
+      .eq("action", "user.invite_cancelled")
+      .order("created_at", { ascending: false });
+
+    const cancelledEmails = new Set<string>();
+    if (cancelledAuditLogs) {
+      for (const log of cancelledAuditLogs) {
+        const cEmail = (
+          log.metadata?.target_email ||
+          log.metadata?.email ||
+          ""
+        ).trim().toLowerCase();
+        if (cEmail) cancelledEmails.add(cEmail);
+      }
+    }
 
     const auditByEmail = new Map<string, any>();
     if (inviteAuditLogs) {
@@ -148,6 +166,12 @@ export async function GET(request: NextRequest) {
         u.last_sign_in_at ||
         profile?.status === "active"
       );
+
+      // If invitation was cancelled and user hasn't accepted, exclude from registration logs
+      if (cancelledEmails.has(email) && !isAccepted) {
+        continue;
+      }
+
       const inviteStatus: "Accepted" | "Pending" = isAccepted ? "Accepted" : "Pending";
 
       // Full Name
@@ -198,11 +222,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Process any audit logs whose target_email didn't have an auth user
+    // Process any audit logs whose target_email didn't have an auth user (excluding cancelled)
     if (inviteAuditLogs) {
       for (const log of inviteAuditLogs) {
         const targetEmail = (log.metadata?.target_email as string)?.trim().toLowerCase();
-        if (!targetEmail || logsMap.has(targetEmail)) continue;
+        if (!targetEmail || logsMap.has(targetEmail) || cancelledEmails.has(targetEmail)) continue;
 
         const targetFullName =
           (log.metadata?.target_full_name as string)?.trim() ||
@@ -321,7 +345,7 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SITE_URL ||
       process.env.NEXT_PUBLIC_APP_URL ||
       (request.url ? new URL(request.url).origin : "https://pupfocus.cjaayy.dev");
-    const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/confirm`;
+    const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/confirm?email=${encodeURIComponent(email)}`;
 
     // Generate fresh invite link
     const { data: genData, error: genError } =
