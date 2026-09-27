@@ -8,7 +8,7 @@ import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
-import { Calendar, Check, CheckCircle, Group, Hourglass, Menu, Minus, NavArrowRight, Refresh, TaskList, Xmark } from "iconoir-react";
+import { Calendar, Check, CheckCircle, Group, Hourglass, Menu, Minus, NavArrowRight, Page, Refresh, TaskList, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import { LogoutButton } from "@/components/shared/logout-button";
@@ -39,6 +39,7 @@ import { DeleteFacultyModal } from "./faculty-modals/delete-faculty-modal";
 import { InviteStatusModal } from "./faculty-modals/invite-status-modal";
 import { SubmissionWindowPanel } from "./submission-window-panel";
 import { RequirementsPanel } from "./requirements-verification-panel";
+import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
 
 function normalizeAdminSection(raw?: string | null): AdminSection | null {
   if (!raw) return null;
@@ -170,6 +171,7 @@ export function AdminFacultyDashboard({
   const [inviteWasSent, setInviteWasSent] = useState(false);
   const [createdFacultyEmail, setCreatedFacultyEmail] = useState<string | null>(null);
   const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
+  const [registrationLogsModalOpen, setRegistrationLogsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingFacultyIds, setLoadingFacultyIds] = useState<Set<string>>(
     new Set(),
@@ -1097,7 +1099,7 @@ export function AdminFacultyDashboard({
                           View, manage, and monitor faculty profiles, department assignments, and account statuses.
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap">
                         <button
                           type="button"
                           onClick={() => {
@@ -1108,6 +1110,14 @@ export function AdminFacultyDashboard({
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold shadow-sm active:scale-[0.98] transition cursor-pointer"
                         >
                           + Add Faculty
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRegistrationLogsModalOpen(true)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                        >
+                          <Page className="h-3.5 w-3.5 text-slate-950" />
+                          <span>User Registration Logs</span>
                         </button>
                         <button
                           type="button"
@@ -1333,6 +1343,12 @@ export function AdminFacultyDashboard({
         profileImageFile={profileImageFile}
         onProfileImageChange={setProfileImageFile}
         profileImageInputKey={profileImageInputKey}
+      />
+
+      <UserRegistrationLogsModal
+        isOpen={registrationLogsModalOpen}
+        onClose={() => setRegistrationLogsModalOpen(false)}
+        targetRole="faculty"
       />
     </div>
   );

@@ -8,6 +8,7 @@ import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
 } from "@/lib/faculty-profile";
+import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 
 async function readRequestPayload(request: NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";
@@ -280,6 +281,25 @@ export async function POST(request: NextRequest) {
           sendError,
         });
       }
+    }
+
+    // Audit log – fire-and-forget; never blocks the response
+    try {
+      await logAuditEvent({
+        actorId: user.id,
+        action: "admin.create",
+        entityType: "admin",
+        entityId: createdAuthUser?.id || user.id,
+        metadata: {
+          target_email: normalizedEmail,
+          target_full_name: fullName,
+          role: ROLE.ADMIN,
+          invite_sent: sent,
+          send_error: sendError,
+        },
+      });
+    } catch (auditError) {
+      console.error("audit_log_admin_create_failed", auditError);
     }
 
     return NextResponse.json({

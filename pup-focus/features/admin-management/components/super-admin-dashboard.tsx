@@ -30,6 +30,7 @@ import { FacultyDetailsModal } from "@/features/faculty-management/components/fa
 import { DeleteFacultyModal } from "@/features/faculty-management/components/faculty-modals/delete-faculty-modal";
 import { DeleteAdminModal } from "@/features/super-admin/components/delete-admin-modal";
 import { InviteStatusModal } from "@/features/faculty-management/components/faculty-modals/invite-status-modal";
+import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -384,6 +385,10 @@ export function SuperAdminDashboard({
   const [facultyInviteModalOpen, setFacultyInviteModalOpen] = useState(false);
   const [facultyInviteModalMessage, setFacultyInviteModalMessage] = useState("");
   const [facultyInviteWasSent, setFacultyInviteWasSent] = useState(false);
+
+  // User Registration Logs Modal State
+  const [registrationLogsModalOpen, setRegistrationLogsModalOpen] = useState(false);
+  const [registrationLogsInitialRole, setRegistrationLogsInitialRole] = useState<"all" | "faculty" | "admin">("all");
 
   const facultyForm = useForm<FacultyAccountFormInput>({
     resolver: zodResolver(facultyAccountSchema),
@@ -1706,13 +1711,24 @@ export function SuperAdminDashboard({
                       Configure and oversee administrative staff privileges and account accesses.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
                     <button
                       type="button"
                       onClick={openCreateAdminModal}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
                     >
                       + Create Admin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRegistrationLogsInitialRole("admin");
+                        setRegistrationLogsModalOpen(true);
+                      }}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                    >
+                      <Page className="h-3.5 w-3.5 text-slate-950" />
+                      <span>User Registration Logs</span>
                     </button>
                     <button
                       type="button"
@@ -1760,7 +1776,7 @@ export function SuperAdminDashboard({
                       View, manage, and monitor faculty profiles, department assignments, and account statuses.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                  <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap">
                     <button
                       type="button"
                       onClick={() => {
@@ -1771,6 +1787,17 @@ export function SuperAdminDashboard({
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
                     >
                       + Add Faculty
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRegistrationLogsInitialRole("faculty");
+                        setRegistrationLogsModalOpen(true);
+                      }}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                    >
+                      <Page className="h-3.5 w-3.5 text-slate-950" />
+                      <span>User Registration Logs</span>
                     </button>
                     <button
                       type="button"
@@ -2286,6 +2313,12 @@ export function SuperAdminDashboard({
         profileImageFile={facultyProfileImageFile}
         onProfileImageChange={setFacultyProfileImageFile}
         profileImageInputKey={facultyProfileImageInputKey}
+      />
+
+      <UserRegistrationLogsModal
+        isOpen={registrationLogsModalOpen}
+        onClose={() => setRegistrationLogsModalOpen(false)}
+        targetRole={registrationLogsInitialRole}
       />
     </div>
   );
