@@ -337,7 +337,7 @@ export function AdminAccountsTable({
               <th className="px-4 py-2.5 font-semibold">Role</th>
               <th className="px-4 py-2.5 font-semibold">Status</th>
               <th className="px-4 py-2.5 font-semibold">Last Login</th>
-              <th className="px-4 py-2.5 text-right font-semibold">Actions</th>
+              <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -465,13 +465,13 @@ export function AdminAccountsTable({
 
                     {/* Inline Actions */}
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                      <div className="flex items-center justify-end gap-1.5 shrink-0">
                         {/* View Details Button */}
                         <button
                           type="button"
                           onClick={() => onViewDetails(admin.profile_id)}
                           title="View Admin Details"
-                          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                         >
                           <AppIcon icon={Eye} size="sm" color="inherit" className="text-slate-950" />
                           <span>View Details</span>
@@ -483,7 +483,7 @@ export function AdminAccountsTable({
                             type="button"
                             onClick={() => onEditAdmin(admin.profile_id)}
                             title="Edit Admin"
-                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                           >
                             <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                             <span>Edit</span>
@@ -498,10 +498,10 @@ export function AdminAccountsTable({
                               onClick={() => onDeactivateAdmin(admin.profile_id)}
                               disabled={isLoadingAction}
                               title="Deactivate Admin"
-                              className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                              className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
                               <AppIcon icon={UserXmark} size="sm" color="white" />
-                              <span>{isLoadingAction ? "..." : "Deactivate"}</span>
+                              <span>{isLoadingAction ? "Deactivating..." : "Deactivate"}</span>
                             </button>
                           ) : (
                             <button
@@ -509,10 +509,10 @@ export function AdminAccountsTable({
                               onClick={() => onActivateAdmin(admin.profile_id)}
                               disabled={isLoadingAction}
                               title="Activate Admin"
-                              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
                               <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" className="text-slate-950" />
-                              <span>{isLoadingAction ? "..." : "Activate"}</span>
+                              <span>{isLoadingAction ? "Activating..." : "Activate"}</span>
                             </button>
                           )
                         ) : null}
@@ -524,10 +524,10 @@ export function AdminAccountsTable({
                             onClick={() => onDeleteAdmin(admin.profile_id)}
                             disabled={isLoadingAction}
                             title="Delete Admin"
-                            className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                            className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                           >
                             <AppIcon icon={Trash} size="sm" color="white" />
-                            <span>Delete</span>
+                            <span>{isLoadingAction ? "Deleting..." : "Delete"}</span>
                           </button>
                         )}
                       </div>

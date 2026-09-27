@@ -443,11 +443,11 @@ export function SidebarContent({
           )}
         </div>
 
-        {/* 5. Audit Logs (Admin Module) */}
+        {/* 5. Transaction Log (Admin Module) */}
         {isSuperAdmin && (
           <SidebarButton
             active={isAuditActive}
-            title="Audit Logs"
+            title="Transaction Log"
             Icon={Activity}
             onClick={() => handleSelect("audit")}
           />

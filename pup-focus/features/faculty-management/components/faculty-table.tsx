@@ -163,7 +163,7 @@ export function FacultyTable({
                 <th className="px-4 py-2.5 font-semibold">Program</th>
                 <th className="px-4 py-2.5 font-semibold">Status</th>
                 <th className="px-4 py-2.5 font-semibold">Last Login</th>
-                <th className="px-4 py-2.5 text-right font-semibold">
+                <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">
                   Actions
                 </th>
               </tr>
@@ -266,12 +266,12 @@ export function FacultyTable({
                         )}
                       </td>
                       <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1.5 shrink-0">
                           <button
                             type="button"
                             onClick={() => onViewDetails(faculty.id)}
                             title="View Faculty Details"
-                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                           >
                             <AppIcon icon={Eye} size="sm" color="inherit" className="text-slate-950" />
                             <span>View Details</span>
@@ -284,7 +284,7 @@ export function FacultyTable({
                                 : onViewDetails(faculty.id)
                             }
                             title="Edit Faculty"
-                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                           >
                             <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                             <span>Edit</span>
@@ -295,7 +295,7 @@ export function FacultyTable({
                               onClick={() => onDeactivate(faculty.id)}
                               disabled={loadingFacultyIds.has(faculty.id)}
                               title="Deactivate Faculty"
-                              className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                              className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
                               <AppIcon icon={UserXmark} size="sm" color="white" />
                               <span>
@@ -310,7 +310,7 @@ export function FacultyTable({
                               onClick={() => onActivate(faculty.id)}
                               disabled={loadingFacultyIds.has(faculty.id)}
                               title="Activate Faculty"
-                              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
                               <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" className="text-slate-950" />
                               <span>
@@ -325,7 +325,7 @@ export function FacultyTable({
                             onClick={() => onDeleteFaculty(faculty.id)}
                             disabled={deletingFacultyIds.has(faculty.id)}
                             title="Delete Faculty"
-                            className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs"
+                            className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                           >
                             <AppIcon icon={Trash} size="sm" color="white" />
                             <span>

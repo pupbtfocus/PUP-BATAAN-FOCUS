@@ -1196,7 +1196,7 @@ export function BackupArchivePanel() {
                       </span>
                     </li>
                     <li className="p-2.5 flex justify-between bg-slate-50/50 dark:bg-slate-950/40">
-                      <span className="text-slate-600 dark:text-slate-400">System Audit Logs:</span>
+                      <span className="text-slate-600 dark:text-slate-400">System Transaction Logs:</span>
                       <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
                         {inspectedBackup.metadata.audit_logs_count ?? 0}
                       </span>
