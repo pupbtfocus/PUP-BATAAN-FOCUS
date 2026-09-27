@@ -354,6 +354,8 @@ export function AdminFacultyDashboard({
   useEffect(() => {
     if (activeSection === "dashboard") {
       void loadDashboardStats();
+    } else if (activeSection === "facultyManagement" || activeSection === "requirements") {
+      void loadFacultyFromDatabase();
     }
   }, [activeSection, verificationResetTrigger]);
 
@@ -366,9 +368,12 @@ export function AdminFacultyDashboard({
       if (response.ok) {
         const data = await response.json();
         setFacultyAccounts(data.faculty || []);
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        console.error("Failed to fetch faculty list:", response.status, errData);
       }
-    } catch {
-      // Error handled by UI state
+    } catch (err) {
+      console.error("Error loading faculty accounts:", err);
     } finally {
       setIsLoading(false);
     }

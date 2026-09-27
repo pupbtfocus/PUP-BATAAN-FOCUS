@@ -415,9 +415,12 @@ export function SuperAdminDashboard({
       if (response.ok) {
         const data = await response.json();
         setFacultyAccounts(data.faculty || []);
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        console.error("Failed to fetch faculty list in super-admin:", response.status, errData);
       }
-    } catch {
-      // Error handled by UI state
+    } catch (err) {
+      console.error("Error loading faculty accounts in super-admin:", err);
     } finally {
       setIsLoadingFaculty(false);
     }
@@ -815,6 +818,14 @@ export function SuperAdminDashboard({
     void loadAdminAccounts();
     void loadFacultyFromDatabase();
   }, []);
+
+  useEffect(() => {
+    if (activeSection === "faculty" || activeSection === "verification") {
+      void loadFacultyFromDatabase();
+    } else if (activeSection === "accounts") {
+      void loadAdminAccounts();
+    }
+  }, [activeSection]);
 
   useEffect(() => {
     void loadAccountSettings();

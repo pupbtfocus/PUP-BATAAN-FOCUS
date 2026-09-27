@@ -19,20 +19,58 @@ export async function GET(request: NextRequest) {
       data: { user },
     } = await sessionClient.auth.getUser();
 
-    const requesterRole =
+    let requesterRole =
       (user?.user_metadata?.role as string | undefined) ??
       (user?.app_metadata?.role as string | undefined);
 
-    if (
-      !user ||
-      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
-    ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    let isAllowed =
+      requesterRole === ROLE.ADMIN ||
+      requesterRole === ROLE.SUPER_ADMIN ||
+      (Boolean(requesterRole) && String(requesterRole).toLowerCase().includes("admin"));
 
     const supabase = getServiceRoleClient();
 
-    // 1. Current active academic term
+    if (!isAllowed) {
+      const { data: dbUserRoles } = await supabase
+        .from("user_roles")
+        .select("roles(code)")
+        .eq("profile_id", user?.id);
+
+      const dbRoles = (dbUserRoles ?? []).map((r: any) => r.roles?.code);
+      if (dbRoles.includes(ROLE.ADMIN) || dbRoles.includes(ROLE.SUPER_ADMIN)) {
+        isAllowed = true;
+      }
+
+      if (!isAllowed && user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id, user_roles(roles(code))")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        const pRoles = ((profile?.user_roles as any[]) ?? []).map((r: any) => r.roles?.code);
+        if (pRoles.includes(ROLE.ADMIN) || pRoles.includes(ROLE.SUPER_ADMIN)) {
+          isAllowed = true;
+        }
+      }
+
+      if (!isAllowed && user?.email) {
+        const { data: adminRecord } = await supabase
+          .from("admins")
+          .select("id")
+          .eq("email", user.email.toLowerCase())
+          .maybeSingle();
+        if (adminRecord) {
+          isAllowed = true;
+        }
+      }
+    }
+
+    if (!user || !isAllowed) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // 1. Current active academic term & faculty data
     const { data: currentTermRow } = await supabase
       .from("academic_terms")
       .select("academic_year, semester, status")
@@ -49,38 +87,74 @@ export async function GET(request: NextRequest) {
       .eq("code", "faculty")
       .maybeSingle();
 
-    let facultyProfiles: Array<{
+    const [
+      { data: userRoles },
+      { data: authUsersData },
+      { data: allAssignments },
+      { data: allProfiles },
+    ] = await Promise.all([
+      facultyRole?.id
+        ? supabase
+            .from("user_roles")
+            .select("profile_id")
+            .eq("role_id", facultyRole.id)
+            .limit(1000)
+        : Promise.resolve({ data: [] }),
+      supabase.auth.admin.listUsers({ perPage: 1000 }),
+      supabase
+        .from("faculty_program_assignments")
+        .select("faculty_profile_id"),
+      supabase
+        .from("profiles")
+        .select("id, user_id, full_name, email"),
+    ]);
+
+    const profileById = new Map<string, any>();
+    const profileByUserId = new Map<string, any>();
+    const profileByEmail = new Map<string, any>();
+    for (const p of allProfiles ?? []) {
+      if (p.id) profileById.set(p.id, p);
+      if (p.user_id) profileByUserId.set(p.user_id, p);
+      if (p.email) profileByEmail.set(p.email.toLowerCase(), p);
+    }
+
+    const facultyProfileIdSet = new Set<string>();
+
+    for (const ur of userRoles ?? []) {
+      if (ur.profile_id) facultyProfileIdSet.add(ur.profile_id);
+    }
+
+    for (const u of authUsersData?.users ?? []) {
+      const metaRole = (
+        u.user_metadata?.role ||
+        u.app_metadata?.role ||
+        ""
+      ).toLowerCase().trim();
+      if (metaRole === "faculty" || metaRole === "faculty_member") {
+        const prof =
+          profileByUserId.get(u.id) ||
+          (u.email ? profileByEmail.get(u.email.toLowerCase()) : null);
+        if (prof?.id) {
+          facultyProfileIdSet.add(prof.id);
+        }
+      }
+    }
+
+    for (const a of allAssignments ?? []) {
+      if (a.faculty_profile_id) {
+        facultyProfileIdSet.add(a.faculty_profile_id);
+      }
+    }
+
+    const facultyProfiles: Array<{
       id: string;
       user_id: string | null;
       full_name: string | null;
       email: string | null;
-    }> = [];
+    }> = Array.from(facultyProfileIdSet)
+      .map((id) => profileById.get(id))
+      .filter(Boolean);
 
-    if (facultyRole?.id) {
-      const { data: userRoles } = await supabase
-        .from("user_roles")
-        .select("profile_id")
-        .eq("role_id", facultyRole.id);
-
-      const profileIds = Array.from(
-        new Set(
-          (userRoles ?? [])
-            .map((r) => r.profile_id)
-            .filter((val): val is string => Boolean(val)),
-        ),
-      );
-
-      if (profileIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, user_id, full_name, email")
-          .in("id", profileIds);
-
-        facultyProfiles = profiles || [];
-      }
-    }
-
-    const { data: authUsersData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
     const authUsersById = new Map<string, any>();
     const authUsersByEmail = new Map<string, any>();
     for (const u of authUsersData?.users ?? []) {

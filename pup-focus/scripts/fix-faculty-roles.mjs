@@ -109,13 +109,13 @@ async function fix() {
     const { data: wrongRoles } = await supabase
       .from("user_roles")
       .select("id, role_id")
-      .eq("profile_id", au.profile_id);
+      .eq("profile_id", prof.id);
 
     if (wrongRoles && wrongRoles.length > 0) {
       // Check if any of these are non-faculty roles that should be faculty
       for (const wr of wrongRoles) {
         if (wr.role_id !== facultyRole.id) {
-          console.log(`  ⚠️  ${au.email} has user_role with wrong role_id=${wr.role_id}, will add correct faculty role`);
+          console.log(`  ⚠️  ${prof.email} has user_role with wrong role_id=${wr.role_id}, will add correct faculty role`);
         }
       }
     }
@@ -125,16 +125,16 @@ async function fix() {
       .from("user_roles")
       .upsert(
         {
-          profile_id: au.profile_id,
+          profile_id: prof.id,
           role_id: facultyRole.id,
         },
         { onConflict: "profile_id,role_id" }
       );
 
     if (insertErr) {
-      console.log(`  ERROR: ${au.email} - ${insertErr.message}`);
+      console.log(`  ERROR: ${prof.email} - ${insertErr.message}`);
     } else {
-      console.log(`  ✅ FIXED: ${au.email} - added faculty user_role`);
+      console.log(`  ✅ FIXED: ${prof.email} - added faculty user_role`);
       fixed++;
     }
   }
