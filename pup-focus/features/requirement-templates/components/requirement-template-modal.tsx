@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Page, Xmark } from "iconoir-react";
-import { AppIcon } from "@/components/ui/app-icon";
+import { Check, Page } from "iconoir-react";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import {
@@ -26,8 +25,6 @@ export function RequirementTemplateModal({
   templateToEdit,
 }: RequirementTemplateModalProps) {
   const [title, setTitle] = useState("");
-  const [code, setCode] = useState("");
-  const [description, setDescription] = useState("");
   const [allowedFormats, setAllowedFormats] = useState<AllowedFormat[]>(["PDF", "DOCX"]);
   const [maxSizeMb, setMaxSizeMb] = useState<number>(10);
   const [isMandatory, setIsMandatory] = useState<boolean>(true);
@@ -40,8 +37,6 @@ export function RequirementTemplateModal({
   useEffect(() => {
     if (templateToEdit) {
       setTitle(templateToEdit.title);
-      setCode(templateToEdit.code);
-      setDescription(templateToEdit.description || "");
       setAllowedFormats(templateToEdit.allowed_formats || ["PDF"]);
       setMaxSizeMb(templateToEdit.max_size_mb || 10);
       setIsMandatory(templateToEdit.is_mandatory);
@@ -49,8 +44,6 @@ export function RequirementTemplateModal({
       setError(null);
     } else {
       setTitle("");
-      setCode("");
-      setDescription("");
       setAllowedFormats(["PDF", "DOCX"]);
       setMaxSizeMb(10);
       setIsMandatory(true);
@@ -60,17 +53,6 @@ export function RequirementTemplateModal({
   }, [templateToEdit, isOpen]);
 
   if (!isOpen) return null;
-
-  const handleTitleChange = (newTitle: string) => {
-    setTitle(newTitle);
-    if (!isEditing) {
-      const generatedCode = newTitle
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "_")
-        .replace(/^_+|_+$/g, "");
-      setCode(generatedCode);
-    }
-  };
 
   const toggleFormat = (fmt: AllowedFormat) => {
     setAllowedFormats((prev) => {
@@ -87,15 +69,9 @@ export function RequirementTemplateModal({
     setError(null);
 
     const cleanTitle = title.trim();
-    const cleanCode = code.trim().toLowerCase().replace(/[^a-z0-9_]/g, "_");
 
     if (!cleanTitle) {
       setError("Document name is required.");
-      return;
-    }
-
-    if (!cleanCode) {
-      setError("Document slug / code is required.");
       return;
     }
 
@@ -114,7 +90,7 @@ export function RequirementTemplateModal({
           body: JSON.stringify({
             id: templateToEdit.id,
             title: cleanTitle,
-            description: description.trim() || null,
+            description: templateToEdit.description || null,
             allowed_formats: allowedFormats,
             max_size_mb: maxSizeMb,
             is_mandatory: isMandatory,
@@ -129,13 +105,19 @@ export function RequirementTemplateModal({
           return;
         }
       } else {
+        const generatedCode =
+          cleanTitle
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "_")
+            .replace(/^_+|_+$/g, "") || `req_${Date.now()}`;
+
         const res = await fetch("/api/admin/requirement-templates", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: cleanTitle,
-            code: cleanCode,
-            description: description.trim() || null,
+            code: generatedCode,
+            description: null,
             allowed_formats: allowedFormats,
             max_size_mb: maxSizeMb,
             is_mandatory: isMandatory,
@@ -184,55 +166,14 @@ export function RequirementTemplateModal({
               id="templateTitle"
               type="text"
               value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               required
               placeholder="e.g. Enhanced Course Syllabus"
               className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 
-          {/* Row 2: Document Slug / Code */}
-          <div>
-            <label
-              className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
-              htmlFor="templateCode"
-            >
-              Document Identifier Code <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="templateCode"
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              disabled={isEditing}
-              required
-              placeholder="e.g. enhanced_syllabus"
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs outline-none transition-all font-mono disabled:opacity-60 disabled:cursor-not-allowed"
-            />
-            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-              Unique identifier used by the compliance engine across submissions.
-            </p>
-          </div>
-
-          {/* Row 3: Description / Instructions */}
-          <div>
-            <label
-              className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block"
-              htmlFor="templateDesc"
-            >
-              Description / Instructions
-            </label>
-            <textarea
-              id="templateDesc"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Provide instructions or submission guidelines for faculty members..."
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm outline-none transition-all resize-none"
-            />
-          </div>
-
-          {/* Row 4: Allowed File Formats */}
+          {/* Row 2: Allowed File Formats */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5">
               Allowed File Formats <span className="text-red-500">*</span>
@@ -259,7 +200,7 @@ export function RequirementTemplateModal({
             </div>
           </div>
 
-          {/* Row 5: Max File Size & Mandatory Toggle */}
+          {/* Row 3: Max File Size & Mandatory Toggle */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label
@@ -313,7 +254,7 @@ export function RequirementTemplateModal({
             </div>
           </div>
 
-          {/* Row 6: Visibility Status (Active vs Hidden) */}
+          {/* Row 4: Visibility Status (Active vs Hidden) */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5">
               Faculty Visibility Status
