@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check, CheckCircle, Download, Eye, Notes, Page, WarningCircle } from "iconoir-react";
+import { Check, CheckCircle, Download, Eye, Notes, WarningCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { SubmissionStatusBadge } from "./submission-status-badge";
@@ -210,22 +210,15 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                   >
                     {/* Requirement Name */}
                     <td className="px-6 py-4.5 font-medium text-slate-900 dark:text-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0b5336]/10 text-[#0b5336] dark:bg-[#0b5336]/20 dark:text-emerald-400 border border-[#0b5336]/20 shadow-2xs">
-                          <AppIcon icon={Page} size="md" color="inherit" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-snug">
-                              {title}
-                            </span>
-                          </div>
-                          {sub.fileName && (
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate block max-w-[260px] mt-0.5" title={sub.fileName}>
-                              {sub.fileName}
-                            </span>
-                          )}
-                        </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-snug">
+                          {title}
+                        </span>
+                        {sub.fileName && (
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate block max-w-[260px] mt-0.5" title={sub.fileName}>
+                            {sub.fileName}
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -331,10 +324,7 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
               className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3.5 shadow-sm transition hover:border-slate-300 dark:border-slate-700"
             >
               {/* Header: Title & Status Badge */}
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0b5336]/10 text-[#0b5336] dark:bg-[#0b5336]/20 dark:text-emerald-400 border border-[#0b5336]/20 shadow-2xs mt-0.5">
-                  <AppIcon icon={Page} size="md" color="inherit" />
-                </div>
+              <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
