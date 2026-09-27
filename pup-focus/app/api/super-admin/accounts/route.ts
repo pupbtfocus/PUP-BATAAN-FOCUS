@@ -121,6 +121,13 @@ export async function GET() {
     const adminAccounts = await Promise.all(
       (users ?? [])
         .filter((u) => {
+          // If the invite has been sent but not yet accepted, do not include in the active accounts list until accepted
+          const isPendingInvite =
+            !u.email_confirmed_at && !u.confirmed_at && !u.last_sign_in_at;
+          if (isPendingInvite) {
+            return false;
+          }
+
           const rawRole = (
             u.user_metadata?.role ||
             u.app_metadata?.role ||

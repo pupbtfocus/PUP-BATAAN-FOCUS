@@ -35,6 +35,21 @@ function resolveUserRole(user: MockAuthUser, profileRole?: string | null): "Facu
   return "Faculty";
 }
 
+function canCancelInvite(user: MockAuthUser): boolean {
+  const isAccepted = Boolean(
+    user.email_confirmed_at ||
+    user.confirmed_at ||
+    user.last_sign_in_at
+  );
+  return !isAccepted;
+}
+
+function shouldExcludeFromActiveDirectory(user: MockAuthUser): boolean {
+  const isPendingInvite =
+    !user.email_confirmed_at && !user.confirmed_at && !user.last_sign_in_at;
+  return isPendingInvite;
+}
+
 describe("User Registration Logs Logic", () => {
   it("marks a user as Pending when email is not confirmed and has not logged in", () => {
     const pendingUser: MockAuthUser = {
@@ -48,6 +63,8 @@ describe("User Registration Logs Logic", () => {
     };
 
     expect(resolveRegistrationStatus(pendingUser)).toBe("Pending");
+    expect(canCancelInvite(pendingUser)).toBe(true);
+    expect(shouldExcludeFromActiveDirectory(pendingUser)).toBe(true);
   });
 
   it("marks a user as Accepted when email_confirmed_at is present", () => {
@@ -60,6 +77,8 @@ describe("User Registration Logs Logic", () => {
     };
 
     expect(resolveRegistrationStatus(acceptedUser)).toBe("Accepted");
+    expect(canCancelInvite(acceptedUser)).toBe(false);
+    expect(shouldExcludeFromActiveDirectory(acceptedUser)).toBe(false);
   });
 
   it("marks a user as Accepted when last_sign_in_at is present even if email_confirmed_at is null", () => {
@@ -71,6 +90,8 @@ describe("User Registration Logs Logic", () => {
     };
 
     expect(resolveRegistrationStatus(loggedInUser)).toBe("Accepted");
+    expect(canCancelInvite(loggedInUser)).toBe(false);
+    expect(shouldExcludeFromActiveDirectory(loggedInUser)).toBe(false);
   });
 
   it("correctly identifies Faculty, Admin, and Super Admin roles", () => {

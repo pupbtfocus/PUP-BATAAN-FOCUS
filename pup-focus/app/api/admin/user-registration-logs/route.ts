@@ -396,3 +396,128 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const sessionClient = await createServerSupabaseClient();
+    const {
+      data: { user: currentUser },
+    } = await sessionClient.auth.getUser();
+
+    const requesterRole =
+      (currentUser?.user_metadata?.role as string | undefined) ??
+      (currentUser?.app_metadata?.role as string | undefined);
+
+    if (
+      !currentUser ||
+      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const email = (body.email || "").trim().toLowerCase();
+    const targetId = body.id;
+
+    if (!email && !targetId) {
+      return NextResponse.json(
+        { error: "Email or User ID is required to cancel invitation" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getServiceRoleClient();
+
+    // 1. Fetch auth user
+    const {
+      data: { users },
+    } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+
+    const authUser = users?.find(
+      (u) =>
+        (email && u.email?.trim().toLowerCase() === email) ||
+        (targetId && u.id === targetId)
+    );
+
+    if (authUser) {
+      // Check if already accepted
+      const isAccepted = Boolean(
+        authUser.email_confirmed_at ||
+        authUser.confirmed_at ||
+        authUser.last_sign_in_at
+      );
+
+      if (isAccepted) {
+        return NextResponse.json(
+          {
+            error:
+              "Cannot cancel an invitation that has already been accepted. To remove this user, use the Delete action in the directory table.",
+          },
+          { status: 400 }
+        );
+      }
+
+      // Delete from auth.users
+      const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(authUser.id);
+      if (deleteAuthError) {
+        return NextResponse.json(
+          { error: `Failed to delete invited auth user: ${deleteAuthError.message}` },
+          { status: 500 }
+        );
+      }
+
+      // Clean up profiles
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("id")
+        .or(`user_id.eq.${authUser.id},email.ilike.${email}`)
+        .maybeSingle();
+
+      if (prof?.id) {
+        await supabase.from("faculty_program_assignments").delete().eq("faculty_profile_id", prof.id);
+        await supabase.from("user_roles").delete().eq("profile_id", prof.id);
+        await supabase.from("profiles").delete().eq("id", prof.id);
+      }
+    } else if (email) {
+      // Clean up profile by email if auth user is already gone
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("email", email)
+        .maybeSingle();
+
+      if (prof?.id) {
+        await supabase.from("faculty_program_assignments").delete().eq("faculty_profile_id", prof.id);
+        await supabase.from("user_roles").delete().eq("profile_id", prof.id);
+        await supabase.from("profiles").delete().eq("id", prof.id);
+      }
+    }
+
+    // Log the cancellation in audit_logs
+    try {
+      await logAuditEvent({
+        actorId: currentUser.id,
+        action: "user.invite_cancelled",
+        entityType: "user",
+        entityId: authUser?.id || currentUser.id,
+        metadata: {
+          target_email: email,
+          target_full_name: authUser?.user_metadata?.full_name || email,
+          cancelled_by_admin: currentUser.id,
+        },
+      });
+    } catch {
+      // Ignored
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Invitation for ${email} has been cancelled successfully.`,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || "Failed to cancel invitation" },
+      { status: 500 }
+    );
+  }
+}

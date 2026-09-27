@@ -1349,6 +1349,9 @@ export function AdminFacultyDashboard({
         isOpen={registrationLogsModalOpen}
         onClose={() => setRegistrationLogsModalOpen(false)}
         targetRole="faculty"
+        onInviteCancelled={() => {
+          void loadFacultyFromDatabase();
+        }}
       />
     </div>
   );
