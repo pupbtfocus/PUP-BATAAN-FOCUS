@@ -3445,6 +3445,8 @@ function FacultySubmissionPanelContent({
                         submissions={filteredPastSubmissions}
                         onViewFile={openHistorySubmissionPreview}
                         viewedSubmissionIds={viewedSubmissionIds}
+                        getRequirementTitle={getRequirementTitle}
+                        templateMandatoryMap={templateMandatoryMap}
                         emptyMessage="No validated documents found for the selected academic term."
                       />
                     )}
