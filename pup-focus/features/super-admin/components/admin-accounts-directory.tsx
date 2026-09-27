@@ -75,6 +75,20 @@ function formatAdminName(admin: AdminAccount): string {
     .join(" ");
 }
 
+function formatLastLogin(isoDate?: string | null): string {
+  if (!isoDate) return "Never logged in";
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return "Never logged in";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export function AdminStatsCards({
   adminAccounts,
   isLoading = false,
@@ -314,31 +328,33 @@ export function AdminAccountsTable({
       />
 
       {/* Clean Data Table */}
-      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none">
-        <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[650px]">
-          <thead>
-            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-              <th className="py-3 px-4">Admin Member</th>
-              <th className="py-3 px-4">Role</th>
-              <th className="py-3 px-4">Status</th>
-              <th className="py-3 px-4 text-right">Actions</th>
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">
+        <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[700px]">
+          <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
+            <tr>
+              <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
+              <th className="px-4 py-2.5 font-semibold">Admin Member</th>
+              <th className="px-4 py-2.5 font-semibold">Role</th>
+              <th className="px-4 py-2.5 font-semibold">Status</th>
+              <th className="px-4 py-2.5 font-semibold">Last Login</th>
+              <th className="px-4 py-2.5 text-right font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
             {isLoading ? (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
                   Loading admin accounts...
                 </td>
               </tr>
             ) : filteredAccounts.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
                   No admin members match the selected criteria.
                 </td>
               </tr>
             ) : (
-              filteredAccounts.map((admin) => {
+              filteredAccounts.map((admin, index) => {
                 const isSuperAdmin = (admin.role || "").toLowerCase().includes("super");
                 const hasAvatar = admin.profileImageUrl && !failedImageIds.has(admin.profile_id);
                 const isLoadingAction = loadingAdminIds.has(admin.profile_id);
@@ -364,50 +380,63 @@ export function AdminAccountsTable({
                 return (
                   <tr
                     key={admin.profile_id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                   >
+                    {/* Index */}
+                    <td className="px-3 py-2.5 text-center text-xs font-mono text-slate-400 dark:text-slate-500">
+                      {index + 1}
+                    </td>
+
                     {/* Admin Member */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="relative shrink-0" aria-hidden="true">
+                    <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-slate-200">
+                      <div
+                        className="flex items-center gap-2.5 cursor-pointer"
+                        onClick={() => onViewDetails(admin.profile_id)}
+                      >
+                        <div
+                          className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-700 dark:text-slate-300"
+                          aria-hidden="true"
+                        >
                           {hasAvatar ? (
                             <img
                               src={admin.profileImageUrl!}
                               alt=""
-                              className="w-9 h-9 rounded-full object-cover border border-slate-300 dark:border-slate-700 shadow-xs"
-                              onError={() => setFailedImageIds((prev) => new Set(prev).add(admin.profile_id))}
+                              className="h-full w-full object-cover"
+                              onError={() =>
+                                setFailedImageIds((prev) =>
+                                  new Set(prev).add(admin.profile_id),
+                                )
+                              }
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-800 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold text-xs flex items-center justify-center shadow-xs">
-                              {getInitials(formatAdminName(admin), isSuperAdmin ? "SA" : "AD")}
-                            </div>
+                            <span>
+                              {getInitials(
+                                formatAdminName(admin),
+                                isSuperAdmin ? "SA" : "AD",
+                              )}
+                            </span>
                           )}
-                          <span
-                            className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${
-                              admin.is_active ? "bg-[#0b5336]" : "bg-[#780000]"
-                            }`}
-                          />
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        <div>
+                          <div className="font-medium text-slate-900 dark:text-slate-200 text-xs hover:text-amber-600 dark:hover:text-amber-300 transition">
                             {formatAdminName(admin)}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                          </div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">
                             {admin.email}
-                          </p>
+                          </div>
                         </div>
                       </div>
                     </td>
 
                     {/* Role Badge */}
-                    <td className="py-3.5 px-4">
-                      <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
+                    <td className="px-4 py-2.5 font-medium text-xs">
+                      <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
                         {isSuperAdmin ? "Super Admin" : "Admin"}
                       </span>
                     </td>
 
                     {/* Status Badge */}
-                    <td className="py-3.5 px-4">
+                    <td className="px-4 py-2.5 font-medium">
                       {admin.is_active ? (
                         <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center shadow-2xs">
                           Active
@@ -419,8 +448,23 @@ export function AdminAccountsTable({
                       )}
                     </td>
 
+                    {/* Last Login */}
+                    <td className="px-4 py-2.5 font-medium text-xs whitespace-nowrap text-slate-700 dark:text-slate-300">
+                      {admin.last_sign_in_at || admin.lastLoginAt ? (
+                        <span>
+                          {formatLastLogin(
+                            admin.last_sign_in_at || admin.lastLoginAt,
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">
+                          Never logged in
+                        </span>
+                      )}
+                    </td>
+
                     {/* Inline Actions */}
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
                         {/* View Details Button */}
                         <button
