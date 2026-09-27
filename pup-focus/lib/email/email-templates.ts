@@ -54,7 +54,8 @@ export function buildEmailLayout({
   const safeActionHref = actionHref ? escapeHtml(actionHref.replace(/&amp;/g, "&")) : "";
   const safeFooterNote = footerNote ? escapeHtml(footerNote) : "";
   const safePupLogoSrc = escapeHtml((pupLogoSrc || logoSrc || buildAppUrl("/icons/pup-seal.png")).replace(/&amp;/g, "&"));
-  const safeFocusLogoSrc = escapeHtml((focusLogoSrc || buildAppUrl("/icons/pup-seal.png")).replace(/&amp;/g, "&"));
+  const safeFocusLogoSrc = focusLogoSrc ? escapeHtml(focusLogoSrc.replace(/&amp;/g, "&")) : "";
+  const hasDistinctFocusLogo = Boolean(safeFocusLogoSrc && safeFocusLogoSrc !== safePupLogoSrc);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -67,18 +68,22 @@ export function buildEmailLayout({
     <table role="presentation" width="100%" style="max-width:620px;margin:0 auto;background:#ffffff;border-collapse:collapse;border-radius:18px;overflow:hidden;box-shadow:0 12px 32px rgba(77,0,0,0.14);border:1px solid rgba(120,0,0,0.08);">
       <tr>
         <td style="background:linear-gradient(135deg,#4d0000 0%,#780000 100%);padding:32px 28px;text-align:center;">
-          <!-- Logos: PUP Seal -->
+          <!-- Logo: PUP Seal -->
           <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 18px auto;">
             <tr>
-              <td style="vertical-align:middle;padding-right:12px;">
-                <img src="${safePupLogoSrc}" alt="PUP Seal" width="52" height="52" style="display:block;border-radius:50%;background:#ffffff;padding:2px;box-shadow:0 4px 10px rgba(0,0,0,0.35);" />
+              <td style="vertical-align:middle;text-align:center;${hasDistinctFocusLogo ? "padding-right:12px;" : ""}">
+                <img src="${safePupLogoSrc}" alt="PUP Seal" width="56" height="56" style="display:block;margin:0 auto;border-radius:50%;background:#ffffff;padding:2px;box-shadow:0 4px 10px rgba(0,0,0,0.35);" />
               </td>
-              <td style="vertical-align:middle;padding:0 4px;color:#fbbf24;font-size:20px;font-weight:700;line-height:1;">
+              ${
+                hasDistinctFocusLogo
+                  ? `<td style="vertical-align:middle;padding:0 4px;color:#fbbf24;font-size:20px;font-weight:700;line-height:1;">
                 •
               </td>
               <td style="vertical-align:middle;padding-left:12px;">
-                <img src="${safeFocusLogoSrc}" alt="PUP" width="52" height="52" style="display:block;border-radius:50%;background:#ffffff;padding:2px;box-shadow:0 4px 10px rgba(0,0,0,0.35);" />
-              </td>
+                <img src="${safeFocusLogoSrc}" alt="PUP FOCUS" width="56" height="56" style="display:block;margin:0 auto;border-radius:50%;background:#ffffff;padding:2px;box-shadow:0 4px 10px rgba(0,0,0,0.35);" />
+              </td>`
+                  : ""
+              }
             </tr>
           </table>
           <div style="min-width:0;max-width:100%;text-align:center;">
@@ -137,7 +142,6 @@ export function buildInviteEmailHtml({
     actionHref: link,
     footerNote: `If you did not expect this invitation, you can safely ignore this email.`,
     pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
-    focusLogoSrc: buildAppUrl("/icons/pup-seal.png"),
   });
 }
 
@@ -212,7 +216,6 @@ export function buildTempPasswordEmailHtml({
     actionHref: signInHref || buildAppUrl("/auth/sign-in"),
     footerNote: `Temporary Password: ${safeTempPassword} • Account: ${safeEmail}`,
     pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
-    focusLogoSrc: buildAppUrl("/icons/pup-seal.png"),
   });
 }
 
@@ -242,7 +245,6 @@ export function buildForgotPasswordEmailHtml({
     actionHref: resetLink,
     footerNote: `If you did not request a password reset, you can safely ignore this email. Your current password will remain active.`,
     pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
-    focusLogoSrc: buildAppUrl("/icons/pup-seal.png"),
   });
 }
 
@@ -287,7 +289,6 @@ export function buildSubmissionWindowNotificationEmailHtml({
     footerNote:
       "If you have already submitted all requirements, thank you. Otherwise, please complete your outstanding submissions at your earliest convenience.",
     pupLogoSrc: buildAppUrl("/icons/pup-seal.png"),
-    focusLogoSrc: buildAppUrl("/icons/pup-seal.png"),
   });
 }
 

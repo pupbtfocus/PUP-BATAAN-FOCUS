@@ -8,7 +8,7 @@ import {
 import { ROLE } from "../../config/roles";
 
 describe("Email Templates", () => {
-  it("buildInviteEmailHtml renders branded invite content with dual logos and first name greeting", () => {
+  it("buildInviteEmailHtml renders branded invite content with single PUP logo and first name greeting", () => {
     const html = buildInviteEmailHtml({
       firstName: "Jane",
       fullName: "Jane Doe",
@@ -22,6 +22,7 @@ describe("Email Templates", () => {
     expect(html).toMatch(/https:\/\/pup-focus\.local\/accept/i);
     expect(html).toMatch(/Faculty/i);
     expect(html).toMatch(/icons\/pup-seal\.png/i);
+    expect((html.match(/pup-seal\.png/g) || []).length).toBe(1);
     expect(html).toMatch(/Accept Invitation &amp; Sign In/i);
   });
 
@@ -46,7 +47,7 @@ describe("Email Templates", () => {
     expect(html).toMatch(/Hello Maria, your faculty account is almost ready\./i);
   });
 
-  it("buildTempPasswordEmailHtml renders temporary credentials with email, password, dual logos, and first name greeting", () => {
+  it("buildTempPasswordEmailHtml renders temporary credentials with email, password, single PUP logo, and first name greeting", () => {
     const html = buildTempPasswordEmailHtml({
       firstName: "Jane",
       fullName: "Jane Doe",
@@ -62,10 +63,11 @@ describe("Email Templates", () => {
     expect(html).toMatch(/TempPass123!/i);
     expect(html).toMatch(/change your password/i);
     expect(html).toMatch(/icons\/pup-seal\.png/i);
+    expect((html.match(/pup-seal\.png/g) || []).length).toBe(1);
     expect(html).toMatch(/Sign in to PUP FOCUS/i);
   });
 
-  it("buildForgotPasswordEmailHtml renders password reset content with dual logos and first name greeting", () => {
+  it("buildForgotPasswordEmailHtml renders password reset content with single PUP logo and first name greeting", () => {
     const html = buildForgotPasswordEmailHtml({
       firstName: "Jane",
       fullName: "Jane Doe",
@@ -79,9 +81,10 @@ describe("Email Templates", () => {
     expect(html).toMatch(/https:\/\/pup-focus\.local\/auth\/change-password\?token=xyz123/i);
     expect(html).toMatch(/Reset Password/i);
     expect(html).toMatch(/icons\/pup-seal\.png/i);
+    expect((html.match(/pup-seal\.png/g) || []).length).toBe(1);
   });
 
-  it("buildSubmissionWindowNotificationEmailHtml renders first name greeting and dual logos", () => {
+  it("buildSubmissionWindowNotificationEmailHtml renders first name greeting and single PUP logo", () => {
     const html = buildSubmissionWindowNotificationEmailHtml({
       fullName: "Jane Doe",
       firstName: "Jane",
@@ -94,6 +97,7 @@ describe("Email Templates", () => {
 
     expect(html).toMatch(/Hello Jane, the faculty submission window has been scheduled\./i);
     expect(html).toMatch(/icons\/pup-seal\.png/i);
+    expect((html.match(/pup-seal\.png/g) || []).length).toBe(1);
     expect(html).toMatch(/Open Faculty Dashboard/i);
   });
 });
