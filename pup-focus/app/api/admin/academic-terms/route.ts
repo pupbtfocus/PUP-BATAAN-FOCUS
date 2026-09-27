@@ -528,19 +528,19 @@ export async function PATCH(request: NextRequest) {
         });
 
       if (hasIncompleteRequirements || !hasSemesterBackup) {
-        let errorTitle = "Incomplete Term Transition Requirements";
+        let errorTitle = "Requirements & Backup";
         let errorDetails = "";
 
         if (hasIncompleteRequirements && !hasSemesterBackup) {
-          errorTitle = "Requirements & Backup Required";
+          errorTitle = "Requirements & Backup";
           errorDetails =
             "The current academic term cannot be changed yet. All faculty compliance requirements must be submitted and validated, and a backup of this semester must be created in Backup & Archive.";
         } else if (hasIncompleteRequirements) {
-          errorTitle = "Incomplete Term Requirements";
+          errorTitle = "Requirements & Backup";
           errorDetails =
             "The current academic term cannot be changed yet. All faculty compliance requirements must be submitted and validated before changing the term.";
         } else {
-          errorTitle = "Semester Backup Required";
+          errorTitle = "Requirements & Backup";
           errorDetails =
             `A backup of ${currentTerm.academic_year} (${currentTerm.semester}) must be created in Backup & Archive before changing to a new academic term.`;
         }
