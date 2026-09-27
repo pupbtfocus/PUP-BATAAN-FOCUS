@@ -751,7 +751,12 @@ export function AdminAcademicTerms({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
-              title={warningModalData.title || "Requirements & Backup Required"}
+              title={
+                warningModalData.title ||
+                (warningModalData.missingBackup
+                  ? "Requirements & Backup Required"
+                  : "Faculty Requirements Required")
+              }
               subtitle="Prerequisites for changing the active academic term."
               icon={WarningTriangle}
               onClose={() =>
@@ -760,17 +765,6 @@ export function AdminAcademicTerms({
             />
 
             <div className="p-6 space-y-4">
-              {/* Context Alert Banner (clean accent, no redundant triangle) */}
-              <div className="rounded-xl border-l-4 border-l-amber-500 border-y border-r border-slate-200 dark:border-slate-800 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 space-y-1">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                  Term Transition Blocked
-                </h4>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {warningModalData.description ||
-                    "The current academic term cannot be changed yet. All faculty compliance requirements must be submitted and validated, and a backup of this semester must be created in Backup & Archive."}
-                </p>
-              </div>
-
               {/* Transition Prerequisites Checklist */}
               <div className="space-y-2.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
