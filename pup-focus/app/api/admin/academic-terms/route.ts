@@ -460,22 +460,67 @@ export async function PATCH(request: NextRequest) {
       const hasSemesterBackup =
         isArchived ||
         (backupRows ?? []).some((b: any) => {
-          const meta = b.metadata ?? {};
-          const metaAy = meta.academic_year || b.academic_year;
-          const metaSem = meta.semester;
+          if (!b) return false;
+          if (b.status && b.status !== "completed") return false;
 
+          const name = (b.backup_name || "").toLowerCase();
+          // Full database snapshots or All AY / All Sem backups cover all terms
           if (
-            metaAy === currentTerm.academic_year &&
-            (metaSem === currentTerm.semester || metaSem === "all" || !metaSem)
+            name.includes("all_ay") ||
+            name.includes("all_sem") ||
+            name.includes("full_database") ||
+            name.includes("full_system") ||
+            name.includes("all_academic") ||
+            name.includes("full_snapshot")
           ) {
             return true;
           }
 
+          const meta = b.metadata ?? {};
+          const metaScope = meta.scope;
+
           if (
-            b.backup_name?.toLowerCase().includes("full_system") ||
-            meta.scope === "all" ||
-            meta.scope === "full"
+            metaScope === "full_database_snapshot" ||
+            metaScope === "all" ||
+            metaScope === "full"
           ) {
+            return true;
+          }
+
+          // Extract academic year and semester from top-level or meta or meta.scope
+          let backupAy = b.academic_year || meta.academic_year;
+          let backupSem = meta.semester;
+
+          if (typeof metaScope === "object" && metaScope !== null) {
+            if (!backupAy) backupAy = metaScope.academic_year;
+            if (!backupSem) backupSem = metaScope.semester;
+          }
+
+          // If no specific AY is specified or AY is 'all', it covers all academic years
+          const coversAy =
+            !backupAy ||
+            backupAy === "all" ||
+            backupAy.trim().toLowerCase() === currentTerm.academic_year.trim().toLowerCase();
+
+          // If no specific semester is specified or semester is 'all', it covers all semesters
+          const normCurrentSem = normalizeSemester(currentTerm.semester).toLowerCase();
+          const normBackupSem = backupSem
+            ? normalizeSemester(backupSem).toLowerCase()
+            : null;
+
+          const coversSem =
+            !backupSem ||
+            backupSem === "all" ||
+            normBackupSem === normCurrentSem;
+
+          if (coversAy && coversSem) {
+            return true;
+          }
+
+          // Also check if backup_name contains the current term AY & Sem
+          const safeAY = currentTerm.academic_year.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+          const safeSem = currentTerm.semester.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+          if (name.includes(safeAY) && (name.includes(safeSem) || name.includes("all_sem"))) {
             return true;
           }
 
