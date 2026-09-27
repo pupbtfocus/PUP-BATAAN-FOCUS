@@ -33,17 +33,17 @@ export default async function FacultyDashboardPage(props: PageProps) {
 
   let initialView: PanelView = "dashboard";
   if (
+    viewParam &&
+    (VALID_PANEL_VIEWS as readonly string[]).includes(viewParam)
+  ) {
+    initialView = viewParam as PanelView;
+  } else if (
     viewParam === "history" ||
     (viewParam === "status" && historyParam) ||
     searchParams.highlight ||
     searchParams.requirement
   ) {
     initialView = "status";
-  } else if (
-    viewParam &&
-    (VALID_PANEL_VIEWS as readonly string[]).includes(viewParam)
-  ) {
-    initialView = viewParam as PanelView;
   }
 
   return (

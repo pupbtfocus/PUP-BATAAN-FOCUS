@@ -416,6 +416,7 @@ function FacultySubmissionPanelContent({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const handledHighlightRef = useRef<string | null>(null);
   const academicYears = useMemo(() => buildAcademicYearOptions(), []);
   const [currentFacultyName, setCurrentFacultyName] = useState<string | null>(
     facultyName ?? null,
@@ -505,17 +506,14 @@ function FacultySubmissionPanelContent({
 
   // SSR-safe initial view calculation: strictly identical on server and client
   const resolveInitialView = useCallback((): PanelView => {
-    if (initialView && initialView !== "dashboard") {
-      return initialView;
-    }
     const v = searchParams?.get("view");
+    if (v && (PANEL_VIEWS as readonly string[]).includes(v)) {
+      return v as PanelView;
+    }
     const highlight = searchParams?.get("highlight") || searchParams?.get("requirement");
     const hist = searchParams?.get("history");
     if (v === "history" || (v === "status" && hist === "true") || highlight) {
       return "status";
-    }
-    if (v && (PANEL_VIEWS as readonly string[]).includes(v)) {
-      return v as PanelView;
     }
     return initialView || "dashboard";
   }, [initialView, searchParams]);
@@ -906,23 +904,32 @@ function FacultySubmissionPanelContent({
   // Deep-linking, view routing, and auto-scrolling with highlight
   useEffect(() => {
     try {
-      const params = new URLSearchParams(window.location.search);
-      const view = params.get("view");
+      const view =
+        searchParams?.get("view") ||
+        new URLSearchParams(window.location.search).get("view");
       const highlightParam =
-        params.get("highlight") || params.get("requirement");
-      const historyParam = params.get("history");
+        searchParams?.get("highlight") ||
+        searchParams?.get("requirement") ||
+        new URLSearchParams(window.location.search).get("highlight") ||
+        new URLSearchParams(window.location.search).get("requirement");
+      const historyParam =
+        searchParams?.get("history") ||
+        new URLSearchParams(window.location.search).get("history");
+
       if (
         view === "history" ||
         (view === "status" && historyParam === "true")
       ) {
         setActiveView((prev) => (prev !== "status" ? "status" : prev));
         setIsHistoryModalOpen(true);
-      } else if (highlightParam) {
-        setActiveView((prev) => (prev !== "status" ? "status" : prev));
       } else if (view && (PANEL_VIEWS as readonly string[]).includes(view)) {
         setActiveView((prev) => (prev !== view ? (view as PanelView) : prev));
+      } else if (highlightParam) {
+        setActiveView((prev) => (prev !== "status" ? "status" : prev));
       }
-      if (highlightParam) {
+
+      if (highlightParam && handledHighlightRef.current !== highlightParam) {
+        handledHighlightRef.current = highlightParam;
         const timer = setTimeout(() => {
           const targetElement =
             document.getElementById(`requirement-${highlightParam}`) ||
@@ -933,25 +940,71 @@ function FacultySubmissionPanelContent({
               block: "center",
             });
             targetElement.classList.add(
-              "ring-2",
-              "ring-slate-400",
-              "bg-slate-500/10",
+              "ring-4",
+              "ring-amber-400",
+              "bg-amber-500/10",
+              "transition-all",
+              "duration-500",
             );
             setTimeout(() => {
               targetElement.classList.remove(
-                "ring-2",
-                "ring-slate-400",
-                "bg-slate-500/10",
+                "ring-4",
+                "ring-amber-400",
+                "bg-amber-500/10",
+                "transition-all",
+                "duration-500",
               );
             }, 3500);
           }
-        }, 500);
+
+          // Clean up highlight params from the URL so future tab switches don't get trapped
+          try {
+            const cleanParams = new URLSearchParams(window.location.search);
+            if (cleanParams.has("highlight") || cleanParams.has("requirement")) {
+              cleanParams.delete("highlight");
+              cleanParams.delete("requirement");
+              const newSearch = cleanParams.toString();
+              const newUrl = newSearch
+                ? `${window.location.pathname}?${newSearch}${window.location.hash}`
+                : `${window.location.pathname}${window.location.hash}`;
+              window.history.replaceState(null, "", newUrl);
+            }
+          } catch {
+            // ignore
+          }
+        }, 350);
         return () => clearTimeout(timer);
       }
     } catch {
       // ignore
     }
   }, [searchParams, requirementStatuses]);
+
+  // Listener for instant in-page view navigation requests from notification drawer
+  useEffect(() => {
+    function handleCustomSelectView(e: Event) {
+      const customEvent = e as CustomEvent<{ view?: PanelView; highlight?: string }>;
+      if (customEvent.detail?.view) {
+        navigateToView(customEvent.detail.view);
+      }
+      if (customEvent.detail?.highlight) {
+        const h = customEvent.detail.highlight;
+        handledHighlightRef.current = null;
+        setTimeout(() => {
+          const el = document.getElementById(`requirement-${h}`) || document.getElementById(h);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.classList.add("ring-4", "ring-amber-400", "bg-amber-500/10", "transition-all", "duration-500");
+            setTimeout(() => {
+              el.classList.remove("ring-4", "ring-amber-400", "bg-amber-500/10", "transition-all", "duration-500");
+            }, 3500);
+          }
+        }, 300);
+      }
+    }
+    window.addEventListener("pup-focus-select-view", handleCustomSelectView);
+    return () => window.removeEventListener("pup-focus-select-view", handleCustomSelectView);
+  }, []);
   useEffect(() => {
     if (submissionWindow?.academicYear && submissionWindow?.semester) {
       void fetchStatuses(
@@ -1025,10 +1078,14 @@ function FacultySubmissionPanelContent({
     setActiveView(targetView);
     setIsHistoryModalOpen(openHistory);
     setIsMobileMenuOpen(false);
+    // Reset handled highlight ref when user manually navigates to another tab
+    handledHighlightRef.current = null;
     try {
       sessionStorage.setItem("pup_focus_faculty_active_view", targetView);
       const params = new URLSearchParams(searchParams?.toString() ?? "");
       params.set("view", targetView);
+      params.delete("highlight");
+      params.delete("requirement");
       if (targetView === "status" && openHistory) {
         params.set("history", "true");
       } else {
