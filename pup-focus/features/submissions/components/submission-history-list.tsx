@@ -34,6 +34,8 @@ export interface SubmissionHistoryListProps<T extends PastSubmissionItem = PastS
   onViewFile: (submission: T) => void;
   onDownloadFile?: (submission: T) => void;
   viewedSubmissionIds?: Set<string>;
+  getRequirementTitle?: (code: string) => string;
+  templateMandatoryMap?: Map<string, boolean>;
   emptyMessage?: string;
   className?: string;
 }
@@ -47,10 +49,10 @@ export const REQUIREMENT_NAME_MAP: Record<string, string> = {
   syllabus: "Enhanced Course Syllabus",
   class_orientation: "Class Orientation Documentation",
   orientation: "Class Orientation Documentation",
-  midterm_package: "Copy of Midterm Examinations with TOS and Answer Key",
-  midterm: "Copy of Midterm Examinations with TOS and Answer Key",
-  final_package: "Copy of Final Examinations with TOS and Answer Key",
-  final: "Copy of Final Examinations with TOS and Answer Key",
+  midterm_package: "Midterm Examinations with TOS and Answer Key",
+  midterm: "Midterm Examinations with TOS and Answer Key",
+  final_package: "Final Examinations with TOS and Answer Key",
+  final: "Final Examinations with TOS and Answer Key",
   class_records: "Class Records",
   classrecords: "Class Records",
 };
@@ -117,6 +119,8 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
   onViewFile,
   onDownloadFile,
   viewedSubmissionIds = new Set(),
+  getRequirementTitle,
+  templateMandatoryMap,
   emptyMessage = "No validated documents found for the selected academic term.",
   className = "",
 }: SubmissionHistoryListProps<T>) {
@@ -125,10 +129,13 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
       onDownloadFile(sub);
       return;
     }
+    const resolvedTitle = getRequirementTitle
+      ? getRequirementTitle(sub.requirementCode)
+      : getFriendlyRequirementName(sub.requirementCode);
     const downloadUrl = `/api/faculty/submissions/view?submissionId=${encodeURIComponent(sub.id)}&download=true`;
     const link = document.createElement("a");
     link.href = downloadUrl;
-    link.download = sub.fileName || `${getFriendlyRequirementName(sub.requirementCode)}.pdf`;
+    link.download = sub.fileName || `${resolvedTitle}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -157,19 +164,22 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
       {/* ─── Desktop Table View with Horizontal Scroll Container ─── */}
       <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
         <div className="w-full overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left text-xs min-w-[880px]" aria-label="Validation history table">
+          <table className="w-full text-left text-xs min-w-[920px]" aria-label="Validation history table">
             <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950/80 text-slate-600 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
               <tr>
-                <th scope="col" className="w-[34%] px-6 py-4">
+                <th scope="col" className="w-[30%] px-6 py-4">
                   Requirement
                 </th>
-                <th scope="col" className="w-[18%] px-5 py-4 whitespace-nowrap">
-                  Academic Term
+                <th scope="col" className="w-[10%] px-4 py-4 text-center whitespace-nowrap">
+                  Type
                 </th>
                 <th scope="col" className="w-[16%] px-5 py-4 whitespace-nowrap">
+                  Academic Term
+                </th>
+                <th scope="col" className="w-[14%] px-5 py-4 whitespace-nowrap">
                   Date Validated
                 </th>
-                <th scope="col" className="w-[10%] px-4 py-4 text-center whitespace-nowrap">
+                <th scope="col" className="w-[8%] px-4 py-4 text-center whitespace-nowrap">
                   Status
                 </th>
                 <th scope="col" className="w-[12%] px-4 py-4">
@@ -182,14 +192,14 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {submissions.map((sub) => {
-                const title = getFriendlyRequirementName(sub.requirementCode);
+                const title = getRequirementTitle
+                  ? getRequirementTitle(sub.requirementCode)
+                  : getFriendlyRequirementName(sub.requirementCode);
+                const isMandatory = templateMandatoryMap
+                  ? templateMandatoryMap.get(sub.requirementCode) !== false
+                  : true;
                 const adminFeedback =
                   sub.adminRemarks || sub.admin_remarks || sub.feedback;
-                const isUnread = Boolean(
-                  adminFeedback &&
-                    !viewedSubmissionIds.has(sub.id) &&
-                    sub.is_read !== true,
-                );
                 const dateValidated =
                   sub.dateValidated || sub.updatedAt || sub.reviewedAt || sub.submittedAt;
 
@@ -217,6 +227,19 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                           )}
                         </div>
                       </div>
+                    </td>
+
+                    {/* Type (Required / Optional) column */}
+                    <td className="px-4 py-4.5 align-middle text-center whitespace-nowrap">
+                      {isMandatory ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                          Required
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                          Optional
+                        </span>
+                      )}
                     </td>
 
                     {/* Academic Term */}
@@ -291,21 +314,21 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
       {/* ─── Mobile Stacked Card View (Visible on mobile, hidden on md+) ─── */}
       <div className="space-y-3.5 block md:hidden" role="feed" aria-label="Validation history list">
         {submissions.map((sub) => {
-          const title = getFriendlyRequirementName(sub.requirementCode);
+          const title = getRequirementTitle
+            ? getRequirementTitle(sub.requirementCode)
+            : getFriendlyRequirementName(sub.requirementCode);
+          const isMandatory = templateMandatoryMap
+            ? templateMandatoryMap.get(sub.requirementCode) !== false
+            : true;
           const adminFeedback =
             sub.adminRemarks || sub.admin_remarks || sub.feedback;
-          const isUnread = Boolean(
-            adminFeedback &&
-              !viewedSubmissionIds.has(sub.id) &&
-              sub.is_read !== true,
-          );
           const dateValidated =
             sub.dateValidated || sub.updatedAt || sub.reviewedAt || sub.submittedAt;
 
           return (
             <article
               key={sub.id}
-              className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3.5 shadow-sm transition hover:border-slate-300 dark:hover:border-slate-700"
+              className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3.5 shadow-sm transition hover:border-slate-300 dark:border-slate-700"
             >
               {/* Header: Title & Status Badge */}
               <div className="flex items-start gap-3">
@@ -313,10 +336,19 @@ export function SubmissionHistoryList<T extends PastSubmissionItem = PastSubmiss
                   <AppIcon icon={Page} size="md" color="inherit" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
                       {title}
                     </h4>
+                    {isMandatory ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                        Required
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                        Optional
+                      </span>
+                    )}
                   </div>
                   {sub.fileName && (
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5" title={sub.fileName}>

@@ -21,14 +21,9 @@ export const DEFAULT_REQUIREMENTS: RequirementCode[] = [
 
 export const REQUIREMENT_LABEL: Record<RequirementCode, string> = {
   [REQUIREMENT_CODE.GRADE_SHEET]: "Grade Sheets",
-  [REQUIREMENT_CODE.ENHANCED_SYLLABUS]:
-    "Enhanced Course Syllabus (if not yet submitted)",
-  [REQUIREMENT_CODE.CLASS_ORIENTATION]:
-    "Class Orientation Documentation (photos and narrative report)",
-  [REQUIREMENT_CODE.MIDTERM_PACKAGE]:
-    "Copy of Midterm Examinations with TOS and Answer Key",
-  [REQUIREMENT_CODE.FINAL_PACKAGE]:
-    "Copy of Final Examinations with TOS and Answer Key",
-  [REQUIREMENT_CODE.CLASS_RECORDS]:
-    "Class Records (midterm and final computations)",
+  [REQUIREMENT_CODE.ENHANCED_SYLLABUS]: "Enhanced Course Syllabus",
+  [REQUIREMENT_CODE.CLASS_ORIENTATION]: "Class Orientation Documentation",
+  [REQUIREMENT_CODE.MIDTERM_PACKAGE]: "Midterm Examinations with TOS and Answer Key",
+  [REQUIREMENT_CODE.FINAL_PACKAGE]: "Final Examinations with TOS and Answer Key",
+  [REQUIREMENT_CODE.CLASS_RECORDS]: "Class Records",
 };
