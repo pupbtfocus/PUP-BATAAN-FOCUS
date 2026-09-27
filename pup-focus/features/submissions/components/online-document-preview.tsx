@@ -134,6 +134,7 @@ export interface OnlineDocumentPreviewProps {
     officeAction?: string | null;
   };
   onDownload?: () => void;
+  borderless?: boolean;
 }
 
 export function OnlineDocumentPreview({
@@ -147,6 +148,7 @@ export function OnlineDocumentPreview({
   isPpt,
   brand,
   onDownload,
+  borderless = false,
 }: OnlineDocumentPreviewProps) {
   const [directUrl, setDirectUrl] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(true);
@@ -242,7 +244,7 @@ export function OnlineDocumentPreview({
     const currentExternalUrl = isGoogle ? googleViewerUrl : officeViewerUrl;
 
     return (
-      <div className="flex flex-col h-full w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]">
+      <div className={`flex flex-col h-full w-full ${borderless ? "rounded-none border-0 shadow-none" : "rounded-2xl border border-slate-800 shadow-xl"} overflow-hidden bg-slate-900 min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]`}>
         {/* Top Control Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-xs text-xs">
           <div className="flex items-center gap-2">
@@ -325,7 +327,7 @@ export function OnlineDocumentPreview({
   // Local document reader mode (for blob: URLs that cloud viewers can't fetch)
   if (viewerMode === "local_doc") {
     return (
-      <div className="flex flex-col h-full w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]">
+      <div className={`flex flex-col h-full w-full ${borderless ? "rounded-none border-0 shadow-none" : "rounded-2xl border border-slate-800 shadow-xl"} overflow-hidden bg-slate-900 min-h-[360px] sm:min-h-[460px] lg:min-h-[560px]`}>
         {/* Top Control Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-xs text-xs">
           <div className="flex items-center gap-2">
@@ -414,7 +416,7 @@ export function OnlineDocumentPreview({
 
   // Default: Simple, clean card matching user request with official icons
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-lg mx-auto p-4 sm:p-6 lg:p-7 text-center bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-xs transition-all">
+    <div className={`flex flex-col items-center justify-center w-full max-w-lg mx-auto p-4 sm:p-6 lg:p-7 text-center ${borderless ? "bg-transparent" : "bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-xs"} transition-all`}>
       {/* File Brand Icon Badge (Using official Microsoft / Office App Icon) */}
       <div className="relative p-2.5 sm:p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 mb-2.5 sm:mb-3.5 shadow-2xs border border-slate-200 dark:border-slate-700/60 flex items-center justify-center">
         <img
