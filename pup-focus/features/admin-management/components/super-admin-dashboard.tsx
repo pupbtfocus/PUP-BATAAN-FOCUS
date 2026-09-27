@@ -28,6 +28,7 @@ import { AddFacultyModal } from "@/features/faculty-management/components/facult
 import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
 import { FacultyDetailsModal } from "@/features/faculty-management/components/faculty-modals/faculty-details-modal";
 import { DeleteFacultyModal } from "@/features/faculty-management/components/faculty-modals/delete-faculty-modal";
+import { DeleteAdminModal } from "@/features/super-admin/components/delete-admin-modal";
 import { InviteStatusModal } from "@/features/faculty-management/components/faculty-modals/invite-status-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -240,6 +241,8 @@ export function SuperAdminDashboard({
   const [loadingAdminIds, setLoadingAdminIds] = useState<Set<string>>(
     new Set(),
   );
+  const [pendingDeleteAdmin, setPendingDeleteAdmin] = useState<AdminAccount | null>(null);
+  const [isDeletingAdminAccount, setIsDeletingAdminAccount] = useState(false);
   const [adminDetails, setAdminDetails] = useState<AdminDetails | null>(null);
   const [isLoadingAdminDetails, setIsLoadingAdminDetails] = useState(false);
   const [adminDetailsOpen, setAdminDetailsOpen] = useState(false);
@@ -1205,15 +1208,18 @@ export function SuperAdminDashboard({
     }
   }
 
-  async function onDeleteAdmin(profileId: string) {
-    const shouldDelete = window.confirm(
-      "Are you sure you want to delete this admin account?",
-    );
-
-    if (!shouldDelete) {
-      return;
+  function onRequestDeleteAdmin(profileId: string) {
+    const target = adminAccounts.find((a) => a.profile_id === profileId) ?? null;
+    if (target) {
+      setPendingDeleteAdmin(target);
     }
+  }
 
+  async function performDeleteAdmin() {
+    if (!pendingDeleteAdmin) return;
+    const profileId = pendingDeleteAdmin.profile_id;
+
+    setIsDeletingAdminAccount(true);
     setLoadingAdminIds((prev) => new Set(prev).add(profileId));
     setAccountActionError(null);
     setAccountActionSuccess(null);
@@ -1232,16 +1238,22 @@ export function SuperAdminDashboard({
       }
 
       setAccountActionSuccess("Admin account deleted successfully.");
+      setPendingDeleteAdmin(null);
       await loadAdminAccounts();
     } catch {
       setAccountActionError("Unexpected error while deleting admin account.");
     } finally {
+      setIsDeletingAdminAccount(false);
       setLoadingAdminIds((prev) => {
         const next = new Set(prev);
         next.delete(profileId);
         return next;
       });
     }
+  }
+
+  function onDeleteAdmin(profileId: string) {
+    onRequestDeleteAdmin(profileId);
   }
 
   async function onViewAdminDetails(profileId: string) {
@@ -2234,6 +2246,14 @@ export function SuperAdminDashboard({
         pendingFaculty={pendingFaculty}
         onCancel={() => setPendingFacultyAction(null)}
         onConfirm={confirmPendingFacultyAction}
+      />
+
+      <DeleteAdminModal
+        isOpen={Boolean(pendingDeleteAdmin)}
+        admin={pendingDeleteAdmin}
+        isLoading={isDeletingAdminAccount}
+        onCancel={() => setPendingDeleteAdmin(null)}
+        onConfirm={performDeleteAdmin}
       />
 
       <InviteStatusModal
