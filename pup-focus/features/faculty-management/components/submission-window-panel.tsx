@@ -622,36 +622,36 @@ export function SubmissionWindowPanel({
       : "Not configured";
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs dark:shadow-none space-y-6 transition-colors">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-xs dark:shadow-none space-y-5 sm:space-y-6 transition-colors">
       {/* Real-time Status Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800 transition-colors">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {/* Status Badge */}
-          <div className="flex items-center gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-2.5 py-1 text-xs font-semibold rounded-md shadow-2xs">
-            <span className={`w-2 h-2 rounded-full ${
+          <div className="inline-flex items-center justify-center sm:justify-start gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold rounded-md shadow-2xs">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${
               isWindowOpen ? "bg-emerald-500 animate-pulse" : isUpcoming ? "bg-amber-500 animate-ping" : "bg-slate-400 dark:bg-slate-500"
             }`} />
             <span>{isAlwaysOpen ? "Always Open Window" : isWindowOpen ? "Live Submission Window" : isUpcoming ? "Scheduled Window" : "Window Closed"}</span>
           </div>
 
           {/* Current Academic Term Badge */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-md shadow-2xs">
+          <div className="inline-flex items-center justify-center sm:justify-start gap-1.5 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-md shadow-2xs">
             <span>Current Term:</span>
             <span className="font-semibold text-slate-900 dark:text-slate-200">{currentTermLabel}</span>
           </div>
         </div>
 
         {/* Real-Time Countdown Timer Display */}
-        <div className="flex items-center gap-2.5 bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 px-3 py-1.5 rounded-lg shadow-xs">
-          <AppIcon icon={Hourglass} size="md" color="default" />
-          <div className="text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="flex items-center justify-between sm:justify-end gap-3 bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 px-3.5 py-2 rounded-lg shadow-xs w-full sm:w-auto">
+          <div className="flex items-center gap-2">
+            <AppIcon icon={Hourglass} size="md" color="default" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               {isWindowOpen ? "Time Remaining" : isUpcoming ? "Opens In" : "Status"}
-            </p>
-            <p className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100">
-              {formattedCountdownTime}
-            </p>
+            </span>
           </div>
+          <span className="font-mono text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+            {formattedCountdownTime}
+          </span>
         </div>
       </div>
 
@@ -707,9 +707,9 @@ export function SubmissionWindowPanel({
           </div>
         ) : null}
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
           {/* Left Column: Opening Schedule Input */}
-          <div className={`p-4 rounded-xl flex flex-col justify-between transition-all duration-200 ${
+          <div className={`p-3.5 sm:p-4 rounded-xl flex flex-col justify-between transition-all duration-200 ${
             isEditingSchedule
               ? "bg-white border-2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 shadow-xs"
               : "bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800"
@@ -753,7 +753,7 @@ export function SubmissionWindowPanel({
           </div>
 
           {/* Right Column: Closing Schedule & Deadline */}
-          <div className={`p-4 rounded-xl flex flex-col justify-between transition-all duration-200 ${
+          <div className={`p-3.5 sm:p-4 rounded-xl flex flex-col justify-between transition-all duration-200 ${
             isEditingSchedule
               ? "bg-white border-2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 shadow-xs"
               : "bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800"
@@ -796,24 +796,24 @@ export function SubmissionWindowPanel({
 
             <div>
               {!isEditingSchedule && (isAlwaysOpen || (windowStatus?.endDate && windowStatus.endDate.startsWith("2099"))) ? (
-                <div className="flex items-center justify-between bg-white border border-emerald-300 text-slate-900 dark:bg-slate-900 dark:border-emerald-800/80 dark:text-slate-100 px-3.5 py-2 text-sm rounded-lg shadow-2xs">
-                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-semibold">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white border border-emerald-300 text-slate-900 dark:bg-slate-900 dark:border-emerald-800/80 dark:text-slate-100 p-3 sm:px-3.5 sm:py-2 text-sm rounded-lg shadow-2xs">
+                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-semibold text-xs sm:text-sm">
                     <AppIcon icon={CheckCircle} size="md" color="inherit" />
                     <span>Always Open (No Closing Deadline)</span>
                   </div>
-                  <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 px-2 py-0.5 text-xs font-bold rounded-md">
+                  <span className="self-start sm:self-auto bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 px-2 py-0.5 text-xs font-bold rounded-md whitespace-nowrap">
                     Indefinite
                   </span>
                 </div>
               ) : !isEditingSchedule && windowStatus?.endDate && windowStatus?.endTimeLabel ? (
-                <div className="flex items-center justify-between bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 px-3.5 py-2 text-sm rounded-lg">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 p-3 sm:px-3.5 sm:py-2 text-sm rounded-lg shadow-2xs">
+                  <div className="flex items-center gap-2 min-w-0">
                     <AppIcon icon={Calendar} size="md" color="default" />
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
                       {windowStatus.endDate} at {windowStatus.endTimeLabel}
                     </span>
                   </div>
-                  <span className="bg-slate-200/80 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-medium rounded-md">
+                  <span className="self-start sm:self-auto bg-slate-200/80 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-[11px] sm:text-xs font-medium rounded-md whitespace-nowrap">
                     Configured Deadline
                   </span>
                 </div>
@@ -914,16 +914,16 @@ export function SubmissionWindowPanel({
         </div>
 
         {/* 3. Structured Footer Action Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 pt-5 mt-6">
-          {/* LEFT: Operational & Destructive Triggers */}
-          <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 border-t border-slate-200 dark:border-slate-800 pt-5 mt-6">
+          {/* Operational & Destructive Triggers */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => {
                 setShowRequestsModal(true);
                 void fetchExtensionRequests();
               }}
-              className="relative flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer shadow-2xs"
+              className="relative flex items-center justify-center sm:justify-start gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2.5 sm:py-2 text-sm font-medium rounded-xl transition-colors cursor-pointer shadow-2xs w-full sm:w-auto"
             >
               <AppIcon icon={Hourglass} size="sm" color="active" />
               <span>Extension Requests</span>
@@ -943,7 +943,7 @@ export function SubmissionWindowPanel({
                   setShowLogsModal(true);
                   refetchLogs();
                 }}
-                className="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer"
+                className="flex items-center justify-center sm:justify-start gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2.5 sm:py-2 text-sm font-medium rounded-xl transition-colors cursor-pointer w-full sm:w-auto"
               >
                 <AppIcon icon={ClockRotateRight} size="sm" color="default" />
                 <span>Extension Logs {extensionLogs.length > 0 ? `(${extensionLogs.length})` : ""}</span>
@@ -954,15 +954,15 @@ export function SubmissionWindowPanel({
               type="button"
               onClick={handleCloseSubmission}
               disabled={isLoading || isSaving || (!windowStatus?.isOpen && windowStatus?.status !== "Upcoming" && !windowStatus?.startDate)}
-              className="flex items-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+              className="flex items-center justify-center sm:justify-start gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs w-full sm:w-auto"
             >
               <AppIcon icon={ShieldAlert} size="sm" color="white" />
               <span>Close Submissions</span>
             </button>
           </div>
 
-          {/* RIGHT: Active Mode Controls (Edit / Save / Cancel / Extend) */}
-          <div className="flex items-center gap-2.5">
+          {/* Active Mode Controls (Edit / Save / Cancel / Extend) */}
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
             {isEditingSchedule ? (
               <>
                 <button
@@ -973,7 +973,7 @@ export function SubmissionWindowPanel({
                     setIsEditingSchedule(false);
                   }}
                   disabled={isSaving}
-                  className="flex items-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                  className="flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                 >
                   <AppIcon icon={Xmark} size="sm" color="inherit" />
                   <span>Cancel</span>
@@ -982,7 +982,7 @@ export function SubmissionWindowPanel({
                 <button
                   type="submit"
                   disabled={isLoading || isSaving}
-                  className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 px-4 py-2 text-sm font-semibold rounded-lg transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 px-4 py-2.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   {isSaving ? (
                     <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
@@ -1006,7 +1006,7 @@ export function SubmissionWindowPanel({
                     }, 50);
                   }}
                   disabled={isLoading || isSaving}
-                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3.5 py-2.5 sm:py-2 text-sm rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                 >
                   <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
                   <span>Edit Schedule</span>
@@ -1016,7 +1016,7 @@ export function SubmissionWindowPanel({
                   type="button"
                   onClick={() => setShowExtendModal(true)}
                   disabled={isLoading || isSaving}
-                  className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 text-sm rounded-lg transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 sm:py-2 text-sm rounded-xl transition-colors shadow-xs disabled:opacity-50 cursor-pointer active:scale-[0.98]"
                 >
                   <AppIcon icon={Hourglass} size="sm" color="inherit" className="text-slate-950" />
                   <span>Extend Window</span>
