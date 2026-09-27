@@ -55,7 +55,7 @@ export function FacultyFilterBar({
                 onClick={() => onStatusFilterChange("all")}
                 className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                   statusFilter === "all"
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                    ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
                 }`}
               >
@@ -66,7 +66,7 @@ export function FacultyFilterBar({
                 onClick={() => onStatusFilterChange("active")}
                 className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                   statusFilter === "active"
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                    ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
                 }`}
               >
@@ -77,7 +77,7 @@ export function FacultyFilterBar({
                 onClick={() => onStatusFilterChange("inactive")}
                 className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                   statusFilter === "inactive"
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                    ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
                 }`}
               >

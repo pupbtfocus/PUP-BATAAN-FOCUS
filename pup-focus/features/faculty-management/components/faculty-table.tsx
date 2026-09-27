@@ -271,9 +271,9 @@ export function FacultyTable({
                             type="button"
                             onClick={() => onViewDetails(faculty.id)}
                             title="View Faculty Details"
-                            className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                           >
-                            <AppIcon icon={Eye} size="sm" color="default" />
+                            <AppIcon icon={Eye} size="sm" color="inherit" className="text-slate-950" />
                             <span>View Details</span>
                           </button>
                           <button

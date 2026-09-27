@@ -166,7 +166,7 @@ export function AdminFilterBar({
               onClick={() => onStatusFilterChange("all")}
               className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                 statusFilter === "all"
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
               }`}
             >
@@ -177,7 +177,7 @@ export function AdminFilterBar({
               onClick={() => onStatusFilterChange("active")}
               className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                 statusFilter === "active"
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
               }`}
             >
@@ -188,7 +188,7 @@ export function AdminFilterBar({
               onClick={() => onStatusFilterChange("inactive")}
               className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
                 statusFilter === "inactive"
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium shadow-xs"
+                  ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 font-normal"
               }`}
             >
@@ -427,9 +427,9 @@ export function AdminAccountsTable({
                           type="button"
                           onClick={() => onViewDetails(admin.profile_id)}
                           title="View Admin Details"
-                          className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-medium rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                          className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                         >
-                          <AppIcon icon={Eye} size="sm" color="default" />
+                          <AppIcon icon={Eye} size="sm" color="inherit" className="text-slate-950" />
                           <span>View Details</span>
                         </button>
 
