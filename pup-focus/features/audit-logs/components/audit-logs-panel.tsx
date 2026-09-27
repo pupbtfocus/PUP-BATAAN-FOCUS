@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { CheckCircle, EditPencil, Eye, Filter, Hourglass, NavArrowLeft, NavArrowRight, Page, Refresh, Search, Settings, ShieldAlert, Trash, Upload, UserBadgeCheck, UserPlus, UserXmark, Xmark, XmarkCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -529,9 +529,8 @@ export function AuditLogsPanel() {
               const isPendingDelete = deleteConfirmEntry?.id === entry.id;
 
               return (
-                <>
+                <Fragment key={entry.id}>
                   <div
-                    key={entry.id}
                     className={`group grid gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-800 transition items-center lg:grid-cols-[80px_160px_1fr_1.2fr_1fr_120px] ${
                       isPendingDelete
                         ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40"
@@ -645,7 +644,7 @@ export function AuditLogsPanel() {
                       </div>
                     </div>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </div>
