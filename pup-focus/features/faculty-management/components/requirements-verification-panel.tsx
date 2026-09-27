@@ -289,7 +289,7 @@ function toAcademicYearAndSemester(dateInput: string | null | undefined): {
 function matchRequirementCode(
   inputCode?: string | null,
   inputReqId?: string | null,
-): RequirementCode | null {
+): string | null {
   const candidates = [inputCode, inputReqId].filter(Boolean) as string[];
   for (const raw of candidates) {
     const s = raw.toLowerCase().trim().replace(/[-_\s]+/g, "");
@@ -310,7 +310,41 @@ function matchRequirementCode(
     )
       return REQUIREMENT_CODE.CLASS_RECORDS;
   }
-  return null;
+  return inputCode ? inputCode.trim() : null;
+}
+
+export function getFriendlyRequirementName(code?: string): string {
+  if (!code) return "Requirement Document";
+  if (REQUIREMENT_LABEL[code as RequirementCode]) {
+    return REQUIREMENT_LABEL[code as RequirementCode];
+  }
+  const clean = code.toLowerCase().trim().replace(/[-_\s]+/g, "");
+  const map: Record<string, string> = {
+    grade_sheet: "Grade Sheets",
+    grade_sheets: "Grade Sheets",
+    gradesheet: "Grade Sheets",
+    gradesheets: "Grade Sheets",
+    enhanced_syllabus: "Enhanced Course Syllabus",
+    syllabus: "Enhanced Course Syllabus",
+    class_orientation: "Class Orientation Documentation",
+    orientation: "Class Orientation Documentation",
+    midterm_package: "Midterm Examinations with TOS and Answer Key",
+    midterm: "Midterm Examinations with TOS and Answer Key",
+    final_package: "Final Examinations with TOS and Answer Key",
+    final: "Final Examinations with TOS and Answer Key",
+    class_records: "Class Records",
+    classrecords: "Class Records",
+  };
+  for (const [key, label] of Object.entries(map)) {
+    const cleanKey = key.toLowerCase().replace(/[-_\s]+/g, "");
+    if (clean === cleanKey || clean.includes(cleanKey)) {
+      return label;
+    }
+  }
+  return code
+    .split(/[_-]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 function doesSubmissionMatchTerm(
@@ -342,6 +376,12 @@ interface FacultyVerificationDrawerProps {
   academicYear: string;
   semester: SemesterOption;
   initialRequirementCode?: string | null;
+  requirementTemplates?: Array<{
+    code: string;
+    title: string;
+    is_mandatory: boolean;
+    is_active?: boolean;
+  }>;
   onClose: () => void;
   onStatusUpdated: () => void;
 }
@@ -360,6 +400,7 @@ function FacultyVerificationDrawer({
   academicYear,
   semester,
   initialRequirementCode,
+  requirementTemplates: requirementTemplatesProp,
   onClose,
   onStatusUpdated,
 }: FacultyVerificationDrawerProps) {
@@ -370,6 +411,46 @@ function FacultyVerificationDrawer({
   const [submittingAction, setSubmittingAction] = useState<"validate" | "revision" | null>(null);
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const [isValidatingAll, setIsValidatingAll] = useState(false);
+
+  // Requirement Templates
+  const [dbTemplates, setDbTemplates] = useState<
+    Array<{
+      code: string;
+      title: string;
+      is_mandatory: boolean;
+      is_active?: boolean;
+    }>
+  >(requirementTemplatesProp || []);
+
+  useEffect(() => {
+    let isCancelled = false;
+    async function loadTemplates() {
+      try {
+        const res = await fetch("/api/admin/requirement-templates");
+        if (res.ok && !isCancelled) {
+          const data = await res.json();
+          if (Array.isArray(data.templates) && data.templates.length > 0) {
+            setDbTemplates(
+              data.templates
+                .filter((t: any) => t.is_active !== false)
+                .map((t: any) => ({
+                  code: t.code,
+                  title: t.title,
+                  is_mandatory: Boolean(t.is_mandatory),
+                  is_active: t.is_active !== false,
+                }))
+            );
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    loadTemplates();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   // History Tab States
   const [historySubmissions, setHistorySubmissions] = useState<FacultyRequirementSubmission[]>([]);
@@ -510,8 +591,64 @@ function FacultyVerificationDrawer({
     }).length;
   }, [submissions, academicYear, semester]);
 
+  // All known requirements combining active templates, defaults, and any submitted custom/optional requirements
+  const allRequirements = useMemo(() => {
+    const items: Array<{
+      code: string;
+      title: string;
+      isMandatory: boolean;
+    }> = [];
+    const seenCodes = new Set<string>();
+
+    const templateSource =
+      dbTemplates.length > 0
+        ? dbTemplates
+        : DEFAULT_REQUIREMENTS.map((code) => ({
+            code,
+            title: REQUIREMENT_LABEL[code] || code,
+            is_mandatory: true,
+          }));
+
+    for (const tpl of templateSource) {
+      if (!seenCodes.has(tpl.code)) {
+        items.push({
+          code: tpl.code,
+          title: tpl.title || getFriendlyRequirementName(tpl.code),
+          isMandatory: tpl.is_mandatory ?? true,
+        });
+        seenCodes.add(tpl.code);
+      }
+    }
+
+    for (const code of DEFAULT_REQUIREMENTS) {
+      if (!seenCodes.has(code)) {
+        items.push({
+          code,
+          title: REQUIREMENT_LABEL[code] || getFriendlyRequirementName(code),
+          isMandatory: true,
+        });
+        seenCodes.add(code);
+      }
+    }
+
+    for (const sub of [...submissions, ...historySubmissions]) {
+      const rawCode = sub.requirement_code;
+      if (rawCode && !seenCodes.has(rawCode)) {
+        items.push({
+          code: rawCode,
+          title: getFriendlyRequirementName(rawCode),
+          isMandatory: false,
+        });
+        seenCodes.add(rawCode);
+      }
+    }
+
+    return items;
+  }, [dbTemplates, submissions, historySubmissions]);
+
   const displayedRequirements = useMemo(() => {
-    return DEFAULT_REQUIREMENTS.filter((code) => {
+    return allRequirements.filter((req) => {
+      const code = req.code;
       if (filterMode === "all") return true;
       const matchingSub = submissions.find((s) => {
         const codeMatched =
@@ -548,7 +685,7 @@ function FacultyVerificationDrawer({
       if (filterMode === "revision") return isRevision;
       return true;
     });
-  }, [filterMode, submissions, academicYear, semester]);
+  }, [allRequirements, filterMode, submissions, academicYear, semester]);
 
   // 1. Fetch current term submissions (only on faculty/term change, without retriggering on history state updates)
   useEffect(() => {
@@ -941,8 +1078,7 @@ function FacultyVerificationDrawer({
       );
 
       for (const sub of uploadedSubmissions) {
-        const reqCode = sub.requirement_code as RequirementCode;
-        const label = REQUIREMENT_LABEL[reqCode] || reqCode;
+        const label = getFriendlyRequirementName(sub.requirement_code);
         const docs = sub.document_versions || [];
 
         for (const doc of docs) {
@@ -1040,8 +1176,7 @@ function FacultyVerificationDrawer({
       );
 
       for (const sub of historySubmissionsWithDocs) {
-        const reqCode = sub.requirement_code as RequirementCode;
-        const label = REQUIREMENT_LABEL[reqCode] || reqCode;
+        const label = getFriendlyRequirementName(sub.requirement_code);
         const docs = sub.document_versions || [];
 
         for (const doc of docs) {
@@ -1338,7 +1473,7 @@ function FacultyVerificationDrawer({
                           : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                       }`}
                     >
-                      {DEFAULT_REQUIREMENTS.length}
+                      {allRequirements.length}
                     </span>
                   </button>
                   <button
@@ -1545,8 +1680,10 @@ function FacultyVerificationDrawer({
                           </td>
                         </tr>
                       ) : (
-                        displayedRequirements.map((code) => {
-                          const reqLabel = REQUIREMENT_LABEL[code];
+                        displayedRequirements.map((req) => {
+                          const code = req.code;
+                          const reqLabel = req.title;
+                          const isMandatory = req.isMandatory;
                           const matchingSubmission = submissions.find((s) => {
                             const codeMatched =
                               matchRequirementCode(
@@ -1638,9 +1775,20 @@ function FacultyVerificationDrawer({
                               {/* Column 1: Requirement */}
                               <td className="px-4 py-3.5 align-middle">
                                 <div className="space-y-1">
-                                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
-                                    {reqLabel}
-                                  </span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
+                                      {reqLabel}
+                                    </span>
+                                    {isMandatory ? (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                        Required
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                        Optional
+                                      </span>
+                                    )}
+                                  </div>
                                   {submittedDateText ? (
                                     <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                                       Submitted: {submittedDateText}
@@ -1993,8 +2141,10 @@ function FacultyVerificationDrawer({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
-                        {DEFAULT_REQUIREMENTS.map((code) => {
-                          const reqLabel = REQUIREMENT_LABEL[code];
+                        {allRequirements.map((req) => {
+                          const code = req.code;
+                          const reqLabel = req.title;
+                          const isMandatory = req.isMandatory;
                           const matchingSub = historySubmissions.find(
                             (s) => s.requirement_code === code
                           );
@@ -2023,9 +2173,20 @@ function FacultyVerificationDrawer({
                               {/* Requirement */}
                               <td className="px-4 py-3.5 align-middle">
                                 <div className="space-y-1">
-                                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
-                                    {reqLabel}
-                                  </span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
+                                      {reqLabel}
+                                    </span>
+                                    {isMandatory ? (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                        Required
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                        Optional
+                                      </span>
+                                    )}
+                                  </div>
                                   {submittedDateText ? (
                                     <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                                       Submitted: {submittedDateText}
@@ -2695,16 +2856,53 @@ export function RequirementsPanel({
   const [selectedProgram, setSelectedProgram] = useState("All Programs");
   const [isProgramDropdownOpen, setIsProgramDropdownOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "completed" | "pending_review" | "needs_revision" | "not_submitted"
+    "all" | "completed" | "optional_review" | "pending_review" | "needs_revision" | "not_submitted"
   >("all");
 
   const [academicYear, setAcademicYear] = useState("");
   const [semester, setSemester] = useState<SemesterOption>("1st Semester");
 
   const [facultyStatuses, setFacultyStatuses] = useState<
-    Record<string, Record<RequirementCode, RequirementStatus>>
+    Record<string, Record<string, RequirementStatus>>
   >({});
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
+
+  const [requirementTemplates, setRequirementTemplates] = useState<
+    Array<{
+      code: string;
+      title: string;
+      is_mandatory: boolean;
+      is_active?: boolean;
+    }>
+  >([]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    async function loadTemplates() {
+      try {
+        const res = await fetch("/api/admin/requirement-templates");
+        if (res.ok && !isCancelled) {
+          const data = await res.json();
+          if (Array.isArray(data.templates) && data.templates.length > 0) {
+            setRequirementTemplates(
+              data.templates.map((t: any) => ({
+                code: t.code,
+                title: t.title,
+                is_mandatory: Boolean(t.is_mandatory),
+                is_active: t.is_active !== false,
+              }))
+            );
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    loadTemplates();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const [reviewingFaculty, setReviewingFaculty] = useState<FacultyAccount | null>(
     null
@@ -2797,7 +2995,7 @@ export function RequirementsPanel({
         })
       );
 
-      const statusMap: Record<string, Record<RequirementCode, RequirementStatus>> =
+      const statusMap: Record<string, Record<string, RequirementStatus>> =
         {};
       for (const item of results) {
         if (item.status) {
@@ -2817,94 +3015,159 @@ export function RequirementsPanel({
     const map = new Map<
       string,
       {
-        category: "completed" | "pending_review" | "needs_revision" | "not_submitted";
-        overallStatus: "Completed / Validated" | "Pending Review" | "Needs Revision" | "Not Submitted";
+        category:
+          | "completed"
+          | "optional_review"
+          | "pending_review"
+          | "needs_revision"
+          | "not_submitted";
+        overallStatus:
+          | "Completed / Validated"
+          | "Optional Review Pending"
+          | "Pending Review"
+          | "Needs Revision"
+          | "Not Submitted";
         statusBadgeClass: string;
-        validatedCount: number;
-        uploadedCount: number;
-        rejectedCount: number;
+        actionButtonText: string;
+        actionButtonClass: string;
+        validatedMandatoryCount: number;
+        totalMandatoryCount: number;
+        totalValidatedCount: number;
+        hasPendingUpload: boolean;
       }
     >();
 
+    const activeTemplates =
+      requirementTemplates.length > 0
+        ? requirementTemplates.filter((t) => t.is_active !== false)
+        : DEFAULT_REQUIREMENTS.map((code) => ({
+            code,
+            title: REQUIREMENT_LABEL[code] || code,
+            is_mandatory: true,
+            is_active: true,
+          }));
+
+    const mandatoryTemplates = activeTemplates.filter((t) => t.is_mandatory);
+    const totalMandatoryCount =
+      mandatoryTemplates.length > 0
+        ? mandatoryTemplates.length
+        : DEFAULT_REQUIREMENTS.length;
+
     for (const faculty of facultyAccounts) {
       const statusRecord = facultyStatuses[faculty.id];
-      const validatedCount = statusRecord
-        ? DEFAULT_REQUIREMENTS.filter(
-            (code) => statusRecord[code] === "validated"
-          ).length
+
+      const validatedMandatoryCount = statusRecord
+        ? mandatoryTemplates.filter((t) => statusRecord[t.code] === "validated").length
         : 0;
 
-      const uploadedCount = statusRecord
-        ? DEFAULT_REQUIREMENTS.filter(
-            (code) => statusRecord[code] === "uploaded"
-          ).length
-        : 0;
+      const allStatuses = statusRecord ? Object.values(statusRecord) : [];
+      const totalValidatedCount = allStatuses.filter((s) => s === "validated").length;
+      const hasPendingUpload = allStatuses.some((s) => s === "uploaded");
+      const hasNeedsRevision = allStatuses.some(
+        (s) => s === "rejected" || s === "needs_revision"
+      );
 
-      const rejectedCount = statusRecord
-        ? DEFAULT_REQUIREMENTS.filter(
-            (code) =>
-              statusRecord[code] === "rejected" ||
-              statusRecord[code] === "needs_revision"
-          ).length
-        : 0;
+      const isAllMandatoryValidated =
+        validatedMandatoryCount === totalMandatoryCount && totalMandatoryCount > 0;
 
-      let category: "completed" | "pending_review" | "needs_revision" | "not_submitted" =
-        "not_submitted";
+      let category:
+        | "completed"
+        | "optional_review"
+        | "pending_review"
+        | "needs_revision"
+        | "not_submitted" = "not_submitted";
       let overallStatus:
         | "Completed / Validated"
+        | "Optional Review Pending"
         | "Pending Review"
         | "Needs Revision"
         | "Not Submitted" = "Not Submitted";
       let statusBadgeClass =
         "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 font-semibold";
+      let actionButtonText = "Review Requirements";
+      let actionButtonClass =
+        "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
 
-      if (validatedCount === DEFAULT_REQUIREMENTS.length) {
-        category = "completed";
-        overallStatus = "Completed / Validated";
+      if (isAllMandatoryValidated && hasPendingUpload) {
+        // All mandatory documents validated, but uploaded optional documents are pending admin review
+        category = "optional_review";
+        overallStatus = "Optional Review Pending";
         statusBadgeClass =
-          "bg-[#0b5336] text-white border border-[#08412a] shadow-2xs font-semibold";
-      } else if (rejectedCount > 0) {
-        category = "needs_revision";
-        overallStatus = "Needs Revision";
-        statusBadgeClass =
-          "bg-[#780000] text-white border border-[#5e0000] shadow-2xs font-semibold";
-      } else if (
-        uploadedCount > 0 ||
-        (validatedCount > 0 && validatedCount < DEFAULT_REQUIREMENTS.length)
-      ) {
+          "bg-indigo-600 text-white border border-indigo-700 shadow-2xs font-semibold";
+        actionButtonText = "Review Optional";
+        actionButtonClass =
+          "bg-indigo-600 hover:bg-indigo-500 text-white font-semibold";
+      } else if (hasPendingUpload) {
+        // Any submission (mandatory or optional) pending admin review
         category = "pending_review";
         overallStatus = "Pending Review";
         statusBadgeClass =
           "bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs font-semibold";
+        actionButtonText = "Review Requirements";
+        actionButtonClass =
+          "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+      } else if (hasNeedsRevision) {
+        category = "needs_revision";
+        overallStatus = "Needs Revision";
+        statusBadgeClass =
+          "bg-[#780000] text-white border border-[#5e0000] shadow-2xs font-semibold";
+        actionButtonText = "Review Requirements";
+        actionButtonClass =
+          "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+      } else if (isAllMandatoryValidated) {
+        // All required documents are validated and no submissions are pending review or rejected
+        category = "completed";
+        overallStatus = "Completed / Validated";
+        statusBadgeClass =
+          "bg-[#0b5336] text-white border border-[#08412a] shadow-2xs font-semibold";
+        actionButtonText = "View Requirements";
+        actionButtonClass =
+          "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-950 font-semibold";
+      } else if (totalValidatedCount > 0) {
+        category = "pending_review";
+        overallStatus = "Pending Review";
+        statusBadgeClass =
+          "bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs font-semibold";
+        actionButtonText = "Review Requirements";
+        actionButtonClass =
+          "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
       } else {
         category = "not_submitted";
         overallStatus = "Not Submitted";
         statusBadgeClass =
           "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 font-semibold";
+        actionButtonText = "Review Requirements";
+        actionButtonClass =
+          "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
       }
 
       map.set(faculty.id, {
         category,
         overallStatus,
         statusBadgeClass,
-        validatedCount,
-        uploadedCount,
-        rejectedCount,
+        actionButtonText,
+        actionButtonClass,
+        validatedMandatoryCount,
+        totalMandatoryCount,
+        totalValidatedCount,
+        hasPendingUpload,
       });
     }
 
     return map;
-  }, [facultyAccounts, facultyStatuses]);
+  }, [facultyAccounts, facultyStatuses, requirementTemplates]);
 
   // Tab counters
   const statusCounts = useMemo(() => {
     let completed = 0;
+    let optional_review = 0;
     let pending_review = 0;
     let needs_revision = 0;
     let not_submitted = 0;
 
     facultyStatusMap.forEach((val) => {
       if (val.category === "completed") completed++;
+      else if (val.category === "optional_review") optional_review++;
       else if (val.category === "pending_review") pending_review++;
       else if (val.category === "needs_revision") needs_revision++;
       else if (val.category === "not_submitted") not_submitted++;
@@ -2913,6 +3176,7 @@ export function RequirementsPanel({
     return {
       all: facultyAccounts.length,
       completed,
+      optional_review,
       pending_review,
       needs_revision,
       not_submitted,
@@ -3107,6 +3371,36 @@ export function RequirementsPanel({
 
         <button
           type="button"
+          onClick={() => setStatusFilter("optional_review")}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 shadow-2xs ${
+            statusFilter === "optional_review"
+              ? "bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-700 font-bold"
+              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20"
+          }`}
+        >
+          <span
+            className={`inline-flex items-center justify-center h-5 w-5 rounded-full shrink-0 shadow-2xs ${
+              statusFilter === "optional_review"
+                ? "bg-white/20 text-white border border-white/30"
+                : "bg-indigo-600 text-white border border-indigo-700"
+            }`}
+          >
+            <AppIcon icon={Hourglass} size="xs" color="white" />
+          </span>
+          <span>Optional Review Pending</span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+              statusFilter === "optional_review"
+                ? "bg-white/20 text-white"
+                : "bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300"
+            }`}
+          >
+            {statusCounts.optional_review}
+          </span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setStatusFilter("needs_revision")}
           className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 shadow-2xs ${
             statusFilter === "needs_revision"
@@ -3188,6 +3482,8 @@ export function RequirementsPanel({
                   >
                     {statusFilter === "completed"
                       ? "No faculty accounts have completed all requirements yet."
+                      : statusFilter === "optional_review"
+                      ? "No faculty accounts currently have optional requirements awaiting review."
                       : statusFilter === "pending_review"
                       ? "No faculty accounts have submissions awaiting review."
                       : statusFilter === "needs_revision"
@@ -3201,10 +3497,14 @@ export function RequirementsPanel({
                 filteredFaculty.map((faculty, index) => {
                   const statusRecord = facultyStatuses[faculty.id];
                   const statInfo = facultyStatusMap.get(faculty.id);
-                  const validatedCount = statInfo?.validatedCount ?? 0;
+                  const validatedMandatoryCount = statInfo?.validatedMandatoryCount ?? 0;
+                  const totalMandatoryCount = statInfo?.totalMandatoryCount ?? DEFAULT_REQUIREMENTS.length;
                   const overallStatus = statInfo?.overallStatus ?? "Not Submitted";
                   const statusBadgeClass = statInfo?.statusBadgeClass ?? "";
-                  const isCompleted = statInfo?.category === "completed";
+                  const actionButtonText = statInfo?.actionButtonText ?? "Review Requirements";
+                  const actionButtonClass =
+                    statInfo?.actionButtonClass ??
+                    "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
 
                   const programCode =
                     faculty.program?.code || faculty.program?.name || "N/A";
@@ -3255,10 +3555,10 @@ export function RequirementsPanel({
                         ) : (
                           <div className="flex flex-col">
                             <span className="font-semibold text-slate-900 dark:text-slate-100">
-                              {validatedCount}/{DEFAULT_REQUIREMENTS.length} Validated
+                              {validatedMandatoryCount}/{totalMandatoryCount} Validated
                             </span>
                             <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                              {Math.round((validatedCount / DEFAULT_REQUIREMENTS.length) * 100)}% Complete
+                              {Math.round((validatedMandatoryCount / totalMandatoryCount) * 100)}% Complete
                             </span>
                           </div>
                         )}
@@ -3275,6 +3575,8 @@ export function RequirementsPanel({
                                 <AppIcon icon={CheckCircle} size="sm" color="white" />
                               ) : overallStatus === "Needs Revision" ? (
                                 <AppIcon icon={Xmark} size="sm" color="white" strokeWidth={2.5} />
+                              ) : overallStatus === "Optional Review Pending" ? (
+                                <AppIcon icon={Hourglass} size="sm" color="white" />
                               ) : overallStatus === "Pending Review" ? (
                                 <AppIcon icon={Hourglass} size="sm" color="inherit" />
                               ) : (
@@ -3289,13 +3591,9 @@ export function RequirementsPanel({
                         <button
                           type="button"
                           onClick={() => setReviewingFaculty(faculty)}
-                          className={`${
-                            isCompleted
-                              ? "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-950 font-semibold"
-                              : "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold"
-                          } px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition cursor-pointer`}
+                          className={`${actionButtonClass} px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition cursor-pointer`}
                         >
-                          Review Requirements
+                          {actionButtonText}
                         </button>
                       </td>
                     </tr>
@@ -3313,6 +3611,7 @@ export function RequirementsPanel({
           academicYear={academicYear}
           semester={semester}
           initialRequirementCode={initialRequirementCode}
+          requirementTemplates={requirementTemplates}
           onClose={() => setReviewingFaculty(null)}
           onStatusUpdated={() => {
             if (academicYear && semester) {
