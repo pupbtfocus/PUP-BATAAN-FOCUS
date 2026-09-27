@@ -396,6 +396,9 @@ export function FacultyDetailsModal({
                               <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-snug">
                                 {label}
                               </span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                Required
+                              </span>
                             </div>
                           </td>
                           <td className="px-4 py-3 align-middle text-right shrink-0">

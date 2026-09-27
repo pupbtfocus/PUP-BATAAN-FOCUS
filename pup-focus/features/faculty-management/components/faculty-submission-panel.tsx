@@ -1179,6 +1179,22 @@ function FacultySubmissionPanelContent({
     return map;
   }, [activeTemplates]);
 
+  const templateMandatoryMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const t of activeTemplates) {
+      map.set(t.code, t.is_mandatory !== false);
+    }
+    return map;
+  }, [activeTemplates]);
+
+  const mandatoryTemplates = useMemo(() => {
+    return activeTemplates.filter((t) => t.is_mandatory !== false);
+  }, [activeTemplates]);
+
+  const optionalTemplates = useMemo(() => {
+    return activeTemplates.filter((t) => t.is_mandatory === false);
+  }, [activeTemplates]);
+
   const getRequirementTitle = useCallback(
     (code: string) => {
       return (
@@ -1283,11 +1299,25 @@ function FacultySubmissionPanelContent({
     ).length;
     return { total, validated, rejected, pending, notSubmitted };
   }, [displayedRequirementStatuses, activeTemplates.length]);
+
+  const mandatoryValidatedCount = useMemo(() => {
+    return displayedRequirementStatuses.filter((r) => {
+      const isMandatory = templateMandatoryMap.get(r.code) !== false;
+      return isMandatory && r.status === "Validated";
+    }).length;
+  }, [displayedRequirementStatuses, templateMandatoryMap]);
+
   const totalRequirements =
     displayedStatusCounts?.total ?? activeTemplates.length;
   const validatedCount = displayedStatusCounts?.validated ?? 0;
+
+  // Semester compliance is met when ALL required/mandatory requirements are Validated!
+  // If 6 are required and 1 is optional, submitting and validating the 6 marks requirements done for the semester.
   const isAllValidated =
-    totalRequirements > 0 && validatedCount === totalRequirements;
+    mandatoryTemplates.length > 0
+      ? mandatoryValidatedCount >= mandatoryTemplates.length
+      : totalRequirements > 0 && validatedCount === totalRequirements;
+
   const isWindowConfigured = Boolean(submissionWindow?.isConfigured);
   const isSubmissionAvailable =
     !isLoadingSubmissionWindow && Boolean(submissionWindow?.isOpen);
@@ -1295,17 +1325,26 @@ function FacultySubmissionPanelContent({
   const isWindowClosed = isWindowConfigured && !isSubmissionAvailable;
   // True when admin has not configured any schedule (e.g. schedules deleted from database)
   const isWindowNotConfigured = !isLoadingSubmissionWindow && !isWindowConfigured;
-  const hasLackings = !isAllValidated && totalRequirements > 0;
+
+  // Lacking requirements only count mandatory requirements that are unsubmitted or rejected
   const lackingRequirements = useMemo(() => {
+    if (isAllValidated) return [];
     return displayedRequirementStatuses
-      .filter((r) => r.status === "Not Submitted" || r.status === "Rejected")
+      .filter((r) => {
+        const isMandatory = templateMandatoryMap.get(r.code) !== false;
+        // Optional requirements are NOT lackings even if not submitted
+        if (!isMandatory) return false;
+        return r.status === "Not Submitted" || r.status === "Rejected";
+      })
       .map((r) => ({
         code: r.code,
         status: r.status as "Not Submitted" | "Rejected",
         label: getRequirementTitle(r.code),
         adminRemarks: r.adminRemarks || r.admin_remarks || r.feedback,
       }));
-  }, [displayedRequirementStatuses, getRequirementTitle]);
+  }, [displayedRequirementStatuses, templateMandatoryMap, getRequirementTitle, isAllValidated]);
+
+  const hasLackings = !isAllValidated && lackingRequirements.length > 0;
 
   useEffect(() => {
     if (!isMounted) return;
@@ -1427,8 +1466,8 @@ function FacultySubmissionPanelContent({
       !isLoadingStatuses &&
       activeView === "dashboard" &&
       Boolean(submissionWindow?.isConfigured && submissionWindow?.isOpen) &&
-      displayedStatusCounts !== null &&
-      displayedStatusCounts.notSubmitted + displayedStatusCounts.rejected + displayedStatusCounts.pending > 0
+      !isAllValidated &&
+      lackingRequirements.length > 0
     ) {
       setHasTriggeredRequirementAlert(true);
       setIsRequirementAlertOpen(true);
@@ -1439,14 +1478,16 @@ function FacultySubmissionPanelContent({
     isLoadingStatuses,
     activeView,
     submissionWindow,
-    displayedStatusCounts,
+    isAllValidated,
+    lackingRequirements.length,
   ]);
   const showIncompleteRequirementsModal = isMounted && isRequirementAlertOpen;
   function openDirectUploadModal(
     code: RequirementCode | string,
     isRevision: boolean = false,
   ) {
-    if (isAllValidated) return;
+    const currentStatus = getRequirementStatus(code);
+    if (currentStatus === "Validated") return;
     setSelectedRequirementForUpload(code);
     setIsRevisionUpload(isRevision);
     setDirectUploadFile(null);
@@ -2140,51 +2181,6 @@ function FacultySubmissionPanelContent({
                     </div>
                 )}
 
-                {/* Term Completion Celebration Banner in Dashboard */}
-                {isAllValidated && (
-                  <div className="p-4 sm:p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/30 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
-                    <div className="flex items-start sm:items-center gap-3">
-                      <div className="p-2.5 rounded-xl bg-[#0b5336] text-white shrink-0 shadow-2xs">
-                        <AppIcon icon={CheckCircle} size="lg" color="inherit" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Done All for This Semester (100% Validated)
-                          </h3>
-                          <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white text-[10px] font-bold px-2 py-0.2 shadow-2xs">
-                            6/6 Complete
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
-                          All 6 mandatory compliance documents for {activeAY} • {activeSem} have been verified and validated.
-                          {!isWindowClosed && (
-                            <span className="block mt-0.5 text-[#0b5336] dark:text-emerald-400 font-medium">
-                              Active submission window extensions apply only to faculty with pending lackings. Your account remains fully completed.
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={openHistoryModal}
-                        className="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-semibold cursor-pointer shadow-2xs transition"
-                      >
-                        View History
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsTermCompletionModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition active:scale-[0.98] cursor-pointer"
-                      >
-                        <AppIcon icon={CheckCircle} size="md" color="inherit" />
-                        <span>View Summary</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* Extension Request Feedback Toast in Dashboard */}
                 <AlertPopup
@@ -2208,28 +2204,30 @@ function FacultySubmissionPanelContent({
                         <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                           {isAllValidated
                             ? "Done All for This Semester"
-                            : `${displayedStatusCounts?.validated ?? 0} of ${displayedStatusCounts?.total ?? 6} Validated`}
+                            : `${mandatoryValidatedCount} of ${mandatoryTemplates.length} Required Validated`}
                         </h3>
                         <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                          {Math.round(
-                            ((displayedStatusCounts?.validated ?? 0) /
-                              (displayedStatusCounts?.total || 6)) *
-                              100,
-                          )}
+                          {isAllValidated
+                            ? 100
+                            : Math.round(
+                                (mandatoryValidatedCount /
+                                  (mandatoryTemplates.length || 1)) *
+                                  100,
+                              )}
                           %
                         </span>
                       </div>
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
-                          ? "All 6/6 requirements completed and validated"
-                          : `${(displayedStatusCounts?.total ?? 6) - (displayedStatusCounts?.validated ?? 0)} items awaiting completion`}
+                          ? `All ${mandatoryTemplates.length} required requirements completed and validated`
+                          : `${mandatoryTemplates.length - mandatoryValidatedCount} required items awaiting completion`}
                       </p>
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700">
                       <div
                         className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
                         style={{
-                          width: `${Math.min(100, Math.round(((displayedStatusCounts?.validated ?? 0) / (displayedStatusCounts?.total || 6)) * 100))}%`,
+                          width: `${isAllValidated ? 100 : Math.min(100, Math.round((mandatoryValidatedCount / (mandatoryTemplates.length || 1)) * 100))}%`,
                         }}
                       />
                     </div>
@@ -2288,13 +2286,12 @@ function FacultySubmissionPanelContent({
                       <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {isAllValidated
                           ? "0 Items (Done All for This Sem)"
-                          : `${(displayedStatusCounts?.notSubmitted ?? 0) +
-                              (displayedStatusCounts?.rejected ?? 0)} Items`}
+                          : `${lackingRequirements.length} Items`}
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
-                          ? "All 6/6 Requirements Validated"
-                          : `${displayedStatusCounts?.notSubmitted ?? 0} Not Submitted • ${displayedStatusCounts?.rejected ?? 0} Needs Revision`}
+                          ? `All ${mandatoryTemplates.length} Required Documents Validated`
+                          : `${lackingRequirements.filter((r) => r.status === "Not Submitted").length} Not Submitted • ${lackingRequirements.filter((r) => r.status === "Rejected").length} Needs Revision`}
                       </p>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -2832,36 +2829,16 @@ function FacultySubmissionPanelContent({
                 ) : (
                   <div className="space-y-3">
                     {isAllValidated && (
-                      <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2.5">
-                          <div className="p-2 rounded-lg bg-[#0b5336] text-white shrink-0 shadow-2xs">
-                            <AppIcon icon={CheckCircle} size="md" color="inherit" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-[#0b5336] dark:text-emerald-400 text-sm">
-                                All Requirements Completed & Validated
-                              </span>
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0b5336] dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                                {`${displayedStatusCounts.validated} of ${displayedStatusCounts.total} Validated`}
-                              </span>
-                            </div>
-                            <p className="text-slate-600 dark:text-slate-300 text-xs mt-0.5">
-                              All {displayedStatusCounts.total} compliance requirements for A.Y. {activeAY} • {activeSem} are completed. Your submissions remain active and viewable below.
-                            </p>
-                          </div>
+                      <div className="py-2.5 px-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/25 flex items-center gap-2.5 text-xs">
+                        <div className="p-1 rounded-md bg-[#0b5336] text-white shrink-0 shadow-2xs">
+                          <AppIcon icon={CheckCircle} size="sm" color="inherit" />
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={openHistoryModal}
-                            className="inline-flex items-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
-                            title="View validated documents history"
-                          >
-                            <AppIcon icon={CheckCircle} size="md" color="white" />
-                            <span>Validation History</span>
-                          </button>
-                        </div>
+                        <span className="font-bold text-[#0b5336] dark:text-emerald-400">
+                          All Required Documents Validated
+                        </span>
+                        <span className="inline-flex items-center text-[11px] font-bold text-[#0b5336] dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                          {`${mandatoryValidatedCount}/${mandatoryTemplates.length} Completed`}
+                        </span>
                       </div>
                     )}
                     <div className="bg-white border border-slate-300 shadow-sm shadow-slate-300/50 dark:bg-slate-900 dark:border dark:border-slate-800 dark:shadow-none rounded-xl overflow-hidden transition-colors">
@@ -2884,10 +2861,19 @@ function FacultySubmissionPanelContent({
                                 {/* Document column */}
                                 <td className="px-5 py-3.5 align-middle">
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
+                                    <div className="flex items-center gap-2.5 flex-wrap">
                                       <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                         {getRequirementTitle(req.code)}
                                       </h4>
+                                      {templateMandatoryMap.get(req.code) !== false ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                          Required
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                          Optional
+                                        </span>
+                                      )}
                                     </div>
                                     <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
                                       {req.submittedAt &&
@@ -3090,7 +3076,9 @@ function FacultySubmissionPanelContent({
                     subtitle={
                       isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
                         ? "Upload your revised compliance document addressing the reviewer's feedback below."
-                        : "Upload your compliance document for admin review and validation."
+                        : selectedRequirementForUpload && templateMandatoryMap.get(selectedRequirementForUpload) === false
+                          ? "Optional submission for this academic term."
+                          : "Required compliance document for admin review and validation."
                     }
                     onClose={closeDirectUploadModal}
                     closeAriaLabel="Close upload modal"

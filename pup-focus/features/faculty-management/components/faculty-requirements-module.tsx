@@ -176,6 +176,7 @@ export function FacultyRequirementsModule({
       return requirementTemplates.map((t) => ({
         code: t.code,
         title: t.title,
+        is_mandatory: t.is_mandatory !== false,
         maxSizeMb: t.max_size_mb || 10,
         allowedFormats: t.allowed_formats || ["PDF", "DOCX", "XLSX"],
       }));
@@ -183,18 +184,22 @@ export function FacultyRequirementsModule({
     return DEFAULT_REQUIREMENTS.map((code) => ({
       code,
       title: REQUIREMENT_LABEL[code] ?? code,
+      is_mandatory: true,
       maxSizeMb: 10,
       allowedFormats: ["PDF", "DOCX", "XLSX"],
     }));
   }, [requirementTemplates]);
 
   const summary = useMemo(() => {
-    if (counts) {
-      return counts;
-    }
     const total = activeRequirementItems.length;
+    const mandatoryItems = activeRequirementItems.filter((i) => i.is_mandatory !== false);
+    const mandatoryCodes = new Set(mandatoryItems.map((i) => i.code));
+
     const validated = requirementStatuses.filter(
       (s) => s.status === "Validated",
+    ).length;
+    const mandatoryValidated = requirementStatuses.filter(
+      (s) => s.status === "Validated" && mandatoryCodes.has(s.code),
     ).length;
     const rejected = requirementStatuses.filter(
       (s) => s.status === "Rejected",
@@ -204,8 +209,22 @@ export function FacultyRequirementsModule({
     ).length;
     const notSubmitted = Math.max(0, total - (validated + rejected + pending));
 
-    return { total, validated, rejected, pending, notSubmitted };
-  }, [counts, activeRequirementItems, requirementStatuses]);
+    const isAllValidated =
+      mandatoryItems.length > 0
+        ? mandatoryValidated >= mandatoryItems.length
+        : total > 0 && validated === total;
+
+    return {
+      total,
+      validated,
+      rejected,
+      pending,
+      notSubmitted,
+      isAllValidated,
+      mandatoryCount: mandatoryItems.length,
+      mandatoryValidated,
+    };
+  }, [activeRequirementItems, requirementStatuses]);
 
   async function loadStatuses() {
     try {
@@ -558,7 +577,18 @@ export function FacultyRequirementsModule({
                       >
                         {/* Requirement Name */}
                         <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-slate-100 max-w-[240px]">
-                          <p className="truncate font-semibold">{req.title}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="truncate font-semibold">{req.title}</p>
+                            {req.is_mandatory !== false ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                Required
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                Optional
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[11px] text-slate-500 dark:text-slate-400">
                             Max {req.maxSizeMb} MB •{" "}
                             {req.allowedFormats.join(", ")}
@@ -685,9 +715,20 @@ export function FacultyRequirementsModule({
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                          {req.title}
-                        </h3>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                            {req.title}
+                          </h3>
+                          {req.is_mandatory !== false ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                              Required
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                              Optional
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                           Max {req.maxSizeMb} MB •{" "}
                           {req.allowedFormats.join(", ")}

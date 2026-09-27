@@ -421,7 +421,7 @@ export async function PATCH(request: NextRequest) {
 
       const { data: currentTermSubs } = await supabase
         .from("submissions")
-        .select("id, status")
+        .select("id, status, requirement_code")
         .in(
           "faculty_assignment_id",
           assignmentIds.length > 0
@@ -429,14 +429,36 @@ export async function PATCH(request: NextRequest) {
             : ["00000000-0000-0000-0000-000000000000"],
         );
 
-      const unvalidatedSubs = (currentTermSubs ?? []).filter(
-        (s: any) => s.status !== "validated" && s.status !== "approved",
+      const { data: dbTemplates } = await supabase
+        .from("requirement_templates")
+        .select("code, is_mandatory")
+        .eq("is_active", true);
+
+      const activeMandatoryTemplates = (dbTemplates ?? []).filter(
+        (t: any) => t.is_mandatory !== false,
+      );
+      const mandatoryReqCount =
+        activeMandatoryTemplates.length > 0 ? activeMandatoryTemplates.length : 6;
+      const mandatoryCodes = new Set(
+        activeMandatoryTemplates.map((t: any) =>
+          String(t.code).toLowerCase().trim(),
+        ),
       );
 
-      const expectedSubmissionsCount = (assignments ?? []).length * 6;
-      const validatedSubmissionsCount = (currentTermSubs ?? []).filter(
-        (s: any) => s.status === "validated" || s.status === "approved",
-      ).length;
+      const unvalidatedSubs = (currentTermSubs ?? []).filter((s: any) => {
+        if (s.status === "validated" || s.status === "approved") return false;
+        const code = String(s.requirement_code || "").toLowerCase().trim();
+        if (code && !mandatoryCodes.has(code)) return false;
+        return true;
+      });
+
+      const expectedSubmissionsCount = (assignments ?? []).length * mandatoryReqCount;
+      const validatedSubmissionsCount = (currentTermSubs ?? []).filter((s: any) => {
+        if (s.status !== "validated" && s.status !== "approved") return false;
+        const code = String(s.requirement_code || "").toLowerCase().trim();
+        if (code && !mandatoryCodes.has(code)) return false;
+        return true;
+      }).length;
 
       const hasIncompleteRequirements =
         unvalidatedSubs.length > 0 ||
