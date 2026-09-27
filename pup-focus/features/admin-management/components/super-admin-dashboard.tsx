@@ -1424,7 +1424,7 @@ export function SuperAdminDashboard({
             <button
               type="button"
               onClick={() => onViewAdminDetails(admin.profile_id)}
-              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 border border-slate-400 dark:border-slate-700 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer"
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs"
             >
               View Details
             </button>
@@ -1698,7 +1698,7 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={openCreateAdminModal}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-slate-950 hover:bg-slate-800 dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300 px-4 py-2 text-xs font-bold text-white transition cursor-pointer shadow-sm active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
                     >
                       + Create Admin
                     </button>
@@ -1706,7 +1706,7 @@ export function SuperAdminDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingAccounts}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <Refresh className={`h-3.5 w-3.5 ${isLoadingAccounts ? "animate-spin" : ""}`} />
                       <span>{isLoadingAccounts ? "Refreshing..." : "Refresh"}</span>
@@ -1756,7 +1756,7 @@ export function SuperAdminDashboard({
                         setCreateFacultySuccess(null);
                         setAddFacultyModalOpen(true);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-slate-950 hover:bg-slate-800 text-white dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
                     >
                       + Add Faculty
                     </button>
@@ -1764,7 +1764,7 @@ export function SuperAdminDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingFaculty}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <Refresh className={`h-3.5 w-3.5 ${isLoadingFaculty ? "animate-spin" : ""}`} />
                       <span>{isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
@@ -2157,7 +2157,7 @@ export function SuperAdminDashboard({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold py-3 rounded-xl transition-all shadow-md mt-2 disabled:opacity-50 cursor-pointer text-sm tracking-wide"
+                className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-md mt-2 disabled:opacity-50 cursor-pointer text-sm tracking-wide"
               >
                 {isSubmitting ? "Creating Admin..." : "Create Admin Account"}
               </button>

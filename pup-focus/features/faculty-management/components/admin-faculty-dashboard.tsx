@@ -962,8 +962,8 @@ export function AdminFacultyDashboard({
 
                           {pendingQueue.length === 0 ? (
                             <div className="py-8 text-center space-y-2">
-                              <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-1">
-                                <AppIcon icon={CheckCircle} size="lg" color="inherit" />
+                              <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs mb-1">
+                                <AppIcon icon={Check} size="md" color="white" strokeWidth={2.5} />
                               </div>
                               <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">All submissions up to date</p>
                               <p className="text-xs text-slate-500 dark:text-slate-400">No pending submissions awaiting review.</p>
@@ -1105,7 +1105,7 @@ export function AdminFacultyDashboard({
                             setCreateSuccess(null);
                             setAddFacultyModalOpen(true);
                           }}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-slate-950 hover:bg-slate-800 text-white dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300 px-4 py-2 text-xs font-bold shadow-sm active:scale-[0.98] transition cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold shadow-sm active:scale-[0.98] transition cursor-pointer"
                         >
                           + Add Faculty
                         </button>
@@ -1113,7 +1113,7 @@ export function AdminFacultyDashboard({
                           type="button"
                           onClick={() => void refreshCurrentPanel()}
                           disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                         >
                           <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                           <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
