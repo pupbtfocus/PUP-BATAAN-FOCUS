@@ -215,6 +215,16 @@ export async function GET(request: NextRequest) {
     const facultyProfileIdSet = new Set<string>();
     const existingUserRoleProfileIds = new Set<string>();
 
+    const isPendingInvite = (authUser: any) => {
+      if (!authUser) return false;
+      const hasAccepted = Boolean(
+        authUser.email_confirmed_at ||
+        authUser.confirmed_at ||
+        authUser.last_sign_in_at
+      );
+      return !hasAccepted;
+    };
+
     // 1) From user_roles
     for (const ur of userRoles ?? []) {
       if (ur.profile_id) {
@@ -225,6 +235,9 @@ export async function GET(request: NextRequest) {
 
     // 2) From auth.users where role === 'faculty'
     for (const u of authUsersData?.users ?? []) {
+      if (isPendingInvite(u)) {
+        continue; // Don't list pending invited faculty until they accept the invite!
+      }
       const metaRole = (
         u.user_metadata?.role ||
         u.app_metadata?.role ||
@@ -276,6 +289,17 @@ export async function GET(request: NextRequest) {
     for (const a of allAssignments ?? []) {
       if (a.faculty_profile_id) {
         facultyProfileIdSet.add(a.faculty_profile_id);
+      }
+    }
+
+    // Exclude any pending invited faculty who have not accepted their invite yet
+    for (const pId of Array.from(facultyProfileIdSet)) {
+      const p = profileById.get(pId);
+      const authUser =
+        (p?.user_id ? authUsersById.get(p.user_id) : null) ||
+        (p?.email ? authUsersByEmail.get(p.email.toLowerCase()) : null);
+      if (authUser && isPendingInvite(authUser)) {
+        facultyProfileIdSet.delete(pId);
       }
     }
 

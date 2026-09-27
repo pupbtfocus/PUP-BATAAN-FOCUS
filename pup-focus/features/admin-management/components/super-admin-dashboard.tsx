@@ -2319,6 +2319,10 @@ export function SuperAdminDashboard({
         isOpen={registrationLogsModalOpen}
         onClose={() => setRegistrationLogsModalOpen(false)}
         targetRole={registrationLogsInitialRole}
+        onInviteCancelled={() => {
+          void loadAdminAccounts();
+          void loadFacultyFromDatabase();
+        }}
       />
     </div>
   );

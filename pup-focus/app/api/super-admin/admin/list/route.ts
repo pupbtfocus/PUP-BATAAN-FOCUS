@@ -122,12 +122,21 @@ export async function GET() {
       (users ?? [])
         .filter((u) => {
           const userRole = u.user_metadata?.role || u.app_metadata?.role;
-          return (
+          const isAdmin = (
             userRole === ROLE.ADMIN ||
             userRole === ROLE.SUPER_ADMIN ||
             userRole === "admin" ||
             userRole === "super_admin"
           );
+          if (!isAdmin) return false;
+
+          // Don't show in the admin list until they accept the invitation!
+          const isPending = Boolean(
+            !u.email_confirmed_at &&
+            !u.confirmed_at &&
+            !u.last_sign_in_at
+          );
+          return !isPending;
         })
         .map(async (u) => {
           const userRole =
