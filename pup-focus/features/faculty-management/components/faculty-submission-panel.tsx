@@ -2846,9 +2846,10 @@ function FacultySubmissionPanelContent({
                         <table className="w-full text-left text-sm min-w-[640px]">
                           <thead>
                             <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
-                              <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-[50%]">Document</th>
-                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[30%]">Actions</th>
-                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[20%]">Status</th>
+                              <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-[45%]">Document</th>
+                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[15%]">Type</th>
+                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[25%]">Actions</th>
+                              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[15%]">Status</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -2861,20 +2862,9 @@ function FacultySubmissionPanelContent({
                                 {/* Document column */}
                                 <td className="px-5 py-3.5 align-middle">
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2.5 flex-wrap">
-                                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                        {getRequirementTitle(req.code)}
-                                      </h4>
-                                      {templateMandatoryMap.get(req.code) !== false ? (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
-                                          Required
-                                        </span>
-                                      ) : (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
-                                          Optional
-                                        </span>
-                                      )}
-                                    </div>
+                                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                      {getRequirementTitle(req.code)}
+                                    </h4>
                                     <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
                                       {req.submittedAt &&
                                       formatSubmittedDateTime(req.submittedAt) ? (
@@ -2904,6 +2894,19 @@ function FacultySubmissionPanelContent({
                                       </p>
                                     )}
                                   </div>
+                                </td>
+
+                                {/* Type (Required / Optional) column */}
+                                <td className="px-4 py-3.5 align-middle text-center">
+                                  {templateMandatoryMap.get(req.code) !== false ? (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                      Required
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 dark:bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                      Optional
+                                    </span>
+                                  )}
                                 </td>
 
                                 {/* Actions column */}
@@ -2960,18 +2963,8 @@ function FacultySubmissionPanelContent({
                                       <button
                                         type="button"
                                         onClick={() => openSubmissionPreview(req)}
-                                        className="relative inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl w-36 h-8 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                                        className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl w-36 h-8 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
                                       >
-                                        {Boolean(
-                                          req.feedback &&
-                                          !viewedSubmissionIds.has(req.latestSubmissionId) &&
-                                          req.is_read !== true,
-                                        ) ? (
-                                          <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-                                          </span>
-                                        ) : null}
                                         <AppIcon icon={Eye} size="sm" color="inherit" />
                                         <span>View File</span>
                                       </button>
