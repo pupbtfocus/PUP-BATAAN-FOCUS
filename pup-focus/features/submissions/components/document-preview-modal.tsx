@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import {
   Calendar,
   ChatBubble,
+  Check,
   CheckCircle,
   Download,
   Hourglass,
@@ -11,6 +12,8 @@ import {
   OpenNewWindow,
   Page,
   Upload,
+  WarningCircle,
+  Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -470,6 +473,16 @@ export function DocumentPreviewModal({
       !submission.storagePath)
   );
 
+  const isAdminRejected = normalizedStatus === "Rejected";
+  const showAdminRemarks =
+    !isUpload &&
+    Boolean(
+      adminFeedback ||
+        submission.reviewedAt ||
+        normalizedStatus === "Validated" ||
+        normalizedStatus === "Rejected"
+    );
+
   const isDirectPreviewable = Boolean(typeInfo.isImage);
   const isOfficeDoc = Boolean(
     typeInfo.isWord ||
@@ -634,275 +647,383 @@ export function DocumentPreviewModal({
           )}
         </div>
 
-        {/* Content Body: stacks on mobile, side-by-side on lg */}
-        <div className="flex flex-col lg:grid lg:gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)] px-3 sm:px-6 py-3 sm:py-6 flex-1 overflow-y-auto min-h-0 gap-4">
-          {/* Main Viewer Area */}
-          {isOfficeDoc ? (
-            <div className="w-full flex flex-col justify-start">
-              <OnlineDocumentPreview
-                key={fileUrl}
-                fileName={effectiveFileName || documentTitle}
-                fileUrl={fileUrl}
-                storagePath={submission.storagePath}
-                submissionId={submission.latestSubmissionId}
-                fileExtension={typeInfo.ext?.toLowerCase() || ""}
-                isExcel={typeInfo.isExcel}
-                isWord={typeInfo.isWord}
-                isPpt={typeInfo.isPpt}
-                brand={getFileBrand(
-                  typeInfo.ext?.toLowerCase() || "",
-                  typeInfo.isExcel,
-                  typeInfo.isWord
-                )}
-                onDownload={handleDownload}
-              />
-            </div>
-          ) : (
-            <div className="min-h-[240px] sm:min-h-[360px] lg:min-h-[500px] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-950 shadow-inner flex items-center justify-center p-2 sm:p-3 relative">
-              {typeInfo.isImage ? (
-                <div className="relative flex items-center justify-center w-full h-full min-h-[240px] sm:min-h-[360px] lg:min-h-[500px] p-2 bg-slate-950/40 rounded-xl overflow-hidden group">
-                  <img
-                    src={displayUrl}
-                    alt={documentTitle}
-                    className="max-h-[45vh] sm:max-h-[60vh] lg:max-h-[70vh] max-w-full rounded-xl object-contain shadow-md"
-                  />
-                </div>
-              ) : (
-                <iframe
-                  title={`${documentTitle} preview`}
-                  src={displayUrl}
-                  className="h-full min-h-[240px] sm:min-h-[360px] lg:min-h-[500px] w-full rounded-xl border-0 bg-slate-900 shadow-xs"
+        {/* Content Body: Merged into One Unified Card */}
+        <div className="p-3 sm:p-5 flex-1 overflow-y-auto min-h-0 flex flex-col">
+          <div className="rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden flex flex-col lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] divide-y lg:divide-y-0 lg:divide-x divide-slate-200/80 dark:divide-slate-800/80 flex-1 min-h-0">
+            {/* Main Viewer Area (Left Side of Card) */}
+            {isOfficeDoc ? (
+              <div className="w-full flex flex-col items-center justify-center p-4 sm:p-6 lg:p-7 overflow-y-auto min-h-0 bg-white dark:bg-slate-900">
+                <OnlineDocumentPreview
+                  key={fileUrl}
+                  fileName={effectiveFileName || documentTitle}
+                  fileUrl={fileUrl}
+                  storagePath={submission.storagePath}
+                  submissionId={submission.latestSubmissionId}
+                  fileExtension={typeInfo.ext?.toLowerCase() || ""}
+                  isExcel={typeInfo.isExcel}
+                  isWord={typeInfo.isWord}
+                  isPpt={typeInfo.isPpt}
+                  brand={getFileBrand(
+                    typeInfo.ext?.toLowerCase() || "",
+                    typeInfo.isExcel,
+                    typeInfo.isWord
+                  )}
+                  onDownload={handleDownload}
+                  borderless={true}
                 />
-              )}
-            </div>
-          )}
+              </div>
+            ) : (
+              <div className="min-h-[240px] sm:min-h-[360px] lg:min-h-[500px] overflow-hidden bg-slate-100/70 dark:bg-slate-950 flex items-center justify-center p-2 sm:p-3 relative h-full w-full">
+                {typeInfo.isImage ? (
+                  <div className="relative flex items-center justify-center w-full h-full min-h-[240px] sm:min-h-[360px] lg:min-h-[500px] p-2 bg-slate-950/40 rounded-xl overflow-hidden group">
+                    <img
+                      src={displayUrl}
+                      alt={documentTitle}
+                      className="max-h-[45vh] sm:max-h-[60vh] lg:max-h-[70vh] max-w-full rounded-xl object-contain shadow-md"
+                    />
+                  </div>
+                ) : (
+                  <iframe
+                    title={`${documentTitle} preview`}
+                    src={displayUrl}
+                    className="h-full min-h-[240px] sm:min-h-[360px] lg:min-h-[500px] w-full border-0 bg-slate-900"
+                  />
+                )}
+              </div>
+            )}
 
-          {/* Sidebar Area */}
-          <div className="flex flex-col justify-between space-y-4">
-            <div className="space-y-3.5">
-              {/* Reviewer / Admin Remarks - Hidden in upload draft preview */}
-              {!isUpload &&
-                (adminFeedback ||
-                  submission.reviewedAt ||
-                  normalizedStatus === "Validated" ||
-                  normalizedStatus === "Rejected") && (
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 p-4 shadow-2xs">
-                    <div
-                      className={`text-[11px] font-bold ${
-                        normalizedStatus === "Rejected"
-                          ? "text-rose-700 dark:text-rose-400"
-                          : "text-[#0b5336] dark:text-emerald-400"
-                      } uppercase tracking-wider mb-2 flex items-center gap-1.5`}
-                    >
-                      <AppIcon
-                        icon={Notes}
-                        size="xs"
-                        color={normalizedStatus === "Rejected" ? "danger" : "success"}
-                      />
-                      <span>Admin Remarks</span>
+            {/* Sidebar Area (Right Side of Card) */}
+            <div className="flex flex-col justify-between bg-slate-50/70 dark:bg-slate-950/40 h-full overflow-y-auto min-h-0">
+              {/* Information Sections */}
+              <div className="divide-y divide-slate-200/80 dark:divide-slate-800/80">
+              {/* 1. Unified Remarks & Notes Card */}
+              {!isUpload && (showAdminRemarks || Boolean(userNote) || true) && (
+                <div className="p-3.5 sm:p-4 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="flex items-center justify-center h-6 w-6 rounded-lg text-xs bg-slate-200/80 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300/70 dark:border-slate-700/70 shrink-0 font-medium">
+                        <AppIcon icon={Notes} size="xs" />
+                      </span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                        Remarks & Notes
+                      </span>
                     </div>
-                    <div
-                      className={`rounded-xl border ${
-                        normalizedStatus === "Rejected"
-                          ? "border-rose-200 dark:border-rose-900/40 bg-rose-500/5 dark:bg-rose-500/10"
-                          : "border-[#0b5336]/20 dark:border-[#0b5336]/30 bg-[#0b5336]/5 dark:bg-[#0b5336]/15"
-                      } p-3 text-xs sm:text-sm italic text-slate-800 dark:text-slate-200 leading-relaxed`}
-                    >
-                      {adminFeedback ? (
-                        <span>&ldquo;{adminFeedback}&rdquo;</span>
-                      ) : normalizedStatus === "Validated" ? (
-                        <span className="not-italic text-slate-500 dark:text-slate-400">
-                          Validated with no additional remarks.
-                        </span>
-                      ) : (
-                        <span className="not-italic text-slate-500 dark:text-slate-400">
-                          No remarks provided.
-                        </span>
+
+                    {showAdminRemarks && (
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
+                          isAdminRejected
+                            ? "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                            : "bg-emerald-50 dark:bg-emerald-950/50 text-[#0b5336] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                        }`}
+                      >
+                        <AppIcon
+                          icon={isAdminRejected ? Xmark : Check}
+                          size="xs"
+                          color={isAdminRejected ? "danger" : "success"}
+                        />
+                        <span>{isAdminRejected ? "Needs Revision" : "Validated"}</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* The Single Unified Card */}
+                  <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 p-3 sm:p-3.5 space-y-2.5 shadow-2xs">
+                    {/* Admin Remarks Section */}
+                    {showAdminRemarks && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                            <span
+                              className={`h-2 w-2 rounded-full shrink-0 ${
+                                isAdminRejected ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
+                              }`}
+                            />
+                            <span>Admin Remarks</span>
+                          </span>
+                          {submission.reviewedAt && (
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                              {formatSubmittedDateTime(submission.reviewedAt) ??
+                                submission.reviewedAt}
+                            </span>
+                          )}
+                        </div>
+
+                        <div
+                          className={`rounded-lg p-2.5 sm:p-3 text-xs leading-relaxed border transition-colors ${
+                            isAdminRejected
+                              ? "bg-rose-50/70 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-900/50 text-rose-950 dark:text-rose-200"
+                              : "bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200/70 dark:border-emerald-800/50 text-emerald-950 dark:text-emerald-200"
+                          }`}
+                        >
+                          {adminFeedback ? (
+                            <p className="font-medium break-words whitespace-pre-wrap">
+                              {adminFeedback}
+                            </p>
+                          ) : normalizedStatus === "Validated" ? (
+                            <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-medium">
+                              <AppIcon icon={CheckCircle} size="xs" color="success" />
+                              <span>Validated with no additional remarks.</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-500 dark:text-slate-400 italic">
+                              No remarks provided.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Subtle internal divider line if both Admin Remarks and Faculty Note are displayed */}
+                    {showAdminRemarks && !isUpload && (
+                      <div className="border-t border-slate-100 dark:border-slate-800/80" />
+                    )}
+
+                    {/* Faculty Note Section */}
+                    {!isUpload && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />
+                            <span>My Remarks / Note</span>
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            Faculty Note
+                          </span>
+                        </div>
+
+                        {userNote ? (
+                          <div className="rounded-lg p-2.5 sm:p-3 text-xs leading-relaxed bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 text-slate-800 dark:text-slate-200">
+                            <p className="font-medium break-words whitespace-pre-wrap">
+                              {userNote}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="px-2.5 py-1.5 rounded-lg bg-slate-50/80 dark:bg-slate-950/40 border border-dashed border-slate-200 dark:border-slate-800 text-[11px] text-slate-400 dark:text-slate-500 italic flex items-center gap-1.5">
+                            <AppIcon
+                              icon={ChatBubble}
+                              size="xs"
+                              className="opacity-40 shrink-0"
+                            />
+                            <span>No personal note added for this submission.</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Details Section (Submission Details or File Details) */}
+              {isUpload ? (
+                <div className="p-3.5 sm:p-4 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center justify-center h-6 w-6 rounded-lg text-xs bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300 shrink-0">
+                      <AppIcon icon={Page} size="xs" />
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                      File Details
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    {/* Document Name */}
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        Document Name
+                      </span>
+                      <div
+                        className="flex items-start gap-2 font-semibold text-slate-900 dark:text-slate-100 break-words"
+                        title={documentTitle}
+                      >
+                        <div className="shrink-0 mt-0.5">
+                          {typeInfo.icon("h-4 w-4 drop-shadow-2xs")}
+                        </div>
+                        <span className="leading-snug">{documentTitle}</span>
+                      </div>
+                      {cleanBaseName && cleanBaseName !== documentTitle && (
+                        <div
+                          className="text-[11px] text-slate-500 dark:text-slate-400 font-medium pl-6 truncate"
+                          title={cleanBaseName}
+                        >
+                          {cleanBaseName}
+                        </div>
                       )}
                     </div>
-                    {submission.reviewedAt ? (
-                      <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-xs">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                          <AppIcon icon={CheckCircle} size="xs" color="success" />
-                          Reviewed On:
+
+                    {submission.fileSize ? (
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800/70">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                          File Size
                         </span>
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">
-                          {formatSubmittedDateTime(submission.reviewedAt) ??
-                            submission.reviewedAt}
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {formatBytes(submission.fileSize)}
                         </span>
                       </div>
                     ) : null}
-                  </div>
-                )}
 
-              {/* My Remarks / Note Section - Hidden in upload draft preview */}
-              {!isUpload && (
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 p-4 shadow-2xs">
-                  <div className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <AppIcon icon={ChatBubble} size="xs" color="active" />
-                    <span>My Remarks / Note</span>
-                  </div>
-                  {userNote ? (
-                    <div className="rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-500/5 dark:bg-amber-500/10 p-3 text-xs sm:text-sm italic text-slate-800 dark:text-slate-200 leading-relaxed">
-                      &ldquo;{userNote}&rdquo;
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                      No note was added.
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Details Section */}
-              {isUpload ? (
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 p-4 shadow-2xs space-y-2.5">
-                  <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <AppIcon icon={Page} size="xs" />
-                    <span>File Details</span>
-                  </div>
-
-                  {/* Document Name */}
-                  <div className="space-y-1 pt-1">
-                    <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Document Name:</span>
-                    <div className="flex items-start gap-2 text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug break-words" title={documentTitle}>
-                      <div className="shrink-0 mt-0.5">{typeInfo.icon("h-4 w-4 drop-shadow-2xs")}</div>
-                      <span>{documentTitle}</span>
-                    </div>
-                    {cleanBaseName && cleanBaseName !== documentTitle && (
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium pl-6 truncate" title={cleanBaseName}>
-                        {cleanBaseName}
-                      </div>
-                    )}
-                  </div>
-
-                  {submission.fileSize ? (
-                    <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
-                      <span className="text-slate-500 dark:text-slate-400">File Size:</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {formatBytes(submission.fileSize)}
+                    {/* Document Format */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800/70">
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        Document Format
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="shrink-0">
+                          {typeInfo.icon("h-4 w-4 drop-shadow-2xs")}
+                        </span>
+                        <span className="truncate max-w-[150px] sm:max-w-[180px]">
+                          {typeInfo.isUnknown
+                            ? "Detecting format..."
+                            : `${typeInfo.type}${typeInfo.ext ? ` (${typeInfo.ext})` : ""}`}
+                        </span>
                       </span>
                     </div>
-                  ) : null}
-
-                  {/* Document Format */}
-                  <div className="flex items-center justify-between text-xs pt-1">
-                    <span className="text-slate-500 dark:text-slate-400">Document Format:</span>
-                    <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
-                      <span className="shrink-0">{typeInfo.icon("h-4 w-4 drop-shadow-2xs")}</span>
-                      <span>
-                        {typeInfo.isUnknown
-                          ? "Detecting format..."
-                          : `${typeInfo.type}${typeInfo.ext ? ` (${typeInfo.ext})` : ""}`}
-                      </span>
-                    </span>
                   </div>
-
                 </div>
               ) : (
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 p-4 shadow-2xs space-y-2.5">
-                  <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <AppIcon icon={Calendar} size="xs" />
-                    <span>Submission Details</span>
+                <div className="p-3.5 sm:p-4 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center justify-center h-6 w-6 rounded-lg text-xs bg-slate-200/70 text-slate-700 dark:bg-slate-800 dark:text-slate-300 shrink-0">
+                      <AppIcon icon={Calendar} size="xs" />
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                      Submission Details
+                    </span>
                   </div>
 
-                  {/* Document Name */}
-                  <div className="space-y-1 pt-1">
-                    <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Document Name:</span>
-                    <div className="flex items-start gap-2 text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug break-words" title={documentTitle}>
-                      <div className="shrink-0 mt-0.5">{typeInfo.icon("h-4 w-4 drop-shadow-2xs")}</div>
-                      <span>{documentTitle}</span>
+                  <div className="space-y-2 text-xs">
+                    {/* Document Name */}
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        Document Name
+                      </span>
+                      <div
+                        className="flex items-start gap-2 font-semibold text-slate-900 dark:text-slate-100 break-words"
+                        title={documentTitle}
+                      >
+                        <div className="shrink-0 mt-0.5">
+                          {typeInfo.icon("h-4 w-4 drop-shadow-2xs")}
+                        </div>
+                        <span className="leading-snug">{documentTitle}</span>
+                      </div>
+                      {cleanBaseName && cleanBaseName !== documentTitle && (
+                        <div
+                          className="text-[11px] text-slate-500 dark:text-slate-400 font-medium pl-6 truncate"
+                          title={cleanBaseName}
+                        >
+                          {cleanBaseName}
+                        </div>
+                      )}
                     </div>
-                    {cleanBaseName && cleanBaseName !== documentTitle && (
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium pl-6 truncate" title={cleanBaseName}>
-                        {cleanBaseName}
+
+                    {/* Submitted At */}
+                    {submission.submittedAt ? (
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800/70">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                          Submitted
+                        </span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {formatSubmittedDateTime(submission.submittedAt) ??
+                            submission.submittedAt}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    {/* Validated / Status */}
+                    {submission.reviewedAt || normalizedStatus === "Validated" ? (
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800/70">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                          <AppIcon icon={CheckCircle} size="xs" color="success" />
+                          <span>Validated</span>
+                        </span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {formatSubmittedDateTime(submission.reviewedAt) ??
+                            submission.reviewedAt ??
+                            "Validated"}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800/70">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                          <AppIcon icon={Hourglass} size="xs" color="active" />
+                          <span>Status</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-400">
+                          <span>{normalizedStatus}</span>
+                        </span>
                       </div>
                     )}
-                  </div>
 
-                  {/* Timestamps */}
-                  {submission.submittedAt ? (
-                    <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
-                      <span className="text-slate-500 dark:text-slate-400">Submitted:</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {formatSubmittedDateTime(submission.submittedAt) ?? submission.submittedAt}
-                      </span>
-                    </div>
-                  ) : null}
-                  {(submission.reviewedAt || normalizedStatus === "Validated") ? (
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                        <AppIcon icon={CheckCircle} size="xs" color="success" />
-                        <span>Validated:</span>
-                      </span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {formatSubmittedDateTime(submission.reviewedAt) ?? submission.reviewedAt ?? "Validated"}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                        <AppIcon icon={Hourglass} size="xs" color="active" />
-                        <span>Status:</span>
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-400">
-                        <span>{normalizedStatus}</span>
-                      </span>
-                    </div>
-                  )}
+                    {/* File Size (if present) */}
+                    {submission.fileSize ? (
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800/70">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                          File Size
+                        </span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {formatBytes(submission.fileSize)}
+                        </span>
+                      </div>
+                    ) : null}
 
-                  {/* Document Format */}
-                  <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
-                    <span className="text-slate-500 dark:text-slate-400">Document Format:</span>
-                    <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
-                      <span className="shrink-0">{typeInfo.icon("h-4 w-4 drop-shadow-2xs")}</span>
-                      <span>
-                        {typeInfo.isUnknown
-                          ? "Detecting format..."
-                          : `${typeInfo.type}${typeInfo.ext ? ` (${typeInfo.ext})` : ""}`}
+                    {/* Document Format */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800/70">
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        Document Format
                       </span>
-                    </span>
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="shrink-0">
+                          {typeInfo.icon("h-4 w-4 drop-shadow-2xs")}
+                        </span>
+                        <span className="truncate max-w-[150px] sm:max-w-[180px]">
+                          {typeInfo.isUnknown
+                            ? "Detecting format..."
+                            : `${typeInfo.type}${typeInfo.ext ? ` (${typeInfo.ext})` : ""}`}
+                        </span>
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
-            </div>
+              </div>
 
-            {/* Action Buttons Area */}
-            <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-2.5">
-              {/* Download Button (Matches Validation History download button) */}
-              <button
-                type="button"
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-white font-bold text-xs py-2.5 shadow-xs transition-all cursor-pointer active:scale-95"
-                onClick={handleDownload}
-                title="Download file directly"
-              >
-                <AppIcon icon={Download} size="sm" color="white" />
-                <span>Download File</span>
-              </button>
+              {/* Integrated Card Action Footer */}
+              <div className="p-3 sm:p-4 bg-slate-100/70 dark:bg-slate-950/60 border-t border-slate-200/80 dark:border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-2.5 mt-auto">
+                {/* Download Button (Matches Validation History download button) */}
+                <button
+                  type="button"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#08412a] bg-[#0b5336] hover:bg-[#08412a] text-white font-bold text-xs py-2.5 shadow-xs transition-all cursor-pointer active:scale-95"
+                  onClick={handleDownload}
+                  title="Download file directly"
+                >
+                  <AppIcon icon={Download} size="sm" color="white" />
+                  <span>Download File</span>
+                </button>
 
-              {/* Full View Button */}
-              <button
-                type="button"
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs py-2.5 transition cursor-pointer shadow-2xs active:scale-95"
-                onClick={handleOpenFullView}
-                title={
-                  typeInfo.isImage
-                    ? "Open image in a new tab"
-                    : "Open document in a new tab"
-                }
-              >
-                <AppIcon icon={OpenNewWindow} size="sm" color="inherit" />
-                <span>Open Full View</span>
-              </button>
+                {/* Full View Button */}
+                <button
+                  type="button"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs py-2.5 transition cursor-pointer shadow-2xs active:scale-95"
+                  onClick={handleOpenFullView}
+                  title={
+                    typeInfo.isImage
+                      ? "Open image in a new tab"
+                      : "Open document in a new tab"
+                  }
+                >
+                  <AppIcon icon={OpenNewWindow} size="sm" color="inherit" />
+                  <span>Open Full View</span>
+                </button>
 
-              {/* Close Button */}
-              <button
-                type="button"
-                className="w-full col-span-1 sm:col-span-2 lg:col-span-1 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs py-2.5 shadow-2xs transition cursor-pointer active:scale-95"
-                onClick={onClose}
-              >
-                <span>Close Preview</span>
-              </button>
+                {/* Close Button */}
+                <button
+                  type="button"
+                  className="w-full col-span-1 sm:col-span-2 lg:col-span-1 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs py-2.5 shadow-2xs transition cursor-pointer active:scale-95"
+                  onClick={onClose}
+                >
+                  <span>Close Preview</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
