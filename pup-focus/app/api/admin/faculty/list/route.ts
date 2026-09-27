@@ -81,14 +81,58 @@ export async function GET(request: NextRequest) {
       } = await sessionClient.auth.getUser();
 
       user = sessionUser;
+      if (!user) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
       requesterRole =
         (user?.user_metadata?.role as string | undefined) ??
         (user?.app_metadata?.role as string | undefined);
 
-      if (
-        !user ||
-        (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
-      ) {
+      let isAllowed =
+        requesterRole === ROLE.ADMIN ||
+        requesterRole === ROLE.SUPER_ADMIN ||
+        (Boolean(requesterRole) && String(requesterRole).toLowerCase().includes("admin"));
+
+      // Fallback: check database user_roles and admins tables if metadata is missing/incomplete
+      if (!isAllowed) {
+        const adminSupabase = getServiceRoleClient();
+        const { data: dbUserRoles } = await adminSupabase
+          .from("user_roles")
+          .select("roles(code)")
+          .eq("profile_id", user.id);
+
+        const dbRoles = (dbUserRoles ?? []).map((r: any) => r.roles?.code);
+        if (dbRoles.includes(ROLE.ADMIN) || dbRoles.includes(ROLE.SUPER_ADMIN)) {
+          isAllowed = true;
+        }
+
+        if (!isAllowed) {
+          const { data: profile } = await adminSupabase
+            .from("profiles")
+            .select("id, user_roles(roles(code))")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          const pRoles = ((profile?.user_roles as any[]) ?? []).map((r: any) => r.roles?.code);
+          if (pRoles.includes(ROLE.ADMIN) || pRoles.includes(ROLE.SUPER_ADMIN)) {
+            isAllowed = true;
+          }
+        }
+
+        if (!isAllowed) {
+          const { data: adminRecord } = await adminSupabase
+            .from("admins")
+            .select("id")
+            .eq("email", user.email?.toLowerCase())
+            .maybeSingle();
+          if (adminRecord) {
+            isAllowed = true;
+          }
+        }
+      }
+
+      if (!isAllowed) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }
@@ -113,30 +157,141 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ faculty: [] });
     }
 
-    const { data: userRoles, error: userRolesError } = await supabase
-      .from("user_roles")
-      .select("profile_id")
-      .eq("role_id", facultyRole.id)
-      .limit(500);
+    // Resilient discovery: query all sources in parallel
+    const [
+      { data: userRoles, error: userRolesError },
+      { data: authUsersData, error: authUsersError },
+      { data: allAssignments, error: assignmentsError },
+      { data: allProfiles, error: profilesError },
+      { data: allPrograms, error: programsError },
+    ] = await Promise.all([
+      supabase
+        .from("user_roles")
+        .select("profile_id")
+        .eq("role_id", facultyRole.id)
+        .limit(1000),
+      supabase.auth.admin.listUsers({ perPage: 1000 }),
+      supabase
+        .from("faculty_program_assignments")
+        .select("faculty_profile_id, program_id, programs(id, code, name)"),
+      supabase
+        .from("profiles")
+        .select("id, user_id, full_name, email, created_at"),
+      supabase.from("programs").select("id, code, name"),
+    ]);
 
     if (userRolesError) {
       console.error("Failed to fetch user_roles in /api/admin/faculty/list:", userRolesError);
-      return NextResponse.json(
-        {
-          error: "Failed to fetch faculty accounts",
-          details: userRolesError.message,
-        },
-        { status: 500 },
-      );
+    }
+    if (authUsersError) {
+      console.error("Failed to fetch auth users in /api/admin/faculty/list:", authUsersError);
+    }
+    if (assignmentsError) {
+      console.error("Failed to fetch faculty program assignments in /api/admin/faculty/list:", assignmentsError);
+    }
+    if (profilesError) {
+      console.error("Failed to fetch profiles in /api/admin/faculty/list:", profilesError);
+    }
+    if (programsError) {
+      console.error("Failed to fetch programs in /api/admin/faculty/list:", programsError);
     }
 
-    const profileIds = Array.from(
-      new Set(
-        (userRoles ?? [])
-          .map((entry) => entry.profile_id)
-          .filter((value): value is string => Boolean(value)),
-      ),
-    );
+    const profileById = new Map<string, any>();
+    const profileByUserId = new Map<string, any>();
+    const profileByEmail = new Map<string, any>();
+    for (const p of allProfiles ?? []) {
+      if (p.id) profileById.set(p.id, p);
+      if (p.user_id) profileByUserId.set(p.user_id, p);
+      if (p.email) profileByEmail.set(p.email.toLowerCase(), p);
+    }
+
+    const authUsersById = new Map<string, any>();
+    const authUsersByEmail = new Map<string, any>();
+    for (const u of authUsersData?.users ?? []) {
+      if (u.id) authUsersById.set(u.id, u);
+      if (u.email) authUsersByEmail.set(u.email.toLowerCase(), u);
+    }
+
+    const facultyProfileIdSet = new Set<string>();
+    const existingUserRoleProfileIds = new Set<string>();
+
+    // 1) From user_roles
+    for (const ur of userRoles ?? []) {
+      if (ur.profile_id) {
+        facultyProfileIdSet.add(ur.profile_id);
+        existingUserRoleProfileIds.add(ur.profile_id);
+      }
+    }
+
+    // 2) From auth.users where role === 'faculty'
+    for (const u of authUsersData?.users ?? []) {
+      const metaRole = (
+        u.user_metadata?.role ||
+        u.app_metadata?.role ||
+        ""
+      ).toLowerCase().trim();
+      if (metaRole === "faculty" || metaRole === "faculty_member") {
+        let prof =
+          profileByUserId.get(u.id) ||
+          (u.email ? profileByEmail.get(u.email.toLowerCase()) : null);
+
+        // If profile doesn't exist yet, auto-create it
+        if (!prof && u.email) {
+          const firstName = (u.user_metadata?.first_name as string) || "";
+          const middleName = (u.user_metadata?.middle_name as string) || "";
+          const lastName = (u.user_metadata?.last_name as string) || "";
+          const fullName =
+            (u.user_metadata?.full_name as string) ||
+            buildFacultyFullName({ firstName, middleName, lastName }) ||
+            u.email;
+
+          const { data: createdProfile } = await supabase
+            .from("profiles")
+            .upsert(
+              {
+                user_id: u.id,
+                email: u.email.toLowerCase(),
+                full_name: fullName,
+              },
+              { onConflict: "user_id" }
+            )
+            .select("id, user_id, full_name, email, created_at")
+            .maybeSingle();
+
+          if (createdProfile) {
+            prof = createdProfile;
+            profileById.set(prof.id, prof);
+            profileByUserId.set(u.id, prof);
+            profileByEmail.set(u.email.toLowerCase(), prof);
+          }
+        }
+
+        if (prof?.id) {
+          facultyProfileIdSet.add(prof.id);
+        }
+      }
+    }
+
+    // 3) From faculty_program_assignments
+    for (const a of allAssignments ?? []) {
+      if (a.faculty_profile_id) {
+        facultyProfileIdSet.add(a.faculty_profile_id);
+      }
+    }
+
+    // Self-healing: Ensure user_roles exists for every faculty profile
+    for (const pId of facultyProfileIdSet) {
+      if (!existingUserRoleProfileIds.has(pId)) {
+        void supabase
+          .from("user_roles")
+          .upsert(
+            { profile_id: pId, role_id: facultyRole.id },
+            { onConflict: "profile_id,role_id" }
+          );
+      }
+    }
+
+    const profileIds = Array.from(facultyProfileIdSet);
 
     if (profileIds.length === 0) {
       if (debugMode) {
@@ -152,15 +307,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ faculty: [] });
     }
 
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, user_id, full_name, email, created_at")
-      .in("id", profileIds);
+    const profiles = profileIds
+      .map((id) => profileById.get(id))
+      .filter(Boolean);
 
     const queryError = profilesError;
-    if (profilesError) {
-      console.error("Failed to fetch profiles in /api/admin/faculty/list:", profilesError);
-    }
 
     const { data: submissionRows, error: submissionsError } = await supabase
       .from("submissions")
@@ -300,44 +451,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const [
-      { data: programAssignments, error: assignmentsError },
-      { data: allPrograms, error: programsError },
-      { data: authUsersData, error: authUsersError },
-    ] = await Promise.all([
-      supabase
-        .from("faculty_program_assignments")
-        .select("faculty_profile_id, program_id, programs(id, code, name)")
-        .in("faculty_profile_id", profileIds),
-      supabase.from("programs").select("id, code, name"),
-      supabase.auth.admin.listUsers({ perPage: 1000 }),
-    ]);
-
-    if (assignmentsError) {
-      console.error(
-        "Failed to fetch faculty program assignments in /api/admin/faculty/list:",
-        assignmentsError,
-      );
-    }
-    if (programsError) {
-      console.error(
-        "Failed to fetch programs in /api/admin/faculty/list:",
-        programsError,
-      );
-    }
-    if (authUsersError) {
-      console.error(
-        "Failed to fetch auth users in /api/admin/faculty/list:",
-        authUsersError,
-      );
-    }
-
-    const authUsersById = new Map<string, any>();
-    const authUsersByEmail = new Map<string, any>();
-    for (const u of authUsersData?.users ?? []) {
-      if (u.id) authUsersById.set(u.id, u);
-      if (u.email) authUsersByEmail.set(u.email.toLowerCase(), u);
-    }
+    const programAssignments = (allAssignments ?? []).filter((a: any) =>
+      profileIds.includes(a.faculty_profile_id),
+    );
 
     const programByProfileId = new Map<
       string,

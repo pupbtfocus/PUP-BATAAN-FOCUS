@@ -12,10 +12,11 @@ export async function bootstrapInvitedFacultyAccount(user: {
 }) {
   const metadata = user.user_metadata ?? {};
 
-  if (
-    metadata.role !== ROLE.FACULTY ||
-    metadata.created_via !== "admin_faculty_panel"
-  ) {
+  const userRole = (
+    typeof metadata.role === "string" ? metadata.role : ""
+  ).toLowerCase().trim();
+
+  if (userRole !== ROLE.FACULTY) {
     return;
   }
 

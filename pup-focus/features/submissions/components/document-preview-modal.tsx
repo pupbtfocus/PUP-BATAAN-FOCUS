@@ -311,6 +311,8 @@ export interface DocumentPreviewSubmission {
   hasPriorRevision?: boolean | null;
   isRevision?: boolean | null;
   isUploadPreview?: boolean;
+  facultyName?: string | null;
+  isAdminView?: boolean;
 }
 
 export interface DocumentPreviewModalProps {
@@ -320,6 +322,7 @@ export interface DocumentPreviewModalProps {
   getPreviewUrl?: (submissionId: string) => string;
   onDownload?: (submission: DocumentPreviewSubmission) => void;
   isUploadPreview?: boolean;
+  isAdminView?: boolean;
 }
 
 function defaultGetPreviewUrl(submissionId: string): string {
@@ -348,10 +351,13 @@ export function DocumentPreviewModal({
   getPreviewUrl = defaultGetPreviewUrl,
   onDownload,
   isUploadPreview = false,
+  isAdminView = false,
 }: DocumentPreviewModalProps) {
   const [resolvedInfo, setResolvedInfo] = useState<ResolvedDirectFileResult | null>(null);
   const [isResolving, setIsResolving] = useState(true);
   const [loadingPercent, setLoadingPercent] = useState(20);
+
+  const isReviewerView = Boolean(isAdminView || submission?.isAdminView);
 
   const fileUrl =
     submission?.fileUrl ||
@@ -606,6 +612,8 @@ export function DocumentPreviewModal({
           subtitle={
             isUpload
               ? "Inspect selected file before uploading"
+              : isReviewerView
+              ? "Official Document Review & Verification Details"
               : "Official Document Verification Details"
           }
           titleId="document-preview-modal-title"
@@ -629,6 +637,12 @@ export function DocumentPreviewModal({
             </>
           ) : (
             <>
+              {submission.facultyName ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                  <span className="text-slate-400 dark:text-slate-500 font-normal">Faculty:</span>
+                  <span>{submission.facultyName}</span>
+                </span>
+              ) : null}
               {(submission.semester || submission.academicYear) && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-2xs">
                   {submission.semester ? `${submission.semester} • ` : ""}
@@ -709,7 +723,7 @@ export function DocumentPreviewModal({
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-medium text-slate-600 dark:text-slate-400">
-                          Admin Remarks
+                          {isReviewerView ? "Admin Remarks / Review Notes" : "Admin Remarks"}
                         </span>
                         {submission.reviewedAt && (
                           <span className="text-[11px] text-slate-400 dark:text-slate-500">
@@ -730,7 +744,7 @@ export function DocumentPreviewModal({
                           </span>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 italic">
-                            No remarks provided.
+                            {isReviewerView ? "No remarks provided yet." : "No remarks provided."}
                           </span>
                         )}
                       </div>
@@ -742,7 +756,7 @@ export function DocumentPreviewModal({
                     <div className="space-y-1.5 pt-1">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-medium text-slate-600 dark:text-slate-400">
-                          My Remarks / Note
+                          {isReviewerView ? "Faculty Remarks / Note" : "My Remarks / Note"}
                         </span>
                       </div>
 
@@ -754,7 +768,9 @@ export function DocumentPreviewModal({
                         </div>
                       ) : (
                         <p className="text-xs text-slate-400 dark:text-slate-500 italic">
-                          No personal note added for this submission.
+                          {isReviewerView
+                            ? "No remarks or personal note added by faculty for this submission."
+                            : "No personal note added for this submission."}
                         </p>
                       )}
                     </div>
@@ -873,6 +889,18 @@ export function DocumentPreviewModal({
                         <span className="font-semibold text-slate-800 dark:text-slate-200">
                           {formatSubmittedDateTime(submission.submittedAt) ??
                             submission.submittedAt}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    {/* Faculty Member (Admin/Verification View) */}
+                    {submission.facultyName ? (
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800/70">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                          Faculty Member
+                        </span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[170px]" title={submission.facultyName}>
+                          {submission.facultyName}
                         </span>
                       </div>
                     ) : null}

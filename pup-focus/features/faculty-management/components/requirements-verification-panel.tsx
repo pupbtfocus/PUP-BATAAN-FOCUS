@@ -41,6 +41,10 @@ import {
 } from "@/features/submissions/services/submission-window.service";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import { OnlineDocumentPreview } from "@/features/submissions/components/online-document-preview";
+import {
+  DocumentPreviewModal,
+  type DocumentPreviewSubmission,
+} from "@/features/submissions/components/document-preview-modal";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
@@ -393,23 +397,8 @@ function FacultyVerificationDrawer({
   const [validateInputText, setValidateInputText] = useState("");
   const [isValidatingSingle, setIsValidatingSingle] = useState(false);
 
-  const [previewingDoc, setPreviewingDoc] = useState<{
-    url: string;
-    name: string;
-    mimeType?: string | null;
-    label: string;
-    storagePath?: string | null;
-    isRevision?: boolean;
-    versions?: Array<{
-      id: string;
-      version_number?: number | null;
-      storage_path: string;
-      mime_type?: string | null;
-      size_bytes?: number | null;
-      created_at?: string | null;
-    }>;
-    activeVersionIndex?: number;
-  } | null>(null);
+  const [previewSubmission, setPreviewSubmission] =
+    useState<DocumentPreviewSubmission | null>(null);
 
   const [remarksInput, setRemarksInput] = useState<Record<string, string>>({});
   const [actionFeedback, setActionFeedback] = useState<{
@@ -1630,10 +1619,7 @@ function FacultyVerificationDrawer({
                           const rawFacultyNote =
                             matchingSubmission?.notes ||
                             matchingSubmission?.remarks;
-                          const facultyNote =
-                            rawFacultyNote && rawFacultyNote !== adminNote
-                              ? rawFacultyNote
-                              : null;
+                          const facultyNote = rawFacultyNote || null;
                           const priorRejectionDecision = (
                             matchingSubmission?.review_decisions || []
                           ).find(
@@ -1696,15 +1682,48 @@ function FacultyVerificationDrawer({
                                         <button
                                           type="button"
                                           onClick={() => {
-                                            setPreviewingDoc({
-                                              url: fileDownloadUrl,
-                                              name: fileName,
-                                              mimeType: firstDoc?.mime_type,
-                                              label: reqLabel,
+                                            setPreviewSubmission({
+                                              code: code,
+                                              title: reqLabel,
+                                              fileName: fileName,
+                                              fileSize: firstDoc?.size_bytes || null,
                                               storagePath: firstDoc?.storage_path,
+                                              fileUrl: fileDownloadUrl || undefined,
+                                              submittedAt:
+                                                matchingSubmission?.submitted_at ||
+                                                matchingSubmission?.created_at ||
+                                                undefined,
+                                              note: facultyNote,
+                                              notes: facultyNote,
+                                              remarks: facultyNote,
+                                              facultyNote: facultyNote,
+                                              feedback: adminNote,
+                                              admin_remarks: adminNote,
+                                              adminRemarks: adminNote,
+                                              reviewedAt:
+                                                matchingSubmission?.review_decisions?.[0]
+                                                  ?.created_at ||
+                                                (matchingSubmission?.status ===
+                                                "validated"
+                                                  ? matchingSubmission?.created_at
+                                                  : undefined),
+                                              latestSubmissionId:
+                                                matchingSubmission?.id,
+                                              status: isRevisionRequested
+                                                ? "Needs Revision"
+                                                : isRevisionUploaded
+                                                ? "Revision Under Review"
+                                                : matchingSubmission?.status ||
+                                                  "Pending",
+                                              academicYear: academicYear,
+                                              semester: semester,
+                                              facultyName: faculty.fullName,
+                                              isAdminView: true,
+                                              hasPriorRevision: Boolean(
+                                                priorRejectionDecision ||
+                                                  isRevisionRequested
+                                              ),
                                               isRevision: isRevisionUploaded,
-                                              versions: documents,
-                                              activeVersionIndex: 0,
                                             });
                                           }}
                                           className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
@@ -2058,14 +2077,52 @@ function FacultyVerificationDrawer({
                                             <button
                                               type="button"
                                               onClick={() => {
-                                                setPreviewingDoc({
-                                                  url: downloadUrl,
-                                                  name: fileName,
-                                                  mimeType: doc.mime_type || null,
-                                                  label: reqLabel,
+                                                const vAdminNote =
+                                                  matchingSub?.review_decisions?.[0]
+                                                    ?.remarks ||
+                                                  matchingSub?.admin_remarks;
+                                                const vFacultyNote =
+                                                  matchingSub?.notes ||
+                                                  matchingSub?.remarks ||
+                                                  null;
+                                                const versionSuffix = doc.version_number
+                                                  ? ` (v${doc.version_number})`
+                                                  : idx > 0
+                                                  ? ` (Revision ${docs.length - idx})`
+                                                  : "";
+                                                setPreviewSubmission({
+                                                  code: code,
+                                                  title: `${reqLabel}${versionSuffix}`,
+                                                  fileName: fileName,
+                                                  fileSize: doc.size_bytes || null,
                                                   storagePath: doc.storage_path,
-                                                  versions: docs,
-                                                  activeVersionIndex: idx,
+                                                  fileUrl: downloadUrl,
+                                                  submittedAt:
+                                                    doc.created_at ||
+                                                    matchingSub?.submitted_at ||
+                                                    matchingSub?.created_at ||
+                                                    undefined,
+                                                  note: vFacultyNote,
+                                                  notes: vFacultyNote,
+                                                  remarks: vFacultyNote,
+                                                  facultyNote: vFacultyNote,
+                                                  feedback: vAdminNote,
+                                                  admin_remarks: vAdminNote,
+                                                  adminRemarks: vAdminNote,
+                                                  reviewedAt:
+                                                    matchingSub?.review_decisions?.[0]
+                                                      ?.created_at,
+                                                  latestSubmissionId:
+                                                    matchingSub?.id,
+                                                  status:
+                                                    matchingSub?.status ||
+                                                    "Pending",
+                                                  academicYear: selectedHistoryAy,
+                                                  semester: selectedHistorySem,
+                                                  facultyName: faculty.fullName,
+                                                  isAdminView: true,
+                                                  hasPriorRevision: Boolean(idx > 0),
+                                                  isRevision: Boolean(idx > 0),
                                                 });
                                               }}
                                               className="p-1 rounded text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
@@ -2149,16 +2206,44 @@ function FacultyVerificationDrawer({
                                       type="button"
                                       onClick={() => {
                                         const first = docs[0];
-                                        const raw = first.storage_path.split("/").pop() || `${reqLabel}.pdf`;
+                                        const raw =
+                                          first.storage_path.split("/").pop() ||
+                                          `${reqLabel}.pdf`;
                                         const clean = cleanDisplayFileName(raw);
-                                        setPreviewingDoc({
-                                          url: `/api/storage/download?path=${encodeURIComponent(first.storage_path)}`,
-                                          name: clean,
-                                          mimeType: first.mime_type || null,
-                                          label: reqLabel,
+                                        setPreviewSubmission({
+                                          code: code,
+                                          title: reqLabel,
+                                          fileName: clean,
+                                          fileSize: first.size_bytes || null,
                                           storagePath: first.storage_path,
-                                          versions: docs,
-                                          activeVersionIndex: 0,
+                                          fileUrl: `/api/storage/download?path=${encodeURIComponent(
+                                            first.storage_path
+                                          )}`,
+                                          submittedAt:
+                                            matchingSub?.submitted_at ||
+                                            matchingSub?.created_at ||
+                                            undefined,
+                                          note: facultyNote,
+                                          notes: facultyNote,
+                                          remarks: facultyNote,
+                                          facultyNote: facultyNote,
+                                          feedback: adminNote,
+                                          admin_remarks: adminNote,
+                                          adminRemarks: adminNote,
+                                          reviewedAt:
+                                            matchingSub?.review_decisions?.[0]
+                                              ?.created_at ||
+                                            matchingSub?.created_at ||
+                                            undefined,
+                                          latestSubmissionId:
+                                            matchingSub?.id,
+                                          status:
+                                            matchingSub?.status ||
+                                            "Validated",
+                                          academicYear: selectedHistoryAy,
+                                          semester: selectedHistorySem,
+                                          facultyName: faculty.fullName,
+                                          isAdminView: true,
                                         });
                                       }}
                                       className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 px-2.5 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs"
@@ -2354,149 +2439,19 @@ function FacultyVerificationDrawer({
         </div>
       ) : null}
 
-      {/* File Preview Sub-Modal */}
-      {previewingDoc ? (
-        <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
-          onClick={() => setPreviewingDoc(null)}
-        >
-          {(() => {
-            const versions = previewingDoc.versions || [];
-            const activeIndex = previewingDoc.activeVersionIndex ?? 0;
-            const currentVersionDoc = versions[activeIndex];
-
-            const rawFileName = currentVersionDoc?.storage_path
-              ? currentVersionDoc.storage_path.split("/").pop() || previewingDoc.name
-              : previewingDoc.name || "Document";
-            const fileName = cleanDisplayFileName(rawFileName);
-            const fileUrl = currentVersionDoc?.storage_path
-              ? `/api/storage/download?path=${encodeURIComponent(currentVersionDoc.storage_path)}`
-              : previewingDoc.url;
-            const storagePath = currentVersionDoc?.storage_path || previewingDoc.storagePath;
-            const mimeType = currentVersionDoc?.mime_type || previewingDoc.mimeType;
-
-            const fileInfo = getFileType(fileName || fileUrl);
-            const fileExtension =
-              fileInfo.extension ||
-              (mimeType?.includes("excel") ||
-              mimeType?.includes("spreadsheet")
-                ? "xlsx"
-                : mimeType?.includes("word")
-                ? "docx"
-                : "file");
-            const isImage =
-              fileInfo.isImage ||
-              mimeType?.startsWith("image/");
-            const isPdf =
-              fileInfo.isPdf || mimeType === "application/pdf";
-            const isExcel =
-              fileInfo.isExcel ||
-              Boolean(mimeType?.includes("excel")) ||
-              Boolean(mimeType?.includes("spreadsheet"));
-            const isWord =
-              fileInfo.isWord ||
-              Boolean(mimeType?.includes("word")) ||
-              Boolean(mimeType?.includes("document"));
-
-            return (
-              <div
-                className="flex h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Modal Top Bar */}
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-4 py-3 bg-white dark:bg-slate-950">
-                  <div className="flex items-center gap-2 truncate max-w-[60%]">
-                    <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                      {previewingDoc.label}
-                    </span>
-                    {previewingDoc.isRevision ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-[10px] font-bold px-2 py-0.5 shrink-0 shadow-2xs">
-                        Revision Uploaded
-                      </span>
-                    ) : null}
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">
-                      ({fileName})
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {isPdf || isImage ? (
-                      <a
-                        href={fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition"
-                      >
-                        <AppIcon icon={OpenNewWindow} size="sm" color="inherit" />
-                        Full View
-                      </a>
-                    ) : null}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleSingleFileDownload(
-                          storagePath || null,
-                          fileName
-                        )
-                      }
-                      className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 transition cursor-pointer"
-                    >
-                      <AppIcon icon={Download} size="sm" color="inherit" />
-                      Download
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPreviewingDoc(null)}
-                      className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs"
-                      aria-label="Close preview"
-                    >
-                      <AppIcon icon={Xmark} size="md" color="inherit" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Preview Content Area */}
-                <div className="relative flex-1 overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center p-4">
-                  {isImage ? (
-                    <img
-                      key={fileUrl}
-                      src={fileUrl}
-                      alt={fileName}
-                      className="max-h-full max-w-full object-contain rounded-xl mx-auto"
-                    />
-                  ) : isExcel || isWord || (!isPdf && !isImage) ? (
-                    <OnlineDocumentPreview
-                      key={fileUrl}
-                      fileName={fileName}
-                      fileUrl={fileUrl}
-                      storagePath={storagePath}
-                      fileExtension={fileExtension}
-                      isExcel={isExcel}
-                      isWord={isWord}
-                      brand={getFileBrand(fileExtension, isExcel, isWord)}
-                      onDownload={() =>
-                        handleSingleFileDownload(
-                          storagePath || null,
-                          fileName
-                        )
-                      }
-                    />
-                  ) : (
-                    <iframe
-                      key={fileUrl}
-                      title="PDF Preview"
-                      src={fileUrl}
-                      className="w-full h-full rounded-xl border-0"
-                    />
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      ) : null}
+      {/* Document Preview Modal (Matches Faculty Account design) */}
+      <DocumentPreviewModal
+        submission={previewSubmission}
+        isOpen={Boolean(previewSubmission)}
+        onClose={() => setPreviewSubmission(null)}
+        isAdminView={true}
+        onDownload={(sub) => {
+          handleSingleFileDownload(
+            sub.storagePath || null,
+            sub.fileName || sub.title || "Document"
+          );
+        }}
+      />
 
       {/* Notice Pop-up Modal */}
       {noticeModalData ? (
