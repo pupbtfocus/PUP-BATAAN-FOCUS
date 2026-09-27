@@ -379,7 +379,12 @@ export function NotificationDrawer() {
           element.classList.remove("ring-4", "ring-amber-400", "bg-amber-500/10", "transition-all", "duration-500");
         }, 4000);
       } else {
-        router.push(`/faculty/dashboard?view=status&highlight=${requirementCode}&requirement=${requirementCode}#${targetElementId}`);
+        router.push(`/faculty/dashboard?view=status&highlight=${requirementCode}#${targetElementId}`);
+        window.dispatchEvent(
+          new CustomEvent("pup-focus-select-view", {
+            detail: { view: "status", highlight: requirementCode },
+          })
+        );
       }
     } else if (
       notification.type === "deadline_alert" ||
@@ -393,9 +398,19 @@ export function NotificationDrawer() {
         targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
       } else {
         router.push("/faculty/dashboard?view=status#requirements");
+        window.dispatchEvent(
+          new CustomEvent("pup-focus-select-view", {
+            detail: { view: "status" },
+          })
+        );
       }
     } else if (!fileInfo.fileUrl) {
       router.push("/faculty/dashboard?view=status");
+      window.dispatchEvent(
+        new CustomEvent("pup-focus-select-view", {
+          detail: { view: "status" },
+        })
+      );
     }
   };
 
