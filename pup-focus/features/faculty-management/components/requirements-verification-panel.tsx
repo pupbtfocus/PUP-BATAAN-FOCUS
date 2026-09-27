@@ -1649,17 +1649,18 @@ function FacultyVerificationDrawer({
                   <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
                     <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                       <tr>
-                        <th className="px-4 py-3 w-[28%]">Requirement</th>
+                        <th className="px-4 py-3 w-[26%]">Requirement</th>
+                        <th className="px-3 py-3 w-[12%] text-center">Type</th>
                         <th className="px-4 py-3 w-[24%]">Attached File</th>
-                        <th className="px-4 py-3 w-[30%]">Notes &amp; Feedback</th>
-                        <th className="px-4 py-3 w-[18%] text-center">Status &amp; Action</th>
+                        <th className="px-4 py-3 w-[22%]">Notes &amp; Feedback</th>
+                        <th className="px-4 py-3 w-[16%] text-center">Status &amp; Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
                       {displayedRequirements.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={4}
+                            colSpan={5}
                             className="py-12 text-center text-slate-500 dark:text-slate-400"
                           >
                             <div className="flex flex-col items-center justify-center gap-2">
@@ -1775,20 +1776,9 @@ function FacultyVerificationDrawer({
                               {/* Column 1: Requirement */}
                               <td className="px-4 py-3.5 align-middle">
                                 <div className="space-y-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
-                                      {reqLabel}
-                                    </span>
-                                    {isMandatory ? (
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
-                                        Required
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
-                                        Optional
-                                      </span>
-                                    )}
-                                  </div>
+                                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
+                                    {reqLabel}
+                                  </span>
                                   {submittedDateText ? (
                                     <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                                       Submitted: {submittedDateText}
@@ -1801,100 +1791,109 @@ function FacultyVerificationDrawer({
                                 </div>
                               </td>
 
-                              {/* Column 2: Attached File */}
+                              {/* Column 2: Type (Centered) */}
+                              <td className="px-3 py-3.5 align-middle text-center">
+                                {isMandatory ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                    Required
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                    Optional
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Column 3: Attached File */}
                               <td className="px-4 py-3.5 align-middle">
                                 {hasFile && fileDownloadUrl ? (
-                                  <div className="flex items-center gap-2.5">
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 text-slate-500 dark:text-slate-400">
-                                      <AppIcon icon={Page} size="md" color="inherit" />
+                                  <div className="space-y-1.5">
+                                    <div>
+                                      <span
+                                        className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug max-w-[200px] xl:max-w-[260px]"
+                                        title={rawFileName}
+                                      >
+                                        {fileName}
+                                      </span>
+                                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                        {fileSize ? <span>{fileSize}</span> : null}
+                                        {isRevisionUploaded ? (
+                                          <span className="font-sans font-bold text-amber-600 dark:text-amber-400">
+                                            • (Revised)
+                                          </span>
+                                        ) : null}
+                                      </div>
                                     </div>
-                                    <div className="min-w-0 space-y-1">
-                                      <div>
-                                        <span
-                                          className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug max-w-[190px] xl:max-w-[240px]"
-                                          title={rawFileName}
-                                        >
-                                          {fileName}
-                                        </span>
-                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                                          {fileSize ? <span>{fileSize}</span> : null}
-                                          {isRevisionUploaded ? (
-                                            <span className="font-sans font-bold text-amber-600 dark:text-amber-400">
-                                              • (Revised)
-                                            </span>
-                                          ) : null}
-                                        </div>
-                                      </div>
 
-                                      <div className="flex items-center gap-1.5 pt-0.5">
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setPreviewSubmission({
-                                              code: code,
-                                              title: reqLabel,
-                                              fileName: fileName,
-                                              fileSize: firstDoc?.size_bytes || null,
-                                              storagePath: firstDoc?.storage_path,
-                                              fileUrl: fileDownloadUrl || undefined,
-                                              submittedAt:
-                                                matchingSubmission?.submitted_at ||
-                                                matchingSubmission?.created_at ||
-                                                undefined,
-                                              note: facultyNote,
-                                              notes: facultyNote,
-                                              remarks: facultyNote,
-                                              facultyNote: facultyNote,
-                                              feedback: adminNote,
-                                              admin_remarks: adminNote,
-                                              adminRemarks: adminNote,
-                                              reviewedAt:
-                                                matchingSubmission?.review_decisions?.[0]
-                                                  ?.created_at ||
-                                                (matchingSubmission?.status ===
-                                                "validated"
-                                                  ? matchingSubmission?.created_at
-                                                  : undefined),
-                                              latestSubmissionId:
-                                                matchingSubmission?.id,
-                                              status: isRevisionRequested
-                                                ? "Needs Revision"
-                                                : isRevisionUploaded
-                                                ? "Revision Under Review"
-                                                : matchingSubmission?.status ||
-                                                  "Pending",
-                                              academicYear: academicYear,
-                                              semester: semester,
-                                              facultyName: faculty.fullName,
-                                              isAdminView: true,
-                                              hasPriorRevision: Boolean(
-                                                priorRejectionDecision ||
-                                                  isRevisionRequested
-                                              ),
-                                              isRevision: isRevisionUploaded,
-                                            });
-                                          }}
-                                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
-                                          title="Preview File"
-                                        >
-                                          <AppIcon icon={Eye} size="sm" color="inherit" />
-                                          <span>Preview</span>
-                                        </button>
+                                    <div className="flex items-center gap-1.5 pt-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPreviewSubmission({
+                                            code: code,
+                                            title: reqLabel,
+                                            fileName: fileName,
+                                            fileSize: firstDoc?.size_bytes || null,
+                                            storagePath: firstDoc?.storage_path,
+                                            fileUrl: fileDownloadUrl || undefined,
+                                            submittedAt:
+                                              matchingSubmission?.submitted_at ||
+                                              matchingSubmission?.created_at ||
+                                              undefined,
+                                            note: facultyNote,
+                                            notes: facultyNote,
+                                            remarks: facultyNote,
+                                            facultyNote: facultyNote,
+                                            feedback: adminNote,
+                                            admin_remarks: adminNote,
+                                            adminRemarks: adminNote,
+                                            reviewedAt:
+                                              matchingSubmission?.review_decisions?.[0]
+                                                ?.created_at ||
+                                              (matchingSubmission?.status ===
+                                              "validated"
+                                                ? matchingSubmission?.created_at
+                                                : undefined),
+                                            latestSubmissionId:
+                                              matchingSubmission?.id,
+                                            status: isRevisionRequested
+                                              ? "Needs Revision"
+                                              : isRevisionUploaded
+                                              ? "Revision Under Review"
+                                              : matchingSubmission?.status ||
+                                                "Pending",
+                                            academicYear: academicYear,
+                                            semester: semester,
+                                            facultyName: faculty.fullName,
+                                            isAdminView: true,
+                                            hasPriorRevision: Boolean(
+                                              priorRejectionDecision ||
+                                                isRevisionRequested
+                                            ),
+                                            isRevision: isRevisionUploaded,
+                                          });
+                                        }}
+                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
+                                        title="Preview File"
+                                      >
+                                        <AppIcon icon={Eye} size="sm" color="inherit" />
+                                        <span>Preview</span>
+                                      </button>
 
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            handleSingleFileDownload(
-                                              firstDoc?.storage_path,
-                                              fileName
-                                            )
-                                          }
-                                          className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 px-2 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
-                                          title="Download File"
-                                        >
-                                          <AppIcon icon={Download} size="sm" color="inherit" />
-                                        </button>
-                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleSingleFileDownload(
+                                            firstDoc?.storage_path,
+                                            fileName
+                                          )
+                                        }
+                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
+                                        title="Download File"
+                                      >
+                                        <AppIcon icon={Download} size="sm" color="inherit" />
+                                        <span>Download</span>
+                                      </button>
                                     </div>
                                   </div>
                                 ) : (
@@ -2133,11 +2132,12 @@ function FacultyVerificationDrawer({
                     <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
                       <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         <tr>
-                          <th className="px-4 py-3 w-[28%]">Requirement</th>
+                          <th className="px-4 py-3 w-[26%]">Requirement</th>
+                          <th className="px-3 py-3 w-[12%] text-center">Type</th>
                           <th className="px-4 py-3 w-[24%]">File Versions</th>
-                          <th className="px-4 py-3 w-[30%]">Notes &amp; Remarks</th>
+                          <th className="px-4 py-3 w-[22%]">Notes &amp; Remarks</th>
                           <th className="px-4 py-3 w-[10%] text-center">Status</th>
-                          <th className="px-4 py-3 w-[8%] text-center">Actions</th>
+                          <th className="px-4 py-3 w-[6%] text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
@@ -2173,20 +2173,9 @@ function FacultyVerificationDrawer({
                               {/* Requirement */}
                               <td className="px-4 py-3.5 align-middle">
                                 <div className="space-y-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
-                                      {reqLabel}
-                                    </span>
-                                    {isMandatory ? (
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
-                                        Required
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
-                                        Optional
-                                      </span>
-                                    )}
-                                  </div>
+                                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
+                                    {reqLabel}
+                                  </span>
                                   {submittedDateText ? (
                                     <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                                       Submitted: {submittedDateText}
@@ -2197,6 +2186,19 @@ function FacultyVerificationDrawer({
                                     </span>
                                   )}
                                 </div>
+                              </td>
+
+                              {/* Type */}
+                              <td className="px-3 py-3.5 align-middle text-center">
+                                {isMandatory ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                    Required
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                    Optional
+                                  </span>
+                                )}
                               </td>
 
                               {/* File Versions */}
@@ -3122,7 +3124,7 @@ export function RequirementsPanel({
           "bg-[#0b5336] text-white border border-[#08412a] shadow-2xs font-semibold";
         actionButtonText = "View Requirements";
         actionButtonClass =
-          "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-950 font-semibold";
+          "bg-[#0b5336] hover:bg-[#08412a] text-white font-semibold";
       } else if (totalValidatedCount > 0) {
         category = "pending_review";
         overallStatus = "Pending Review";
