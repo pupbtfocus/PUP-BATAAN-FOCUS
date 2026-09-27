@@ -1216,6 +1216,7 @@ export function AdminFacultyDashboard({
                       onWindowChange={() =>
                         setVerificationResetTrigger((prev) => prev + 1)
                       }
+                      onNavigateToRequirements={() => handleSetActiveSection("requirements")}
                     />
                   </article>
                 ) : null}
@@ -1245,7 +1246,11 @@ export function AdminFacultyDashboard({
                       </div>
                     </div>
 
-                    <AdminAcademicTerms adminName={(currentAdminName || adminName) ?? "Admin"} />
+                    <AdminAcademicTerms
+                      adminName={(currentAdminName || adminName) ?? "Admin"}
+                      isSuperAdmin={false}
+                      onNavigateToRequirements={() => handleSetActiveSection("requirements")}
+                    />
                   </article>
                 ) : null}
 

@@ -28,14 +28,22 @@ function getTermScore(academicYear: string, semester: string): number {
 
 export function AdminAcademicTerms({
   adminName,
+  isSuperAdmin = false,
+  onNavigateToRequirements,
+  onNavigateToBackups,
 }: {
   adminName?: string | null;
+  isSuperAdmin?: boolean;
+  onNavigateToRequirements?: () => void;
+  onNavigateToBackups?: () => void;
 }) {
   const [terms, setTerms] = useState<AcademicTermItem[]>([]);
   const [warningModalData, setWarningModalData] = useState<{
     isOpen: boolean;
     title: string;
     description: string;
+    hasIncompleteRequirements?: boolean;
+    missingBackup?: boolean;
   }>({ isOpen: false, title: "", description: "" });
   const [nextAcademicYear, setNextAcademicYear] = useState("2026-2027");
   const [isLoading, setIsLoading] = useState(true);
@@ -228,16 +236,20 @@ export function AdminAcademicTerms({
 
       if (!response.ok) {
         if (
-          data?.error?.includes("unvalidated or incomplete requirements") ||
+          data?.error?.includes("Incomplete") ||
+          data?.error?.includes("Requirements") ||
+          data?.error?.includes("Backup") ||
           data?.details?.includes("unvalidated") ||
-          data?.error?.includes("Cannot close") ||
-          data?.error?.includes("Incomplete Term Requirements")
+          data?.details?.includes("backup")
         ) {
           setWarningModalData({
             isOpen: true,
-            title: "Incomplete Term Requirements",
+            title: data?.error || "Incomplete Term Transition Requirements",
             description:
-              "The submission window cannot be changed or closed yet. There are still missing requirements or unvalidated submissions for the current term.",
+              data?.details ||
+              "All requirements must be submitted and validated, and a backup must be created before changing the academic term.",
+            hasIncompleteRequirements: data?.hasIncompleteRequirements ?? true,
+            missingBackup: Boolean(data?.missingBackup),
           });
           setTermToSetCurrent(null);
           return;
@@ -588,7 +600,7 @@ export function AdminAcademicTerms({
               </button>
               <button
                 type="button"
-                onClick={confirmSetCurrent}
+                onClick={() => void confirmSetCurrent()}
                 disabled={isSaving || countdown > 0}
                 className="bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] font-semibold px-4 py-2 rounded-xl text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
               >
@@ -657,7 +669,7 @@ export function AdminAcademicTerms({
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               {warningModalData.description}
             </p>
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() =>
@@ -667,16 +679,46 @@ export function AdminAcademicTerms({
               >
                 Close
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setWarningModalData({ ...warningModalData, isOpen: false });
-                  window.location.href = "/admin/dashboard?tab=requirements";
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
-              >
-                Review Requirements
-              </button>
+              {warningModalData.hasIncompleteRequirements !== false ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWarningModalData({ ...warningModalData, isOpen: false });
+                    if (onNavigateToRequirements) {
+                      onNavigateToRequirements();
+                      return;
+                    }
+                    const isSuper =
+                      isSuperAdmin ||
+                      (typeof window !== "undefined" &&
+                        window.location.pathname.startsWith("/super-admin"));
+                    if (isSuper) {
+                      window.location.href = "/super-admin/dashboard?tab=verification";
+                    } else {
+                      window.location.href = "/admin/dashboard?tab=requirements";
+                    }
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  Review Requirements
+                </button>
+              ) : null}
+              {warningModalData.missingBackup ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWarningModalData({ ...warningModalData, isOpen: false });
+                    if (onNavigateToBackups) {
+                      onNavigateToBackups();
+                      return;
+                    }
+                    window.location.href = "/super-admin/dashboard?tab=backups";
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  Backup Semester
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
