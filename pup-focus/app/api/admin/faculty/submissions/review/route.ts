@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     // Fetch details of submission being reviewed to identify the target faculty member
     const { data: submission } = await supabaseAdmin
       .from("submissions")
-      .select("id, faculty_profile_id, requirement_code, academic_year, semester")
+      .select("id, faculty_profile_id, requirement_code")
       .eq("id", submissionId)
       .maybeSingle();
 
@@ -198,29 +198,34 @@ export async function POST(request: NextRequest) {
     try {
       let targetAuthUserId: string | null = null;
 
-      // 1. Check uploader from document_versions
-      const { data: docVersion } = await supabaseAdmin
-        .from("document_versions")
-        .select("created_by")
-        .eq("submission_id", submissionId)
-        .order("version_number", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (docVersion?.created_by) {
-        targetAuthUserId = docVersion.created_by;
-      }
-
-      // 2. Check profiles by faculty_profile_id
-      if (!targetAuthUserId && submission?.faculty_profile_id) {
+      // 1. Resolve auth user_id from faculty_profile_id
+      const facultyProfileId = submission?.faculty_profile_id;
+      if (facultyProfileId) {
         const { data: profile } = await supabaseAdmin
           .from("profiles")
-          .select("user_id")
-          .eq("id", submission.faculty_profile_id)
+          .select("id, user_id, full_name")
+          .eq("id", facultyProfileId)
           .maybeSingle();
 
-        if (profile?.user_id) {
-          targetAuthUserId = profile.user_id;
+        targetAuthUserId = profile?.user_id || facultyProfileId;
+      }
+
+      // Fallback: If submission wasn't loaded earlier, re-query cleanly
+      if (!targetAuthUserId) {
+        const { data: subFallback } = await supabaseAdmin
+          .from("submissions")
+          .select("faculty_profile_id, requirement_code")
+          .eq("id", submissionId)
+          .maybeSingle();
+
+        if (subFallback?.faculty_profile_id) {
+          const { data: profFallback } = await supabaseAdmin
+            .from("profiles")
+            .select("user_id")
+            .eq("id", subFallback.faculty_profile_id)
+            .maybeSingle();
+
+          targetAuthUserId = profFallback?.user_id || subFallback.faculty_profile_id;
         }
       }
 
@@ -230,15 +235,19 @@ export async function POST(request: NextRequest) {
 
         let notifType = "SUBMISSION_APPROVED";
         let notifTitle = "Submission Approved";
-        let notifMessage = `Your submission for "${reqLabel}" has been approved${cleanRemarks ? `: "${cleanRemarks}"` : "."}`;
+        let notifMessage = cleanRemarks
+          ? `Your submission for "${reqLabel}" has been approved. Remarks: ${cleanRemarks}`
+          : `Your submission for "${reqLabel}" has been approved.`;
 
         if (cleanDecision === "rejected") {
           notifType = "SUBMISSION_REJECTED";
-          notifTitle = "Revision Requested";
-          notifMessage = `Revision requested for "${reqLabel}"${cleanRemarks ? `: "${cleanRemarks}"` : ". Please review and resubmit."}`;
+          notifTitle = "Submission Rejected";
+          notifMessage = cleanRemarks
+            ? `Your submission for "${reqLabel}" was rejected. Remarks: ${cleanRemarks}`
+            : `Your submission for "${reqLabel}" was rejected. Please review and resubmit.`;
         }
 
-        await createNotification({
+        const notifResult = await createNotification({
           userId: targetAuthUserId,
           type: notifType,
           title: notifTitle,
@@ -253,6 +262,18 @@ export async function POST(request: NextRequest) {
             decision: cleanDecision,
             remarks: cleanRemarks,
           },
+        });
+
+        logger.info("faculty_review_notification_dispatched", {
+          submissionId,
+          targetAuthUserId,
+          notifType,
+          notifSuccess: Boolean(notifResult),
+        });
+      } else {
+        logger.warn("faculty_review_notification_target_user_not_found", {
+          submissionId,
+          facultyProfileId: submission?.faculty_profile_id,
         });
       }
     } catch (notifError) {

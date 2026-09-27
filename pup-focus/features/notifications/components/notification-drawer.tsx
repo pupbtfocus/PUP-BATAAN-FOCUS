@@ -629,6 +629,11 @@ export function NotificationDrawer() {
                         ? notification.message.split("Remarks:")[1]?.trim()
                         : null);
 
+                    const displayMessage =
+                      remarks && notification.message.includes("Remarks:")
+                        ? notification.message.split("Remarks:")[0].trim().replace(/\.$/, "") + "."
+                        : notification.message;
+
                     const isUnread = !notification.isRead;
 
                     return (
@@ -688,7 +693,7 @@ export function NotificationDrawer() {
 
                           {/* Message Body */}
                           <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                            {notification.message}
+                            {displayMessage}
                           </p>
 
                           {/* Reviewer Remarks Quote Bubble if present */}
