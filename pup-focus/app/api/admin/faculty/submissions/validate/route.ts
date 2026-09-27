@@ -179,36 +179,22 @@ export async function POST(request: NextRequest) {
     try {
       const { data: submission } = await supabase
         .from("submissions")
-        .select("id, faculty_profile_id, requirement_code, academic_year, semester")
+        .select("id, faculty_profile_id, requirement_code")
         .eq("id", submissionId)
         .maybeSingle();
 
       let targetAuthUserId: string | null = null;
 
-      // 1. Check uploader from document_versions
-      const { data: docVersion } = await supabase
-        .from("document_versions")
-        .select("created_by")
-        .eq("submission_id", submissionId)
-        .order("version_number", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (docVersion?.created_by) {
-        targetAuthUserId = docVersion.created_by;
-      }
-
-      // 2. Check profile by faculty_profile_id
-      if (!targetAuthUserId && submission?.faculty_profile_id) {
+      // 1. Resolve auth user_id from faculty_profile_id
+      const facultyProfileId = submission?.faculty_profile_id;
+      if (facultyProfileId) {
         const { data: facultyProfile } = await supabase
           .from("profiles")
-          .select("user_id")
-          .eq("id", submission.faculty_profile_id)
+          .select("id, user_id, full_name")
+          .eq("id", facultyProfileId)
           .maybeSingle();
 
-        if (facultyProfile?.user_id) {
-          targetAuthUserId = facultyProfile.user_id;
-        }
+        targetAuthUserId = facultyProfile?.user_id || facultyProfileId;
       }
 
       if (targetAuthUserId) {
@@ -217,16 +203,22 @@ export async function POST(request: NextRequest) {
 
         let notifType = "SUBMISSION_APPROVED";
         let notifTitle = "Submission Approved";
-        let notifMessage = `Your submission for "${reqLabel}" has been approved${cleanRemarks ? `: "${cleanRemarks}"` : "."}`;
+        let notifMessage = cleanRemarks
+          ? `Your submission for "${reqLabel}" has been approved. Remarks: ${cleanRemarks}`
+          : `Your submission for "${reqLabel}" has been approved.`;
 
         if (decision === "rejected") {
           notifType = "SUBMISSION_REJECTED";
           notifTitle = "Submission Rejected";
-          notifMessage = `Your submission for "${reqLabel}" was rejected${cleanRemarks ? `: "${cleanRemarks}"` : ". Please review and resubmit."}`;
+          notifMessage = cleanRemarks
+            ? `Your submission for "${reqLabel}" was rejected. Remarks: ${cleanRemarks}`
+            : `Your submission for "${reqLabel}" was rejected. Please review and resubmit.`;
         } else if ((decision as string) === "needs_revision" || (decision as string) === "revision_requested") {
           notifType = "REVISION_REQUESTED";
           notifTitle = "Revision Requested";
-          notifMessage = `Revision requested for "${reqLabel}"${cleanRemarks ? `: "${cleanRemarks}"` : ". Please update your submission."}`;
+          notifMessage = cleanRemarks
+            ? `Revision requested for "${reqLabel}". Remarks: ${cleanRemarks}`
+            : `Revision requested for "${reqLabel}". Please update your submission.`;
         }
 
         await createNotification({

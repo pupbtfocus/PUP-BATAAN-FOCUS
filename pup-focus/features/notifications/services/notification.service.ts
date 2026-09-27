@@ -71,8 +71,8 @@ export async function createNotification(
 
     let { error } = await supabase.from("notifications").insert(insertData);
 
-    // If error occurs due to metadata column not existing in DB schema, retry without metadata
-    if (error && payload.metadata && error.message.includes("metadata")) {
+    // If error occurs and metadata was included, retry without metadata in case the column is missing in DB schema cache
+    if (error && "metadata" in insertData) {
       delete insertData.metadata;
       const retry = await supabase.from("notifications").insert(insertData);
       error = retry.error;
