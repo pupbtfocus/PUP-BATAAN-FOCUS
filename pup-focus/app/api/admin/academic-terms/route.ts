@@ -442,13 +442,75 @@ export async function PATCH(request: NextRequest) {
         unvalidatedSubs.length > 0 ||
         validatedSubmissionsCount < expectedSubmissionsCount;
 
-      if (hasIncompleteRequirements) {
+      // Guard 1B: Check if current semester has been backed up or archived
+      const { data: currentTermRecord } = await supabase
+        .from("academic_terms")
+        .select("is_archived")
+        .eq("academic_year", currentTerm.academic_year)
+        .eq("semester", currentTerm.semester)
+        .maybeSingle();
+
+      const isArchived = Boolean(currentTermRecord?.is_archived);
+
+      const { data: backupRows } = await supabase
+        .from("system_backups")
+        .select("id, backup_name, academic_year, metadata, status")
+        .eq("status", "completed");
+
+      const hasSemesterBackup =
+        isArchived ||
+        (backupRows ?? []).some((b: any) => {
+          const meta = b.metadata ?? {};
+          const metaAy = meta.academic_year || b.academic_year;
+          const metaSem = meta.semester;
+
+          if (
+            metaAy === currentTerm.academic_year &&
+            (metaSem === currentTerm.semester || metaSem === "all" || !metaSem)
+          ) {
+            return true;
+          }
+
+          if (
+            b.backup_name?.toLowerCase().includes("full_system") ||
+            meta.scope === "all" ||
+            meta.scope === "full"
+          ) {
+            return true;
+          }
+
+          return false;
+        });
+
+      if (hasIncompleteRequirements || !hasSemesterBackup) {
+        let errorTitle = "Incomplete Term Transition Requirements";
+        let errorDetails = "";
+
+        if (hasIncompleteRequirements && !hasSemesterBackup) {
+          errorTitle = "Requirements & Backup Required";
+          errorDetails =
+            "The current academic term cannot be changed yet. All faculty compliance requirements must be submitted and validated, and a backup of this semester must be created in Backup & Archive.";
+        } else if (hasIncompleteRequirements) {
+          errorTitle = "Incomplete Term Requirements";
+          errorDetails =
+            "The current academic term cannot be changed yet. All faculty compliance requirements must be submitted and validated before changing the term.";
+        } else {
+          errorTitle = "Semester Backup Required";
+          errorDetails =
+            `A backup of ${currentTerm.academic_year} (${currentTerm.semester}) must be created in Backup & Archive before changing to a new academic term.`;
+        }
+
         return NextResponse.json(
           {
-            error: "Incomplete Term Requirements",
-            details:
-              "The submission window cannot be changed or closed yet. There are still missing requirements or unvalidated submissions for the current term.",
+            error: errorTitle,
+            details: errorDetails,
+            hasIncompleteRequirements,
+            missingBackup: !hasSemesterBackup,
             unvalidatedCount: unvalidatedSubs.length,
+            missingCount: Math.max(
+              0,
+              expectedSubmissionsCount - validatedSubmissionsCount,
+            ),
           },
           { status: 400 },
         );

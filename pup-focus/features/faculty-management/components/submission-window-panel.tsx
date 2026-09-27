@@ -126,11 +126,13 @@ export interface ExtensionLogEntry {
 export interface SubmissionWindowPanelProps {
   onWindowChange?: () => void;
   isSuperAdmin?: boolean;
+  onNavigateToRequirements?: () => void;
 }
 
 export function SubmissionWindowPanel({
   onWindowChange,
   isSuperAdmin = false,
+  onNavigateToRequirements,
 }: SubmissionWindowPanelProps) {
   const [openDateTime, setOpenDateTime] = useState("");
   const [closeDateTime, setCloseDateTime] = useState("");
@@ -1466,7 +1468,19 @@ export function SubmissionWindowPanel({
                 type="button"
                 onClick={() => {
                   setWarningModalData({ ...warningModalData, isOpen: false });
-                  window.location.href = "/admin/dashboard?tab=requirements";
+                  if (onNavigateToRequirements) {
+                    onNavigateToRequirements();
+                    return;
+                  }
+                  const isSuper =
+                    isSuperAdmin ||
+                    (typeof window !== "undefined" &&
+                      window.location.pathname.startsWith("/super-admin"));
+                  if (isSuper) {
+                    window.location.href = "/super-admin/dashboard?tab=verification";
+                  } else {
+                    window.location.href = "/admin/dashboard?tab=requirements";
+                  }
                 }}
                 className="flex-1 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs shadow-xs active:scale-[0.98] transition-colors cursor-pointer"
               >

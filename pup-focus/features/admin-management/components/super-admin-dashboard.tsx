@@ -1873,7 +1873,12 @@ export function SuperAdminDashboard({
                   </div>
                 </div>
 
-                <AdminAcademicTerms adminName={adminName ?? "Super Admin"} />
+                <AdminAcademicTerms
+                  adminName={adminName ?? "Super Admin"}
+                  isSuperAdmin={true}
+                  onNavigateToRequirements={() => handleSetActiveSection("verification")}
+                  onNavigateToBackups={() => handleSetActiveSection("backups")}
+                />
               </article>
             ) : null}
 
@@ -1906,6 +1911,7 @@ export function SuperAdminDashboard({
                   onWindowChange={() =>
                     setVerificationResetTrigger((prev) => prev + 1)
                   }
+                  onNavigateToRequirements={() => handleSetActiveSection("verification")}
                 />
               </article>
             ) : null}
