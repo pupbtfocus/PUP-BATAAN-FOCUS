@@ -1,11 +1,16 @@
 -- Core Row Level Security Policies for PUP FOCUS
 
--- Helper function to check admin / super admin status safely
-CREATE OR REPLACE FUNCTION public.is_admin_or_super_admin()
+-- Create private schema not exposed via PostgREST Data API
+CREATE SCHEMA IF NOT EXISTS app_private;
+GRANT USAGE ON SCHEMA app_private TO authenticated, service_role;
+
+-- Internal helper function with elevated privileges to check admin roles safely without recursion
+CREATE OR REPLACE FUNCTION app_private.is_admin_or_super_admin()
 RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
   SELECT COALESCE(
     (auth.jwt() -> 'user_metadata' ->> 'role') IN ('admin', 'super_admin'),
@@ -23,6 +28,23 @@ AS $$
       AND r.code IN ('admin', 'super_admin')
   );
 $$;
+
+GRANT EXECUTE ON FUNCTION app_private.is_admin_or_super_admin() TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION app_private.is_admin_or_super_admin() FROM PUBLIC, anon;
+
+-- Public wrapper defined as SECURITY INVOKER to avoid exposing SECURITY DEFINER over PostgREST API
+CREATE OR REPLACE FUNCTION public.is_admin_or_super_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+SET search_path = public, pg_temp
+AS $$
+  SELECT app_private.is_admin_or_super_admin();
+$$;
+
+GRANT EXECUTE ON FUNCTION public.is_admin_or_super_admin() TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.is_admin_or_super_admin() FROM PUBLIC, anon;
 
 -- Enable RLS on core tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
