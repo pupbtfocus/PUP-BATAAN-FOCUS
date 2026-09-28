@@ -6,6 +6,74 @@ import { ROLE, canManageAdminAccount } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 
+async function resolveAvatarUrl(
+  supabaseAdmin: any,
+  email?: string | null,
+  rawAvatarUrl?: string | null
+): Promise<string | null> {
+  // 1. If rawAvatarUrl is already a valid full HTTP URL
+  if (rawAvatarUrl && rawAvatarUrl.startsWith("http")) {
+    return rawAvatarUrl;
+  }
+
+  // 2. If rawAvatarUrl is a storage path or partial path
+  if (rawAvatarUrl) {
+    let storagePath = rawAvatarUrl;
+    if (storagePath.includes("/avatars/")) {
+      storagePath = storagePath.split("/avatars/")[1].split("?")[0];
+    } else if (storagePath.includes("/compliance-private/")) {
+      storagePath = storagePath.split("/compliance-private/")[1].split("?")[0];
+    }
+
+    const { data: publicData } = supabaseAdmin.storage
+      .from("avatars")
+      .getPublicUrl(storagePath);
+    if (publicData?.publicUrl) {
+      return publicData.publicUrl;
+    }
+  }
+
+  // 3. Search 'avatars' bucket under admin/${email}
+  if (email) {
+    const folderPath = `admin/${email}`;
+    const { data: files } = await supabaseAdmin.storage
+      .from("avatars")
+      .list(folderPath, { limit: 10, sortBy: { column: "created_at", order: "desc" } });
+
+    if (files && files.length > 0) {
+      const latestFile = files[0];
+      const filePath = `${folderPath}/${latestFile.name}`;
+      const { data: publicData } = supabaseAdmin.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      if (publicData?.publicUrl) {
+        return publicData.publicUrl;
+      }
+    }
+
+    // Legacy fallback: Search compliance-private bucket under admin-profile-images/${email}
+    const legacyFolderPath = `admin-profile-images/${email}`;
+    const { data: legacyFiles } = await supabaseAdmin.storage
+      .from("compliance-private")
+      .list(legacyFolderPath, { limit: 10, sortBy: { column: "created_at", order: "desc" } });
+
+    if (legacyFiles && legacyFiles.length > 0) {
+      const latestFile = legacyFiles[0];
+      const filePath = `${legacyFolderPath}/${latestFile.name}`;
+      const { data, error } = await supabaseAdmin.storage
+        .from("compliance-private")
+        .createSignedUrl(filePath, 60 * 60 * 24);
+
+      if (!error && data?.signedUrl) {
+        return data.signedUrl;
+      }
+    }
+  }
+
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   const sessionClient = await createServerSupabaseClient();
   const {
@@ -40,14 +108,36 @@ export async function GET(request: NextRequest) {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
-        .eq("id", profileId)
+        .select("id, user_id, full_name, email, avatar_url, status, created_at, updated_at")
+        .or(`id.eq.${profileId},user_id.eq.${profileId}`)
         .maybeSingle();
       profile = data;
     } catch {}
 
-    const authRes = await supabase.auth.admin.getUserById(profileId);
-    const authUser = authRes.data?.user;
+    const authUserId = profile?.user_id || profileId;
+    let authUser: any = null;
+    try {
+      const authRes = await supabase.auth.admin.getUserById(authUserId);
+      authUser = authRes.data?.user;
+    } catch {}
+
+    if (!profile && !authUser) {
+      // Fallback search by email
+      try {
+        const { data: profByEmail } = await supabase
+          .from("profiles")
+          .select("id, user_id, full_name, email, avatar_url, status, created_at, updated_at")
+          .eq("email", profileId)
+          .maybeSingle();
+        if (profByEmail) {
+          profile = profByEmail;
+          if (profByEmail.user_id) {
+            const authRes = await supabase.auth.admin.getUserById(profByEmail.user_id);
+            authUser = authRes.data?.user;
+          }
+        }
+      } catch {}
+    }
 
     if (!profile && !authUser) {
       return NextResponse.json(
@@ -67,23 +157,19 @@ export async function GET(request: NextRequest) {
       authUser?.user_metadata?.role ||
       authUser?.app_metadata?.role ||
       ROLE.ADMIN;
-    const avatarUrl =
+
+    const rawAvatarUrl =
+      profile?.avatar_url ||
+      (profile as any)?.profile_image_url ||
       authUser?.user_metadata?.avatar_url ||
       authUser?.user_metadata?.picture ||
       null;
-    let resolvedAvatarUrl = avatarUrl;
-    if (resolvedAvatarUrl && !resolvedAvatarUrl.startsWith("http")) {
-      let cleanPath = resolvedAvatarUrl.replace(/^avatars\//, "");
-      if (cleanPath.includes("/avatars/")) {
-        cleanPath = cleanPath.split("/avatars/")[1].split("?")[0];
-      }
-      const { data: pub } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(cleanPath);
-      if (pub?.publicUrl) {
-        resolvedAvatarUrl = pub.publicUrl;
-      }
-    }
+
+    const resolvedAvatarUrl = await resolveAvatarUrl(
+      supabase,
+      email,
+      rawAvatarUrl
+    );
 
     const isActive =
       profile?.status === "active" ||
@@ -92,8 +178,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       details: {
-        id: profileId,
-        profile_id: profileId,
+        id: profile?.id || profileId,
+        profile_id: profile?.id || profileId,
         full_name: fullName,
         email,
         role,
@@ -101,6 +187,7 @@ export async function GET(request: NextRequest) {
         permissions: [],
         is_active: isActive,
         created_at: profile?.created_at || authUser?.created_at,
+        updated_at: profile?.updated_at || authUser?.updated_at,
         last_sign_in_at: authUser?.last_sign_in_at ?? null,
         lastLoginAt: authUser?.last_sign_in_at ?? null,
         profileImageUrl: resolvedAvatarUrl,

@@ -105,12 +105,12 @@ export async function GET() {
       return NextResponse.json({ error: authError.message }, { status: 500 });
     }
 
-    // Try fetching profiles for supplementary full_name
-    let profileMap = new Map<string, { full_name?: string | null }>();
+    // Try fetching profiles for supplementary full_name and status
+    let profileMap = new Map<string, { full_name?: string | null; status?: string | null }>();
     try {
       const { data: profiles } = await supabaseAdmin
         .from("profiles")
-        .select("id, full_name");
+        .select("id, full_name, status");
       if (profiles) {
         profileMap = new Map(profiles.map((p) => [p.id, p]));
       }
@@ -174,6 +174,15 @@ export async function GET() {
             rawAvatarUrl
           );
 
+          const rawProfileStatus = (profile?.status || "").toString().toLowerCase().trim();
+          const isUserActive =
+            u.user_metadata?.is_active === false ||
+            u.app_metadata?.is_active === false ||
+            rawProfileStatus === "inactive" ||
+            rawProfileStatus === "false"
+              ? false
+              : true;
+
           return {
             id: u.id,
             email: u.email ?? "",
@@ -181,7 +190,8 @@ export async function GET() {
             role: normalizedRole,
             avatar_url: resolvedAvatarUrl,
             created_at: u.created_at,
-            status: "active",
+            status: isUserActive ? "active" : "inactive",
+            is_active: isUserActive,
             last_sign_in_at: u.last_sign_in_at ?? null,
             lastLoginAt: u.last_sign_in_at ?? null,
           };
