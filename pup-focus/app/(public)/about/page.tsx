@@ -14,9 +14,9 @@ export default function AboutPage() {
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#3a080e]/90 hover:bg-[#4a0e17] px-4 py-2 text-xs font-bold text-amber-200 transition-all shadow-xl backdrop-blur-md"
+            className="inline-flex items-center gap-2 rounded-full border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] px-4 py-2 text-xs font-bold text-white transition-all shadow-xl backdrop-blur-md cursor-pointer"
           >
-            <AppIcon icon={ArrowLeft} size="md" color="active" />
+            <AppIcon icon={ArrowLeft} size="md" color="white" />
             <span>Back to Login</span>
           </Link>
 

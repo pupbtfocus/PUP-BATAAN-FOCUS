@@ -261,7 +261,7 @@ export function ForgotPasswordModal({
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-2 right-2 rounded-xl border border-amber-400/30 bg-black/40 p-2 text-amber-200 hover:bg-black/60 hover:text-white transition-all cursor-pointer z-30"
+              className="absolute top-2 right-2 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] p-2 text-white transition-all cursor-pointer z-30 shadow-xs"
               aria-label="Close modal"
             >
               <AppIcon icon={Xmark} size="sm" color="inherit" />
@@ -326,7 +326,7 @@ export function ForgotPasswordModal({
                 <Button
                   type="button"
                   onClick={onClose}
-                  className="h-11 sm:h-12 flex-1 rounded-2xl border border-amber-400/30 bg-black/30 text-amber-200 font-extrabold uppercase text-xs tracking-wider hover:bg-black/50 hover:text-white transition-all cursor-pointer"
+                  className="h-11 sm:h-12 flex-1 rounded-2xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white font-extrabold uppercase text-xs tracking-wider transition-all cursor-pointer shadow-xs"
                 >
                   Cancel
                 </Button>

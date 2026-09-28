@@ -1978,7 +1978,7 @@ function FacultySubmissionPanelContent({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg border border-amber-400/40 bg-[#6b0000] hover:bg-[#580000] text-white transition-colors cursor-pointer shadow-xs"
+                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs"
               >
                 <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>

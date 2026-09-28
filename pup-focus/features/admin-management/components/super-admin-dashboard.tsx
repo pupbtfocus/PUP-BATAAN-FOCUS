@@ -1509,7 +1509,7 @@ export function SuperAdminDashboard({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg border border-amber-400/40 bg-[#6b0000] hover:bg-[#580000] text-white transition cursor-pointer shadow-xs"
+                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs"
                 aria-label="Close navigation"
               >
                 <AppIcon icon={Xmark} size="lg" color="inherit" />
@@ -2872,7 +2872,7 @@ function AdminDetailsModal({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
+                      className="rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-4 py-2 text-xs font-semibold transition cursor-pointer shadow-xs"
                     >
                       Close
                     </button>

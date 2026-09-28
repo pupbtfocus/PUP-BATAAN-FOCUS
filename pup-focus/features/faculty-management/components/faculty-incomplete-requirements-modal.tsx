@@ -51,7 +51,7 @@ export function FacultyIncompleteRequirementsModal({
         <button
           type="button"
           onClick={onClose}
-          className="p-1 rounded-lg hover:bg-white/15 text-white/80 hover:text-white transition-colors cursor-pointer shrink-0 -mr-1 -mt-0.5"
+          className="p-1.5 rounded-lg border border-[#5e0000] bg-[#5e0000] hover:bg-[#4a0000] text-white transition-colors cursor-pointer shrink-0 -mr-1 -mt-0.5 shadow-xs"
           aria-label="Dismiss alert"
           title="Dismiss alert"
         >
@@ -97,7 +97,7 @@ export function FacultyIncompleteRequirementsModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 sm:py-1.5 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold cursor-pointer transition active:scale-[0.98]"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 sm:py-1.5 rounded-lg border border-[#5e0000] bg-[#5e0000] hover:bg-[#4a0000] text-white text-xs sm:text-sm font-semibold cursor-pointer transition shadow-xs active:scale-[0.98]"
           >
             Dismiss
           </button>

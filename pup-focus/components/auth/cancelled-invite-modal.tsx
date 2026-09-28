@@ -69,7 +69,7 @@ export function CancelledInviteModal({
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 rounded-xl border border-rose-500/30 bg-rose-950/40 hover:bg-rose-900/60 text-rose-200 p-1.5 transition-colors cursor-pointer shadow-xs"
+            className="absolute top-4 right-4 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-xs"
             aria-label="Close modal"
           >
             <AppIcon icon={Xmark} size="md" color="inherit" />
@@ -138,7 +138,7 @@ export function CancelledInviteModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="h-9 w-full rounded-xl border border-slate-700 hover:border-slate-500 bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition cursor-pointer"
+                className="h-9 w-full rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition cursor-pointer shadow-xs"
               >
                 Dismiss
               </button>

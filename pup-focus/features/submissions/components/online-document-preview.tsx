@@ -251,9 +251,9 @@ export function OnlineDocumentPreview({
             <button
               type="button"
               onClick={() => setViewerMode("options")}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer text-xs font-semibold shadow-2xs active:scale-95"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer text-xs font-semibold shadow-xs active:scale-95"
             >
-              <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
+              <AppIcon icon={NavArrowLeft} size="sm" color="white" />
               <span>Back</span>
             </button>
             <span className="text-slate-400 font-mono text-[11px] truncate max-w-[120px] sm:max-w-[200px] hidden sm:inline">
@@ -334,9 +334,9 @@ export function OnlineDocumentPreview({
             <button
               type="button"
               onClick={() => setViewerMode("options")}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer text-xs font-semibold shadow-2xs active:scale-95"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer text-xs font-semibold shadow-xs active:scale-95"
             >
-              <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
+              <AppIcon icon={NavArrowLeft} size="sm" color="white" />
               <span>Back</span>
             </button>
             <span className="text-slate-400 font-mono text-[11px] truncate max-w-[120px] sm:max-w-[200px] hidden sm:inline">

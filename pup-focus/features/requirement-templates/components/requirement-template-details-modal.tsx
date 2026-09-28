@@ -279,7 +279,7 @@ export function RequirementTemplateDetailsModal({
             <button
               type="button"
               onClick={onClose}
-              className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 text-xs font-semibold rounded-lg px-3.5 py-2 transition-colors cursor-pointer shadow-2xs"
+              className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold rounded-lg px-3.5 py-2 transition-colors cursor-pointer shadow-xs"
             >
               Close
             </button>

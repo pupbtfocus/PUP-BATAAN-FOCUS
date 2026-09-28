@@ -994,7 +994,7 @@ export function DocumentPreviewModal({
                 {/* Close Button */}
                 <button
                   type="button"
-                  className="w-full col-span-1 sm:col-span-2 lg:col-span-1 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs py-2.5 shadow-2xs transition cursor-pointer active:scale-95"
+                  className="w-full col-span-1 sm:col-span-2 lg:col-span-1 inline-flex items-center justify-center gap-2 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white font-bold text-xs py-2.5 shadow-xs transition cursor-pointer active:scale-95"
                   onClick={onClose}
                 >
                   <span>Close Preview</span>
