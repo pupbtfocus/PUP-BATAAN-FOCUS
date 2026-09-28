@@ -343,8 +343,8 @@ export function UserRegistrationLogsModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2 sm:p-5 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="w-full max-w-5xl h-[92vh] sm:h-auto sm:max-h-[90vh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2 sm:p-4 md:p-6 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] h-[92vh] sm:h-auto sm:max-h-[90vh] flex flex-col rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden transition-all">
           {/* Modal Header */}
           <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
             <ModalHeader
@@ -374,9 +374,9 @@ export function UserRegistrationLogsModal({
               </div>
             ) : null}
 
-            {/* Stats Summary Bar - Clean & Non-truncated */}
+            {/* Stats Summary Bar - Gold Bordered Cards */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2 sm:p-3 text-center sm:text-left">
+              <div className="rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-2.5 sm:p-3 text-center sm:text-left shadow-xs transition-colors">
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                   Total
                 </span>
@@ -384,7 +384,7 @@ export function UserRegistrationLogsModal({
                   {stats.total}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2 sm:p-3 text-center sm:text-left">
+              <div className="rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-2.5 sm:p-3 text-center sm:text-left shadow-xs transition-colors">
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                   Accepted
@@ -393,7 +393,7 @@ export function UserRegistrationLogsModal({
                   {stats.accepted}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2 sm:p-3 text-center sm:text-left">
+              <div className="rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-2.5 sm:p-3 text-center sm:text-left shadow-xs transition-colors">
                 <span className="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                   Pending
@@ -639,9 +639,9 @@ export function UserRegistrationLogsModal({
                   })}
                 </div>
 
-                {/* ── Desktop View: Responsive Scrollable Table (>= 768px) ── */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs min-w-[760px]">
+                {/* ── Desktop View: Responsive Full-Width Table (>= 768px) ── */}
+                <div className="hidden md:block overflow-x-auto rounded-xl border border-amber-400/40 dark:border-amber-500/30 shadow-2xs">
+                  <table className="w-full text-left border-collapse text-xs">
                     <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-sm">
                       <tr>
                         <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
@@ -653,7 +653,7 @@ export function UserRegistrationLogsModal({
                         </th>
                         <th className="px-4 py-2.5 font-semibold">Status</th>
                         <th className="px-4 py-2.5 font-semibold">Sent At</th>
-                        <th className="px-4 py-2.5 text-right font-semibold min-w-[260px]">Actions</th>
+                        <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap min-w-[200px]">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -910,7 +910,7 @@ export function UserRegistrationLogsModal({
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
             <ModalHeader
               icon={User}
               title="Invitation Details"
@@ -1086,7 +1086,7 @@ export function UserRegistrationLogsModal({
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-md rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
             <ModalHeader
               icon={Trash}
               title="Cancel Invitation?"
