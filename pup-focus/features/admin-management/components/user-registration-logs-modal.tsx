@@ -600,35 +600,39 @@ export function UserRegistrationLogsModal({
                                 onClick={() => void handleResendInvite(log)}
                                 disabled={isResending}
                                 title="Resend invitation email"
-                                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold border border-slate-900 dark:border-slate-700 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
+                                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
                               >
-                                <AppIcon icon={SendMail} size="sm" color="white" />
+                                <AppIcon icon={SendMail} size="sm" color="inherit" className="text-slate-950" />
                                 <span>{isResending ? "Sending..." : "Resend"}</span>
                               </button>
                             </div>
                           ) : !log.lastLoginAt ? (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
-                                <Check className="h-3.5 w-3.5" />
-                                <span>Accepted</span>
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCancelError(null);
+                                  setPendingCancelLog(log);
+                                }}
+                                title="Cancel or Remove Account"
+                                className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                              >
+                                <AppIcon icon={Trash} size="sm" color="white" />
+                                <span>Cancel</span>
+                              </button>
+
                               <button
                                 type="button"
                                 onClick={() => void handleResendInvite(log)}
                                 disabled={isResending}
                                 title="Resend login credentials email"
-                                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold border border-slate-900 dark:border-slate-700 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
+                                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
                               >
-                                <AppIcon icon={SendMail} size="sm" color="white" />
+                                <AppIcon icon={SendMail} size="sm" color="inherit" className="text-slate-950" />
                                 <span>{isResending ? "Sending..." : "Resend"}</span>
                               </button>
                             </div>
-                          ) : (
-                            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1.5">
-                              <Check className="h-3.5 w-3.5" />
-                              <span>Active Account</span>
-                            </span>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     );
@@ -759,18 +763,19 @@ export function UserRegistrationLogsModal({
                                       <span>Cancel Invite</span>
                                     </button>
 
-                                    {/* Resend Invite Button - Solid Slate */}
+                                    {/* Resend Invite Button - Solid Gold */}
                                     <button
                                       type="button"
                                       onClick={() => void handleResendInvite(log)}
                                       disabled={isResending}
                                       title="Resend invitation email"
-                                      className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold border border-slate-900 dark:border-slate-700 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
                                     >
                                       <AppIcon
                                         icon={SendMail}
                                         size="sm"
-                                        color="white"
+                                        color="inherit"
+                                        className="text-slate-950"
                                       />
                                       <span>
                                         {isResending ? "Resending..." : "Resend"}
@@ -779,33 +784,40 @@ export function UserRegistrationLogsModal({
                                   </>
                                 ) : !log.lastLoginAt ? (
                                   <>
-                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1 pl-1">
-                                      <Check className="h-3 w-3" />
-                                      <span>Accepted</span>
-                                    </span>
+                                    {/* Cancel / Delete bugged or unlogged account */}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCancelError(null);
+                                        setPendingCancelLog(log);
+                                      }}
+                                      title="Cancel or Remove Account"
+                                      className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                    >
+                                      <AppIcon icon={Trash} size="sm" color="white" />
+                                      <span>Cancel</span>
+                                    </button>
+
+                                    {/* Resend Credentials Button - Solid Gold */}
                                     <button
                                       type="button"
                                       onClick={() => void handleResendInvite(log)}
                                       disabled={isResending}
                                       title="Resend login credentials email"
-                                      className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold border border-slate-900 dark:border-slate-700 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
                                     >
                                       <AppIcon
                                         icon={SendMail}
                                         size="sm"
-                                        color="white"
+                                        color="inherit"
+                                        className="text-slate-950"
                                       />
                                       <span>
                                         {isResending ? "Resending..." : "Resend Credentials"}
                                       </span>
                                     </button>
                                   </>
-                                ) : (
-                                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1 pl-1">
-                                    <Check className="h-3 w-3" />
-                                    <span>Active</span>
-                                  </span>
-                                )}
+                                ) : null}
                               </div>
                             </td>
                           </tr>
@@ -1019,7 +1031,7 @@ export function UserRegistrationLogsModal({
               {/* Modal Actions - Solid Colors */}
               <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <div>
-                  {selectedLogForDetails.status === "Pending" ? (
+                  {selectedLogForDetails.status === "Pending" || !selectedLogForDetails.lastLoginAt ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -1041,9 +1053,9 @@ export function UserRegistrationLogsModal({
                       type="button"
                       onClick={() => void handleResendInvite(selectedLogForDetails)}
                       disabled={resendingEmail === selectedLogForDetails.email}
-                      className="flex-1 sm:flex-initial bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold border border-slate-900 dark:border-slate-700 text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
+                      className="flex-1 sm:flex-initial bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-600 text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
                     >
-                      <AppIcon icon={SendMail} size="sm" color="white" />
+                      <AppIcon icon={SendMail} size="sm" color="inherit" className="text-slate-950" />
                       <span>
                         {resendingEmail === selectedLogForDetails.email
                           ? "Resending..."
