@@ -217,7 +217,13 @@ export async function GET(request: NextRequest) {
         inviteSent: auditLog?.metadata?.invite_sent !== false,
         sendError: (auditLog?.metadata?.send_error as string) || null,
         program: progCode,
-        avatarUrl: profile?.avatar_url || u.user_metadata?.avatar_url || null,
+        avatarUrl:
+          profile?.avatar_url ||
+          (profile as any)?.profile_image_url ||
+          u.user_metadata?.avatar_url ||
+          u.user_metadata?.profile_image_url ||
+          u.user_metadata?.picture ||
+          null,
         invitedBy,
       });
     }
@@ -234,10 +240,11 @@ export async function GET(request: NextRequest) {
 
         const isFaculty = log.action === "faculty.create";
         const actorProfile = profileByUserId.get(log.actor_id) || profileById.get(log.actor_id);
+        const fallbackProfile = profileByEmail.get(targetEmail);
 
         logsMap.set(targetEmail, {
           id: log.id,
-          fullName: targetFullName,
+          fullName: fallbackProfile?.full_name || targetFullName,
           email: targetEmail,
           role: isFaculty ? "Faculty" : "Admin",
           status: "Pending",
@@ -247,7 +254,7 @@ export async function GET(request: NextRequest) {
           inviteSent: log.metadata?.invite_sent !== false,
           sendError: (log.metadata?.send_error as string) || null,
           program: (log.metadata?.program_code as string) || null,
-          avatarUrl: null,
+          avatarUrl: fallbackProfile?.avatar_url || (fallbackProfile as any)?.profile_image_url || null,
           invitedBy: actorProfile?.full_name || actorProfile?.email || null,
         });
       }
