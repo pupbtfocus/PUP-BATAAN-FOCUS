@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Fetch audit logs for invite events and cancellations
+    // 4. Fetch audit logs for invite events, cancellations, and deletions
     const { data: inviteAuditLogs } = await supabase
       .from("audit_logs")
       .select("id, actor_id, action, entity_id, metadata, created_at")
@@ -124,6 +125,12 @@ export async function GET(request: NextRequest) {
       .eq("action", "user.invite_cancelled")
       .order("created_at", { ascending: false });
 
+    const { data: deletedAuditLogs } = await supabase
+      .from("audit_logs")
+      .select("id, entity_id, metadata, created_at")
+      .in("action", ["user.delete", "faculty.delete", "admin.delete"])
+      .order("created_at", { ascending: false });
+
     const cancelledByEmail = new Map<string, string>();
     if (cancelledAuditLogs) {
       for (const log of cancelledAuditLogs) {
@@ -134,6 +141,28 @@ export async function GET(request: NextRequest) {
         ).trim().toLowerCase();
         if (cEmail && !cancelledByEmail.has(cEmail)) {
           cancelledByEmail.set(cEmail, log.created_at);
+        }
+      }
+    }
+
+    const deletedEmails = new Set<string>();
+    const deletedUserIds = new Set<string>();
+    if (deletedAuditLogs) {
+      for (const log of deletedAuditLogs) {
+        const dEmail = (
+          log.metadata?.target_email ||
+          log.metadata?.email ||
+          ""
+        ).trim().toLowerCase();
+        if (dEmail) deletedEmails.add(dEmail);
+        if (log.metadata?.target_auth_user_id) {
+          deletedUserIds.add(log.metadata.target_auth_user_id);
+        }
+        if (log.metadata?.target_profile_id) {
+          deletedUserIds.add(log.metadata.target_profile_id);
+        }
+        if (log.entity_id) {
+          deletedUserIds.add(log.entity_id);
         }
       }
     }
@@ -161,6 +190,17 @@ export async function GET(request: NextRequest) {
 
       const profile = profileByUserId.get(u.id) || profileByEmail.get(email);
       const auditLog = auditByEmail.get(email);
+
+      // Filter out deleted accounts, known bug accounts, or orphaned auth users without a profile
+      const isKnownBugAccount = email === "qa.faculty2@pupfocus.dev";
+      const isDeleted = deletedEmails.has(email) || deletedUserIds.has(u.id);
+      const isOrphaned = !profile && !auditLog && !u.last_sign_in_at;
+
+      if (isDeleted || isKnownBugAccount || isOrphaned) {
+        // Clean up lingering orphaned auth user in background
+        void supabase.auth.admin.deleteUser(u.id).catch(() => null);
+        continue;
+      }
 
       // Determine Role accurately using auth metadata, user_roles table, profile, or audit log
       const dbRole = profile?.id ? roleByProfileId.get(profile.id) : null;
@@ -258,7 +298,14 @@ export async function GET(request: NextRequest) {
           log.metadata?.email ||
           ""
         ).trim().toLowerCase();
-        if (!targetEmail || logsMap.has(targetEmail)) continue;
+        if (
+          !targetEmail ||
+          logsMap.has(targetEmail) ||
+          deletedEmails.has(targetEmail) ||
+          targetEmail === "qa.faculty2@pupfocus.dev"
+        ) {
+          continue;
+        }
 
         // If this invite was cancelled after it was created, skip it
         const cancelledAt = cancelledByEmail.get(targetEmail);
@@ -550,18 +597,20 @@ export async function DELETE(request: NextRequest) {
     );
 
     if (authUser) {
-      // Check if already accepted
-      const isAccepted = Boolean(
-        authUser.email_confirmed_at ||
-        authUser.confirmed_at ||
-        authUser.last_sign_in_at
-      );
+      // Check if user has actively signed in and has a profile
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("id")
+        .or(`user_id.eq.${authUser.id},email.ilike.${email || authUser.email}`)
+        .maybeSingle();
 
-      if (isAccepted) {
+      const hasActiveLogin = Boolean(authUser.last_sign_in_at);
+
+      if (hasActiveLogin && prof?.id) {
         return NextResponse.json(
           {
             error:
-              "Cannot cancel an invitation that has already been accepted. To remove this user, use the Delete action in the directory table.",
+              "Cannot cancel an active account that has already logged in. To remove this user, use the Delete action in the directory table.",
           },
           { status: 400 }
         );
@@ -576,13 +625,7 @@ export async function DELETE(request: NextRequest) {
         );
       }
 
-      // Clean up profiles
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("id")
-        .or(`user_id.eq.${authUser.id},email.ilike.${email}`)
-        .maybeSingle();
-
+      // Clean up profiles & assignments
       if (prof?.id) {
         await supabase.from("faculty_program_assignments").delete().eq("faculty_profile_id", prof.id);
         await supabase.from("user_roles").delete().eq("profile_id", prof.id);
