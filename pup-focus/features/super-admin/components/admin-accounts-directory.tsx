@@ -37,6 +37,7 @@ export interface AdminAccountsTableProps {
   onActivateAdmin: (profileId: string) => void;
   onDeleteAdmin: (profileId: string) => void;
   loadingAdminIds?: Set<string>;
+  deletingAdminIds?: Set<string>;
   accountsError?: string | null;
   accountActionError?: string | null;
   accountActionSuccess?: string | null;
@@ -224,6 +225,7 @@ export function AdminAccountsTable({
   onActivateAdmin,
   onDeleteAdmin,
   loadingAdminIds = new Set(),
+  deletingAdminIds = new Set(),
   accountsError,
   accountActionError,
   accountActionSuccess,
@@ -357,7 +359,8 @@ export function AdminAccountsTable({
               filteredAccounts.map((admin, index) => {
                 const isSuperAdmin = (admin.role || "").toLowerCase().includes("super");
                 const hasAvatar = admin.profileImageUrl && !failedImageIds.has(admin.profile_id);
-                const isLoadingAction = loadingAdminIds.has(admin.profile_id);
+                const isDeactivatingOrActivating = loadingAdminIds.has(admin.profile_id);
+                const isDeleting = deletingAdminIds.has(admin.profile_id);
                 const canEdit = canManageAdminAccount({
                   targetEmail: admin.email,
                   targetRole: admin.role,
@@ -496,23 +499,23 @@ export function AdminAccountsTable({
                             <button
                               type="button"
                               onClick={() => onDeactivateAdmin(admin.profile_id)}
-                              disabled={isLoadingAction}
+                              disabled={isDeactivatingOrActivating || isDeleting}
                               title="Deactivate Admin"
                               className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
                               <AppIcon icon={UserXmark} size="sm" color="white" />
-                              <span>{isLoadingAction ? "Deactivating..." : "Deactivate"}</span>
+                              <span>{isDeactivatingOrActivating ? "Deactivating..." : "Deactivate"}</span>
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={() => onActivateAdmin(admin.profile_id)}
-                              disabled={isLoadingAction}
+                              disabled={isDeactivatingOrActivating || isDeleting}
                               title="Activate Admin"
                               className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
                               <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" className="text-slate-950" />
-                              <span>{isLoadingAction ? "Activating..." : "Activate"}</span>
+                              <span>{isDeactivatingOrActivating ? "Activating..." : "Activate"}</span>
                             </button>
                           )
                         ) : null}
@@ -522,12 +525,12 @@ export function AdminAccountsTable({
                           <button
                             type="button"
                             onClick={() => onDeleteAdmin(admin.profile_id)}
-                            disabled={isLoadingAction}
+                            disabled={isDeactivatingOrActivating || isDeleting}
                             title="Delete Admin"
                             className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                           >
                             <AppIcon icon={Trash} size="sm" color="white" />
-                            <span>{isLoadingAction ? "Deleting..." : "Delete"}</span>
+                            <span>{isDeleting ? "Deleting..." : "Delete"}</span>
                           </button>
                         )}
                       </div>

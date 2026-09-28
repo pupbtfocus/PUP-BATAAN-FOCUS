@@ -28,7 +28,10 @@ import { AddFacultyModal } from "@/features/faculty-management/components/facult
 import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
 import { FacultyDetailsModal } from "@/features/faculty-management/components/faculty-modals/faculty-details-modal";
 import { DeleteFacultyModal } from "@/features/faculty-management/components/faculty-modals/delete-faculty-modal";
-import { DeleteAdminModal } from "@/features/super-admin/components/delete-admin-modal";
+import {
+  DeleteAdminModal,
+  type PendingAdminAction,
+} from "@/features/super-admin/components/delete-admin-modal";
 import { InviteStatusModal } from "@/features/faculty-management/components/faculty-modals/invite-status-modal";
 import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
 import { useForm } from "react-hook-form";
@@ -243,7 +246,22 @@ export function SuperAdminDashboard({
   const [loadingAdminIds, setLoadingAdminIds] = useState<Set<string>>(
     new Set(),
   );
-  const [pendingDeleteAdmin, setPendingDeleteAdmin] = useState<AdminAccount | null>(null);
+  const [deletingAdminIds, setDeletingAdminIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [pendingAdminAction, setPendingAdminAction] =
+    useState<PendingAdminAction | null>(null);
+  const pendingAdmin = useMemo(
+    () =>
+      pendingAdminAction
+        ? adminAccounts.find(
+            (a) =>
+              a.profile_id === pendingAdminAction.adminId ||
+              a.id === pendingAdminAction.adminId,
+          ) ?? null
+        : null,
+    [adminAccounts, pendingAdminAction],
+  );
   const [isDeletingAdminAccount, setIsDeletingAdminAccount] = useState(false);
   const [adminDetails, setAdminDetails] = useState<AdminDetails | null>(null);
   const [isLoadingAdminDetails, setIsLoadingAdminDetails] = useState(false);
@@ -743,9 +761,14 @@ export function SuperAdminDashboard({
             department: "Administration",
             permissions: [],
             is_active:
-              !acc.status ||
-              acc.status?.toLowerCase() === "active" ||
-              acc.status === "true",
+              acc.is_active !== undefined
+                ? Boolean(acc.is_active)
+                : acc.status
+                ? acc.status.toLowerCase() === "active" || acc.status === "true"
+                : true,
+            status:
+              acc.status ||
+              (acc.is_active ? "active" : "inactive"),
             created_at: acc.created_at,
             role: normalizedRole,
             profileImageUrl: acc.avatar_url || acc.profileImageUrl || null,
@@ -1154,7 +1177,11 @@ export function SuperAdminDashboard({
     }
   }
 
-  async function onDeactivateAdmin(profileId: string) {
+  function onDeactivateAdmin(profileId: string) {
+    setPendingAdminAction({ kind: "deactivate", adminId: profileId });
+  }
+
+  async function performDeactivateAdmin(profileId: string) {
     setLoadingAdminIds((prev) => new Set(prev).add(profileId));
     setAccountActionError(null);
     setAccountActionSuccess(null);
@@ -1174,6 +1201,13 @@ export function SuperAdminDashboard({
         return;
       }
 
+      setAdminAccounts((prev) =>
+        prev.map((admin) =>
+          admin.profile_id === profileId || admin.id === profileId
+            ? { ...admin, is_active: false, status: "inactive" }
+            : admin,
+        ),
+      );
       setAccountActionSuccess("Admin account deactivated successfully.");
       await loadAdminAccounts();
     } catch {
@@ -1189,7 +1223,11 @@ export function SuperAdminDashboard({
     }
   }
 
-  async function onActivateAdmin(profileId: string) {
+  function onActivateAdmin(profileId: string) {
+    setPendingAdminAction({ kind: "activate", adminId: profileId });
+  }
+
+  async function performActivateAdmin(profileId: string) {
     setLoadingAdminIds((prev) => new Set(prev).add(profileId));
     setAccountActionError(null);
     setAccountActionSuccess(null);
@@ -1207,6 +1245,13 @@ export function SuperAdminDashboard({
         return;
       }
 
+      setAdminAccounts((prev) =>
+        prev.map((admin) =>
+          admin.profile_id === profileId || admin.id === profileId
+            ? { ...admin, is_active: true, status: "active" }
+            : admin,
+        ),
+      );
       setAccountActionSuccess("Admin account activated successfully.");
       await loadAdminAccounts();
     } catch {
@@ -1221,18 +1266,16 @@ export function SuperAdminDashboard({
   }
 
   function onRequestDeleteAdmin(profileId: string) {
-    const target = adminAccounts.find((a) => a.profile_id === profileId) ?? null;
-    if (target) {
-      setPendingDeleteAdmin(target);
-    }
+    setPendingAdminAction({ kind: "delete", adminId: profileId });
   }
 
-  async function performDeleteAdmin() {
-    if (!pendingDeleteAdmin) return;
-    const profileId = pendingDeleteAdmin.profile_id;
+  function onDeleteAdmin(profileId: string) {
+    onRequestDeleteAdmin(profileId);
+  }
 
+  async function performDeleteAdmin(profileId: string) {
     setIsDeletingAdminAccount(true);
-    setLoadingAdminIds((prev) => new Set(prev).add(profileId));
+    setDeletingAdminIds((prev) => new Set(prev).add(profileId));
     setAccountActionError(null);
     setAccountActionSuccess(null);
 
@@ -1249,14 +1292,16 @@ export function SuperAdminDashboard({
         return;
       }
 
+      setAdminAccounts((prev) =>
+        prev.filter((admin) => admin.profile_id !== profileId && admin.id !== profileId),
+      );
       setAccountActionSuccess("Admin account deleted successfully.");
-      setPendingDeleteAdmin(null);
       await loadAdminAccounts();
     } catch {
       setAccountActionError("Unexpected error while deleting admin account.");
     } finally {
       setIsDeletingAdminAccount(false);
-      setLoadingAdminIds((prev) => {
+      setDeletingAdminIds((prev) => {
         const next = new Set(prev);
         next.delete(profileId);
         return next;
@@ -1264,8 +1309,25 @@ export function SuperAdminDashboard({
     }
   }
 
-  function onDeleteAdmin(profileId: string) {
-    onRequestDeleteAdmin(profileId);
+  async function confirmPendingAdminAction() {
+    if (!pendingAdminAction) {
+      return;
+    }
+
+    const { kind, adminId } = pendingAdminAction;
+    setPendingAdminAction(null);
+
+    if (kind === "delete") {
+      await performDeleteAdmin(adminId);
+      return;
+    }
+
+    if (kind === "activate") {
+      await performActivateAdmin(adminId);
+      return;
+    }
+
+    await performDeactivateAdmin(adminId);
   }
 
   async function onViewAdminDetails(profileId: string) {
@@ -1273,7 +1335,30 @@ export function SuperAdminDashboard({
     setAdminDetailsEditable(false);
     setIsLoadingAdminDetails(true);
     setAdminDetailsOpen(true);
-    setAdminDetails(null);
+    
+    // Seed from already loaded admin accounts directory for instant avatar & details
+    const existing = adminAccounts.find(
+      (a) => a.profile_id === profileId || a.id === profileId
+    );
+    if (existing) {
+      setAdminDetails({
+        profile_id: existing.profile_id,
+        id: existing.id,
+        full_name: existing.full_name,
+        email: existing.email,
+        role: existing.role,
+        is_active: existing.is_active,
+        department: existing.department,
+        permissions: existing.permissions,
+        created_at: existing.created_at,
+        lastLoginAt: existing.lastLoginAt,
+        last_sign_in_at: existing.last_sign_in_at,
+        profileImageUrl: existing.profileImageUrl || existing.avatar_url || existing.profile?.avatar_url,
+        avatar_url: existing.profileImageUrl || existing.avatar_url || existing.profile?.avatar_url,
+      });
+    } else {
+      setAdminDetails(null);
+    }
 
     try {
       const response = await fetch(
@@ -1288,7 +1373,12 @@ export function SuperAdminDashboard({
         return;
       }
 
-      setAdminDetails(data.details ?? null);
+      setAdminDetails((prev) => ({
+        ...(prev ?? {}),
+        ...(data.details ?? {}),
+        profileImageUrl: data.details?.profileImageUrl || prev?.profileImageUrl,
+        avatar_url: data.details?.avatar_url || prev?.avatar_url,
+      }));
     } catch {
       setAccountActionError("Unexpected error while loading admin details.");
       setAdminDetailsOpen(false);
@@ -1301,7 +1391,29 @@ export function SuperAdminDashboard({
     setAdminDetailsEditable(true);
     setIsLoadingAdminDetails(true);
     setAdminDetailsOpen(true);
-    setAdminDetails(null);
+
+    const existing = adminAccounts.find(
+      (a) => a.profile_id === profileId || a.id === profileId
+    );
+    if (existing) {
+      setAdminDetails({
+        profile_id: existing.profile_id,
+        id: existing.id,
+        full_name: existing.full_name,
+        email: existing.email,
+        role: existing.role,
+        is_active: existing.is_active,
+        department: existing.department,
+        permissions: existing.permissions,
+        created_at: existing.created_at,
+        lastLoginAt: existing.lastLoginAt,
+        last_sign_in_at: existing.last_sign_in_at,
+        profileImageUrl: existing.profileImageUrl || existing.avatar_url || existing.profile?.avatar_url,
+        avatar_url: existing.profileImageUrl || existing.avatar_url || existing.profile?.avatar_url,
+      });
+    } else {
+      setAdminDetails(null);
+    }
 
     try {
       const response = await fetch(
@@ -1318,7 +1430,12 @@ export function SuperAdminDashboard({
         return;
       }
 
-      setAdminDetails(data.details ?? null);
+      setAdminDetails((prev) => ({
+        ...(prev ?? {}),
+        ...(data.details ?? {}),
+        profileImageUrl: data.details?.profileImageUrl || prev?.profileImageUrl,
+        avatar_url: data.details?.avatar_url || prev?.avatar_url,
+      }));
     } catch {
       setAccountActionError("Unexpected error while loading admin details.");
       setAdminDetailsOpen(false);
@@ -1416,7 +1533,7 @@ export function SuperAdminDashboard({
                 <button
                   type="button"
                   onClick={() => onDeactivateAdmin(admin.profile_id)}
-                  disabled={loadingAdminIds.has(admin.profile_id)}
+                  disabled={loadingAdminIds.has(admin.profile_id) || deletingAdminIds.has(admin.profile_id)}
                   className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-2xs"
                 >
                   {loadingAdminIds.has(admin.profile_id)
@@ -1427,7 +1544,7 @@ export function SuperAdminDashboard({
                 <button
                   type="button"
                   onClick={() => onActivateAdmin(admin.profile_id)}
-                  disabled={loadingAdminIds.has(admin.profile_id)}
+                  disabled={loadingAdminIds.has(admin.profile_id) || deletingAdminIds.has(admin.profile_id)}
                   className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-2xs"
                 >
                   {loadingAdminIds.has(admin.profile_id)
@@ -1456,10 +1573,10 @@ export function SuperAdminDashboard({
               <button
                 type="button"
                 onClick={() => onDeleteAdmin(admin.profile_id)}
-                disabled={loadingAdminIds.has(admin.profile_id)}
+                disabled={loadingAdminIds.has(admin.profile_id) || deletingAdminIds.has(admin.profile_id)}
                 className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-2xs"
               >
-                Delete
+                {deletingAdminIds.has(admin.profile_id) ? "Deleting..." : "Delete"}
               </button>
             ) : null}
           </div>
@@ -1728,6 +1845,7 @@ export function SuperAdminDashboard({
                   onActivateAdmin={(profileId) => void onActivateAdmin(profileId)}
                   onDeleteAdmin={(profileId) => void onDeleteAdmin(profileId)}
                   loadingAdminIds={loadingAdminIds}
+                  deletingAdminIds={deletingAdminIds}
                   accountsError={accountsError}
                   accountActionError={accountActionError}
                   accountActionSuccess={accountActionSuccess}
@@ -2259,11 +2377,18 @@ export function SuperAdminDashboard({
       />
 
       <DeleteAdminModal
-        isOpen={Boolean(pendingDeleteAdmin)}
-        admin={pendingDeleteAdmin}
-        isLoading={isDeletingAdminAccount}
-        onCancel={() => setPendingDeleteAdmin(null)}
-        onConfirm={performDeleteAdmin}
+        pendingAdminAction={pendingAdminAction}
+        pendingAdmin={pendingAdmin}
+        isLoading={
+          isDeletingAdminAccount ||
+          Boolean(
+            pendingAdminAction &&
+              (loadingAdminIds.has(pendingAdminAction.adminId) ||
+                deletingAdminIds.has(pendingAdminAction.adminId)),
+          )
+        }
+        onCancel={() => setPendingAdminAction(null)}
+        onConfirm={confirmPendingAdminAction}
       />
 
       <InviteStatusModal
@@ -2537,38 +2662,38 @@ function AdminDetailsModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-3 sm:p-5 backdrop-blur-sm">
+      <div className="w-full max-w-2xl sm:max-w-3xl rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
         <ModalHeader
           title={canEdit ? "Edit Admin Account" : "View Admin Account"}
           icon={User}
         />
-        <div className="p-6 overflow-y-auto">
+        <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
         {isLoading ? (
           <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Loading details...</p>
         ) : details ? (
-          <div className="space-y-4 mt-4">
-            <div className="flex items-center gap-4 rounded-xl border border-slate-400 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4">
+          <div className="space-y-4 mt-2">
+            <div className="flex items-center gap-4 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 min-w-0">
               {details.profileImageUrl && !modalAvatarError ? (
                 <img
                   src={details.profileImageUrl}
                   alt={details.full_name ?? "Admin"}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/40 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950"
+                  className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/60 bg-slate-100 dark:bg-slate-950 shadow-md ring-2 ring-white dark:ring-slate-950 shrink-0"
                   onError={() => setModalAvatarError(true)}
                 />
               ) : (
-                <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950">
+                <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950 shrink-0">
                   {getInitials(
                     details.full_name,
                     details.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
                   )}
                 </div>
               )}
-              <div>
-                <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              <div className="min-w-0 flex-1">
+                <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate">
                   {details.full_name || "Admin User"}
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{details.email}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 break-all select-all font-mono mt-0.5">{details.email}</p>
                 <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/70 text-slate-900 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
                   {details.role ? ROLE_LABEL[details.role as AppRole] : "Admin"}
                 </span>
@@ -2577,8 +2702,8 @@ function AdminDetailsModal({
 
             {canEdit ? (
               <form className="space-y-4" onSubmit={onSubmit}>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="min-w-0">
                     <label
                       className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                       htmlFor="adminFullName"
@@ -2626,7 +2751,7 @@ function AdminDetailsModal({
                     </div>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <label
                       className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider mb-1.5"
                       htmlFor="adminEmail"
@@ -2786,20 +2911,22 @@ function AdminDetailsModal({
               </form>
             ) : (
               <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                       Full Name
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100 break-words">
                       {details.full_name}
                     </p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                       Email Address
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{details.email}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100 break-all select-all font-mono">
+                      {details.email}
+                    </p>
                   </div>
                 </div>
 
