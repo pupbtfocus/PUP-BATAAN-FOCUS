@@ -1711,7 +1711,7 @@ export function SuperAdminDashboard({
 
                 {/* TIER 3: Admin Accounts Overview */}
                 <section className="w-full space-y-4">
-                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs transition-colors">
+                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs transition-colors overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-400 dark:border-slate-800">
                       <div>
                         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
@@ -1742,8 +1742,8 @@ export function SuperAdminDashboard({
                             Boolean(avatarUrl) && !failedImageIds.has(admin.profile_id);
 
                           return (
-                            <div key={admin.profile_id} className="py-3 flex items-center justify-between gap-4">
-                              <div className="flex items-center gap-3">
+                            <div key={admin.profile_id} className="py-3 flex items-center justify-between gap-3 min-w-0">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-400 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs font-bold shadow-sm">
                                   {hasAvatar ? (
                                     <img
@@ -1763,16 +1763,16 @@ export function SuperAdminDashboard({
                                     )
                                   )}
                                 </div>
-                                <div>
-                                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate">
                                     {formatAdminName(admin)}
                                   </p>
-                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate" title={admin.email}>
                                     {admin.email}
                                   </p>
                                 </div>
                               </div>
-                              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
+                              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs shrink-0 ${
                                 admin.is_active
                                   ? "bg-[#0b5336] text-white border-[#08412a]"
                                   : "bg-[#780000] text-white border-[#5e0000]"
