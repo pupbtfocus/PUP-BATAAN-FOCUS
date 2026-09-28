@@ -67,6 +67,7 @@ interface AdminAccount {
   full_name: string;
   email: string;
   profileImageUrl?: string | null;
+  avatar_url?: string | null;
   profile?: {
     firstName?: string | null;
     middleName?: string | null;
@@ -747,7 +748,8 @@ export function SuperAdminDashboard({
               acc.status === "true",
             created_at: acc.created_at,
             role: normalizedRole,
-            profileImageUrl: acc.avatar_url || null,
+            profileImageUrl: acc.avatar_url || acc.profileImageUrl || null,
+            avatar_url: acc.avatar_url || acc.profileImageUrl || null,
             last_sign_in_at: acc.last_sign_in_at ?? null,
             lastLoginAt: acc.last_sign_in_at ?? null,
           };
@@ -765,7 +767,12 @@ export function SuperAdminDashboard({
       }
 
       const data = await response.json();
-      setAdminAccounts(data.admins || []);
+      const rawAdmins = (data.admins || []).map((a: any) => ({
+        ...a,
+        profileImageUrl: a.profileImageUrl || a.avatar_url || null,
+        avatar_url: a.avatar_url || a.profileImageUrl || null,
+      }));
+      setAdminAccounts(rawAdmins);
     } catch {
       setAccountsError("Error loading admin accounts");
     } finally {
@@ -1527,20 +1534,31 @@ export function SuperAdminDashboard({
           <div className="min-h-0 flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
-                {/* TIER 1: Welcome Banner Gold Card */}
-                <section className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-6 sm:p-7 shadow-md shadow-amber-500/10 transition-colors">
-                  <div className="relative z-10 space-y-1">
+                {/* Gold Card Header */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                  <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
-                      Welcome back, {extractFirstName(currentAdminName, "Super Admin")}
+                      Dashboard
                     </h1>
-                    <p className="text-xs sm:text-sm text-amber-950/85 dark:text-amber-200/90 font-medium">
-                      Super Admin Dashboard • Campus Management Overview
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
+                      Oversee administrative accounts, manage faculty compliance, configure academic cycles, and monitor campus-wide operations.
                     </p>
                   </div>
-                </section>
+                  <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void refreshCurrentPanel()}
+                      disabled={isLoadingAccounts || isLoadingFaculty}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                    >
+                      <Refresh className={`h-3.5 w-3.5 ${isLoadingAccounts || isLoadingFaculty ? "animate-spin" : ""}`} />
+                      <span>{isLoadingAccounts || isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
+                    </button>
+                  </div>
+                </div>
 
-                {/* TIER 2: 3-Column Stat Grid */}
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {/* TIER 2: Stat Grid */}
+                <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   {/* Card 1: Active Admin Accounts */}
                   <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
@@ -1572,58 +1590,69 @@ export function SuperAdminDashboard({
                       </p>
                     </div>
                   </div>
-
-                  {/* Card 3: Academic Window & Compliance */}
-                  <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Requirements & Cycle</span>
-                      <CheckCircle className="h-5 w-5 text-slate-400" strokeWidth={2} />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        Full Access
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        Review, verify, and configure terms
-                      </p>
-                    </div>
-                  </div>
                 </section>
 
-                {/* TIER 3: 2-Column Main Body */}
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                  {/* Left Column (2-Span) — Admin Accounts Overview */}
-                  <div className="lg:col-span-2 space-y-4">
-                    <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-sm transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-400 dark:border-slate-800">
-                        <div>
-                          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                            Administrative Accounts
-                          </h2>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            Active system administrators and credentials
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleSetActiveSection("accounts")}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer self-start sm:self-auto"
-                        >
-                          <span>Manage Accounts</span>
-                          <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
-                        </button>
+                {/* TIER 3: Admin Accounts Overview */}
+                <section className="w-full space-y-4">
+                  <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-sm transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-400 dark:border-slate-800">
+                      <div>
+                        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                          Administrative Accounts
+                        </h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          Active system administrators and credentials
+                        </p>
                       </div>
-                      {adminAccounts.length > 0 ? (
-                        <div className="divide-y divide-slate-400 dark:divide-slate-800 mt-2">
-                          {adminAccounts.slice(0, 5).map((admin) => (
+                      <button
+                        type="button"
+                        onClick={() => handleSetActiveSection("accounts")}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 dark:border-amber-400 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98] self-start sm:self-auto"
+                      >
+                        <span>Manage Accounts</span>
+                        <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+                      </button>
+                    </div>
+                    {adminAccounts.length > 0 ? (
+                      <div className="divide-y divide-slate-400 dark:divide-slate-800 mt-2">
+                        {adminAccounts.slice(0, 5).map((admin) => {
+                          const avatarUrl =
+                            admin.profileImageUrl ||
+                            admin.avatar_url ||
+                            admin.profile?.avatar_url ||
+                            admin.profile?.picture;
+                          const hasAvatar =
+                            Boolean(avatarUrl) && !failedImageIds.has(admin.profile_id);
+
+                          return (
                             <div key={admin.profile_id} className="py-3 flex items-center justify-between gap-4">
                               <div className="flex items-center gap-3">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-400 bg-slate-100 text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 text-xs font-bold shadow-sm">
-                                  {getInitials(admin.full_name, admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD")}
+                                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-400 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs font-bold shadow-sm">
+                                  {hasAvatar ? (
+                                    <img
+                                      src={avatarUrl!}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                      onError={() =>
+                                        setFailedImageIds((prev) =>
+                                          new Set(prev).add(admin.profile_id)
+                                        )
+                                      }
+                                    />
+                                  ) : (
+                                    getInitials(
+                                      admin.full_name,
+                                      admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
+                                    )
+                                  )}
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">{formatAdminName(admin)}</p>
-                                  <p className="text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
+                                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
+                                    {formatAdminName(admin)}
+                                  </p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    {admin.email}
+                                  </p>
                                 </div>
                               </div>
                               <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs ${
@@ -1634,66 +1663,14 @@ export function SuperAdminDashboard({
                                 {admin.is_active ? "Active" : "Inactive"}
                               </span>
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="py-8 text-center">
-                          <p className="text-xs text-slate-500 dark:text-slate-400">No admin accounts found.</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right Column (1-Span) — Quick Module Access */}
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
-                      <div className="pb-3 border-b border-slate-400 dark:border-slate-800">
-                        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Quick Navigation</h2>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Jump directly to any admin module.</p>
+                          );
+                        })}
                       </div>
-                      <div className="space-y-2 pt-3">
-                        <button
-                          type="button"
-                          onClick={() => handleSetActiveSection("faculty")}
-                          className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
-                        >
-                          <span>Faculty Management</span>
-                          <AppIcon icon={NavArrowRight} size="md" color="muted" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSetActiveSection("verification")}
-                          className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
-                        >
-                          <span>Requirements Verification</span>
-                          <AppIcon icon={NavArrowRight} size="md" color="muted" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSetActiveSection("terms")}
-                          className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
-                        >
-                          <span>Academic Year & Semester</span>
-                          <AppIcon icon={NavArrowRight} size="md" color="muted" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSetActiveSection("window")}
-                          className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
-                        >
-                          <span>Submission Schedule</span>
-                          <AppIcon icon={NavArrowRight} size="md" color="muted" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSetActiveSection("audit")}
-                          className="w-full text-left rounded-xl border border-slate-400 dark:border-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs font-semibold text-slate-900 dark:text-slate-100 cursor-pointer flex items-center justify-between"
-                        >
-                          <span>Transaction Log</span>
-                          <AppIcon icon={NavArrowRight} size="md" color="muted" />
-                        </button>
+                    ) : (
+                      <div className="py-8 text-center">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">No admin accounts found.</p>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </section>
               </article>
