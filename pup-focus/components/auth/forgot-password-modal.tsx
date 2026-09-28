@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Turnstile, type TurnstileInstance } from "@/components/auth/turnstile";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
@@ -22,6 +23,8 @@ export function ForgotPasswordModal({
 }: ForgotPasswordModalProps) {
   const [resetEmail, setResetEmail] = useState(initialEmail);
   const [isSendingReset, setIsSendingReset] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -32,6 +35,8 @@ export function ForgotPasswordModal({
       setResetEmail(initialEmail);
       setToast(null);
       setIsSendingReset(false);
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
     }
   }, [isOpen, initialEmail]);
 
@@ -53,6 +58,14 @@ export function ForgotPasswordModal({
       return;
     }
 
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+      setToast({
+        type: "error",
+        message: "Please complete the security verification challenge.",
+      });
+      return;
+    }
+
     setIsSendingReset(true);
 
     try {
@@ -60,7 +73,7 @@ export function ForgotPasswordModal({
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedResetEmail }),
+        body: JSON.stringify({ email: normalizedResetEmail, captchaToken }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -74,6 +87,8 @@ export function ForgotPasswordModal({
           onClose();
         }, 2200);
       } else {
+        setCaptchaToken(null);
+        turnstileRef.current?.reset();
         const rawMsg = data.error || "Failed to send password reset email.";
         if (
           rawMsg.toLowerCase().includes("rate limit") ||
@@ -90,9 +105,12 @@ export function ForgotPasswordModal({
           const { error: fallbackErr } =
             await supabase.auth.resetPasswordForEmail(normalizedResetEmail, {
               redirectTo: `${window.location.origin}/auth/change-password`,
+              captchaToken: captchaToken || undefined,
             });
 
           if (fallbackErr) {
+            setCaptchaToken(null);
+            turnstileRef.current?.reset();
             const fallbackMsg = fallbackErr.message;
             if (
               fallbackMsg.toLowerCase().includes("rate limit") ||
@@ -121,6 +139,8 @@ export function ForgotPasswordModal({
         }
       }
     } catch (err: any) {
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
       setToast({
         type: "error",
         message:
@@ -254,6 +274,22 @@ export function ForgotPasswordModal({
                 </div>
               </div>
 
+              {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+                <div className="flex justify-center my-2.5 min-h-[65px] items-center">
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                    onError={() => setCaptchaToken(null)}
+                    options={{
+                      theme: "dark",
+                      size: "normal",
+                    }}
+                  />
+                </div>
+              )}
+
               <div className="flex gap-2.5 pt-1">
                 <Button
                   type="button"
@@ -264,8 +300,11 @@ export function ForgotPasswordModal({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSendingReset}
-                  className="h-11 sm:h-12 flex-1 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2 disabled:opacity-50"
+                  disabled={
+                    isSendingReset ||
+                    (Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken)
+                  }
+                  className="h-11 sm:h-12 flex-1 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSendingReset ? (
                     <>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import type { TurnstileInstance } from "@/components/auth/turnstile";
 import { Logo } from "@/components/ui/logo";
 import { LoginForm, type NoticeBanner } from "@/components/auth/login-form";
 import { ForgotPasswordModal } from "@/components/auth/forgot-password-modal";
@@ -36,6 +37,8 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authModal, setAuthModal] = useState<AuthModalState | null>(null);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
 
   // Load remembered credentials from localStorage
   useEffect(() => {
@@ -248,11 +251,20 @@ export default function Home() {
       return;
     }
 
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+      const errorMsg = "Please complete the security verification challenge.";
+      setError(errorMsg);
+      setNotice({ type: "error", message: errorMsg });
+      setIsSubmitting(false);
+      return;
+    }
+
     const supabase = createClient();
     const signIn = () =>
       supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
+        options: { captchaToken: captchaToken || undefined },
       });
 
     let { data: signInData, error: signInError } = await signIn();
@@ -263,6 +275,8 @@ export default function Home() {
       });
 
       if (!bootstrapResponse.ok) {
+        setCaptchaToken(null);
+        turnstileRef.current?.reset();
         try {
           const body = (await bootstrapResponse.json()) as { error?: string };
           setError(
@@ -279,6 +293,8 @@ export default function Home() {
     }
 
     if (signInError || !signInData?.user) {
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
       const errorMessage = signInError?.message ?? "Sign in failed";
       const isInvalidCredentials = errorMessage === "Invalid login credentials";
 
@@ -580,6 +596,9 @@ export default function Home() {
                   error={error}
                   notice={notice}
                   publicEnvConfigured={Boolean(PUBLIC_ENV)}
+                  captchaToken={captchaToken}
+                  setCaptchaToken={setCaptchaToken}
+                  turnstileRef={turnstileRef}
                 />
               </div>
 
