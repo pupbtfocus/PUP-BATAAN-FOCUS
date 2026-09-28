@@ -843,7 +843,7 @@ export function UserRegistrationLogsModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-4 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer text-center"
+              className="w-full sm:w-auto rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] px-4 py-2 sm:py-1.5 text-xs font-semibold text-white transition cursor-pointer text-center shadow-xs"
             >
               Close
             </button>
@@ -1012,7 +1012,7 @@ export function UserRegistrationLogsModal({
                   <button
                     type="button"
                     onClick={() => setSelectedLogForDetails(null)}
-                    className="flex-1 sm:flex-initial rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer text-center"
+                    className="flex-1 sm:flex-initial rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] px-4 py-2 text-xs font-semibold text-white transition cursor-pointer text-center shadow-xs"
                   >
                     Close
                   </button>

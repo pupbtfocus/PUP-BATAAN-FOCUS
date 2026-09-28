@@ -454,9 +454,9 @@ export function AuditLogsPanel() {
             <button
               type="button"
               onClick={() => setSelectedIds(new Set())}
-              className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 transition cursor-pointer"
+              className="flex items-center gap-1 text-xs text-white px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] transition cursor-pointer shadow-xs"
             >
-              <AppIcon icon={Xmark} size="xs" color="inherit" />
+              <AppIcon icon={Xmark} size="xs" color="white" />
               Clear
             </button>
             <button
@@ -628,7 +628,7 @@ export function AuditLogsPanel() {
                         <button
                           type="button"
                           onClick={() => setDeleteConfirmEntry(null)}
-                          className="px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                          className="px-3 py-1 text-xs font-semibold rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs"
                         >
                           Cancel
                         </button>

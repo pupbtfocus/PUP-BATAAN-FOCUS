@@ -1460,7 +1460,7 @@ export function SubmissionWindowPanel({
                 onClick={() =>
                   setWarningModalData({ ...warningModalData, isOpen: false })
                 }
-                className="flex-1 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                className="flex-1 py-2.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
               >
                 Close
               </button>
