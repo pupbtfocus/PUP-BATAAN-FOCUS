@@ -2,17 +2,11 @@
 
 import React from "react";
 import {
-  Calendar,
-  CheckCircle,
-  Clock,
   Database,
   EditPencil,
   Eye,
   EyeClosed,
-  InfoCircle,
   Page,
-  ShieldCheck,
-  Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -103,38 +97,15 @@ export function RequirementTemplateDetailsModal({
                 )}
 
                 {template.is_mandatory ? (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500/15 text-amber-900 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-400/30">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs">
                     Mandatory Submission
                   </span>
                 ) : (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-600 text-white border border-slate-700 shadow-2xs">
                     Optional Submission
                   </span>
                 )}
-
-                <span className="font-mono text-xs px-2 py-0.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md border border-slate-200 dark:border-slate-700">
-                  code: {template.code}
-                </span>
               </div>
-            </div>
-          </div>
-
-          {/* Description & Guidelines Section */}
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <AppIcon icon={InfoCircle} size="sm" color="default" />
-              Description & Faculty Guidelines
-            </h4>
-            <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/30 p-4">
-              {template.description && template.description.trim().length > 0 ? (
-                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                  {template.description}
-                </p>
-              ) : (
-                <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                  No additional instructions or descriptions configured. Faculty members will see standard submission options for this document.
-                </p>
-              )}
             </div>
           </div>
 
@@ -181,30 +152,6 @@ export function RequirementTemplateDetailsModal({
                   Upload payload ceiling enforced per file submission.
                 </p>
               </div>
-            </div>
-
-            {/* Compliance Policy */}
-            <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-800/20 p-4 space-y-1.5">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Compliance Requirement Policy
-              </span>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                {template.is_mandatory
-                  ? "Mandatory requirement. Faculty cannot achieve complete term clearance without valid approval of this document."
-                  : "Optional requirement. Document may be submitted optionally or as supplemental documentation."}
-              </p>
-            </div>
-
-            {/* Visibility Status */}
-            <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-800/20 p-4 space-y-1.5">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Faculty Visibility Status
-              </span>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                {template.is_active
-                  ? "Active and visible. Appears in faculty compliance checklists and submission upload menus."
-                  : "Hidden from faculty view. Will not appear in checklists, but prior submissions remain safely archived."}
-              </p>
             </div>
           </div>
 
