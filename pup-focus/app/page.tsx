@@ -463,7 +463,7 @@ export default function Home() {
   }
 
   return (
-    <main className="relative h-screen min-h-screen max-h-screen w-full flex flex-col items-center justify-center px-3 sm:px-4 py-2 text-[#fff8e7] overflow-hidden bg-[#1c0406]">
+    <main className="relative min-h-screen h-auto md:h-screen md:max-h-screen w-full flex flex-col items-center justify-start md:justify-center px-3 sm:px-4 pt-14 pb-10 sm:py-6 md:py-2 text-[#fff8e7] overflow-x-hidden overflow-y-auto md:overflow-hidden bg-[#1c0406]">
       {/* Campus Background Photos with Maroon Blur */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div
@@ -485,7 +485,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#2a0408]/45 via-transparent to-[#1c0205]/60" />
       </div>
 
-      <div className="relative z-10 w-full max-w-4xl lg:max-w-5xl mx-auto my-auto py-2 sm:py-3">
+      <div className="relative z-10 w-full max-w-[460px] md:max-w-4xl lg:max-w-5xl mx-auto my-0 md:my-auto py-1 sm:py-2 md:py-3">
         {/* Wide Open-Book Card Container */}
         <div className="relative w-full mx-auto opacity-[0.88]">
           {/* Desktop Curved Card Top Header SVG (>= md) */}
@@ -640,8 +640,8 @@ export default function Home() {
             </svg>
 
             {/* Logo positioned precisely inside the curved arch */}
-            <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
-              <Logo size={110} className="mb-0 drop-shadow-[0_10px_20px_rgba(0,0,0,0.7)]" />
+            <div className="absolute -top-7 sm:-top-8 left-1/2 -translate-x-1/2 z-20">
+              <Logo size={105} className="mb-0 drop-shadow-[0_10px_20px_rgba(0,0,0,0.7)]" />
             </div>
           </div>
 
@@ -653,7 +653,7 @@ export default function Home() {
 
           {/* Card Body - Official PUP Brand Maroon (#800000) with 2-Sided Open Book Layout */}
           <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-4 border-b-4 border-amber-400 bg-[#800000] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)]">
-            <div className="grid grid-cols-1 md:grid-cols-12 items-stretch min-h-[380px] sm:min-h-[420px]">
+            <div className="grid grid-cols-1 md:grid-cols-12 items-stretch md:min-h-[420px]">
               {/* Left Side (Page 1): Login Form (Swapped) */}
               <div className="md:col-span-6 relative flex flex-col justify-center p-5 sm:p-7 md:p-8 border-b-2 md:border-b-0 border-amber-400/40 bg-transparent">
                 {/* Form Header */}
@@ -690,7 +690,7 @@ export default function Home() {
               </div>
 
               {/* Right Side (Page 2): Centered PUP FOCUS and Faculty Online Compliance and Uploading System with Pylon Background */}
-              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center p-5 sm:p-7 md:p-8 min-h-[380px] sm:min-h-[420px] bg-transparent overflow-hidden">
+              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center p-5 sm:p-7 md:p-8 min-h-[220px] sm:min-h-[260px] md:min-h-[420px] bg-transparent overflow-hidden">
                 {/* Pylon Monument Background (pylon.png) */}
                 <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                   <Image
