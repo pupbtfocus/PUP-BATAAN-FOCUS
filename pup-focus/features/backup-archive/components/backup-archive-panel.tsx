@@ -12,7 +12,6 @@ import {
   Hourglass,
   MultiplePages,
   NavArrowDown,
-  Plus,
   Refresh,
   Search,
   Trash,
@@ -449,7 +448,7 @@ export function BackupArchivePanel() {
     <div className="space-y-6">
       {/* Top 3 Stat Cards */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
+        <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Total Backups Generated
@@ -466,7 +465,7 @@ export function BackupArchivePanel() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
+        <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Archived Academic Years
@@ -483,7 +482,7 @@ export function BackupArchivePanel() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
+        <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Last Backup Date
@@ -506,7 +505,7 @@ export function BackupArchivePanel() {
       <AlertPopup type="success" message={success} onClose={() => setSuccess(null)} />
 
       {/* SECTION 1: Scope Selector & Backup Generator Bar */}
-      <section className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs transition-colors space-y-4">
+      <section className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs transition-colors space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -514,7 +513,7 @@ export function BackupArchivePanel() {
               <span>Institutional Backup & Document Vault</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Generate full snapshots (.JSON) or download document vaults (.ZIP) filtered by academic year, semester, or faculty member.
+              Download document vaults (.ZIP) filtered by academic year, semester, or faculty member.
             </p>
           </div>
 
@@ -742,37 +741,17 @@ export function BackupArchivePanel() {
               type="button"
               disabled={Boolean(exportingTermKey) || isGeneratingBackup}
               onClick={() => void handleDownloadZip()}
-              className="flex items-center gap-1.5 bg-white hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold rounded-xl text-xs sm:text-sm px-3.5 py-2 transition border border-slate-300 dark:border-slate-700 cursor-pointer disabled:opacity-50 shadow-2xs"
+              className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-bold rounded-xl text-xs sm:text-sm px-4 py-2 transition shadow-xs cursor-pointer disabled:opacity-50"
             >
               {exportingTermKey === `${selectedAcademicYear}__${selectedSemester}__${selectedFacultyId}` ? (
                 <>
-                  <Refresh className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                  <Refresh className="w-3.5 h-3.5 animate-spin text-slate-950" />
                   <span>{exportProgress || "Zipping documents..."}</span>
                 </>
               ) : (
                 <>
-                  <AppIcon icon={Archive} size="md" color="default" />
+                  <AppIcon icon={Archive} size="md" color="inherit" className="text-slate-950" />
                   <span>Download Document Vault (.ZIP)</span>
-                </>
-              )}
-            </button>
-
-            {/* Generate Snapshot JSON */}
-            <button
-              type="button"
-              disabled={isGeneratingBackup || Boolean(exportingTermKey)}
-              onClick={() => void handleGenerateBackup()}
-              className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-bold rounded-xl text-xs sm:text-sm px-4 py-2 transition shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              {isGeneratingBackup ? (
-                <>
-                  <Refresh className="w-3.5 h-3.5 animate-spin" />
-                  <span>Generating Snapshot...</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Generate Snapshot (.JSON)</span>
                 </>
               )}
             </button>
@@ -797,7 +776,7 @@ export function BackupArchivePanel() {
         </div>
 
         {/* Backups Table */}
-        <div className="w-full overflow-x-auto rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
+        <div className="w-full overflow-x-auto rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
@@ -985,7 +964,7 @@ export function BackupArchivePanel() {
         </div>
 
         {/* Archived Terms Table */}
-        <div className="w-full overflow-x-auto rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
+        <div className="w-full overflow-x-auto rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
@@ -1094,7 +1073,7 @@ export function BackupArchivePanel() {
       {/* Backup Inspection Modal */}
       {inspectedBackup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-hidden flex flex-col">
+          <div className="w-full max-w-lg rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] overflow-hidden flex flex-col">
             <ModalHeader title={inspectedBackup.backup_name} icon={Database} />
             <div className="p-6 overflow-y-auto flex-1 space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3 p-4 rounded-lg bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800">
@@ -1230,7 +1209,7 @@ export function BackupArchivePanel() {
       {/* Term Vault Inspection Modal */}
       {inspectedTerm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
+          <div className="w-full max-w-md rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader title="Archive Vault Inspection" icon={Archive} />
             <div className="p-6 space-y-3 text-xs">
               <div className="p-4 rounded-lg bg-slate-50 border border-slate-200/80 dark:bg-slate-900/50 dark:border-slate-800 space-y-2">
@@ -1304,7 +1283,7 @@ export function BackupArchivePanel() {
       {/* Delete Backup Confirmation Modal */}
       {backupToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+          <div className="w-full max-w-md rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
             {/* Modal Header */}
             <ModalHeader
               icon={Trash}
