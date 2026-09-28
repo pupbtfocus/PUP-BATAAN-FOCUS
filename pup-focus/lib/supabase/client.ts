@@ -36,6 +36,18 @@ function createMissingSupabaseClient() {
           error: new Error(SUPABASE_ENV_WARNING),
         };
       },
+      async signUp() {
+        return {
+          data: { user: null, session: null },
+          error: new Error(SUPABASE_ENV_WARNING),
+        };
+      },
+      async resetPasswordForEmail() {
+        return {
+          data: {},
+          error: new Error(SUPABASE_ENV_WARNING),
+        };
+      },
       async signOut() {
         return { error: null };
       },
