@@ -3,6 +3,7 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 
 export interface TurnstileInstance {
+  execute: () => void;
   reset: () => void;
   render?: () => void;
   remove?: () => void;
@@ -16,8 +17,9 @@ export interface TurnstileProps {
   onExpire?: () => void;
   options?: {
     theme?: "light" | "dark" | "auto";
-    size?: "normal" | "flexible" | "compact";
+    size?: "normal" | "flexible" | "compact" | "invisible";
     action?: string;
+    execution?: "render" | "execute";
   };
   className?: string;
 }
@@ -33,10 +35,12 @@ declare global {
           "error-callback"?: (error?: unknown) => void;
           "expired-callback"?: () => void;
           theme?: "light" | "dark" | "auto";
-          size?: "normal" | "flexible" | "compact";
+          size?: "normal" | "flexible" | "compact" | "invisible";
           action?: string;
+          execution?: "render" | "execute";
         }
       ) => string;
+      execute: (containerOrWidgetId?: HTMLElement | string) => void;
       reset: (widgetId?: string) => void;
       remove: (widgetId?: string) => void;
       getResponse: (widgetId?: string) => string | undefined;
@@ -48,19 +52,51 @@ export const Turnstile = forwardRef<TurnstileInstance, TurnstileProps>(
   function Turnstile({ siteKey, onSuccess, onError, onExpire, options, className }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const widgetIdRef = useRef<string | null>(null);
+    const isPendingExecuteRef = useRef(false);
+
+    const onSuccessRef = useRef(onSuccess);
+    const onErrorRef = useRef(onError);
+    const onExpireRef = useRef(onExpire);
+
+    useEffect(() => {
+      onSuccessRef.current = onSuccess;
+      onErrorRef.current = onError;
+      onExpireRef.current = onExpire;
+    });
 
     useImperativeHandle(ref, () => ({
+      execute: () => {
+        if (typeof window !== "undefined" && window.turnstile && widgetIdRef.current) {
+          try {
+            // Check if widget already has an unexpired response token
+            const existingToken = window.turnstile.getResponse(widgetIdRef.current);
+            if (existingToken) {
+              console.log("[Turnstile] Using existing response token");
+              onSuccessRef.current?.(existingToken);
+              return;
+            }
+            window.turnstile.execute(widgetIdRef.current);
+          } catch (e) {
+            console.error("[Turnstile] Execute error:", e);
+            onErrorRef.current?.(e);
+          }
+        } else {
+          isPendingExecuteRef.current = true;
+        }
+      },
       reset: () => {
+        isPendingExecuteRef.current = false;
         if (typeof window !== "undefined" && window.turnstile && widgetIdRef.current) {
           try {
             window.turnstile.reset(widgetIdRef.current);
-          } catch {
-            // Ignore reset failures if widget unmounted
+          } catch (e) {
+            console.warn("[Turnstile] Reset warning:", e);
           }
         }
       },
       render: () => {},
       remove: () => {
+        isPendingExecuteRef.current = false;
         if (typeof window !== "undefined" && window.turnstile && widgetIdRef.current) {
           try {
             window.turnstile.remove(widgetIdRef.current);
@@ -94,23 +130,42 @@ export const Turnstile = forwardRef<TurnstileInstance, TurnstileProps>(
           widgetIdRef.current = null;
         }
         try {
+          const effectiveSize = options?.size || "normal";
+          const effectiveExecution = options?.execution || "render";
+
           widgetIdRef.current = window.turnstile.render(containerRef.current, {
             sitekey: siteKey,
             callback: (token: string) => {
-              if (isMounted) onSuccess?.(token);
+              if (isMounted) {
+                console.log("[Turnstile] Challenge completed, token received");
+                onSuccessRef.current?.(token);
+              }
             },
             "error-callback": (err: unknown) => {
-              if (isMounted) onError?.(err);
+              if (isMounted) {
+                console.error("[Turnstile] Challenge error callback:", err);
+                onErrorRef.current?.(err);
+              }
             },
             "expired-callback": () => {
-              if (isMounted) onExpire?.();
+              if (isMounted) {
+                console.warn("[Turnstile] Token expired callback");
+                onExpireRef.current?.();
+              }
             },
             theme: options?.theme || "dark",
-            size: options?.size || "normal",
+            size: effectiveSize,
             action: options?.action,
+            execution: effectiveExecution,
           });
+
+          if (isPendingExecuteRef.current && widgetIdRef.current) {
+            isPendingExecuteRef.current = false;
+            window.turnstile.execute(widgetIdRef.current);
+          }
         } catch (e) {
-          console.error("Turnstile render error:", e);
+          console.error("[Turnstile] Render error:", e);
+          onErrorRef.current?.(e);
         }
       }
 
@@ -127,6 +182,10 @@ export const Turnstile = forwardRef<TurnstileInstance, TurnstileProps>(
           script.defer = true;
           script.onload = () => {
             renderWidget();
+          };
+          script.onerror = (e) => {
+            console.error("[Turnstile] Failed to load Cloudflare Turnstile script:", e);
+            onErrorRef.current?.(e);
           };
           document.head.appendChild(script);
         } else {
@@ -147,7 +206,7 @@ export const Turnstile = forwardRef<TurnstileInstance, TurnstileProps>(
           widgetIdRef.current = null;
         }
       };
-    }, [siteKey, options?.theme, options?.size, options?.action]);
+    }, [siteKey, options?.theme, options?.size, options?.action, options?.execution]);
 
     return <div ref={containerRef} className={className} />;
   }
