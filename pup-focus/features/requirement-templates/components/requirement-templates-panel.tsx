@@ -54,7 +54,24 @@ export function RequirementTemplatesPanel({
         throw new Error("Failed to load requirement templates");
       }
       const data = await res.json();
-      setTemplates(data.templates || []);
+      const rawTemplates: RequirementTemplate[] = data.templates || [];
+      const seenCodes = new Set<string>();
+      const seenTitles = new Set<string>();
+      const deduplicated: RequirementTemplate[] = [];
+
+      for (const t of rawTemplates) {
+        const codeKey = (t.code || "").trim().toLowerCase();
+        const titleKey = (t.title || "").trim().toLowerCase();
+
+        if (codeKey && seenCodes.has(codeKey)) continue;
+        if (titleKey && seenTitles.has(titleKey)) continue;
+
+        if (codeKey) seenCodes.add(codeKey);
+        if (titleKey) seenTitles.add(titleKey);
+        deduplicated.push(t);
+      }
+
+      setTemplates(deduplicated);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error loading requirement templates");
     } finally {
@@ -343,7 +360,7 @@ export function RequirementTemplatesPanel({
         <table className="w-full text-left border-collapse min-w-[700px]">
           <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
             <tr>
-              <th className="py-3 px-4">Document Title & Description</th>
+              <th className="py-3 px-4">Document Title</th>
               <th className="py-3 px-4">Allowed Formats</th>
               <th className="py-3 px-4">Max Size</th>
               <th className="py-3 px-4">Requirement Type</th>
@@ -377,38 +394,16 @@ export function RequirementTemplatesPanel({
                   key={tpl.id}
                   className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
                 >
-                  {/* Column 1: Document Title & Description */}
+                  {/* Column 1: Document Title */}
                   <td className="py-3 px-4">
-                    <div className="flex items-start gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setTemplateToView(tpl)}
-                        title="Click to view details"
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 mt-0.5 shrink-0 transition-colors cursor-pointer"
-                      >
-                        <Page className="h-4 w-4" strokeWidth={2} />
-                      </button>
-                      <div className="min-w-0">
-                        <button
-                          type="button"
-                          onClick={() => setTemplateToView(tpl)}
-                          title="Click to view details"
-                          className="text-left font-semibold text-slate-900 dark:text-slate-100 hover:text-amber-600 dark:hover:text-amber-400 text-xs sm:text-sm transition-colors cursor-pointer block truncate max-w-md"
-                        >
-                          {tpl.title}
-                        </button>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="font-mono text-[10px] px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded">
-                            {tpl.code}
-                          </span>
-                          {tpl.description ? (
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-sm">
-                              • {tpl.description}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTemplateToView(tpl)}
+                      title="Click to view details"
+                      className="text-left font-semibold text-slate-900 dark:text-slate-100 hover:text-amber-600 dark:hover:text-amber-400 text-xs sm:text-sm transition-colors cursor-pointer block truncate max-w-md"
+                    >
+                      {tpl.title}
+                    </button>
                   </td>
 
                   {/* Column 2: Allowed Formats */}
@@ -431,11 +426,11 @@ export function RequirementTemplatesPanel({
                   {/* Column 4: Mandatory */}
                   <td className="py-3 px-4">
                     {tpl.is_mandatory ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-500/15 text-amber-900 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-400/30">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs">
                         Mandatory
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-600 text-white border border-slate-700 shadow-2xs">
                         Optional
                       </span>
                     )}

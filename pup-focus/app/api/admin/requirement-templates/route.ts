@@ -68,6 +68,38 @@ const DEFAULT_SEEDS: Array<Omit<RequirementTemplate, "id" | "created_at" | "upda
   },
 ];
 
+function deduplicateRequirementTemplates(templates: RequirementTemplate[]): {
+  unique: RequirementTemplate[];
+  duplicateIds: string[];
+} {
+  const seenCodes = new Set<string>();
+  const seenTitles = new Set<string>();
+  const unique: RequirementTemplate[] = [];
+  const duplicateIds: string[] = [];
+
+  for (const t of templates) {
+    const codeKey = (t.code || "").trim().toLowerCase();
+    const titleKey = (t.title || "").trim().toLowerCase();
+
+    const isDuplicate =
+      (codeKey && seenCodes.has(codeKey)) ||
+      (titleKey && seenTitles.has(titleKey));
+
+    if (isDuplicate) {
+      if (t.id && !t.id.startsWith("default-")) {
+        duplicateIds.push(t.id);
+      }
+      continue;
+    }
+
+    if (codeKey) seenCodes.add(codeKey);
+    if (titleKey) seenTitles.add(titleKey);
+    unique.push(t);
+  }
+
+  return { unique, duplicateIds };
+}
+
 function isAdminRole(role: string | undefined) {
   return role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN;
 }
@@ -116,7 +148,8 @@ export async function GET(request: NextRequest) {
           .select();
 
         if (!seedError && seeded && seeded.length > 0) {
-          return NextResponse.json({ templates: seeded });
+          const { unique } = deduplicateRequirementTemplates(seeded);
+          return NextResponse.json({ templates: unique });
         }
       } catch (err) {
         console.error("Auto-seeding requirement templates failed:", err);
@@ -131,7 +164,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ templates: mapped });
     }
 
-    const filtered = onlyActive ? rows.filter((r) => r.is_active) : rows;
+    const { unique: deduplicatedRows, duplicateIds } = deduplicateRequirementTemplates(rows);
+
+    // Asynchronously delete duplicate records from the database if any were found
+    if (duplicateIds.length > 0) {
+      void supabase
+        .from("requirement_templates")
+        .delete()
+        .in("id", duplicateIds)
+        .then(() => {
+          console.log(`Cleaned up ${duplicateIds.length} duplicate requirement template records.`);
+        });
+    }
+
+    const filtered = onlyActive ? deduplicatedRows.filter((r) => r.is_active) : deduplicatedRows;
     return NextResponse.json({ templates: filtered });
   } catch (error) {
     console.error("GET requirement-templates error:", error);
@@ -224,6 +270,14 @@ export async function POST(request: NextRequest) {
         .order("is_mandatory", { ascending: false })
         .order("created_at", { ascending: true });
 
+      const { unique: deduplicatedAll, duplicateIds: postDupIds } = deduplicateRequirementTemplates(allTemplates || []);
+      if (postDupIds.length > 0) {
+        void supabase
+          .from("requirement_templates")
+          .delete()
+          .in("id", postDupIds);
+      }
+
       const totalUpdated = syncedCount + insertedCount;
       const message =
         totalUpdated > 0
@@ -236,7 +290,7 @@ export async function POST(request: NextRequest) {
         insertedCount,
         restoredCount: totalUpdated,
         message,
-        templates: allTemplates || [],
+        templates: deduplicatedAll,
       });
     }
 
@@ -258,29 +312,24 @@ export async function POST(request: NextRequest) {
       code = title.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/__+/g, "_");
     }
 
-    // Check code uniqueness
-    const { data: existing } = await supabase
+    // Check code and title uniqueness
+    const { data: existingCode } = await supabase
       .from("requirement_templates")
       .select("id")
-      .eq("code", code)
+      .ilike("code", code)
       .maybeSingle();
 
-    if (existing) {
-      const uniqueCode = `${code}_${Math.random().toString(36).substring(2, 6)}`;
-      const { data: stillExisting } = await supabase
-        .from("requirement_templates")
-        .select("id")
-        .eq("code", uniqueCode)
-        .maybeSingle();
+    const { data: existingTitle } = await supabase
+      .from("requirement_templates")
+      .select("id")
+      .ilike("title", title)
+      .maybeSingle();
 
-      if (!stillExisting) {
-        code = uniqueCode;
-      } else {
-        return NextResponse.json(
-          { error: `A requirement template with this title already exists.` },
-          { status: 400 }
-        );
-      }
+    if (existingCode || existingTitle) {
+      return NextResponse.json(
+        { error: "A requirement template with this document title or code already exists." },
+        { status: 409 }
+      );
     }
 
     const { data: created, error: insertError } = await supabase
