@@ -17,7 +17,7 @@ export function FacultyStatsCards({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+      <div className="rounded-xl bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
           Total Faculty
         </p>
@@ -26,7 +26,7 @@ export function FacultyStatsCards({
         </p>
       </div>
 
-      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+      <div className="rounded-xl bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
           Active Faculty
         </p>
@@ -35,7 +35,7 @@ export function FacultyStatsCards({
         </p>
       </div>
 
-      <div className="rounded-xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+      <div className="rounded-xl bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
           Inactive Faculty
         </p>

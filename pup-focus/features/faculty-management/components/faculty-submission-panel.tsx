@@ -2192,7 +2192,7 @@ function FacultySubmissionPanelContent({
                 {/* Top Stat Summary Grid (3 Cards) */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
                   {/* Card 1: Overall Progress */}
-                  <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
+                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Overall Progress
@@ -2234,7 +2234,7 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Card 2: Submission Window Status */}
-                  <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
+                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Window Status
@@ -2275,7 +2275,7 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Card 3: Action Required */}
-                  <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
+                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Action Required
@@ -2307,7 +2307,7 @@ function FacultySubmissionPanelContent({
                 {/* Main Dashboard Body: Recent Activity */}
                 <section className="space-y-6">
                   {/* Activity Feed Card */}
-                  <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
+                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
                       <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         Recent Activity
@@ -2841,7 +2841,7 @@ function FacultySubmissionPanelContent({
                         </span>
                       </div>
                     )}
-                    <div className="bg-white border border-slate-300 shadow-sm shadow-slate-300/50 dark:bg-slate-900 dark:border dark:border-slate-800 dark:shadow-none rounded-xl overflow-hidden transition-colors">
+                    <div className="bg-white border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:shadow-none rounded-xl overflow-hidden transition-colors">
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm min-w-[640px]">
                           <thead>

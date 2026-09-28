@@ -22,7 +22,7 @@ export function FacultyFilterBar({
   placeholder = "Search faculty by name or email...",
 }: FacultyFilterBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 rounded-xl mb-6 transition-colors">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 rounded-xl mb-6 transition-colors">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
         <input
           type="text"

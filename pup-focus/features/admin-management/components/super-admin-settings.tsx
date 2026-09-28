@@ -544,7 +544,7 @@ export function SuperAdminSettings({
       {/* Grid Layout (2-Column) */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Profile Details Card */}
-        <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
+        <article className="rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
           <div className="pb-4 border-b border-slate-200 dark:border-slate-800">
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-normal">
               Profile Details
@@ -803,7 +803,7 @@ export function SuperAdminSettings({
         </article>
 
         {/* Change Password Card */}
-        <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
+        <article className="rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
           <div className="pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-normal">
@@ -1016,7 +1016,7 @@ export function SuperAdminSettings({
       </section>
 
       {/* System Preferences & Session Duration Section */}
-      <article className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
+      <article className="rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white shadow-xs dark:bg-slate-900 p-6 transition-colors">
         <div className="pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-normal">

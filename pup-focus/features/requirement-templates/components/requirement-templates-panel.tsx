@@ -339,7 +339,7 @@ export function RequirementTemplatesPanel({
       </div>
 
       {/* Main Data Table matching adaptive table standard */}
-      <div className="w-full overflow-x-auto rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm shadow-slate-300/50 dark:shadow-none overflow-hidden transition-colors">
+      <div className="w-full overflow-x-auto rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
         <table className="w-full text-left border-collapse min-w-[700px]">
           <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
             <tr>
