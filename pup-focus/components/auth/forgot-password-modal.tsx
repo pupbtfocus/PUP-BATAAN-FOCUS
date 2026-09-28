@@ -25,6 +25,13 @@ export function ForgotPasswordModal({
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const pendingResetEmailRef = useRef<string | null>(null);
+  const latestResetEmailRef = useRef(resetEmail);
+
+  useEffect(() => {
+    latestResetEmailRef.current = resetEmail;
+  });
+
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -33,9 +40,11 @@ export function ForgotPasswordModal({
   useEffect(() => {
     if (isOpen) {
       setResetEmail(initialEmail);
+      latestResetEmailRef.current = initialEmail;
       setToast(null);
       setIsSendingReset(false);
       setCaptchaToken(null);
+      pendingResetEmailRef.current = null;
       turnstileRef.current?.reset();
     }
   }, [isOpen, initialEmail]);
@@ -61,19 +70,40 @@ export function ForgotPasswordModal({
     if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
       setToast({
         type: "error",
-        message: "Please complete the security verification challenge.",
+        message: "Please complete the security check before requesting a reset link.",
       });
       return;
     }
 
+    pendingResetEmailRef.current = normalizedResetEmail;
     setIsSendingReset(true);
+    await performSendReset(captchaToken || undefined);
+  }
+
+  function handleTurnstileSuccess(token: string) {
+    setCaptchaToken(token);
+  }
+
+  function handleTurnstileError() {
+    setIsSendingReset(false);
+    setCaptchaToken(null);
+    pendingResetEmailRef.current = null;
+    turnstileRef.current?.reset();
+    setToast({
+      type: "error",
+      message: "Security verification challenge failed. Please try again.",
+    });
+  }
+
+  async function performSendReset(token?: string) {
+    const normalizedResetEmail = (pendingResetEmailRef.current ?? latestResetEmailRef.current).trim().toLowerCase();
 
     try {
       // 1. Try sending via server API route (bypasses Supabase client rate limits and sends branded email)
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedResetEmail, captchaToken }),
+        body: JSON.stringify({ email: normalizedResetEmail, captchaToken: token }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -87,9 +117,8 @@ export function ForgotPasswordModal({
           onClose();
         }, 2200);
       } else {
-        setCaptchaToken(null);
-        turnstileRef.current?.reset();
         const rawMsg = data.error || "Failed to send password reset email.";
+        console.error("[ForgotPassword] API route failed:", rawMsg);
         if (
           rawMsg.toLowerCase().includes("rate limit") ||
           rawMsg.toLowerCase().includes("over_email_send_rate_limit")
@@ -102,15 +131,15 @@ export function ForgotPasswordModal({
         } else {
           // Fallback to client-side resetPasswordForEmail if API fails for non-rate-limit reason
           const supabase = createClient();
+          console.log("[ForgotPassword] Trying client fallback resetPasswordForEmail...");
           const { error: fallbackErr } =
             await supabase.auth.resetPasswordForEmail(normalizedResetEmail, {
               redirectTo: `${window.location.origin}/auth/change-password`,
-              captchaToken: captchaToken || undefined,
+              captchaToken: token || undefined,
             });
 
           if (fallbackErr) {
-            setCaptchaToken(null);
-            turnstileRef.current?.reset();
+            console.error("[ForgotPassword] Supabase fallback error:", fallbackErr.message, fallbackErr);
             const fallbackMsg = fallbackErr.message;
             if (
               fallbackMsg.toLowerCase().includes("rate limit") ||
@@ -139,8 +168,6 @@ export function ForgotPasswordModal({
         }
       }
     } catch (err: any) {
-      setCaptchaToken(null);
-      turnstileRef.current?.reset();
       setToast({
         type: "error",
         message:
@@ -148,6 +175,9 @@ export function ForgotPasswordModal({
       });
     } finally {
       setIsSendingReset(false);
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
+      pendingResetEmailRef.current = null;
     }
   }
 
@@ -274,17 +304,19 @@ export function ForgotPasswordModal({
                 </div>
               </div>
 
+              {/* Turnstile Widget */}
               {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
                 <div className="flex justify-center my-2.5 min-h-[65px] items-center">
                   <Turnstile
                     ref={turnstileRef}
                     siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setCaptchaToken(token)}
-                    onExpire={() => setCaptchaToken(null)}
-                    onError={() => setCaptchaToken(null)}
+                    onSuccess={handleTurnstileSuccess}
+                    onExpire={handleTurnstileError}
+                    onError={handleTurnstileError}
                     options={{
                       theme: "dark",
                       size: "normal",
+                      execution: "render",
                     }}
                   />
                 </div>
@@ -300,10 +332,7 @@ export function ForgotPasswordModal({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={
-                    isSendingReset ||
-                    (Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken)
-                  }
+                  disabled={isSendingReset || (Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken)}
                   className="h-11 sm:h-12 flex-1 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSendingReset ? (

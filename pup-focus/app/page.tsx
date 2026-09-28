@@ -39,6 +39,12 @@ export default function Home() {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const pendingCredentialsRef = useRef<{ email: string; password: string; rememberMe: boolean } | null>(null);
+  const latestCredentialsRef = useRef({ email, password, rememberMe });
+
+  useEffect(() => {
+    latestCredentialsRef.current = { email, password, rememberMe };
+  });
 
   // Load remembered credentials from localStorage
   useEffect(() => {
@@ -236,7 +242,6 @@ export default function Home() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSubmitting(true);
     setError(null);
     setNotice(null);
     setAuthModal(null);
@@ -247,134 +252,214 @@ export default function Home() {
       const errorMsg = "Please provide a real email address.";
       setError(errorMsg);
       setNotice({ type: "error", message: errorMsg });
-      setIsSubmitting(false);
+      return;
+    }
+
+    if (!password) {
+      const errorMsg = "Please enter your password.";
+      setError(errorMsg);
+      setNotice({ type: "error", message: errorMsg });
       return;
     }
 
     if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
-      const errorMsg = "Please complete the security verification challenge.";
+      const errorMsg = "Please complete the security check before signing in.";
       setError(errorMsg);
       setNotice({ type: "error", message: errorMsg });
-      setIsSubmitting(false);
       return;
     }
 
+    pendingCredentialsRef.current = {
+      email: normalizedEmail,
+      password,
+      rememberMe,
+    };
+
+    setIsSubmitting(true);
+    await performSignIn(captchaToken || undefined);
+  }
+
+  function handleTurnstileSuccess(token: string) {
+    console.log("[Auth] Turnstile pre-submit verification passed");
+    setCaptchaToken(token);
+    setError(null);
+  }
+
+  function handleTurnstileError(err?: unknown) {
+    console.error("[Auth] Turnstile challenge error:", err);
+    setCaptchaToken(null);
+    setIsSubmitting(false);
+    pendingCredentialsRef.current = null;
+    turnstileRef.current?.reset();
+    const errorMsg = "Security verification challenge failed. Please try again.";
+    setError(errorMsg);
+    setNotice({ type: "error", message: errorMsg });
+  }
+
+  function handleTurnstileExpire() {
+    console.warn("[Auth] Turnstile token expired");
+    setCaptchaToken(null);
+    setIsSubmitting(false);
+    pendingCredentialsRef.current = null;
+    turnstileRef.current?.reset();
+  }
+
+  async function performSignIn(token?: string) {
+    const creds = pendingCredentialsRef.current ?? {
+      email: latestCredentialsRef.current.email.trim().toLowerCase(),
+      password: latestCredentialsRef.current.password,
+      rememberMe: latestCredentialsRef.current.rememberMe,
+    };
+    const normalizedEmail = creds.email;
+    const currentPassword = creds.password;
+    const activeRememberMe = creds.rememberMe;
+
     const supabase = createClient();
+    console.log("[Auth] Signing in with password for:", normalizedEmail, { hasCaptcha: Boolean(token) });
+
     const signIn = () =>
       supabase.auth.signInWithPassword({
         email: normalizedEmail,
-        password,
-        options: { captchaToken: captchaToken || undefined },
+        password: currentPassword,
+        options: token ? { captchaToken: token } : undefined,
       });
 
-    let { data: signInData, error: signInError } = await signIn();
+    try {
+      let { data: signInData, error: signInError } = await signIn();
 
-    if (signInError && normalizedEmail === SUPER_ADMIN_EMAIL) {
-      const bootstrapResponse = await fetch("/api/bootstrap/super-admin", {
-        method: "POST",
-      });
+      if (signInError && normalizedEmail === SUPER_ADMIN_EMAIL) {
+        console.warn("[Auth] Super admin login failed, attempting bootstrap:", signInError.message);
+        const bootstrapResponse = await fetch("/api/bootstrap/super-admin", {
+          method: "POST",
+        });
 
-      if (!bootstrapResponse.ok) {
-        setCaptchaToken(null);
-        turnstileRef.current?.reset();
-        try {
-          const body = (await bootstrapResponse.json()) as { error?: string };
-          setError(
-            body.error ?? "Unable to initialize the super admin account.",
-          );
-        } catch {
-          setError("Unable to initialize the super admin account.");
+        if (!bootstrapResponse.ok) {
+          try {
+            const body = (await bootstrapResponse.json()) as { error?: string };
+            const errText = body.error ?? "Unable to initialize the super admin account.";
+            console.error("[Auth] Super admin bootstrap failed:", errText);
+            setError(errText);
+            setNotice({ type: "error", message: errText });
+          } catch {
+            setError("Unable to initialize the super admin account.");
+          }
+          setIsSubmitting(false);
+          return;
+        }
+
+        ({ data: signInData, error: signInError } = await signIn());
+      }
+
+      if (signInError || !signInData?.user) {
+        console.error("[Auth] Supabase sign-in error:", signInError?.message, signInError);
+        const rawMessage = signInError?.message ?? "Sign in failed";
+        const isInvalidCredentials =
+          rawMessage.toLowerCase().includes("invalid login credentials") ||
+          rawMessage.toLowerCase().includes("invalid credentials");
+
+        if (isInvalidCredentials) {
+          setAuthModal({
+            title: "Invalid Credentials",
+            message: "The email address or password you entered is incorrect. Please try again.",
+            actionLabel: "Try again",
+            variant: "error",
+          });
+        } else {
+          setError(rawMessage);
+          setNotice({ type: "error", message: rawMessage });
+          setAuthModal({
+            title: "Authentication Error",
+            message: rawMessage,
+            actionLabel: "Try again",
+            variant: "error",
+          });
         }
         setIsSubmitting(false);
         return;
       }
 
-      ({ data: signInData, error: signInError } = await signIn());
-    }
+      const user = signInData.user;
+      console.log("[Auth] Sign in successful for user:", user.id);
 
-    if (signInError || !signInData?.user) {
-      setCaptchaToken(null);
-      turnstileRef.current?.reset();
-      const errorMessage = signInError?.message ?? "Sign in failed";
-      const isInvalidCredentials = errorMessage === "Invalid login credentials";
+      const mustChange =
+        (user.user_metadata as any)?.must_change_password === true ||
+        (user.user_metadata as any)?.force_password_change === true;
+      if (mustChange) {
+        setIsSubmitting(false);
+        window.location.assign("/auth/change-password");
+        return;
+      }
 
-      setAuthModal({
-        title: "Invalid Credentials",
-        message: "The email address or password you entered is incorrect. Please try again.",
-        actionLabel: "Try again",
-        variant: "error",
-      });
-      setIsSubmitting(false);
-      return;
-    }
+      const metadataIsActive =
+        (user.user_metadata as any)?.is_active ??
+        (user.app_metadata as any)?.is_active;
 
-    const user = signInData.user;
-    const mustChange =
-      (user.user_metadata as any)?.must_change_password === true ||
-      (user.user_metadata as any)?.force_password_change === true;
-    if (mustChange) {
-      setIsSubmitting(false);
-      window.location.assign("/auth/change-password");
-      return;
-    }
-
-    const metadataIsActive =
-      (user.user_metadata as any)?.is_active ??
-      (user.app_metadata as any)?.is_active;
-
-    let isActive: boolean | null = null;
-    if (typeof metadataIsActive === "boolean") {
-      isActive = metadataIsActive;
-    } else {
-      try {
-        const resp = await fetch("/api/auth/validate");
-        if (resp.ok) {
-          const body = (await resp.json()) as { is_active?: boolean };
-          if (typeof body.is_active === "boolean") {
-            isActive = body.is_active;
+      let isActive: boolean | null = null;
+      if (typeof metadataIsActive === "boolean") {
+        isActive = metadataIsActive;
+      } else {
+        try {
+          const resp = await fetch("/api/auth/validate");
+          if (resp.ok) {
+            const body = (await resp.json()) as { is_active?: boolean };
+            if (typeof body.is_active === "boolean") {
+              isActive = body.is_active;
+            }
           }
+        } catch {
+          // ignore validation errors and proceed
+        }
+      }
+
+      if (isActive === false) {
+        await supabase.auth.signOut();
+        console.warn("[Auth] Account is deactivated:", normalizedEmail);
+        setError("Your account has been deactivated. Contact an administrator.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const signedInRole =
+        (user.user_metadata?.role as AppRole | undefined) ??
+        (user.app_metadata?.role as AppRole | undefined) ??
+        ROLE.FACULTY;
+      const nextTarget = ROUTE_BY_ROLE[signedInRole];
+
+      // Save or clear Remember Me credentials safely in localStorage
+      try {
+        if (activeRememberMe) {
+          localStorage.setItem("pup_focus_remember_me", "true");
+          localStorage.setItem("pup_focus_remembered_email", normalizedEmail);
+        } else {
+          localStorage.removeItem("pup_focus_remember_me");
+          localStorage.removeItem("pup_focus_remembered_email");
         }
       } catch {
-        // ignore validation errors and proceed
+        // Ignore storage access errors
       }
-    }
 
-    if (isActive === false) {
-      await supabase.auth.signOut();
-      setError("Your account has been deactivated. Contact an administrator.");
+      // Always reset all role active views/tabs so every new session starts fresh on the Dashboard
+      resetDashboardNavigationState();
+
       setIsSubmitting(false);
-      return;
+      setAuthModal({
+        title: "Login Successful",
+        message: `Welcome back! You are signed in as ${ROLE_LABEL[signedInRole]}.`,
+        variant: "success",
+        redirectTo: nextTarget,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred during sign in.";
+      console.error("[Auth] Unexpected sign in exception:", msg);
+      setError(msg);
+      setNotice({ type: "error", message: msg });
+      setIsSubmitting(false);
+    } finally {
+      // Strictly reset Turnstile widget AFTER the Supabase request finishes
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
+      pendingCredentialsRef.current = null;
     }
-
-    const signedInRole =
-      (user.user_metadata?.role as AppRole | undefined) ??
-      (user.app_metadata?.role as AppRole | undefined) ??
-      ROLE.FACULTY;
-    const nextTarget = ROUTE_BY_ROLE[signedInRole];
-
-    // Save or clear Remember Me credentials safely in localStorage
-    try {
-      if (rememberMe) {
-        localStorage.setItem("pup_focus_remember_me", "true");
-        localStorage.setItem("pup_focus_remembered_email", normalizedEmail);
-      } else {
-        localStorage.removeItem("pup_focus_remember_me");
-        localStorage.removeItem("pup_focus_remembered_email");
-      }
-    } catch {
-      // Ignore storage access errors
-    }
-
-    // Always reset all role active views/tabs so every new session starts fresh on the Dashboard
-    resetDashboardNavigationState();
-
-    setIsSubmitting(false);
-    setAuthModal({
-      title: "Login Successful",
-      message: `Welcome back! You are signed in as ${ROLE_LABEL[signedInRole]}.`,
-      variant: "success",
-      redirectTo: nextTarget,
-    });
   }
 
   return (
@@ -596,9 +681,11 @@ export default function Home() {
                   error={error}
                   notice={notice}
                   publicEnvConfigured={Boolean(PUBLIC_ENV)}
-                  captchaToken={captchaToken}
-                  setCaptchaToken={setCaptchaToken}
                   turnstileRef={turnstileRef}
+                  captchaToken={captchaToken}
+                  onTurnstileSuccess={handleTurnstileSuccess}
+                  onTurnstileError={handleTurnstileError}
+                  onTurnstileExpire={handleTurnstileExpire}
                 />
               </div>
 

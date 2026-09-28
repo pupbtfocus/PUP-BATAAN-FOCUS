@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type FormEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { Turnstile, type TurnstileInstance } from "@/components/auth/turnstile";
 import { Button } from "@/components/ui/button";
@@ -35,14 +35,19 @@ export function SignUpForm() {
   } | null>(null);
 
   const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const pendingSignUpRef = useRef<{
+    fullName: string;
+    email: string;
+    password: string;
+  } | null>(null);
+  const latestSignUpRef = useRef({ fullName, email, password });
+
+  useEffect(() => {
+    latestSignUpRef.current = { fullName, email, password };
+  });
 
   const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
     setIsCapsLockOn(e.getModifierState("CapsLock"));
-  };
-
-  const resetCaptcha = () => {
-    setCaptchaToken(null);
-    turnstileRef.current?.reset();
   };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -50,8 +55,9 @@ export function SignUpForm() {
     setToast(null);
 
     const normalizedEmail = email.trim().toLowerCase();
+    const cleanFullName = fullName.trim();
 
-    if (!fullName.trim()) {
+    if (!cleanFullName) {
       setToast({ type: "error", message: "Please enter your full name." });
       return;
     }
@@ -71,32 +77,65 @@ export function SignUpForm() {
       return;
     }
 
-    // Submission lock: prevent submission if captchaToken is null/empty when Turnstile is configured
     if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
       setToast({
         type: "error",
-        message: "Please complete the security verification challenge.",
+        message: "Please complete the security check before signing up.",
       });
       return;
     }
 
+    pendingSignUpRef.current = {
+      fullName: cleanFullName,
+      email: normalizedEmail,
+      password,
+    };
+
     setIsSubmitting(true);
+    await performSignUp(captchaToken || undefined);
+  }
+
+  function handleTurnstileSuccess(token: string) {
+    setCaptchaToken(token);
+  }
+
+  function handleTurnstileError() {
+    setIsSubmitting(false);
+    setCaptchaToken(null);
+    pendingSignUpRef.current = null;
+    turnstileRef.current?.reset();
+    setToast({
+      type: "error",
+      message: "Security verification challenge failed. Please try again.",
+    });
+  }
+
+  async function performSignUp(token?: string) {
+    const creds = pendingSignUpRef.current ?? {
+      fullName: latestSignUpRef.current.fullName.trim(),
+      email: latestSignUpRef.current.email.trim().toLowerCase(),
+      password: latestSignUpRef.current.password,
+    };
+    const normalizedEmail = creds.email;
+    const currentPassword = creds.password;
+    const currentFullName = creds.fullName;
 
     try {
       const supabase = createClient();
+      console.log("[SignUp] Attempting signUp for:", normalizedEmail, { hasCaptcha: Boolean(token) });
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
-        password,
+        password: currentPassword,
         options: {
-          captchaToken: captchaToken || undefined,
+          captchaToken: token || undefined,
           data: {
-            full_name: fullName.trim(),
+            full_name: currentFullName,
           },
         },
       });
 
       if (error) {
-        resetCaptcha();
+        console.error("[SignUp] Supabase signUp error:", error.message, error);
         setToast({
           type: "error",
           message: error.message || "Failed to create account. Please try again.",
@@ -105,24 +144,26 @@ export function SignUpForm() {
       }
 
       if (data?.user) {
+        console.log("[SignUp] User successfully registered:", data.user.id);
         setToast({
           type: "success",
           message: "Registration successful! Please check your email to confirm your account.",
         });
-        // Clear form fields
         setFullName("");
         setEmail("");
         setPassword("");
         setConfirmPassword("");
-        resetCaptcha();
       }
     } catch (err: unknown) {
-      resetCaptcha();
       const message =
         err instanceof Error ? err.message : "An unexpected error occurred during registration.";
+      console.error("[SignUp] Unexpected signUp exception:", message, err);
       setToast({ type: "error", message });
     } finally {
       setIsSubmitting(false);
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
+      pendingSignUpRef.current = null;
     }
   }
 
@@ -264,16 +305,17 @@ export function SignUpForm() {
 
         {/* Turnstile Widget */}
         {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-          <div className="flex justify-center my-2.5 min-h-[65px] items-center">
+          <div className="flex justify-center my-3 min-h-[65px] items-center">
             <Turnstile
               ref={turnstileRef}
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-              onSuccess={(token) => setCaptchaToken(token)}
-              onExpire={() => resetCaptcha()}
-              onError={() => resetCaptcha()}
+              onSuccess={handleTurnstileSuccess}
+              onExpire={handleTurnstileError}
+              onError={handleTurnstileError}
               options={{
                 theme: "dark",
                 size: "normal",
+                execution: "render",
               }}
             />
           </div>
@@ -282,10 +324,7 @@ export function SignUpForm() {
         {/* Submission Button */}
         <Button
           type="submit"
-          disabled={
-            isSubmitting ||
-            (Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken)
-          }
+          disabled={isSubmitting || (Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) && !captchaToken)}
           className="mt-3 h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-500 font-black text-[#3d0000] tracking-widest uppercase text-sm sm:text-base transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-[0.98] cursor-pointer shadow-lg shadow-black/50 hover:shadow-black/60 border border-amber-300/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (

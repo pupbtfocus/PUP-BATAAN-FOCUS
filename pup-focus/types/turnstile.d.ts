@@ -15,7 +15,7 @@ declare module "@marsidev/react-turnstile" {
       tabIndex?: number;
       responseField?: boolean;
       responseFieldName?: string;
-      size?: "normal" | "flexible" | "compact";
+      size?: "normal" | "flexible" | "compact" | "invisible";
       retry?: "auto" | "never";
       retryInterval?: number;
       refreshExpired?: "auto" | "manual" | "never";
@@ -28,10 +28,11 @@ declare module "@marsidev/react-turnstile" {
   }
 
   export interface TurnstileInstance {
+    execute: () => void;
     reset: () => void;
-    render: () => void;
-    remove: () => void;
-    getResponse: () => string | undefined;
+    render?: () => void;
+    remove?: () => void;
+    getResponse?: () => string | undefined;
   }
 
   export const Turnstile: React.ForwardRefExoticComponent<
