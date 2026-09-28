@@ -839,7 +839,7 @@ export function AdminFacultyDashboard({
                     {/* Top Stat Summary Grid (3 Cards) */}
                     <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
                       {/* Card 1: Overall Progress */}
-                      <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
+                      <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             Overall Progress
@@ -878,7 +878,7 @@ export function AdminFacultyDashboard({
                       </div>
 
                       {/* Card 2: Submission Schedule / Window Status */}
-                      <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
+                      <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             Window Status
@@ -909,7 +909,7 @@ export function AdminFacultyDashboard({
                       </div>
 
                       {/* Card 3: Action Required */}
-                      <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
+                      <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             Action Required
@@ -941,7 +941,7 @@ export function AdminFacultyDashboard({
                     <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                       {/* Left Column (2-Span) — Pending Verification Queue */}
                       <div className="lg:col-span-2 space-y-4">
-                        <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
+                        <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
                           <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
                             <div className="flex items-center gap-2">
                               <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -1025,7 +1025,7 @@ export function AdminFacultyDashboard({
 
                       {/* Right Column (1-Span) — Recent Admin Actions / Activity */}
                       <div className="space-y-4">
-                        <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
+                        <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4 transition-colors">
                           <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-slate-800">
                             <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                               Recent Activity

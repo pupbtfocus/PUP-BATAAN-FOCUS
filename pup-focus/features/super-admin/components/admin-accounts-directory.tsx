@@ -153,7 +153,7 @@ export function AdminFilterBar({
   placeholder?: string;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 rounded-2xl mb-6 transition-colors">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 rounded-2xl mb-6 transition-colors">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
         <input
           type="text"
@@ -328,7 +328,7 @@ export function AdminAccountsTable({
       />
 
       {/* Clean Data Table */}
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">
+      <div className="w-full overflow-x-auto rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">
         <table className="w-full text-left border-collapse text-xs text-slate-800 dark:text-slate-300 min-w-[700px]">
           <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
             <tr>

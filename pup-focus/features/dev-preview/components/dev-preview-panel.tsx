@@ -240,7 +240,7 @@ export function DevPreviewPanel() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-2 sm:p-4">
       {/* Top Header Card */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
@@ -268,7 +268,7 @@ export function DevPreviewPanel() {
       </div>
 
       {/* Tabs Navigation Bar */}
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-x-auto">
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border-2 border-amber-400 dark:border-amber-500/60 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab("gmail")}

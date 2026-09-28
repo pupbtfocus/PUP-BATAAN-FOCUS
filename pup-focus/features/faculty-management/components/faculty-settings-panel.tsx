@@ -583,7 +583,7 @@ export function FacultySettingsPanel({
       {/* Grid Layout */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-start">
         {/* Profile Details Card */}
-        <article className="rounded-2xl border border-slate-300 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs transition-colors">
+        <article className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs transition-colors">
           <div className="pb-4 border-b border-slate-300 dark:border-slate-800/80">
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               Profile Details
@@ -885,7 +885,7 @@ export function FacultySettingsPanel({
         </article>
 
         {/* Change Password Card */}
-        <article className="rounded-2xl border border-slate-300 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs transition-colors">
+        <article className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs transition-colors">
           <div className="pb-4 border-b border-slate-300 dark:border-slate-800/80 flex items-center justify-between">
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">

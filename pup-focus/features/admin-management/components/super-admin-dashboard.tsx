@@ -1560,7 +1560,7 @@ export function SuperAdminDashboard({
                 {/* TIER 2: Stat Grid */}
                 <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   {/* Card 1: Active Admin Accounts */}
-                  <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
+                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Admin Accounts</span>
                       <Shield className="h-5 w-5 text-slate-400" strokeWidth={2} />
@@ -1576,7 +1576,7 @@ export function SuperAdminDashboard({
                   </div>
 
                   {/* Card 2: Faculty Accounts */}
-                  <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 transition-colors">
+                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Faculty Accounts</span>
                       <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
@@ -1594,7 +1594,7 @@ export function SuperAdminDashboard({
 
                 {/* TIER 3: Admin Accounts Overview */}
                 <section className="w-full space-y-4">
-                  <div className="rounded-2xl border border-slate-400 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-sm transition-colors">
+                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs transition-colors">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-400 dark:border-slate-800">
                       <div>
                         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
