@@ -5,6 +5,8 @@ import {
   Check,
   Clock,
   Eye,
+  NavArrowLeft,
+  NavArrowRight,
   Page,
   Refresh,
   SendMail,
@@ -39,13 +41,87 @@ function formatDate(isoDate?: string | null): string {
 }
 
 function getInitials(name?: string | null): string {
-  if (!name || !name.trim()) return "U";
+  if (!name || !name.trim()) return "";
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
   }
   return parts[0].slice(0, 2).toUpperCase();
 }
+
+function getPageNumbers(currentPage: number, totalPages: number): (number | string)[] {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  const pages: (number | string)[] = [1];
+  if (currentPage > 3) {
+    pages.push("...");
+  }
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  if (currentPage < totalPages - 2) {
+    pages.push("...");
+  }
+  pages.push(totalPages);
+  return pages;
+}
+
+interface UserLogAvatarProps {
+  avatarUrl?: string | null;
+  name?: string | null;
+  className?: string;
+  size?: "sm" | "md" | "lg";
+}
+
+function UserLogAvatar({
+  avatarUrl,
+  name,
+  className = "",
+  size = "md",
+}: UserLogAvatarProps) {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [avatarUrl]);
+
+  const initials = getInitials(name);
+  const trimmedUrl = avatarUrl?.trim();
+  const showImage = Boolean(trimmedUrl) && !hasError;
+
+  const sizeClasses =
+    size === "sm"
+      ? "h-7 w-7 text-[10px]"
+      : size === "lg"
+      ? "h-12 w-12 text-sm font-bold"
+      : "h-9 w-9 text-xs font-semibold";
+
+  return (
+    <div
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 select-none shadow-2xs ${sizeClasses} ${className}`}
+      aria-hidden="true"
+    >
+      {showImage ? (
+        <img
+          src={trimmedUrl}
+          alt={name ? `${name}'s profile avatar` : "User profile avatar"}
+          className="h-full w-full object-cover"
+          onError={() => setHasError(true)}
+          loading="lazy"
+        />
+      ) : initials ? (
+        <span className="font-semibold tracking-wider">{initials}</span>
+      ) : (
+        <AppIcon icon={User} size={size === "lg" ? "md" : "sm"} color="inherit" />
+      )}
+    </div>
+  );
+}
+
+const PAGE_SIZE = 10;
 
 export function UserRegistrationLogsModal({
   isOpen,
@@ -61,6 +137,7 @@ export function UserRegistrationLogsModal({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [adminRoleFilter, setAdminRoleFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const [resendingEmail, setResendingEmail] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<{
@@ -103,6 +180,7 @@ export function UserRegistrationLogsModal({
       setStatusFilter("all");
       setAdminRoleFilter("all");
       setSearchTerm("");
+      setCurrentPage(1);
       setFeedbackMessage(null);
       setSelectedLogForDetails(null);
       setPendingCancelLog(null);
@@ -114,6 +192,11 @@ export function UserRegistrationLogsModal({
       setCancelError(null);
     }
   }, [isOpen, fetchLogs]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, adminRoleFilter, searchTerm]);
 
   const handleResendInvite = async (log: RegistrationLogItem) => {
     setResendingEmail(log.email);
@@ -199,28 +282,47 @@ export function UserRegistrationLogsModal({
 
   const filteredLogs = useMemo(() => {
     return logs.filter((item) => {
-      // If admin mode and specific sub-role chosen
-      if (targetRole === "admin" && adminRoleFilter !== "all") {
+      // Role filter
+      if (targetRole === "admin") {
         if (adminRoleFilter === "super" && item.role !== "Super Admin") return false;
         if (adminRoleFilter === "regular" && item.role !== "Admin") return false;
+      } else if (targetRole === "all" && adminRoleFilter !== "all") {
+        if (adminRoleFilter === "faculty" && item.role !== "Faculty") return false;
+        if (adminRoleFilter === "regular" && item.role !== "Admin") return false;
+        if (adminRoleFilter === "super" && item.role !== "Super Admin") return false;
       }
+
       // Status match
       if (statusFilter !== "all" && item.status.toLowerCase() !== statusFilter.toLowerCase()) {
         return false;
       }
+
       // Search match
-      if (searchTerm) {
-        const query = searchTerm.toLowerCase();
+      if (searchTerm.trim()) {
+        const query = searchTerm.trim().toLowerCase();
         const matchesName = item.fullName.toLowerCase().includes(query);
         const matchesEmail = item.email.toLowerCase().includes(query);
         const matchesProgram = item.program?.toLowerCase().includes(query) ?? false;
-        if (!matchesName && !matchesEmail && !matchesProgram) {
+        const matchesRole = item.role.toLowerCase().includes(query);
+        if (!matchesName && !matchesEmail && !matchesProgram && !matchesRole) {
           return false;
         }
       }
       return true;
     });
   }, [logs, targetRole, adminRoleFilter, statusFilter, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / PAGE_SIZE));
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedLogs = useMemo(() => {
+    const startIndex = (validCurrentPage - 1) * PAGE_SIZE;
+    return filteredLogs.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredLogs, validCurrentPage]);
+
+  const pageNumbers = useMemo(() => {
+    return getPageNumbers(validCurrentPage, totalPages);
+  }, [validCurrentPage, totalPages]);
 
   if (!isOpen) return null;
 
@@ -239,23 +341,18 @@ export function UserRegistrationLogsModal({
     ? "Track sent administrator invitations, delivery status, and account activation progress."
     : "Track sent invitations, delivery status, and account activation progress.";
 
-  const totalLabel = isFacultyMode
-    ? "Total Faculty Invites"
-    : isAdminMode
-    ? "Total Admin Invites"
-    : "Total Invitations";
-
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-5 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2 sm:p-5 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="w-full max-w-5xl h-[92vh] sm:h-auto sm:max-h-[90vh] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden">
           {/* Modal Header */}
-          <div className="p-6 pb-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
             <ModalHeader
               icon={Page}
               title={modalTitle}
               subtitle={modalSubtitle}
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+              onClose={onClose}
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-3 sm:mb-4 rounded-t-2xl"
             />
 
             {feedbackMessage ? (
@@ -277,311 +374,476 @@ export function UserRegistrationLogsModal({
               </div>
             ) : null}
 
-            {/* Stats Summary Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3">
-                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  {totalLabel}
+            {/* Stats Summary Bar - Clean & Non-truncated */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2 sm:p-3 text-center sm:text-left">
+                <span className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                  Total
                 </span>
-                <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
                   {stats.total}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3">
-                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2 sm:p-3 text-center sm:text-left">
+                <span className="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                   Accepted
                 </span>
-                <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
                   {stats.accepted}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3">
-                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-2 sm:p-3 text-center sm:text-left">
+                <span className="text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                   Pending
                 </span>
-                <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
                   {stats.pending}
                 </p>
               </div>
             </div>
 
-            {/* Filter & Search Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4">
-              <div className="flex flex-wrap items-center gap-2 flex-1">
-                <input
-                  type="text"
-                  placeholder={
-                    isFacultyMode
-                      ? "Search faculty by name or email..."
-                      : isAdminMode
-                      ? "Search admin by name or email..."
-                      : "Search by name or email..."
-                  }
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full sm:w-64 h-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-xs placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-amber-500 transition"
-                />
+            {/* Filter & Search Bar - Realigned for Mobile View */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3 sm:mt-4">
+              {/* Row 1 on mobile: Search Input with Compact Refresh Button */}
+              <div className="flex items-center gap-2 flex-1">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder={
+                      isFacultyMode
+                        ? "Search faculty by name or email..."
+                        : isAdminMode
+                        ? "Search admin by name or email..."
+                        : "Search by name or email..."
+                    }
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full h-9 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-xs placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#780000] focus:ring-1 focus:ring-[#780000]/30 transition"
+                  />
+                </div>
 
+                <button
+                  type="button"
+                  onClick={() => void fetchLogs()}
+                  disabled={isLoading}
+                  title="Refresh logs"
+                  className="h-9 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-850 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 transition cursor-pointer disabled:opacity-50 shrink-0 shadow-2xs"
+                >
+                  <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
+              </div>
+
+              {/* Row 2 on mobile: Filter Dropdown(s) */}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Role Dropdown */}
                 {isAdminMode ? (
                   <select
                     value={adminRoleFilter}
                     onChange={(e) => setAdminRoleFilter(e.target.value)}
-                    className="h-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-xs outline-none focus:border-amber-500 cursor-pointer"
+                    className="h-9 flex-1 sm:flex-initial sm:w-36 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-[#780000] focus:ring-1 focus:ring-[#780000]/30 transition cursor-pointer shadow-2xs"
                   >
-                    <option value="all">All Admin Roles</option>
+                    <option value="all">All Roles</option>
+                    <option value="regular">Admin</option>
+                    <option value="super">Super Admin</option>
+                  </select>
+                ) : targetRole === "all" ? (
+                  <select
+                    value={adminRoleFilter}
+                    onChange={(e) => setAdminRoleFilter(e.target.value)}
+                    className="h-9 flex-1 sm:flex-initial sm:w-36 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-[#780000] focus:ring-1 focus:ring-[#780000]/30 transition cursor-pointer shadow-2xs"
+                  >
+                    <option value="all">All Roles</option>
+                    <option value="faculty">Faculty</option>
                     <option value="regular">Admin</option>
                     <option value="super">Super Admin</option>
                   </select>
                 ) : null}
 
-                {/* Status Filter Pills */}
-                <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1 h-9 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setStatusFilter("all")}
-                    className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
-                      statusFilter === "all"
-                        ? "bg-amber-500 text-slate-950 font-semibold shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                    }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStatusFilter("accepted")}
-                    className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
-                      statusFilter === "accepted"
-                        ? "bg-amber-500 text-slate-950 font-semibold shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                    }`}
-                  >
-                    Accepted
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStatusFilter("pending")}
-                    className={`rounded-lg px-2.5 py-1 text-xs transition cursor-pointer ${
-                      statusFilter === "pending"
-                        ? "bg-amber-500 text-slate-950 font-semibold shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                    }`}
-                  >
-                    Pending
-                  </button>
-                </div>
+                {/* Status Dropdown */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="h-9 flex-1 sm:flex-initial sm:w-36 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-[#780000] focus:ring-1 focus:ring-[#780000]/30 transition cursor-pointer shadow-2xs"
+                >
+                  <option value="all">All Status</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="pending">Pending</option>
+                </select>
               </div>
-
-              <button
-                type="button"
-                onClick={() => void fetchLogs()}
-                disabled={isLoading}
-                title="Refresh logs"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-850 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 transition cursor-pointer disabled:opacity-50"
-              >
-                <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                <span>Refresh</span>
-              </button>
             </div>
           </div>
 
-          {/* Scrollable Data Table */}
-          <div className="flex-1 overflow-y-auto overflow-x-auto min-h-[250px] p-6 pt-2">
-            <table className="w-full text-left border-collapse text-xs min-w-[850px]">
-              <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-sm">
-                <tr>
-                  <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
-                  <th className="px-4 py-2.5 font-semibold">
-                    {isFacultyMode ? "Faculty Member" : isAdminMode ? "Admin Member" : "User"}
-                  </th>
-                  <th className="px-4 py-2.5 font-semibold">
-                    {isFacultyMode ? "Program" : "Role"}
-                  </th>
-                  <th className="px-4 py-2.5 font-semibold">Status</th>
-                  <th className="px-4 py-2.5 font-semibold">Sent At</th>
-                  <th className="px-4 py-2.5 text-right font-semibold min-w-[280px]">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-xs text-slate-500 dark:text-slate-400">
-                      Loading registration logs...
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-xs text-red-500">
-                      {error}
-                    </td>
-                  </tr>
-                ) : filteredLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-xs text-slate-500 dark:text-slate-400">
-                      No registration logs found matching the filter criteria.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredLogs.map((log, index) => {
+          {/* Main Log Content Area */}
+          <div className="flex-1 overflow-y-auto min-h-[250px] p-3 sm:p-6 pt-3">
+            {isLoading ? (
+              <div className="py-16 text-center text-xs text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center gap-2">
+                <Refresh className="h-5 w-5 animate-spin text-[#780000]" />
+                <span>Loading registration logs...</span>
+              </div>
+            ) : error ? (
+              <div className="py-16 text-center text-xs text-red-500 flex flex-col items-center justify-center gap-2">
+                <AppIcon icon={WarningTriangle} size="md" color="inherit" />
+                <span>{error}</span>
+              </div>
+            ) : filteredLogs.length === 0 ? (
+              <div className="py-16 text-center text-xs text-slate-500 dark:text-slate-400">
+                No registration logs found matching the filter criteria.
+              </div>
+            ) : (
+              <>
+                {/* ── Mobile View: Realigned Stacked Cards (< 768px) ── */}
+                <div className="md:hidden space-y-3">
+                  {paginatedLogs.map((log, index) => {
                     const isAccepted = log.status === "Accepted";
                     const isResending = resendingEmail === log.email;
+                    const itemIndex = (validCurrentPage - 1) * PAGE_SIZE + index + 1;
 
                     return (
-                      <tr
-                        key={`${log.email}-${log.invitedAt}-${index}`}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                      <div
+                        key={`mobile-${log.email}-${log.invitedAt}-${index}`}
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3.5 shadow-2xs space-y-3"
                       >
-                        {/* # Index */}
-                        <td className="px-3 py-2.5 text-center text-xs font-mono text-slate-400 dark:text-slate-500">
-                          {index + 1}
-                        </td>
-
-                        {/* Member Column */}
-                        <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-slate-100">
-                          <div className="flex items-center gap-2.5">
-                            <div
-                              className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-700 dark:text-slate-300"
-                              aria-hidden="true"
-                            >
-                              {log.avatarUrl ? (
-                                <img
-                                  src={log.avatarUrl}
-                                  alt=""
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <span>{getInitials(log.fullName)}</span>
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
+                        {/* Header: Number, Avatar, Name/Email, Status */}
+                        <div className="flex items-start justify-between gap-2.5">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <span className="text-[10px] font-mono font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md shrink-0">
+                              #{itemIndex}
+                            </span>
+                            <UserLogAvatar
+                              avatarUrl={log.avatarUrl}
+                              name={log.fullName}
+                              size="md"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate">
                                 {log.fullName}
-                              </div>
-                              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal font-mono">
+                              </h4>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono truncate">
                                 {log.email}
-                              </div>
+                              </p>
                             </div>
                           </div>
-                        </td>
 
-                        {/* Program or Role Badge */}
-                        <td className="px-4 py-2.5 font-medium text-xs">
-                          {isFacultyMode ? (
-                            <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
-                              {log.program || "Unassigned"}
-                            </span>
-                          ) : (
-                            <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
-                              {log.role}
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Status */}
-                        <td className="px-4 py-2.5 font-medium">
-                          {isAccepted ? (
-                            <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
-                              <Check className="h-3 w-3" />
-                              <span>Accepted</span>
-                            </span>
-                          ) : (
-                            <span className="bg-amber-500 text-slate-950 border border-amber-600 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
-                              <Clock className="h-3 w-3 text-slate-950" />
-                              <span>Pending</span>
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Sent At */}
-                        <td className="px-4 py-2.5 font-medium text-xs whitespace-nowrap text-slate-600 dark:text-slate-400">
-                          <div>{formatDate(log.invitedAt)}</div>
-                          {isAccepted && log.confirmedAt ? (
-                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">
-                              Accepted: {formatDate(log.confirmedAt)}
-                            </div>
-                          ) : null}
-                        </td>
-
-                        {/* Actions */}
-                        <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {/* View Details Button */}
-                            <button
-                              type="button"
-                              onClick={() => setSelectedLogForDetails(log)}
-                              title="View Details"
-                              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
-                            >
-                              <AppIcon
-                                icon={Eye}
-                                size="sm"
-                                color="inherit"
-                                className="text-slate-950"
-                              />
-                              <span>View Details</span>
-                            </button>
-
-                            {!isAccepted ? (
-                              <>
-                                {/* Cancel Invite Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setCancelError(null);
-                                    setPendingCancelLog(log);
-                                  }}
-                                  title="Cancel Invitation"
-                                  className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
-                                >
-                                  <AppIcon icon={Trash} size="sm" color="white" />
-                                  <span>Cancel Invite</span>
-                                </button>
-
-                                {/* Resend Invite Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => void handleResendInvite(log)}
-                                  disabled={isResending}
-                                  title="Resend invitation email"
-                                  className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold border border-slate-300 dark:border-slate-700 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
-                                >
-                                  <AppIcon
-                                    icon={SendMail}
-                                    size="sm"
-                                    color="inherit"
-                                  />
-                                  <span>
-                                    {isResending ? "Resending..." : "Resend"}
-                                  </span>
-                                </button>
-                              </>
-                            ) : (
-                              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1 pl-1">
+                          <div className="shrink-0">
+                            {isAccepted ? (
+                              <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[10px] font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
                                 <Check className="h-3 w-3" />
-                                <span>Active</span>
+                                <span>Accepted</span>
+                              </span>
+                            ) : (
+                              <span className="bg-amber-500 text-slate-950 border border-amber-600 px-2 py-0.5 text-[10px] font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
+                                <Clock className="h-3 w-3 text-slate-950" />
+                                <span>Pending</span>
                               </span>
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        </div>
+
+                        {/* Details row: Role / Program & Dates */}
+                        <div className="grid grid-cols-2 gap-2 text-xs pt-2.5 border-t border-slate-100 dark:border-slate-850">
+                          <div>
+                            <span className="text-[9px] uppercase font-semibold text-slate-400 dark:text-slate-500 block">
+                              {isFacultyMode ? "Program" : "Role"}
+                            </span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs mt-0.5 inline-block">
+                              {isFacultyMode ? log.program || "Unassigned" : log.role}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-[9px] uppercase font-semibold text-slate-400 dark:text-slate-500 block">
+                              Sent At
+                            </span>
+                            <span className="font-medium text-slate-700 dark:text-slate-300 text-[11px] mt-0.5 inline-block">
+                              {formatDate(log.invitedAt)}
+                            </span>
+                            {isAccepted && log.confirmedAt ? (
+                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal block mt-0.5">
+                                Accepted: {formatDate(log.confirmedAt)}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        {/* Actions bar - Solid Colors & Clean Realignment */}
+                        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-850">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedLogForDetails(log)}
+                            title="View Details"
+                            className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-lg px-3 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                          >
+                            <AppIcon icon={Eye} size="sm" color="white" />
+                            <span>View Details</span>
+                          </button>
+
+                          {!isAccepted ? (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCancelError(null);
+                                  setPendingCancelLog(log);
+                                }}
+                                title="Cancel Invitation"
+                                className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
+                              >
+                                <AppIcon icon={Trash} size="sm" color="white" />
+                                <span>Cancel</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => void handleResendInvite(log)}
+                                disabled={isResending}
+                                title="Resend invitation email"
+                                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold border border-slate-900 dark:border-slate-700 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
+                              >
+                                <AppIcon icon={SendMail} size="sm" color="white" />
+                                <span>{isResending ? "Sending..." : "Resend"}</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1.5">
+                              <Check className="h-3.5 w-3.5" />
+                              <span>Active Account</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     );
-                  })
-                )}
-              </tbody>
-            </table>
+                  })}
+                </div>
+
+                {/* ── Desktop View: Responsive Scrollable Table (>= 768px) ── */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs min-w-[760px]">
+                    <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-sm">
+                      <tr>
+                        <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
+                        <th className="px-4 py-2.5 font-semibold">
+                          {isFacultyMode ? "Faculty Member" : isAdminMode ? "Admin Member" : "User"}
+                        </th>
+                        <th className="px-4 py-2.5 font-semibold">
+                          {isFacultyMode ? "Program" : "Role"}
+                        </th>
+                        <th className="px-4 py-2.5 font-semibold">Status</th>
+                        <th className="px-4 py-2.5 font-semibold">Sent At</th>
+                        <th className="px-4 py-2.5 text-right font-semibold min-w-[260px]">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                      {paginatedLogs.map((log, index) => {
+                        const isAccepted = log.status === "Accepted";
+                        const isResending = resendingEmail === log.email;
+                        const itemIndex = (validCurrentPage - 1) * PAGE_SIZE + index + 1;
+
+                        return (
+                          <tr
+                            key={`desktop-${log.email}-${log.invitedAt}-${index}`}
+                            className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                          >
+                            {/* # Index */}
+                            <td className="px-3 py-2.5 text-center text-xs font-mono text-slate-400 dark:text-slate-500">
+                              {itemIndex}
+                            </td>
+
+                            {/* Member Column */}
+                            <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-slate-100">
+                              <div className="flex items-center gap-2.5">
+                                <UserLogAvatar
+                                  avatarUrl={log.avatarUrl}
+                                  name={log.fullName}
+                                  size="sm"
+                                />
+                                <div>
+                                  <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
+                                    {log.fullName}
+                                  </div>
+                                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal font-mono">
+                                    {log.email}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Program or Role Badge */}
+                            <td className="px-4 py-2.5 font-medium text-xs">
+                              {isFacultyMode ? (
+                                <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
+                                  {log.program || "Unassigned"}
+                                </span>
+                              ) : (
+                                <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
+                                  {log.role}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Status */}
+                            <td className="px-4 py-2.5 font-medium">
+                              {isAccepted ? (
+                                <span className="bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
+                                  <Check className="h-3 w-3" />
+                                  <span>Accepted</span>
+                                </span>
+                              ) : (
+                                <span className="bg-amber-500 text-slate-950 border border-amber-600 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 shadow-2xs">
+                                  <Clock className="h-3 w-3 text-slate-950" />
+                                  <span>Pending</span>
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Sent At */}
+                            <td className="px-4 py-2.5 font-medium text-xs whitespace-nowrap text-slate-600 dark:text-slate-400">
+                              <div>{formatDate(log.invitedAt)}</div>
+                              {isAccepted && log.confirmedAt ? (
+                                <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">
+                                  Accepted: {formatDate(log.confirmedAt)}
+                                </div>
+                              ) : null}
+                            </td>
+
+                            {/* Actions - Solid Colors */}
+                            <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* View Details Button - Solid Maroon */}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedLogForDetails(log)}
+                                  title="View Details"
+                                  className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                >
+                                  <AppIcon
+                                    icon={Eye}
+                                    size="sm"
+                                    color="white"
+                                  />
+                                  <span>View Details</span>
+                                </button>
+
+                                {!isAccepted ? (
+                                  <>
+                                    {/* Cancel Invite Button - Solid Maroon */}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCancelError(null);
+                                        setPendingCancelLog(log);
+                                      }}
+                                      title="Cancel Invitation"
+                                      className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                                    >
+                                      <AppIcon icon={Trash} size="sm" color="white" />
+                                      <span>Cancel Invite</span>
+                                    </button>
+
+                                    {/* Resend Invite Button - Solid Slate */}
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleResendInvite(log)}
+                                      disabled={isResending}
+                                      title="Resend invitation email"
+                                      className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold border border-slate-900 dark:border-slate-700 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                                    >
+                                      <AppIcon
+                                        icon={SendMail}
+                                        size="sm"
+                                        color="white"
+                                      />
+                                      <span>
+                                        {isResending ? "Resending..." : "Resend"}
+                                      </span>
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1 pl-1">
+                                    <Check className="h-3 w-3" />
+                                    <span>Active</span>
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Modal Footer */}
-          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-            <span>
-              Showing {filteredLogs.length} of {logs.length} registration logs
-            </span>
+          {/* Modal Footer with Responsive Pagination Controls */}
+          <div className="p-3 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 shrink-0">
+            {/* Entry Counter */}
+            <div className="text-center sm:text-left w-full sm:w-auto font-medium">
+              Showing {filteredLogs.length === 0 ? 0 : (validCurrentPage - 1) * PAGE_SIZE + 1} to{" "}
+              {Math.min(validCurrentPage * PAGE_SIZE, filteredLogs.length)} of {filteredLogs.length} logs
+              {filteredLogs.length !== logs.length ? ` (filtered from ${logs.length})` : ""}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 ? (
+              <div className="flex items-center justify-center gap-1 w-full sm:w-auto">
+                <button
+                  type="button"
+                  disabled={validCurrentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-medium text-xs shadow-2xs"
+                  aria-label="Previous page"
+                >
+                  <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
+                  <span className="hidden sm:inline">Prev</span>
+                </button>
+
+                {/* Page Number Buttons */}
+                <div className="flex items-center gap-1">
+                  {pageNumbers.map((p, idx) =>
+                    typeof p === "number" ? (
+                      <button
+                        key={`page-${p}`}
+                        type="button"
+                        onClick={() => setCurrentPage(p)}
+                        className={`h-7 w-7 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center ${
+                          validCurrentPage === p
+                            ? "bg-[#780000] text-white border border-[#5e0000] shadow-xs"
+                            : "border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                        }`}
+                        aria-current={validCurrentPage === p ? "page" : undefined}
+                      >
+                        {p}
+                      </button>
+                    ) : (
+                      <span key={`ellipsis-${idx}`} className="px-1 text-slate-400">
+                        ...
+                      </span>
+                    )
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={validCurrentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-medium text-xs shadow-2xs"
+                  aria-label="Next page"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+                </button>
+              </div>
+            ) : null}
+
+            {/* Close Button */}
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-4 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
+              className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-4 py-2 sm:py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer text-center"
             >
               Close
             </button>
@@ -589,36 +851,30 @@ export function UserRegistrationLogsModal({
         </div>
       </div>
 
-      {/* View Details Modal */}
+      {/* ── View Details Modal ── */}
       {selectedLogForDetails ? (
         <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
             <ModalHeader
               icon={User}
               title="Invitation Details"
               subtitle="Comprehensive registration and account invite status"
               onClose={() => setSelectedLogForDetails(null)}
-              className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl"
             />
 
             <div className="space-y-4">
               {/* Recipient Profile Card */}
-              <div className="flex items-center gap-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200">
-                  {selectedLogForDetails.avatarUrl ? (
-                    <img
-                      src={selectedLogForDetails.avatarUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span>{getInitials(selectedLogForDetails.fullName)}</span>
-                  )}
-                </div>
+              <div className="flex items-center gap-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3.5 sm:p-4">
+                <UserLogAvatar
+                  avatarUrl={selectedLogForDetails.avatarUrl}
+                  name={selectedLogForDetails.fullName}
+                  size="lg"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
@@ -643,7 +899,7 @@ export function UserRegistrationLogsModal({
               </div>
 
               {/* Details Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 text-xs">
                 <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-3">
                   <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                     Assigned Role
@@ -720,8 +976,8 @@ export function UserRegistrationLogsModal({
                 </div>
               ) : null}
 
-              {/* Modal Actions */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
+              {/* Modal Actions - Solid Colors */}
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <div>
                   {selectedLogForDetails.status === "Pending" ? (
                     <button
@@ -731,7 +987,7 @@ export function UserRegistrationLogsModal({
                         setCancelError(null);
                         setPendingCancelLog(target);
                       }}
-                      className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                      className="w-full sm:w-auto bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs"
                     >
                       <AppIcon icon={Trash} size="sm" color="white" />
                       <span>Cancel Invite</span>
@@ -739,15 +995,15 @@ export function UserRegistrationLogsModal({
                   ) : null}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   {selectedLogForDetails.status === "Pending" ? (
                     <button
                       type="button"
                       onClick={() => void handleResendInvite(selectedLogForDetails)}
                       disabled={resendingEmail === selectedLogForDetails.email}
-                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                      className="flex-1 sm:flex-initial bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold border border-slate-900 dark:border-slate-700 text-xs rounded-xl px-3.5 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
                     >
-                      <AppIcon icon={SendMail} size="sm" color="inherit" className="text-slate-950" />
+                      <AppIcon icon={SendMail} size="sm" color="white" />
                       <span>
                         {resendingEmail === selectedLogForDetails.email ? "Resending..." : "Resend Invite"}
                       </span>
@@ -756,7 +1012,7 @@ export function UserRegistrationLogsModal({
                   <button
                     type="button"
                     onClick={() => setSelectedLogForDetails(null)}
-                    className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                    className="flex-1 sm:flex-initial rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer text-center"
                   >
                     Close
                   </button>
@@ -767,37 +1023,31 @@ export function UserRegistrationLogsModal({
         </div>
       ) : null}
 
-      {/* Cancel Invite Modal */}
+      {/* ── Cancel Invite Modal ── */}
       {pendingCancelLog ? (
         <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-70 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
             <ModalHeader
               icon={Trash}
               title="Cancel Invitation?"
               subtitle="Revoke pending account invitation"
               onClose={() => !isCancelling && setPendingCancelLog(null)}
               closeDisabled={isCancelling}
-              className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
+              className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 mb-4 sm:mb-5 rounded-t-2xl"
             />
 
             <div className="space-y-4">
               {/* Member Card */}
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-3.5 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {pendingCancelLog.avatarUrl ? (
-                    <img
-                      src={pendingCancelLog.avatarUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span>{getInitials(pendingCancelLog.fullName)}</span>
-                  )}
-                </div>
+                <UserLogAvatar
+                  avatarUrl={pendingCancelLog.avatarUrl}
+                  name={pendingCancelLog.fullName}
+                  size="md"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                     {pendingCancelLog.fullName}
@@ -831,12 +1081,12 @@ export function UserRegistrationLogsModal({
               ) : null}
 
               {/* Confirmation Buttons */}
-              <div className="flex items-center justify-end gap-2.5 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setPendingCancelLog(null)}
                   disabled={isCancelling}
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer disabled:opacity-50 text-center"
                 >
                   Keep Invitation
                 </button>
@@ -844,7 +1094,7 @@ export function UserRegistrationLogsModal({
                   type="button"
                   onClick={() => void handleConfirmCancelInvite()}
                   disabled={isCancelling}
-                  className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-xl px-4 py-2 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                  className="w-full sm:w-auto bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-xl px-4 py-2 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
                 >
                   <AppIcon icon={Trash} size="sm" color="white" />
                   <span>{isCancelling ? "Cancelling..." : "Yes, Cancel Invite"}</span>
