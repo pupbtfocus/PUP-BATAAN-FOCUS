@@ -606,6 +606,23 @@ export function UserRegistrationLogsModal({
                                 <span>{isResending ? "Sending..." : "Resend"}</span>
                               </button>
                             </div>
+                          ) : !log.lastLoginAt ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+                                <Check className="h-3.5 w-3.5" />
+                                <span>Accepted</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => void handleResendInvite(log)}
+                                disabled={isResending}
+                                title="Resend login credentials email"
+                                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold border border-slate-900 dark:border-slate-700 text-xs rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
+                              >
+                                <AppIcon icon={SendMail} size="sm" color="white" />
+                                <span>{isResending ? "Sending..." : "Resend"}</span>
+                              </button>
+                            </div>
                           ) : (
                             <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1.5">
                               <Check className="h-3.5 w-3.5" />
@@ -757,6 +774,29 @@ export function UserRegistrationLogsModal({
                                       />
                                       <span>
                                         {isResending ? "Resending..." : "Resend"}
+                                      </span>
+                                    </button>
+                                  </>
+                                ) : !log.lastLoginAt ? (
+                                  <>
+                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1 pl-1">
+                                      <Check className="h-3 w-3" />
+                                      <span>Accepted</span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleResendInvite(log)}
+                                      disabled={isResending}
+                                      title="Resend login credentials email"
+                                      className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold border border-slate-900 dark:border-slate-700 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                                    >
+                                      <AppIcon
+                                        icon={SendMail}
+                                        size="sm"
+                                        color="white"
+                                      />
+                                      <span>
+                                        {isResending ? "Resending..." : "Resend Credentials"}
                                       </span>
                                     </button>
                                   </>
@@ -996,7 +1036,7 @@ export function UserRegistrationLogsModal({
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  {selectedLogForDetails.status === "Pending" ? (
+                  {selectedLogForDetails.status === "Pending" || !selectedLogForDetails.lastLoginAt ? (
                     <button
                       type="button"
                       onClick={() => void handleResendInvite(selectedLogForDetails)}
@@ -1005,7 +1045,11 @@ export function UserRegistrationLogsModal({
                     >
                       <AppIcon icon={SendMail} size="sm" color="white" />
                       <span>
-                        {resendingEmail === selectedLogForDetails.email ? "Resending..." : "Resend Invite"}
+                        {resendingEmail === selectedLogForDetails.email
+                          ? "Resending..."
+                          : selectedLogForDetails.status === "Pending"
+                          ? "Resend Invite"
+                          : "Resend Credentials"}
                       </span>
                     </button>
                   ) : null}

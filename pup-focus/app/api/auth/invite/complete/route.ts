@@ -6,21 +6,43 @@ import { bootstrapInvitedFacultyAccount } from "@/lib/auth/bootstrap-invited-fac
 import { sendTempPasswordEmail } from "@/lib/email/send-invite";
 import { ROLE } from "@/config/roles";
 
-function generateTempPassword(len = 10) {
-  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+export function generateTempPassword(len = 16) {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnopqrstuvwxyz";
   const numbers = "23456789";
   const specials = "!@#$%&*";
-  let randomPart = "";
-  for (let i = 0; i < len; i++) {
-    const chars = letters + numbers + specials;
-    randomPart += chars[Math.floor(Math.random() * chars.length)];
+
+  // Explicitly guarantee multiple characters from every required class:
+  // uppercase, lowercase, digits, and symbols
+  const guaranteed: string[] = [
+    upper[Math.floor(Math.random() * upper.length)],
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    numbers[Math.floor(Math.random() * numbers.length)],
+    numbers[Math.floor(Math.random() * numbers.length)],
+    specials[Math.floor(Math.random() * specials.length)],
+    specials[Math.floor(Math.random() * specials.length)],
+  ];
+
+  const allChars = upper + lower + numbers + specials;
+  while (guaranteed.length < len) {
+    guaranteed.push(allChars[Math.floor(Math.random() * allChars.length)]);
   }
-  return `PUPFocus!${randomPart}`;
+
+  // Fisher-Yates shuffle
+  for (let i = guaranteed.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [guaranteed[i], guaranteed[j]] = [guaranteed[j], guaranteed[i]];
+  }
+
+  // Prefix with PUPFocus#2026! which itself strictly satisfies all 4 character classes
+  return `PUPFocus#2026!${guaranteed.join("")}`;
 }
 
 export async function POST(req: Request) {
   try {
-    // 1. Properly parse incoming request body (e.g., userId, password, full_name, token)
+    // 1. Properly parse incoming request body (e.g., userId, password, full_name, email, token)
     let body: Record<string, any> = {};
     try {
       body = await req.json();
@@ -37,12 +59,14 @@ export async function POST(req: Request) {
       full_name: bodyFullNameSnake,
       fullName: bodyFullNameCamel,
       name: bodyName,
+      email: bodyEmail,
       token,
     } = body;
 
     const requestedUserId = bodyUserId || bodyUserIdSnake || bodyId;
     const requestedFullName = bodyFullNameSnake || bodyFullNameCamel || bodyName;
     const requestedPassword = bodyPassword;
+    const requestedEmail = (bodyEmail as string | undefined)?.trim().toLowerCase();
 
     // 2. Use @supabase/supabase-js initialized with process.env.SUPABASE_SERVICE_ROLE_KEY to grant admin privileges
     const supabaseUrl =
@@ -104,6 +128,21 @@ export async function POST(req: Request) {
       }
     }
 
+    if ((!targetUserId || !authUser) && requestedEmail) {
+      try {
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        const match = listData?.users?.find(
+          (u) => u.email?.trim().toLowerCase() === requestedEmail
+        );
+        if (match) {
+          authUser = match;
+          targetUserId = match.id;
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
     if (!targetUserId || !authUser) {
       return NextResponse.json(
         {
@@ -116,7 +155,7 @@ export async function POST(req: Request) {
 
     // 3. Call supabase.auth.admin.updateUserById to update the password and set email_confirm: true
     const isTempPasswordGenerated = !requestedPassword;
-    const passwordToSet = requestedPassword || generateTempPassword(12);
+    const passwordToSet = requestedPassword || generateTempPassword(16);
     const fullNameToSet =
       requestedFullName ||
       authUser.user_metadata?.full_name ||

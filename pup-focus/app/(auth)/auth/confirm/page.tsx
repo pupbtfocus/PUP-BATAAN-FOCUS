@@ -275,6 +275,7 @@ function AuthConfirmContent() {
         },
         body: JSON.stringify({
           userId: userSession.id,
+          email: derivedEmail,
           full_name: fullName,
         }),
       });
