@@ -43,7 +43,6 @@ export function RequirementTemplatesPanel({
   const [countdown, setCountdown] = useState<number>(10);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState<string | null>(null);
-  const [isAcquiringCurrent, setIsAcquiringCurrent] = useState(false);
 
   const loadTemplates = async () => {
     try {
@@ -178,34 +177,6 @@ export function RequirementTemplatesPanel({
     }
   };
 
-  const handleAcquireCurrent = async () => {
-    try {
-      setIsAcquiringCurrent(true);
-      setError(null);
-      const res = await fetch("/api/admin/requirement-templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "acquire_current" }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to acquire current requirement templates");
-      }
-
-      setSuccess(
-        data.message ||
-          "Standard requirements successfully acquired and synchronized with system specifications."
-      );
-      setTimeout(() => setSuccess(null), 5000);
-      await loadTemplates();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error acquiring current templates");
-    } finally {
-      setIsAcquiringCurrent(false);
-    }
-  };
-
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || countdown > 0) return;
 
@@ -237,7 +208,7 @@ export function RequirementTemplatesPanel({
       {/* 3-Card Stat Summary Header matching AdminStatsCards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {/* 1. TOTAL TEMPLATES */}
-        <div className="rounded-2xl bg-white text-slate-900 border border-slate-300 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+        <div className="rounded-2xl bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
               Total Templates
@@ -253,7 +224,7 @@ export function RequirementTemplatesPanel({
         </div>
 
         {/* 2. ACTIVE REQUIREMENTS */}
-        <div className="rounded-2xl bg-white text-slate-900 border border-slate-300 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+        <div className="rounded-2xl bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
               Active Requirements
@@ -269,7 +240,7 @@ export function RequirementTemplatesPanel({
         </div>
 
         {/* 3. HIDDEN REQUIREMENTS */}
-        <div className="rounded-2xl bg-white text-slate-900 border border-slate-300 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
+        <div className="rounded-2xl bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 p-5 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
               Hidden Requirements
@@ -321,7 +292,7 @@ export function RequirementTemplatesPanel({
                 onClick={() => setStatusFilter(st)}
                 className={`px-3 py-1 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer ${
                   statusFilter === st
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs font-semibold"
+                    ? "bg-amber-500 text-slate-950 font-semibold shadow-xs border border-amber-600/30"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60"
                 }`}
               >
@@ -333,17 +304,6 @@ export function RequirementTemplatesPanel({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <button
-            type="button"
-            onClick={() => void handleAcquireCurrent()}
-            disabled={isAcquiringCurrent || isLoading}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
-            title="Acquire & synchronize official compliance requirements from system specifications"
-          >
-            <Refresh className={`h-3.5 w-3.5 ${isAcquiringCurrent ? "animate-spin text-amber-500" : ""}`} strokeWidth={2} />
-            <span>{isAcquiringCurrent ? "Acquiring..." : "Acquire Current Requirements"}</span>
-          </button>
-
           <button
             type="button"
             onClick={handleOpenAddModal}
@@ -360,6 +320,7 @@ export function RequirementTemplatesPanel({
         <table className="w-full text-left border-collapse min-w-[700px]">
           <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
             <tr>
+              <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
               <th className="py-3 px-4">Document Title</th>
               <th className="py-3 px-4">Allowed Formats</th>
               <th className="py-3 px-4">Max Size</th>
@@ -371,14 +332,14 @@ export function RequirementTemplatesPanel({
           <tbody className="divide-y divide-slate-300 dark:divide-slate-800/60 text-xs">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="py-10 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={7} className="py-10 text-center text-slate-500 dark:text-slate-400">
                   <Refresh className="h-5 w-5 animate-spin mx-auto mb-2 text-amber-500" strokeWidth={2} />
                   Loading requirement templates...
                 </td>
               </tr>
             ) : filteredTemplates.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={7} className="py-12 text-center text-slate-500 dark:text-slate-400">
                   <Page className="h-8 w-8 mx-auto mb-2 text-slate-400 opacity-60" strokeWidth={2} />
                   <p className="font-semibold text-slate-700 dark:text-slate-300">No requirement templates found</p>
                   <p className="text-xs text-slate-500 mt-1">
@@ -389,11 +350,16 @@ export function RequirementTemplatesPanel({
                 </td>
               </tr>
             ) : (
-              filteredTemplates.map((tpl) => (
+              filteredTemplates.map((tpl, index) => (
                 <tr
                   key={tpl.id}
                   className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
                 >
+                  {/* Index */}
+                  <td className="px-3 py-3 text-center text-xs font-mono text-slate-400 dark:text-slate-500">
+                    {index + 1}
+                  </td>
+
                   {/* Column 1: Document Title */}
                   <td className="py-3 px-4">
                     <button
