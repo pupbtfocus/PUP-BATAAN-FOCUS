@@ -465,7 +465,7 @@ export function FacultySubmissionPanel({
                           )
                         }
                       >
-                        {DEFAULT_REQUIREMENTS.map((code) => {
+                        {DEFAULT_REQUIREMENTS.map((code: RequirementCode) => {
                           const status = getRequirementStatus(code);
                           const disabled =
                             status &&
