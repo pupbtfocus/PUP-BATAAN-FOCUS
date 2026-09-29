@@ -21,7 +21,7 @@ import { SubmissionStatusBadge } from "./submission-status-badge";
 
 export interface LackingRequirementItem {
   code: RequirementCode | string;
-  status: "Not Submitted" | "Rejected" | "Pending";
+  status: "Not Submitted" | "Rejected" | "Pending" | "Overdue" | "Extended" | string;
   label?: string;
   adminRemarks?: string | null;
 }

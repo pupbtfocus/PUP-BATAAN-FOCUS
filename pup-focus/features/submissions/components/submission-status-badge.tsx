@@ -12,7 +12,10 @@ export type NormalizedSubmissionStatus =
   | "Revision Under Review"
   | "Pending"
   | "Pending Review"
-  | "Not Submitted";
+  | "Not Submitted"
+  | "Exempted"
+  | "Overdue"
+  | "Extended";
 
 interface SubmissionStatusBadgeProps {
   status?: string | null;
@@ -27,10 +30,23 @@ interface SubmissionStatusBadgeProps {
 
 export function getNormalizedStatus(
   status?: string | null,
-): "Validated" | "Needs Revision" | "Revision Requested" | "Revision Under Review" | "Pending Review" | "Not Submitted" {
-  if (!status) return "Not Submitted";
+):
+  | "Validated"
+  | "Needs Revision"
+  | "Revision Requested"
+  | "Revision Under Review"
+  | "Pending"
+  | "Pending Review"
+  | "Not Submitted"
+  | "Exempted"
+  | "Overdue"
+  | "Extended" {
+  if (!status) return "Pending";
   const s = status.toLowerCase().trim();
 
+  if (s === "exempted" || s === "exempt") return "Exempted";
+  if (s === "overdue") return "Overdue";
+  if (s === "extended") return "Extended";
   if (s === "validated" || s === "approved") return "Validated";
   if (s === "revision requested" || s === "revision_requested") return "Revision Requested";
   if (s === "rejected" || s === "needs revision" || s === "needs_revision")
@@ -44,15 +60,16 @@ export function getNormalizedStatus(
   )
     return "Revision Under Review";
   if (
-    s === "pending" ||
     s === "pending review" ||
     s === "pending_review" ||
+    s === "under_review" ||
     s === "uploaded" ||
-    s === "submitted" ||
-    s === "under_review"
+    s === "submitted"
   )
     return "Pending Review";
-  return "Not Submitted";
+  if (s === "pending") return "Pending";
+  if (s === "not submitted" || s === "not_submitted") return "Pending";
+  return "Pending";
 }
 
 export function SubmissionStatusBadge({
@@ -107,6 +124,38 @@ export function SubmissionStatusBadge({
       dotClass: "bg-slate-950",
       iconBadgeClass: "bg-slate-950/20 text-slate-950 border border-slate-950/30",
       icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-slate-950" strokeWidth={2.2} />,
+    },
+    Exempted: {
+      label: "Exempted",
+      containerClass:
+        "bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-semibold",
+      dotClass: "bg-slate-500",
+      iconBadgeClass: "bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-400 dark:border-slate-600",
+      icon: <AppIcon icon={Minus} color="inherit" className="shrink-0 text-slate-600 dark:text-slate-300" strokeWidth={2.5} />,
+    },
+    Pending: {
+      label: "Pending",
+      containerClass:
+        "bg-amber-500 text-slate-950 border border-amber-600 font-bold dark:bg-amber-500 dark:text-slate-950 dark:border-amber-400",
+      dotClass: "bg-slate-950",
+      iconBadgeClass: "bg-slate-950/20 text-slate-950 border border-slate-950/30",
+      icon: <AppIcon icon={Hourglass} color="inherit" className="shrink-0 text-slate-950" strokeWidth={2.2} />,
+    },
+    Overdue: {
+      label: "Overdue",
+      containerClass:
+        "bg-[#780000] text-white border border-[#5e0000] font-bold",
+      dotClass: "bg-rose-300",
+      iconBadgeClass: "bg-white/20 text-white border border-white/30",
+      icon: <AppIcon icon={Xmark} color="white" className="shrink-0" strokeWidth={2.5} />,
+    },
+    Extended: {
+      label: "Extended",
+      containerClass:
+        "bg-indigo-600 text-white border border-indigo-700 font-bold dark:bg-indigo-700 dark:border-indigo-600",
+      dotClass: "bg-indigo-200",
+      iconBadgeClass: "bg-white/20 text-white border border-white/30",
+      icon: <AppIcon icon={Hourglass} color="white" className="shrink-0" strokeWidth={2.2} />,
     },
     "Not Submitted": {
       label: "Not Submitted",

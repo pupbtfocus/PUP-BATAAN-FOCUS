@@ -17,6 +17,7 @@ import {
   isValidAcademicYear,
   isValidSemester,
   normalizeSemester,
+  normalizeTime24Hour,
 } from "@/features/submissions/services/submission-window.service";
 import crypto from "crypto";
 
@@ -84,10 +85,113 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = getServiceRoleClient();
 
-    // Validate if submissions are currently open.
+    // 1. Get form data & parse metadata first
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+
+    // Query current active term directly from database
+    const { data: dbCurrentTerm } = await supabaseAdmin
+      .from("academic_terms")
+      .select("id, academic_year, semester")
+      .eq("status", "Current")
+      .maybeSingle();
+
+    const requirementCodeInput =
+      (formData.get("requirementCode") as string) ||
+      (formData.get("requirement_type") as string) ||
+      "";
+
+    // 2. Validate if submissions are currently open or unlocked via approved extension / custom due date
     const submissionWindow = await getSubmissionWindow(supabaseAdmin);
     const windowState = evaluateSubmissionWindow(submissionWindow);
-    if (!windowState.isOpen) {
+
+    let isUnlockedViaExtension = false;
+    let isExempted = false;
+    let hasCustomDuePassed = false;
+
+    // Check if faculty has individual custom due date, approved extension, or exemption
+    try {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const profileId = profile?.id || user.id;
+
+      // Check exemption or custom due date in existing submissions
+      const { data: existingSub } = await supabaseAdmin
+        .from("submissions")
+        .select("status, due_at")
+        .eq("requirement_code", requirementCodeInput)
+        .or(`faculty_profile_id.eq.${profileId},user_id.eq.${user.id}`)
+        .maybeSingle();
+
+      const existingStatus = (existingSub?.status || "").toLowerCase().trim();
+      if (existingStatus === "exempted" || existingStatus === "exempt") {
+        isExempted = true;
+      }
+
+      if (existingSub?.due_at) {
+        const customIso = existingSub.due_at.includes("T") ? existingSub.due_at : `${existingSub.due_at}T23:59:59+08:00`;
+        const customMs = new Date(customIso).getTime();
+        if (!Number.isNaN(customMs)) {
+          if (Date.now() <= customMs) {
+            isUnlockedViaExtension = true;
+          } else {
+            hasCustomDuePassed = true;
+          }
+        }
+      }
+
+      // Check approved extension requests
+      if (!isUnlockedViaExtension) {
+        const { data: extData } = await supabaseAdmin
+          .from("extension_requests")
+          .select("*")
+          .eq("faculty_user_id", user.id)
+          .eq("status", "approved")
+          .order("created_at", { ascending: false });
+
+        if (extData && extData.length > 0) {
+          for (const ext of extData) {
+            const reqCodes = Array.isArray(ext.requirement_codes) ? ext.requirement_codes : [];
+            const applies = reqCodes.length === 0 || reqCodes.includes(requirementCodeInput);
+            if (applies && ext.requested_date) {
+              const extIso = `${ext.requested_date}T${ext.requested_time ? normalizeTime24Hour(ext.requested_time) || "23:59:59" : "23:59:59"}+08:00`;
+              const extMs = new Date(extIso).getTime();
+              if (!Number.isNaN(extMs) && Date.now() <= extMs) {
+                isUnlockedViaExtension = true;
+                hasCustomDuePassed = false;
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch {}
+
+    if (isExempted) {
+      return NextResponse.json(
+        { error: "This requirement is exempted. File uploads are disabled." },
+        { status: 400 },
+      );
+    }
+
+    if ((hasCustomDuePassed || !windowState.isOpen) && !isUnlockedViaExtension) {
+      if (hasCustomDuePassed) {
+        return NextResponse.json(
+          {
+            error: "The deadline for this requirement has passed. File upload is locked. Please request an extension.",
+          },
+          { status: 403 },
+        );
+      }
+
       const startTimeLabel = windowState.startTime
         ? format24HourTo12Hour(windowState.startTime)
         : "";
@@ -105,27 +209,6 @@ export async function POST(request: NextRequest) {
         { status: 403 },
       );
     }
-
-    // Get form data
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
-
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
-
-    // Query current active term directly from database
-    const { data: dbCurrentTerm } = await supabaseAdmin
-      .from("academic_terms")
-      .select("id, academic_year, semester")
-      .eq("status", "Current")
-      .maybeSingle();
-
-    // Parse submission metadata
-    const requirementCodeInput =
-      (formData.get("requirementCode") as string) ||
-      (formData.get("requirement_type") as string) ||
-      "";
 
     const activeAcademicYear =
       (formData.get("academicYear") as string) ||
