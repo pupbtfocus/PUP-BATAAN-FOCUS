@@ -285,7 +285,7 @@ export async function GET(request: NextRequest) {
       if (versionId) {
         const { data: specificVer } = await adminClient
           .from("document_versions")
-          .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
+          .select("id, submission_id, storage_path, mime_type, size_bytes")
           .eq("id", versionId)
           .maybeSingle();
         docVer = specificVer;
@@ -294,7 +294,7 @@ export async function GET(request: NextRequest) {
       if (!docVer) {
         const { data: latestVer } = await adminClient
           .from("document_versions")
-          .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
+          .select("id, submission_id, storage_path, mime_type, size_bytes")
           .or(`submission_id.eq.${submissionId},id.eq.${submissionId}`)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -324,7 +324,7 @@ export async function GET(request: NextRequest) {
           const subIds = siblingSubmissions.map((s) => s.id);
           const { data: siblingVer } = await adminClient
             .from("document_versions")
-            .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
+            .select("id, submission_id, storage_path, mime_type, size_bytes")
             .in("submission_id", subIds)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -339,7 +339,8 @@ export async function GET(request: NextRequest) {
       // document_versions table missing, proceed to storage discovery
     }
 
-    const targetFileName = filename || docVer?.file_name || undefined;
+    const targetFileName =
+      filename || (docVer?.storage_path ? docVer.storage_path.split("/").pop() : undefined);
     const downloadOptions =
       download === "true" || filename
         ? { download: targetFileName || true }
@@ -373,7 +374,7 @@ export async function GET(request: NextRequest) {
         downloadUrl: signResult.signedUrl,
         storagePath: signResult.resolvedPath,
         mimeType: docVer?.mime_type || signResult.mimeType,
-        fileName: docVer?.file_name || undefined,
+        fileName: targetFileName || undefined,
         sizeBytes: docVer?.size_bytes || null,
       });
     }

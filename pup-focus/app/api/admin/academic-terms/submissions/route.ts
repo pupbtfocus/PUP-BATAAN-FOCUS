@@ -26,9 +26,11 @@ export type HistoricalSubmissionItem = {
   submittedAt: string | null;
   dateValidated: string | null;
   adminRemarks: string | null;
+  facultyRemarks: string | null;
   fileName: string | null;
   storagePath: string | null;
   downloadUrl: string | null;
+  viewUrl?: string | null;
   isReadOnly: boolean;
 };
 
@@ -243,11 +245,15 @@ export async function GET(request: NextRequest) {
     const reviewDecisionsMap = new Map<string, any[]>();
 
     if (submissionIds.length > 0) {
-      const { data: docVersions } = await supabase
+      const { data: docVersions, error: docError } = await supabase
         .from("document_versions")
-        .select("id, submission_id, version_number, storage_path, mime_type, file_name, created_at")
+        .select("id, submission_id, version_number, storage_path, mime_type, created_at")
         .in("submission_id", submissionIds)
         .order("version_number", { ascending: false });
+
+      if (docError) {
+        console.error("Failed to query document_versions in academic-terms/submissions:", docError);
+      }
 
       if (docVersions) {
         for (const doc of docVersions) {
@@ -381,11 +387,34 @@ export async function GET(request: NextRequest) {
 
       // Document path / version
       const doc = docVersionsMap.get(sub.id);
-      const storagePath = doc?.storage_path || null;
-      const fileName = doc?.file_name || (storagePath ? storagePath.split("/").pop() : null);
+      const storagePath =
+        doc?.storage_path ||
+        (sub.status !== "missing" && sub.faculty_profile_id
+          ? `faculty-submissions/${sub.faculty_profile_id}/${sub.id}`
+          : null);
 
-      const downloadUrl = storagePath
+      const fileName =
+        (doc?.storage_path ? doc.storage_path.split("/").pop() : null) ||
+        (storagePath ? storagePath.split("/").pop() : null) ||
+        (sub.status !== "missing" ? `${sub.requirement_code || "document"}.pdf` : null);
+
+      const hasFile = Boolean(
+        doc?.storage_path ||
+        storagePath ||
+        sub.status === "uploaded" ||
+        sub.status === "submitted" ||
+        sub.status === "validated" ||
+        sub.status === "approved" ||
+        sub.status === "pending_review" ||
+        sub.submitted_at
+      );
+
+      const downloadUrl = hasFile
         ? `/api/faculty/submissions/view?submissionId=${encodeURIComponent(sub.id)}&download=true`
+        : null;
+
+      const viewUrl = hasFile
+        ? `/api/faculty/submissions/view?submissionId=${encodeURIComponent(sub.id)}`
         : null;
 
       const reqCode = (sub.requirement_code || "") as RequirementCode;
@@ -404,9 +433,11 @@ export async function GET(request: NextRequest) {
         submittedAt: sub.submitted_at || sub.created_at || null,
         dateValidated,
         adminRemarks,
+        facultyRemarks: sub.remarks?.trim() || null,
         fileName,
         storagePath,
         downloadUrl,
+        viewUrl,
         isReadOnly: !isCurrentActiveTerm,
       });
     }
