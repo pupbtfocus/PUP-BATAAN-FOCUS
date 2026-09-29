@@ -4,9 +4,11 @@ import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 
 import {
+  Archive,
   Calendar,
   Check,
   Database,
+  Eye,
   Lock,
   SystemRestart,
   TaskList,
@@ -15,6 +17,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import { HistoricalSubmissionsModal } from "./historical-submissions-modal";
 
 type AcademicTermStatus = "Current" | "Upcoming" | "Archived" | "Completed";
 
@@ -65,6 +68,11 @@ export function AdminAcademicTerms({
   const [termToDelete, setTermToDelete] = useState<AcademicTermItem | null>(
     null,
   );
+  const [historyModalData, setHistoryModalData] = useState<{
+    isOpen: boolean;
+    academicYear?: string;
+    semester?: string;
+  }>({ isOpen: false });
   const [countdown, setCountdown] = useState<number>(10);
 
   useEffect(() => {
@@ -424,7 +432,17 @@ export function AdminAcademicTerms({
   return (
     <div className="w-full space-y-4">
       {/* Top Header Actions */}
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-end gap-3 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setHistoryModalData({ isOpen: true })}
+          className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-semibold px-3.5 py-2 rounded-xl text-xs transition-all cursor-pointer shadow-2xs"
+          title="Browse read-only historical submissions from past inactive terms"
+        >
+          <AppIcon icon={Archive} size="xs" color="inherit" />
+          <span>Browse Past Submissions</span>
+        </button>
+
         <button
           type="button"
           onClick={() => setIsCreateModalOpen(true)}
@@ -487,6 +505,27 @@ export function AdminAcademicTerms({
                     </td>
                     <td className="py-2.5 px-4 text-right">
                       <div className="inline-flex items-center gap-2 justify-end">
+                        {/* Submissions View Button */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setHistoryModalData({
+                              isOpen: true,
+                              academicYear: term.academicYear,
+                              semester: term.semester,
+                            })
+                          }
+                          title={
+                            term.status === "Current"
+                              ? "View submissions for the current active academic term"
+                              : "Browse read-only historical submissions from this academic term"
+                          }
+                          className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-medium px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-2xs"
+                        >
+                          <AppIcon icon={Eye} size="xs" color="inherit" />
+                          <span>Submissions</span>
+                        </button>
+
                         {/* Set Current Action with Term Progression Guardrails */}
                         {renderSetCurrentAction(term)}
 
@@ -926,6 +965,19 @@ export function AdminAcademicTerms({
           </div>
         </div>
       ) : null}
+
+      {/* Historical Submissions Modal for Inactive / Past Terms */}
+      <HistoricalSubmissionsModal
+        isOpen={historyModalData.isOpen}
+        onClose={() => setHistoryModalData({ isOpen: false })}
+        initialAcademicYear={historyModalData.academicYear}
+        initialSemester={historyModalData.semester}
+        allTerms={terms.map((t) => ({
+          academicYear: t.academicYear,
+          semester: t.semester,
+          status: t.status,
+        }))}
+      />
     </div>
   );
 }

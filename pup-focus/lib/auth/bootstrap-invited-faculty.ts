@@ -99,25 +99,27 @@ export async function bootstrapInvitedFacultyAccount(user: {
     throw new Error(userRoleError.message);
   }
 
-  // Ensure faculty program assignment is persisted
+  // Ensure faculty program assignment is persisted strictly under the currently active Academic Term
   if (programId && profile?.id) {
+    const { data: activeTerm } = await serviceRoleClient
+      .from("academic_terms")
+      .select("academic_year, semester")
+      .eq("status", "Current")
+      .maybeSingle();
+
+    const academicYear = activeTerm?.academic_year || "2026-2027";
+    const term = activeTerm?.semester || "1st Semester";
+
     const { data: existingAssignment } = await serviceRoleClient
       .from("faculty_program_assignments")
       .select("id")
       .eq("faculty_profile_id", profile.id)
       .eq("program_id", programId)
+      .eq("academic_year", academicYear)
+      .ilike("term", `%${term}%`)
       .maybeSingle();
 
     if (!existingAssignment) {
-      const { data: activeTerm } = await serviceRoleClient
-        .from("academic_terms")
-        .select("academic_year, semester")
-        .eq("status", "Current")
-        .maybeSingle();
-
-      const academicYear = activeTerm?.academic_year || "2026-2027";
-      const term = activeTerm?.semester || "1st Semester";
-
       await serviceRoleClient.from("faculty_program_assignments").insert({
         faculty_profile_id: profile.id,
         program_id: programId,

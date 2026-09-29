@@ -282,7 +282,30 @@ export function validateSubmissionWindow(
 
 export async function getSubmissionWindow(
   supabase: SupabaseClient,
+  targetTerm?: { academicYear?: string | null; semester?: string | null } | null,
 ): Promise<SubmissionWindowConfig | null> {
+  // If targetTerm is not explicitly provided, resolve the currently active academic term
+  let resolvedTerm = targetTerm;
+  if (!resolvedTerm || !resolvedTerm.academicYear || !resolvedTerm.semester) {
+    try {
+      const { data: currentTerm } = await supabase
+        .from("academic_terms")
+        .select("academic_year, semester")
+        .eq("status", "Current")
+        .limit(1)
+        .maybeSingle();
+
+      if (currentTerm?.academic_year && currentTerm?.semester) {
+        resolvedTerm = {
+          academicYear: currentTerm.academic_year,
+          semester: currentTerm.semester,
+        };
+      }
+    } catch {
+      // In case academic_terms table is temporarily inaccessible
+    }
+  }
+
   const { data, error } = await supabase
     .from("submission_windows")
     .select(
@@ -317,6 +340,10 @@ export async function getSubmissionWindow(
         endDate: timeData.end_date,
         startTime: normalizeTime24Hour(timeData.start_time),
         endTime: normalizeTime24Hour(timeData.end_time),
+        academicYear: resolvedTerm?.academicYear ?? undefined,
+        semester: resolvedTerm?.semester
+          ? normalizeSemester(resolvedTerm.semester)
+          : undefined,
       };
     }
 
@@ -342,7 +369,92 @@ export async function getSubmissionWindow(
       endDate: legacyData.end_date,
       startTime: DEFAULT_START_TIME,
       endTime: DEFAULT_END_TIME,
+      academicYear: resolvedTerm?.academicYear ?? undefined,
+      semester: resolvedTerm?.semester
+        ? normalizeSemester(resolvedTerm.semester)
+        : undefined,
     };
+  }
+
+  // If a specific/active term is expected, enforce that the schedule strictly belongs to that term
+  if (resolvedTerm?.academicYear && resolvedTerm?.semester) {
+    const targetAY = resolvedTerm.academicYear.trim();
+    const targetSem = normalizeSemester(resolvedTerm.semester);
+
+    const matchesActiveTerm =
+      data &&
+      data.academic_year === targetAY &&
+      normalizeSemester(data.semester) === targetSem;
+
+    if (matchesActiveTerm) {
+      if (
+        !isValidDateInput(data.start_date) ||
+        !isValidDateInput(data.end_date) ||
+        !isValid24HourTimeInput(data.start_time) ||
+        !isValid24HourTimeInput(data.end_time)
+      ) {
+        return null;
+      }
+
+      return {
+        startDate: data.start_date,
+        endDate: data.end_date,
+        startTime: normalizeTime24Hour(data.start_time),
+        endTime: normalizeTime24Hour(data.end_time),
+        academicYear: data.academic_year ?? undefined,
+        semester: normalizeSemester(data.semester),
+      };
+    }
+
+    // If submission_windows id=1 does not match the active term, check submission_window_terms
+    try {
+      const { data: termData, error: termError } = await supabase
+        .from("submission_window_terms")
+        .select("start_date, end_date, start_time, end_time, academic_year, semester")
+        .eq("academic_year", targetAY)
+        .eq("semester", targetSem)
+        .maybeSingle();
+
+      if (!termError && termData && termData.start_date && termData.end_date) {
+        const startTime = termData.start_time || "09:00:00";
+        const endTime = termData.end_time || "17:00:00";
+        const startTime24 = isValid12HourTimeInput(startTime)
+          ? convert12HourTo24Hour(startTime)
+          : normalizeTime24Hour(startTime) || "09:00:00";
+        const endTime24 = isValid12HourTimeInput(endTime)
+          ? convert12HourTo24Hour(endTime)
+          : normalizeTime24Hour(endTime) || "17:00:00";
+
+        // Mirror this term's schedule to submission_windows id=1
+        await supabase.from("submission_windows").upsert(
+          {
+            id: 1,
+            start_date: termData.start_date,
+            end_date: termData.end_date,
+            start_time: startTime24,
+            end_time: endTime24,
+            academic_year: targetAY,
+            semester: targetSem,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" },
+        );
+
+        return {
+          startDate: termData.start_date,
+          endDate: termData.end_date,
+          startTime: startTime24,
+          endTime: endTime24,
+          academicYear: targetAY,
+          semester: targetSem,
+        };
+      }
+    } catch {
+      // In case submission_window_terms query fails
+    }
+
+    // Active term has no schedule configured yet
+    return null;
   }
 
   if (!data) {
@@ -378,7 +490,34 @@ export function evaluateSubmissionWindow(
   config: SubmissionWindowConfig | null,
   today = getTodayInManila(),
   currentTime = getCurrentTimeInManila(),
+  activeTerm?: { academicYear?: string | null; semester?: string | null } | null,
 ): SubmissionWindowState {
+  if (activeTerm?.academicYear && activeTerm?.semester && config) {
+    const activeAY = activeTerm.academicYear.trim();
+    const activeSem = normalizeSemester(activeTerm.semester);
+    if (
+      config.academicYear &&
+      config.semester &&
+      (config.academicYear.trim() !== activeAY ||
+        normalizeSemester(config.semester) !== activeSem)
+    ) {
+      // Config does not belong to the active academic term
+      return {
+        isConfigured: false,
+        status: "Closed",
+        isOpen: false,
+        today,
+        currentTime,
+        startDate: null,
+        endDate: null,
+        startTime: null,
+        endTime: null,
+        academicYear: activeAY,
+        semester: activeSem,
+      };
+    }
+  }
+
   if (!config) {
     return {
       isConfigured: false,
@@ -390,8 +529,8 @@ export function evaluateSubmissionWindow(
       endDate: null,
       startTime: null,
       endTime: null,
-      academicYear: null,
-      semester: null,
+      academicYear: activeTerm?.academicYear ?? null,
+      semester: activeTerm?.semester ? normalizeSemester(activeTerm.semester) : null,
     };
   }
 
@@ -412,7 +551,7 @@ export function evaluateSubmissionWindow(
     endDate: config.endDate,
     startTime: config.startTime,
     endTime: config.endTime,
-    academicYear: config.academicYear ?? null,
-    semester: config.semester ?? null,
+    academicYear: config.academicYear ?? activeTerm?.academicYear ?? null,
+    semester: config.semester ?? (activeTerm?.semester ? normalizeSemester(activeTerm.semester) : null),
   };
 }

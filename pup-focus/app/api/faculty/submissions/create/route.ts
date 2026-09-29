@@ -177,7 +177,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (
+    const { data: activeTerm } = await supabaseAdmin
+      .from("academic_terms")
+      .select("academic_year, semester")
+      .eq("status", "Current")
+      .maybeSingle();
+
+    if (activeTerm?.academic_year && activeTerm?.semester) {
+      if (
+        payload.academicYear !== activeTerm.academic_year ||
+        normalizeSemester(payload.semester) !== normalizeSemester(activeTerm.semester)
+      ) {
+        return NextResponse.json(
+          {
+            error: `Submission must belong to the active Academic Term (${activeTerm.academic_year} ${activeTerm.semester}).`,
+          },
+          { status: 400 },
+        );
+      }
+    } else if (
       submissionWindow?.academicYear &&
       submissionWindow?.semester &&
       (payload.academicYear !== submissionWindow.academicYear ||

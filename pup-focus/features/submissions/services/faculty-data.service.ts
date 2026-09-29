@@ -111,6 +111,25 @@ function normalizeAcademicYear(ay?: string | null): string {
   return ay.toLowerCase().trim().replace(/^s\.?y\.?\s*/i, "").replace(/^a\.?y\.?\s*/i, "");
 }
 
+function toAcademicYearAndSemester(dateInput: string | null | undefined): {
+  academicYear: string;
+  semester: "1st Semester" | "2nd Semester";
+} {
+  const sourceDate = dateInput ? new Date(dateInput) : new Date();
+  const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
+
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const startsSchoolYear = month >= 6;
+
+  return {
+    academicYear: startsSchoolYear
+      ? `${year}-${year + 1}`
+      : `${year - 1}-${year}`,
+    semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
+  };
+}
+
 function matchRequirementCode(
   inputCode?: string | null,
   inputReqId?: string | null,
@@ -152,16 +171,7 @@ export async function getFacultyInitialData(
 ): Promise<FacultyInitialData> {
   const supabase = getServiceRoleClient();
 
-  // 1. Submission Window
-  let windowConfig = null;
-  try {
-    windowConfig = await getSubmissionWindow(supabase);
-  } catch (err) {
-    logger.warn("faculty_data_submission_window_failed", { error: String(err) });
-  }
-  const evaluatedWindow = evaluateSubmissionWindow(windowConfig);
-
-  // 2. Active Term
+  // 1. Resolve Active Academic Term strictly (only one can be designated active)
   const { data: dbCurrentTerm } = await supabase
     .from("academic_terms")
     .select("id, academic_year, semester")
@@ -184,13 +194,11 @@ export async function getFacultyInitialData(
   const activeAcademicYear =
     requestedAcademicYear ||
     dbTerm?.academic_year ||
-    evaluatedWindow?.academicYear ||
     "2026-2027";
 
   const rawSem =
     requestedSemester ||
     dbTerm?.semester ||
-    evaluatedWindow?.semester ||
     "1st Semester";
 
   const activeSemester: "1st Semester" | "2nd Semester" =
@@ -199,10 +207,27 @@ export async function getFacultyInitialData(
   const normActiveYear = normalizeAcademicYear(activeAcademicYear);
   const normActiveSem = normalizeSemester(activeSemester);
 
+  // 2. Submission Window strictly scoped to the active Academic Term
+  let windowConfig = null;
+  try {
+    windowConfig = await getSubmissionWindow(supabase, {
+      academicYear: activeAcademicYear,
+      semester: activeSemester,
+    });
+  } catch (err) {
+    logger.warn("faculty_data_submission_window_failed", { error: String(err) });
+  }
+  const evaluatedWindow = evaluateSubmissionWindow(
+    windowConfig,
+    undefined,
+    undefined,
+    { academicYear: activeAcademicYear, semester: activeSemester },
+  );
+
   const submissionWindow: SubmissionWindowStateData = {
     ...evaluatedWindow,
-    academicYear: evaluatedWindow.academicYear || normActiveYear,
-    semester: (evaluatedWindow.semester as "1st Semester" | "2nd Semester") || activeSemester,
+    academicYear: activeAcademicYear,
+    semester: activeSemester,
     startTimeLabel: evaluatedWindow.startTime
       ? format24HourTo12Hour(evaluatedWindow.startTime)
       : null,
@@ -242,6 +267,7 @@ export async function getFacultyInitialData(
 
   // 4. Faculty Profile IDs & Avatar URL
   const facultyIds = new Set<string>([authUserId]);
+  let facultyProfileId: string | null = null;
   let avatarUrl: string | null = null;
   try {
     const { data: profileRow } = await supabase
@@ -251,6 +277,7 @@ export async function getFacultyInitialData(
       .maybeSingle();
 
     if (profileRow?.id) {
+      facultyProfileId = profileRow.id;
       facultyIds.add(profileRow.id);
     }
 
@@ -302,11 +329,37 @@ export async function getFacultyInitialData(
     }
   } catch {}
 
-  const currentTermAssignments = assignmentRows.filter(
+  let currentTermAssignments = assignmentRows.filter(
     (row) =>
       normalizeAcademicYear(row.academic_year) === normActiveYear &&
       normalizeSemester(row.term) === normActiveSem,
   );
+
+  // Onboarding check: Ensure faculty has an active assignment for the active Academic Term
+  const targetProfileId = facultyProfileId || facultyIdList[0];
+  if (currentTermAssignments.length === 0 && programInfo?.id && targetProfileId) {
+    try {
+      const { data: newAssignment } = await supabase
+        .from("faculty_program_assignments")
+        .upsert(
+          {
+            faculty_profile_id: targetProfileId,
+            program_id: programInfo.id,
+            academic_year: activeAcademicYear,
+            term: activeSemester,
+          },
+          { onConflict: "faculty_profile_id,program_id,academic_year,term" },
+        )
+        .select("id, academic_year, term")
+        .single();
+
+      if (newAssignment) {
+        currentTermAssignments = [newAssignment];
+        assignmentRows.push(newAssignment);
+      }
+    } catch {}
+  }
+
   const currentAssignmentIds = currentTermAssignments.map((row) => row.id);
 
   // 6. Submissions
@@ -491,10 +544,22 @@ export async function getFacultyInitialData(
 
     const facultyNote = row.remarks?.trim() || undefined;
 
+    const matchedAssignment = assignmentRows.find((a) => a.id === row.faculty_assignment_id);
+    let histAY = matchedAssignment?.academic_year || null;
+    let histSem: "1st Semester" | "2nd Semester" | null = matchedAssignment?.term
+      ? (normalizeSemester(matchedAssignment.term).includes("2") ? "2nd Semester" : "1st Semester")
+      : null;
+
+    if (!histAY || !histSem) {
+      const dateTerm = toAcademicYearAndSemester(row.submitted_at || row.created_at);
+      histAY = histAY || dateTerm.academicYear;
+      histSem = histSem || dateTerm.semester;
+    }
+
     pastSubmissions.push({
       id: row.id,
-      academicYear: activeAcademicYear,
-      semester: activeSemester,
+      academicYear: histAY,
+      semester: histSem || "1st Semester",
       requirementCode: row.requirement_code,
       status: "Validated",
       submittedAt: row.submitted_at || row.created_at || new Date().toISOString(),

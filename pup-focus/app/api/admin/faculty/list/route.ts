@@ -173,7 +173,7 @@ export async function GET(request: NextRequest) {
       supabase.auth.admin.listUsers({ perPage: 1000 }),
       supabase
         .from("faculty_program_assignments")
-        .select("faculty_profile_id, program_id, programs(id, code, name)"),
+        .select("id, faculty_profile_id, program_id, academic_year, term, programs(id, code, name)"),
       supabase
         .from("profiles")
         .select("id, user_id, full_name, email, created_at"),
@@ -340,7 +340,7 @@ export async function GET(request: NextRequest) {
     const { data: submissionRows, error: submissionsError } = await supabase
       .from("submissions")
       .select(
-        "faculty_profile_id, requirement_code, status, submitted_at",
+        "faculty_profile_id, requirement_code, status, submitted_at, faculty_assignment_id",
       )
       .in("faculty_profile_id", profileIds)
       .order("submitted_at", { ascending: false })
@@ -419,7 +419,17 @@ export async function GET(request: NextRequest) {
       ? normalizeSemester(activeTerm.semester)
       : null;
 
-    for (const row of (submissionRows ?? []) as SubmissionRow[]) {
+    const activeAssignmentIdSet = new Set(
+      (allAssignments ?? [])
+        .filter(
+          (a: any) =>
+            normalizeAcademicYear(a.academic_year) === activeAY &&
+            normalizeSemester(a.term) === activeSem,
+        )
+        .map((a: any) => a.id),
+    );
+
+    for (const row of (submissionRows ?? []) as (SubmissionRow & { faculty_assignment_id?: string | null })[]) {
       const profileId = row.faculty_profile_id;
       const requirementCode = row.requirement_code as
         | (typeof DEFAULT_REQUIREMENTS)[number]
@@ -437,13 +447,19 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      if (activeAY && activeSem && row.submitted_at) {
-        const subTerm = toAcademicYearAndSemester(row.submitted_at);
-        if (
-          normalizeAcademicYear(subTerm.academicYear) !== activeAY ||
-          normalizeSemester(subTerm.semester) !== activeSem
-        ) {
-          continue;
+      if (activeAY && activeSem) {
+        if (row.faculty_assignment_id && activeAssignmentIdSet.size > 0) {
+          if (!activeAssignmentIdSet.has(row.faculty_assignment_id)) {
+            continue;
+          }
+        } else if (row.submitted_at) {
+          const subTerm = toAcademicYearAndSemester(row.submitted_at);
+          if (
+            normalizeAcademicYear(subTerm.academicYear) !== activeAY ||
+            normalizeSemester(subTerm.semester) !== activeSem
+          ) {
+            continue;
+          }
         }
       }
 

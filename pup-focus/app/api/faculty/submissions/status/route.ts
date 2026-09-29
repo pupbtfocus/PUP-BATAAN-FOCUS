@@ -152,16 +152,71 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 2. Safely evaluate submission window
+    const url = new URL(request.url);
+    const requestedAcademicYear = (
+      url.searchParams.get("academicYear") ||
+      request.nextUrl?.searchParams?.get("academicYear")
+    )?.trim();
+    const requestedSemester = (
+      url.searchParams.get("semester") ||
+      request.nextUrl?.searchParams?.get("semester")
+    )?.trim();
+
+    // 2. Resolve currently active academic term strictly
+    const { data: dbCurrentTerm } = await supabase
+      .from("academic_terms")
+      .select("id, academic_year, semester")
+      .eq("status", "Current")
+      .maybeSingle();
+
+    let dbTerm = dbCurrentTerm;
+    if (!dbTerm) {
+      const { data: latestTerm } = await supabase
+        .from("academic_terms")
+        .select("id, academic_year, semester")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestTerm) {
+        dbTerm = latestTerm;
+      }
+    }
+
+    const activeAcademicYear =
+      requestedAcademicYear ||
+      dbTerm?.academic_year ||
+      "2026-2027";
+
+    const activeSemester = normalizeSemester(
+      requestedSemester ||
+      dbTerm?.semester ||
+      "1st Semester"
+    );
+
+    const normActiveYear = normalizeAcademicYear(activeAcademicYear);
+    const normActiveSem = normalizeSemester(activeSemester);
+
+    // 2.1 Safely evaluate submission window strictly scoped to the active Academic Term
     let windowState;
     try {
-      const submissionWindow = await getSubmissionWindow(supabase);
-      windowState = evaluateSubmissionWindow(submissionWindow);
+      const submissionWindow = await getSubmissionWindow(supabase, {
+        academicYear: activeAcademicYear,
+        semester: activeSemester,
+      });
+      windowState = evaluateSubmissionWindow(
+        submissionWindow,
+        undefined,
+        undefined,
+        { academicYear: activeAcademicYear, semester: activeSemester },
+      );
     } catch (windowError) {
       logger.warn("submission_window_eval_failed", {
         error: windowError instanceof Error ? windowError.message : String(windowError),
       });
-      windowState = evaluateSubmissionWindow(null);
+      windowState = evaluateSubmissionWindow(null, undefined, undefined, {
+        academicYear: activeAcademicYear,
+        semester: activeSemester,
+      });
     }
 
     const localWindowStart = windowState.startDate
@@ -199,51 +254,6 @@ export async function GET(request: NextRequest) {
         semester: startsSchoolYear ? "1st Semester" : "2nd Semester",
       };
     }
-
-    const url = new URL(request.url);
-    const requestedAcademicYear = (
-      url.searchParams.get("academicYear") ||
-      request.nextUrl?.searchParams?.get("academicYear")
-    )?.trim();
-    const requestedSemester = (
-      url.searchParams.get("semester") ||
-      request.nextUrl?.searchParams?.get("semester")
-    )?.trim();
-
-    const { data: dbCurrentTerm } = await supabase
-      .from("academic_terms")
-      .select("id, academic_year, semester")
-      .eq("status", "Current")
-      .maybeSingle();
-
-    let dbTerm = dbCurrentTerm;
-    if (!dbTerm) {
-      const { data: latestTerm } = await supabase
-        .from("academic_terms")
-        .select("id, academic_year, semester")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (latestTerm) {
-        dbTerm = latestTerm;
-      }
-    }
-
-    const activeAcademicYear =
-      requestedAcademicYear ||
-      dbTerm?.academic_year ||
-      windowState?.academicYear ||
-      "2026-2027";
-
-    const activeSemester = normalizeSemester(
-      requestedSemester ||
-      dbTerm?.semester ||
-      windowState?.semester ||
-      "1st Semester"
-    );
-
-    const normActiveYear = normalizeAcademicYear(activeAcademicYear);
-    const normActiveSem = normalizeSemester(activeSemester);
 
     // 2.1 Fetch active requirement templates
     let activeTemplateRows: Array<{
@@ -371,11 +381,39 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const currentTermAssignments = assignmentRows.filter(
+    let currentTermAssignments = assignmentRows.filter(
       (row) =>
         normalizeAcademicYear(row.academic_year) === normActiveYear &&
         normalizeSemester(row.term) === normActiveSem,
     );
+
+    // Onboarding check: ensure faculty has an active assignment for the active Academic Term
+    if (currentTermAssignments.length === 0 && profileRow?.id) {
+      const priorAssignment = assignmentRows.find((a: any) => (a as any).program_id);
+      if (priorAssignment && (priorAssignment as any).program_id) {
+        try {
+          const { data: newAssignment } = await supabase
+            .from("faculty_program_assignments")
+            .upsert(
+              {
+                faculty_profile_id: profileRow.id,
+                program_id: (priorAssignment as any).program_id,
+                academic_year: activeAcademicYear,
+                term: activeSemester,
+              },
+              { onConflict: "faculty_profile_id,program_id,academic_year,term" },
+            )
+            .select("id, academic_year, term")
+            .single();
+
+          if (newAssignment) {
+            currentTermAssignments = [newAssignment];
+            assignmentRows.push(newAssignment);
+          }
+        } catch {}
+      }
+    }
+
     const currentAssignmentIds = currentTermAssignments.map((row) => row.id);
 
     // 5. Query submissions matching EITHER faculty profile ID or auth user ID

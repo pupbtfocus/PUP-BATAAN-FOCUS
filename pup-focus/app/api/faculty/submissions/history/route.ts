@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import {
@@ -116,8 +116,12 @@ function toHistoryStatus(
   return "Pending";
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const url = new URL(request.url);
+    const filterAY = url.searchParams.get("academicYear")?.trim();
+    const filterSem = url.searchParams.get("semester")?.trim();
+
     // 1. Authenticate user
     const sessionClient = await createServerSupabaseClient();
     const {
@@ -375,9 +379,19 @@ export async function GET() {
       });
     }
 
+    const filteredHistory = history.filter((item) => {
+      if (filterAY && filterAY !== "All" && item.academicYear !== filterAY) {
+        return false;
+      }
+      if (filterSem && filterSem !== "All" && item.semester !== filterSem) {
+        return false;
+      }
+      return true;
+    });
+
     return NextResponse.json({
-      submissions: history,
-      total: history.length,
+      submissions: filteredHistory,
+      total: filteredHistory.length,
     });
   } catch (error) {
     logger.error("submission_history_endpoint_error", {

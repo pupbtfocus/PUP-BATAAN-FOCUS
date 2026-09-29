@@ -231,7 +231,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const submissions = rawSubmissions || [];
+    // Strictly scope default submission stats to the currently active Academic Term
+    const { data: activeAssignments } = await supabase
+      .from("faculty_program_assignments")
+      .select("id")
+      .eq("academic_year", currentAcademicYear)
+      .ilike("term", `%${currentSemester}%`);
+
+    const activeAssignmentIds = new Set((activeAssignments ?? []).map((a: any) => a.id));
+
+    const submissions = (rawSubmissions || []).filter((sub: any) => {
+      if (activeAssignmentIds.size > 0) {
+        return sub.faculty_assignment_id && activeAssignmentIds.has(sub.faculty_assignment_id);
+      }
+      return true;
+    });
 
     // Helper functions for status categorization
     const isPendingStatus = (s: string | null) => {
