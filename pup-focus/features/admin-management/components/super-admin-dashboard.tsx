@@ -24,6 +24,7 @@ import { RequirementTemplatesPanel } from "@/features/requirement-templates/comp
 import { BackupArchivePanel } from "@/features/backup-archive/components/backup-archive-panel";
 import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
 import { SuperAdminSettings } from "@/features/admin-management/components/super-admin-settings";
+import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
 import { AddFacultyModal } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
 import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
 import { FacultyDetailsModal } from "@/features/faculty-management/components/faculty-modals/faculty-details-modal";
@@ -1621,15 +1622,20 @@ export function SuperAdminDashboard({
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 h-full p-4 border-r-2 border-amber-400/60 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
-            <div className="flex items-center justify-between pb-3 border-b border-amber-400/50">
-              <span className="text-sm font-semibold uppercase tracking-wider text-white">Navigation</span>
+            <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                <BrandMark size={38} className="shrink-0" />
+                <span className="text-lg font-black tracking-tight text-white leading-tight">
+                  PUP FOCUS
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs"
+                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs shrink-0"
                 aria-label="Close navigation"
               >
-                <AppIcon icon={Xmark} size="lg" color="inherit" />
+                <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
 

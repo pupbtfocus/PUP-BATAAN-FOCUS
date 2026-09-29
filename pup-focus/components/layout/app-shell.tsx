@@ -6,6 +6,7 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
 import { AdminNotificationDrawer } from "@/features/notifications/components/admin-notification-drawer";
+import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
 
 type NavigationItem = {
   href: string;
@@ -47,11 +48,11 @@ export function AppShell({
           <div className="flex items-center gap-2 sm:gap-2.5 z-10 min-w-0 flex-1 mr-2">
             <BrandMark size={40} className="shrink-0" />
             <div className="flex flex-col min-w-0">
-              <h1 className="text-base sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
+              <h1 className="hidden md:block text-base sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
                 PUP FOCUS
               </h1>
-              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[120px] xs:max-w-[150px] sm:max-w-[200px]">
-                {subtitle || "Faculty Online Compliance and Uploading System"}
+              <span className="md:hidden text-[10px] xs:text-[11px] font-medium text-amber-200/90 tracking-tight leading-tight line-clamp-2 max-w-[260px]">
+                {subtitle || <HighlightedSystemTitle />}
               </span>
             </div>
           </div>
@@ -59,7 +60,7 @@ export function AppShell({
           {/* Centered System Title for Desktop */}
           <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-4">
             <span className="text-xs lg:text-sm xl:text-base font-semibold text-amber-200/95 tracking-wide text-center truncate max-w-[48vw]">
-              {subtitle || "Faculty Online Compliance and Uploading System"}
+              {subtitle || <HighlightedSystemTitle />}
             </span>
           </div>
 
