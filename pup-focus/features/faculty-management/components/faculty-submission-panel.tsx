@@ -28,6 +28,7 @@ import {
 import {
   getTodayInManila,
   buildAcademicYearOptions,
+  normalizeTime24Hour,
 } from "@/features/submissions/services/submission-window.service";
 import type {
   FacultyInitialData,
@@ -189,7 +190,14 @@ export type PanelView = (typeof PANEL_VIEWS)[number];
 type HistorySubmissionStatus = "Pending" | "Validated" | "Rejected";
 type RequirementStatus = {
   code: RequirementCode | string;
-  status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
+  status:
+    | "Validated"
+    | "Rejected"
+    | "Pending"
+    | "Not Submitted"
+    | "Exempted"
+    | "Overdue"
+    | "Extended";
   reviewedAt?: string;
   feedback?: string;
   admin_remarks?: string;
@@ -205,6 +213,11 @@ type RequirementStatus = {
   viewed_at?: string;
   isRevision?: boolean;
   hasPriorRevision?: boolean;
+  due_at?: string | null;
+  customDueDate?: string | null;
+  effectiveDeadline?: string | null;
+  isExtended?: boolean;
+  extendedUntil?: string | null;
 };
 type SubmissionPreview = DocumentPreviewSubmission;
 type PastSubmission = {
@@ -304,17 +317,20 @@ function getStatusDotColor(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
   if (status === "Validated") return "bg-[#0b5336]";
-  if (status === "Rejected") return "bg-[#780000]";
-  if (status === "Not Submitted") return "bg-slate-600";
-  return "bg-blue-400";
+  if (status === "Rejected" || status === "Overdue") return "bg-[#780000]";
+  if (status === "Extended") return "bg-indigo-600";
+  if (status === "Exempted" || status === "Not Submitted") return "bg-slate-600";
+  return "bg-amber-500";
 }
 function getStatusTextColor(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
 ): string {
   if (status === "Validated") return "text-[#0b5336] dark:text-emerald-400 font-semibold";
-  if (status === "Rejected") return "text-[#780000] dark:text-rose-400 font-semibold";
+  if (status === "Rejected" || status === "Overdue") return "text-[#780000] dark:text-rose-400 font-semibold";
+  if (status === "Extended") return "text-indigo-600 dark:text-indigo-400 font-semibold";
+  if (status === "Exempted") return "text-slate-600 dark:text-slate-400 font-semibold";
   if (status === "Not Submitted") return "text-slate-500 dark:text-slate-500";
-  return "text-blue-700 dark:text-blue-400";
+  return "text-amber-700 dark:text-amber-400 font-semibold";
 }
 function getStatusTextColorClass(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
@@ -326,11 +342,15 @@ function getStatusBadgeTone(
 ): string {
   if (status === "Validated")
     return "bg-[#0b5336] text-white border border-[#08412a]";
-  if (status === "Rejected")
+  if (status === "Rejected" || status === "Overdue")
     return "bg-[#780000] text-white border border-[#5e0000]";
+  if (status === "Extended")
+    return "bg-indigo-600 text-white border border-indigo-700";
+  if (status === "Exempted")
+    return "bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700";
   if (status === "Not Submitted")
     return "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
-  return "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60";
+  return "bg-amber-500 text-slate-950 border border-amber-600 font-bold";
 }
 function renderStatusIconBadge(
   status: RequirementStatus["status"] | HistorySubmissionStatus,
@@ -342,10 +362,24 @@ function renderStatusIconBadge(
       </span>
     );
   }
-  if (status === "Rejected") {
+  if (status === "Rejected" || status === "Overdue") {
     return (
       <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
         <AppIcon icon={Xmark} size="xs" color="white" />
+      </span>
+    );
+  }
+  if (status === "Extended") {
+    return (
+      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-indigo-600 text-white border border-indigo-700 shrink-0 shadow-2xs">
+        <AppIcon icon={Hourglass} size="xs" color="white" />
+      </span>
+    );
+  }
+  if (status === "Exempted") {
+    return (
+      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 shrink-0 shadow-2xs">
+        <AppIcon icon={Minus} size="xs" color="inherit" />
       </span>
     );
   }
@@ -367,6 +401,9 @@ function getStatusText(
 ): string {
   if (status === "Validated") return "Validated";
   if (status === "Rejected") return "Needs Revision";
+  if (status === "Overdue") return "Overdue";
+  if (status === "Extended") return "Extended";
+  if (status === "Exempted") return "Exempted";
   if (status === "Not Submitted") return "Not Submitted";
   return "Pending Review";
 }
@@ -670,6 +707,8 @@ function FacultySubmissionPanelContent({
   const [hasPendingExtensionRequest, setHasPendingExtensionRequest] =
     useState(false);
   const [pendingExtensionData, setPendingExtensionData] = useState<any | null>(null);
+  const [latestApprovedExtension, setLatestApprovedExtension] = useState<any | null>(null);
+  const [allExtensionRequests, setAllExtensionRequests] = useState<any[]>([]);
   const [showExtensionDetailsModal, setShowExtensionDetailsModal] = useState(false);
   const [extensionRequestToast, setExtensionRequestToast] = useState<
     string | null
@@ -1206,74 +1245,174 @@ function FacultySubmissionPanelContent({
     [templateTitleMap],
   );
 
+  const formatDeadlineDate = useCallback((isoOrDateStr: string | null | undefined): string => {
+    if (!isoOrDateStr) return "";
+    try {
+      const d = new Date(isoOrDateStr);
+      if (Number.isNaN(d.getTime())) return isoOrDateStr;
+      return d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Manila",
+      });
+    } catch {
+      return isoOrDateStr;
+    }
+  }, []);
+
   const displayedRequirementStatuses = useMemo<RequirementStatus[]>(() => {
     const normActiveAY = normalizeAcademicYear(activeAY);
     const normActiveSem = normalizeSemester(activeSem);
     const activeCodes = activeTemplates.map((t) => t.code);
+    const nowMs = Date.now();
+
+    // Schedule global deadline
+    const globalDeadlineIso = submissionWindow?.endDate
+      ? `${submissionWindow.endDate}T${submissionWindow.endTime ? normalizeTime24Hour(submissionWindow.endTime) || "23:59:59" : "23:59:59"}+08:00`
+      : null;
+    const globalDeadlineMs = globalDeadlineIso ? new Date(globalDeadlineIso).getTime() : null;
+
+    // Filter approved extension requests for active term
+    const approvedExtList = (allExtensionRequests || []).filter((ext: any) => {
+      if (ext.status !== "approved") return false;
+      const matchAY = !ext.academic_year || normalizeAcademicYear(ext.academic_year) === normActiveAY;
+      const matchSem = !ext.semester || normalizeSemester(ext.semester) === normActiveSem;
+      return matchAY && matchSem;
+    });
+    if (approvedExtList.length === 0 && latestApprovedExtension?.status === "approved") {
+      approvedExtList.push(latestApprovedExtension);
+    }
 
     return activeCodes.map((code) => {
       const live = requirementStatuses.find((r) => r.code === code);
-      if (live && live.status !== "Not Submitted") {
-        return live;
-      }
       const match = pastSubmissions.find((s) => {
         if (s.requirementCode !== code) return false;
         const subSem = normalizeSemester(s.semester);
         const subYear = normalizeAcademicYear(s.academicYear);
         return subSem === normActiveSem && subYear === normActiveAY;
       });
-      if (match) {
-        const adminRemarks =
-          match.adminRemarks ||
-          match.admin_remarks ||
-          match.feedback ||
-          null;
-        const matchUserNote =
-          match.note ||
-          (match as { notes?: string }).notes ||
-          match.remarks ||
-          null;
-        return {
-          code: match.requirementCode || code,
-          status:
-            match.status === "Validated"
-              ? "Validated"
-              : match.status === "Rejected"
-                ? "Rejected"
-                : "Pending",
-          submittedAt: match.submittedAt,
-          reviewedAt: match.reviewedAt,
-          note: matchUserNote,
-          remarks: matchUserNote || undefined,
-          latestSubmissionId: match.id,
-          adminRemarks: adminRemarks,
-          admin_remarks: adminRemarks || undefined,
-          feedback: adminRemarks || undefined,
-        };
+
+      // Find matching approved extension for this requirement code
+      const matchingExt = approvedExtList.find((ext: any) => {
+        const reqCodes = Array.isArray(ext.requirement_codes) ? ext.requirement_codes : [];
+        return reqCodes.length === 0 || reqCodes.includes(code);
+      });
+
+      const extDeadlineIso = matchingExt?.requested_date
+        ? `${matchingExt.requested_date}T${matchingExt.requested_time ? normalizeTime24Hour(matchingExt.requested_time) || "23:59:59" : "23:59:59"}+08:00`
+        : null;
+      const extDeadlineMs = extDeadlineIso ? new Date(extDeadlineIso).getTime() : null;
+      const isExtensionActive = Boolean(extDeadlineMs && nowMs <= extDeadlineMs);
+
+      // Effective deadline determination:
+      // Individual custom due date if one exists; otherwise, approved extension date or schedule's global deadline
+      const existingCustomDue = live?.customDueDate || live?.due_at || (match as any)?.due_at;
+      let effectiveDeadlineIso = globalDeadlineIso;
+      let effectiveDeadlineMs = globalDeadlineMs;
+      let customDueDate: string | null = null;
+
+      if (isExtensionActive && extDeadlineIso && extDeadlineMs) {
+        effectiveDeadlineIso = extDeadlineIso;
+        effectiveDeadlineMs = extDeadlineMs;
+        if (existingCustomDue) {
+          customDueDate = existingCustomDue;
+        }
+      } else if (existingCustomDue) {
+        customDueDate = existingCustomDue;
+        const customIso = existingCustomDue.includes("T") ? existingCustomDue : `${existingCustomDue}T23:59:59+08:00`;
+        const customMs = new Date(customIso).getTime();
+        if (!Number.isNaN(customMs)) {
+          effectiveDeadlineIso = customIso;
+          effectiveDeadlineMs = customMs;
+        }
+      } else if (extDeadlineIso && extDeadlineMs) {
+        effectiveDeadlineIso = extDeadlineIso;
+        effectiveDeadlineMs = extDeadlineMs;
       }
-      if (live) {
-        const liveAdminRemarks =
-          live.adminRemarks ||
-          live.admin_remarks ||
-          live.feedback ||
-          null;
-        const liveUserNote =
-          live.note ||
-          (live as { notes?: string }).notes ||
-          live.remarks ||
-          null;
-        return {
-          ...live,
-          note: liveUserNote,
-          remarks: liveUserNote || undefined,
-          adminRemarks: liveAdminRemarks,
-          admin_remarks: liveAdminRemarks || undefined,
-          feedback: liveAdminRemarks || undefined,
-        };
+
+      const isPastEffectiveDeadline = Boolean(
+        effectiveDeadlineMs && nowMs > effectiveDeadlineMs,
+      );
+
+      const subSource = live?.submittedAt || live?.latestSubmissionId
+        ? live
+        : match || live;
+
+      const subId =
+        (subSource as RequirementStatus)?.latestSubmissionId ||
+        (subSource as PastSubmission)?.id ||
+        (match as any)?.id;
+
+      const hasFile = Boolean(subSource?.submittedAt || subId);
+
+      const rawStatus = (subSource?.status || "").toLowerCase().trim();
+      const isExempted = rawStatus === "exempted" || rawStatus === "exempt";
+
+      // Status Evaluation Rules:
+      // 1. EXEMPTED: Display an "Exempted" badge. Disable both file uploads and extension requests.
+      // 2. PENDING: Current date is on or before effective deadline, and no file is submitted.
+      // 3. OVERDUE: Current date is past effective deadline, and no file is submitted.
+      // 4. EXTENDED: Extension request approved, temporarily unlocked until approved date.
+      let evaluatedStatus: RequirementStatus["status"] = "Pending";
+
+      if (isExempted) {
+        evaluatedStatus = "Exempted";
+      } else if (subSource && subSource.status === "Validated") {
+        evaluatedStatus = "Validated";
+      } else if (subSource && subSource.status === "Rejected") {
+        evaluatedStatus = "Rejected";
+      } else if (hasFile) {
+        evaluatedStatus = "Pending";
+      } else {
+        // No file is submitted
+        if (isExtensionActive) {
+          evaluatedStatus = "Extended";
+        } else if (isPastEffectiveDeadline) {
+          evaluatedStatus = "Overdue";
+        } else {
+          evaluatedStatus = "Pending";
+        }
       }
+
+      const adminRemarks =
+        subSource?.adminRemarks ||
+        subSource?.admin_remarks ||
+        subSource?.feedback ||
+        null;
+
+      const userNote =
+        subSource?.note ||
+        (subSource as { notes?: string })?.notes ||
+        subSource?.remarks ||
+        null;
+
       return {
         code,
-        status: "Not Submitted" as const,
+        status: evaluatedStatus,
+        submittedAt: subSource?.submittedAt,
+        reviewedAt: subSource?.reviewedAt,
+        note: userNote,
+        remarks: userNote || undefined,
+        latestSubmissionId: subId,
+        adminRemarks: adminRemarks,
+        admin_remarks: adminRemarks || undefined,
+        feedback: adminRemarks || undefined,
+        storagePath: (subSource as any)?.storagePath,
+        fileName: (subSource as any)?.fileName,
+        is_read: subSource?.is_read,
+        isViewed: subSource?.isViewed,
+        viewed_at: subSource?.viewed_at,
+        isRevision: Boolean((subSource as RequirementStatus)?.isRevision),
+        hasPriorRevision: Boolean((subSource as RequirementStatus)?.hasPriorRevision),
+        due_at: existingCustomDue || null,
+        customDueDate,
+        effectiveDeadline: effectiveDeadlineIso,
+        isExtended: isExtensionActive,
+        extendedUntil: extDeadlineIso,
       };
     });
   }, [
@@ -1282,7 +1421,11 @@ function FacultySubmissionPanelContent({
     pastSubmissions,
     requirementStatuses,
     activeTemplates,
+    submissionWindow,
+    allExtensionRequests,
+    latestApprovedExtension,
   ]);
+
   const displayedStatusCounts = useMemo(() => {
     const total = activeTemplates.length;
     const validated = displayedRequirementStatuses.filter(
@@ -1294,16 +1437,25 @@ function FacultySubmissionPanelContent({
     const pending = displayedRequirementStatuses.filter(
       (r) => r.status === "Pending",
     ).length;
-    const notSubmitted = displayedRequirementStatuses.filter(
-      (r) => r.status === "Not Submitted",
+    const overdue = displayedRequirementStatuses.filter(
+      (r) => r.status === "Overdue",
     ).length;
-    return { total, validated, rejected, pending, notSubmitted };
+    const extended = displayedRequirementStatuses.filter(
+      (r) => r.status === "Extended",
+    ).length;
+    const exempted = displayedRequirementStatuses.filter(
+      (r) => r.status === "Exempted",
+    ).length;
+    const notSubmitted = displayedRequirementStatuses.filter(
+      (r) => !r.latestSubmissionId && r.status !== "Validated" && r.status !== "Exempted",
+    ).length;
+    return { total, validated, rejected, pending, overdue, extended, exempted, notSubmitted };
   }, [displayedRequirementStatuses, activeTemplates.length]);
 
   const mandatoryValidatedCount = useMemo(() => {
     return displayedRequirementStatuses.filter((r) => {
       const isMandatory = templateMandatoryMap.get(r.code) !== false;
-      return isMandatory && r.status === "Validated";
+      return isMandatory && (r.status === "Validated" || r.status === "Exempted");
     }).length;
   }, [displayedRequirementStatuses, templateMandatoryMap]);
 
@@ -1311,8 +1463,7 @@ function FacultySubmissionPanelContent({
     displayedStatusCounts?.total ?? activeTemplates.length;
   const validatedCount = displayedStatusCounts?.validated ?? 0;
 
-  // Semester compliance is met when ALL required/mandatory requirements are Validated!
-  // If 6 are required and 1 is optional, submitting and validating the 6 marks requirements done for the semester.
+  // Semester compliance is met when ALL required/mandatory requirements are Validated or Exempted!
   const isAllValidated =
     mandatoryTemplates.length > 0
       ? mandatoryValidatedCount >= mandatoryTemplates.length
@@ -1332,13 +1483,14 @@ function FacultySubmissionPanelContent({
     return displayedRequirementStatuses
       .filter((r) => {
         const isMandatory = templateMandatoryMap.get(r.code) !== false;
-        // Optional requirements are NOT lackings even if not submitted
+        // Optional and Exempted requirements are NOT lackings!
         if (!isMandatory) return false;
-        return r.status === "Not Submitted" || r.status === "Rejected";
+        if (r.status === "Validated" || r.status === "Exempted") return false;
+        return true;
       })
       .map((r) => ({
         code: r.code,
-        status: r.status as "Not Submitted" | "Rejected",
+        status: (r.status as any) || "Pending",
         label: getRequirementTitle(r.code),
         adminRemarks: r.adminRemarks || r.admin_remarks || r.feedback,
       }));
@@ -1368,6 +1520,8 @@ function FacultySubmissionPanelContent({
           const data = await res.json();
           setHasPendingExtensionRequest(Boolean(data.hasPendingRequest));
           setPendingExtensionData(data.pendingRequest || data.latestRequest || null);
+          setLatestApprovedExtension(data.latestApprovedRequest || null);
+          setAllExtensionRequests(Array.isArray(data.requests) ? data.requests : []);
           if (data.isApproved || data.latestApprovedRequest || data.latestRequest?.status === "approved") {
             void refetchSubmissionWindow();
           }
@@ -1399,6 +1553,10 @@ function FacultySubmissionPanelContent({
 
   function openExtensionRequestModal(code?: RequirementCode | string) {
     if (!isWindowConfigured) return;
+    if (code) {
+      const match = displayedRequirementStatuses.find((r) => r.code === code);
+      if (match?.status === "Exempted") return;
+    }
     setSelectedExtensionReqCode(code || null);
     setIsExtensionModalOpen(true);
   }
@@ -1486,8 +1644,10 @@ function FacultySubmissionPanelContent({
     code: RequirementCode | string,
     isRevision: boolean = false,
   ) {
-    const currentStatus = getRequirementStatus(code);
-    if (currentStatus === "Validated") return;
+    const matched = displayedRequirementStatuses.find((r) => r.code === code);
+    const currentStatus = matched?.status || getRequirementStatus(code);
+    if (currentStatus === "Validated" || currentStatus === "Exempted") return;
+    if (currentStatus === "Overdue" && !matched?.isExtended) return;
     setSelectedRequirementForUpload(code);
     setIsRevisionUpload(isRevision);
     setDirectUploadFile(null);
@@ -2158,7 +2318,7 @@ function FacultySubmissionPanelContent({
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.validated}</strong> Validated
                         </span>
                       </span>
-                      <span className="inline-flex items-center gap-1.5" title="Pending: Awaiting administration verification">
+                      <span className="inline-flex items-center gap-1.5" title="Pending: Awaiting submission or verification">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
                           <AppIcon icon={Hourglass} size="xs" color="inherit" />
                         </span>
@@ -2166,6 +2326,26 @@ function FacultySubmissionPanelContent({
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.pending}</strong> Pending
                         </span>
                       </span>
+                      {displayedStatusCounts.overdue > 0 && !isAllValidated && (
+                        <span className="inline-flex items-center gap-1.5" title="Overdue: Past deadline and no file submitted">
+                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+                            <AppIcon icon={Xmark} size="xs" color="white" />
+                          </span>
+                          <span>
+                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.overdue}</strong> Overdue
+                          </span>
+                        </span>
+                      )}
+                      {displayedStatusCounts.extended > 0 && !isAllValidated && (
+                        <span className="inline-flex items-center gap-1.5" title="Extended: Extension request approved">
+                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-indigo-600 text-white border border-indigo-700 shrink-0 shadow-2xs">
+                            <AppIcon icon={Hourglass} size="xs" color="white" />
+                          </span>
+                          <span>
+                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.extended}</strong> Extended
+                          </span>
+                        </span>
+                      )}
                       <span className="inline-flex items-center gap-1.5" title="Needs Revision: Correction requested by reviewer">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
                           <AppIcon icon={Xmark} size="xs" color="white" />
@@ -2174,14 +2354,16 @@ function FacultySubmissionPanelContent({
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.rejected}</strong> Needs Revision
                         </span>
                       </span>
-                      <span className="inline-flex items-center gap-1.5" title="Not Submitted: Requirement pending document upload">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700 shrink-0 shadow-2xs">
-                          <AppIcon icon={Minus} size="xs" color="inherit" />
+                      {displayedStatusCounts.exempted > 0 && (
+                        <span className="inline-flex items-center gap-1.5" title="Exempted: Requirement not applicable / excused">
+                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 shrink-0 shadow-2xs">
+                            <AppIcon icon={Minus} size="xs" color="inherit" />
+                          </span>
+                          <span>
+                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.exempted}</strong> Exempted
+                          </span>
                         </span>
-                        <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.notSubmitted}</strong> Not Submitted
-                        </span>
-                      </span>
+                      )}
                     </div>
                 )}
 
@@ -2295,7 +2477,7 @@ function FacultySubmissionPanelContent({
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
                           ? `All ${mandatoryTemplates.length} Required Documents Validated`
-                          : `${lackingRequirements.filter((r) => r.status === "Not Submitted").length} Not Submitted • ${lackingRequirements.filter((r) => r.status === "Rejected").length} Needs Revision`}
+                          : `${lackingRequirements.filter((r) => r.status === "Overdue").length > 0 ? `${lackingRequirements.filter((r) => r.status === "Overdue").length} Overdue • ` : ""}${lackingRequirements.filter((r) => r.status === "Pending" || r.status === "Not Submitted").length} Pending • ${lackingRequirements.filter((r) => r.status === "Rejected").length} Needs Revision`}
                       </p>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -2710,7 +2892,7 @@ function FacultySubmissionPanelContent({
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.validated}</strong> Validated
                         </span>
                       </span>
-                      <span className="inline-flex items-center gap-1.5" title="Pending: Awaiting administration verification">
+                      <span className="inline-flex items-center gap-1.5" title="Pending: Awaiting submission or verification">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
                           <AppIcon icon={Hourglass} size="xs" color="inherit" />
                         </span>
@@ -2718,6 +2900,26 @@ function FacultySubmissionPanelContent({
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.pending}</strong> Pending
                         </span>
                       </span>
+                      {displayedStatusCounts.overdue > 0 && !isAllValidated && (
+                        <span className="inline-flex items-center gap-1.5" title="Overdue: Past deadline and no file submitted">
+                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+                            <AppIcon icon={Xmark} size="xs" color="white" />
+                          </span>
+                          <span>
+                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.overdue}</strong> Overdue
+                          </span>
+                        </span>
+                      )}
+                      {displayedStatusCounts.extended > 0 && !isAllValidated && (
+                        <span className="inline-flex items-center gap-1.5" title="Extended: Extension request approved">
+                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-indigo-600 text-white border border-indigo-700 shrink-0 shadow-2xs">
+                            <AppIcon icon={Hourglass} size="xs" color="white" />
+                          </span>
+                          <span>
+                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.extended}</strong> Extended
+                          </span>
+                        </span>
+                      )}
                       <span className="inline-flex items-center gap-1.5" title="Needs Revision: Correction requested by reviewer">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
                           <AppIcon icon={Xmark} size="xs" color="white" />
@@ -2726,14 +2928,16 @@ function FacultySubmissionPanelContent({
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.rejected}</strong> Needs Revision
                         </span>
                       </span>
-                      <span className="inline-flex items-center gap-1.5" title="Not Submitted: Requirement pending document upload">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700 shrink-0 shadow-2xs">
-                          <AppIcon icon={Minus} size="xs" color="inherit" />
+                      {displayedStatusCounts.exempted > 0 && (
+                        <span className="inline-flex items-center gap-1.5" title="Exempted: Requirement not applicable / excused">
+                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 shrink-0 shadow-2xs">
+                            <AppIcon icon={Minus} size="xs" color="inherit" />
+                          </span>
+                          <span>
+                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.exempted}</strong> Exempted
+                          </span>
                         </span>
-                        <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.notSubmitted}</strong> Not Submitted
-                        </span>
-                      </span>
+                      )}
                     </div>
                 )}
 
@@ -2882,6 +3086,19 @@ function FacultySubmissionPanelContent({
                                       {req.reviewedAt && (
                                         <span>• Reviewed: {req.reviewedAt}</span>
                                       )}
+                                      {req.effectiveDeadline && !req.submittedAt && req.status !== "Exempted" && (
+                                        <span
+                                          className={
+                                            req.status === "Overdue"
+                                              ? "text-[#780000] dark:text-rose-400 font-semibold"
+                                              : req.status === "Extended"
+                                                ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+                                                : ""
+                                          }
+                                        >
+                                          • Due: {formatDeadlineDate(req.effectiveDeadline)}
+                                        </span>
+                                      )}
                                     </div>
                                     {/* Inline Revision Note */}
                                     {req.status === "Rejected" && (
@@ -2916,9 +3133,22 @@ function FacultySubmissionPanelContent({
                                 {/* Actions column */}
                                 <td className="px-4 py-3.5 align-middle text-center">
                                   <div className="flex flex-col items-center justify-center gap-1.5">
-                                    {/* Upload Revision (Rejected - Primary Action on Top) */}
+                                    {/* 1. EXEMPTED: Disable both file uploads and extension requests */}
+                                    {req.status === "Exempted" && (
+                                      <button
+                                        type="button"
+                                        disabled
+                                        className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
+                                        title="This requirement is exempted. No submission or extension is needed."
+                                      >
+                                        <AppIcon icon={Minus} size="sm" color="inherit" />
+                                        <span>Exempted</span>
+                                      </button>
+                                    )}
+
+                                    {/* 2. REJECTED: Upload Revision or Request Extension if closed/overdue */}
                                     {req.status === "Rejected" && (
-                                      isWindowNotConfigured ? (
+                                      isWindowNotConfigured && !req.isExtended ? (
                                         <button
                                           type="button"
                                           disabled
@@ -2928,7 +3158,17 @@ function FacultySubmissionPanelContent({
                                           <AppIcon icon={Calendar} size="sm" color="inherit" />
                                           <span>Awaiting Schedule</span>
                                         </button>
-                                      ) : isWindowClosed ? (
+                                      ) : req.isExtended ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => openDirectUploadModal(req.code, true)}
+                                          className="inline-flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-700 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+                                          title={`Upload revision unlocked until extended date: ${formatDeadlineDate(req.extendedUntil)}`}
+                                        >
+                                          <AppIcon icon={Upload} size="sm" color="white" />
+                                          <span>Upload Revision</span>
+                                        </button>
+                                      ) : (isWindowClosed || Boolean(req.effectiveDeadline && Date.now() > new Date(req.effectiveDeadline).getTime())) ? (
                                         hasPendingExtensionRequest ? (
                                           <button
                                             type="button"
@@ -2952,8 +3192,7 @@ function FacultySubmissionPanelContent({
                                         <button
                                           type="button"
                                           onClick={() => openDirectUploadModal(req.code, true)}
-                                          disabled={!hasActiveSchedule}
-                                          className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                          className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
                                         >
                                           <AppIcon icon={Upload} size="sm" color="inherit" />
                                           <span>Upload Revision</span>
@@ -2961,8 +3200,11 @@ function FacultySubmissionPanelContent({
                                       )
                                     )}
 
-                                    {/* View File */}
+                                    {/* 3. VIEW FILE: For submitted requirements */}
                                     {req.status !== "Not Submitted" &&
+                                    req.status !== "Exempted" &&
+                                    req.status !== "Overdue" &&
+                                    (!req.isExtended || req.latestSubmissionId) &&
                                     req.latestSubmissionId ? (
                                       <button
                                         type="button"
@@ -2974,9 +3216,46 @@ function FacultySubmissionPanelContent({
                                       </button>
                                     ) : null}
 
-                                    {/* Upload (Not Submitted) */}
-                                    {req.status === "Not Submitted" && (
-                                      isWindowNotConfigured ? (
+                                    {/* 4. EXTENDED: Temporarily unlock upload portal until approved extended date */}
+                                    {req.status === "Extended" && !req.latestSubmissionId && (
+                                      <button
+                                        type="button"
+                                        onClick={() => openDirectUploadModal(req.code)}
+                                        className="inline-flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-700 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+                                        title={req.extendedUntil ? `Upload unlocked until extended date: ${formatDeadlineDate(req.extendedUntil)}` : "Upload unlocked via approved extension"}
+                                      >
+                                        <AppIcon icon={Upload} size="sm" color="white" />
+                                        <span>Upload (Extended)</span>
+                                      </button>
+                                    )}
+
+                                    {/* 5. OVERDUE: Lock file upload and display Request Extension option */}
+                                    {req.status === "Overdue" && (
+                                      hasPendingExtensionRequest ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => setShowExtensionDetailsModal(true)}
+                                          className="inline-flex items-center justify-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold w-36 h-8 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+                                        >
+                                          <AppIcon icon={Hourglass} size="sm" color="active" />
+                                          <span>Extension Pending</span>
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => openExtensionRequestModal(req.code)}
+                                          className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-bold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+                                        >
+                                          <AppIcon icon={Hourglass} size="sm" color="inherit" />
+                                          <span>Request Extension</span>
+                                        </button>
+                                      )
+                                    )}
+
+                                    {/* 6. PENDING: Current date is on or before effective deadline, enable file upload */}
+                                    {(req.status === "Pending" && !req.latestSubmissionId) ||
+                                    (req.status === "Not Submitted") ? (
+                                      isWindowNotConfigured && !req.customDueDate ? (
                                         <button
                                           type="button"
                                           disabled
@@ -2986,38 +3265,17 @@ function FacultySubmissionPanelContent({
                                           <AppIcon icon={Calendar} size="sm" color="inherit" />
                                           <span>Awaiting Schedule</span>
                                         </button>
-                                      ) : isWindowClosed ? (
-                                        hasPendingExtensionRequest ? (
-                                          <button
-                                            type="button"
-                                            onClick={() => setShowExtensionDetailsModal(true)}
-                                            className="inline-flex items-center justify-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold w-36 h-8 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
-                                          >
-                                            <AppIcon icon={Hourglass} size="sm" color="active" />
-                                            <span>Extension Pending</span>
-                                          </button>
-                                        ) : (
-                                          <button
-                                            type="button"
-                                            onClick={() => openExtensionRequestModal(req.code)}
-                                            className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-bold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
-                                          >
-                                            <AppIcon icon={Hourglass} size="sm" color="inherit" />
-                                            <span>Request Extension</span>
-                                          </button>
-                                        )
                                       ) : (
                                         <button
                                           type="button"
                                           onClick={() => openDirectUploadModal(req.code)}
-                                          disabled={!hasActiveSchedule}
-                                          className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                          className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
                                         >
                                           <AppIcon icon={Upload} size="sm" color="inherit" />
                                           <span>Upload</span>
                                         </button>
                                       )
-                                    )}
+                                    ) : null}
                                   </div>
                                 </td>
 
@@ -3027,9 +3285,12 @@ function FacultySubmissionPanelContent({
                                     <SubmissionStatusBadge
                                       status={
                                         req.status === "Pending" &&
+                                        req.latestSubmissionId &&
                                         (req.hasPriorRevision || req.isRevision)
                                           ? "Revision Under Review"
-                                          : req.status
+                                          : req.status === "Pending" && req.latestSubmissionId
+                                            ? "Pending Review"
+                                            : req.status
                                       }
                                       size="md"
                                       iconOnly

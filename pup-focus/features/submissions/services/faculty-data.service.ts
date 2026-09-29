@@ -17,7 +17,14 @@ import { logger } from "@/lib/observability/logger";
 
 export type RequirementStatusData = {
   code: RequirementCode | string;
-  status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
+  status:
+    | "Validated"
+    | "Rejected"
+    | "Pending"
+    | "Not Submitted"
+    | "Exempted"
+    | "Overdue"
+    | "Extended";
   reviewedAt?: string;
   feedback?: string;
   admin_remarks?: string;
@@ -31,6 +38,11 @@ export type RequirementStatusData = {
   viewed_at?: string;
   isRevision?: boolean;
   hasPriorRevision?: boolean;
+  due_at?: string | null;
+  customDueDate?: string | null;
+  effectiveDeadline?: string | null;
+  isExtended?: boolean;
+  extendedUntil?: string | null;
 };
 
 export type RequirementTemplateData = {
@@ -47,6 +59,9 @@ export type StatusCountsData = {
   rejected: number;
   pending: number;
   notSubmitted: number;
+  overdue?: number;
+  extended?: number;
+  exempted?: number;
 };
 
 export type SubmissionWindowStateData = {
@@ -368,6 +383,7 @@ export async function getFacultyInitialData(
     requirement_code?: string | null;
     requirement_id?: string | null;
     status: string | null;
+    due_at?: string | null;
     submitted_at?: string | null;
     created_at?: string | null;
     remarks?: string | null;
@@ -380,7 +396,7 @@ export async function getFacultyInitialData(
   try {
     const { data } = await supabase
       .from("submissions")
-      .select("id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id")
+      .select("id, requirement_code, status, due_at, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id")
       .in("faculty_profile_id", facultyIdList)
       .order("submitted_at", { ascending: false });
 
@@ -388,6 +404,44 @@ export async function getFacultyInitialData(
   } catch {}
 
   const submissionIds = rawSubmissions.map((s) => s.id);
+
+  // 6.1 Query approved extension requests for this faculty user
+  let approvedExtensions: any[] = [];
+  try {
+    const { data: extData } = await supabase
+      .from("extension_requests")
+      .select("*")
+      .eq("faculty_user_id", authUserId)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false });
+
+    if (extData && Array.isArray(extData)) {
+      approvedExtensions = extData;
+    }
+  } catch {}
+
+  if (approvedExtensions.length === 0) {
+    try {
+      const { data: notifs } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("type", "EXTENSION_REQUEST")
+        .eq("user_id", authUserId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (notifs) {
+        for (const n of notifs) {
+          try {
+            const parsed = JSON.parse(n.message);
+            if (parsed.status === "approved") {
+              approvedExtensions.push(parsed);
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+  }
 
   // 7. Review Decisions
   const reviewDecisionsMap = new Map<
@@ -417,12 +471,18 @@ export async function getFacultyInitialData(
     } catch {}
   }
 
-  // 8. Map Active Term Statuses
+  // 8. Map Active Term Statuses using Hard Deadline & Status Calculation rules
+  const nowMs = Date.now();
+  const globalDeadlineIso = submissionWindow.endDate
+    ? `${submissionWindow.endDate}T${submissionWindow.endTime ? normalizeTime24Hour(submissionWindow.endTime) || "23:59:59" : "23:59:59"}+08:00`
+    : null;
+  const globalDeadlineMs = globalDeadlineIso ? new Date(globalDeadlineIso).getTime() : null;
+
   const statusMap = new Map<string, RequirementStatusData>();
   for (const tpl of activeTemplates) {
     statusMap.set(tpl.code, {
       code: tpl.code,
-      status: "Not Submitted",
+      status: "Pending",
     });
   }
 
@@ -433,23 +493,77 @@ export async function getFacultyInitialData(
     return currentAssignmentIds.length === 0;
   });
 
-  for (const sub of termFilteredSubmissions) {
-    const matchedCode = matchRequirementCode(
-      sub.requirement_code,
-      sub.requirement_id,
-      activeTemplates,
-    );
-    if (!matchedCode) continue;
-    if (statusMap.get(matchedCode)?.status !== "Not Submitted") continue;
+  for (const tpl of activeTemplates) {
+    const code = tpl.code;
+    const sub = termFilteredSubmissions.find((s) => {
+      const m = matchRequirementCode(s.requirement_code, s.requirement_id, activeTemplates);
+      return m === code;
+    });
 
-    const reviews = reviewDecisionsMap.get(sub.id) || [];
+    const reviews = sub ? reviewDecisionsMap.get(sub.id) || [] : [];
     const latestReview = reviews[0];
     const latestReviewWithRemarks = reviews.find((r) => r.remarks && r.remarks.trim() !== "");
 
-    const rawStatus = (sub.status || "").toLowerCase().trim();
+    const rawStatus = (sub?.status || "").toLowerCase().trim();
     const latestDecision = (latestReview?.decision || "").toLowerCase().trim();
 
-    const isPendingUpload =
+    // Check approved extension request
+    const matchingExt = approvedExtensions.find((ext) => {
+      const matchAY = !ext.academic_year || normalizeAcademicYear(ext.academic_year) === normActiveYear;
+      const matchSem = !ext.semester || normalizeSemester(ext.semester) === normActiveSem;
+      if (!matchAY || !matchSem) return false;
+      const reqCodes = Array.isArray(ext.requirement_codes) ? ext.requirement_codes : [];
+      return reqCodes.length === 0 || reqCodes.includes(code);
+    });
+
+    const extDeadlineIso = matchingExt?.requested_date
+      ? `${matchingExt.requested_date}T${matchingExt.requested_time ? normalizeTime24Hour(matchingExt.requested_time) || "23:59:59" : "23:59:59"}+08:00`
+      : null;
+    const extDeadlineMs = extDeadlineIso ? new Date(extDeadlineIso).getTime() : null;
+    const isExtensionActive = Boolean(extDeadlineMs && nowMs <= extDeadlineMs);
+
+    // Effective deadline determination:
+    // Individual custom due date if one exists; otherwise, approved extension date or schedule's global deadline
+    let effectiveDeadlineIso = globalDeadlineIso;
+    let effectiveDeadlineMs = globalDeadlineMs;
+    let customDueDate: string | null = null;
+
+    if (isExtensionActive && extDeadlineIso && extDeadlineMs) {
+      effectiveDeadlineIso = extDeadlineIso;
+      effectiveDeadlineMs = extDeadlineMs;
+      if (sub?.due_at) {
+        customDueDate = sub.due_at;
+      }
+    } else if (sub?.due_at) {
+      customDueDate = sub.due_at;
+      const customIso = sub.due_at.includes("T") ? sub.due_at : `${sub.due_at}T23:59:59+08:00`;
+      const customMs = new Date(customIso).getTime();
+      if (!Number.isNaN(customMs)) {
+        effectiveDeadlineIso = customIso;
+        effectiveDeadlineMs = customMs;
+      }
+    } else if (extDeadlineIso && extDeadlineMs) {
+      effectiveDeadlineIso = extDeadlineIso;
+      effectiveDeadlineMs = extDeadlineMs;
+    }
+
+    const isPastEffectiveDeadline = Boolean(
+      effectiveDeadlineMs && nowMs > effectiveDeadlineMs,
+    );
+
+    const isSubmitted = Boolean(
+      sub?.submitted_at ||
+      rawStatus === "pending" ||
+      rawStatus === "uploaded" ||
+      rawStatus === "submitted" ||
+      rawStatus === "under_review" ||
+      rawStatus === "pending_review" ||
+      rawStatus === "validated" ||
+      rawStatus === "approved" ||
+      rawStatus === "rejected",
+    );
+
+    const isPendingReview =
       rawStatus === "pending" ||
       rawStatus === "uploaded" ||
       rawStatus === "submitted" ||
@@ -460,29 +574,42 @@ export async function getFacultyInitialData(
       latestDecision === "rejected" ||
       reviews.some((r) => (r.decision || "").toLowerCase() === "rejected");
 
-    let status: "Validated" | "Rejected" | "Pending" | "Not Submitted" = "Pending";
-    if (rawStatus === "validated" || rawStatus === "approved" || latestDecision === "validated") {
+    // Status evaluation rules:
+    // 1. EXEMPTED: Display an "Exempted" badge. Disable both file uploads and extension requests.
+    // 2. PENDING: Current date is on or before effective deadline, and no file is submitted.
+    // 3. OVERDUE: Current date is past effective deadline, and no file is submitted.
+    // 4. EXTENDED: Extension request approved, temporarily unlocked until approved date.
+    let status: RequirementStatusData["status"] = "Pending";
+
+    if (rawStatus === "exempted" || rawStatus === "exempt") {
+      status = "Exempted";
+    } else if (rawStatus === "validated" || rawStatus === "approved" || latestDecision === "validated") {
       status = "Validated";
-    } else if (isPendingUpload) {
+    } else if (isPendingReview) {
       status = "Pending";
     } else if (rawStatus === "rejected" || latestDecision === "rejected") {
       status = "Rejected";
-    } else {
-      status = "Pending";
+    } else if (!isSubmitted) {
+      if (isExtensionActive) {
+        status = "Extended";
+      } else if (isPastEffectiveDeadline) {
+        status = "Overdue";
+      } else {
+        status = "Pending";
+      }
     }
 
     const adminFeedback =
       latestReviewWithRemarks?.remarks?.trim() ||
       latestReview?.remarks?.trim() ||
-      sub.admin_remarks?.trim() ||
+      sub?.admin_remarks?.trim() ||
       undefined;
 
-    const facultyNote = sub.remarks?.trim() || undefined;
-
+    const facultyNote = sub?.remarks?.trim() || undefined;
     const isRevision = Boolean(hasPriorRejection && status === "Pending");
 
-    statusMap.set(matchedCode, {
-      code: matchedCode,
+    statusMap.set(code, {
+      code,
       status,
       reviewedAt: (latestReviewWithRemarks || latestReview)?.created_at
         ? new Date((latestReviewWithRemarks || latestReview)!.created_at!).toISOString().split("T")[0]
@@ -492,13 +619,18 @@ export async function getFacultyInitialData(
       adminRemarks: adminFeedback,
       note: facultyNote,
       remarks: facultyNote,
-      submittedAt: sub.submitted_at || sub.created_at || undefined,
-      latestSubmissionId: sub.id,
-      is_read: Boolean(sub.is_read),
-      isViewed: Boolean(sub.is_read),
-      viewed_at: sub.viewed_at || undefined,
+      submittedAt: sub?.submitted_at || sub?.created_at || undefined,
+      latestSubmissionId: sub?.id,
+      is_read: Boolean(sub?.is_read),
+      isViewed: Boolean(sub?.is_read),
+      viewed_at: sub?.viewed_at || undefined,
       isRevision,
       hasPriorRevision: isRevision || hasPriorRejection,
+      due_at: sub?.due_at || null,
+      customDueDate,
+      effectiveDeadline: effectiveDeadlineIso,
+      isExtended: isExtensionActive,
+      extendedUntil: extDeadlineIso,
     });
   }
 
@@ -508,7 +640,12 @@ export async function getFacultyInitialData(
     validated: requirementStatuses.filter((r) => r.status === "Validated").length,
     rejected: requirementStatuses.filter((r) => r.status === "Rejected").length,
     pending: requirementStatuses.filter((r) => r.status === "Pending").length,
-    notSubmitted: requirementStatuses.filter((r) => r.status === "Not Submitted").length,
+    overdue: requirementStatuses.filter((r) => r.status === "Overdue").length,
+    extended: requirementStatuses.filter((r) => r.status === "Extended").length,
+    exempted: requirementStatuses.filter((r) => r.status === "Exempted").length,
+    notSubmitted: requirementStatuses.filter(
+      (r) => r.status === "Pending" || r.status === "Overdue" || r.status === "Extended",
+    ).length,
   };
 
   // 9. Historical Submissions (Validated / Approved only)

@@ -153,6 +153,33 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
+    // Check if any requested requirement is marked exempted
+    if (requirementCodes && requirementCodes.length > 0) {
+      const { data: subData } = await supabase
+        .from("submissions")
+        .select("requirement_code, status")
+        .eq("user_id", user.id)
+        .eq("academic_year", academicYear)
+        .eq("semester", semester)
+        .in("requirement_code", requirementCodes);
+
+      const exemptedCodes = (subData || [])
+        .filter((s: any) => {
+          const st = (s.status || "").toLowerCase().trim();
+          return st === "exempted" || st === "exempt";
+        })
+        .map((s: any) => s.requirement_code);
+
+      if (exemptedCodes.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Extension requests cannot be submitted for exempted requirements (${exemptedCodes.join(", ")}).`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     // Fetch faculty profile details
     const { data: profile } = await supabase
       .from("profiles")
