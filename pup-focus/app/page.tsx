@@ -617,8 +617,8 @@ export default function Home() {
                 />
               </div>
 
-              {/* Right Side (Desktop) / Bottom (Mobile): PUP FOCUS Branding */}
-              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center p-6 sm:p-7 md:p-8 min-h-[200px] sm:min-h-[230px] md:min-h-[420px] bg-transparent overflow-hidden">
+              {/* Right Side (Desktop) / Bottom (Mobile): FOCUS Branding */}
+              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center py-6 px-2 sm:p-7 md:p-8 min-h-[200px] sm:min-h-[230px] md:min-h-[420px] bg-transparent overflow-hidden">
                 {/* Pylon Monument Background (pylon.png) */}
                 <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                   <Image
@@ -631,19 +631,23 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Centered Typography: PUP FOCUS & Faculty Online Compliance and Uploading System */}
-                <div className="relative z-10 w-full max-w-md mx-auto flex flex-col items-center justify-center text-center">
+                {/* Centered Typography: FOCUS & Faculty Online Compliance and Uploading System */}
+                <div className="relative z-10 w-full max-w-xl mx-auto flex flex-col items-center justify-center text-center px-1">
                   {/* Title */}
                   <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-wider text-amber-300 uppercase mb-2 drop-shadow-[0_3px_10px_rgba(0,0,0,0.95)]">
-                    PUP FOCUS
+                    FOCUS
                   </h1>
 
                   {/* Sleek Golden Divider */}
                   <div className="mx-auto my-2.5 sm:my-3 h-0.5 w-24 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_rgba(251,191,36,1)]" />
 
-                  {/* Centered System Label */}
-                  <h2 className="text-sm sm:text-base lg:text-xl font-bold tracking-wide text-[#fff8e7] leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] max-w-xs sm:max-w-sm">
-                    Faculty Online Compliance and Uploading System
+                  {/* Centered System Label in 1 row */}
+                  <h2 className="w-full text-center whitespace-nowrap text-[10px] min-[360px]:text-[11px] min-[400px]:text-xs sm:text-sm md:text-xs lg:text-sm xl:text-base font-bold tracking-tight sm:tracking-wide text-[#fff8e7] leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                    <span className="text-amber-300 text-[1.2em] font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">F</span>aculty{" "}
+                    <span className="text-amber-300 text-[1.2em] font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">O</span>nline{" "}
+                    <span className="text-amber-300 text-[1.2em] font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">C</span>ompliance and{" "}
+                    <span className="text-amber-300 text-[1.2em] font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">U</span>ploading{" "}
+                    <span className="text-amber-300 text-[1.2em] font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]">S</span>ystem
                   </h2>
                 </div>
               </div>
