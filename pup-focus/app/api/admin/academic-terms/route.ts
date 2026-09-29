@@ -657,10 +657,35 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    await supabase
-      .from("submission_windows")
-      .update({ academic_year: academicYear, semester })
-      .eq("id", 1);
+    // Synchronize submission window strictly for this newly activated term:
+    // Every submission schedule must belong to a specific Academic Term.
+    const { data: termSchedule } = await supabase
+      .from("submission_window_terms")
+      .select("start_date, end_date, start_time, end_time")
+      .eq("academic_year", academicYear)
+      .eq("semester", semester)
+      .maybeSingle();
+
+    if (termSchedule?.start_date && termSchedule?.end_date) {
+      await supabase
+        .from("submission_windows")
+        .upsert(
+          {
+            id: 1,
+            start_date: termSchedule.start_date,
+            end_date: termSchedule.end_date,
+            start_time: termSchedule.start_time || "09:00:00",
+            end_time: termSchedule.end_time || "17:00:00",
+            academic_year: academicYear,
+            semester,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" },
+        );
+    } else {
+      // If no schedule exists yet for the new active term, clear previous term's schedule
+      await supabase.from("submission_windows").delete().eq("id", 1);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

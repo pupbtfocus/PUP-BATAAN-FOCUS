@@ -20,35 +20,27 @@ export async function GET() {
     }
 
     const supabase = getServiceRoleClient();
-    const config = await getSubmissionWindow(supabase);
-    const status = evaluateSubmissionWindow(config);
 
-    if (!status.academicYear || !status.semester) {
-      let { data: currentTerm } = await supabase
-        .from("academic_terms")
-        .select("academic_year, semester")
-        .eq("status", "Current")
-        .maybeSingle();
+    // 1. Resolve currently active academic term strictly
+    const { data: currentTerm } = await supabase
+      .from("academic_terms")
+      .select("academic_year, semester")
+      .eq("status", "Current")
+      .maybeSingle();
 
-      if (!currentTerm) {
-        const { data: latestTerm } = await supabase
-          .from("academic_terms")
-          .select("academic_year, semester")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        currentTerm = latestTerm;
-      }
+    const activeAY = currentTerm?.academic_year || "2026-2027";
+    const rawSem = currentTerm?.semester ? normalizeSemester(currentTerm.semester) : "1st Semester";
+    const activeSem: "1st Semester" | "2nd Semester" = rawSem.includes("2") ? "2nd Semester" : "1st Semester";
 
-      if (currentTerm?.academic_year && currentTerm?.semester) {
-        status.academicYear = currentTerm.academic_year;
-        const rawSem = normalizeSemester(currentTerm.semester);
-        status.semester = rawSem.includes("2") ? "2nd Semester" : "1st Semester";
-      } else {
-        status.academicYear = "2026-2027";
-        status.semester = "1st Semester";
-      }
-    }
+    // 2. Evaluate schedule strictly for active term
+    const config = await getSubmissionWindow(supabase, {
+      academicYear: activeAY,
+      semester: activeSem,
+    });
+    const status = evaluateSubmissionWindow(config, undefined, undefined, {
+      academicYear: activeAY,
+      semester: activeSem,
+    });
 
     return NextResponse.json({
       ...status,

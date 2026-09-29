@@ -213,8 +213,8 @@ export async function POST(request: NextRequest) {
       start_time: startTimeToUse,
       end_date: newEndDate,
       end_time: normalizeTime24Hour(end24h),
-      academic_year: latestWindow?.academic_year || activeAcademicYear,
-      semester: latestWindow?.semester || activeSemester,
+      academic_year: activeAcademicYear,
+      semester: activeSemester,
       updated_by: user.id,
       updated_at: new Date().toISOString(),
     };
@@ -232,6 +232,21 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
+
+    // Keep submission_window_terms synchronized for the active academic term
+    await supabase.from("submission_window_terms").upsert(
+      {
+        academic_year: activeAcademicYear,
+        semester: activeSemester,
+        start_date: startDateToUse,
+        end_date: newEndDate,
+        start_time: startTimeToUse,
+        end_time: normalizeTime24Hour(end24h),
+        created_by: user.id,
+        created_at: new Date().toISOString(),
+      },
+      { onConflict: "academic_year,semester" },
+    );
 
     // 4. Insert audit log entry into submission_window_logs with action_type = 'EXTENSION'
     const logRecord = {
