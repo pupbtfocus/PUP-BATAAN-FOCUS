@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Menu } from "iconoir-react";
+import { Menu, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { SidebarContent } from "@/components/sidebar";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
+import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
 
 export default function DashboardLayout({
   children,
@@ -29,14 +30,14 @@ export default function DashboardLayout({
           >
             <AppIcon icon={Menu} size="lg" color="inherit" />
           </button>
-          <div className="flex items-center gap-2.5">
-            <BrandMark size={44} className="shrink-0" />
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 mr-2">
+            <BrandMark size={40} className="shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="font-extrabold text-white text-lg sm:text-xl md:text-2xl tracking-tight whitespace-nowrap leading-tight">
+              <span className="hidden md:block font-extrabold text-white text-lg sm:text-xl md:text-2xl tracking-tight whitespace-nowrap leading-tight">
                 PUP FOCUS
               </span>
-              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
-                Faculty Online Compliance and Uploading System
+              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight line-clamp-2">
+                <HighlightedSystemTitle />
               </span>
             </div>
           </div>
@@ -45,7 +46,7 @@ export default function DashboardLayout({
         {/* Centered System Title for Desktop */}
         <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-4">
           <span className="text-xs lg:text-sm xl:text-base font-semibold text-amber-200/95 tracking-wide text-center truncate max-w-[48vw]">
-            Faculty Online Compliance and Uploading System
+            <HighlightedSystemTitle />
           </span>
         </div>
 
@@ -72,7 +73,23 @@ export default function DashboardLayout({
               className="fixed inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 h-full p-4 flex flex-col justify-between z-10 shadow-2xl">
+            <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 h-full p-4 flex flex-col z-10 shadow-2xl overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">
+                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <BrandMark size={38} className="shrink-0" />
+                  <span className="text-lg font-black tracking-tight text-white leading-tight">
+                    PUP FOCUS
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs shrink-0"
+                  aria-label="Close navigation"
+                >
+                  <AppIcon icon={Xmark} size="md" color="inherit" />
+                </button>
+              </div>
               <SidebarContent
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}

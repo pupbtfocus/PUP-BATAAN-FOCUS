@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { NotificationDrawer } from "@/features/notifications/components/notification-drawer";
+import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
 
 type NavigationItem = {
   href: string;
@@ -25,11 +26,11 @@ export function FacultyHeader({
         <div className="flex items-center gap-3 z-10">
           <BrandMark size={44} className="shrink-0" />
           <div className="flex flex-col min-w-0">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
+            <h1 className="hidden md:block text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
               PUP FOCUS
             </h1>
-            <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
-              {subtitle || "Faculty Online Compliance and Uploading System"}
+            <span className="md:hidden text-[10px] xs:text-[11px] font-medium text-amber-200/90 tracking-tight leading-tight line-clamp-2 max-w-[260px]">
+              {subtitle || <HighlightedSystemTitle />}
             </span>
           </div>
         </div>
@@ -38,7 +39,7 @@ export function FacultyHeader({
         <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-4">
           <span className="text-xs lg:text-sm xl:text-base font-semibold text-amber-200/95 tracking-wide text-center truncate max-w-[48vw]">
             {title === "PUP FOCUS"
-              ? "Faculty Online Compliance and Uploading System"
+              ? <HighlightedSystemTitle />
               : subtitle || null}
           </span>
         </div>

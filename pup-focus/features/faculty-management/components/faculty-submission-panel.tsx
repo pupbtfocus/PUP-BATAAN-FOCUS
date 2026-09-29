@@ -1972,13 +1972,17 @@ function FacultySubmissionPanelContent({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">
-              <span className="text-sm font-semibold text-white">
-                Faculty Menu
-              </span>
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                <BrandMark size={38} className="shrink-0" />
+                <span className="text-lg font-black tracking-tight text-white leading-tight">
+                  PUP FOCUS
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs"
+                className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs shrink-0"
+                aria-label="Close navigation"
               >
                 <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>

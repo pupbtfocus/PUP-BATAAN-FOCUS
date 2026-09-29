@@ -13,6 +13,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
+import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
 import {
   AdminNotificationDrawer,
   type AdminNotificationItem,
@@ -679,11 +680,11 @@ export function AdminFacultyDashboard({
 
             <BrandMark size={44} className="shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
+              <span className="hidden md:block text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
                 PUP FOCUS
               </span>
-              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight truncate max-w-[160px] sm:max-w-[200px]">
-                Faculty Online Compliance and Uploading System
+              <span className="md:hidden text-[10px] xs:text-[11px] font-medium text-amber-200/90 tracking-tight leading-tight line-clamp-2 max-w-[260px]">
+                <HighlightedSystemTitle />
               </span>
             </div>
           </div>
@@ -691,7 +692,7 @@ export function AdminFacultyDashboard({
           {/* Centered System Title for Desktop */}
           <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-4">
             <span className="text-xs lg:text-sm xl:text-base font-semibold text-amber-200/95 tracking-wide text-center truncate max-w-[48vw]">
-              Faculty Online Compliance and Uploading System
+              <HighlightedSystemTitle />
             </span>
           </div>
 
@@ -727,13 +728,16 @@ export function AdminFacultyDashboard({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">
-                <span className="text-sm font-semibold text-white">
-                  Admin Menu
-                </span>
+                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <BrandMark size={38} className="shrink-0" />
+                  <span className="text-lg font-black tracking-tight text-white leading-tight">
+                    PUP FOCUS
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs"
+                  className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shadow-xs shrink-0"
                   aria-label="Close navigation"
                 >
                   <AppIcon icon={Xmark} size="md" color="inherit" />
