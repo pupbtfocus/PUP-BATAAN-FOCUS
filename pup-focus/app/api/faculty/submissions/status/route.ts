@@ -499,7 +499,7 @@ export async function GET(request: NextRequest) {
       try {
         const { data: docVersions } = await supabase
           .from("document_versions")
-          .select("id, submission_id, storage_path, mime_type, file_name")
+          .select("id, submission_id, storage_path, mime_type")
           .in("submission_id", submissionIds)
           .order("version_number", { ascending: false });
 
@@ -510,7 +510,7 @@ export async function GET(request: NextRequest) {
               id: doc.id,
               storage_path: doc.storage_path,
               mime_type: doc.mime_type,
-              file_name: doc.file_name,
+              file_name: doc.storage_path ? doc.storage_path.split("/").pop() : undefined,
             });
             docVersionsMap.set(doc.submission_id, list);
           }

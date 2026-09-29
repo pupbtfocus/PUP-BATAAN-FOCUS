@@ -290,7 +290,7 @@ export async function GET(
       if (versionId) {
         const { data: specificVer } = await adminClient
           .from("document_versions")
-          .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
+          .select("id, submission_id, storage_path, mime_type, size_bytes")
           .eq("id", versionId)
           .maybeSingle();
         docVer = specificVer;
@@ -299,7 +299,7 @@ export async function GET(
       if (!docVer) {
         const { data: latestVer } = await adminClient
           .from("document_versions")
-          .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
+          .select("id, submission_id, storage_path, mime_type, size_bytes")
           .or(`submission_id.eq.${submissionId},id.eq.${submissionId}`)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -329,7 +329,7 @@ export async function GET(
           const subIds = siblingSubmissions.map((s) => s.id);
           const { data: siblingVer } = await adminClient
             .from("document_versions")
-            .select("id, submission_id, storage_path, file_name, mime_type, size_bytes")
+            .select("id, submission_id, storage_path, mime_type, size_bytes")
             .in("submission_id", subIds)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -344,7 +344,8 @@ export async function GET(
       // document_versions table missing, proceed to storage discovery
     }
 
-    const targetFileName = filename || docVer?.file_name || undefined;
+    const targetFileName =
+      filename || (docVer?.storage_path ? docVer.storage_path.split("/").pop() : undefined);
     const downloadOptions =
       download === "true" || filename
         ? { download: targetFileName || true }

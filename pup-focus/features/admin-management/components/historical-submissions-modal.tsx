@@ -3,16 +3,11 @@
 import { useEffect, useState, useMemo } from "react";
 import {
   Archive,
-  CheckCircle,
-  Download,
-  Eye,
-  Notes,
   Page,
   Refresh,
   Search,
   SystemRestart,
   WarningCircle,
-  Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
@@ -109,15 +104,17 @@ export function HistoricalSubmissionsModal({
         s.facultyEmail.toLowerCase().includes(q) ||
         s.programCode.toLowerCase().includes(q) ||
         s.requirementTitle.toLowerCase().includes(q) ||
-        s.requirementCode.toLowerCase().includes(q),
+        s.requirementCode.toLowerCase().includes(q) ||
+        (s.facultyRemarks && s.facultyRemarks.toLowerCase().includes(q)) ||
+        (s.adminRemarks && s.adminRemarks.toLowerCase().includes(q)),
     );
   }, [submissions, searchQuery]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="flex h-[90vh] w-full max-w-5xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden dark:border-slate-800 dark:bg-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 sm:p-4 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="flex h-[92vh] w-[96vw] max-w-[1550px] flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden dark:border-slate-800 dark:bg-slate-900">
         <ModalHeader
           title={
             isCurrentTerm
@@ -209,16 +206,16 @@ export function HistoricalSubmissionsModal({
 
           {/* Read-Only or Active Status Notice Badge */}
           <div
-            className={`mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-xs border ${
+            className={`mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg px-4 py-2 text-xs font-semibold shadow-xs ${
               isCurrentTerm
-                ? "bg-emerald-500/10 text-emerald-900 border-emerald-500/20 dark:text-emerald-300"
-                : "bg-amber-500/10 text-amber-900 border-amber-500/20 dark:text-amber-300"
+                ? "bg-[#0b5336] text-white border border-[#08412a]"
+                : "bg-[#b45309] text-white border border-[#92400e]"
             }`}
           >
-            <span className="font-semibold flex items-center gap-1.5">
+            <span className="flex items-center gap-2">
               {isCurrentTerm ? (
                 <>
-                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
                   <span>
                     Current Active Term: Submissions can be actively reviewed and evaluated in Requirements Verification.
                   </span>
@@ -237,12 +234,14 @@ export function HistoricalSubmissionsModal({
                       ? "/super-admin/dashboard?tab=verification"
                       : "/admin/dashboard?tab=requirements"
                   }
-                  className="font-bold underline hover:opacity-80 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1"
+                  className="font-bold underline text-amber-200 hover:text-white inline-flex items-center gap-1 transition-colors"
                 >
                   <span>Go to Requirements Verification →</span>
                 </a>
               )}
-              <span className="font-bold">Total: {filteredSubmissions.length} records</span>
+              <span className="font-bold bg-black/20 px-2.5 py-0.5 rounded-full text-white">
+                Total: {filteredSubmissions.length} records
+              </span>
             </div>
           </div>
         </div>
@@ -297,16 +296,16 @@ export function HistoricalSubmissionsModal({
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-950">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs table-auto">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400">
-                    <th className="px-4 py-3">Faculty Member</th>
-                    <th className="px-4 py-3">Program</th>
-                    <th className="px-4 py-3">Requirement</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Submitted At</th>
-                    <th className="px-4 py-3">Admin Remarks</th>
-                    <th className="px-4 py-3 text-right">Document</th>
+                    <th className="px-4 py-3.5 whitespace-nowrap min-w-[220px]">Faculty Member</th>
+                    <th className="px-3 py-3.5 whitespace-nowrap min-w-[80px]">Program</th>
+                    <th className="px-4 py-3.5 min-w-[240px]">Requirement</th>
+                    <th className="px-3 py-3.5 whitespace-nowrap min-w-[130px]">Status</th>
+                    <th className="px-4 py-3.5 whitespace-nowrap min-w-[150px]">Submitted At</th>
+                    <th className="px-4 py-3.5 min-w-[160px]">Admin Remarks</th>
+                    <th className="px-4 py-3.5 min-w-[160px]">Faculty Remarks</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -323,7 +322,7 @@ export function HistoricalSubmissionsModal({
                           {sub.facultyEmail}
                         </p>
                       </td>
-                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium">
+                      <td className="px-3 py-3 text-slate-700 dark:text-slate-300 font-medium">
                         {sub.programCode || "—"}
                       </td>
                       <td className="px-4 py-3">
@@ -334,7 +333,7 @@ export function HistoricalSubmissionsModal({
                           {sub.requirementCode}
                         </p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3">
                         <SubmissionStatusBadge status={sub.status} />
                       </td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
@@ -349,24 +348,14 @@ export function HistoricalSubmissionsModal({
                             })
                           : "—"}
                       </td>
-                      <td className="px-4 py-3 max-w-[200px] truncate text-slate-500 dark:text-slate-400" title={sub.adminRemarks || ""}>
+                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400" title={sub.adminRemarks || ""}>
                         {sub.adminRemarks || "—"}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        {sub.downloadUrl ? (
-                          <a
-                            href={sub.downloadUrl}
-                            download={sub.fileName || "submission.pdf"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 shadow-2xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                            title="Download document (read-only archive)"
-                          >
-                            <AppIcon icon={Download} size="xs" color="inherit" />
-                            <span>Download</span>
-                          </a>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300" title={sub.facultyRemarks || ""}>
+                        {sub.facultyRemarks ? (
+                          <span className="italic">{sub.facultyRemarks}</span>
                         ) : (
-                          <span className="text-slate-400 italic text-[11px]">No file</span>
+                          <span className="text-slate-400">—</span>
                         )}
                       </td>
                     </tr>
@@ -385,7 +374,7 @@ export function HistoricalSubmissionsModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg bg-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+            className="rounded-lg bg-[#800000] hover:bg-[#6c0000] text-white px-5 py-1.5 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             Close
           </button>
