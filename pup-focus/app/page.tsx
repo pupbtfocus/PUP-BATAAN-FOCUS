@@ -463,7 +463,7 @@ export default function Home() {
   }
 
   return (
-    <main className="relative min-h-screen h-auto md:h-screen md:max-h-screen w-full flex flex-col items-center justify-start md:justify-center px-3 sm:px-4 pt-14 pb-10 sm:py-6 md:py-2 text-[#fff8e7] overflow-x-hidden overflow-y-auto md:overflow-hidden bg-[#1c0406]">
+    <main className="relative min-h-screen h-auto md:h-screen md:max-h-screen w-full flex flex-col items-center justify-start md:justify-center px-3 sm:px-4 py-6 sm:py-6 md:py-2 text-[#fff8e7] overflow-x-hidden overflow-y-auto md:overflow-hidden bg-[#1c0406]">
       {/* Campus Background Photos with Maroon Blur */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div
@@ -568,83 +568,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Mobile Curved Card Top Header SVG (< md) */}
-          <div className="block md:hidden relative -mb-[8px] z-10">
-            <svg
-              viewBox="0 0 400 64"
-              className="w-full h-auto block pointer-events-none overflow-visible"
-            >
-              <defs>
-                <linearGradient id="cardTopGradMobile" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#800000" />
-                  <stop offset="100%" stopColor="#800000" />
-                </linearGradient>
-
-                <linearGradient id="topGoldCrestMobile" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#D97706" stopOpacity="0.8" />
-                  <stop offset="15%" stopColor="#F59E0B" stopOpacity="0.95" />
-                  <stop offset="35%" stopColor="#FDE68A" stopOpacity="1" />
-                  <stop offset="50%" stopColor="#FFFBEB" stopOpacity="1" />
-                  <stop offset="65%" stopColor="#FDE68A" stopOpacity="1" />
-                  <stop offset="85%" stopColor="#F59E0B" stopOpacity="0.95" />
-                  <stop offset="100%" stopColor="#D97706" stopOpacity="0.8" />
-                </linearGradient>
-
-                <linearGradient id="topAmbientSheenMobile" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.75" />
-                  <stop offset="60%" stopColor="#F59E0B" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="#800000" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-
-              {/* 1. Background Fill Path - extends to y=80 */}
-              <path
-                d="M 0,80 L 0,20 Q 0,0 20,0 L 142,0 C 158,0 162,37 200,37 C 238,37 242,0 258,0 L 380,0 Q 400,0 400,20 L 400,80 Z"
-                fill="#800000"
-              />
-
-              {/* 2. Ambient Golden Light Sheen */}
-              <path
-                d="M 2,20 Q 2,2 20,2 L 142,2 C 158,2 162,37 200,37 C 238,37 242,2 258,2 L 380,2 Q 398,2 398,20"
-                fill="none"
-                stroke="url(#topAmbientSheenMobile)"
-                strokeWidth="5"
-                strokeLinecap="round"
-              />
-
-              {/* 3. Base Golden Border (top curve + sides extending into card) */}
-              <path
-                d="M 2,82 L 2,20 Q 2,2 20,2 L 142,2 C 158,2 162,37 200,37 C 238,37 242,2 258,2 L 380,2 Q 398,2 398,20 L 398,82"
-                fill="none"
-                stroke="rgba(245, 158, 11, 1)"
-                strokeWidth="4"
-              />
-
-              {/* 4. Luminous 3D Golden Crest */}
-              <path
-                d="M 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20"
-                fill="none"
-                stroke="url(#topGoldCrestMobile)"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-
-              {/* 5. Fine Specular Reflection */}
-              <path
-                d="M 25,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 375,1"
-                fill="none"
-                stroke="rgba(255, 255, 255, 0.6)"
-                strokeWidth="1"
-                strokeLinecap="round"
-              />
-            </svg>
-
-            {/* Logo positioned precisely inside the curved arch */}
-            <div className="absolute -top-7 sm:-top-8 left-1/2 -translate-x-1/2 z-20">
-              <Logo size={105} className="mb-0 drop-shadow-[0_10px_20px_rgba(0,0,0,0.7)]" />
-            </div>
-          </div>
-
           {/* Continuous Center Spine Separator Line (Desktop) */}
           <div
             className="hidden md:block absolute left-1/2 -translate-x-1/2 w-[2px] bg-amber-400/40 pointer-events-none z-20"
@@ -652,16 +575,21 @@ export default function Home() {
           />
 
           {/* Card Body - Official PUP Brand Maroon (#800000) with 2-Sided Open Book Layout */}
-          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-4 border-b-4 border-amber-400 bg-[#800000] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)]">
+          <section className="relative rounded-[1.75rem] sm:rounded-[2rem] md:rounded-t-none md:rounded-b-[2rem] border-4 md:border-t-0 md:border-x-4 md:border-b-4 border-amber-400 bg-[#800000] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(128,0,0,0.4)]">
             <div className="grid grid-cols-1 md:grid-cols-12 items-stretch md:min-h-[420px]">
-              {/* Left Side (Page 1): Login Form (Swapped) */}
-              <div className="md:col-span-6 relative flex flex-col justify-center p-5 sm:p-7 md:p-8 border-b-2 md:border-b-0 border-amber-400/40 bg-transparent">
+              {/* Left Side (Desktop) / Top (Mobile): Login Form */}
+              <div className="md:col-span-6 relative flex flex-col justify-center p-5 sm:p-7 md:p-8 bg-transparent">
+                {/* PUP Seal Logo (Mobile only, centered above SIGN IN) */}
+                <div className="flex md:hidden justify-center mb-3">
+                  <Logo size={82} className="drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)]" />
+                </div>
+
                 {/* Form Header */}
                 <div className="mb-3 sm:mb-4 text-center">
                   <h2 className="text-2xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                     Sign In
                   </h2>
-                  <div className="mx-auto my-3 h-0.5 w-20 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
+                  <div className="mx-auto my-2.5 sm:my-3 h-0.5 w-20 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
                   <p className="text-amber-100 text-xs sm:text-sm font-medium tracking-wide">
                     Enter your institutional credentials to continue
                   </p>
@@ -689,8 +617,8 @@ export default function Home() {
                 />
               </div>
 
-              {/* Right Side (Page 2): Centered PUP FOCUS and Faculty Online Compliance and Uploading System with Pylon Background */}
-              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center p-5 sm:p-7 md:p-8 min-h-[220px] sm:min-h-[260px] md:min-h-[420px] bg-transparent overflow-hidden">
+              {/* Right Side (Desktop) / Bottom (Mobile): PUP FOCUS Branding */}
+              <div className="md:col-span-6 relative flex flex-col items-center justify-center text-center p-6 sm:p-7 md:p-8 min-h-[200px] sm:min-h-[230px] md:min-h-[420px] bg-transparent overflow-hidden">
                 {/* Pylon Monument Background (pylon.png) */}
                 <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                   <Image
@@ -703,7 +631,7 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Centered Typography: PUP FOCUS & Faculty Online Compliance and Uploading System (No card wrapper) */}
+                {/* Centered Typography: PUP FOCUS & Faculty Online Compliance and Uploading System */}
                 <div className="relative z-10 w-full max-w-md mx-auto flex flex-col items-center justify-center text-center">
                   {/* Title */}
                   <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-wider text-amber-300 uppercase mb-2 drop-shadow-[0_3px_10px_rgba(0,0,0,0.95)]">
@@ -711,10 +639,10 @@ export default function Home() {
                   </h1>
 
                   {/* Sleek Golden Divider */}
-                  <div className="mx-auto my-3 h-0.5 w-24 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_rgba(251,191,36,1)]" />
+                  <div className="mx-auto my-2.5 sm:my-3 h-0.5 w-24 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_rgba(251,191,36,1)]" />
 
                   {/* Centered System Label */}
-                  <h2 className="text-base sm:text-lg lg:text-xl font-bold tracking-wide text-[#fff8e7] leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] max-w-sm">
+                  <h2 className="text-sm sm:text-base lg:text-xl font-bold tracking-wide text-[#fff8e7] leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] max-w-xs sm:max-w-sm">
                     Faculty Online Compliance and Uploading System
                   </h2>
                 </div>
