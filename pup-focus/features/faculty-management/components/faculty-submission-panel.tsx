@@ -1302,8 +1302,10 @@ function FacultySubmissionPanelContent({
         return reqCodes.length === 0 || reqCodes.includes(code);
       });
 
-      const extDeadlineIso = matchingExt?.requested_date
-        ? `${matchingExt.requested_date}T${matchingExt.requested_time ? normalizeTime24Hour(matchingExt.requested_time) || "23:59:59" : "23:59:59"}+08:00`
+      const targetExtDate = matchingExt?.approved_date || matchingExt?.requested_date;
+      const targetExtTime = matchingExt?.approved_time || matchingExt?.requested_time;
+      const extDeadlineIso = targetExtDate
+        ? `${targetExtDate}T${targetExtTime ? normalizeTime24Hour(targetExtTime) || "23:59:59" : "23:59:59"}+08:00`
         : null;
       const extDeadlineMs = extDeadlineIso ? new Date(extDeadlineIso).getTime() : null;
       const isExtensionActive = Boolean(extDeadlineMs && nowMs <= extDeadlineMs);
@@ -1369,7 +1371,13 @@ function FacultySubmissionPanelContent({
         evaluatedStatus = "Pending";
       } else {
         // No file is submitted
-        if (isExtensionActive) {
+        const isCustomDueExtended = Boolean(
+          customDueDate &&
+          effectiveDeadlineMs &&
+          nowMs <= effectiveDeadlineMs &&
+          (!globalDeadlineMs || effectiveDeadlineMs > globalDeadlineMs)
+        );
+        if (isExtensionActive || isCustomDueExtended) {
           evaluatedStatus = "Extended";
         } else if (isPastEffectiveDeadline) {
           evaluatedStatus = "Overdue";
@@ -3972,8 +3980,20 @@ function FacultySubmissionPanelContent({
                     <div className="space-y-3 text-xs">
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
                       <span className="font-semibold text-slate-600 dark:text-slate-400">Status</span>
-                      <span className="px-2.5 py-0.5 rounded-full font-bold bg-amber-500 text-slate-950 text-[11px]">
-                        Pending Admin Review
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] ${
+                          pendingExtensionData.status === "approved"
+                            ? "bg-emerald-500 text-white"
+                            : pendingExtensionData.status === "rejected"
+                            ? "bg-rose-600 text-white"
+                            : "bg-amber-500 text-slate-950"
+                        }`}
+                      >
+                        {pendingExtensionData.status === "approved"
+                          ? "Approved"
+                          : pendingExtensionData.status === "rejected"
+                          ? "Declined"
+                          : "Pending Admin Review"}
                       </span>
                     </div>
 
@@ -3985,12 +4005,21 @@ function FacultySubmissionPanelContent({
                     </div>
 
                     <div className="space-y-1">
-                      <span className="font-semibold text-slate-500 dark:text-slate-400">Requested Duration:</span>
+                      <span className="font-semibold text-slate-500 dark:text-slate-400">Requested Target Deadline:</span>
                       <p className="font-medium text-slate-900 dark:text-slate-200">
                         {pendingExtensionData.requested_preset || "+3 Days"}
                         {pendingExtensionData.requested_date ? ` (until ${pendingExtensionData.requested_date} ${pendingExtensionData.requested_time || ""})` : ""}
                       </p>
                     </div>
+
+                    {pendingExtensionData.approved_date && (
+                      <div className="space-y-1 p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/50">
+                        <span className="font-semibold text-emerald-800 dark:text-emerald-300">Approved Custom Deadline:</span>
+                        <p className="font-medium text-emerald-900 dark:text-emerald-200">
+                          {pendingExtensionData.approved_date} at {pendingExtensionData.approved_time || "11:59 PM"}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="space-y-1">
                       <span className="font-semibold text-slate-500 dark:text-slate-400">Reason / Justification:</span>
@@ -3999,8 +4028,40 @@ function FacultySubmissionPanelContent({
                       </p>
                     </div>
 
+                    {/* Supporting Document Link */}
+                    {(pendingExtensionData.supporting_document_url || pendingExtensionData.supporting_document_name) && (
+                      <div className="space-y-1">
+                        <span className="font-semibold text-slate-500 dark:text-slate-400">Supporting Document:</span>
+                        <div>
+                          <a
+                            href={`/api/faculty/submissions/extension-request/document?requestId=${pendingExtensionData.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-semibold transition"
+                          >
+                            <AppIcon icon={Page} size="xs" color="inherit" />
+                            <span>{pendingExtensionData.supporting_document_name || "Download Supporting Document"}</span>
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Approver Remarks */}
+                    {pendingExtensionData.admin_remarks && (
+                      <div className="space-y-1 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">Approver Feedback Remarks:</span>
+                        <p className="text-slate-800 dark:text-slate-200">
+                          &ldquo;{pendingExtensionData.admin_remarks}&rdquo;
+                        </p>
+                      </div>
+                    )}
+
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
-                      An administrator will review your extension request. Document uploads will be unlocked immediately once approved.
+                      {pendingExtensionData.status === "approved"
+                        ? "Your extension request was approved. The submission portal is unlocked until the approved deadline date."
+                        : pendingExtensionData.status === "rejected"
+                        ? "Your extension request was declined. File uploads remain locked for overdue requirements."
+                        : "An administrator will review your extension request. Document uploads will be unlocked immediately once approved."}
                     </p>
                   </div>
 

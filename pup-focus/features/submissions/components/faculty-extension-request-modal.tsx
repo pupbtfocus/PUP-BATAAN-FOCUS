@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Calendar,
   CheckCircle,
   Hourglass,
   InfoCircle,
+  Page,
   SystemRestart,
+  Trash,
+  Upload,
   WarningCircle,
   WarningTriangle,
   Xmark,
@@ -38,6 +41,48 @@ export interface FacultyExtensionRequestModalProps {
 
 type ExtensionPreset = "+24 Hours" | "+48 Hours" | "+3 Days" | "+1 Week" | "Custom";
 
+function calculateProposedDeadline(preset: ExtensionPreset, customDate: string, customTime: string): { dateStr: string; displayStr: string } {
+  if (preset === "Custom" && customDate) {
+    try {
+      const d = new Date(`${customDate}T${customTime || "17:00"}:00+08:00`);
+      if (!Number.isNaN(d.getTime())) {
+        return {
+          dateStr: customDate,
+          displayStr: d.toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+            timeZone: "Asia/Manila",
+          }),
+        };
+      }
+    } catch {}
+    return { dateStr: customDate, displayStr: `${customDate} at ${customTime || "17:00"}` };
+  }
+
+  const d = new Date();
+  if (preset === "+24 Hours") d.setDate(d.getDate() + 1);
+  else if (preset === "+48 Hours") d.setDate(d.getDate() + 2);
+  else if (preset === "+1 Week") d.setDate(d.getDate() + 7);
+  else d.setDate(d.getDate() + 3); // +3 Days default
+
+  const dateStr = d.toISOString().split("T")[0];
+  const displayStr = d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Manila",
+  });
+
+  return { dateStr, displayStr };
+}
+
 export function FacultyExtensionRequestModal({
   isOpen,
   onClose,
@@ -52,9 +97,11 @@ export function FacultyExtensionRequestModal({
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("17:00");
   const [reason, setReason] = useState("");
+  const [supportingDocument, setSupportingDocument] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successState, setSuccessState] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize selected codes when modal opens or lackings change
   useEffect(() => {
@@ -68,6 +115,7 @@ export function FacultyExtensionRequestModal({
       }
       setReason("");
       setPreset("+3 Days");
+      setSupportingDocument(null);
       setErrorMessage(null);
       setSuccessState(false);
 
@@ -89,6 +137,8 @@ export function FacultyExtensionRequestModal({
   function selectAllCodes() {
     setSelectedCodes(lackings.map((l) => l.code));
   }
+
+  const { displayStr: proposedDeadlineDisplay } = calculateProposedDeadline(preset, customDate, customTime);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -114,18 +164,23 @@ export function FacultyExtensionRequestModal({
     setIsSubmitting(true);
 
     try {
+      const formData = new FormData();
+      formData.append("academicYear", academicYear);
+      formData.append("semester", semester);
+      formData.append("requirementCodes", JSON.stringify(selectedCodes));
+      formData.append("reason", reason.trim());
+      formData.append("requestedPreset", preset);
+      if (preset === "Custom") {
+        formData.append("customDate", customDate);
+        formData.append("customTime", customTime);
+      }
+      if (supportingDocument) {
+        formData.append("supportingDocument", supportingDocument);
+      }
+
       const response = await fetch("/api/faculty/submissions/extension-request", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          academicYear,
-          semester,
-          requirementCodes: selectedCodes,
-          reason: reason.trim(),
-          requestedPreset: preset,
-          customDate: preset === "Custom" ? customDate : undefined,
-          customTime: preset === "Custom" ? customTime : undefined,
-        }),
+        body: formData,
       });
 
       const data = await response.json().catch(() => ({}));
@@ -158,55 +213,57 @@ export function FacultyExtensionRequestModal({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-4 flex min-h-full items-center justify-center backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-lg max-h-[88vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="extension-modal-title"
       >
-        {/* Fixed Header */}
         <ModalHeader
           icon={Hourglass}
-          title="Request Deadline Extension"
+          title="Request Submission Extension"
           subtitle={`A.Y. ${academicYear} • ${semester}`}
+          onClose={onClose}
+          closeAriaLabel="Close extension request modal"
+          className="shrink-0"
         />
 
-        {/* Content Body */}
         {successState ? (
-          <div className="p-8 text-center space-y-3 my-auto">
-            <div className="inline-flex p-3 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <AppIcon icon={CheckCircle} size="md" color="inherit" />
+          <div className="p-8 text-center space-y-4">
+            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400">
+              <AppIcon icon={CheckCircle} size="lg" color="inherit" />
             </div>
-            <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              Request Submitted Successfully
-            </h4>
-            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
-              Your request for a deadline extension has been forwarded to the academic
-              administrators. You will be notified once reviewed.
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+              Extension Request Submitted
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-300 max-w-sm mx-auto leading-relaxed">
+              Your extension request has been submitted to the academic administration for review.
+              You will receive an alert once approved.
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            {/* Scrollable Form Fields */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
-              {/* Error Message */}
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
               {errorMessage && (
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[#780000] border border-[#5e0000] text-xs text-white font-semibold shadow-xs">
-                  <AppIcon icon={WarningCircle} size="md" color="white" className="mt-0.5 shrink-0" />
-                  <span className="leading-snug">{errorMessage}</span>
+                <div
+                  role="alert"
+                  className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400 text-xs flex items-start gap-2"
+                >
+                  <AppIcon icon={WarningTriangle} size="sm" color="inherit" className="shrink-0 mt-0.5" />
+                  <span>{errorMessage}</span>
                 </div>
               )}
 
-              {/* Incomplete Requirements Selection */}
+              {/* Requirement Selection Checklist */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    Select Requirements Needing Extension:
+                    Requirements to Extend <span className="text-red-500">*</span>
                   </label>
                   {lackings.length > 1 && (
                     <button
                       type="button"
                       onClick={selectAllCodes}
-                      className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                      className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 hover:underline cursor-pointer"
                     >
                       Select All ({lackings.length})
                     </button>
@@ -214,17 +271,14 @@ export function FacultyExtensionRequestModal({
                 </div>
 
                 {lackings.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-2">
-                    No incomplete requirements found.
-                  </p>
+                  <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-xs text-slate-500 dark:text-slate-400">
+                    No overdue or pending requirements found for this academic term.
+                  </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto pr-1">
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                     {lackings.map((item) => {
                       const isSelected = selectedCodes.includes(item.code);
-                      const label =
-                        item.label ||
-                        (REQUIREMENT_LABEL as Record<string, string>)[item.code] ||
-                        item.code;
+                      const label = item.label || REQUIREMENT_LABEL[item.code as RequirementCode] || item.code;
                       return (
                         <div
                           key={item.code}
@@ -259,10 +313,10 @@ export function FacultyExtensionRequestModal({
                 )}
               </div>
 
-              {/* Requested Extension Duration */}
+              {/* Proposed Target Deadline Duration & Presets */}
               <div>
                 <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
-                  Requested Extension Duration:
+                  Proposed Target Deadline <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
                   {(["+24 Hours", "+48 Hours", "+3 Days", "+1 Week", "Custom"] as const).map(
@@ -283,6 +337,14 @@ export function FacultyExtensionRequestModal({
                   )}
                 </div>
 
+                {/* Calculated Proposed Target Deadline Display */}
+                <div className="mt-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">Target Deadline:</span>
+                  <span className="font-bold text-amber-800 dark:text-amber-300">
+                    {proposedDeadlineDisplay}
+                  </span>
+                </div>
+
                 {preset === "Custom" && (
                   <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
                     <div>
@@ -294,6 +356,7 @@ export function FacultyExtensionRequestModal({
                         value={customDate}
                         min={new Date().toISOString().split("T")[0]}
                         onChange={(e) => setCustomDate(e.target.value)}
+                        required
                         className="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
                       />
                     </div>
@@ -305,6 +368,7 @@ export function FacultyExtensionRequestModal({
                         type="time"
                         value={customTime}
                         onChange={(e) => setCustomTime(e.target.value)}
+                        required
                         className="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
                       />
                     </div>
@@ -327,12 +391,71 @@ export function FacultyExtensionRequestModal({
                 />
               </div>
 
+              {/* Optional Supporting Document Upload */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
+                  Supporting Document <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file && file.size > 10 * 1024 * 1024) {
+                      setErrorMessage("Supporting document file size exceeds the 10MB limit.");
+                      setSupportingDocument(null);
+                      return;
+                    }
+                    setSupportingDocument(file);
+                    setErrorMessage(null);
+                  }}
+                  className="hidden"
+                />
+
+                {supportingDocument ? (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <AppIcon icon={Page} size="sm" color="inherit" className="text-amber-500 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                          {supportingDocument.name}
+                        </p>
+                        <p className="text-[10px] text-slate-500">
+                          {(supportingDocument.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSupportingDocument(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      className="p-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer shrink-0"
+                      title="Remove file"
+                    >
+                      <AppIcon icon={Trash} size="sm" color="inherit" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-400 dark:hover:border-amber-500 bg-slate-50 dark:bg-slate-800/30 text-xs font-semibold text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                  >
+                    <AppIcon icon={Upload} size="sm" color="inherit" />
+                    <span>Attach Supporting Document (PDF, Image, DOCX — max 10MB)</span>
+                  </button>
+                )}
+              </div>
+
               {/* Informational Guidance Note */}
               <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 text-[11px] text-slate-700 dark:text-slate-300">
                 <AppIcon icon={InfoCircle} size="md" color="active" />
                 <span className="leading-relaxed">
-                  Your request will be submitted to the academic administration. You will
-                  receive an alert when the request is approved or processed.
+                  Only one pending extension request is permitted per requirement schedule.
+                  Once approved, your portal will be unlocked until the approved date.
                 </span>
               </div>
             </div>
