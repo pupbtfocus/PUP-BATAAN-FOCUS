@@ -2,7 +2,15 @@
 
 import { useEffect, useState, useId } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { UserPlus, Xmark } from "iconoir-react";
+import {
+  Calendar,
+  CheckCircle,
+  EditPencil,
+  Hourglass,
+  UserPlus,
+  WarningTriangle,
+  Xmark,
+} from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -23,6 +31,28 @@ export type ProgramOption = {
   name: string;
 };
 
+export interface OnboardingScheduleItem {
+  code: string;
+  title: string;
+  description?: string | null;
+  globalDeadlineIso: string;
+  globalDeadlineDate: string;
+  globalDeadlineTime: string;
+}
+
+export interface OnboardingCheckResult {
+  hasPastDeadlines: boolean;
+  activeTerm?: { academicYear: string; semester: string } | null;
+  globalDeadline?: { endDate: string; endTime?: string; iso: string } | null;
+  schedules: OnboardingScheduleItem[];
+}
+
+export interface OnboardingOptionsPayload {
+  onboardingOption: "grace_period" | "custom_deadlines" | "exempt";
+  gracePeriodIso?: string;
+  customDeadlines?: Record<string, string>;
+}
+
 const DEFAULT_DEGREE_PROGRAMS = [
   { code: "BEED", name: "Bachelor of Elementary Education" },
   { code: "BSA", name: "Bachelor of Science in Accountancy" },
@@ -42,7 +72,7 @@ const REDUNDANT_CODES = new Set(["BSBA", "BSE"]);
 
 export interface AddFacultyPanelProps {
   form: UseFormReturn<FacultyAccountFormInput>;
-  onAddFaculty: (input: FacultyAccountFormInput) => void;
+  onAddFaculty: (input: FacultyAccountFormInput, onboardingPayload?: OnboardingOptionsPayload) => void;
   isCreating: boolean;
   createError: string | null;
   createSuccess: string | null;
@@ -51,6 +81,8 @@ export interface AddFacultyPanelProps {
   profileImageInputKey: number;
   wrapperClassName?: string;
   formClassName?: string;
+  step?: "form" | "onboarding";
+  onStepChange?: (step: "form" | "onboarding") => void;
 }
 
 export function AddFacultyPanel({
@@ -64,6 +96,8 @@ export function AddFacultyPanel({
   profileImageInputKey,
   wrapperClassName,
   formClassName,
+  step: controlledStep,
+  onStepChange,
 }: AddFacultyPanelProps) {
   const [degreePrograms, setDegreePrograms] = useState<ProgramOption[]>([]);
   const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
@@ -72,6 +106,21 @@ export function AddFacultyPanel({
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
   const photoInputId = useId();
+
+  // Onboarding workflow state
+  const [internalStep, setInternalStep] = useState<"form" | "onboarding">("form");
+  const currentStep = controlledStep ?? internalStep;
+  const setStep = (s: "form" | "onboarding") => {
+    setInternalStep(s);
+    onStepChange?.(s);
+  };
+
+  const [onboardingData, setOnboardingData] = useState<OnboardingCheckResult | null>(null);
+  const [pendingFormInput, setPendingFormInput] = useState<FacultyAccountFormInput | null>(null);
+  const [selectedOption, setSelectedOption] = useState<"grace_period" | "custom_deadlines" | "exempt">("grace_period");
+  const [gracePresetDays, setGracePresetDays] = useState<number>(7);
+  const [customGraceDate, setCustomGraceDate] = useState<string>("");
+  const [customPerScheduleDeadlines, setCustomPerScheduleDeadlines] = useState<Record<string, { date: string; time: string }>>({});
 
   useEffect(() => {
     if (!profileImageFile) {
@@ -86,6 +135,45 @@ export function AddFacultyPanel({
       URL.revokeObjectURL(objectUrl);
     };
   }, [profileImageFile]);
+
+  // Check onboarding past deadlines for active term
+  useEffect(() => {
+    let isMounted = true;
+
+    async function checkOnboardingSchedules() {
+      try {
+        const res = await fetch("/api/admin/faculty/onboarding-check", { credentials: "include" });
+        if (res.ok && isMounted) {
+          const data = (await res.json()) as OnboardingCheckResult;
+          setOnboardingData(data);
+
+          // Precompute default 7-day grace date
+          const d = new Date();
+          d.setDate(d.getDate() + 7);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          const defaultDateStr = `${yyyy}-${mm}-${dd}`;
+          setCustomGraceDate(defaultDateStr);
+
+          // Initialize custom per-schedule map
+          const initialMap: Record<string, { date: string; time: string }> = {};
+          (data.schedules || []).forEach((sched) => {
+            initialMap[sched.code] = { date: defaultDateStr, time: "23:59" };
+          });
+          setCustomPerScheduleDeadlines(initialMap);
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    void checkOnboardingSchedules();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -123,50 +211,49 @@ export function AddFacultyPanel({
         }
 
         if (isMounted) {
-          const filtered = rawPrograms.filter(
-            (p: ProgramOption) => !REDUNDANT_CODES.has(p.code.toUpperCase()),
+          const cleanedPrograms = rawPrograms.filter(
+            (p) => !REDUNDANT_CODES.has(p.code),
           );
 
-          const degrees: ProgramOption[] = [];
-          const diplomas: ProgramOption[] = [];
+          setDegreePrograms(
+            cleanedPrograms
+              .filter((p) => !p.code.startsWith("D"))
+              .map((p) => ({
+                id: p.id,
+                code: p.code,
+                name:
+                  DEFAULT_DEGREE_PROGRAMS.find((dp) => dp.code === p.code)?.name ??
+                  p.name,
+              })),
+          );
 
-          if (filtered.length > 0) {
-            filtered.forEach((p: ProgramOption) => {
-              const codeUpper = p.code.toUpperCase();
-              const nameUpper = p.name.toUpperCase();
-              if (codeUpper.startsWith("D") || nameUpper.includes("DIPLOMA")) {
-                diplomas.push(p);
-              } else {
-                degrees.push(p);
-              }
-            });
-          } else {
-            DEFAULT_DEGREE_PROGRAMS.forEach(
-              (p: { code: string; name: string }) =>
-                degrees.push({ id: p.code, ...p }),
-            );
-            DEFAULT_DIPLOMA_COURSES.forEach(
-              (p: { code: string; name: string }) =>
-                diplomas.push({ id: p.code, ...p }),
-            );
-          }
-
-          setDegreePrograms(degrees);
-          setDiplomaCourses(diplomas);
+          setDiplomaCourses(
+            cleanedPrograms
+              .filter((p) => p.code.startsWith("D"))
+              .map((p) => ({
+                id: p.id,
+                code: p.code,
+                name:
+                  DEFAULT_DIPLOMA_COURSES.find((dp) => dp.code === p.code)?.name ??
+                  p.name,
+              })),
+          );
         }
       } catch (err) {
-        console.error("Program fetch error:", err);
+        console.error("Error loading programs:", err);
         if (isMounted) {
           setDegreePrograms(
-            DEFAULT_DEGREE_PROGRAMS.map((p: { code: string; name: string }) => ({
+            DEFAULT_DEGREE_PROGRAMS.map((p) => ({
               id: p.code,
-              ...p,
+              code: p.code,
+              name: p.name,
             })),
           );
           setDiplomaCourses(
-            DEFAULT_DIPLOMA_COURSES.map((p: { code: string; name: string }) => ({
+            DEFAULT_DIPLOMA_COURSES.map((p) => ({
               id: p.code,
-              ...p,
+              code: p.code,
+              name: p.name,
             })),
           );
         }
@@ -187,178 +274,477 @@ export function AddFacultyPanel({
     onProfileImageChange(file);
   };
 
+  const handleFormSubmit = (values: FacultyAccountFormInput) => {
+    // If past deadlines exist in the active term, prompt admin with Onboarding Options
+    if (onboardingData?.hasPastDeadlines && onboardingData.schedules.length > 0) {
+      setPendingFormInput(values);
+      setStep("onboarding");
+    } else {
+      onAddFaculty(values);
+    }
+  };
+
+  const handleConfirmOnboarding = () => {
+    if (!pendingFormInput) return;
+
+    let gracePeriodIso = "";
+    if (selectedOption === "grace_period") {
+      let targetDate = customGraceDate;
+      if (!targetDate) {
+        const d = new Date();
+        d.setDate(d.getDate() + (gracePresetDays || 7));
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        targetDate = `${yyyy}-${mm}-${dd}`;
+      }
+      gracePeriodIso = `${targetDate}T23:59:59+08:00`;
+    }
+
+    const customDeadlinesFormatted: Record<string, string> = {};
+    if (selectedOption === "custom_deadlines") {
+      Object.entries(customPerScheduleDeadlines).forEach(([code, val]) => {
+        if (val.date) {
+          customDeadlinesFormatted[code] = `${val.date}T${val.time || "23:59"}:00+08:00`;
+        }
+      });
+    }
+
+    onAddFaculty(pendingFormInput, {
+      onboardingOption: selectedOption,
+      gracePeriodIso: gracePeriodIso || undefined,
+      customDeadlines: selectedOption === "custom_deadlines" ? customDeadlinesFormatted : undefined,
+    });
+  };
+
   return (
     <div className={wrapperClassName ?? "flex flex-col w-full"}>
-      <form
-        className={`flex flex-1 w-full flex-col gap-4 ${formClassName ?? ""}`}
-        onSubmit={form.handleSubmit(onAddFaculty)}
-      >
-        <div className="grid gap-3 md:grid-cols-3">
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="firstName">
-              First Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="firstName"
-              placeholder="e.g. Juan"
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
-              {...form.register("firstName")}
-            />
-            <FieldError message={form.formState.errors.firstName?.message} />
+      {currentStep === "onboarding" && onboardingData ? (
+        /* ================= ONBOARDING OPTIONS SCREEN ================= */
+        <div className="flex flex-col gap-4">
+          {/* Past Deadlines Notice Banner */}
+          <div className="rounded-xl border border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 p-4 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <AppIcon icon={WarningTriangle} size="md" color="warning" />
+              <span className="font-bold text-sm text-amber-950 dark:text-amber-200">
+                Past Submission Deadlines Detected
+              </span>
+            </div>
+            <p className="text-xs text-amber-900/90 dark:text-amber-300/90 leading-relaxed">
+              The active academic term <span className="font-semibold text-slate-900 dark:text-slate-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> has <span className="font-semibold">{onboardingData.schedules.length} requirement schedule{onboardingData.schedules.length > 1 ? "s" : ""}</span> whose global deadline passed on <span className="font-semibold text-rose-700 dark:text-rose-400">{onboardingData.globalDeadline?.endDate} at {onboardingData.globalDeadline?.endTime || "11:59 PM"}</span>.
+            </p>
+            <p className="text-xs text-amber-900/80 dark:text-amber-300/80">
+              Select an onboarding policy for <strong className="text-slate-900 dark:text-slate-100">{pendingFormInput?.firstName} {pendingFormInput?.lastName}</strong>:
+            </p>
           </div>
 
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="middleName">
-              Middle Name
-            </label>
-            <input
-              id="middleName"
-              placeholder="e.g. Santos"
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
-              {...form.register("middleName")}
-            />
-            <FieldError message={form.formState.errors.middleName?.message} />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="lastName">
-              Last Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="lastName"
-              placeholder="e.g. Dela Cruz"
-              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
-              {...form.register("lastName")}
-            />
-            <FieldError message={form.formState.errors.lastName?.message} />
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="programId">
-            Academic Program / Department <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="programId"
-            className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 focus:outline-none focus:border-slate-900 dark:focus:border-slate-100 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10 disabled:opacity-50"
-            disabled={isLoadingPrograms || isCreating}
-            {...form.register("programId")}
-          >
-            <option value="" className="bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400">
-              {isLoadingPrograms ? "Loading programs..." : "-- Select Program / Department --"}
-            </option>
-
-            {degreePrograms.length > 0 && (
-              <optgroup label="Degree Programs" className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
-                {degreePrograms.map((p) => (
-                  <option key={p.id} value={p.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-normal">
-                    {p.code} — {p.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-
-            {diplomaCourses.length > 0 && (
-              <optgroup label="Diploma Courses" className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
-                {diplomaCourses.map((p) => (
-                  <option key={p.id} value={p.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-normal">
-                    {p.code} — {p.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </select>
-          <FieldError message={form.formState.errors.programId?.message} />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 block">
-            Profile Photo
-          </label>
-          <div className="border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-3">
-            {imagePreview ? (
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="w-12 h-12 rounded-full object-cover border border-slate-300 dark:border-slate-700 shrink-0"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">
-                IMG
+          {/* Options Cards */}
+          <div className="space-y-3">
+            {/* Option A: Grace Period */}
+            <div
+              onClick={() => setSelectedOption("grace_period")}
+              className={`rounded-xl border p-4 transition-all cursor-pointer space-y-3 ${
+                selectedOption === "grace_period"
+                  ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-500/20"
+                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    checked={selectedOption === "grace_period"}
+                    onChange={() => setSelectedOption("grace_period")}
+                    className="mt-1 accent-amber-500 cursor-pointer"
+                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        Option A: Grace Period
+                      </span>
+                      <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
+                        Recommended
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                      Automatically assign a custom due date ({gracePresetDays > 0 ? `${gracePresetDays} days from now` : "custom date"}) for all past schedules in the active term. Status will be set to <span className="font-semibold text-indigo-600 dark:text-indigo-400">Pending</span> (submission portal unlocked).
+                    </p>
+                  </div>
+                </div>
               </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <label
-                htmlFor={photoInputId}
-                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer inline-block transition-all"
-              >
-                Choose Profile Photo
+
+              {selectedOption === "grace_period" && (
+                <div className="pl-7 pt-1 space-y-2 border-t border-amber-200 dark:border-amber-900/40 mt-2">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                    Choose Grace Duration:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {[7, 14, 30].map((days) => (
+                      <button
+                        type="button"
+                        key={days}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setGracePresetDays(days);
+                          const d = new Date();
+                          d.setDate(d.getDate() + days);
+                          const yyyy = d.getFullYear();
+                          const mm = String(d.getMonth() + 1).padStart(2, "0");
+                          const dd = String(d.getDate()).padStart(2, "0");
+                          setCustomGraceDate(`${yyyy}-${mm}-${dd}`);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                          gracePresetDays === days
+                            ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+                        }`}
+                      >
+                        +{days} Days
+                      </button>
+                    ))}
+                    <div className="flex items-center gap-1.5 sm:ml-auto">
+                      <span className="text-xs text-slate-500">Custom Date:</span>
+                      <input
+                        type="date"
+                        value={customGraceDate}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          setCustomGraceDate(e.target.value);
+                          setGracePresetDays(0);
+                        }}
+                        className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                    Effective Target Deadline: {customGraceDate || "7 days from today"} at 11:59 PM.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Option B: Custom Deadlines */}
+            <div
+              onClick={() => setSelectedOption("custom_deadlines")}
+              className={`rounded-xl border p-4 transition-all cursor-pointer space-y-3 ${
+                selectedOption === "custom_deadlines"
+                  ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-500/20"
+                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <input
+                  type="radio"
+                  checked={selectedOption === "custom_deadlines"}
+                  onChange={() => setSelectedOption("custom_deadlines")}
+                  className="mt-1 accent-amber-500 cursor-pointer"
+                />
+                <div>
+                  <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                    Option B: Custom Deadlines per Requirement
+                  </span>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                    Manually pick a specific individual due date & time for each past requirement schedule.
+                  </p>
+                </div>
+              </div>
+
+              {selectedOption === "custom_deadlines" && (
+                <div className="pl-7 pt-2 space-y-2 border-t border-amber-200 dark:border-amber-900/40 mt-2 max-h-56 overflow-y-auto pr-1">
+                  {onboardingData.schedules.map((sched) => (
+                    <div
+                      key={sched.code}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs"
+                    >
+                      <div>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">{sched.title}</span>
+                        <span className="text-[10px] text-slate-400 block font-mono">{sched.code}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="date"
+                          value={customPerScheduleDeadlines[sched.code]?.date || customGraceDate}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            const newDate = e.target.value;
+                            setCustomPerScheduleDeadlines((prev) => ({
+                              ...prev,
+                              [sched.code]: {
+                                date: newDate,
+                                time: prev[sched.code]?.time || "23:59",
+                              },
+                            }));
+                          }}
+                          className="p-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs"
+                        />
+                        <input
+                          type="time"
+                          value={customPerScheduleDeadlines[sched.code]?.time || "23:59"}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            const newTime = e.target.value;
+                            setCustomPerScheduleDeadlines((prev) => ({
+                              ...prev,
+                              [sched.code]: {
+                                date: prev[sched.code]?.date || customGraceDate,
+                                time: newTime,
+                              },
+                            }));
+                          }}
+                          className="p-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Option C: Exempt / Waive */}
+            <div
+              onClick={() => setSelectedOption("exempt")}
+              className={`rounded-xl border p-4 transition-all cursor-pointer ${
+                selectedOption === "exempt"
+                  ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-500/20"
+                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <input
+                  type="radio"
+                  checked={selectedOption === "exempt"}
+                  onChange={() => setSelectedOption("exempt")}
+                  className="mt-1 accent-amber-500 cursor-pointer"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                      Option C: Exempt / Waive Requirements
+                    </span>
+                    <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
+                      Exempt
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                    Mark all past schedules in the active term as <span className="font-semibold text-slate-800 dark:text-slate-200">Exempted</span> for this new faculty member. Both file uploads and extension requests will be disabled.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <AlertPopup
+            type="error"
+            message={createError !== dismissedError ? createError : null}
+            position="inline"
+            onClose={() => setDismissedError(createError)}
+          />
+
+          <AlertPopup
+            type="success"
+            message={createSuccess !== dismissedSuccess ? createSuccess : null}
+            position="inline"
+            onClose={() => setDismissedSuccess(createSuccess)}
+          />
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setStep("form")}
+              disabled={isCreating}
+              className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition cursor-pointer"
+            >
+              ← Back to Details
+            </button>
+
+            <button
+              type="button"
+              onClick={handleConfirmOnboarding}
+              disabled={isCreating}
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-xs shadow-md transition cursor-pointer disabled:opacity-50"
+            >
+              {isCreating ? "Finalizing Account..." : "Confirm & Create Account"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* ================= REGULAR FORM SCREEN ================= */
+        <form
+          className={`flex flex-1 w-full flex-col gap-4 ${formClassName ?? ""}`}
+          onSubmit={form.handleSubmit(handleFormSubmit)}
+        >
+          <div className="grid gap-3 md:grid-cols-3">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="firstName">
+                First Name <span className="text-red-500">*</span>
               </label>
               <input
-                key={profileImageInputKey}
-                id={photoInputId}
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  const file = event.target.files?.[0] ?? null;
-                  handleImageChange(file);
-                }}
-                className="hidden"
+                id="firstName"
+                placeholder="e.g. Juan"
+                className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+                {...form.register("firstName")}
               />
+              <FieldError message={form.formState.errors.firstName?.message} />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="middleName">
+                Middle Name
+              </label>
+              <input
+                id="middleName"
+                placeholder="e.g. Santos"
+                className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+                {...form.register("middleName")}
+              />
+              <FieldError message={form.formState.errors.middleName?.message} />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="lastName">
+                Last Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="lastName"
+                placeholder="e.g. Dela Cruz"
+                className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+                {...form.register("lastName")}
+              />
+              <FieldError message={form.formState.errors.lastName?.message} />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="programId">
+              Department / Program <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="programId"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10 cursor-pointer disabled:opacity-50"
+              disabled={isLoadingPrograms}
+              {...form.register("programId")}
+            >
+              <option value="">
+                {isLoadingPrograms ? "Loading programs..." : "Select Department / Program"}
+              </option>
+
+              {degreePrograms.length > 0 && (
+                <optgroup label="Degree Programs" className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
+                  {degreePrograms.map((p) => (
+                    <option key={p.id} value={p.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-normal">
+                      {p.code} — {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
+              {diplomaCourses.length > 0 && (
+                <optgroup label="Diploma Courses" className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold">
+                  {diplomaCourses.map((p) => (
+                    <option key={p.id} value={p.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-normal">
+                      {p.code} — {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <FieldError message={form.formState.errors.programId?.message} />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 block">
+              Profile Photo
+            </label>
+            <div className="border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-3">
+              {imagePreview ? (
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-12 h-12 rounded-full object-cover border border-slate-300 dark:border-slate-700 shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0">
+                  IMG
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <label
+                  htmlFor={photoInputId}
+                  className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer inline-block transition-all"
+                >
+                  Choose Profile Photo
+                </label>
+                <input
+                  key={profileImageInputKey}
+                  id={photoInputId}
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    handleImageChange(file);
+                  }}
+                  className="hidden"
+                />
+                {profileImageFile ? (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+                    {profileImageFile.name}
+                  </p>
+                ) : null}
+              </div>
               {profileImageFile ? (
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
-                  {profileImageFile.name}
-                </p>
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
+                  onClick={() => handleImageChange(null)}
+                >
+                  Remove
+                </button>
               ) : null}
             </div>
-            {profileImageFile ? (
-              <button
-                type="button"
-                className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
-                onClick={() => handleImageChange(null)}
-              >
-                Remove
-              </button>
-            ) : null}
           </div>
-        </div>
 
-        <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="email">
-            Email Address <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="email"
-            type="email"
-            className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
-            placeholder="faculty@pup.edu.ph"
-            {...form.register("email")}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="email">
+              Email Address <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
+              placeholder="faculty@pup.edu.ph"
+              {...form.register("email")}
+            />
+            <FieldError message={form.formState.errors.email?.message} />
+          </div>
+
+          <AlertPopup
+            type="error"
+            message={createError !== dismissedError ? createError : null}
+            position="inline"
+            onClose={() => setDismissedError(createError)}
           />
-          <FieldError message={form.formState.errors.email?.message} />
-        </div>
 
-        <AlertPopup
-          type="error"
-          message={createError !== dismissedError ? createError : null}
-          position="inline"
-          onClose={() => setDismissedError(createError)}
-        />
+          <AlertPopup
+            type="success"
+            message={createSuccess !== dismissedSuccess ? createSuccess : null}
+            position="inline"
+            onClose={() => setDismissedSuccess(createSuccess)}
+          />
 
-        <AlertPopup
-          type="success"
-          message={createSuccess !== dismissedSuccess ? createSuccess : null}
-          position="inline"
-          onClose={() => setDismissedSuccess(createSuccess)}
-        />
-
-        <button
-          className="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"
-          type="submit"
-          disabled={isCreating || isLoadingPrograms}
-        >
-          {isCreating ? "Sending invite..." : "Create Faculty Account"}
-        </button>
-      </form>
+          <button
+            className="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"
+            type="submit"
+            disabled={isCreating || isLoadingPrograms}
+          >
+            {isCreating
+              ? "Validating..."
+              : onboardingData?.hasPastDeadlines
+              ? "Next: Onboarding Options →"
+              : "Create Faculty Account"}
+          </button>
+        </form>
+      )}
     </div>
   );
 }
@@ -373,22 +759,38 @@ export function AddFacultyModal({
   onClose,
   ...panelProps
 }: AddFacultyModalProps) {
+  const [modalStep, setModalStep] = useState<"form" | "onboarding">("form");
+
+  useEffect(() => {
+    if (!isOpen) {
+      setModalStep("form");
+    }
+  }, [isOpen]);
+
   if (!isOpen) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[92vh] overflow-y-auto">
         <ModalHeader
-          icon={UserPlus}
-          title="Add Faculty Account"
-          subtitle="Create credentials and assign department permissions"
+          icon={modalStep === "onboarding" ? Hourglass : UserPlus}
+          title={modalStep === "onboarding" ? "New Faculty Onboarding" : "Add Faculty Account"}
+          subtitle={
+            modalStep === "onboarding"
+              ? "Configure onboarding policy for active term schedules with past deadlines"
+              : "Create credentials and assign department permissions"
+          }
           onClose={onClose}
           className="-mx-6 -mt-6 mb-6 rounded-t-2xl"
         />
 
-        <AddFacultyPanel {...panelProps} />
+        <AddFacultyPanel
+          {...panelProps}
+          step={modalStep}
+          onStepChange={setModalStep}
+        />
       </div>
     </div>
   );

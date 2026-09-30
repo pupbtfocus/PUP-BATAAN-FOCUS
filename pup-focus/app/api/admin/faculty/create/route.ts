@@ -10,6 +10,7 @@ import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
 } from "@/lib/faculty-profile";
+import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
 
 async function readRequestPayload(request: NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";
@@ -32,6 +33,17 @@ async function readRequestPayload(request: NextRequest) {
         formData.get("profileImage") instanceof File
           ? (formData.get("profileImage") as File)
           : null,
+      onboardingOption: readString("onboardingOption") || null,
+      gracePeriodIso: readString("gracePeriodIso") || null,
+      customDeadlines: (() => {
+        const raw = readString("customDeadlines");
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      })(),
     };
   }
 
@@ -43,6 +55,9 @@ async function readRequestPayload(request: NextRequest) {
     programId?: string;
     program_id?: string;
     fullName?: string;
+    onboardingOption?: string;
+    gracePeriodIso?: string;
+    customDeadlines?: Record<string, string>;
   };
 
   const legacyNameParts =
@@ -62,6 +77,9 @@ async function readRequestPayload(request: NextRequest) {
     email: body.email ?? "",
     programId: (body.programId ?? body.program_id ?? "").trim(),
     profileImage: null,
+    onboardingOption: body.onboardingOption || null,
+    gracePeriodIso: body.gracePeriodIso || null,
+    customDeadlines: body.customDeadlines || null,
   };
 }
 
@@ -83,8 +101,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { firstName, middleName, lastName, email, programId, profileImage } =
-      await readRequestPayload(request);
+    const {
+      firstName,
+      middleName,
+      lastName,
+      email,
+      programId,
+      profileImage,
+      onboardingOption,
+      gracePeriodIso,
+      customDeadlines,
+    } = await readRequestPayload(request);
 
     const fullName = buildFacultyFullName({
       firstName,
@@ -343,6 +370,87 @@ export async function POST(request: NextRequest) {
             },
             { onConflict: "faculty_profile_id,program_id,academic_year,term" },
           );
+
+          // Initialize requirement tracking records based on onboarding choice for past schedules
+          if (
+            onboardingOption &&
+            ["grace_period", "custom_deadlines", "exempt"].includes(onboardingOption)
+          ) {
+            try {
+              // 1. Get curriculum
+              const { data: curr } = await supabase
+                .from("curricula")
+                .select("id")
+                .limit(1)
+                .maybeSingle();
+
+              // 2. Get active requirement codes
+              let targetReqCodes: string[] = [];
+              const { data: activeTemplates } = await supabase
+                .from("requirement_templates")
+                .select("code")
+                .eq("is_active", true);
+
+              if (activeTemplates && activeTemplates.length > 0) {
+                targetReqCodes = activeTemplates.map((t) => t.code);
+              } else {
+                targetReqCodes = [...DEFAULT_REQUIREMENTS];
+              }
+
+              // Compute default 7-day grace period ISO if not provided
+              let defaultGraceIso = gracePeriodIso;
+              if (!defaultGraceIso) {
+                const gd = new Date();
+                gd.setDate(gd.getDate() + 7);
+                const yyyy = gd.getFullYear();
+                const mm = String(gd.getMonth() + 1).padStart(2, "0");
+                const dd = String(gd.getDate()).padStart(2, "0");
+                defaultGraceIso = `${yyyy}-${mm}-${dd}T23:59:59+08:00`;
+              }
+
+              const nowIso = new Date().toISOString();
+              const curriculumId = curr?.id;
+
+              if (curriculumId && targetReqCodes.length > 0) {
+                for (const code of targetReqCodes) {
+                  let subStatus = "pending";
+                  let subDueAt: string | null = null;
+                  let subRemarks: string | null = null;
+
+                  if (onboardingOption === "grace_period") {
+                    subStatus = "pending";
+                    subDueAt = defaultGraceIso;
+                    subRemarks = "Initialized with 7-day onboarding grace period";
+                  } else if (onboardingOption === "custom_deadlines") {
+                    subStatus = "pending";
+                    subDueAt = customDeadlines?.[code] || defaultGraceIso;
+                    subRemarks = "Initialized with custom onboarding deadline";
+                  } else if (onboardingOption === "exempt") {
+                    subStatus = "exempted";
+                    subDueAt = null;
+                    subRemarks = "Exempted during new faculty onboarding";
+                  }
+
+                  await supabase.from("submissions").insert({
+                    id: crypto.randomUUID(),
+                    faculty_profile_id: newProfile.id,
+                    curriculum_id: curriculumId,
+                    requirement_code: code,
+                    status: subStatus,
+                    due_at: subDueAt,
+                    remarks: subRemarks,
+                    created_at: nowIso,
+                    updated_at: nowIso,
+                  });
+                }
+              }
+            } catch (initErr) {
+              logger.error("faculty_onboarding_requirements_init_failed", {
+                error: initErr instanceof Error ? initErr.message : String(initErr),
+                facultyProfileId: newProfile.id,
+              });
+            }
+          }
         }
       } catch (assignError) {
         logger.error("faculty_preinsert_failed", {
@@ -392,6 +500,7 @@ export async function POST(request: NextRequest) {
           program_name: programRecord.name,
           invite_sent: sent,
           send_error: sendError,
+          onboarding_option: onboardingOption || "default",
         },
       });
     } catch (auditError) {
