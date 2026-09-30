@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ isCancelled: false });
     }
 
-    // 1. Check if user still exists in auth.users
+    // 1. Check if user still exists in auth.users or profiles
     const {
       data: { users },
     } = await supabase.auth.admin.listUsers({ perPage: 1000 });
@@ -43,6 +43,12 @@ export async function GET(request: NextRequest) {
     const activeUser = users?.find(
       (u) => u.email?.trim().toLowerCase() === email
     );
+
+    const { data: userProfile } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, created_at")
+      .ilike("email", email)
+      .maybeSingle();
 
     // If an active user exists and has confirmed, it was not cancelled
     if (activeUser && (activeUser.email_confirmed_at || activeUser.confirmed_at || activeUser.last_sign_in_at)) {
@@ -66,17 +72,33 @@ export async function GET(request: NextRequest) {
       return targetEmail === email;
     });
 
+    const accountCreatedAt = activeUser?.created_at || userProfile?.created_at;
+
     if (cancelledLog) {
-      return NextResponse.json({
-        isCancelled: true,
-        cancelledAt: cancelledLog.created_at,
-        email,
-        fullName: cancelledLog.metadata?.target_full_name || email.split("@")[0],
-      });
+      // If an active account exists, only treat as cancelled if cancellation happened AFTER account creation
+      if (accountCreatedAt) {
+        const accountTime = new Date(accountCreatedAt).getTime();
+        const cancelTime = new Date(cancelledLog.created_at).getTime();
+        if (cancelTime > accountTime) {
+          return NextResponse.json({
+            isCancelled: true,
+            cancelledAt: cancelledLog.created_at,
+            email,
+            fullName: cancelledLog.metadata?.target_full_name || userProfile?.full_name || email.split("@")[0],
+          });
+        }
+      } else {
+        return NextResponse.json({
+          isCancelled: true,
+          cancelledAt: cancelledLog.created_at,
+          email,
+          fullName: cancelledLog.metadata?.target_full_name || email.split("@")[0],
+        });
+      }
     }
 
-    // If user does not exist in auth at all, but was checking an invite link
-    if (!activeUser) {
+    // If user does not exist in auth or profiles at all
+    if (!activeUser && !userProfile) {
       return NextResponse.json({
         isCancelled: true,
         reason: "User record not found / invite revoked",

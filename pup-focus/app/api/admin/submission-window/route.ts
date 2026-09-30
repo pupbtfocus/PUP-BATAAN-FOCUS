@@ -5,6 +5,8 @@ import {
   format24HourTo12Hour,
   evaluateSubmissionWindow,
   getSubmissionWindow,
+  getTodayInManila,
+  getCurrentTimeInManila,
   isAllowedAcademicYear,
   isMissingSubmissionWindowColumnsError,
   normalizeSemester,
@@ -471,6 +473,15 @@ export async function DELETE() {
 
     const supabase = getServiceRoleClient();
     const activeTerm = await resolveActiveAcademicTerm(supabase);
+    const todayManila = getTodayInManila();
+    const timeManila = getCurrentTimeInManila();
+
+    // Capture existing window before deleting so term history reflects closure
+    const { data: existingWin } = await supabase
+      .from("submission_windows")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
 
     const { error } = await supabase
       .from("submission_windows")
@@ -485,6 +496,24 @@ export async function DELETE() {
         },
         { status: 500 },
       );
+    }
+
+    // Clear the active schedule in submission_window_terms while preserving the term record
+    try {
+      await supabase.from("submission_window_terms").upsert(
+        {
+          academic_year: existingWin?.academic_year || activeTerm.academicYear,
+          semester: existingWin?.semester || activeTerm.semester,
+          start_date: null,
+          end_date: null,
+          start_time: null,
+          end_time: null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "academic_year,semester" },
+      );
+    } catch {
+      // Best-effort update
     }
 
     const status = evaluateSubmissionWindow(

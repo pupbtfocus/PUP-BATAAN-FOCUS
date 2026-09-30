@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const deletedEmails = new Set<string>();
+    const latestDeleteByEmail = new Map<string, string>();
     const deletedUserIds = new Set<string>();
     if (deletedAuditLogs) {
       for (const log of deletedAuditLogs) {
@@ -154,7 +154,12 @@ export async function GET(request: NextRequest) {
           log.metadata?.email ||
           ""
         ).trim().toLowerCase();
-        if (dEmail) deletedEmails.add(dEmail);
+        if (dEmail) {
+          const prev = latestDeleteByEmail.get(dEmail);
+          if (!prev || new Date(log.created_at) > new Date(prev)) {
+            latestDeleteByEmail.set(dEmail, log.created_at);
+          }
+        }
         if (log.metadata?.target_auth_user_id) {
           deletedUserIds.add(log.metadata.target_auth_user_id);
         }
@@ -191,14 +196,23 @@ export async function GET(request: NextRequest) {
       const profile = profileByUserId.get(u.id) || profileByEmail.get(email);
       const auditLog = auditByEmail.get(email);
 
-      // Filter out deleted accounts, known bug accounts, or orphaned auth users without a profile
+      // Check if user was deleted
+      const userCreatedAt = new Date(u.created_at).getTime();
+      const deleteLogTime = latestDeleteByEmail.get(email)
+        ? new Date(latestDeleteByEmail.get(email)!).getTime()
+        : 0;
+
+      // An auth user is only considered deleted if explicitly matched by deleted user ID,
+      // or if an email deletion audit log was recorded AFTER this auth user was created.
+      const isDeleted =
+        deletedUserIds.has(u.id) ||
+        (deleteLogTime > 0 && deleteLogTime > userCreatedAt);
+
       const isKnownBugAccount = email === "qa.faculty2@pupfocus.dev";
-      const isDeleted = deletedEmails.has(email) || deletedUserIds.has(u.id);
       const isOrphaned = !profile && !auditLog && !u.last_sign_in_at;
 
       if (isDeleted || isKnownBugAccount || isOrphaned) {
-        // Clean up lingering orphaned auth user in background
-        void supabase.auth.admin.deleteUser(u.id).catch(() => null);
+        // Skip from display; never passively delete auth users in a GET query
         continue;
       }
 
@@ -301,15 +315,23 @@ export async function GET(request: NextRequest) {
         if (
           !targetEmail ||
           logsMap.has(targetEmail) ||
-          deletedEmails.has(targetEmail) ||
           targetEmail === "qa.faculty2@pupfocus.dev"
         ) {
           continue;
         }
 
+        const logTime = new Date(log.created_at).getTime();
+        const deleteLogTime = latestDeleteByEmail.get(targetEmail)
+          ? new Date(latestDeleteByEmail.get(targetEmail)!).getTime()
+          : 0;
+
+        if (deleteLogTime > 0 && deleteLogTime >= logTime) {
+          continue;
+        }
+
         // If this invite was cancelled after it was created, skip it
         const cancelledAt = cancelledByEmail.get(targetEmail);
-        if (cancelledAt && new Date(cancelledAt) >= new Date(log.created_at)) {
+        if (cancelledAt && new Date(cancelledAt).getTime() >= logTime) {
           continue;
         }
 

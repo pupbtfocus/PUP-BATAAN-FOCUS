@@ -181,8 +181,8 @@ export function SubmissionWindowPanel({
   // Edit vs. Save schedule toggle (defaults to editing if no schedule exists yet)
   const [isEditingSchedule, setIsEditingSchedule] = useState(false);
 
-  // 10-second safety countdown for Close Submissions
-  const [closeCountdown, setCloseCountdown] = useState(10);
+  // 3-second safety countdown for Close Submissions
+  const [closeCountdown, setCloseCountdown] = useState(3);
 
   // Snapshot refs for cancel-edit restore
   const savedOpenDateTimeRef = useRef("");
@@ -555,7 +555,7 @@ export function SubmissionWindowPanel({
   }
 
   function handleCloseSubmission() {
-    setCloseCountdown(10);
+    setCloseCountdown(3);
     setShowCloseConfirmation(true);
   }
 
@@ -1633,7 +1633,7 @@ export function SubmissionWindowPanel({
                       cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5"
                       className="text-rose-600 dark:text-rose-500 transition-all duration-1000 ease-linear"
                       strokeDasharray="97.39"
-                      strokeDashoffset={97.39 * (1 - closeCountdown / 10)}
+                      strokeDashoffset={97.39 * (1 - closeCountdown / 3)}
                       strokeLinecap="round"
                     />
                   </svg>
@@ -1655,7 +1655,7 @@ export function SubmissionWindowPanel({
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => { setShowCloseConfirmation(false); setCloseCountdown(10); }}
+                onClick={() => { setShowCloseConfirmation(false); setCloseCountdown(3); }}
                 className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer shadow-xs"
               >
                 Cancel
