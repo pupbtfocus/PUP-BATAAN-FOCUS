@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Calendar, CheckCircle, ClockRotateRight, EditPencil, FloppyDisk, Hourglass, NavArrowRight, ShieldAlert, SystemRestart, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Calendar, CheckCircle, ClockRotateRight, EditPencil, FloppyDisk, Hourglass, NavArrowRight, Page, ShieldAlert, SystemRestart, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { Button } from "@/components/ui/button";
@@ -165,6 +165,11 @@ export function SubmissionWindowPanel({
   const [selectedRequestForReject, setSelectedRequestForReject] = useState<any | null>(null);
   const [rejectRemarks, setRejectRemarks] = useState("");
   const [isReviewingRequest, setIsReviewingRequest] = useState(false);
+  const [selectedRequestForApprove, setSelectedRequestForApprove] = useState<any | null>(null);
+  const [approveDate, setApproveDate] = useState("");
+  const [approveTime, setApproveTime] = useState("23:59");
+  const [approveRemarks, setApproveRemarks] = useState("");
+  const [isApprovingRequest, setIsApprovingRequest] = useState(false);
   const [activeLinkedRequestId, setActiveLinkedRequestId] = useState<string | null>(null);
   const [extendModalPrefills, setExtendModalPrefills] = useState<{
     scope?: "global" | "program" | "faculty";
@@ -593,7 +598,7 @@ export function SubmissionWindowPanel({
         }),
       });
       if (res.ok) {
-        setSuccess("Extension request has been declined.");
+        setSuccess("Extension request has been declined. Portal remains locked for overdue requirements.");
         setSelectedRequestForReject(null);
         setRejectRemarks("");
         void fetchExtensionRequests();
@@ -605,6 +610,61 @@ export function SubmissionWindowPanel({
       setError(err instanceof Error ? err.message : "Error declining extension request.");
     } finally {
       setIsReviewingRequest(false);
+    }
+  }
+
+  function handleOpenApproveModal(req: any) {
+    setSelectedRequestForApprove(req);
+    let defaultDate = req.requested_date || "";
+    let defaultTime = req.requested_time || "23:59";
+    if (!defaultDate) {
+      const preset = req.requested_preset || "+3 Days";
+      const d = new Date();
+      if (preset === "+24 Hours") d.setHours(d.getHours() + 24);
+      else if (preset === "+48 Hours") d.setHours(d.getHours() + 48);
+      else if (preset === "+3 Days") d.setDate(d.getDate() + 3);
+      else if (preset === "+1 Week") d.setDate(d.getDate() + 7);
+      else d.setDate(d.getDate() + 3);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      defaultDate = `${yyyy}-${mm}-${dd}`;
+    }
+    setApproveDate(defaultDate);
+    setApproveTime(defaultTime);
+    setApproveRemarks("");
+  }
+
+  async function handleConfirmApproveRequest() {
+    if (!selectedRequestForApprove) return;
+    setIsApprovingRequest(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/submission-window/extension-requests", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          requestId: selectedRequestForApprove.id,
+          action: "approve",
+          approvedDate: approveDate,
+          approvedTime: approveTime,
+          adminRemarks: approveRemarks.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        setSuccess(`Extension request approved until ${approveDate} at ${approveTime}. Submission portal unlocked for faculty.`);
+        setSelectedRequestForApprove(null);
+        void fetchExtensionRequests();
+        onWindowChange?.();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error || "Failed to approve extension request.");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error approving extension request.");
+    } finally {
+      setIsApprovingRequest(false);
     }
   }
 
@@ -1132,10 +1192,15 @@ export function SubmissionWindowPanel({
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 shrink-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 text-xs text-slate-500 shrink-0">
                         <span className="font-semibold text-amber-800 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
                           {req.requested_preset || "+3 Days"}
                         </span>
+                        {req.requested_date && (
+                          <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                            (Target: {req.requested_date} {req.requested_time || "23:59"})
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -1159,16 +1224,38 @@ export function SubmissionWindowPanel({
                       &ldquo;{req.reason}&rdquo;
                     </div>
 
+                    {/* Supporting Document Attachment */}
+                    {req.supporting_document_url || req.supporting_document_name ? (
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <a
+                          href={`/api/faculty/submissions/extension-request/document?requestId=${req.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 text-[11px] font-semibold transition"
+                        >
+                          <AppIcon icon={Page} size="xs" color="inherit" />
+                          <span>Supporting Document: {req.supporting_document_name || "View Document"}</span>
+                        </a>
+                      </div>
+                    ) : null}
+
+                    {/* Approved details if already approved */}
+                    {req.status === "approved" && req.approved_date && (
+                      <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-[11px] text-emerald-800 dark:text-emerald-300">
+                        <span className="font-semibold">Approved Custom Deadline:</span> {req.approved_date} at {req.approved_time || "11:59 PM"}
+                      </div>
+                    )}
+
                     {/* Admin remarks if reviewed */}
                     {req.admin_remarks && (
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        <span className="font-semibold">Admin remarks:</span> {req.admin_remarks}
+                        <span className="font-semibold">Approver remarks:</span> {req.admin_remarks}
                       </p>
                     )}
 
                     {/* Pending Action Buttons */}
                     {req.status === "pending" && (
-                      <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
                         <button
                           type="button"
                           onClick={() => setSelectedRequestForReject(req)}
@@ -1178,10 +1265,10 @@ export function SubmissionWindowPanel({
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleOpenExtendForRequest(req)}
-                          className="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-xs"
+                          onClick={() => handleOpenApproveModal(req)}
+                          className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer shadow-xs"
                         >
-                          Extend Window ({req.requested_preset || "+3 Days"})
+                          Approve Extension
                         </button>
                       </div>
                     )}
@@ -1206,7 +1293,7 @@ export function SubmissionWindowPanel({
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Reason / Remarks for Faculty (Optional)
+                Reason / Feedback Remarks for Faculty (Optional)
               </label>
               <textarea
                 value={rejectRemarks}
@@ -1216,6 +1303,10 @@ export function SubmissionWindowPanel({
                 className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
               />
             </div>
+
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Declining this request keeps the requirement <span className="font-semibold text-rose-600 dark:text-rose-400">Overdue</span> and leaves the submission portal locked.
+            </p>
 
             <div className="flex justify-end gap-2 pt-2">
               <button
@@ -1236,6 +1327,103 @@ export function SubmissionWindowPanel({
                 className="px-4 py-2 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition cursor-pointer shadow-xs disabled:opacity-50"
               >
                 {isReviewingRequest ? "Declining..." : "Confirm Decline"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Approve Extension Request Modal */}
+      {selectedRequestForApprove ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+            <ModalHeader
+              icon={CheckCircle}
+              title="Approve Extension Request"
+              subtitle={`Faculty: ${selectedRequestForApprove.faculty_name} • ${selectedRequestForApprove.requested_preset || "+3 Days"}`}
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
+              <p className="text-slate-600 dark:text-slate-300">
+                <span className="font-semibold text-slate-800 dark:text-slate-200">Reason:</span> &ldquo;{selectedRequestForApprove.reason}&rdquo;
+              </p>
+              {selectedRequestForApprove.supporting_document_url && (
+                <div className="pt-1">
+                  <a
+                    href={`/api/faculty/submissions/extension-request/document?requestId=${selectedRequestForApprove.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-300 hover:underline font-semibold"
+                  >
+                    <AppIcon icon={Page} size="xs" color="inherit" />
+                    <span>View Supporting Document ({selectedRequestForApprove.supporting_document_name || "Attachment"})</span>
+                  </a>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Approved Custom Due Date
+                </label>
+                <input
+                  type="date"
+                  value={approveDate}
+                  onChange={(e) => setApproveDate(e.target.value)}
+                  className="w-full p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Approved Time
+                </label>
+                <input
+                  type="time"
+                  value={approveTime}
+                  onChange={(e) => setApproveTime(e.target.value)}
+                  className="w-full p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Approver Remarks / Instructions (Optional)
+              </label>
+              <textarea
+                value={approveRemarks}
+                onChange={(e) => setApproveRemarks(e.target.value)}
+                placeholder="e.g. Extension approved. Please complete submissions before the deadline."
+                rows={2}
+                className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Assigns this date as the individual custom due date, sets status to <span className="font-semibold text-indigo-600 dark:text-indigo-400">Extended</span>, and unlocks the portal until that new date.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRequestForApprove(null);
+                  setApproveRemarks("");
+                }}
+                disabled={isApprovingRequest}
+                className="px-4 py-2 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmApproveRequest()}
+                disabled={isApprovingRequest || !approveDate}
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                {isApprovingRequest ? "Approving..." : "Confirm Approval"}
               </button>
             </div>
           </div>

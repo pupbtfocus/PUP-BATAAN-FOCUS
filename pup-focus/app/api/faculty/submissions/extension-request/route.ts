@@ -7,16 +7,7 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { logger } from "@/lib/observability/logger";
-
-type ExtensionRequestBody = {
-  academicYear?: string;
-  semester?: string;
-  requirementCodes?: RequirementCode[];
-  reason: string;
-  requestedPreset?: string;
-  customDate?: string;
-  customTime?: string;
-};
+import crypto from "crypto";
 
 export async function GET(request: NextRequest) {
   try {
@@ -88,6 +79,8 @@ export async function GET(request: NextRequest) {
               requested_preset: parsed.requested_preset || "+3 Days",
               requested_date: parsed.requested_date || null,
               requested_time: parsed.requested_time || null,
+              supporting_document_url: parsed.supporting_document_url || null,
+              supporting_document_name: parsed.supporting_document_name || null,
               status: parsed.status || "pending",
               admin_remarks: parsed.admin_remarks || null,
               created_at: parsed.created_at || n.created_at,
@@ -133,16 +126,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await request.json().catch(() => ({}))) as ExtensionRequestBody;
-    const {
-      academicYear = "2026-2027",
-      semester = "1st Semester",
-      requirementCodes = [],
-      reason,
-      requestedPreset = "+3 Days",
-      customDate,
-      customTime,
-    } = body;
+    const contentType = request.headers.get("content-type") || "";
+    let academicYear = "2026-2027";
+    let semester = "1st Semester";
+    let requirementCodes: RequirementCode[] = [];
+    let reason = "";
+    let requestedPreset = "+3 Days";
+    let customDate: string | undefined = undefined;
+    let customTime: string | undefined = "17:00";
+    let supportingDocFile: File | null = null;
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      academicYear = (formData.get("academicYear") as string) || academicYear;
+      semester = (formData.get("semester") as string) || semester;
+      const rawCodes = formData.get("requirementCodes") as string;
+      if (rawCodes) {
+        try {
+          requirementCodes = JSON.parse(rawCodes);
+        } catch {
+          requirementCodes = [rawCodes as RequirementCode];
+        }
+      }
+      reason = (formData.get("reason") as string) || "";
+      requestedPreset = (formData.get("requestedPreset") as string) || requestedPreset;
+      customDate = (formData.get("customDate") as string) || undefined;
+      customTime = (formData.get("customTime") as string) || "17:00";
+      const fileCandidate = formData.get("supportingDocument");
+      if (fileCandidate && typeof fileCandidate === "object" && "size" in fileCandidate && (fileCandidate as File).size > 0) {
+        supportingDocFile = fileCandidate as File;
+      }
+    } else {
+      const body = await request.json().catch(() => ({}));
+      academicYear = body.academicYear || academicYear;
+      semester = body.semester || semester;
+      requirementCodes = Array.isArray(body.requirementCodes) ? body.requirementCodes : [];
+      reason = body.reason || "";
+      requestedPreset = body.requestedPreset || requestedPreset;
+      customDate = body.customDate;
+      customTime = body.customTime || "17:00";
+    }
 
     if (!reason || reason.trim().length < 5) {
       return NextResponse.json(
@@ -153,7 +176,65 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    // Check if any requested requirement is marked exempted
+    // 1. Restrict faculty to a maximum of one pending extension request per requirement schedule
+    const { data: existingPending } = await supabase
+      .from("extension_requests")
+      .select("id, requirement_codes, requested_preset, status")
+      .eq("faculty_user_id", user.id)
+      .eq("academic_year", academicYear)
+      .eq("semester", semester)
+      .eq("status", "pending");
+
+    if (existingPending && existingPending.length > 0) {
+      const hasOverlap = existingPending.some((ext: any) => {
+        const extCodes: string[] = Array.isArray(ext.requirement_codes) ? ext.requirement_codes : [];
+        if (extCodes.length === 0 || requirementCodes.length === 0) return true;
+        return requirementCodes.some((code) => extCodes.includes(code));
+      });
+
+      if (hasOverlap) {
+        return NextResponse.json(
+          {
+            error: "You already have a pending extension request for this requirement schedule. Maximum of one pending extension request is allowed.",
+          },
+          { status: 400 },
+        );
+      }
+    } else {
+      // Check fallback notifications
+      const { data: notifPending } = await supabase
+        .from("notifications")
+        .select("id, message")
+        .eq("type", "EXTENSION_REQUEST")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (notifPending) {
+        const hasPendingNotif = notifPending.some((n: any) => {
+          try {
+            const p = JSON.parse(n.message);
+            if (p.status !== "pending") return false;
+            if (p.academic_year !== academicYear || p.semester !== semester) return false;
+            const extCodes: string[] = Array.isArray(p.requirement_codes) ? p.requirement_codes : [];
+            if (extCodes.length === 0 || requirementCodes.length === 0) return true;
+            return requirementCodes.some((code: string) => extCodes.includes(code));
+          } catch {
+            return false;
+          }
+        });
+        if (hasPendingNotif) {
+          return NextResponse.json(
+            {
+              error: "You already have a pending extension request for this requirement schedule. Maximum of one pending extension request is allowed.",
+            },
+            { status: 400 },
+          );
+        }
+      }
+    }
+
+    // 2. Check if any requested requirement is marked exempted
     if (requirementCodes && requirementCodes.length > 0) {
       const { data: subData } = await supabase
         .from("submissions")
@@ -180,7 +261,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fetch faculty profile details
+    // 3. Compute proposed target deadline date & time based on preset or custom
+    let targetDeadlineDate = customDate;
+    let targetDeadlineTime = customTime || "17:00";
+
+    if (!targetDeadlineDate || requestedPreset !== "Custom") {
+      const target = new Date();
+      if (requestedPreset === "+24 Hours") {
+        target.setDate(target.getDate() + 1);
+      } else if (requestedPreset === "+48 Hours") {
+        target.setDate(target.getDate() + 2);
+      } else if (requestedPreset === "+1 Week") {
+        target.setDate(target.getDate() + 7);
+      } else {
+        // Default: +3 Days
+        target.setDate(target.getDate() + 3);
+      }
+      targetDeadlineDate = target.toISOString().split("T")[0];
+    }
+
+    // 4. Fetch faculty profile details
     const { data: profile } = await supabase
       .from("profiles")
       .select("id, full_name, email, department")
@@ -193,14 +293,40 @@ export async function POST(request: NextRequest) {
       user.email ||
       "Faculty Member";
 
-    const reqNames =
-      requirementCodes.length > 0
-        ? requirementCodes.map((c) => REQUIREMENT_LABEL[c] || c).join(", ")
-        : "All Pending Requirements";
-
-    const title = `Extension Request: ${facultyName}`;
     const requestId = crypto.randomUUID();
     const nowIso = new Date().toISOString();
+
+    // 5. Handle optional supporting document upload
+    let supportingDocUrl: string | null = null;
+    let supportingDocName: string | null = null;
+
+    if (supportingDocFile) {
+      if (supportingDocFile.size > 10 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: "Supporting document exceeds the 10MB file size limit." },
+          { status: 400 },
+        );
+      }
+
+      const cleanFileName = supportingDocFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const docPath = `extension-documents/${user.id}/${requestId}-${cleanFileName}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("faculty-submissions")
+        .upload(docPath, supportingDocFile, {
+          contentType: supportingDocFile.type || "application/octet-stream",
+          upsert: true,
+        });
+
+      if (!uploadErr) {
+        supportingDocUrl = docPath;
+        supportingDocName = supportingDocFile.name;
+      } else {
+        logger.warn("extension_supporting_doc_upload_failed", {
+          error: uploadErr.message,
+        });
+      }
+    }
 
     const requestPayload = {
       id: requestId,
@@ -213,21 +339,24 @@ export async function POST(request: NextRequest) {
       requirement_codes: requirementCodes,
       reason: reason.trim(),
       requested_preset: requestedPreset,
-      requested_date: customDate || null,
-      requested_time: customTime || null,
+      requested_date: targetDeadlineDate,
+      requested_time: targetDeadlineTime,
+      supporting_document_url: supportingDocUrl,
+      supporting_document_name: supportingDocName,
       status: "pending",
       created_at: nowIso,
       updated_at: nowIso,
     };
 
-    // 1. Try to insert into dedicated extension_requests table
+    // 6. Try to insert into dedicated extension_requests table
     try {
       await supabase.from("extension_requests").insert(requestPayload);
     } catch {
       // Table may not exist yet, fallback will handle it
     }
 
-    // 2. Insert into notifications table with structured JSON message so admin and fallback queries can retrieve it
+    // 7. Insert into notifications table with structured JSON message so admin and fallback queries can retrieve it
+    const title = `Extension Request: ${facultyName}`;
     const notificationInsert = {
       id: requestId,
       user_id: user.id,
@@ -248,7 +377,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. Log to audit logs
+    // 8. Log to audit logs
     try {
       await logAuditEvent({
         actorId: user.id,
@@ -265,7 +394,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Extension request for ${requestedPreset} submitted successfully. An administrator will review your request.`,
+      message: `Extension request for ${requestedPreset} (until ${targetDeadlineDate} ${targetDeadlineTime}) submitted successfully. An administrator will review your request.`,
       request: requestPayload,
     });
   } catch (error) {
