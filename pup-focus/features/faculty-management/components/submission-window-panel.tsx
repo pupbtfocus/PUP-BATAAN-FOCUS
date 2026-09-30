@@ -334,7 +334,31 @@ export function SubmissionWindowPanel({
         return;
       }
 
-      const data = body as SubmissionWindowResponse;
+      let data = body as SubmissionWindowResponse;
+
+      // Ensure active academic term is populated even if window status config was previously uninitialized
+      if (!data.academicYear || !data.semester) {
+        try {
+          const termsRes = await fetch("/api/admin/academic-terms", { credentials: "include" });
+          if (termsRes.ok) {
+            const termsJson = await termsRes.json();
+            const termsList = Array.isArray(termsJson?.terms) ? termsJson.terms : [];
+            const currentTerm = termsList.find(
+              (t: any) => (t.status || "").trim().toLowerCase() === "current"
+            ) || termsList[0];
+            if (currentTerm?.academicYear && currentTerm?.semester) {
+              data = {
+                ...data,
+                academicYear: currentTerm.academicYear,
+                semester: currentTerm.semester,
+              };
+            }
+          }
+        } catch {
+          // ignore fallback error
+        }
+      }
+
       setWindowStatus(data);
 
       if (data.status === "Closed") {
@@ -435,7 +459,30 @@ export function SubmissionWindowPanel({
     setError(null);
     setSuccess(null);
 
-    if (!windowStatus?.academicYear || !windowStatus?.semester) {
+    let currentAY = windowStatus?.academicYear;
+    let currentSem = windowStatus?.semester;
+
+    if (!currentAY || !currentSem) {
+      try {
+        const termsRes = await fetch("/api/admin/academic-terms", { credentials: "include" });
+        if (termsRes.ok) {
+          const termsJson = await termsRes.json();
+          const termsList = Array.isArray(termsJson?.terms) ? termsJson.terms : [];
+          const currentTerm = termsList.find(
+            (t: any) => (t.status || "").trim().toLowerCase() === "current"
+          ) || termsList[0];
+          if (currentTerm?.academicYear && currentTerm?.semester) {
+            currentAY = currentTerm.academicYear;
+            currentSem = currentTerm.semester;
+            setWindowStatus((prev) => (prev ? { ...prev, academicYear: currentAY, semester: currentSem } : null));
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!currentAY || !currentSem) {
       setError("No active academic term is configured. Please set a current academic term first.");
       return;
     }

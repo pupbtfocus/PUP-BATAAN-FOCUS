@@ -288,18 +288,22 @@ export async function getSubmissionWindow(
   let resolvedTerm = targetTerm;
   if (!resolvedTerm || !resolvedTerm.academicYear || !resolvedTerm.semester) {
     try {
-      const { data: currentTerm } = await supabase
+      const { data: termRows } = await supabase
         .from("academic_terms")
-        .select("academic_year, semester")
-        .eq("status", "Current")
-        .limit(1)
-        .maybeSingle();
+        .select("academic_year, semester, status")
+        .order("academic_year", { ascending: false });
 
-      if (currentTerm?.academic_year && currentTerm?.semester) {
-        resolvedTerm = {
-          academicYear: currentTerm.academic_year,
-          semester: currentTerm.semester,
-        };
+      if (Array.isArray(termRows) && termRows.length > 0) {
+        const found = termRows.find(
+          (t) => (t.status || "").trim().toLowerCase() === "current",
+        );
+        const currentTerm = found || termRows[0];
+        if (currentTerm?.academic_year && currentTerm?.semester) {
+          resolvedTerm = {
+            academicYear: currentTerm.academic_year.trim(),
+            semester: normalizeSemester(currentTerm.semester),
+          };
+        }
       }
     } catch {
       // In case academic_terms table is temporarily inaccessible
