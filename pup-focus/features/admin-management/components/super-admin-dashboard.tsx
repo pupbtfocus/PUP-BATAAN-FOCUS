@@ -454,7 +454,14 @@ export function SuperAdminDashboard({
     }
   }
 
-  async function onAddFaculty(input: FacultyAccountFormInput) {
+  async function onAddFaculty(
+    input: FacultyAccountFormInput,
+    onboardingPayload?: {
+      onboardingOption: "grace_period" | "custom_deadlines" | "exempt";
+      gracePeriodIso?: string;
+      customDeadlines?: Record<string, string>;
+    },
+  ) {
     setIsCreatingFaculty(true);
     setCreateFacultyError(null);
     setCreateFacultySuccess(null);
@@ -469,6 +476,16 @@ export function SuperAdminDashboard({
 
       if (facultyProfileImageFile) {
         payload.append("profileImage", facultyProfileImageFile);
+      }
+
+      if (onboardingPayload) {
+        payload.append("onboardingOption", onboardingPayload.onboardingOption);
+        if (onboardingPayload.gracePeriodIso) {
+          payload.append("gracePeriodIso", onboardingPayload.gracePeriodIso);
+        }
+        if (onboardingPayload.customDeadlines) {
+          payload.append("customDeadlines", JSON.stringify(onboardingPayload.customDeadlines));
+        }
       }
 
       const response = await fetch("/api/admin/faculty/create", {

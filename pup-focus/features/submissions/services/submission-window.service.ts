@@ -385,8 +385,12 @@ export async function getSubmissionWindow(
     const targetAY = resolvedTerm.academicYear.trim();
     const targetSem = normalizeSemester(resolvedTerm.semester);
 
+    // If no window is configured in submission_windows (e.g. deleted/closed), return null
+    if (!data) {
+      return null;
+    }
+
     const matchesActiveTerm =
-      data &&
       data.academic_year === targetAY &&
       normalizeSemester(data.semester) === targetSem;
 
@@ -410,7 +414,7 @@ export async function getSubmissionWindow(
       };
     }
 
-    // If submission_windows id=1 does not match the active term, check submission_window_terms
+    // If submission_windows id=1 belongs to a different term, check submission_window_terms
     try {
       const { data: termData, error: termError } = await supabase
         .from("submission_window_terms")

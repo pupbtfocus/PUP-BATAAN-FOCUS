@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useId } from "react";
+import { useEffect, useState, useId, useRef } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import {
   Calendar,
@@ -15,6 +15,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
 import type { FacultyAccountFormInput } from "@/features/faculty-management/schemas/faculty-account.schema";
 
 function FieldError({ message }: { message?: string }) {
@@ -83,6 +84,7 @@ export interface AddFacultyPanelProps {
   formClassName?: string;
   step?: "form" | "onboarding";
   onStepChange?: (step: "form" | "onboarding") => void;
+  isOpen?: boolean;
 }
 
 export function AddFacultyPanel({
@@ -98,6 +100,7 @@ export function AddFacultyPanel({
   formClassName,
   step: controlledStep,
   onStepChange,
+  isOpen,
 }: AddFacultyPanelProps) {
   const [degreePrograms, setDegreePrograms] = useState<ProgramOption[]>([]);
   const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
@@ -106,6 +109,9 @@ export function AddFacultyPanel({
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
   const photoInputId = useId();
+
+  const firstNameInputRef = useRef<HTMLInputElement | null>(null);
+  const emailInputRef = useRef<HTMLInputElement | null>(null);
 
   // Onboarding workflow state
   const [internalStep, setInternalStep] = useState<"form" | "onboarding">("form");
@@ -116,11 +122,49 @@ export function AddFacultyPanel({
   };
 
   const [onboardingData, setOnboardingData] = useState<OnboardingCheckResult | null>(null);
+  const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
   const [pendingFormInput, setPendingFormInput] = useState<FacultyAccountFormInput | null>(null);
   const [selectedOption, setSelectedOption] = useState<"grace_period" | "custom_deadlines" | "exempt">("grace_period");
   const [gracePresetDays, setGracePresetDays] = useState<number>(7);
   const [customGraceDate, setCustomGraceDate] = useState<string>("");
   const [customPerScheduleDeadlines, setCustomPerScheduleDeadlines] = useState<Record<string, { date: string; time: string }>>({});
+  const [hasAppliedOptions, setHasAppliedOptions] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasAppliedOptions(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (createSuccess) {
+      setHasAppliedOptions(false);
+    }
+  }, [createSuccess]);
+
+  // Check completion of all required fields
+  const watchedFirstName = form.watch("firstName");
+  const watchedLastName = form.watch("lastName");
+  const watchedProgramId = form.watch("programId");
+  const watchedEmail = form.watch("email");
+
+  const isEmailValid = Boolean(
+    watchedEmail &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(watchedEmail.trim())
+  );
+
+  const areAllRequiredFieldsFilled = Boolean(
+    watchedFirstName?.trim() &&
+    watchedLastName?.trim() &&
+    watchedProgramId?.trim() &&
+    isEmailValid
+  );
+
+  const areOptionsSatisfied = onboardingData?.hasPastDeadlines
+    ? hasAppliedOptions
+    : true;
+
+  const canSubmit = areAllRequiredFieldsFilled && areOptionsSatisfied;
 
   useEffect(() => {
     if (!profileImageFile) {
@@ -141,8 +185,12 @@ export function AddFacultyPanel({
     let isMounted = true;
 
     async function checkOnboardingSchedules() {
+      setIsLoadingOnboarding(true);
       try {
-        const res = await fetch("/api/admin/faculty/onboarding-check", { credentials: "include" });
+        const res = await fetch(`/api/admin/faculty/onboarding-check?_t=${Date.now()}`, {
+          cache: "no-store",
+          credentials: "include",
+        });
         if (res.ok && isMounted) {
           const data = (await res.json()) as OnboardingCheckResult;
           setOnboardingData(data);
@@ -162,9 +210,41 @@ export function AddFacultyPanel({
             initialMap[sched.code] = { date: defaultDateStr, time: "23:59" };
           });
           setCustomPerScheduleDeadlines(initialMap);
+        } else {
+          // Fallback to checking /api/admin/submission-window directly
+          const winRes = await fetch(`/api/admin/submission-window?_t=${Date.now()}`);
+          if (winRes.ok && isMounted) {
+            const winData = await winRes.json();
+            if (winData.status === "Closed" || !winData.isOpen) {
+              const fallbackSchedules = DEFAULT_REQUIREMENTS.map((code) => ({
+                code,
+                title: REQUIREMENT_LABEL[code] || code,
+                globalDeadlineDate: winData.endDate || new Date().toISOString().split("T")[0],
+                globalDeadlineTime: winData.endTime || "11:59 PM",
+                globalDeadlineIso: `${winData.endDate || new Date().toISOString().split("T")[0]}T23:59:59+08:00`,
+              }));
+              setOnboardingData({
+                hasPastDeadlines: true,
+                activeTerm: {
+                  academicYear: winData.academicYear || "2026-2027",
+                  semester: winData.semester || "1st Semester",
+                },
+                globalDeadline: {
+                  endDate: winData.endDate || new Date().toISOString().split("T")[0],
+                  endTime: winData.endTime || "11:59 PM",
+                  iso: `${winData.endDate || new Date().toISOString().split("T")[0]}T23:59:59+08:00`,
+                },
+                schedules: fallbackSchedules,
+              });
+            }
+          }
         }
       } catch {
         // Fallback
+      } finally {
+        if (isMounted) {
+          setIsLoadingOnboarding(false);
+        }
       }
     }
 
@@ -173,7 +253,7 @@ export function AddFacultyPanel({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [controlledStep]);
 
   useEffect(() => {
     let isMounted = true;
@@ -274,47 +354,84 @@ export function AddFacultyPanel({
     onProfileImageChange(file);
   };
 
-  const handleFormSubmit = (values: FacultyAccountFormInput) => {
-    // If past deadlines exist in the active term, prompt admin with Onboarding Options
+  const handleFormSubmit = async (values: FacultyAccountFormInput) => {
+    // If past deadlines exist or submissions are closed
     if (onboardingData?.hasPastDeadlines && onboardingData.schedules.length > 0) {
-      setPendingFormInput(values);
-      setStep("onboarding");
-    } else {
-      onAddFaculty(values);
+      if (!hasAppliedOptions) {
+        setPendingFormInput(values);
+        setStep("onboarding");
+        return;
+      }
+
+      // Compute onboarding payload from the applied options
+      let gracePeriodIso = "";
+      if (selectedOption === "grace_period") {
+        let targetDate = customGraceDate;
+        if (!targetDate) {
+          const d = new Date();
+          d.setDate(d.getDate() + (gracePresetDays || 7));
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          targetDate = `${yyyy}-${mm}-${dd}`;
+        }
+        gracePeriodIso = `${targetDate}T23:59:59+08:00`;
+      }
+
+      const customDeadlinesFormatted: Record<string, string> = {};
+      if (selectedOption === "custom_deadlines") {
+        Object.entries(customPerScheduleDeadlines).forEach(([code, val]) => {
+          if (val.date) {
+            customDeadlinesFormatted[code] = `${val.date}T${val.time || "23:59"}:00+08:00`;
+          }
+        });
+      }
+
+      onAddFaculty(values, {
+        onboardingOption: selectedOption,
+        gracePeriodIso: gracePeriodIso || undefined,
+        customDeadlines: selectedOption === "custom_deadlines" ? customDeadlinesFormatted : undefined,
+      });
+      return;
     }
+
+    // Double-check live status in case schedule was recently closed or initial check was pending
+    try {
+      const res = await fetch(`/api/admin/faculty/onboarding-check?_t=${Date.now()}`, {
+        cache: "no-store",
+        credentials: "include",
+      });
+      if (res.ok) {
+        const fresh = (await res.json()) as OnboardingCheckResult;
+        if (fresh?.hasPastDeadlines && fresh.schedules?.length > 0) {
+          setOnboardingData(fresh);
+          setPendingFormInput(values);
+          setStep("onboarding");
+          return;
+        }
+      }
+    } catch {
+      // Proceed to direct add if check fails
+    }
+
+    onAddFaculty(values);
   };
 
-  const handleConfirmOnboarding = () => {
-    if (!pendingFormInput) return;
+  const handleApplyOptions = () => {
+    setHasAppliedOptions(true);
+    setStep("form");
 
-    let gracePeriodIso = "";
-    if (selectedOption === "grace_period") {
-      let targetDate = customGraceDate;
-      if (!targetDate) {
-        const d = new Date();
-        d.setDate(d.getDate() + (gracePresetDays || 7));
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        targetDate = `${yyyy}-${mm}-${dd}`;
+    // Direct focus to input field for name (or email if name already provided)
+    setTimeout(() => {
+      const currentValues = form.getValues();
+      if (!currentValues.firstName?.trim()) {
+        firstNameInputRef.current?.focus();
+      } else if (!currentValues.email?.trim()) {
+        emailInputRef.current?.focus();
+      } else {
+        firstNameInputRef.current?.focus();
       }
-      gracePeriodIso = `${targetDate}T23:59:59+08:00`;
-    }
-
-    const customDeadlinesFormatted: Record<string, string> = {};
-    if (selectedOption === "custom_deadlines") {
-      Object.entries(customPerScheduleDeadlines).forEach(([code, val]) => {
-        if (val.date) {
-          customDeadlinesFormatted[code] = `${val.date}T${val.time || "23:59"}:00+08:00`;
-        }
-      });
-    }
-
-    onAddFaculty(pendingFormInput, {
-      onboardingOption: selectedOption,
-      gracePeriodIso: gracePeriodIso || undefined,
-      customDeadlines: selectedOption === "custom_deadlines" ? customDeadlinesFormatted : undefined,
-    });
+    }, 60);
   };
 
   return (
@@ -323,18 +440,25 @@ export function AddFacultyPanel({
         /* ================= ONBOARDING OPTIONS SCREEN ================= */
         <div className="flex flex-col gap-4">
           {/* Past Deadlines Notice Banner */}
-          <div className="rounded-xl border border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 p-4 space-y-1.5">
+          <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-100 via-amber-50 to-amber-200/70 dark:from-[#3a2208] dark:via-[#2b1805] dark:to-[#351e06] p-4 space-y-1.5 shadow-xs">
             <div className="flex items-center gap-2">
               <AppIcon icon={WarningTriangle} size="md" color="warning" />
-              <span className="font-bold text-sm text-amber-950 dark:text-amber-200">
-                Past Submission Deadlines Detected
+              <span className="font-bold text-sm text-amber-950 dark:text-amber-100">
+                Submissions are closed for this term
               </span>
             </div>
-            <p className="text-xs text-amber-900/90 dark:text-amber-300/90 leading-relaxed">
-              The active academic term <span className="font-semibold text-slate-900 dark:text-slate-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> has <span className="font-semibold">{onboardingData.schedules.length} requirement schedule{onboardingData.schedules.length > 1 ? "s" : ""}</span> whose global deadline passed on <span className="font-semibold text-rose-700 dark:text-rose-400">{onboardingData.globalDeadline?.endDate} at {onboardingData.globalDeadline?.endTime || "11:59 PM"}</span>.
+            <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
+              Submissions in <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> are currently closed for {onboardingData.schedules.length} requirements.
             </p>
-            <p className="text-xs text-amber-900/80 dark:text-amber-300/80">
-              Select an onboarding policy for <strong className="text-slate-900 dark:text-slate-100">{pendingFormInput?.firstName} {pendingFormInput?.lastName}</strong>:
+            <p className="text-xs text-amber-950/80 dark:text-amber-200/80 font-medium">
+              {(() => {
+                const name = `${pendingFormInput?.firstName || form.getValues("firstName") || ""} ${pendingFormInput?.lastName || form.getValues("lastName") || ""}`.trim();
+                return name ? (
+                  <>How would you like to handle requirements for <strong className="text-slate-950 dark:text-white">{name}</strong>?</>
+                ) : (
+                  <>How would you like to handle requirements for <strong className="text-slate-950 dark:text-white">this faculty member</strong>?</>
+                );
+              })()}
             </p>
           </div>
 
@@ -360,14 +484,14 @@ export function AddFacultyPanel({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                        Option A: Grace Period
+                        Option A: Extra Days (Grace Period)
                       </span>
                       <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
                         Recommended
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      Automatically assign a custom due date ({gracePresetDays > 0 ? `${gracePresetDays} days from now` : "custom date"}) for all past schedules in the active term. Status will be set to <span className="font-semibold text-indigo-600 dark:text-indigo-400">Pending</span> (submission portal unlocked).
+                      Give extra time ({gracePresetDays > 0 ? `${gracePresetDays} days` : "custom date"}) to submit requirements after registration.
                     </p>
                   </div>
                 </div>
@@ -519,14 +643,14 @@ export function AddFacultyPanel({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                      Option C: Exempt / Waive Requirements
+                      Option C: Waive Requirements
                     </span>
                     <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
                       Exempt
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Mark all past schedules in the active term as <span className="font-semibold text-slate-800 dark:text-slate-200">Exempted</span> for this new faculty member. Both file uploads and extension requests will be disabled.
+                    Waive all closed requirements for this faculty member so their compliance score isn't affected.
                   </p>
                 </div>
               </div>
@@ -552,19 +676,17 @@ export function AddFacultyPanel({
             <button
               type="button"
               onClick={() => setStep("form")}
-              disabled={isCreating}
-              className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition cursor-pointer"
+              className="px-5 py-2.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98]"
             >
-              ← Back to Details
+              ← Back
             </button>
 
             <button
               type="button"
-              onClick={handleConfirmOnboarding}
-              disabled={isCreating}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-xs shadow-md transition cursor-pointer disabled:opacity-50"
+              onClick={handleApplyOptions}
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-xs shadow-md transition cursor-pointer active:scale-[0.98]"
             >
-              {isCreating ? "Finalizing Account..." : "Confirm & Create Account"}
+              Apply
             </button>
           </div>
         </div>
@@ -584,6 +706,10 @@ export function AddFacultyPanel({
                 placeholder="e.g. Juan"
                 className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
                 {...form.register("firstName")}
+                ref={(el) => {
+                  form.register("firstName").ref(el);
+                  firstNameInputRef.current = el;
+                }}
               />
               <FieldError message={form.formState.errors.firstName?.message} />
             </div>
@@ -714,9 +840,58 @@ export function AddFacultyPanel({
               className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
               placeholder="faculty@pup.edu.ph"
               {...form.register("email")}
+              ref={(el) => {
+                form.register("email").ref(el);
+                emailInputRef.current = el;
+              }}
             />
             <FieldError message={form.formState.errors.email?.message} />
           </div>
+
+          {/* Onboarding Policy Options Banner & Action Button */}
+          {onboardingData?.hasPastDeadlines ? (
+            <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500 bg-gradient-to-r from-amber-100 via-amber-50 to-amber-200/80 dark:from-[#3a2208] dark:via-[#2b1805] dark:to-[#351e06] p-4 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <AppIcon icon={WarningTriangle} size="sm" color="warning" />
+                  <span className="font-bold text-xs text-amber-950 dark:text-amber-100">
+                    Submissions are closed
+                  </span>
+                </div>
+                <span
+                  className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                    hasAppliedOptions
+                      ? "bg-emerald-200 dark:bg-emerald-950/80 text-emerald-950 dark:text-emerald-200 border-emerald-400 dark:border-emerald-600"
+                      : "bg-amber-300 dark:bg-amber-900/80 text-amber-950 dark:text-amber-100 border-amber-400 dark:border-amber-700"
+                  }`}
+                >
+                  {hasAppliedOptions
+                    ? selectedOption === "grace_period"
+                      ? `Grace Period (+${gracePresetDays || 7}d)`
+                      : selectedOption === "custom_deadlines"
+                      ? "Custom Dates"
+                      : "Waived"
+                    : "Select Option First"}
+                </span>
+              </div>
+              <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
+                {hasAppliedOptions
+                  ? "Requirements policy selected and ready to apply upon account creation."
+                  : "Submissions are currently closed. You must choose how to handle requirements for this faculty member before continuing."}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  const values = form.getValues();
+                  setPendingFormInput(values);
+                  setStep("onboarding");
+                }}
+                className="w-full py-2.5 px-4 rounded-xl border border-amber-500/80 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 hover:from-amber-300 hover:to-amber-300 dark:from-amber-500 dark:via-amber-400 dark:to-amber-500 dark:hover:from-amber-400 dark:hover:to-amber-400 text-slate-950 font-black text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.99]"
+              >
+                <span>{hasAppliedOptions ? "Change Options →" : "Customize Options →"}</span>
+              </button>
+            </div>
+          ) : null}
 
           <AlertPopup
             type="error"
@@ -732,17 +907,37 @@ export function AddFacultyPanel({
             onClose={() => setDismissedSuccess(createSuccess)}
           />
 
-          <button
-            className="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer text-sm tracking-wide"
-            type="submit"
-            disabled={isCreating || isLoadingPrograms}
-          >
-            {isCreating
-              ? "Validating..."
-              : onboardingData?.hasPastDeadlines
-              ? "Next: Onboarding Options →"
-              : "Create Faculty Account"}
-          </button>
+          {areAllRequiredFieldsFilled && !areOptionsSatisfied ? (
+            <button
+              type="button"
+              onClick={() => {
+                const values = form.getValues();
+                setPendingFormInput(values);
+                setStep("onboarding");
+              }}
+              className="mt-2 w-full py-3 rounded-xl transition-all shadow-md text-sm tracking-wide font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
+            >
+              <span>Select Requirement Options →</span>
+            </button>
+          ) : (
+            <button
+              className={`mt-2 w-full py-3 rounded-xl transition-all shadow-md text-sm tracking-wide font-bold ${
+                !canSubmit
+                  ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
+                  : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
+              }`}
+              type="submit"
+              disabled={!canSubmit || isCreating || isLoadingPrograms || isLoadingOnboarding}
+            >
+              {isCreating
+                ? "Creating Faculty Account..."
+                : isLoadingOnboarding
+                ? "Checking schedule..."
+                : !areAllRequiredFieldsFilled
+                ? "Fill All Required Fields"
+                : "Create Faculty Account"}
+            </button>
+          )}
         </form>
       )}
     </div>
@@ -776,10 +971,10 @@ export function AddFacultyModal({
       <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[92vh] overflow-y-auto">
         <ModalHeader
           icon={modalStep === "onboarding" ? Hourglass : UserPlus}
-          title={modalStep === "onboarding" ? "New Faculty Onboarding" : "Add Faculty Account"}
+          title={modalStep === "onboarding" ? "Requirement Options" : "Add Faculty Account"}
           subtitle={
             modalStep === "onboarding"
-              ? "Configure onboarding policy for active term schedules with past deadlines"
+              ? "Choose how closed requirements should be handled for this faculty member"
               : "Create credentials and assign department permissions"
           }
           onClose={onClose}
@@ -788,6 +983,7 @@ export function AddFacultyModal({
 
         <AddFacultyPanel
           {...panelProps}
+          isOpen={isOpen}
           step={modalStep}
           onStepChange={setModalStep}
         />
