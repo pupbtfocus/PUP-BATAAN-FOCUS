@@ -61,13 +61,7 @@ CREATE POLICY "Admins can view all extension requests"
   FOR SELECT
   TO authenticated
   USING (
-    COALESCE((auth.jwt() -> 'user_metadata' ->> 'role'), (auth.jwt() -> 'app_metadata' ->> 'role')) IN ('admin', 'super_admin')
-    OR EXISTS (
-      SELECT 1 FROM public.user_roles ur
-      JOIN public.profiles p ON p.id = ur.profile_id
-      JOIN public.roles r ON r.id = ur.role_id
-      WHERE p.user_id = auth.uid() AND r.code IN ('admin', 'super_admin')
-    )
+    public.is_admin_or_super_admin()
   );
 
 -- Admins and Super Admins can update extension requests (approve/reject)
@@ -77,20 +71,8 @@ CREATE POLICY "Admins can update extension requests"
   FOR UPDATE
   TO authenticated
   USING (
-    COALESCE((auth.jwt() -> 'user_metadata' ->> 'role'), (auth.jwt() -> 'app_metadata' ->> 'role')) IN ('admin', 'super_admin')
-    OR EXISTS (
-      SELECT 1 FROM public.user_roles ur
-      JOIN public.profiles p ON p.id = ur.profile_id
-      JOIN public.roles r ON r.id = ur.role_id
-      WHERE p.user_id = auth.uid() AND r.code IN ('admin', 'super_admin')
-    )
+    public.is_admin_or_super_admin()
   )
   WITH CHECK (
-    COALESCE((auth.jwt() -> 'user_metadata' ->> 'role'), (auth.jwt() -> 'app_metadata' ->> 'role')) IN ('admin', 'super_admin')
-    OR EXISTS (
-      SELECT 1 FROM public.user_roles ur
-      JOIN public.profiles p ON p.id = ur.profile_id
-      JOIN public.roles r ON r.id = ur.role_id
-      WHERE p.user_id = auth.uid() AND r.code IN ('admin', 'super_admin')
-    )
+    public.is_admin_or_super_admin()
   );
