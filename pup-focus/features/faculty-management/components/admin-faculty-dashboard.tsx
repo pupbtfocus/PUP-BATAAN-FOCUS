@@ -436,7 +436,14 @@ export function AdminFacultyDashboard({
     await performDeactivateFaculty(facultyId);
   }
 
-  async function onAddFaculty(input: FacultyAccountFormInput) {
+  async function onAddFaculty(
+    input: FacultyAccountFormInput,
+    onboardingPayload?: {
+      onboardingOption: "grace_period" | "custom_deadlines" | "exempt";
+      gracePeriodIso?: string;
+      customDeadlines?: Record<string, string>;
+    },
+  ) {
     setIsCreating(true);
     setCreateError(null);
     setCreateSuccess(null);
@@ -451,6 +458,16 @@ export function AdminFacultyDashboard({
 
       if (profileImageFile) {
         payload.append("profileImage", profileImageFile);
+      }
+
+      if (onboardingPayload) {
+        payload.append("onboardingOption", onboardingPayload.onboardingOption);
+        if (onboardingPayload.gracePeriodIso) {
+          payload.append("gracePeriodIso", onboardingPayload.gracePeriodIso);
+        }
+        if (onboardingPayload.customDeadlines) {
+          payload.append("customDeadlines", JSON.stringify(onboardingPayload.customDeadlines));
+        }
       }
 
       const response = await fetch("/api/admin/faculty/create", {
