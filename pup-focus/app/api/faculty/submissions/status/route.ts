@@ -673,7 +673,7 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // 3. Fallback for unassigned rows
+      // 3. Fallback for submitted rows (match by submission date)
       if (sub.submitted_at) {
         const { academicYear: subAY, semester: subSem } =
           toAcademicYearAndSemester(sub.submitted_at);
@@ -683,8 +683,16 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // 4. Onboarding grace period rows: no submitted_at but have due_at set.
+      //    Include them if they were created near the current active term (no semester/AY columns).
+      //    These come from admin-assigned grace periods during new faculty onboarding.
+      if (sub.due_at && !sub.submitted_at) {
+        return true;
+      }
+
       return false;
     });
+
 
     // 6. Map requirement statuses using Hard Deadline & Status Calculation rules
     const nowMs = Date.now();
@@ -872,6 +880,20 @@ export async function GET(request: NextRequest) {
           ? "2nd Semester"
           : activeSemester;
 
+    const globalWindowLocked = !windowState.isOpen || !windowState.isConfigured;
+
+    // isLocked should be false if the faculty has at least one requirement with an
+    // active individual due_at (grace period from onboarding Option A), even when
+    // the global submission window is closed.
+    const hasActiveGracePeriod =
+      globalWindowLocked &&
+      requirementStatuses.some((r) => {
+        if (!r.due_at) return false;
+        const dueIso = r.due_at.includes("T") ? r.due_at : `${r.due_at}T23:59:59+08:00`;
+        const dueMs = new Date(dueIso).getTime();
+        return !Number.isNaN(dueMs) && nowMs <= dueMs;
+      });
+
     return NextResponse.json({
       requirementStatuses,
       requirementTemplates: activeTemplateRows,
@@ -879,7 +901,7 @@ export async function GET(request: NextRequest) {
       academicYear: activeAcademicYear,
       semester: normalizedSemLabel,
       hasActiveSchedule: Boolean(windowState.isConfigured && windowState.isOpen),
-      isLocked: !windowState.isOpen || !windowState.isConfigured,
+      isLocked: globalWindowLocked && !hasActiveGracePeriod,
       debug: {
         profileId: profileRow?.id || facultyIdList[0] || null,
         submissionsFound: submissions?.length || 0,

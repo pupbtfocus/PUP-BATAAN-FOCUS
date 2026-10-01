@@ -361,15 +361,22 @@ export async function POST(request: NextRequest) {
           const academicYear = activeTerm?.academic_year || "2026-2027";
           const term = activeTerm?.semester || "1st Semester";
 
-          await supabase.from("faculty_program_assignments").upsert(
-            {
-              faculty_profile_id: newProfile.id,
-              program_id: programRecord.id,
-              academic_year: academicYear,
-              term: term,
-            },
-            { onConflict: "faculty_profile_id,program_id,academic_year,term" },
-          );
+          // Insert program assignment and capture the ID
+          const { data: assignmentRow } = await supabase
+            .from("faculty_program_assignments")
+            .upsert(
+              {
+                faculty_profile_id: newProfile.id,
+                program_id: programRecord.id,
+                academic_year: academicYear,
+                term: term,
+              },
+              { onConflict: "faculty_profile_id,program_id,academic_year,term" },
+            )
+            .select("id")
+            .maybeSingle();
+
+          const assignmentId = assignmentRow?.id ?? null;
 
           // Initialize requirement tracking records based on onboarding choice for past schedules
           if (
@@ -434,8 +441,11 @@ export async function POST(request: NextRequest) {
                   await supabase.from("submissions").insert({
                     id: crypto.randomUUID(),
                     faculty_profile_id: newProfile.id,
+                    faculty_assignment_id: assignmentId,
                     curriculum_id: curriculumId,
                     requirement_code: code,
+                    academic_year: academicYear,
+                    semester: term,
                     status: subStatus,
                     due_at: subDueAt,
                     remarks: subRemarks,

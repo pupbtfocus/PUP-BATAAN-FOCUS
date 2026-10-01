@@ -716,6 +716,17 @@ export async function getFacultyInitialData(
     });
   }
 
+  const globalWindowLocked = !submissionWindow.isOpen || !submissionWindow.isConfigured;
+  const nowMs = Date.now();
+  const hasActiveGracePeriod =
+    globalWindowLocked &&
+    requirementStatuses.some((r) => {
+      if (!r.due_at) return false;
+      const dueIso = r.due_at.includes("T") ? r.due_at : `${r.due_at}T23:59:59+08:00`;
+      const dueMs = new Date(dueIso).getTime();
+      return !Number.isNaN(dueMs) && nowMs <= dueMs;
+    });
+
   return {
     requirementStatuses,
     requirementTemplates: activeTemplates,
@@ -725,7 +736,7 @@ export async function getFacultyInitialData(
     submissionWindow,
     pastSubmissions,
     hasActiveSchedule: Boolean(submissionWindow.isConfigured && submissionWindow.isOpen),
-    isLocked: !submissionWindow.isOpen || !submissionWindow.isConfigured,
+    isLocked: globalWindowLocked && !hasActiveGracePeriod,
     department: departmentName,
     program: programInfo,
     avatarUrl,
