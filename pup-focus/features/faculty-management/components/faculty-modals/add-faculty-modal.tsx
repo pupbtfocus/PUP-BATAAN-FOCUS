@@ -49,7 +49,7 @@ export interface OnboardingCheckResult {
 }
 
 export interface OnboardingOptionsPayload {
-  onboardingOption: "grace_period" | "custom_deadlines" | "exempt";
+  onboardingOption: "grace_period" | "custom_deadlines" | "exempt" | "standard";
   gracePeriodIso?: string;
   customDeadlines?: Record<string, string>;
 }
@@ -124,7 +124,7 @@ export function AddFacultyPanel({
   const [onboardingData, setOnboardingData] = useState<OnboardingCheckResult | null>(null);
   const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
   const [pendingFormInput, setPendingFormInput] = useState<FacultyAccountFormInput | null>(null);
-  const [selectedOption, setSelectedOption] = useState<"grace_period" | "custom_deadlines" | "exempt">("grace_period");
+  const [selectedOption, setSelectedOption] = useState<"grace_period" | "custom_deadlines" | "exempt" | "standard">("grace_period");
   const [gracePresetDays, setGracePresetDays] = useState<number>(7);
   const [customGraceDate, setCustomGraceDate] = useState<string>("");
   const [customPerScheduleDeadlines, setCustomPerScheduleDeadlines] = useState<Record<string, { date: string; time: string }>>({});
@@ -439,24 +439,24 @@ export function AddFacultyPanel({
       {currentStep === "onboarding" && onboardingData ? (
         /* ================= ONBOARDING OPTIONS SCREEN ================= */
         <div className="flex flex-col gap-4">
-          {/* Past Deadlines Notice Banner */}
-          <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-100 via-amber-50 to-amber-200/70 dark:from-[#3a2208] dark:via-[#2b1805] dark:to-[#351e06] p-4 space-y-1.5 shadow-xs">
+          {/* Notice Banner - Solid Amber Background */}
+          <div className="rounded-xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-4 space-y-1.5 shadow-sm">
             <div className="flex items-center gap-2">
-              <AppIcon icon={WarningTriangle} size="md" color="warning" />
-              <span className="font-bold text-sm text-amber-950 dark:text-amber-100">
-                Submissions are closed for this term
+              <AppIcon icon={WarningTriangle} size="md" color="inherit" className="text-amber-950 dark:text-amber-300" />
+              <span className="font-bold text-sm text-slate-950 dark:text-amber-100">
+                Submissions are closed right now
               </span>
             </div>
             <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
-              Submissions in <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> are currently closed for {onboardingData.schedules.length} requirements.
+              The submission schedule for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> is currently closed.
             </p>
-            <p className="text-xs text-amber-950/80 dark:text-amber-200/80 font-medium">
+            <p className="text-xs text-amber-950/85 dark:text-amber-200/80 font-medium">
               {(() => {
                 const name = `${pendingFormInput?.firstName || form.getValues("firstName") || ""} ${pendingFormInput?.lastName || form.getValues("lastName") || ""}`.trim();
                 return name ? (
-                  <>How would you like to handle requirements for <strong className="text-slate-950 dark:text-white">{name}</strong>?</>
+                  <>How would you like to set up requirements for <strong className="text-slate-950 dark:text-white">{name}</strong>?</>
                 ) : (
-                  <>How would you like to handle requirements for <strong className="text-slate-950 dark:text-white">this faculty member</strong>?</>
+                  <>How would you like to set up requirements for <strong className="text-slate-950 dark:text-white">this faculty member</strong>?</>
                 );
               })()}
             </p>
@@ -469,7 +469,7 @@ export function AddFacultyPanel({
               onClick={() => setSelectedOption("grace_period")}
               className={`rounded-xl border p-4 transition-all cursor-pointer space-y-3 ${
                 selectedOption === "grace_period"
-                  ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-500/20"
+                  ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
                   : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
               }`}
             >
@@ -484,14 +484,14 @@ export function AddFacultyPanel({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                        Option A: Extra Days (Grace Period)
+                        Option A: Give Extra Days (Grace Period)
                       </span>
                       <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
                         Recommended
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      Give extra time ({gracePresetDays > 0 ? `${gracePresetDays} days` : "custom date"}) to submit requirements after registration.
+                      Give this teacher extra days ({gracePresetDays > 0 ? `${gracePresetDays} days` : "custom date"}) to submit requirements after signing up.
                     </p>
                   </div>
                 </div>
@@ -500,7 +500,7 @@ export function AddFacultyPanel({
               {selectedOption === "grace_period" && (
                 <div className="pl-7 pt-1 space-y-2 border-t border-amber-200 dark:border-amber-900/40 mt-2">
                   <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                    Choose Grace Duration:
+                    Choose extra days:
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
                     {[7, 14, 30].map((days) => (
@@ -527,7 +527,7 @@ export function AddFacultyPanel({
                       </button>
                     ))}
                     <div className="flex items-center gap-1.5 sm:ml-auto">
-                      <span className="text-xs text-slate-500">Custom Date:</span>
+                      <span className="text-xs text-slate-500">Pick date:</span>
                       <input
                         type="date"
                         value={customGraceDate}
@@ -541,95 +541,50 @@ export function AddFacultyPanel({
                     </div>
                   </div>
                   <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
-                    Effective Target Deadline: {customGraceDate || "7 days from today"} at 11:59 PM.
+                    Personal deadline: {customGraceDate || "7 days from today"} at 11:59 PM.
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Option B: Custom Deadlines */}
+            {/* Option B: Normal Add */}
             <div
-              onClick={() => setSelectedOption("custom_deadlines")}
-              className={`rounded-xl border p-4 transition-all cursor-pointer space-y-3 ${
-                selectedOption === "custom_deadlines"
-                  ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-500/20"
+              onClick={() => setSelectedOption("standard")}
+              className={`rounded-xl border p-4 transition-all cursor-pointer ${
+                selectedOption === "standard"
+                  ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
                   : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
               }`}
             >
               <div className="flex items-start gap-3">
                 <input
                   type="radio"
-                  checked={selectedOption === "custom_deadlines"}
-                  onChange={() => setSelectedOption("custom_deadlines")}
+                  checked={selectedOption === "standard"}
+                  onChange={() => setSelectedOption("standard")}
                   className="mt-1 accent-amber-500 cursor-pointer"
                 />
                 <div>
-                  <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                    Option B: Custom Deadlines per Requirement
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                      Option B: Normal Add (Same as Everyone)
+                    </span>
+                    <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
+                      Standard
+                    </span>
+                  </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Manually pick a specific individual due date & time for each past requirement schedule.
+                    Add normally like other faculty members. Uploads stay locked until you set and open a submission schedule.
                   </p>
                 </div>
               </div>
-
-              {selectedOption === "custom_deadlines" && (
-                <div className="pl-7 pt-2 space-y-2 border-t border-amber-200 dark:border-amber-900/40 mt-2 max-h-56 overflow-y-auto pr-1">
-                  {onboardingData.schedules.map((sched) => (
-                    <div
-                      key={sched.code}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs"
-                    >
-                      <div>
-                        <span className="font-semibold text-slate-900 dark:text-slate-100">{sched.title}</span>
-                        <span className="text-[10px] text-slate-400 block font-mono">{sched.code}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="date"
-                          value={customPerScheduleDeadlines[sched.code]?.date || customGraceDate}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            const newDate = e.target.value;
-                            setCustomPerScheduleDeadlines((prev) => ({
-                              ...prev,
-                              [sched.code]: {
-                                date: newDate,
-                                time: prev[sched.code]?.time || "23:59",
-                              },
-                            }));
-                          }}
-                          className="p-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs"
-                        />
-                        <input
-                          type="time"
-                          value={customPerScheduleDeadlines[sched.code]?.time || "23:59"}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            const newTime = e.target.value;
-                            setCustomPerScheduleDeadlines((prev) => ({
-                              ...prev,
-                              [sched.code]: {
-                                date: prev[sched.code]?.date || customGraceDate,
-                                time: newTime,
-                              },
-                            }));
-                          }}
-                          className="p-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* Option C: Exempt / Waive */}
+            {/* Option C: Waive / Excuse */}
             <div
               onClick={() => setSelectedOption("exempt")}
               className={`rounded-xl border p-4 transition-all cursor-pointer ${
                 selectedOption === "exempt"
-                  ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-500/20"
+                  ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
                   : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
               }`}
             >
@@ -643,14 +598,14 @@ export function AddFacultyPanel({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                      Option C: Waive Requirements
+                      Option C: Excuse Requirements (Waived)
                     </span>
                     <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
-                      Exempt
+                      Excused
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Waive all closed requirements for this faculty member so their compliance score isn't affected.
+                    Excuse past requirements for this faculty member so their compliance score isn't affected.
                   </p>
                 </div>
               </div>
@@ -850,34 +805,34 @@ export function AddFacultyPanel({
 
           {/* Onboarding Policy Options Banner & Action Button */}
           {onboardingData?.hasPastDeadlines ? (
-            <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500 bg-gradient-to-r from-amber-100 via-amber-50 to-amber-200/80 dark:from-[#3a2208] dark:via-[#2b1805] dark:to-[#351e06] p-4 space-y-3 shadow-xs">
+            <div className="rounded-xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <AppIcon icon={WarningTriangle} size="sm" color="warning" />
-                  <span className="font-bold text-xs text-amber-950 dark:text-amber-100">
+                  <AppIcon icon={WarningTriangle} size="sm" color="inherit" className="text-amber-950 dark:text-amber-300" />
+                  <span className="font-bold text-xs text-slate-950 dark:text-amber-100">
                     Submissions are closed
                   </span>
                 </div>
                 <span
                   className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border shadow-2xs ${
                     hasAppliedOptions
-                      ? "bg-emerald-200 dark:bg-emerald-950/80 text-emerald-950 dark:text-emerald-200 border-emerald-400 dark:border-emerald-600"
-                      : "bg-amber-300 dark:bg-amber-900/80 text-amber-950 dark:text-amber-100 border-amber-400 dark:border-amber-700"
+                      ? "bg-emerald-600 text-white border-emerald-700"
+                      : "bg-slate-950 text-amber-300 border-slate-900"
                   }`}
                 >
                   {hasAppliedOptions
                     ? selectedOption === "grace_period"
                       ? `Grace Period (+${gracePresetDays || 7}d)`
-                      : selectedOption === "custom_deadlines"
-                      ? "Custom Dates"
-                      : "Waived"
+                      : selectedOption === "standard"
+                      ? "Normal Add"
+                      : "Excused"
                     : "Select Option First"}
                 </span>
               </div>
               <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
                 {hasAppliedOptions
-                  ? "Requirements policy selected and ready to apply upon account creation."
-                  : "Submissions are currently closed. You must choose how to handle requirements for this faculty member before continuing."}
+                  ? "Requirement setup chosen and ready to apply."
+                  : "Submissions are closed right now. Pick how to handle requirements for this teacher before adding."}
               </p>
               <button
                 type="button"
@@ -886,7 +841,7 @@ export function AddFacultyPanel({
                   setPendingFormInput(values);
                   setStep("onboarding");
                 }}
-                className="w-full py-2.5 px-4 rounded-xl border border-amber-500/80 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 hover:from-amber-300 hover:to-amber-300 dark:from-amber-500 dark:via-amber-400 dark:to-amber-500 dark:hover:from-amber-400 dark:hover:to-amber-400 text-slate-950 font-black text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.99]"
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-950 hover:bg-slate-900 text-amber-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
               >
                 <span>{hasAppliedOptions ? "Change Options →" : "Customize Options →"}</span>
               </button>
@@ -974,7 +929,7 @@ export function AddFacultyModal({
           title={modalStep === "onboarding" ? "Requirement Options" : "Add Faculty Account"}
           subtitle={
             modalStep === "onboarding"
-              ? "Choose how closed requirements should be handled for this faculty member"
+              ? "Choose how to handle submissions for this teacher"
               : "Create credentials and assign department permissions"
           }
           onClose={onClose}

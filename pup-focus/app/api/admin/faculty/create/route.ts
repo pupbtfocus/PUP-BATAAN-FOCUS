@@ -381,7 +381,7 @@ export async function POST(request: NextRequest) {
           // Initialize requirement tracking records based on onboarding choice for past schedules
           if (
             onboardingOption &&
-            ["grace_period", "custom_deadlines", "exempt"].includes(onboardingOption)
+            ["grace_period", "custom_deadlines", "exempt", "standard", "normal"].includes(onboardingOption)
           ) {
             try {
               // 1. Get curriculum
@@ -436,6 +436,10 @@ export async function POST(request: NextRequest) {
                     subStatus = "exempted";
                     subDueAt = null;
                     subRemarks = "Exempted during new faculty onboarding";
+                  } else if (onboardingOption === "standard" || onboardingOption === "normal") {
+                    subStatus = "pending";
+                    subDueAt = null;
+                    subRemarks = "Standard registration (no personal schedule set)";
                   }
 
                   await supabase.from("submissions").insert({
