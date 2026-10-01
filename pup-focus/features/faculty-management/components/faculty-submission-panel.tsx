@@ -1485,6 +1485,40 @@ function FacultySubmissionPanelContent({
   // True when admin has not configured any schedule (e.g. schedules deleted from database)
   const isWindowNotConfigured = !isLoadingSubmissionWindow && !isWindowConfigured;
 
+  // True when the global window is off but this specific faculty has an active grace period due_at
+  const now = Date.now();
+  const hasActiveGracePeriod =
+    !isSubmissionAvailable &&
+    displayedRequirementStatuses.some((r) => {
+      const due = (r as any).due_at || (r as any).customDueDate;
+      if (!due) return false;
+      const dueIso = due.includes("T") ? due : `${due}T23:59:59+08:00`;
+      const dueMs = new Date(dueIso).getTime();
+      return !Number.isNaN(dueMs) && now <= dueMs;
+    });
+
+  const earliestGracePeriodDeadline = hasActiveGracePeriod
+    ? displayedRequirementStatuses
+        .map((r) => {
+          const due = (r as any).due_at || (r as any).customDueDate;
+          if (!due) return null;
+          const dueIso = due.includes("T") ? due : `${due}T23:59:59+08:00`;
+          const ms = new Date(dueIso).getTime();
+          return !Number.isNaN(ms) && now <= ms ? new Date(dueIso) : null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => (a as Date).getTime() - (b as Date).getTime())[0] as Date | null
+    : null;
+
+  const gracePeriodDeadlineLabel = earliestGracePeriodDeadline
+    ? earliestGracePeriodDeadline.toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "Asia/Manila",
+      })
+    : null;
+
   // Lacking requirements only count mandatory requirements that are unsubmitted or rejected
   const lackingRequirements = useMemo(() => {
     if (isAllValidated) return [];
@@ -2428,43 +2462,59 @@ function FacultySubmissionPanelContent({
                   </div>
 
                   {/* Card 2: Submission Window Status */}
-                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors">
+                  <div className={`rounded-2xl border-2 ${
+                    hasActiveGracePeriod
+                      ? "border-emerald-400 dark:border-emerald-500/60"
+                      : "border-amber-400 dark:border-amber-500/60"
+                  } bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-3 transition-colors`}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Window Status
                       </span>
-                      {isWindowNotConfigured || (hasActiveSchedule && !isWindowClosed) ? (
+                      {hasActiveGracePeriod ? (
+                        <Check className="h-5 w-5 text-emerald-500" strokeWidth={2.5} />
+                      ) : isWindowNotConfigured || (hasActiveSchedule && !isWindowClosed) ? (
                         <Calendar className="h-5 w-5 text-slate-400" strokeWidth={2} />
                       ) : (
                         <Hourglass className="h-5 w-5 text-slate-400" strokeWidth={2} />
                       )}
                     </div>
                     <div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      <h3 className={`text-xl sm:text-2xl font-bold tracking-tight ${
+                        hasActiveGracePeriod
+                          ? "text-emerald-700 dark:text-emerald-400"
+                          : "text-slate-900 dark:text-slate-100"
+                      }`}>
                         {isAllValidated
                           ? "Done All for This Sem"
-                          : isWindowNotConfigured
-                            ? "Schedule Not Set"
-                            : isWindowClosed
-                              ? "Window Closed"
-                              : "Submission Open"}
+                          : hasActiveGracePeriod
+                            ? "Grace Period Active"
+                            : isWindowNotConfigured
+                              ? "Schedule Not Set"
+                              : isWindowClosed
+                                ? "Window Closed"
+                                : "Submission Open"}
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
                           ? "All requirements completed for this term"
-                          : windowDeadlineDisplay
-                            ? `Deadline: ${windowDeadlineDisplay}`
-                            : "Awaiting admin schedule"}
+                          : hasActiveGracePeriod && gracePeriodDeadlineLabel
+                            ? `Personal deadline: ${gracePeriodDeadlineLabel}`
+                            : windowDeadlineDisplay
+                              ? `Deadline: ${windowDeadlineDisplay}`
+                              : "Awaiting admin schedule"}
                       </p>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {isAllValidated
                         ? "Requirements locked in validated status"
-                        : isSubmissionAvailable
-                          ? "Uploads and resubmissions are currently enabled"
-                          : isWindowNotConfigured
-                            ? "Submissions will unlock when scheduled"
-                            : "Document submissions are currently locked"}
+                        : hasActiveGracePeriod
+                          ? "Uploads are enabled via your personal onboarding grace period"
+                          : isSubmissionAvailable
+                            ? "Uploads and resubmissions are currently enabled"
+                            : isWindowNotConfigured
+                              ? "Submissions will unlock when scheduled"
+                              : "Document submissions are currently locked"}
                     </p>
                   </div>
 
@@ -2949,8 +2999,38 @@ function FacultySubmissionPanelContent({
                     </div>
                 )}
 
+                {/* 0. Grace Period Active Banner — shown when global window is off but faculty has personal due_at */}
+                {hasActiveGracePeriod && !isAllValidated && (
+                  <div className="p-3 sm:p-4 rounded-xl border border-emerald-400 dark:border-emerald-700/60 bg-emerald-50/70 dark:bg-emerald-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
+                    <div className="flex items-start sm:items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 shrink-0">
+                        <AppIcon icon={Check} size="md" color="inherit" />
+                      </div>
+                      <div>
+                        <div>
+                          <span className="font-bold text-emerald-900 dark:text-emerald-300 mr-1.5">
+                            Grace Period Active:
+                          </span>
+                          Your account was recently registered. A personal submission window has been granted for you to upload your requirements.
+                        </div>
+                        {gracePeriodDeadlineLabel && (
+                          <div className="mt-1.5 text-emerald-800 dark:text-emerald-400 font-semibold">
+                            Your personal deadline: {gracePeriodDeadlineLabel} at 11:59 PM
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-300 border border-emerald-500/40 text-[11px] font-bold">
+                        <AppIcon icon={Check} size="xs" color="inherit" />
+                        <span>Uploads Unlocked</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* 1. Schedule Not Set Banner (No Schedule Configured in Database) */}
-                {isWindowNotConfigured && !isAllValidated && (
+                {isWindowNotConfigured && !isAllValidated && !hasActiveGracePeriod && (
                   <div className="p-3 sm:p-4 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
                     <div className="flex items-start sm:items-center gap-2.5">
                       <div className="p-1.5 rounded-lg bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
@@ -2975,7 +3055,7 @@ function FacultySubmissionPanelContent({
                 )}
 
                 {/* 2. Closed Window Banner with Request Extension Button (Schedule was set and has now expired) */}
-                {isWindowClosed && !isAllValidated && (
+                {isWindowClosed && !isAllValidated && !hasActiveGracePeriod && (
                   <div className="p-3 sm:p-4 rounded-xl border border-amber-300 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
                     <div className="flex items-start sm:items-center gap-2.5">
                       <div className="p-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
