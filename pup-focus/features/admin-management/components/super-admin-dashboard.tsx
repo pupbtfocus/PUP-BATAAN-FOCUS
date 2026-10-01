@@ -457,7 +457,7 @@ export function SuperAdminDashboard({
   async function onAddFaculty(
     input: FacultyAccountFormInput,
     onboardingPayload?: {
-      onboardingOption: "grace_period" | "custom_deadlines" | "exempt";
+      onboardingOption: "grace_period" | "custom_deadlines" | "exempt" | "standard";
       gracePeriodIso?: string;
       customDeadlines?: Record<string, string>;
     },
@@ -1674,13 +1674,13 @@ export function SuperAdminDashboard({
           <div className="min-h-0 flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
-                {/* Gold Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                {/* Solid Amber Card Header */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                       Dashboard
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
                       Oversee administrative accounts, manage faculty compliance, configure academic cycles, and monitor campus-wide operations.
                     </p>
                   </div>
@@ -1689,7 +1689,7 @@ export function SuperAdminDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingAccounts || isLoadingFaculty}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <Refresh className={`h-3.5 w-3.5 ${isLoadingAccounts || isLoadingFaculty ? "animate-spin" : ""}`} />
                       <span>{isLoadingAccounts || isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
@@ -1818,13 +1818,13 @@ export function SuperAdminDashboard({
 
             {activeSection === "accounts" ? (
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                {/* Gold Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                {/* Solid Amber Card Header */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                       Admin Management
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
                       Configure and oversee administrative staff privileges and account accesses.
                     </p>
                   </div>
@@ -1851,7 +1851,7 @@ export function SuperAdminDashboard({
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingAccounts}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <Refresh className={`h-3.5 w-3.5 ${isLoadingAccounts ? "animate-spin" : ""}`} />
                       <span>{isLoadingAccounts ? "Refreshing..." : "Refresh"}</span>
@@ -1884,13 +1884,13 @@ export function SuperAdminDashboard({
 
             {activeSection === "faculty" ? (
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                {/* Gold Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                {/* Solid Amber Card Header */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                       Faculty Management
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
                       View, manage, and monitor faculty profiles, department assignments, and account statuses.
                     </p>
                   </div>
@@ -1960,13 +1960,13 @@ export function SuperAdminDashboard({
 
             {activeSection === "verification" ? (
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                {/* Gold Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                {/* Solid Amber Card Header */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                       Requirements Verification
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
                       Review, validate, or request revisions for submitted faculty compliance documents for this academic term.
                     </p>
                   </div>
@@ -1996,13 +1996,13 @@ export function SuperAdminDashboard({
 
             {activeSection === "terms" ? (
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                {/* Gold Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                {/* Solid Amber Card Header */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                       Academic Year and Semester
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
                       Manage academic years, semester cycles, and activate the current operational term.
                     </p>
                   </div>
@@ -2010,7 +2010,7 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <AppIcon icon={Refresh} size="sm" color="inherit" />
                       <span>Refresh</span>
@@ -2029,13 +2029,13 @@ export function SuperAdminDashboard({
 
             {activeSection === "window" ? (
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                {/* Gold Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                {/* Solid Amber Card Header */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                       Submission Schedule
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
                       Set and manage submission opening dates, closing deadlines, and faculty extension requests.
                     </p>
                   </div>
@@ -2043,7 +2043,7 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <AppIcon icon={Refresh} size="sm" color="inherit" />
                       <span>Refresh</span>
@@ -2063,13 +2063,13 @@ export function SuperAdminDashboard({
 
             {activeSection === "templates" ? (
               <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                {/* Gold Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                {/* Solid Amber Card Header */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                       Requirement Templates
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
                       Define, configure, and standardize required submission document checklists for faculty.
                     </p>
                   </div>
@@ -2077,7 +2077,7 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={() => setTemplatesRefreshTrigger((prev) => prev + 1)}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-3.5 py-2 sm:py-1.5 text-xs font-bold text-slate-900 dark:text-amber-100 dark:border-amber-500/50 transition cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <Refresh className="h-3.5 w-3.5" strokeWidth={2} />
                       <span>Refresh</span>
@@ -2091,13 +2091,13 @@ export function SuperAdminDashboard({
 
             {activeSection === "backups" ? (
               <article className="p-2 sm:p-4 md:p-5">
-                {/* Gold Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-wrap items-center justify-between gap-3 mb-6">
+                {/* Solid Amber Card Header */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-wrap items-center justify-between gap-3 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                       Backups & Archive
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
                       Create system snapshots, export compliance records, and download encrypted archives.
                     </p>
                   </div>
@@ -2109,13 +2109,13 @@ export function SuperAdminDashboard({
 
             {activeSection === "audit" ? (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                {/* Gold Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 dark:from-[#2a1705] dark:via-[#3d2208] dark:to-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                {/* Solid Amber Card Header */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
                       Transaction Log
                     </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/85 dark:text-amber-200/90 font-medium leading-relaxed">
+                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
                       Track and inspect real-time security events, administrator actions, and user session activity.
                     </p>
                   </div>

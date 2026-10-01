@@ -863,18 +863,18 @@ export function SubmissionWindowPanel({
         </div>
       )}
 
-      {/* Pending Extension Requests Alert Banner */}
+      {/* Pending Extension Requests Alert Banner - Solid Amber */}
       {pendingRequestsCount > 0 && (
-        <div className="rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/30 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="rounded-xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md shadow-amber-500/10">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0">
+            <div className="p-2 rounded-lg bg-amber-500/30 text-amber-950 dark:text-amber-300 shrink-0">
               <AppIcon icon={Hourglass} size="lg" color="inherit" />
             </div>
             <div>
-              <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
+              <p className="text-sm font-bold text-slate-950 dark:text-amber-100">
                 {pendingRequestsCount} Pending Faculty Extension Request{pendingRequestsCount !== 1 ? "s" : ""}
               </p>
-              <p className="text-xs text-amber-800/80 dark:text-amber-300/80">
+              <p className="text-xs text-amber-950/90 dark:text-amber-200/90">
                 Faculty members have requested deadline extensions for their compliance requirements.
               </p>
             </div>
