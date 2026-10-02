@@ -136,6 +136,8 @@ export interface ActiveFacultySchedule {
   deadlineFormatted: string;
   daysRemaining: number;
   timeRemainingLabel: string;
+  openDateFormatted?: string;
+  closeDateFormatted?: string;
   unlockedRequirements: string[];
   unlockedCount: number;
   remarks: string;
@@ -198,7 +200,10 @@ export function SubmissionWindowPanel({
 
   // Active Faculty On-Schedule states (Option A Onboarding Grace Period / Extensions)
   const [activeFacultySchedules, setActiveFacultySchedules] = useState<ActiveFacultySchedule[]>([]);
+  const [closingFacultyId, setClosingFacultyId] = useState<string | null>(null);
   const [showActiveFacultyModal, setShowActiveFacultyModal] = useState(false);
+  const [facultyToClose, setFacultyToClose] = useState<ActiveFacultySchedule | null>(null);
+  const [facultyCloseCountdown, setFacultyCloseCountdown] = useState(3);
 
   // Edit vs. Save schedule toggle (defaults to editing if no schedule exists yet)
   const [isEditingSchedule, setIsEditingSchedule] = useState(false);
@@ -347,6 +352,38 @@ export function SubmissionWindowPanel({
     }
   }, []);
 
+  const handleCloseFacultySchedule = (fac: ActiveFacultySchedule) => {
+    setFacultyToClose(fac);
+    setFacultyCloseCountdown(3);
+  };
+
+  const confirmCloseFacultySchedule = async () => {
+    if (!facultyToClose) return;
+    const fac = facultyToClose;
+    setClosingFacultyId(fac.facultyProfileId);
+    try {
+      const res = await fetch("/api/admin/submission-window/active-faculty-schedules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ facultyProfileId: fac.facultyProfileId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to close faculty submission schedule");
+      } else {
+        setSuccess(`Submission schedule closed for ${fac.facultyName}.`);
+        setFacultyToClose(null);
+        await fetchActiveFacultySchedules();
+        onWindowChange?.();
+      }
+    } catch {
+      setError("Failed to close faculty submission schedule");
+    } finally {
+      setClosingFacultyId(null);
+    }
+  };
+
   async function loadWindow() {
     setIsLoading(true);
     setError(null);
@@ -466,6 +503,17 @@ export function SubmissionWindowPanel({
     }
     return () => clearInterval(interval);
   }, [showCloseConfirmation, closeCountdown]);
+
+  // Faculty Close countdown timer tick
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (facultyToClose && facultyCloseCountdown > 0) {
+      interval = setInterval(() => {
+        setFacultyCloseCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [facultyToClose, facultyCloseCountdown]);
 
   useEffect(() => {
     if (!closeDateTime || isAlwaysOpen || closeDateTime.startsWith("2099")) return;
@@ -830,23 +878,23 @@ export function SubmissionWindowPanel({
         onClose={() => setSuccess(null)}
       />
 
-      {/* Active Faculty Schedules Alert Banner (Option A Onboarding Grace Period / Extensions) */}
+      {/* Active Faculty Schedules Alert Banner (Option A Onboarding Grace Period / Extensions) - Solid Green with Gold Button */}
       {activeFacultySchedules.length > 0 && (
-        <div className="rounded-xl border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50/90 dark:bg-emerald-950/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="rounded-xl border-2 border-emerald-600 dark:border-emerald-500 bg-emerald-700 dark:bg-emerald-900 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md shadow-emerald-700/20 text-white">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 shrink-0">
+            <div className="p-2 rounded-lg bg-emerald-800 dark:bg-emerald-950 text-white shrink-0 border border-emerald-600/50">
               <AppIcon icon={CheckCircle} size="lg" color="inherit" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-emerald-950 dark:text-emerald-200">
+                <p className="text-sm font-bold text-white">
                   {activeFacultySchedules.length} Faculty Member{activeFacultySchedules.length !== 1 ? "s" : ""} Currently On Active Schedule
                 </p>
-                <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-200/80 dark:bg-emerald-800/80 text-emerald-900 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-600">
+                <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-800 text-emerald-100 border border-emerald-500">
                   On Schedule
                 </span>
               </div>
-              <p className="text-xs text-emerald-900/80 dark:text-emerald-300/80 mt-0.5">
+              <p className="text-xs text-emerald-100 mt-0.5 font-medium leading-relaxed">
                 {isWindowOpen
                   ? "Faculty members with active individual deadlines or onboarding grace periods."
                   : "Global submission schedule is currently closed, but these faculty have active personal submission windows (Option A Onboarding or Extensions)."}
@@ -856,7 +904,7 @@ export function SubmissionWindowPanel({
           <button
             type="button"
             onClick={() => setShowActiveFacultyModal(true)}
-            className="shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-lg transition shadow-xs cursor-pointer flex items-center gap-1.5"
+            className="shrink-0 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg transition shadow-xs cursor-pointer flex items-center gap-1.5 active:scale-95 border border-amber-300/80"
           >
             <span>View On-Schedule Faculty ({activeFacultySchedules.length})</span>
           </button>
@@ -1766,6 +1814,92 @@ export function SubmissionWindowPanel({
         </div>
       ) : null}
 
+      {/* Individual Faculty Close Confirmation Modal — 3-second Safety Countdown */}
+      {facultyToClose ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+            <ModalHeader
+              icon={WarningTriangle}
+              title={`Close Submission for ${facultyToClose.facultyName}?`}
+              subtitle="Immediate Closure & Portal Lock"
+              onClose={() => {
+                setFacultyToClose(null);
+                setFacultyCloseCountdown(3);
+              }}
+              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
+            />
+            <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+              This will <span className="font-bold text-rose-700 dark:text-rose-400">immediately close</span> the active submission schedule for <strong className="text-slate-900 dark:text-slate-100">{facultyToClose.facultyName}</strong> ({facultyToClose.email}). Their individual upload portal will be locked immediately.
+            </p>
+
+            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 dark:border-amber-950/60 bg-amber-50/70 dark:bg-amber-950/20 p-3 text-xs text-amber-900 dark:text-amber-300">
+              <AppIcon icon={ShieldAlert} size="md" color="warning" className="mt-0.5 shrink-0" />
+              <p className="leading-relaxed">
+                <span className="font-semibold">Documents Protected:</span> Any compliance documents already uploaded by this faculty member will remain intact and validated/under review.
+              </p>
+            </div>
+
+            {/* Countdown indicator */}
+            {facultyCloseCountdown > 0 ? (
+              <div className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/30 px-4 py-3">
+                <div className="relative flex items-center justify-center h-10 w-10 shrink-0">
+                  <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 dark:text-slate-800" />
+                    <circle
+                      cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5"
+                      className="text-rose-600 dark:text-rose-500 transition-all duration-1000 ease-linear"
+                      strokeDasharray="97.39"
+                      strokeDashoffset={97.39 * (1 - facultyCloseCountdown / 3)}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="absolute text-sm font-black text-rose-700 dark:text-rose-400">{facultyCloseCountdown}</span>
+                </div>
+                <p className="text-[11px] text-rose-800 dark:text-rose-300">
+                  Please wait <span className="font-bold">{facultyCloseCountdown} second{facultyCloseCountdown !== 1 ? "s" : ""}</span> before confirming. This safety timer protects against accidental closures.
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3">
+                <AppIcon icon={CheckCircle} size="lg" color="success" />
+                <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold">
+                  Safety timer completed. You may now confirm the closure.
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setFacultyToClose(null);
+                  setFacultyCloseCountdown(3);
+                }}
+                className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmCloseFacultySchedule()}
+                disabled={facultyCloseCountdown > 0 || closingFacultyId === facultyToClose.facultyProfileId}
+                className={`text-xs font-semibold rounded-lg px-4 py-2 transition-all cursor-pointer shadow-xs ${
+                  facultyCloseCountdown > 0 || closingFacultyId === facultyToClose.facultyProfileId
+                    ? "bg-slate-200 dark:bg-slate-800 text-slate-400 border border-slate-300 dark:border-slate-700 cursor-not-allowed opacity-60"
+                    : "bg-[#780000] hover:bg-[#5e0000] text-white"
+                }`}
+              >
+                {facultyCloseCountdown > 0
+                  ? `Confirm Close (${facultyCloseCountdown}s)`
+                  : closingFacultyId === facultyToClose.facultyProfileId
+                  ? "Closing..."
+                  : "Confirm Close Submission"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {warningModalData.isOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in">
           <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
@@ -1827,89 +1961,137 @@ export function SubmissionWindowPanel({
               className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
             />
 
-            <div className="p-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 flex items-start gap-2.5">
-              <AppIcon icon={CheckCircle} size="md" color="inherit" className="mt-0.5 shrink-0" />
-              <p className="leading-relaxed">
+            <div className="p-3.5 rounded-xl bg-emerald-700 dark:bg-emerald-800 border-2 border-emerald-600 dark:border-emerald-700 text-xs text-white flex items-start gap-2.5 shadow-md">
+              <AppIcon icon={CheckCircle} size="md" color="white" className="mt-0.5 shrink-0 text-white" />
+              <p className="leading-relaxed font-medium text-white">
                 These faculty members currently have permission to upload compliance documents even if the global window is closed. Their personal submission deadlines are enforced individually.
               </p>
             </div>
 
             <div className="overflow-y-auto space-y-3 pr-1 flex-1">
-              {activeFacultySchedules.length === 0 ? (
-                <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                  <p className="font-semibold text-slate-700 dark:text-slate-300">
-                    No faculty currently on individual schedule.
-                  </p>
-                  <p>Faculty onboarded with Option A or granted extension requests will appear here.</p>
-                </div>
-              ) : (
-                activeFacultySchedules.map((fac) => (
-                  <div
-                    key={fac.facultyProfileId}
-                    className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/20 space-y-3 transition-colors"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
+              {(() => {
+                const seenKeys = new Set<string>();
+                const uniqueFacultySchedules = activeFacultySchedules.filter((fac) => {
+                  const key = fac.facultyProfileId || fac.email;
+                  if (!key || seenKeys.has(key)) return false;
+                  seenKeys.add(key);
+                  return true;
+                });
+
+                if (uniqueFacultySchedules.length === 0) {
+                  return (
+                    <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">
+                        No faculty currently on individual schedule.
+                      </p>
+                      <p>Faculty onboarded with Option A or granted extension requests will appear here.</p>
+                    </div>
+                  );
+                }
+
+                return uniqueFacultySchedules.map((fac) => {
+                  const formattedOpen =
+                    fac.openDateFormatted && fac.openDateFormatted !== "—"
+                      ? fac.openDateFormatted
+                      : (() => {
+                          try {
+                            const d = new Date(fac.deadline);
+                            const openD = new Date(d.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            return openD.toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true,
+                            });
+                          } catch {
+                            return "Active";
+                          }
+                        })();
+
+                  const formattedClose =
+                    fac.closeDateFormatted && fac.closeDateFormatted !== "—"
+                      ? fac.closeDateFormatted
+                      : fac.deadlineFormatted || "—";
+
+                  return (
+                    <div
+                      key={fac.facultyProfileId}
+                      className="p-4 rounded-xl border-2 border-emerald-400 dark:border-emerald-700 bg-white dark:bg-slate-900 space-y-3 transition-colors shadow-xs"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                              {fac.facultyName}
+                            </h4>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                              {fac.typeLabel}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            {fac.email} • {fac.department} • {fac.academicYear} {fac.semester}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs shrink-0">
+                          <div className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-300">
+                            <span className="font-medium text-slate-500 dark:text-slate-400 mr-1">Open:</span>
+                            <strong className="font-bold text-slate-900 dark:text-slate-100">{formattedOpen}</strong>
+                          </div>
+                          <div className="px-2.5 py-1 rounded-md bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 text-[11px] text-emerald-900 dark:text-emerald-200">
+                            <span className="font-medium text-emerald-700 dark:text-emerald-400 mr-1">Close:</span>
+                            <strong className="font-bold text-emerald-950 dark:text-emerald-100">{formattedClose}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                            {fac.facultyName}
-                          </h4>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-                            {fac.typeLabel}
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-300/80 dark:border-emerald-800">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                            Upload Portal Unlocked
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                          {fac.email} • {fac.department} • {fac.academicYear} {fac.semester}
-                        </p>
+                        <button
+                          type="button"
+                          disabled={closingFacultyId === fac.facultyProfileId}
+                          onClick={() => void handleCloseFacultySchedule(fac)}
+                          className="flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2 text-xs font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs active:scale-95 shrink-0"
+                          title="Close submission window for this faculty member"
+                        >
+                          <AppIcon icon={ShieldAlert} size="sm" color="white" />
+                          <span>{closingFacultyId === fac.facultyProfileId ? "Closing..." : "Close Submission"}</span>
+                        </button>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 shrink-0">
-                        <span className="font-semibold bg-emerald-500/15 px-2.5 py-1 rounded-md border border-emerald-500/30 flex items-center gap-1">
-                          <AppIcon icon={Hourglass} size="xs" color="inherit" />
-                          <span>{fac.timeRemainingLabel}</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium block sm:inline sm:mr-1">
-                          Personal Submission Deadline:
-                        </span>
-                        <strong className="text-slate-900 dark:text-slate-100">
-                          {fac.deadlineFormatted}
-                        </strong>
-                      </div>
-                      <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                        ✅ Upload Portal Unlocked
-                      </span>
-                    </div>
-
-                    {Array.isArray(fac.unlockedRequirements) && fac.unlockedRequirements.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                          Unlocked Requirements ({fac.unlockedCount}):
-                        </span>
-                        {fac.unlockedRequirements.map((code) => (
-                          <span
-                            key={code}
-                            className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-semibold border border-slate-200 dark:border-slate-700"
-                          >
-                            {code}
+                      {Array.isArray(fac.unlockedRequirements) && fac.unlockedRequirements.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                            Unlocked Requirements ({fac.unlockedCount}):
                           </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
+                          {fac.unlockedRequirements.map((code) => (
+                            <span
+                              key={code}
+                              className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-semibold border border-slate-200 dark:border-slate-700"
+                            >
+                              {code}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
 
             <div className="flex justify-end pt-2 border-t border-slate-200/70 dark:border-slate-800/70">
               <button
                 type="button"
                 onClick={() => setShowActiveFacultyModal(false)}
-                className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-xs font-semibold transition cursor-pointer shadow-xs"
+                className="px-5 py-2 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs active:scale-95"
               >
                 Close
               </button>
