@@ -52,7 +52,7 @@ export async function GET() {
       // Fallback with minimal columns if academic_year / semester aren't on submissions
       const { data: fallbackSubData, error: fallbackError } = await supabase
         .from("submissions")
-        .select("id, faculty_profile_id, requirement_code, status, due_at, remarks")
+        .select("id, faculty_profile_id, requirement_code, status, due_at, remarks, created_at")
         .gt("due_at", nowIso)
         .eq("status", "pending")
         .order("due_at", { ascending: true });
@@ -100,7 +100,7 @@ export async function GET() {
     if (profileKeys.length > 0) {
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("id, full_name, email, user_id")
+        .select("id, full_name, email, user_id, created_at")
         .in("id", profileKeys);
 
       const profilesList = profilesData || [];
@@ -188,6 +188,29 @@ export async function GET() {
         hour12: true,
       });
 
+      const rawOpenIso = subs[0]?.created_at || profile?.created_at || null;
+      let openDate = rawOpenIso ? new Date(rawOpenIso) : null;
+      if (!openDate || Number.isNaN(openDate.getTime())) {
+        openDate = new Date(deadlineDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+      }
+      const openDateFormatted = openDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      const closeDateFormatted = deadlineDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+
       const uniqueCodes = Array.from(
         new Set(subs.map((s) => s.requirement_code).filter(Boolean))
       );
@@ -213,6 +236,8 @@ export async function GET() {
         deadlineFormatted,
         daysRemaining: days,
         timeRemainingLabel,
+        openDateFormatted,
+        closeDateFormatted,
         unlockedRequirements: uniqueCodes,
         unlockedCount: uniqueCodes.length,
         remarks: subs[0]?.remarks || "Active individual submission schedule",
@@ -252,6 +277,23 @@ export async function GET() {
         hour12: true,
       });
 
+      const openDateFormatted = ext.approved_date
+        ? new Date(`${ext.approved_date}T00:00:00`).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "—";
+
+      const closeDateFormatted = deadlineDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+
       const reqCodes = Array.isArray(ext.requirement_codes)
         ? ext.requirement_codes
         : [];
@@ -269,20 +311,124 @@ export async function GET() {
         deadlineFormatted,
         daysRemaining: days,
         timeRemainingLabel,
+        openDateFormatted,
+        closeDateFormatted,
         unlockedRequirements: reqCodes,
         unlockedCount: reqCodes.length,
         remarks: ext.reason || "Approved deadline extension",
       });
     }
 
+    // Deduplicate schedules by facultyProfileId or email
+    const uniqueSchedules: any[] = [];
+    const seenIds = new Set<string>();
+    for (const s of schedules) {
+      const idKey = s.facultyProfileId || s.email;
+      if (!seenIds.has(idKey)) {
+        seenIds.add(idKey);
+        uniqueSchedules.push(s);
+      }
+    }
+
     return NextResponse.json({
-      count: schedules.length,
-      schedules,
+      count: uniqueSchedules.length,
+      schedules: uniqueSchedules,
     });
   } catch (error) {
     console.error("Failed to fetch active faculty schedules:", error);
     return NextResponse.json(
       { error: "Internal Server Error", count: 0, schedules: [] },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const sessionClient = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await sessionClient.auth.getUser();
+
+    const requesterRole =
+      (user?.user_metadata?.role as string | undefined) ??
+      (user?.app_metadata?.role as string | undefined);
+
+    let hasAccess = isAdminRole(requesterRole);
+    if (!hasAccess && user) {
+      const supabaseCheck = getServiceRoleClient();
+      const { data: prof } = await supabaseCheck
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (prof?.role && isAdminRole(prof.role)) {
+        hasAccess = true;
+      }
+    }
+
+    if (!user || !hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { facultyProfileId } = body;
+    if (!facultyProfileId) {
+      return NextResponse.json({ error: "facultyProfileId is required" }, { status: 400 });
+    }
+
+    const supabase = getServiceRoleClient();
+    const nowIso = new Date().toISOString();
+
+    // 1. Resolve possible profile ID and user_id
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, user_id, full_name")
+      .or(`id.eq.${facultyProfileId},user_id.eq.${facultyProfileId}`)
+      .maybeSingle();
+
+    const targetProfileId = profile?.id || facultyProfileId;
+    const targetUserId = profile?.user_id;
+
+    const targetIds = [targetProfileId, ...(targetUserId ? [targetUserId] : []), ...(facultyProfileId ? [facultyProfileId] : [])];
+    const uniqueTargetIds = Array.from(new Set(targetIds.filter(Boolean)));
+
+    // 2. Clear due_at on any active pending submissions for this faculty member
+    const { error: subUpdateErr } = await supabase
+      .from("submissions")
+      .update({
+        due_at: null,
+        remarks: "Individual submission window closed by admin",
+      })
+      .in("faculty_profile_id", uniqueTargetIds)
+      .gt("due_at", nowIso)
+      .eq("status", "pending");
+
+    if (subUpdateErr) {
+      console.error("Failed to close submissions due_at:", subUpdateErr);
+    }
+
+    // 3. Cancel any active extension requests for this faculty member
+    try {
+      await supabase
+        .from("extension_requests")
+        .update({
+          status: "cancelled",
+        })
+        .in("faculty_user_id", uniqueTargetIds)
+        .eq("status", "approved");
+    } catch {
+      // Best-effort
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Individual submission window closed successfully.",
+    });
+  } catch (error) {
+    console.error("Error closing active faculty schedule:", error);
+    return NextResponse.json(
+      { error: "Failed to close faculty submission schedule" },
       { status: 500 }
     );
   }
