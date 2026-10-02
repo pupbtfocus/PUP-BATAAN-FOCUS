@@ -140,9 +140,15 @@ export function SubmissionWindowCountdown({
     return (
       <div className="rounded-xl border border-emerald-500/40 bg-[#08412a]/90 p-3.5 shadow-xs text-white text-center">
         <div className="flex items-center justify-center gap-2">
+<<<<<<< Updated upstream
           <AppIcon icon={CheckCircle} size="sm" color="inherit" className="text-emerald-300 shrink-0" />
           <span className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-200">
             Requirements Complete
+=======
+          <AppIcon icon={CheckCircle} size="sm" color="inherit" className="text-emerald-300" />
+          <span className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-200">
+            All Requirements Done
+>>>>>>> Stashed changes
           </span>
         </div>
         {windowState?.academicYear && windowState?.semester ? (
@@ -201,9 +207,11 @@ export function SubmissionWindowCountdown({
   > = {
     Open: {
       label:
-        windowState?.badgeLabel ||
-        (isAlwaysOpen ? "Submissions Always Open" : "Submission Open"),
-      dotClass: "bg-emerald-400 pulse-dot",
+        isAllValidated
+          ? "All Requirements Done"
+          : windowState?.badgeLabel ||
+            (isAlwaysOpen ? "Submissions Always Open" : "Submission Open"),
+      dotClass: isAllValidated ? "bg-emerald-400" : "bg-emerald-400 pulse-dot",
       borderClass: "border-amber-400/40",
       bgClass: "bg-[#6b0000]/80 text-emerald-200",
       textClass: "text-emerald-300",
