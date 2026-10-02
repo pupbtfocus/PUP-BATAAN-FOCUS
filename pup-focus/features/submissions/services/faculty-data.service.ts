@@ -717,15 +717,52 @@ export async function getFacultyInitialData(
   }
 
   const globalWindowLocked = !submissionWindow.isOpen || !submissionWindow.isConfigured;
-  const nowMs = Date.now();
-  const hasActiveGracePeriod =
-    globalWindowLocked &&
-    requirementStatuses.some((r) => {
-      if (!r.due_at) return false;
+  let earliestGraceDueMs: number | null = null;
+  let earliestGraceIso: string | null = null;
+
+  for (const r of requirementStatuses) {
+    if (r.due_at) {
       const dueIso = r.due_at.includes("T") ? r.due_at : `${r.due_at}T23:59:59+08:00`;
       const dueMs = new Date(dueIso).getTime();
-      return !Number.isNaN(dueMs) && nowMs <= dueMs;
-    });
+      if (!Number.isNaN(dueMs) && nowMs <= dueMs) {
+        if (earliestGraceDueMs === null || dueMs < earliestGraceDueMs) {
+          earliestGraceDueMs = dueMs;
+          earliestGraceIso = dueIso;
+        }
+      }
+    }
+  }
+
+  const hasActiveGracePeriod = globalWindowLocked && earliestGraceDueMs !== null;
+
+  // Personalize submission window: if global is closed/off but this faculty has an active grace period,
+  // unlock the window strictly for THIS faculty member. Otherwise, lock it for other faculty.
+  let effectiveSubmissionWindow = submissionWindow;
+  if (hasActiveGracePeriod && earliestGraceIso) {
+    const endDate = earliestGraceIso.split("T")[0];
+    effectiveSubmissionWindow = {
+      isConfigured: true,
+      isOpen: true,
+      status: "Open",
+      today: submissionWindow.today,
+      currentTime: submissionWindow.currentTime,
+      startDate: submissionWindow.startDate || submissionWindow.today,
+      endDate,
+      startTime: "00:00:00",
+      endTime: "23:59:59",
+      academicYear: activeAcademicYear,
+      semester: activeSemester,
+      startTimeLabel: "12:00 AM",
+      endTimeLabel: "11:59 PM",
+      currentTimeLabel: submissionWindow.currentTimeLabel,
+    };
+  } else if (globalWindowLocked) {
+    effectiveSubmissionWindow = {
+      ...submissionWindow,
+      isOpen: false,
+      status: "Closed",
+    };
+  }
 
   return {
     requirementStatuses,
@@ -733,9 +770,9 @@ export async function getFacultyInitialData(
     counts,
     academicYear: activeAcademicYear,
     semester: activeSemester,
-    submissionWindow,
+    submissionWindow: effectiveSubmissionWindow,
     pastSubmissions,
-    hasActiveSchedule: Boolean(submissionWindow.isConfigured && submissionWindow.isOpen),
+    hasActiveSchedule: Boolean(effectiveSubmissionWindow.isConfigured && effectiveSubmissionWindow.isOpen),
     isLocked: globalWindowLocked && !hasActiveGracePeriod,
     department: departmentName,
     program: programInfo,

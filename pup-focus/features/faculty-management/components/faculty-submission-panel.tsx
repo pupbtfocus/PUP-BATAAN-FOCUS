@@ -27,6 +27,8 @@ import {
 } from "@/config/compliance";
 import {
   getTodayInManila,
+  getCurrentTimeInManila,
+  format24HourTo12Hour,
   buildAcademicYearOptions,
   normalizeTime24Hour,
 } from "@/features/submissions/services/submission-window.service";
@@ -266,6 +268,8 @@ type SubmissionWindowState = {
   startTimeLabel?: string | null;
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
+  isGracePeriod?: boolean;
+  badgeLabel?: string | null;
 };
 function buildAcademicYears(count = 5): string[] {
   const now = new Date();
@@ -1488,17 +1492,18 @@ function FacultySubmissionPanelContent({
   // True when the global window is off but this specific faculty has an active grace period due_at
   const now = Date.now();
   const hasActiveGracePeriod =
-    !isSubmissionAvailable &&
-    displayedRequirementStatuses.some((r) => {
-      const due = (r as any).due_at || (r as any).customDueDate;
-      if (!due) return false;
-      const dueIso = due.includes("T") ? due : `${due}T23:59:59+08:00`;
-      const dueMs = new Date(dueIso).getTime();
-      return !Number.isNaN(dueMs) && now <= dueMs;
-    });
+    Boolean(submissionWindow?.isGracePeriod) ||
+    (!isSubmissionAvailable &&
+      displayedRequirementStatuses.some((r) => {
+        const due = (r as any).due_at || (r as any).customDueDate;
+        if (!due) return false;
+        const dueIso = due.includes("T") ? due : `${due}T23:59:59+08:00`;
+        const dueMs = new Date(dueIso).getTime();
+        return !Number.isNaN(dueMs) && now <= dueMs;
+      }));
 
   const earliestGracePeriodDeadline = hasActiveGracePeriod
-    ? displayedRequirementStatuses
+    ? (displayedRequirementStatuses
         .map((r) => {
           const due = (r as any).due_at || (r as any).customDueDate;
           if (!due) return null;
@@ -1507,7 +1512,8 @@ function FacultySubmissionPanelContent({
           return !Number.isNaN(ms) && now <= ms ? new Date(dueIso) : null;
         })
         .filter(Boolean)
-        .sort((a, b) => (a as Date).getTime() - (b as Date).getTime())[0] as Date | null
+        .sort((a, b) => (a as Date).getTime() - (b as Date).getTime())[0] as Date | null) ||
+      (submissionWindow?.endDate ? new Date(`${submissionWindow.endDate}T23:59:59+08:00`) : null)
     : null;
 
   const gracePeriodDeadlineLabel = earliestGracePeriodDeadline
@@ -1518,6 +1524,66 @@ function FacultySubmissionPanelContent({
         timeZone: "Asia/Manila",
       })
     : null;
+
+  const isEffectivelyOpen = isSubmissionAvailable || hasActiveGracePeriod;
+
+  const effectiveSubmissionWindow = useMemo(() => {
+    if (isSubmissionAvailable && submissionWindow?.isOpen && !submissionWindow?.isGracePeriod) {
+      return submissionWindow;
+    }
+    if (hasActiveGracePeriod && earliestGracePeriodDeadline) {
+      const iso = earliestGracePeriodDeadline.toISOString();
+      const datePart = iso.split("T")[0];
+      return {
+        isConfigured: true,
+        isOpen: true,
+        status: "Open" as const,
+        today: getTodayInManila(),
+        currentTime: getCurrentTimeInManila(),
+        startDate: submissionWindow?.startDate || getTodayInManila(),
+        endDate: datePart,
+        startTime: "00:00:00",
+        endTime: "23:59:59",
+        academicYear: statusAcademicYear || submissionWindow?.academicYear || null,
+        semester: (statusSemester || submissionWindow?.semester || null) as any,
+        startTimeLabel: "12:00 AM",
+        endTimeLabel: "11:59 PM",
+        currentTimeLabel: format24HourTo12Hour(getCurrentTimeInManila()),
+        isGracePeriod: true,
+        badgeLabel: "Option A Grace Period",
+      };
+    }
+    if (submissionWindow?.isGracePeriod) {
+      return submissionWindow;
+    }
+    if (!submissionWindow || !submissionWindow.isConfigured) {
+      return {
+        isConfigured: false,
+        isOpen: false,
+        status: "Closed" as const,
+        today: getTodayInManila(),
+        currentTime: getCurrentTimeInManila(),
+        startDate: null,
+        endDate: null,
+        startTime: null,
+        endTime: null,
+        academicYear: statusAcademicYear || null,
+        semester: (statusSemester || null) as any,
+      };
+    }
+    return {
+      ...submissionWindow,
+      isOpen: false,
+      status: "Closed" as const,
+    };
+  }, [
+    isSubmissionAvailable,
+    submissionWindow,
+    hasActiveGracePeriod,
+    earliestGracePeriodDeadline,
+    statusAcademicYear,
+    statusSemester,
+  ]);
 
   // Lacking requirements only count mandatory requirements that are unsubmitted or rejected
   const lackingRequirements = useMemo(() => {
@@ -1690,6 +1756,7 @@ function FacultySubmissionPanelContent({
     const currentStatus = matched?.status || getRequirementStatus(code);
     if (currentStatus === "Validated" || currentStatus === "Exempted") return;
     if (currentStatus === "Overdue" && !matched?.isExtended) return;
+    if (!isEffectivelyOpen && !matched?.isExtended && !matched?.customDueDate) return;
     setSelectedRequirementForUpload(code);
     setIsRevisionUpload(isRevision);
     setDirectUploadFile(null);
@@ -1987,8 +2054,7 @@ function FacultySubmissionPanelContent({
     try {
       if (
         isLoadingSubmissionWindow ||
-        !submissionWindow ||
-        !submissionWindow.isOpen
+        !isEffectivelyOpen
       ) {
         setSubmissionMessage(
           submissionWindow?.isConfigured
@@ -2116,7 +2182,7 @@ function FacultySubmissionPanelContent({
         <div className="my-2 h-px w-full bg-amber-400/50" />
         <div className="my-1.5">
           <SubmissionWindowCountdown
-            window={submissionWindow}
+            window={effectiveSubmissionWindow}
             isLoading={isLoadingSubmissionWindow}
             onExpired={handleWindowExpired}
           />
@@ -2230,7 +2296,7 @@ function FacultySubmissionPanelContent({
             <div className="my-2 h-px w-full bg-amber-400/50" />
             <div className="my-1.5">
               <SubmissionWindowCountdown
-                window={submissionWindow}
+                window={effectiveSubmissionWindow}
                 isLoading={isLoadingSubmissionWindow}
                 onExpired={handleWindowExpired}
               />
@@ -2605,7 +2671,7 @@ function FacultySubmissionPanelContent({
             )}
             {activeView === "submit" && (
               <article className="space-y-6 p-2 sm:p-4 md:p-5">
-                {isSubmissionAvailable ? (
+                {isEffectivelyOpen ? (
                   <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
@@ -2726,8 +2792,8 @@ function FacultySubmissionPanelContent({
                           disabled={
                             isSubmitting ||
                             !form.fileName ||
-                            (submissionWindow
-                              ? !submissionWindow.isOpen
+                            (effectiveSubmissionWindow
+                              ? !effectiveSubmissionWindow.isOpen
                               : false) ||
                             (() => {
                               const s = getRequirementStatus(
@@ -3256,7 +3322,7 @@ function FacultySubmissionPanelContent({
                                           <AppIcon icon={Upload} size="sm" color="white" />
                                           <span>Upload Revision</span>
                                         </button>
-                                      ) : (isWindowClosed || Boolean(req.effectiveDeadline && Date.now() > new Date(req.effectiveDeadline).getTime())) ? (
+                                      ) : ((isWindowClosed || Boolean(req.effectiveDeadline && Date.now() > new Date(req.effectiveDeadline).getTime())) && !hasActiveGracePeriod && !req.customDueDate) ? (
                                         hasPendingExtensionRequest ? (
                                           <button
                                             type="button"
@@ -3343,15 +3409,15 @@ function FacultySubmissionPanelContent({
                                     {/* 6. PENDING: Current date is on or before effective deadline, enable file upload */}
                                     {(req.status === "Pending" && !req.latestSubmissionId) ||
                                     (req.status === "Not Submitted") ? (
-                                      isWindowNotConfigured && !req.customDueDate ? (
+                                      ((isWindowClosed || isWindowNotConfigured) && !req.customDueDate && !hasActiveGracePeriod) ? (
                                         <button
                                           type="button"
                                           disabled
                                           className="inline-flex items-center justify-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-medium w-36 h-8 rounded-xl text-xs cursor-not-allowed opacity-80"
-                                          title="Submissions will open once the administration announces the submission schedule."
+                                          title={isWindowClosed ? "Submissions are currently closed." : "Submissions will open once the administration announces the submission schedule."}
                                         >
                                           <AppIcon icon={Calendar} size="sm" color="inherit" />
-                                          <span>Awaiting Schedule</span>
+                                          <span>{isWindowClosed ? "Submission Closed" : "Awaiting Schedule"}</span>
                                         </button>
                                       ) : (
                                         <button
@@ -3859,7 +3925,7 @@ function FacultySubmissionPanelContent({
                     closeAriaLabel="Close submission modal"
                   />
                   <div className="flex-1 overflow-y-auto p-6 min-h-0">
-                    {isSubmissionAvailable ? (
+                    {isEffectivelyOpen ? (
                       <form className="space-y-4" onSubmit={handleSubmit}>
                         <div className="grid gap-4 md:grid-cols-2">
                           <div className="grid gap-4 md:grid-cols-2">

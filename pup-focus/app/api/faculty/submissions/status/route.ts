@@ -900,7 +900,8 @@ export async function GET(request: NextRequest) {
       counts,
       academicYear: activeAcademicYear,
       semester: normalizedSemLabel,
-      hasActiveSchedule: Boolean(windowState.isConfigured && windowState.isOpen),
+      hasActiveSchedule: Boolean(windowState.isConfigured && windowState.isOpen) || hasActiveGracePeriod,
+      hasActiveGracePeriod,
       isLocked: globalWindowLocked && !hasActiveGracePeriod,
       debug: {
         profileId: profileRow?.id || facultyIdList[0] || null,
