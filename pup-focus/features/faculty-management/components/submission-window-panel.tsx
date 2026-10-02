@@ -242,6 +242,14 @@ export function SubmissionWindowPanel({
 
   const isUpcoming = Boolean(startDateObj && now < startDateObj);
 
+  const isGlobalSubmissionOpen = useMemo(() => {
+    if (windowStatus?.status === "Closed") return false;
+    if (isAlwaysOpen) return true;
+    if (!startDateObj || !endDateObj) return false;
+    if (now > endDateObj) return false;
+    return isWindowOpen || isUpcoming;
+  }, [windowStatus?.status, isAlwaysOpen, startDateObj, endDateObj, now, isWindowOpen, isUpcoming]);
+
   const formattedCountdownTime = useMemo(() => {
     if (isAlwaysOpen || (endDateObj && endDateObj.getFullYear() >= 2099)) {
       return "Always Open (No Deadline)";
@@ -641,6 +649,7 @@ export function SubmissionWindowPanel({
   }
 
   function handleCloseSubmission() {
+    if (!isGlobalSubmissionOpen) return;
     setCloseCountdown(3);
     setShowCloseConfirmation(true);
   }
@@ -1197,8 +1206,9 @@ export function SubmissionWindowPanel({
             <button
               type="button"
               onClick={handleCloseSubmission}
-              disabled={isLoading || isSaving || (!windowStatus?.isOpen && windowStatus?.status !== "Upcoming" && !windowStatus?.startDate)}
-              className="flex items-center justify-center sm:justify-start gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs w-full sm:w-auto"
+              disabled={isLoading || isSaving || !isGlobalSubmissionOpen}
+              className="flex items-center justify-center sm:justify-start gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs w-full sm:w-auto"
+              title={!isGlobalSubmissionOpen ? "Global submission window is currently closed" : "Close active submissions"}
             >
               <AppIcon icon={ShieldAlert} size="sm" color="white" />
               <span>Close Submissions</span>
@@ -1259,8 +1269,9 @@ export function SubmissionWindowPanel({
                 <button
                   type="button"
                   onClick={() => setShowExtendModal(true)}
-                  disabled={isLoading || isSaving}
-                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 sm:py-2 text-sm rounded-xl transition-colors shadow-xs disabled:opacity-50 cursor-pointer active:scale-[0.98]"
+                  disabled={isLoading || isSaving || !isGlobalSubmissionOpen}
+                  className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 sm:py-2 text-sm rounded-xl transition-colors shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
+                  title={!isGlobalSubmissionOpen ? "Cannot extend a closed submission window" : "Extend active submission window"}
                 >
                   <AppIcon icon={Hourglass} size="sm" color="inherit" className="text-slate-950" />
                   <span>Extend Window</span>
