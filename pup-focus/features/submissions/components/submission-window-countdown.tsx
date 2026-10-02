@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Calendar, WarningTriangle } from "iconoir-react";
+import { Calendar, CheckCircle, WarningTriangle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 
 type SubmissionWindowState = {
@@ -27,6 +27,7 @@ type SubmissionWindowCountdownProps = {
   window: SubmissionWindowState | null;
   isLoading: boolean;
   onExpired?: () => void;
+  isAllValidated?: boolean;
 };
 
 function getManilaTimestamp(date: string, time: string): number {
@@ -72,6 +73,7 @@ export function SubmissionWindowCountdown({
   window: windowState,
   isLoading,
   onExpired,
+  isAllValidated,
 }: SubmissionWindowCountdownProps) {
   const [hasExpired, setHasExpired] = useState(false);
 
@@ -129,6 +131,28 @@ export function SubmissionWindowCountdown({
           <div className="h-14 rounded-lg bg-black/25 border border-amber-400/10" />
           <div className="h-14 rounded-lg bg-black/25 border border-amber-400/10" />
         </div>
+      </div>
+    );
+  }
+
+  // Completed all mandatory requirements for the semester
+  if (isAllValidated) {
+    return (
+      <div className="rounded-xl border border-emerald-500/40 bg-[#08412a]/90 p-3.5 shadow-xs text-white text-center">
+        <div className="flex items-center justify-center gap-2">
+          <AppIcon icon={CheckCircle} size="sm" color="inherit" className="text-emerald-300 shrink-0" />
+          <span className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-200">
+            Requirements Complete
+          </span>
+        </div>
+        {windowState?.academicYear && windowState?.semester ? (
+          <p className="mt-1 text-[11px] text-emerald-200/80 font-medium">
+            A.Y. {windowState.academicYear} | {windowState.semester}
+          </p>
+        ) : null}
+        <p className="mt-2 text-xs leading-relaxed text-emerald-100/90 font-medium">
+          All required compliance documents completed for this semester.
+        </p>
       </div>
     );
   }
