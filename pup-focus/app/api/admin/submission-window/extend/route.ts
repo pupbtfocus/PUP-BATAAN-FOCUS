@@ -206,7 +206,10 @@ export async function POST(request: NextRequest) {
 
     const startTimeToUse = latestWindow?.start_time || "09:00:00";
 
-    // 3. Upsert / Update active submission_windows record only if scope is global
+    const targetDueAtIso = `${newEndDate}T${normalizeTime24Hour(end24h)}+08:00`;
+
+    // 3. For GLOBAL extensions, upsert submission_windows record id=1 and submission_window_terms.
+    // For FACULTY or PROGRAM extensions, leave the global schedule untouched and update submissions.due_at!
     if (scope === "global") {
       const upsertPayload = {
         id: 1,
@@ -249,24 +252,72 @@ export async function POST(request: NextRequest) {
         { onConflict: "academic_year,semester" },
       );
     } else if (scope === "faculty" && scopeTarget) {
-      // Individual faculty extension: update only their submissions' due_at
+      // Personal extension: update due_at on submissions strictly for this faculty member
       const cleanTarget = scopeTarget.trim();
-      const { data: targetProfiles } = await supabase
-        .from("profiles")
-        .select("id, user_id, full_name, email")
-        .or(`full_name.ilike.%${cleanTarget}%,email.ilike.%${cleanTarget}%,id.eq.${cleanTarget}`);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanTarget);
 
-      const profileIds = (targetProfiles || []).map((p) => p.id);
-      if (profileIds.length > 0) {
-        const newDueAt = `${newEndDate}T${normalizeTime24Hour(end24h)}+08:00`;
+      let targetProfileId: string | null = null;
+      if (isUuid) {
+        const { data: pById } = await supabase
+          .from("profiles")
+          .select("id")
+          .or(`id.eq.${cleanTarget},user_id.eq.${cleanTarget}`)
+          .maybeSingle();
+        targetProfileId = pById?.id || null;
+      }
+
+      if (!targetProfileId) {
+        const { data: pByText } = await supabase
+          .from("profiles")
+          .select("id")
+          .or(`email.ilike.%${cleanTarget}%,full_name.ilike.%${cleanTarget}%`)
+          .limit(1)
+          .maybeSingle();
+        targetProfileId = pByText?.id || null;
+      }
+
+      if (targetProfileId) {
         await supabase
           .from("submissions")
           .update({
-            due_at: newDueAt,
+            due_at: targetDueAtIso,
             remarks: `Extension granted (${preset}) until ${newEndDate} at ${endTimeLabel}`,
+            updated_at: new Date().toISOString(),
           })
-          .in("faculty_profile_id", profileIds)
-          .eq("status", "pending");
+          .eq("faculty_profile_id", targetProfileId)
+          .eq("academic_year", activeAcademicYear)
+          .eq("semester", activeSemester);
+      }
+    } else if (scope === "program" && scopeTarget) {
+      // Program extension: update due_at only for faculty belonging to this program
+      const cleanProgram = scopeTarget.trim();
+      const { data: progAssignments } = await supabase
+        .from("faculty_program_assignments")
+        .select("faculty_profile_id, programs(code, name)")
+        .or(`academic_year.eq.${activeAcademicYear},academic_year.is.null`);
+
+      const matchingProfileIds = (progAssignments || [])
+        .filter((pa: any) => {
+          const prog = pa.programs;
+          return (
+            prog?.code?.toLowerCase() === cleanProgram.toLowerCase() ||
+            prog?.name?.toLowerCase() === cleanProgram.toLowerCase()
+          );
+        })
+        .map((pa: any) => pa.faculty_profile_id)
+        .filter(Boolean);
+
+      if (matchingProfileIds.length > 0) {
+        await supabase
+          .from("submissions")
+          .update({
+            due_at: targetDueAtIso,
+            remarks: `Extension granted (${preset}) until ${newEndDate} at ${endTimeLabel}`,
+            updated_at: new Date().toISOString(),
+          })
+          .in("faculty_profile_id", matchingProfileIds)
+          .eq("academic_year", activeAcademicYear)
+          .eq("semester", activeSemester);
       }
     }
 
