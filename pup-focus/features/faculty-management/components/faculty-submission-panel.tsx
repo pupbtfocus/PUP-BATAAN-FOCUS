@@ -2185,6 +2185,7 @@ function FacultySubmissionPanelContent({
             window={effectiveSubmissionWindow}
             isLoading={isLoadingSubmissionWindow}
             onExpired={handleWindowExpired}
+            isAllValidated={isAllValidated}
           />
         </div>
         <div className="my-2 h-px w-full bg-amber-400/50" />
@@ -2299,6 +2300,7 @@ function FacultySubmissionPanelContent({
                 window={effectiveSubmissionWindow}
                 isLoading={isLoadingSubmissionWindow}
                 onExpired={handleWindowExpired}
+                isAllValidated={isAllValidated}
               />
             </div>
             <div className="my-2 h-px w-full bg-amber-400/50" />
