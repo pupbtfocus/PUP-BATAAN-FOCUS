@@ -39,6 +39,11 @@ export type SubmissionWindowState = {
   endTime: string | null;
   academicYear: string | null;
   semester: SubmissionWindowSemester | null;
+  startTimeLabel?: string | null;
+  endTimeLabel?: string | null;
+  currentTimeLabel?: string | null;
+  isGracePeriod?: boolean;
+  badgeLabel?: string | null;
 };
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;

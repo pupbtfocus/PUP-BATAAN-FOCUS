@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
         .from("submissions")
         .select("status, due_at")
         .eq("requirement_code", requirementCodeInput)
-        .or(`faculty_profile_id.eq.${profileId},user_id.eq.${user.id}`)
+        .eq("faculty_profile_id", profileId)
         .maybeSingle();
 
       const existingStatus = (existingSub?.status || "").toLowerCase().trim();
@@ -144,6 +144,29 @@ export async function POST(request: NextRequest) {
             isUnlockedViaExtension = true;
           } else {
             hasCustomDuePassed = true;
+          }
+        }
+      }
+
+      // Check general onboarding grace period (Option A) across faculty profile submissions
+      if (!isUnlockedViaExtension && !hasCustomDuePassed) {
+        const { data: anyGraceSub } = await supabaseAdmin
+          .from("submissions")
+          .select("due_at")
+          .eq("faculty_profile_id", profileId)
+          .not("due_at", "is", null);
+
+        if (anyGraceSub && anyGraceSub.length > 0) {
+          const nowMs = Date.now();
+          for (const s of anyGraceSub) {
+            if (s.due_at) {
+              const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
+              const ms = new Date(iso).getTime();
+              if (!Number.isNaN(ms) && nowMs <= ms) {
+                isUnlockedViaExtension = true;
+                break;
+              }
+            }
           }
         }
       }

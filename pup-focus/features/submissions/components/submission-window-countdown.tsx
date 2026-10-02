@@ -19,6 +19,8 @@ type SubmissionWindowState = {
   startTimeLabel?: string | null;
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
+  isGracePeriod?: boolean;
+  badgeLabel?: string | null;
 };
 
 type SubmissionWindowCountdownProps = {
@@ -174,7 +176,9 @@ export function SubmissionWindowCountdown({
     }
   > = {
     Open: {
-      label: isAlwaysOpen ? "Submissions Always Open" : "Submission Open",
+      label:
+        windowState?.badgeLabel ||
+        (isAlwaysOpen ? "Submissions Always Open" : "Submission Open"),
       dotClass: "bg-emerald-400 pulse-dot",
       borderClass: "border-amber-400/40",
       bgClass: "bg-[#6b0000]/80 text-emerald-200",

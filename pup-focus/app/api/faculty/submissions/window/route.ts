@@ -42,6 +42,65 @@ export async function GET() {
       semester: activeSem,
     });
 
+    // 3. If global window is closed/off, check if THIS faculty member has an active personal grace period (Option A)
+    if (!status.isOpen || !status.isConfigured) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const profileId = profile?.id;
+      if (profileId) {
+        const { data: graceSubs } = await supabase
+          .from("submissions")
+          .select("due_at")
+          .eq("faculty_profile_id", profileId)
+          .not("due_at", "is", null);
+
+        if (graceSubs && graceSubs.length > 0) {
+          const nowMs = Date.now();
+          let earliestGraceDueMs: number | null = null;
+          let earliestGraceIso: string | null = null;
+
+          for (const s of graceSubs) {
+            if (s.due_at) {
+              const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
+              const ms = new Date(iso).getTime();
+              if (!Number.isNaN(ms) && nowMs <= ms) {
+                if (earliestGraceDueMs === null || ms < earliestGraceDueMs) {
+                  earliestGraceDueMs = ms;
+                  earliestGraceIso = iso;
+                }
+              }
+            }
+          }
+
+          if (earliestGraceIso) {
+            const endDate = earliestGraceIso.split("T")[0];
+            return NextResponse.json({
+              isConfigured: true,
+              status: "Open",
+              isOpen: true,
+              today: status.today,
+              currentTime: status.currentTime,
+              startDate: status.startDate || status.today,
+              endDate,
+              startTime: "00:00:00",
+              endTime: "23:59:59",
+              academicYear: activeAY,
+              semester: activeSem,
+              startTimeLabel: "12:00 AM",
+              endTimeLabel: "11:59 PM",
+              currentTimeLabel: format24HourTo12Hour(status.currentTime),
+              isGracePeriod: true,
+              badgeLabel: "Option A Grace Period",
+            });
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       ...status,
       startTimeLabel: status.startTime
