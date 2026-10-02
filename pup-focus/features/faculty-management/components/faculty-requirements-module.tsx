@@ -18,6 +18,9 @@ import {
   StatusMetricsSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
 import { DocumentPreviewModal, type DocumentPreviewSubmission } from "@/features/submissions/components/document-preview-modal";
+import type { SubmissionWindowState } from "@/features/submissions/services/submission-window.service";
+
+export type { SubmissionWindowState };
 
 export type RequirementTemplateItem = {
   code: string;
@@ -29,7 +32,14 @@ export type RequirementTemplateItem = {
 
 export type RequirementStatusItem = {
   code: string;
-  status: "Validated" | "Rejected" | "Pending" | "Not Submitted";
+  status:
+    | "Validated"
+    | "Rejected"
+    | "Pending"
+    | "Not Submitted"
+    | "Exempted"
+    | "Overdue"
+    | "Extended";
   reviewedAt?: string;
   feedback?: string;
   admin_remarks?: string;
@@ -44,6 +54,14 @@ export type RequirementStatusItem = {
   remarks?: string | null;
   note?: string | null;
   facultyNote?: string | null;
+  is_read?: boolean;
+  isViewed?: boolean;
+  viewed_at?: string;
+  due_at?: string | null;
+  customDueDate?: string | null;
+  effectiveDeadline?: string | null;
+  isExtended?: boolean;
+  extendedUntil?: string | null;
 };
 
 export type StatusResponse = {
@@ -55,6 +73,9 @@ export type StatusResponse = {
     rejected: number;
     pending: number;
     notSubmitted: number;
+    exempted?: number;
+    overdue?: number;
+    extended?: number;
   };
 };
 
@@ -66,19 +87,6 @@ type RequirementFormState = {
   semester: SemesterOption;
   requirementCode: string;
   remarks: string;
-};
-
-export type SubmissionWindowState = {
-  isConfigured: boolean;
-  isOpen: boolean;
-  today: string;
-  currentTime: string;
-  startDate: string | null;
-  endDate: string | null;
-  startTime: string | null;
-  endTime: string | null;
-  academicYear: string | null;
-  semester: SemesterOption | null;
 };
 
 function buildAcademicYears(count = 5): string[] {
@@ -633,7 +641,7 @@ export function FacultyRequirementsModule({
 
                         {/* Action Buttons */}
                         <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                          {status === "Not Submitted" && (
+                          {(status === "Not Submitted" || status === "Overdue" || status === "Extended") && (
                             <button
                               type="button"
                               aria-label={`Submit document for ${req.title}`}
@@ -775,7 +783,7 @@ export function FacultyRequirementsModule({
                     )}
 
                     <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
-                      {status === "Not Submitted" && (
+                      {(status === "Not Submitted" || status === "Overdue" || status === "Extended") && (
                         <button
                           type="button"
                           aria-label={`Submit requirement ${req.title}`}
