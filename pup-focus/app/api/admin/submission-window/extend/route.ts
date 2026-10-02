@@ -206,47 +206,69 @@ export async function POST(request: NextRequest) {
 
     const startTimeToUse = latestWindow?.start_time || "09:00:00";
 
-    // 3. Upsert / Update active submission_windows record to re-open/extend it
-    const upsertPayload = {
-      id: 1,
-      start_date: startDateToUse,
-      start_time: startTimeToUse,
-      end_date: newEndDate,
-      end_time: normalizeTime24Hour(end24h),
-      academic_year: activeAcademicYear,
-      semester: activeSemester,
-      updated_by: user.id,
-      updated_at: new Date().toISOString(),
-    };
-
-    const { error: upsertError } = await supabase
-      .from("submission_windows")
-      .upsert(upsertPayload, { onConflict: "id" });
-
-    if (upsertError) {
-      logger.error("extend_submission_window_upsert_failed", {
-        error: upsertError.message,
-      });
-      return NextResponse.json(
-        { error: "Failed to update submission window deadline in database." },
-        { status: 500 },
-      );
-    }
-
-    // Keep submission_window_terms synchronized for the active academic term
-    await supabase.from("submission_window_terms").upsert(
-      {
+    // 3. Upsert / Update active submission_windows record only if scope is global
+    if (scope === "global") {
+      const upsertPayload = {
+        id: 1,
+        start_date: startDateToUse,
+        start_time: startTimeToUse,
+        end_date: newEndDate,
+        end_time: normalizeTime24Hour(end24h),
         academic_year: activeAcademicYear,
         semester: activeSemester,
-        start_date: startDateToUse,
-        end_date: newEndDate,
-        start_time: startTimeToUse,
-        end_time: normalizeTime24Hour(end24h),
-        created_by: user.id,
-        created_at: new Date().toISOString(),
-      },
-      { onConflict: "academic_year,semester" },
-    );
+        updated_by: user.id,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: upsertError } = await supabase
+        .from("submission_windows")
+        .upsert(upsertPayload, { onConflict: "id" });
+
+      if (upsertError) {
+        logger.error("extend_submission_window_upsert_failed", {
+          error: upsertError.message,
+        });
+        return NextResponse.json(
+          { error: "Failed to update submission window deadline in database." },
+          { status: 500 },
+        );
+      }
+
+      // Keep submission_window_terms synchronized for the active academic term
+      await supabase.from("submission_window_terms").upsert(
+        {
+          academic_year: activeAcademicYear,
+          semester: activeSemester,
+          start_date: startDateToUse,
+          end_date: newEndDate,
+          start_time: startTimeToUse,
+          end_time: normalizeTime24Hour(end24h),
+          created_by: user.id,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: "academic_year,semester" },
+      );
+    } else if (scope === "faculty" && scopeTarget) {
+      // Individual faculty extension: update only their submissions' due_at
+      const cleanTarget = scopeTarget.trim();
+      const { data: targetProfiles } = await supabase
+        .from("profiles")
+        .select("id, user_id, full_name, email")
+        .or(`full_name.ilike.%${cleanTarget}%,email.ilike.%${cleanTarget}%,id.eq.${cleanTarget}`);
+
+      const profileIds = (targetProfiles || []).map((p) => p.id);
+      if (profileIds.length > 0) {
+        const newDueAt = `${newEndDate}T${normalizeTime24Hour(end24h)}+08:00`;
+        await supabase
+          .from("submissions")
+          .update({
+            due_at: newDueAt,
+            remarks: `Extension granted (${preset}) until ${newEndDate} at ${endTimeLabel}`,
+          })
+          .in("faculty_profile_id", profileIds)
+          .eq("status", "pending");
+      }
+    }
 
     // 4. Insert audit log entry into submission_window_logs with action_type = 'EXTENSION'
     const logRecord = {
