@@ -1,8 +1,8 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Get current folder path
-set "TARGET_DIR=%~dp0pup-focus"
+:: Resolve pup-focus folder (one level up from bat-scripts\)
+for %%I in ("%~dp0..\pup-focus") do set "TARGET_DIR=%%~fI"
 
 :: Force drive letter to Uppercase C:\ to fix Webpack Casing Bug
 if "!TARGET_DIR:~0,1!"=="c" (
