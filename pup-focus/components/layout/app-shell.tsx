@@ -51,7 +51,7 @@ export function AppShell({
               <h1 className="hidden md:block text-base sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
                 PUP FOCUS
               </h1>
-              <span className="md:hidden text-[10px] xs:text-[11px] font-medium text-amber-200/90 tracking-tight leading-tight line-clamp-2 max-w-[260px]">
+              <span className="md:hidden text-[10px] xs:text-[11px] font-medium text-white tracking-tight leading-tight line-clamp-2 max-w-[260px]">
                 {subtitle || <HighlightedSystemTitle />}
               </span>
             </div>
@@ -59,7 +59,7 @@ export function AppShell({
 
           {/* Centered System Title for Desktop */}
           <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-4">
-            <span className="text-xs lg:text-sm xl:text-base font-semibold text-amber-200/95 tracking-wide text-center truncate max-w-[48vw]">
+            <span className="text-xs lg:text-sm xl:text-base font-semibold text-white tracking-wide text-center truncate max-w-[48vw]">
               {subtitle || <HighlightedSystemTitle />}
             </span>
           </div>
