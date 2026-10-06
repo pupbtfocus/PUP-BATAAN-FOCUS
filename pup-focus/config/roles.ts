@@ -29,6 +29,16 @@ export function isQaSuperAdmin(email?: string | null): boolean {
   );
 }
 
+export function isQaFaculty(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim();
+  return (
+    normalized === "qa.faculty1@pupfocus.dev" ||
+    normalized === "qa.faculty2@pupfocus.dev" ||
+    (normalized.startsWith("qa.faculty") && normalized.endsWith("@pupfocus.dev"))
+  );
+}
+
 export function canManageAdminAccount(params: {
   targetEmail?: string | null;
   targetRole?: string | null;

@@ -15,7 +15,7 @@ import { APP_CONFIG } from "@/config/app";
 import { getPublicEnvSafe } from "@/config/env";
 import { createClient } from "@/lib/supabase/client";
 import { ROUTE_BY_ROLE, resetDashboardNavigationState } from "@/config/routes";
-import { ROLE, ROLE_LABEL, type AppRole } from "@/config/roles";
+import { ROLE, ROLE_LABEL, type AppRole, isQaFaculty } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
 
 const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
@@ -327,21 +327,23 @@ export default function Home() {
     try {
       let { data: signInData, error: signInError } = await signIn();
 
-      if (signInError && normalizedEmail === SUPER_ADMIN_EMAIL) {
-        console.warn("[Auth] Super admin login failed, attempting bootstrap:", signInError.message);
-        const bootstrapResponse = await fetch("/api/bootstrap/super-admin", {
+      if (signInError && (normalizedEmail === SUPER_ADMIN_EMAIL || isQaFaculty(normalizedEmail))) {
+        const isSuperAdmin = normalizedEmail === SUPER_ADMIN_EMAIL;
+        console.warn(`[Auth] ${isSuperAdmin ? "Super admin" : "QA faculty"} login failed, attempting bootstrap:`, signInError.message);
+        const endpoint = isSuperAdmin ? "/api/bootstrap/super-admin" : "/api/bootstrap/qa-faculty";
+        const bootstrapResponse = await fetch(endpoint, {
           method: "POST",
         });
 
         if (!bootstrapResponse.ok) {
           try {
             const body = (await bootstrapResponse.json()) as { error?: string };
-            const errText = body.error ?? "Unable to initialize the super admin account.";
-            console.error("[Auth] Super admin bootstrap failed:", errText);
+            const errText = body.error ?? `Unable to initialize the ${isSuperAdmin ? "super admin" : "QA faculty"} account.`;
+            console.error("[Auth] Bootstrap failed:", errText);
             setError(errText);
             setNotice({ type: "error", message: errText });
           } catch {
-            setError("Unable to initialize the super admin account.");
+            setError(`Unable to initialize the ${isSuperAdmin ? "super admin" : "QA faculty"} account.`);
           }
           setIsSubmitting(false);
           return;
