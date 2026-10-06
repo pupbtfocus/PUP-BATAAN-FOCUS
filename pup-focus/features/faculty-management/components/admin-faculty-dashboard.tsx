@@ -8,7 +8,7 @@ import Image from "next/image";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
-import { Calendar, Check, CheckCircle, Group, Hourglass, Menu, Minus, NavArrowRight, Page, Refresh, TaskList, Xmark } from "iconoir-react";
+import { Calendar, Check, CheckCircle, ClockRotateRight, Group, Hourglass, Menu, Minus, NavArrowRight, Page, Refresh, TaskList, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import { LogoutButton } from "@/components/shared/logout-button";
@@ -41,6 +41,7 @@ import { InviteStatusModal } from "./faculty-modals/invite-status-modal";
 import { SubmissionWindowPanel } from "./submission-window-panel";
 import { RequirementsPanel } from "./requirements-verification-panel";
 import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
+import { SubmissionScheduleLogsModal } from "./submission-schedule-logs-modal";
 
 function normalizeAdminSection(raw?: string | null): AdminSection | null {
   if (!raw) return null;
@@ -173,6 +174,7 @@ export function AdminFacultyDashboard({
   const [createdFacultyEmail, setCreatedFacultyEmail] = useState<string | null>(null);
   const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
   const [registrationLogsModalOpen, setRegistrationLogsModalOpen] = useState(false);
+  const [scheduleLogsModalOpen, setScheduleLogsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingFacultyIds, setLoadingFacultyIds] = useState<Set<string>>(
     new Set(),
@@ -1142,6 +1144,14 @@ export function AdminFacultyDashboard({
                         </button>
                         <button
                           type="button"
+                          onClick={() => setScheduleLogsModalOpen(true)}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                        >
+                          <ClockRotateRight className="h-3.5 w-3.5 text-slate-950" />
+                          <span>Submission Schedule Logs</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => void refreshCurrentPanel()}
                           disabled={isLoading}
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
@@ -1373,6 +1383,11 @@ export function AdminFacultyDashboard({
         onInviteCancelled={() => {
           void loadFacultyFromDatabase();
         }}
+      />
+
+      <SubmissionScheduleLogsModal
+        isOpen={scheduleLogsModalOpen}
+        onClose={() => setScheduleLogsModalOpen(false)}
       />
     </div>
   );

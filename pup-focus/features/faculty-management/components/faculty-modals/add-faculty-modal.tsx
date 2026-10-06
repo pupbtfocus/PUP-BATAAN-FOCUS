@@ -5,6 +5,7 @@ import type { UseFormReturn } from "react-hook-form";
 import {
   Calendar,
   CheckCircle,
+  ClockRotateRight,
   EditPencil,
   Hourglass,
   UserPlus,
@@ -17,6 +18,7 @@ import { AlertPopup } from "@/components/ui/alert-popup";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
 import type { FacultyAccountFormInput } from "@/features/faculty-management/schemas/faculty-account.schema";
+import { SubmissionScheduleLogsModal } from "@/features/faculty-management/components/submission-schedule-logs-modal";
 
 function FieldError({ message }: { message?: string }) {
   if (!message) {
@@ -85,6 +87,7 @@ export interface AddFacultyPanelProps {
   step?: "form" | "onboarding";
   onStepChange?: (step: "form" | "onboarding") => void;
   isOpen?: boolean;
+  onOpenScheduleLogs?: () => void;
 }
 
 export function AddFacultyPanel({
@@ -101,6 +104,7 @@ export function AddFacultyPanel({
   step: controlledStep,
   onStepChange,
   isOpen,
+  onOpenScheduleLogs,
 }: AddFacultyPanelProps) {
   const [degreePrograms, setDegreePrograms] = useState<ProgramOption[]>([]);
   const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
@@ -460,6 +464,16 @@ export function AddFacultyPanel({
                 );
               })()}
             </p>
+            <div className="pt-1 flex items-center justify-start">
+              <button
+                type="button"
+                onClick={() => onOpenScheduleLogs?.()}
+                className="py-1.5 px-3 rounded-lg bg-white hover:bg-amber-50 text-slate-950 border border-amber-500/60 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.99]"
+              >
+                <AppIcon icon={ClockRotateRight} size="xs" color="inherit" />
+                <span>View Submission Schedule Logs</span>
+              </button>
+            </div>
           </div>
 
           {/* Options Cards */}
@@ -834,17 +848,27 @@ export function AddFacultyPanel({
                   ? "Requirement setup chosen and ready to apply."
                   : "Submissions are closed right now. Pick how to handle requirements for this teacher before adding."}
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  const values = form.getValues();
-                  setPendingFormInput(values);
-                  setStep("onboarding");
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-amber-50 text-slate-950 border border-amber-500/60 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
-              >
-                <span>{hasAppliedOptions ? "Change Options →" : "Customize Options →"}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onOpenScheduleLogs?.()}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-amber-50 text-slate-950 border border-amber-500/60 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
+                >
+                  <AppIcon icon={ClockRotateRight} size="xs" color="inherit" />
+                  <span>Schedule Logs</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const values = form.getValues();
+                    setPendingFormInput(values);
+                    setStep("onboarding");
+                  }}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
+                >
+                  <span>{hasAppliedOptions ? "Change Options →" : "Customize Options →"}</span>
+                </button>
+              </div>
             </div>
           ) : null}
 
@@ -910,10 +934,12 @@ export function AddFacultyModal({
   ...panelProps
 }: AddFacultyModalProps) {
   const [modalStep, setModalStep] = useState<"form" | "onboarding">("form");
+  const [scheduleLogsOpen, setScheduleLogsOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setModalStep("form");
+      setScheduleLogsOpen(false);
     }
   }, [isOpen]);
 
@@ -922,27 +948,45 @@ export function AddFacultyModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[92vh] overflow-y-auto">
-        <ModalHeader
-          icon={modalStep === "onboarding" ? Hourglass : UserPlus}
-          title={modalStep === "onboarding" ? "Requirement Options" : "Add Faculty Account"}
-          subtitle={
-            modalStep === "onboarding"
-              ? "Choose how to handle submissions for this teacher"
-              : "Create credentials and assign department permissions"
-          }
-          onClose={onClose}
-          className="-mx-6 -mt-6 mb-6 rounded-t-2xl"
-        />
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[92vh] overflow-y-auto">
+          <ModalHeader
+            icon={modalStep === "onboarding" ? Hourglass : UserPlus}
+            title={modalStep === "onboarding" ? "Requirement Options" : "Add Faculty Account"}
+            subtitle={
+              modalStep === "onboarding"
+                ? "Choose how to handle submissions for this teacher"
+                : "Create credentials and assign department permissions"
+            }
+            onClose={onClose}
+            className="-mx-6 -mt-6 mb-6 rounded-t-2xl"
+          >
+            <button
+              type="button"
+              onClick={() => setScheduleLogsOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-amber-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 border border-amber-500/60 text-xs font-bold transition shadow-2xs cursor-pointer active:scale-95"
+              title="View Submission Schedule Logs"
+            >
+              <AppIcon icon={ClockRotateRight} size="xs" color="inherit" className="text-amber-600 dark:text-amber-400" />
+              <span className="hidden sm:inline">Schedule Logs</span>
+            </button>
+          </ModalHeader>
 
-        <AddFacultyPanel
-          {...panelProps}
-          isOpen={isOpen}
-          step={modalStep}
-          onStepChange={setModalStep}
-        />
+          <AddFacultyPanel
+            {...panelProps}
+            isOpen={isOpen}
+            step={modalStep}
+            onStepChange={setModalStep}
+            onOpenScheduleLogs={() => setScheduleLogsOpen(true)}
+          />
+        </div>
       </div>
-    </div>
+
+      <SubmissionScheduleLogsModal
+        isOpen={scheduleLogsOpen}
+        onClose={() => setScheduleLogsOpen(false)}
+      />
+    </>
   );
 }
