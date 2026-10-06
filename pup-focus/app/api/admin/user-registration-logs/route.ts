@@ -208,10 +208,9 @@ export async function GET(request: NextRequest) {
         deletedUserIds.has(u.id) ||
         (deleteLogTime > 0 && deleteLogTime > userCreatedAt);
 
-      const isKnownBugAccount = email === "qa.faculty2@pupfocus.dev";
       const isOrphaned = !profile && !auditLog && !u.last_sign_in_at;
 
-      if (isDeleted || isKnownBugAccount || isOrphaned) {
+      if (isDeleted || isOrphaned) {
         // Skip from display; never passively delete auth users in a GET query
         continue;
       }
@@ -312,11 +311,7 @@ export async function GET(request: NextRequest) {
           log.metadata?.email ||
           ""
         ).trim().toLowerCase();
-        if (
-          !targetEmail ||
-          logsMap.has(targetEmail) ||
-          targetEmail === "qa.faculty2@pupfocus.dev"
-        ) {
+        if (!targetEmail || logsMap.has(targetEmail)) {
           continue;
         }
 
