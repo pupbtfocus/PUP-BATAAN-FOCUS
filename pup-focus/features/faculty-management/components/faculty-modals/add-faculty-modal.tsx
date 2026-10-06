@@ -817,7 +817,7 @@ export function AddFacultyPanel({
                   className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border shadow-2xs ${
                     hasAppliedOptions
                       ? "bg-emerald-600 text-white border-emerald-700"
-                      : "bg-slate-950 text-amber-300 border-slate-900"
+                      : "bg-white text-amber-950 border-amber-500/60"
                   }`}
                 >
                   {hasAppliedOptions
@@ -841,7 +841,7 @@ export function AddFacultyPanel({
                   setPendingFormInput(values);
                   setStep("onboarding");
                 }}
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-950 hover:bg-slate-900 text-amber-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
+                className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-amber-50 text-slate-950 border border-amber-500/60 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
               >
                 <span>{hasAppliedOptions ? "Change Options →" : "Customize Options →"}</span>
               </button>
