@@ -112,6 +112,7 @@ export async function GET() {
     if (windowState.isOpen) {
       return NextResponse.json({
         hasPastDeadlines: false,
+        hasPastSchedule: false,
         activeTerm: {
           academicYear: activeAY,
           semester: activeSem,
@@ -158,17 +159,102 @@ export async function GET() {
     }
 
     // Submissions for this term are CLOSED (either deadline passed OR manually closed/off)
+    const todayManila = getTodayInManila();
+    const timeManila = getCurrentTimeInManila();
+    const nowManila = `${todayManila}T${normalizeTime24Hour(timeManila)}`;
+
+    // Check if there was any schedule previously configured, logged, or closed for the active term
+    let hasLogEvents = false;
+    let lastLoggedEndDate: string | null = null;
+    let lastLoggedEndTime: string | null = null;
+    try {
+      const { data: pastLogs } = await supabase
+        .from("submission_window_logs")
+        .select("id, action_type, old_end_date, old_end_time, new_end_date, new_end_time, scope_target, created_at")
+        .order("created_at", { ascending: false })
+        .limit(40);
+
+      if (Array.isArray(pastLogs) && pastLogs.length > 0) {
+        const termLogs = pastLogs.filter((log) => {
+          if (!log.scope_target) return false;
+          return log.scope_target.includes(activeAY) && log.scope_target.includes(activeSem);
+        });
+
+        if (termLogs.length > 0) {
+          hasLogEvents = true;
+          for (const log of termLogs) {
+            if (log.new_end_date || log.old_end_date) {
+              lastLoggedEndDate = log.new_end_date || log.old_end_date;
+              lastLoggedEndTime = log.new_end_time || log.old_end_time;
+              break;
+            }
+          }
+        }
+      }
+    } catch {
+      // Ignore if table missing
+    }
+
+    let hasAuditScheduleEvents = false;
+    try {
+      const { data: audits } = await supabase
+        .from("audit_logs")
+        .select("id, metadata")
+        .in("action", [
+          "submission_window.update",
+          "submission_window.close",
+          "submission_window.extend",
+        ])
+        .limit(50);
+
+      if (Array.isArray(audits) && audits.length > 0) {
+        hasAuditScheduleEvents = audits.some((a) => {
+          const meta = a.metadata || {};
+          return meta.academic_year === activeAY && meta.semester === activeSem;
+        });
+      }
+    } catch {
+      // Ignore
+    }
+
+    let hasTermRowSchedule = false;
+    try {
+      const { data: pastTerms } = await supabase
+        .from("submission_window_terms")
+        .select("start_date, end_date, academic_year, semester")
+        .eq("academic_year", activeAY)
+        .eq("semester", activeSem)
+        .maybeSingle();
+
+      if (pastTerms?.start_date || pastTerms?.end_date) {
+        hasTermRowSchedule = true;
+      }
+    } catch {
+      // Ignore
+    }
+
+    const hasPastSchedule = Boolean(
+      hasLogEvents ||
+      hasAuditScheduleEvents ||
+      hasTermRowSchedule ||
+      Boolean(termWin?.end_date || termWin?.start_date) ||
+      Boolean((globalWin?.end_date || globalWin?.start_date) && globalWin?.academic_year === activeAY && globalWin?.semester === activeSem) ||
+      Boolean((windowConfig?.endDate || windowConfig?.startDate) && windowConfig?.academicYear === activeAY && windowConfig?.semester === activeSem)
+    );
+
     const effectiveEndDate =
       termWin?.end_date ||
-      globalWin?.end_date ||
+      (globalWin?.academic_year === activeAY && globalWin?.semester === activeSem ? globalWin?.end_date : null) ||
       windowState.endDate ||
-      getTodayInManila();
+      lastLoggedEndDate ||
+      todayManila;
 
     const effectiveEndTime =
       termWin?.end_time ||
-      globalWin?.end_time ||
+      (globalWin?.academic_year === activeAY && globalWin?.semester === activeSem ? globalWin?.end_time : null) ||
       windowState.endTime ||
-      getCurrentTimeInManila();
+      lastLoggedEndTime ||
+      timeManila;
 
     const normTime = normalizeTime24Hour(effectiveEndTime || "23:59:59") || "23:59:59";
     const deadlineIso = `${effectiveEndDate}T${normTime}+08:00`;
@@ -212,6 +298,7 @@ export async function GET() {
 
     return NextResponse.json({
       hasPastDeadlines: true,
+      hasPastSchedule,
       activeTerm: {
         academicYear: activeAY,
         semester: activeSem,
