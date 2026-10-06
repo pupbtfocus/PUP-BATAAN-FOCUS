@@ -21,7 +21,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
-import type { SubmissionScheduleLogEntry } from "@/app/api/admin/submission-window/logs/route";
+import type { SubmissionScheduleLogEntry } from "@/features/faculty-management/types/submission-schedule-logs.types";
 
 export interface SubmissionScheduleLogsModalProps {
   isOpen: boolean;
