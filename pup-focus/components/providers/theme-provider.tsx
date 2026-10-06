@@ -25,7 +25,9 @@ if (typeof window !== "undefined") {
         fullText.includes("bis_skin_checked") ||
         fullText.includes("bis_register") ||
         fullText.includes("__processed_") ||
-        fullText.includes("Encountered a script tag")
+        fullText.includes("Encountered a script tag") ||
+        fullText.includes("Invalid login credentials") ||
+        fullText.includes("[Auth] Supabase sign-in")
       ) {
         return;
       }

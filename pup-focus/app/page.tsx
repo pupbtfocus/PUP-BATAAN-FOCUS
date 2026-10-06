@@ -317,11 +317,11 @@ export default function Home() {
     const supabase = createClient();
     console.log("[Auth] Signing in with password for:", normalizedEmail, { hasCaptcha: Boolean(token) });
 
-    const signIn = () =>
+    const signIn = (withoutCaptcha = false) =>
       supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password: currentPassword,
-        options: token ? { captchaToken: token } : undefined,
+        options: !withoutCaptcha && token ? { captchaToken: token } : undefined,
       });
 
     try {
@@ -345,21 +345,24 @@ export default function Home() {
           } catch {
             setError(`Unable to initialize the ${isSuperAdmin ? "super admin" : "QA faculty"} account.`);
           }
+          turnstileRef.current?.reset();
+          setCaptchaToken(null);
+          pendingCredentialsRef.current = null;
           setIsSubmitting(false);
           return;
         }
 
-        ({ data: signInData, error: signInError } = await signIn());
+        ({ data: signInData, error: signInError } = await signIn(true));
       }
 
       if (signInError || !signInData?.user) {
-        console.error("[Auth] Supabase sign-in error:", signInError?.message, signInError);
         const rawMessage = signInError?.message ?? "Sign in failed";
         const isInvalidCredentials =
           rawMessage.toLowerCase().includes("invalid login credentials") ||
           rawMessage.toLowerCase().includes("invalid credentials");
 
         if (isInvalidCredentials) {
+          console.warn("[Auth] Supabase sign-in failed:", rawMessage);
           setAuthModal({
             title: "Invalid Credentials",
             message: "The email address or password you entered is incorrect. Please try again.",
@@ -367,6 +370,7 @@ export default function Home() {
             variant: "error",
           });
         } else {
+          console.error("[Auth] Supabase sign-in error:", rawMessage, signInError);
           setError(rawMessage);
           setNotice({ type: "error", message: rawMessage });
           setAuthModal({
@@ -376,6 +380,9 @@ export default function Home() {
             variant: "error",
           });
         }
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
+        pendingCredentialsRef.current = null;
         setIsSubmitting(false);
         return;
       }

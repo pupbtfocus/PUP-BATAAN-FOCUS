@@ -152,10 +152,10 @@ async function bootstrapQaFaculty() {
           email: normalizedEmail,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "id" }
+        { onConflict: "user_id" }
       )
       .select("id")
-      .single();
+      .maybeSingle();
 
     if (profileErr) {
       console.warn(`Profile upsert error for ${acc.email}:`, profileErr.message);
