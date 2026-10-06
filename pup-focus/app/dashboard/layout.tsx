@@ -36,7 +36,7 @@ export default function DashboardLayout({
               <span className="hidden md:block font-extrabold text-white text-lg sm:text-xl md:text-2xl tracking-tight whitespace-nowrap leading-tight">
                 PUP FOCUS
               </span>
-              <span className="md:hidden text-[10px] font-medium text-amber-200/90 tracking-wide leading-tight line-clamp-2">
+              <span className="md:hidden text-[10px] font-medium text-white tracking-wide leading-tight line-clamp-2">
                 <HighlightedSystemTitle />
               </span>
             </div>
@@ -45,7 +45,7 @@ export default function DashboardLayout({
 
         {/* Centered System Title for Desktop */}
         <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-4">
-          <span className="text-xs lg:text-sm xl:text-base font-semibold text-amber-200/95 tracking-wide text-center truncate max-w-[48vw]">
+          <span className="text-xs lg:text-sm xl:text-base font-semibold text-white tracking-wide text-center truncate max-w-[48vw]">
             <HighlightedSystemTitle />
           </span>
         </div>
