@@ -10,6 +10,7 @@ import type {
   SubmissionWindowResponse,
 } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { ExtendSubmissionWindowModal } from "./extend-submission-window-modal";
+import { SubmissionScheduleLogsModal } from "./submission-schedule-logs-modal";
 import { AlertPopup } from "@/components/ui/alert-popup";
 
 function toDateTimeLocal(d: Date): string {
@@ -310,7 +311,6 @@ export function SubmissionWindowPanel({
   }
 
   const fetchLogs = useCallback(async () => {
-    if (!isSuperAdmin) return;
     try {
       setIsLoadingLogs(true);
       const res = await fetch("/api/admin/submission-window/logs", { credentials: "include" });
@@ -323,13 +323,11 @@ export function SubmissionWindowPanel({
     } finally {
       setIsLoadingLogs(false);
     }
-  }, [isSuperAdmin]);
+  }, []);
 
   const refetchLogs = useCallback(() => {
-    if (isSuperAdmin) {
-      void fetchLogs();
-    }
-  }, [isSuperAdmin, fetchLogs]);
+    void fetchLogs();
+  }, [fetchLogs]);
 
   const fetchExtensionRequests = useCallback(async () => {
     try {
@@ -1189,19 +1187,17 @@ export function SubmissionWindowPanel({
               ) : null}
             </button>
 
-            {isSuperAdmin ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLogsModal(true);
-                  refetchLogs();
-                }}
-                className="flex items-center justify-center sm:justify-start gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2.5 sm:py-2 text-sm font-medium rounded-xl transition-colors cursor-pointer w-full sm:w-auto"
-              >
-                <AppIcon icon={ClockRotateRight} size="sm" color="default" />
-                <span>Extension Logs {extensionLogs.length > 0 ? `(${extensionLogs.length})` : ""}</span>
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                setShowLogsModal(true);
+                refetchLogs();
+              }}
+              className="flex items-center justify-center sm:justify-start gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2.5 sm:py-2 text-sm font-medium rounded-xl transition-colors cursor-pointer w-full sm:w-auto"
+            >
+              <AppIcon icon={ClockRotateRight} size="sm" color="default" />
+              <span>Submission Schedule Logs {extensionLogs.length > 0 ? `(${extensionLogs.length})` : ""}</span>
+            </button>
 
             <button
               type="button"
@@ -1625,89 +1621,11 @@ export function SubmissionWindowPanel({
         </div>
       ) : null}
 
-      {/* Extension Logs History Modal - Super Admin Only */}
-      {isSuperAdmin && showLogsModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-900 dark:text-slate-100">
-            <ModalHeader
-              icon={ClockRotateRight}
-              title="Extension Audit Logs"
-              subtitle="Historical record of extension approvals, rejections, and window resets"
-              onClose={() => setShowLogsModal(false)}
-              closeAriaLabel="Close logs"
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
-            />
-
-            <div className="overflow-y-auto space-y-3 pr-1 flex-1">
-              {isLoadingLogs ? (
-                <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
-                  <AppIcon icon={SystemRestart} size="md" color="default" className="animate-spin" />
-                  Loading extension history...
-                </div>
-              ) : extensionLogs.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                  No extension history recorded yet.
-                </div>
-              ) : (
-                extensionLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-2.5 text-xs text-slate-900 dark:text-slate-100"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100">
-                          {log.extended_by_name || "Admin"}
-                        </span>
-                        <span className="rounded bg-slate-200/80 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 uppercase">
-                          {log.extension_preset || "Extended"}
-                        </span>
-                        <span className="rounded bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 capitalize">
-                          Scope: {log.scope} ({log.scope_target || "Global"})
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        {new Date(log.created_at).toLocaleString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
-                      </span>
-                    </div>
-
-                    {log.new_end_date || log.old_end_date ? (
-                      <div className="flex flex-wrap items-center gap-2 text-slate-800 dark:text-slate-300 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800">
-                        <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">Deadline Change:</span>
-                        {log.old_end_date ? (
-                          <>
-                            <span className="text-slate-500 line-through">
-                              {log.old_end_date} {log.old_end_time || ""}
-                            </span>
-                            <AppIcon icon={NavArrowRight} size="sm" color="muted" />
-                          </>
-                        ) : null}
-                        <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
-                          {log.new_end_date} {log.new_end_time ? `at ${log.new_end_time}` : ""}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap items-center gap-2 text-slate-800 dark:text-slate-300 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800">
-                        <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">Action:</span>
-                        <span className="font-semibold text-slate-900 dark:text-slate-100">
-                          {log.reason || "Administrative Window Update"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {/* Submission Schedule Logs History Modal */}
+      <SubmissionScheduleLogsModal
+        isOpen={showLogsModal}
+        onClose={() => setShowLogsModal(false)}
+      />
 
       {/* Save Confirmation Modal */}
       {showSaveConfirmation ? (

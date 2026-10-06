@@ -438,6 +438,39 @@ export async function PUT(request: NextRequest) {
       });
     }
 
+    // Direct entry into submission_window_logs table
+    try {
+      let actorName = "Administrator";
+      try {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (prof?.full_name || prof?.email) {
+          actorName = prof.full_name || prof.email;
+        }
+      } catch {}
+
+      await supabase.from("submission_window_logs").insert({
+        submission_window_id: 1,
+        action_type: "SCHEDULE_UPDATE",
+        extended_by: user.id,
+        extended_by_name: actorName,
+        old_end_date: null,
+        old_end_time: null,
+        new_end_date: endDate,
+        new_end_time: endTime24,
+        scope: "global",
+        scope_target: `${academicYear} • ${semester}`,
+        reason: "Submission Schedule Configured",
+        reason_details: `Window set from ${startDate} ${startTime} to ${endDate} ${endTime}`,
+        notified_faculty: true,
+      });
+    } catch (swlError) {
+      logger.warn("submission_window_log_insert_failed", { error: String(swlError) });
+    }
+
     return NextResponse.json({
       ...status,
       startTimeLabel: status.startTime
@@ -557,6 +590,39 @@ export async function DELETE() {
       logger.error("audit_log_submission_window_close_failed", {
         error: auditError instanceof Error ? auditError.message : String(auditError),
       });
+    }
+
+    // Direct entry into submission_window_logs table
+    try {
+      let actorName = "Administrator";
+      try {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (prof?.full_name || prof?.email) {
+          actorName = prof.full_name || prof.email;
+        }
+      } catch {}
+
+      await supabase.from("submission_window_logs").insert({
+        submission_window_id: 1,
+        action_type: "SCHEDULE_CLOSE",
+        extended_by: user.id,
+        extended_by_name: actorName,
+        old_end_date: existingWin?.end_date || null,
+        old_end_time: existingWin?.end_time || null,
+        new_end_date: todayManila,
+        new_end_time: timeManila,
+        scope: "global",
+        scope_target: `${status.academicYear} • ${status.semester}`,
+        reason: "Submission Window Closed",
+        reason_details: "Active submission window was manually closed by administrator",
+        notified_faculty: true,
+      });
+    } catch (swlError) {
+      logger.warn("submission_window_close_log_insert_failed", { error: String(swlError) });
     }
 
     return NextResponse.json({

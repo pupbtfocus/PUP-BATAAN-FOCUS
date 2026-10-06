@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole, canManageAdminAccount } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
-import { Activity, CheckCircle, EditPencil, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
+import { Activity, CheckCircle, ClockRotateRight, EditPencil, Eye, EyeClosed, Group, Key, Menu, NavArrowRight, Page, Refresh, SendMail, Shield, User, UserPlus, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -35,6 +35,7 @@ import {
 } from "@/features/super-admin/components/delete-admin-modal";
 import { InviteStatusModal } from "@/features/faculty-management/components/faculty-modals/invite-status-modal";
 import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
+import { SubmissionScheduleLogsModal } from "@/features/faculty-management/components/submission-schedule-logs-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -409,6 +410,7 @@ export function SuperAdminDashboard({
   // User Registration Logs Modal State
   const [registrationLogsModalOpen, setRegistrationLogsModalOpen] = useState(false);
   const [registrationLogsInitialRole, setRegistrationLogsInitialRole] = useState<"all" | "faculty" | "admin">("all");
+  const [submissionScheduleLogsModalOpen, setSubmissionScheduleLogsModalOpen] = useState(false);
 
   const facultyForm = useForm<FacultyAccountFormInput>({
     resolver: zodResolver(facultyAccountSchema),
@@ -1919,6 +1921,14 @@ export function SuperAdminDashboard({
                     </button>
                     <button
                       type="button"
+                      onClick={() => setSubmissionScheduleLogsModalOpen(true)}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
+                    >
+                      <ClockRotateRight className="h-3.5 w-3.5 text-slate-950" />
+                      <span>Submission Schedule Logs</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => void refreshCurrentPanel()}
                       disabled={isLoadingFaculty}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
@@ -2448,6 +2458,11 @@ export function SuperAdminDashboard({
           void loadAdminAccounts();
           void loadFacultyFromDatabase();
         }}
+      />
+
+      <SubmissionScheduleLogsModal
+        isOpen={submissionScheduleLogsModalOpen}
+        onClose={() => setSubmissionScheduleLogsModalOpen(false)}
       />
     </div>
   );

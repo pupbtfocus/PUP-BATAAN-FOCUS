@@ -87,18 +87,21 @@ Used exclusively for document validation, approvals, and setting active/current 
 - **Confirm & Validate All** (Bulk Modal)
 - **Set Current** (Academic Term Management Row & Modal Switch)
 
-#### 3. PUP Maroon Destructive, Dismissive & Cancel Actions
-**Solid Utility**: `bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] shadow-xs transition-colors cursor-pointer`  
-**Dismiss X Utility**: `rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs`  
-Used for all destructive, revoking, deactivating, closing, deleting, revision requests, and ALL modal dismissals and cancellations:
-- **Cancel** (All modals, dialogs, drawers, safety timers, and form cards are solid maroon)
-- **Close** (Modal footers and detailed view dialogs)
-- **Close 'X' / Dismiss** (Top-right modal headers, lightbox previewers, drawer dismissals)
-- **Deactivate**
-- **Delete** (Faculty Accounts, Academic Terms, Admin Accounts)
+#### 3. PUP Maroon Destructive, Dismissive, Close, Back & Cancel Actions
+**Solid Utility**: `bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] shadow-xs transition-colors cursor-pointer active:scale-95`  
+**Dismiss X Utility**: `rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-2xs active:scale-95`  
+**Back Button Utility**: `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-colors cursor-pointer shadow-xs active:scale-95`  
+
+**MANDATORY DESIGN SYSTEM RULE**: All **Cancel**, **Close**, **'X' (Dismiss)**, and **Back** buttons across all modals, dialogs, drawers, views, cards, forms, and lightboxes MUST use solid PUP Maroon (`#780000` with hover `#5e0000` and border `#5e0000`) with white text. NEVER use gray, plain white, or dark slate buttons for cancel, close, X, or back actions.
+- **Cancel**: (All modal footers, dialogs, confirmation popups, safety timers, and form cards are solid maroon)
+- **Close**: (All modal footers, dialog footers, alert dismissals, and detailed view modals are solid maroon)
+- **Close 'X' / Dismiss**: (Top-right modal headers via `ModalCloseButton`, banner dismissals, drawer dismissals, search bar clear buttons are solid maroon)
+- **Back**: (Back navigation buttons in wizards, detail views, multi-step forms, and previews are solid maroon)
+- **Deactivate**: (Account status toggles and account deactivation confirmations)
+- **Delete**: (Faculty Accounts, Academic Terms, Admin Accounts)
 - **Close Submissions** / **Confirm Close Submissions**
-- **Revision** (Table Row Action)
-- **Send Revision Request** (Revision Modal)
+- **Revision**: (Table Row Action)
+- **Send Revision Request**: (Revision Modal Action)
 
 ### 2.3 Surface & Border Palette
 
