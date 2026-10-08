@@ -81,6 +81,8 @@ export async function GET() {
       // Only a closed window requires choosing an onboarding option.
       hasPastDeadlines: !isWindowActive,
       hasPastSchedule: !isWindowActive,
+      isWindowActive,
+      isWindowOpen: windowState.isOpen,
       windowStatus: windowState.status,
       activeTerm: {
         academicYear: term.academicYear,
@@ -92,6 +94,8 @@ export async function GET() {
         iso: deadline.iso,
       },
       schedules,
+      templates,
+      requirements: schedules,
     });
   } catch (error) {
     return NextResponse.json(
