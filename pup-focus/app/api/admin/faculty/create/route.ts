@@ -30,7 +30,17 @@ async function readRequestPayload(request: NextRequest) {
       return typeof value === "string" ? value : "";
     };
 
+    const rawPayload: Record<string, any> = {};
+    formData.forEach((value, key) => {
+      if (value instanceof File) {
+        rawPayload[key] = `[File: ${value.name}, ${value.size} bytes]`;
+      } else {
+        rawPayload[key] = value;
+      }
+    });
+
     return {
+      rawBody: rawPayload,
       firstName: readString("firstName"),
       middleName: readString("middleName"),
       lastName: readString("lastName"),
@@ -54,7 +64,7 @@ async function readRequestPayload(request: NextRequest) {
     };
   }
 
-  const body = (await request.json()) as {
+  const body = ((await request.json().catch(() => ({}))) || {}) as {
     firstName?: string;
     middleName?: string;
     lastName?: string;
@@ -80,6 +90,7 @@ async function readRequestPayload(request: NextRequest) {
     legacyNameParts.length > 2 ? legacyNameParts.slice(1, -1).join(" ") : "";
 
   return {
+    rawBody: body,
     firstName: (body.firstName ?? legacyFirstName).trim(),
     middleName: (body.middleName ?? legacyMiddleName).trim(),
     lastName: (body.lastName ?? legacyLastName).trim(),
@@ -216,6 +227,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const body = await readRequestPayload(request);
+    console.log(
+      "[FACULTY CREATE INPUT BODY]",
+      JSON.stringify(body.rawBody ?? body, null, 2),
+    );
+
     const {
       firstName,
       middleName,
@@ -226,7 +243,7 @@ export async function POST(request: NextRequest) {
       onboardingOption,
       gracePeriodIso,
       customDeadlines,
-    } = await readRequestPayload(request);
+    } = body;
 
     const fullName = buildFacultyFullName({
       firstName,
@@ -235,8 +252,26 @@ export async function POST(request: NextRequest) {
     });
 
     if (!firstName || !lastName || !email || !programId) {
+      const missingFields: string[] = [];
+      if (!firstName) missingFields.push("firstName");
+      if (!lastName) missingFields.push("lastName");
+      if (!email) missingFields.push("email");
+      if (!programId) missingFields.push("programId / department");
+
+      const validationErrorDetails = {
+        missingFields,
+        received: {
+          firstName: firstName || null,
+          lastName: lastName || null,
+          email: email || null,
+          programId: programId || null,
+        },
+        message:
+          "Missing required fields (First name, Last name, Email, and Department/Program selection are required).",
+      };
+      console.error("[FACULTY CREATE 400 ERROR]", validationErrorDetails);
       return NextResponse.json(
-        { error: "Missing required fields (First name, Last name, Email, and Department/Program selection are required)." },
+        { error: "Validation failed", details: validationErrorDetails },
         { status: 400 },
       );
     }
@@ -244,8 +279,15 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!isValidEmailAddress(normalizedEmail)) {
+      const validationErrorDetails = {
+        field: "email",
+        value: email,
+        normalizedEmail,
+        message: "Please provide a real email address",
+      };
+      console.error("[FACULTY CREATE 400 ERROR]", validationErrorDetails);
       return NextResponse.json(
-        { error: "Please provide a real email address" },
+        { error: "Validation failed", details: validationErrorDetails },
         { status: 400 },
       );
     }
@@ -305,8 +347,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!programRecord) {
+      const validationErrorDetails = {
+        field: "programId",
+        value: programId,
+        message: "Selected academic program or department is invalid.",
+      };
+      console.error("[FACULTY CREATE 400 ERROR]", validationErrorDetails);
       return NextResponse.json(
-        { error: "Selected academic program or department is invalid." },
+        { error: "Validation failed", details: validationErrorDetails },
         { status: 400 },
       );
     }
@@ -318,22 +366,32 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existingProfile) {
+      const validationErrorDetails = {
+        field: "email",
+        value: normalizedEmail,
+        message: `Faculty account with email ${normalizedEmail} already exists in profiles`,
+      };
+      console.error("[FACULTY CREATE 400 ERROR]", validationErrorDetails);
       return NextResponse.json(
         {
-          error: `Faculty account with email ${normalizedEmail} already exists`,
+          error: "Validation failed",
+          details: validationErrorDetails,
         },
         { status: 400 },
       );
     }
 
-
-
     const { data: authUsers, error: authUsersError } =
       await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
 
     if (authUsersError) {
+      const validationErrorDetails = {
+        step: "listUsers",
+        message: authUsersError.message,
+      };
+      console.error("[FACULTY CREATE 400 ERROR]", validationErrorDetails);
       return NextResponse.json(
-        { error: authUsersError.message },
+        { error: "Validation failed", details: validationErrorDetails },
         { status: 400 },
       );
     }
@@ -343,9 +401,16 @@ export async function POST(request: NextRequest) {
     );
 
     if (existingAuthUser) {
+      const validationErrorDetails = {
+        field: "email",
+        value: normalizedEmail,
+        message: `Faculty account with email ${normalizedEmail} already exists in auth`,
+      };
+      console.error("[FACULTY CREATE 400 ERROR]", validationErrorDetails);
       return NextResponse.json(
         {
-          error: `Faculty account with email ${normalizedEmail} already exists`,
+          error: "Validation failed",
+          details: validationErrorDetails,
         },
         { status: 400 },
       );
@@ -372,9 +437,15 @@ export async function POST(request: NextRequest) {
         });
 
       if (uploadError) {
+        const validationErrorDetails = {
+          field: "profileImage",
+          message: `Failed to upload profile image: ${uploadError.message}`,
+        };
+        console.error("[FACULTY CREATE 400 ERROR]", validationErrorDetails);
         return NextResponse.json(
           {
-            error: `Failed to upload profile image: ${uploadError.message}`,
+            error: "Validation failed",
+            details: validationErrorDetails,
           },
           { status: 400 },
         );
@@ -420,9 +491,15 @@ export async function POST(request: NextRequest) {
           .catch(() => null);
       }
 
+      const validationErrorDetails = {
+        field: "generateLink",
+        message: genError?.message ?? "Failed to generate faculty invite link",
+      };
+      console.error("[FACULTY CREATE 400 ERROR]", validationErrorDetails);
       return NextResponse.json(
         {
-          error: genError?.message ?? "Failed to generate faculty invite link",
+          error: "Validation failed",
+          details: validationErrorDetails,
         },
         { status: 400 },
       );
