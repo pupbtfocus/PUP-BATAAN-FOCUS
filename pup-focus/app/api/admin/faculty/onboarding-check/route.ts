@@ -4,15 +4,7 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { ROLE } from "@/config/roles";
-import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
-import {
-  evaluateSubmissionWindow,
-  getSubmissionWindow,
-  getTodayInManila,
-  getCurrentTimeInManila,
-  normalizeTime24Hour,
-} from "@/features/submissions/services/submission-window.service";
+import { resolveOnboardingContext } from "@/features/submissions/services/submission-window.service";
 
 function isAuthorizedAdmin(role?: string): boolean {
   if (!role) return false;
@@ -71,155 +63,32 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // 1. Fetch currently active academic term with fallback
-    let activeAY = "2026-2027";
-    let activeSem = "1st Semester";
+    const ctx = await resolveOnboardingContext(supabase);
+    const { term, windowState, deadline, templates, isWindowActive } = ctx;
 
-    try {
-      const { data: termRows } = await supabase
-        .from("academic_terms")
-        .select("id, academic_year, semester, status")
-        .order("academic_year", { ascending: false });
-
-      if (Array.isArray(termRows) && termRows.length > 0) {
-        const found = termRows.find(
-          (t: any) =>
-            (t.status || "").trim().toLowerCase() === "current" ||
-            (t.status || "").trim().toLowerCase() === "active",
-        );
-        const currentTerm = found || termRows[0];
-        if (currentTerm?.academic_year) activeAY = currentTerm.academic_year.trim();
-        if (currentTerm?.semester) activeSem = currentTerm.semester.trim();
-      }
-    } catch {
-      // Fallback
-    }
-
-    // 2. Fetch current window config and evaluated status
-    const windowConfig = await getSubmissionWindow(supabase, {
-      academicYear: activeAY,
-      semester: activeSem,
-    });
-
-    const windowState = evaluateSubmissionWindow(
-      windowConfig,
-      undefined,
-      undefined,
-      { academicYear: activeAY, semester: activeSem },
-    );
-
-    // If the window is currently OPEN, submissions are actively accepted; no past deadline restriction!
-    if (windowState.isOpen) {
-      return NextResponse.json({
-        hasPastDeadlines: false,
-        activeTerm: {
-          academicYear: activeAY,
-          semester: activeSem,
-        },
-        globalDeadline: {
-          endDate: windowState.endDate,
-          endTime: windowState.endTime,
-          iso: `${windowState.endDate}T${normalizeTime24Hour(windowState.endTime || "23:59:59")}+08:00`,
-        },
-        schedules: [],
-      });
-    }
-
-    // Submissions are NOT open (schedule is off, closed, or past deadline).
-    let termWin: any = null;
-    try {
-      const { data: tw } = await supabase
-        .from("submission_window_terms")
-        .select("start_date, end_date, start_time, end_time")
-        .eq("academic_year", activeAY)
-        .eq("semester", activeSem)
-        .maybeSingle();
-
-      if (tw?.end_date) {
-        termWin = tw;
-      }
-    } catch {
-      // Table may not exist yet
-    }
-
-    let globalWin: any = null;
-    try {
-      const { data: gw } = await supabase
-        .from("submission_windows")
-        .select("start_date, end_date, start_time, end_time, academic_year, semester")
-        .eq("id", 1)
-        .maybeSingle();
-
-      if (gw?.end_date) {
-        globalWin = gw;
-      }
-    } catch {
-      // Fallback
-    }
-
-    // Submissions for this term are CLOSED (either deadline passed OR manually closed/off)
-    const effectiveEndDate =
-      termWin?.end_date ||
-      globalWin?.end_date ||
-      windowState.endDate ||
-      getTodayInManila();
-
-    const effectiveEndTime =
-      termWin?.end_time ||
-      globalWin?.end_time ||
-      windowState.endTime ||
-      getCurrentTimeInManila();
-
-    const normTime = normalizeTime24Hour(effectiveEndTime || "23:59:59") || "23:59:59";
-    const deadlineIso = `${effectiveEndDate}T${normTime}+08:00`;
-
-    // 3. Submissions are closed! Fetch all active requirement schedules in the active term
-    let activeTemplates: Array<{
-      code: string;
-      title: string;
-      description?: string | null;
-    }> = [];
-
-    try {
-      const { data: templates } = await supabase
-        .from("requirement_templates")
-        .select("code, title, description")
-        .eq("is_active", true)
-        .order("title", { ascending: true });
-
-      if (templates && templates.length > 0) {
-        activeTemplates = templates;
-      }
-    } catch {
-      // Fallback
-    }
-
-    if (activeTemplates.length === 0) {
-      activeTemplates = DEFAULT_REQUIREMENTS.map((code) => ({
-        code,
-        title: REQUIREMENT_LABEL[code] || code,
-      }));
-    }
-
-    const schedules = activeTemplates.map((t) => ({
+    // Requirement templates are always returned so the UI knows exactly what
+    // will be assigned, whether submissions are open or closed.
+    const schedules = templates.map((t) => ({
       code: t.code,
       title: t.title,
       description: t.description || null,
-      globalDeadlineIso: deadlineIso,
-      globalDeadlineDate: effectiveEndDate,
-      globalDeadlineTime: effectiveEndTime || "11:59 PM",
+      globalDeadlineIso: deadline.iso,
+      globalDeadlineDate: deadline.endDate,
+      globalDeadlineTime: deadline.endTime,
     }));
 
     return NextResponse.json({
-      hasPastDeadlines: true,
+      // Only a closed window requires choosing an onboarding option.
+      hasPastDeadlines: !isWindowActive,
+      windowStatus: windowState.status,
       activeTerm: {
-        academicYear: activeAY,
-        semester: activeSem,
+        academicYear: term.academicYear,
+        semester: term.semester,
       },
       globalDeadline: {
-        endDate: effectiveEndDate,
-        endTime: effectiveEndTime,
-        iso: deadlineIso,
+        endDate: deadline.endDate,
+        endTime: deadline.endTime,
+        iso: deadline.iso,
       },
       schedules,
     });

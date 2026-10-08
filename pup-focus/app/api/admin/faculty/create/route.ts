@@ -10,7 +10,14 @@ import {
   FACULTY_PROFILE_IMAGE_BUCKET,
   buildFacultyFullName,
 } from "@/lib/faculty-profile";
-import { DEFAULT_REQUIREMENTS } from "@/config/compliance";
+import {
+  buildGraceDueAtIso,
+  buildOriginRemarks,
+  isValidManilaIso,
+  resolveOnboardingContext,
+  type OnboardingContext,
+  type SubmissionOrigin,
+} from "@/features/submissions/services/submission-window.service";
 
 async function readRequestPayload(request: NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";
@@ -81,6 +88,84 @@ async function readRequestPayload(request: NextRequest) {
     gracePeriodIso: body.gracePeriodIso || null,
     customDeadlines: body.customDeadlines || null,
   };
+}
+
+type SubmissionPlan = {
+  status: "pending" | "exempted";
+  origin: SubmissionOrigin;
+  dueAt: string | null;
+  detail: string;
+};
+
+const DEFAULT_GRACE_DAYS = 7;
+
+/**
+ * Decides how one requirement row is initialized for a brand-new faculty member.
+ * - Window open/upcoming: regular pending row due at the window end (STANDARD).
+ * - Window closed: honor the selected onboarding option.
+ */
+function buildSubmissionPlan(params: {
+  ctx: OnboardingContext;
+  requirementCode: string;
+  option: string | null;
+  gracePeriodIso: string | null;
+  customDeadlines: Record<string, string> | null;
+}): SubmissionPlan {
+  const { ctx, requirementCode, option, gracePeriodIso, customDeadlines } = params;
+
+  if (ctx.isWindowActive) {
+    return {
+      status: "pending",
+      origin: "STANDARD",
+      dueAt: ctx.deadline.iso,
+      detail: `Regular submission window until ${ctx.deadline.endDate}`,
+    };
+  }
+
+  const nowMs = Date.now();
+  const graceDueAt =
+    isValidManilaIso(gracePeriodIso) && new Date(gracePeriodIso).getTime() > nowMs
+      ? gracePeriodIso
+      : buildGraceDueAtIso(DEFAULT_GRACE_DAYS);
+
+  switch (option) {
+    case "exempt":
+      return {
+        status: "exempted",
+        origin: "EXEMPTED",
+        dueAt: null,
+        detail: "Marked as not required during new faculty setup",
+      };
+    case "grace_period":
+      return {
+        status: "pending",
+        origin: "NEW_FACULTY_GRACE",
+        dueAt: graceDueAt,
+        detail: `Extra time granted until ${graceDueAt}`,
+      };
+    case "custom_deadlines": {
+      const custom = customDeadlines?.[requirementCode];
+      const dueAt =
+        isValidManilaIso(custom) && new Date(custom).getTime() > nowMs
+          ? custom
+          : graceDueAt;
+      return {
+        status: "pending",
+        origin: "NEW_FACULTY_CUSTOM",
+        dueAt,
+        detail: `Custom deadline until ${dueAt}`,
+      };
+    }
+    default:
+      // "standard" / "normal" / no option: follow the previous global schedule.
+      // Its deadline has passed, so the row stays locked until an extension or new window.
+      return {
+        status: "pending",
+        origin: "NEW_FACULTY_STANDARD",
+        dueAt: ctx.deadline.iso,
+        detail: `Follows standard schedule (closed since ${ctx.deadline.endDate})`,
+      };
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -351,15 +436,11 @@ export async function POST(request: NextRequest) {
               );
           }
 
-          // Insert program assignment
-          const { data: activeTerm } = await supabase
-            .from("academic_terms")
-            .select("academic_year, semester")
-            .eq("status", "Current")
-            .maybeSingle();
-
-          const academicYear = activeTerm?.academic_year || "2026-2027";
-          const term = activeTerm?.semester || "1st Semester";
+          // Resolve the active term + window state once so the assignment and
+          // every submission row use identical, consistent values.
+          const ctx = await resolveOnboardingContext(supabase);
+          const academicYear = ctx.term.academicYear;
+          const term = ctx.term.semester;
 
           // Insert program assignment and capture the ID
           const { data: assignmentRow } = await supabase
@@ -378,92 +459,60 @@ export async function POST(request: NextRequest) {
 
           const assignmentId = assignmentRow?.id ?? null;
 
-          // Initialize requirement tracking records based on onboarding choice for past schedules
-          if (
-            onboardingOption &&
-            ["grace_period", "custom_deadlines", "exempt", "standard", "normal"].includes(onboardingOption)
-          ) {
-            try {
-              // 1. Get curriculum
-              const { data: curr } = await supabase
-                .from("curricula")
-                .select("id")
-                .limit(1)
-                .maybeSingle();
+          // Always initialize requirement rows, whether the window is open or closed.
+          try {
+            const { data: curr } = await supabase
+              .from("curricula")
+              .select("id")
+              .limit(1)
+              .maybeSingle();
 
-              // 2. Get active requirement codes
-              let targetReqCodes: string[] = [];
-              const { data: activeTemplates } = await supabase
-                .from("requirement_templates")
-                .select("code")
-                .eq("is_active", true);
+            const curriculumId = curr?.id;
 
-              if (activeTemplates && activeTemplates.length > 0) {
-                targetReqCodes = activeTemplates.map((t) => t.code);
-              } else {
-                targetReqCodes = [...DEFAULT_REQUIREMENTS];
-              }
-
-              // Compute default 7-day grace period ISO if not provided
-              let defaultGraceIso = gracePeriodIso;
-              if (!defaultGraceIso) {
-                const gd = new Date();
-                gd.setDate(gd.getDate() + 7);
-                const yyyy = gd.getFullYear();
-                const mm = String(gd.getMonth() + 1).padStart(2, "0");
-                const dd = String(gd.getDate()).padStart(2, "0");
-                defaultGraceIso = `${yyyy}-${mm}-${dd}T23:59:59+08:00`;
-              }
-
-              const nowIso = new Date().toISOString();
-              const curriculumId = curr?.id;
-
-              if (curriculumId && targetReqCodes.length > 0) {
-                for (const code of targetReqCodes) {
-                  let subStatus = "pending";
-                  let subDueAt: string | null = null;
-                  let subRemarks: string | null = null;
-
-                  if (onboardingOption === "grace_period") {
-                    subStatus = "pending";
-                    subDueAt = defaultGraceIso;
-                    subRemarks = "Initialized with 7-day onboarding grace period";
-                  } else if (onboardingOption === "custom_deadlines") {
-                    subStatus = "pending";
-                    subDueAt = customDeadlines?.[code] || defaultGraceIso;
-                    subRemarks = "Initialized with custom onboarding deadline";
-                  } else if (onboardingOption === "exempt") {
-                    subStatus = "exempted";
-                    subDueAt = null;
-                    subRemarks = "Exempted during new faculty onboarding";
-                  } else if (onboardingOption === "standard" || onboardingOption === "normal") {
-                    subStatus = "pending";
-                    subDueAt = null;
-                    subRemarks = "Standard registration (no personal schedule set)";
-                  }
-
-                  await supabase.from("submissions").insert({
-                    id: crypto.randomUUID(),
-                    faculty_profile_id: newProfile.id,
-                    faculty_assignment_id: assignmentId,
-                    curriculum_id: curriculumId,
-                    requirement_code: code,
-                    academic_year: academicYear,
-                    semester: term,
-                    status: subStatus,
-                    due_at: subDueAt,
-                    remarks: subRemarks,
-                    created_at: nowIso,
-                    updated_at: nowIso,
-                  });
-                }
-              }
-            } catch (initErr) {
-              logger.error("faculty_onboarding_requirements_init_failed", {
-                error: initErr instanceof Error ? initErr.message : String(initErr),
+            if (!curriculumId) {
+              logger.error("faculty_onboarding_no_curriculum", {
                 facultyProfileId: newProfile.id,
               });
+            } else if (ctx.templates.length > 0) {
+              const nowIso = new Date().toISOString();
+              const rows = ctx.templates.map((template) => {
+                const plan = buildSubmissionPlan({
+                  ctx,
+                  requirementCode: template.code,
+                  option: onboardingOption,
+                  gracePeriodIso,
+                  customDeadlines,
+                });
+
+                return {
+                  id: crypto.randomUUID(),
+                  faculty_profile_id: newProfile.id,
+                  faculty_assignment_id: assignmentId,
+                  curriculum_id: curriculumId,
+                  requirement_code: template.code,
+                  academic_year: academicYear,
+                  semester: term,
+                  status: plan.status,
+                  due_at: plan.dueAt,
+                  remarks: buildOriginRemarks(plan.origin, plan.detail),
+                  created_at: nowIso,
+                  updated_at: nowIso,
+                };
+              });
+
+              const { error: insertError } = await supabase
+                .from("submissions")
+                .insert(rows);
+
+              if (insertError) {
+                throw insertError;
+              }
             }
+          } catch (initErr) {
+            logger.error("faculty_onboarding_requirements_init_failed", {
+              error: initErr instanceof Error ? initErr.message : String(initErr),
+              facultyProfileId: newProfile.id,
+            });
           }
         }
       } catch (assignError) {

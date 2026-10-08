@@ -330,7 +330,8 @@ export default function Home() {
     try {
       let { data: signInData, error: signInError } = await signIn();
 
-      if (signInError && normalizedEmail === SUPER_ADMIN_EMAIL) {
+      const isCaptchaError = Boolean(signInError?.message?.toLowerCase().includes("captcha"));
+      if (signInError && !isCaptchaError && normalizedEmail === SUPER_ADMIN_EMAIL) {
         console.warn("[Auth] Super admin login failed, attempting bootstrap:", signInError.message);
         const bootstrapResponse = await fetch("/api/bootstrap/super-admin", {
           method: "POST",
