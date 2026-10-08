@@ -20,6 +20,9 @@ type SubmissionWindowState = {
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
   isGracePeriod?: boolean;
+  isPersonalDeadline?: boolean;
+  effectiveDeadline?: string | null;
+  formattedDueAt?: string | null;
   badgeLabel?: string | null;
 };
 
@@ -152,6 +155,33 @@ export function SubmissionWindowCountdown({
         ) : null}
         <p className="mt-2 text-xs leading-relaxed text-emerald-100/90 font-medium">
           All required compliance documents completed for this semester.
+        </p>
+      </div>
+    );
+  }
+
+  // Personal deadline active override
+  const isPersonalActive = Boolean(windowState?.isPersonalDeadline || windowState?.isGracePeriod);
+  if (isPersonalActive && !isAllValidated) {
+    return (
+      <div className="rounded-xl border border-emerald-500/40 bg-[#08412a]/90 p-3.5 shadow-xs text-white text-center">
+        <div className="flex items-center justify-center gap-2">
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400 pulse-dot" aria-hidden="true" />
+          <span className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-300">
+            PERSONAL DEADLINE ACTIVE
+          </span>
+        </div>
+        {windowState?.formattedDueAt ? (
+          <p className="mt-1.5 text-[11px] text-emerald-200/90 font-medium">
+            Due: {windowState.formattedDueAt}
+          </p>
+        ) : windowState?.academicYear && windowState?.semester ? (
+          <p className="mt-1.5 text-[11px] text-emerald-200/80 font-medium">
+            A.Y. {windowState.academicYear} | {windowState.semester}
+          </p>
+        ) : null}
+        <p className="mt-1.5 text-xs leading-relaxed text-emerald-100/90 font-medium">
+          Uploads currently unlocked
         </p>
       </div>
     );

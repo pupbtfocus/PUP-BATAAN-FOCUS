@@ -485,6 +485,75 @@ export async function getFacultyInitialData(
     personalDeadline = await getFacultyPersonalDeadline(supabase, authUserId);
   }
 
+  if (globalWindowLocked && !personalDeadline && rawSubmissions.length > 0) {
+    const futurePendingSubs = rawSubmissions.filter((s) => {
+      if (!s.due_at) return false;
+      const st = (s.status || "").toLowerCase().trim();
+      if (st === "validated" || st === "approved" || st === "exempted") return false;
+      const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
+      const dueMs = new Date(iso).getTime();
+      return !Number.isNaN(dueMs) && dueMs > nowMs;
+    });
+
+    if (futurePendingSubs.length > 0) {
+      futurePendingSubs.sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime());
+      const targetSub = futurePendingSubs[0];
+      const iso = targetSub.due_at!.includes("T") ? targetSub.due_at! : `${targetSub.due_at!}T23:59:59+08:00`;
+      const targetDate = new Date(iso);
+      const datePart = iso.split("T")[0];
+      const dateStr = targetDate.toLocaleDateString("en-PH", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "Asia/Manila",
+      });
+      const timeStr = targetDate.toLocaleTimeString("en-PH", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Manila",
+      });
+      personalDeadline = {
+        hasPersonalDeadline: true,
+        effectiveDeadline: iso,
+        formattedDueAt: `${dateStr} at ${timeStr}`,
+        endDate: datePart,
+      };
+    }
+  }
+
+  if (globalWindowLocked && !personalDeadline && approvedExtensions.length > 0) {
+    for (const ext of approvedExtensions) {
+      const extDate = ext.approved_extension_date || ext.requested_extension_date || ext.due_at;
+      if (!extDate) continue;
+      const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
+      const dueMs = new Date(iso).getTime();
+      if (!Number.isNaN(dueMs) && dueMs > nowMs) {
+        const targetDate = new Date(iso);
+        const datePart = iso.split("T")[0];
+        const dateStr = targetDate.toLocaleDateString("en-PH", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+          timeZone: "Asia/Manila",
+        });
+        const timeStr = targetDate.toLocaleTimeString("en-PH", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+          timeZone: "Asia/Manila",
+        });
+        personalDeadline = {
+          hasPersonalDeadline: true,
+          effectiveDeadline: iso,
+          formattedDueAt: `${dateStr} at ${timeStr}`,
+          endDate: datePart,
+        };
+        break;
+      }
+    }
+  }
+
   const globalDeadlineIso = submissionWindow.endDate
     ? `${submissionWindow.endDate}T${submissionWindow.endTime ? normalizeTime24Hour(submissionWindow.endTime) || "23:59:59" : "23:59:59"}+08:00`
     : null;

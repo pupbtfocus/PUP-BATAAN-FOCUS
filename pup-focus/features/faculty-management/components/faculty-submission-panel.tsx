@@ -1486,27 +1486,26 @@ function FacultySubmissionPanelContent({
       ? mandatoryValidatedCount >= mandatoryTemplates.length
       : totalRequirements > 0 && validatedCount === totalRequirements;
 
-  const isWindowConfigured = Boolean(submissionWindow?.isConfigured);
-  const isSubmissionAvailable =
-    !isLoadingSubmissionWindow && Boolean(submissionWindow?.isOpen);
-  // Only considered closed if a schedule was actually configured in the database
-  const isWindowClosed = isWindowConfigured && !isSubmissionAvailable;
-  // True when admin has not configured any schedule (e.g. schedules deleted from database)
-  const isWindowNotConfigured = !isLoadingSubmissionWindow && !isWindowConfigured;
-
   // True when the global window is off but this specific faculty has an active grace period / personal deadline
   const now = Date.now();
   const hasActiveGracePeriod =
     Boolean(submissionWindow?.isGracePeriod) ||
     Boolean(submissionWindow?.isPersonalDeadline) ||
-    (!isSubmissionAvailable &&
-      displayedRequirementStatuses.some((r) => {
-        const due = (r as any).due_at || (r as any).customDueDate;
-        if (!due) return false;
-        const dueIso = due.includes("T") ? due : `${due}T23:59:59+08:00`;
-        const dueMs = new Date(dueIso).getTime();
-        return !Number.isNaN(dueMs) && now <= dueMs;
-      }));
+    displayedRequirementStatuses.some((r) => {
+      const due = (r as any).due_at || (r as any).customDueDate;
+      if (!due) return false;
+      const dueIso = due.includes("T") ? due : `${due}T23:59:59+08:00`;
+      const dueMs = new Date(dueIso).getTime();
+      return !Number.isNaN(dueMs) && now <= dueMs;
+    });
+
+  const isWindowConfigured = Boolean(submissionWindow?.isConfigured) || hasActiveGracePeriod;
+  const isSubmissionAvailable =
+    (!isLoadingSubmissionWindow && Boolean(submissionWindow?.isOpen)) || hasActiveGracePeriod;
+  // Only considered closed if a schedule was actually configured in the database and no personal deadline
+  const isWindowClosed = isWindowConfigured && !isSubmissionAvailable && !hasActiveGracePeriod;
+  // True when admin has not configured any schedule (e.g. schedules deleted from database) and no personal deadline
+  const isWindowNotConfigured = !isLoadingSubmissionWindow && !isWindowConfigured && !hasActiveGracePeriod;
 
   const earliestGracePeriodDeadline = hasActiveGracePeriod
     ? (displayedRequirementStatuses
@@ -1569,7 +1568,13 @@ function FacultySubmissionPanelContent({
       };
     }
     if (submissionWindow?.isGracePeriod || submissionWindow?.isPersonalDeadline) {
-      return submissionWindow;
+      return {
+        ...submissionWindow,
+        isConfigured: true,
+        isOpen: true,
+        status: "Open" as const,
+        badgeLabel: "Personal Deadline Active",
+      };
     }
     if (!submissionWindow || !submissionWindow.isConfigured) {
       return {
@@ -2405,11 +2410,15 @@ function FacultySubmissionPanelContent({
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
                     <p className="text-xs sm:text-sm text-amber-950 dark:text-amber-300 font-semibold">
                       A.Y. {activeAY} • {activeSem}
-                      {isWindowNotConfigured && !isAllValidated ? (
+                      {hasActiveGracePeriod && !isAllValidated ? (
+                        <span className="ml-2 font-semibold">
+                          • (Personal Schedule Active)
+                        </span>
+                      ) : isWindowNotConfigured && !isAllValidated && !isEffectivelyOpen ? (
                         <span className="ml-2 font-semibold">
                           • (Awaiting Schedule)
                         </span>
-                      ) : isWindowClosed && !isAllValidated ? (
+                      ) : isWindowClosed && !isAllValidated && !isEffectivelyOpen ? (
                         <span className="ml-2 font-semibold">
                           • (Submission Window Closed)
                         </span>
@@ -2583,7 +2592,7 @@ function FacultySubmissionPanelContent({
                         {isAllValidated
                           ? "All requirements completed for this term"
                           : hasActiveGracePeriod && personalDeadlineFormatted
-                            ? `Personal deadline: ${personalDeadlineFormatted}`
+                            ? `Due: ${personalDeadlineFormatted}`
                             : windowDeadlineDisplay
                               ? `Deadline: ${windowDeadlineDisplay}`
                               : "Awaiting admin schedule"}
@@ -2593,7 +2602,7 @@ function FacultySubmissionPanelContent({
                       {isAllValidated
                         ? "Requirements locked in validated status"
                         : hasActiveGracePeriod
-                          ? "Uploads are enabled via your personal deadline"
+                          ? "Uploads are currently unlocked"
                           : isSubmissionAvailable
                             ? "Uploads and resubmissions are currently enabled"
                             : isWindowNotConfigured
@@ -2960,11 +2969,15 @@ function FacultySubmissionPanelContent({
                     <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
                       <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
                         A.Y. {activeAY} • {activeSem}
-                        {isWindowNotConfigured && !isAllValidated ? (
+                        {hasActiveGracePeriod && !isAllValidated ? (
+                          <span className="ml-2 font-semibold">
+                            • (Personal Schedule Active)
+                          </span>
+                        ) : isWindowNotConfigured && !isAllValidated && !isEffectivelyOpen ? (
                           <span className="ml-2 font-semibold">
                             • (Awaiting Schedule)
                           </span>
-                        ) : isWindowClosed && !isAllValidated ? (
+                        ) : isWindowClosed && !isAllValidated && !isEffectivelyOpen ? (
                           <span className="ml-2 font-semibold">
                             • (Submission Window Closed)
                           </span>
@@ -3095,7 +3108,7 @@ function FacultySubmissionPanelContent({
                 )}
 
                 {/* 1. Schedule Not Set Banner (No Schedule Configured in Database) */}
-                {isWindowNotConfigured && !isAllValidated && !hasActiveGracePeriod && (
+                {isWindowNotConfigured && !isAllValidated && !hasActiveGracePeriod && !isEffectivelyOpen && (
                   <div className="p-3 sm:p-4 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
                     <div className="flex items-start sm:items-center gap-2.5">
                       <div className="p-1.5 rounded-lg bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
@@ -3120,7 +3133,7 @@ function FacultySubmissionPanelContent({
                 )}
 
                 {/* 2. Closed Window Banner with Request Extension Button (Schedule was set and has now expired) */}
-                {isWindowClosed && !isAllValidated && !hasActiveGracePeriod && (
+                {isWindowClosed && !isAllValidated && !hasActiveGracePeriod && !isEffectivelyOpen && (
                   <div className="p-3 sm:p-4 rounded-xl border border-amber-300 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
                     <div className="flex items-start sm:items-center gap-2.5">
                       <div className="p-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
@@ -3301,7 +3314,7 @@ function FacultySubmissionPanelContent({
 
                                     {/* 2. REJECTED: Upload Revision or Request Extension if closed/overdue */}
                                     {req.status === "Rejected" && (
-                                      isWindowNotConfigured && !req.isExtended ? (
+                                      (isWindowNotConfigured && !req.isExtended && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
                                         <button
                                           type="button"
                                           disabled
@@ -3321,7 +3334,7 @@ function FacultySubmissionPanelContent({
                                           <AppIcon icon={Upload} size="sm" color="white" />
                                           <span>Upload Revision</span>
                                         </button>
-                                      ) : ((isWindowClosed || Boolean(req.effectiveDeadline && Date.now() > new Date(req.effectiveDeadline).getTime())) && !hasActiveGracePeriod && !req.customDueDate) ? (
+                                      ) : ((isWindowClosed || Boolean(req.effectiveDeadline && Date.now() > new Date(req.effectiveDeadline).getTime())) && !hasActiveGracePeriod && !isEffectivelyOpen && !req.customDueDate) ? (
                                         hasPendingExtensionRequest ? (
                                           <button
                                             type="button"
@@ -3408,7 +3421,7 @@ function FacultySubmissionPanelContent({
                                     {/* 6. PENDING: Current date is on or before effective deadline, enable file upload */}
                                     {(req.status === "Pending" && !req.latestSubmissionId) ||
                                     (req.status === "Not Submitted") ? (
-                                      ((isWindowClosed || isWindowNotConfigured) && !req.customDueDate && !hasActiveGracePeriod) ? (
+                                      ((isWindowClosed || isWindowNotConfigured) && !req.customDueDate && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
                                         <button
                                           type="button"
                                           disabled
