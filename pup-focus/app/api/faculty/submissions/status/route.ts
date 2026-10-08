@@ -696,6 +696,21 @@ export async function GET(request: NextRequest) {
 
     // 6. Map requirement statuses using Hard Deadline & Status Calculation rules
     const nowMs = Date.now();
+    let activePersonalDeadlineIso: string | null = null;
+    let activePersonalDeadlineMs: number | null = null;
+    for (const sub of (submissions || [])) {
+      if (sub.due_at) {
+        const iso = sub.due_at.includes("T") ? sub.due_at : `${sub.due_at}T23:59:59+08:00`;
+        const ms = new Date(iso).getTime();
+        if (!Number.isNaN(ms) && nowMs <= ms) {
+          if (activePersonalDeadlineMs === null || ms < activePersonalDeadlineMs) {
+            activePersonalDeadlineMs = ms;
+            activePersonalDeadlineIso = iso;
+          }
+        }
+      }
+    }
+
     const globalDeadlineIso = localWindowEnd ? `${localWindowEnd}+08:00` : null;
     const globalDeadlineMs = globalDeadlineIso ? new Date(globalDeadlineIso).getTime() : null;
 
@@ -743,9 +758,9 @@ export async function GET(request: NextRequest) {
       const isExtensionActive = Boolean(extDeadlineMs && nowMs <= extDeadlineMs);
 
       // Effective deadline determination:
-      // Individual custom due date if one exists; otherwise, approved extension date or schedule's global deadline
-      let effectiveDeadlineIso = globalDeadlineIso;
-      let effectiveDeadlineMs = globalDeadlineMs;
+      // Individual custom due date if one exists; otherwise, approved extension date, personal deadline, or schedule's global deadline
+      let effectiveDeadlineIso = activePersonalDeadlineIso || globalDeadlineIso;
+      let effectiveDeadlineMs = activePersonalDeadlineMs !== null ? activePersonalDeadlineMs : globalDeadlineMs;
       let customDueDate: string | null = null;
 
       if (isExtensionActive && extDeadlineIso && extDeadlineMs) {
@@ -851,8 +866,8 @@ export async function GET(request: NextRequest) {
         viewed_at: submission?.viewed_at || undefined,
         isRevision,
         hasPriorRevision: isRevision || hasPriorRejection,
-        due_at: submission?.due_at || null,
-        customDueDate,
+        due_at: submission?.due_at || activePersonalDeadlineIso || null,
+        customDueDate: customDueDate || activePersonalDeadlineIso || null,
         effectiveDeadline: effectiveDeadlineIso,
         isExtended: isExtensionActive,
         extendedUntil: extDeadlineIso,

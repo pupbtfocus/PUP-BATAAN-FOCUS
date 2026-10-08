@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   evaluateSubmissionWindow,
   format24HourTo12Hour,
+  getFacultyPersonalDeadline,
   getSubmissionWindow,
   normalizeSemester,
 } from "@/features/submissions/services/submission-window.service";
@@ -42,63 +43,48 @@ export async function GET() {
       semester: activeSem,
     });
 
-    // 3. If global window is closed/off, check if THIS faculty member has an active personal grace period (Option A)
-    if (!status.isOpen || !status.isConfigured) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+    // 3. First, check if the Global Submission Window is OPEN. If yes, return isOpen: true.
+    if (status.isConfigured && status.isOpen) {
+      return NextResponse.json({
+        ...status,
+        startTimeLabel: status.startTime
+          ? format24HourTo12Hour(status.startTime)
+          : null,
+        endTimeLabel: status.endTime
+          ? format24HourTo12Hour(status.endTime)
+          : null,
+        currentTimeLabel: format24HourTo12Hour(status.currentTime),
+        isPersonalDeadline: false,
+        isGracePeriod: false,
+      });
+    }
 
-      const profileId = profile?.id;
-      if (profileId) {
-        const { data: graceSubs } = await supabase
-          .from("submissions")
-          .select("due_at")
-          .eq("faculty_profile_id", profileId)
-          .not("due_at", "is", null);
-
-        if (graceSubs && graceSubs.length > 0) {
-          const nowMs = Date.now();
-          let earliestGraceDueMs: number | null = null;
-          let earliestGraceIso: string | null = null;
-
-          for (const s of graceSubs) {
-            if (s.due_at) {
-              const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
-              const ms = new Date(iso).getTime();
-              if (!Number.isNaN(ms) && nowMs <= ms) {
-                if (earliestGraceDueMs === null || ms < earliestGraceDueMs) {
-                  earliestGraceDueMs = ms;
-                  earliestGraceIso = iso;
-                }
-              }
-            }
-          }
-
-          if (earliestGraceIso) {
-            const endDate = earliestGraceIso.split("T")[0];
-            return NextResponse.json({
-              isConfigured: true,
-              status: "Open",
-              isOpen: true,
-              today: status.today,
-              currentTime: status.currentTime,
-              startDate: status.startDate || status.today,
-              endDate,
-              startTime: "00:00:00",
-              endTime: "23:59:59",
-              academicYear: activeAY,
-              semester: activeSem,
-              startTimeLabel: "12:00 AM",
-              endTimeLabel: "11:59 PM",
-              currentTimeLabel: format24HourTo12Hour(status.currentTime),
-              isGracePeriod: true,
-              badgeLabel: "Option A Grace Period",
-            });
-          }
-        }
-      }
+    // 4. If the Global Window is CLOSED, check the submissions table for this specific faculty member.
+    // If the faculty member has pending requirements where due_at is set and in the future (due_at > now()),
+    // evaluate isOpen = true for this user!
+    const personalDeadline = await getFacultyPersonalDeadline(supabase, user.id);
+    if (personalDeadline) {
+      return NextResponse.json({
+        isConfigured: true,
+        status: "Open",
+        isOpen: true,
+        today: status.today,
+        currentTime: status.currentTime,
+        startDate: status.startDate || status.today,
+        endDate: personalDeadline.endDate,
+        startTime: "00:00:00",
+        endTime: "23:59:59",
+        academicYear: activeAY,
+        semester: activeSem,
+        startTimeLabel: "12:00 AM",
+        endTimeLabel: "11:59 PM",
+        currentTimeLabel: format24HourTo12Hour(status.currentTime),
+        isGracePeriod: true,
+        isPersonalDeadline: true,
+        effectiveDeadline: personalDeadline.effectiveDeadline,
+        formattedDueAt: personalDeadline.formattedDueAt,
+        badgeLabel: "Personal Deadline Active",
+      });
     }
 
     return NextResponse.json({
@@ -110,6 +96,8 @@ export async function GET() {
         ? format24HourTo12Hour(status.endTime)
         : null,
       currentTimeLabel: format24HourTo12Hour(status.currentTime),
+      isPersonalDeadline: false,
+      isGracePeriod: false,
     });
   } catch (error) {
     return NextResponse.json(

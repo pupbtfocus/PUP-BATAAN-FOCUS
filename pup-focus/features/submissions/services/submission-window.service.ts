@@ -44,7 +44,10 @@ export type SubmissionWindowState = {
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
   isGracePeriod?: boolean;
+  isPersonalDeadline?: boolean;
   badgeLabel?: string | null;
+  effectiveDeadline?: string | null;
+  formattedDueAt?: string | null;
 };
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -877,3 +880,100 @@ export async function resolveOnboardingContext(
     hasAnyScheduleHistory,
   };
 }
+
+export type FacultyPersonalDeadline = {
+  hasPersonalDeadline: boolean;
+  effectiveDeadline: string;
+  formattedDueAt: string;
+  endDate: string;
+};
+
+export async function getFacultyPersonalDeadline(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<FacultyPersonalDeadline | null> {
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const facultyIds = [userId];
+    if (profile?.id && profile.id !== userId) {
+      facultyIds.push(profile.id);
+    }
+
+    let { data: subs } = await supabase
+      .from("submissions")
+      .select("id, status, due_at, requirement_code, submitted_at")
+      .in("faculty_profile_id", facultyIds)
+      .not("due_at", "is", null);
+
+    if (!subs || subs.length === 0) {
+      const { data: altSubs } = await supabase
+        .from("submissions")
+        .select("id, status, due_at, requirement_code, submitted_at")
+        .or(`faculty_profile_id.in.(${facultyIds.join(",")}),user_id.in.(${facultyIds.join(",")})`)
+        .not("due_at", "is", null);
+      if (altSubs && altSubs.length > 0) {
+        subs = altSubs;
+      }
+    }
+
+    if (!subs || subs.length === 0) {
+      return null;
+    }
+
+    const nowMs = Date.now();
+    const futurePending: Array<{ dueIso: string; dueMs: number }> = [];
+
+    for (const s of subs) {
+      if (!s.due_at) continue;
+      const st = (s.status || "").toLowerCase().trim();
+      if (st === "validated" || st === "approved" || st === "exempted") {
+        continue;
+      }
+      const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
+      const dueMs = new Date(iso).getTime();
+      if (!Number.isNaN(dueMs) && dueMs > nowMs) {
+        futurePending.push({ dueIso: iso, dueMs });
+      }
+    }
+
+    if (futurePending.length === 0) {
+      return null;
+    }
+
+    // Sort to prioritize the upcoming active pending deadline
+    futurePending.sort((a, b) => a.dueMs - b.dueMs);
+    const target = futurePending[0];
+    const targetDate = new Date(target.dueIso);
+    const datePart = target.dueIso.split("T")[0];
+
+    const dateStr = targetDate.toLocaleDateString("en-PH", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "Asia/Manila",
+    });
+    const timeStr = targetDate.toLocaleTimeString("en-PH", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Manila",
+    });
+
+    const formattedDueAt = `${dateStr} at ${timeStr}`;
+
+    return {
+      hasPersonalDeadline: true,
+      effectiveDeadline: target.dueIso,
+      formattedDueAt,
+      endDate: datePart,
+    };
+  } catch {
+    return null;
+  }
+}
+

@@ -150,10 +150,14 @@ export async function POST(request: NextRequest) {
 
       // Check general onboarding grace period (Option A) across faculty profile submissions
       if (!isUnlockedViaExtension && !hasCustomDuePassed) {
+        const facultyIds = [user.id];
+        if (profile?.id && profile.id !== user.id) {
+          facultyIds.push(profile.id);
+        }
         const { data: anyGraceSub } = await supabaseAdmin
           .from("submissions")
           .select("due_at")
-          .eq("faculty_profile_id", profileId)
+          .in("faculty_profile_id", facultyIds)
           .not("due_at", "is", null);
 
         if (anyGraceSub && anyGraceSub.length > 0) {
