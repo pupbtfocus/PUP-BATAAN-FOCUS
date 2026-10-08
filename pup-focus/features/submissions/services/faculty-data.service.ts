@@ -116,6 +116,7 @@ export type FacultyInitialData = {
   submissionWindow: SubmissionWindowStateData;
   pastSubmissions: PastSubmissionData[];
   hasActiveSchedule: boolean;
+  hasActiveGracePeriod?: boolean;
   isLocked: boolean;
   department?: string | null;
   program?: {
@@ -479,19 +480,18 @@ export async function getFacultyInitialData(
 
   // 8. Map Active Term Statuses using Hard Deadline & Status Calculation rules
   const nowMs = Date.now();
-  const globalWindowLocked = !submissionWindow.isOpen || !submissionWindow.isConfigured;
-  let personalDeadline = null;
-  if (globalWindowLocked) {
-    personalDeadline = await getFacultyPersonalDeadline(supabase, authUserId);
-  }
+  let personalDeadline = await getFacultyPersonalDeadline(supabase, authUserId);
 
-  if (globalWindowLocked && !personalDeadline && rawSubmissions.length > 0) {
+  if (!personalDeadline && rawSubmissions.length > 0) {
     const futurePendingSubs = rawSubmissions.filter((s) => {
       if (!s.due_at) return false;
       const st = (s.status || "").toLowerCase().trim();
       if (st === "validated" || st === "approved" || st === "exempted") return false;
-      const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
-      const dueMs = new Date(iso).getTime();
+      let dueMs = new Date(s.due_at).getTime();
+      if (Number.isNaN(dueMs)) {
+        const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
+        dueMs = new Date(iso).getTime();
+      }
       return !Number.isNaN(dueMs) && dueMs > nowMs;
     });
 
@@ -499,7 +499,7 @@ export async function getFacultyInitialData(
       futurePendingSubs.sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime());
       const targetSub = futurePendingSubs[0];
       const iso = targetSub.due_at!.includes("T") ? targetSub.due_at! : `${targetSub.due_at!}T23:59:59+08:00`;
-      const targetDate = new Date(iso);
+      const targetDate = new Date(targetSub.due_at!);
       const datePart = iso.split("T")[0];
       const dateStr = targetDate.toLocaleDateString("en-PH", {
         month: "long",
@@ -522,14 +522,18 @@ export async function getFacultyInitialData(
     }
   }
 
-  if (globalWindowLocked && !personalDeadline && approvedExtensions.length > 0) {
+  if (!personalDeadline && approvedExtensions.length > 0) {
     for (const ext of approvedExtensions) {
       const extDate = ext.approved_extension_date || ext.requested_extension_date || ext.due_at;
       if (!extDate) continue;
-      const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
-      const dueMs = new Date(iso).getTime();
+      let dueMs = new Date(extDate).getTime();
+      if (Number.isNaN(dueMs)) {
+        const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
+        dueMs = new Date(iso).getTime();
+      }
       if (!Number.isNaN(dueMs) && dueMs > nowMs) {
-        const targetDate = new Date(iso);
+        const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
+        const targetDate = new Date(extDate);
         const datePart = iso.split("T")[0];
         const dateStr = targetDate.toLocaleDateString("en-PH", {
           month: "long",
@@ -553,6 +557,8 @@ export async function getFacultyInitialData(
       }
     }
   }
+
+  const globalWindowLocked = !submissionWindow.isOpen || !submissionWindow.isConfigured;
 
   const globalDeadlineIso = submissionWindow.endDate
     ? `${submissionWindow.endDate}T${submissionWindow.endTime ? normalizeTime24Hour(submissionWindow.endTime) || "23:59:59" : "23:59:59"}+08:00`
@@ -799,8 +805,7 @@ export async function getFacultyInitialData(
 
   const hasActiveGracePeriod = Boolean(personalDeadline);
 
-  // Personalize submission window: if global is closed/off but this faculty has an active grace period,
-  // unlock the window strictly for THIS faculty member. Otherwise, lock it for other faculty.
+  // Personalize submission window: if personal deadline exists, enforce hard overrides
   let effectiveSubmissionWindow: SubmissionWindowStateData = submissionWindow;
   if (personalDeadline) {
     effectiveSubmissionWindow = {
@@ -840,8 +845,9 @@ export async function getFacultyInitialData(
     semester: activeSemester,
     submissionWindow: effectiveSubmissionWindow,
     pastSubmissions,
-    hasActiveSchedule: Boolean(effectiveSubmissionWindow.isConfigured && effectiveSubmissionWindow.isOpen),
-    isLocked: globalWindowLocked && !hasActiveGracePeriod,
+    hasActiveSchedule: Boolean(hasActiveGracePeriod || (effectiveSubmissionWindow.isConfigured && effectiveSubmissionWindow.isOpen)),
+    hasActiveGracePeriod,
+    isLocked: !hasActiveGracePeriod && globalWindowLocked,
     department: departmentName,
     program: programInfo,
     avatarUrl,

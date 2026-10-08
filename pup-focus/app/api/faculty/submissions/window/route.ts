@@ -43,25 +43,7 @@ export async function GET() {
       semester: activeSem,
     });
 
-    // 3. First, check if the Global Submission Window is OPEN. If yes, return isOpen: true.
-    if (status.isConfigured && status.isOpen) {
-      return NextResponse.json({
-        ...status,
-        startTimeLabel: status.startTime
-          ? format24HourTo12Hour(status.startTime)
-          : null,
-        endTimeLabel: status.endTime
-          ? format24HourTo12Hour(status.endTime)
-          : null,
-        currentTimeLabel: format24HourTo12Hour(status.currentTime),
-        isPersonalDeadline: false,
-        isGracePeriod: false,
-      });
-    }
-
-    // 4. If the Global Window is CLOSED, check the submissions table for this specific faculty member.
-    // If the faculty member has pending requirements where due_at is set and in the future (due_at > now()),
-    // evaluate isOpen = true for this user!
+    // 3. Check for active personal deadline first
     const personalDeadline = await getFacultyPersonalDeadline(supabase, user.id);
     if (personalDeadline) {
       return NextResponse.json({
@@ -84,6 +66,22 @@ export async function GET() {
         effectiveDeadline: personalDeadline.effectiveDeadline,
         formattedDueAt: personalDeadline.formattedDueAt,
         badgeLabel: "Personal Deadline Active",
+      });
+    }
+
+    // 4. Fallback to Global Submission Window
+    if (status.isConfigured && status.isOpen) {
+      return NextResponse.json({
+        ...status,
+        startTimeLabel: status.startTime
+          ? format24HourTo12Hour(status.startTime)
+          : null,
+        endTimeLabel: status.endTime
+          ? format24HourTo12Hour(status.endTime)
+          : null,
+        currentTimeLabel: format24HourTo12Hour(status.currentTime),
+        isPersonalDeadline: false,
+        isGracePeriod: false,
       });
     }
 
