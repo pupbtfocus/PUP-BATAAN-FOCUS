@@ -895,13 +895,16 @@ export async function getFacultyPersonalDeadline(
   try {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("id")
-      .eq("user_id", userId)
+      .select("id, user_id")
+      .or(`user_id.eq.${userId},id.eq.${userId}`)
       .maybeSingle();
 
     const facultyIds = [userId];
-    if (profile?.id && profile.id !== userId) {
+    if (profile?.id && !facultyIds.includes(profile.id)) {
       facultyIds.push(profile.id);
+    }
+    if (profile?.user_id && !facultyIds.includes(profile.user_id)) {
+      facultyIds.push(profile.user_id);
     }
 
     let { data: subs } = await supabase
@@ -921,24 +924,44 @@ export async function getFacultyPersonalDeadline(
       }
     }
 
-    if (!subs || subs.length === 0) {
-      return null;
-    }
-
     const nowMs = Date.now();
     const futurePending: Array<{ dueIso: string; dueMs: number }> = [];
 
-    for (const s of subs) {
-      if (!s.due_at) continue;
-      const st = (s.status || "").toLowerCase().trim();
-      if (st === "validated" || st === "approved" || st === "exempted") {
-        continue;
+    if (subs && subs.length > 0) {
+      for (const s of subs) {
+        if (!s.due_at) continue;
+        const st = (s.status || "").toLowerCase().trim();
+        if (st === "validated" || st === "approved" || st === "exempted") {
+          continue;
+        }
+        const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
+        const dueMs = new Date(iso).getTime();
+        if (!Number.isNaN(dueMs) && dueMs > nowMs) {
+          futurePending.push({ dueIso: iso, dueMs });
+        }
       }
-      const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
-      const dueMs = new Date(iso).getTime();
-      if (!Number.isNaN(dueMs) && dueMs > nowMs) {
-        futurePending.push({ dueIso: iso, dueMs });
-      }
+    }
+
+    if (futurePending.length === 0) {
+      try {
+        const { data: extData } = await supabase
+          .from("extension_requests")
+          .select("approved_extension_date, requested_extension_date, status")
+          .in("faculty_user_id", facultyIds)
+          .eq("status", "approved");
+
+        if (extData && extData.length > 0) {
+          for (const ext of extData) {
+            const extDate = ext.approved_extension_date || ext.requested_extension_date;
+            if (!extDate) continue;
+            const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
+            const dueMs = new Date(iso).getTime();
+            if (!Number.isNaN(dueMs) && dueMs > nowMs) {
+              futurePending.push({ dueIso: iso, dueMs });
+            }
+          }
+        }
+      } catch {}
     }
 
     if (futurePending.length === 0) {
