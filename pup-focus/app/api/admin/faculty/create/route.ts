@@ -516,83 +516,116 @@ export async function POST(request: NextRequest) {
               curriculumId = null;
             }
 
-            if (ctx.templates.length > 0) {
-              const nowIso = new Date().toISOString();
-              const rows = ctx.templates.map((template) => {
-                const plan = buildSubmissionPlan({
-                  ctx,
-                  requirementCode: template.code,
-                  option: onboardingOption,
-                  gracePeriodIso,
-                  customDeadlines,
-                });
+            const DEFAULT_FALLBACK_CODES = [
+              "grade_sheet",
+              "syllabus",
+              "class_orientation",
+              "midterm_exam",
+              "final_exam",
+              "tos",
+            ];
 
-                const normalizedOpt = (onboardingOption || "").toLowerCase().trim();
-                const customDeadlineIso = customDeadlines?.[template.code];
-                const calculatedDueAt =
-                  customDeadlineIso ||
-                  gracePeriodIso ||
-                  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            const activeTemplates =
+              ctx.templates && ctx.templates.length > 0
+                ? ctx.templates
+                : DEFAULT_FALLBACK_CODES.map((code) => ({ code, title: code }));
 
-                let effectiveDueAt = plan.dueAt;
-                if (
-                  (normalizedOpt === "grace_period" ||
-                    normalizedOpt === "extra_time" ||
-                    normalizedOpt === "give_extra_time" ||
-                    normalizedOpt === "option_a" ||
-                    normalizedOpt.includes("extra") ||
-                    normalizedOpt.includes("grace") ||
-                    plan.origin === "NEW_FACULTY_GRACE") &&
-                  !effectiveDueAt
-                ) {
-                  effectiveDueAt = calculatedDueAt;
-                }
+            const nowIso = new Date().toISOString();
+            const computedDueAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-                const row: Record<string, any> = {
-                  id: crypto.randomUUID(),
-                  faculty_profile_id: newProfile.id,
-                  faculty_assignment_id: assignmentId,
-                  requirement_code: template.code,
-                  academic_year: academicYear,
-                  semester: term,
-                  status: plan.status,
-                  due_at: effectiveDueAt,
-                  remarks: buildOriginRemarks(plan.origin, plan.detail),
-                  created_at: nowIso,
-                  updated_at: nowIso,
-                };
-
-                if (curriculumId) {
-                  row.curriculum_id = curriculumId;
-                }
-
-                return row;
+            const rows = activeTemplates.map((template) => {
+              const plan = buildSubmissionPlan({
+                ctx,
+                requirementCode: template.code,
+                option: onboardingOption,
+                gracePeriodIso,
+                customDeadlines,
               });
 
-              let { error: insertError } = await supabase
-                .from("submissions")
-                .insert(rows);
+              const normalizedOpt = (onboardingOption || "").toLowerCase().trim();
+              const customDeadlineIso = customDeadlines?.[template.code];
+              const calculatedDueAt =
+                customDeadlineIso ||
+                gracePeriodIso ||
+                computedDueAt;
 
-              if (insertError && curriculumId && insertError.message?.toLowerCase().includes("curriculum")) {
-                const rowsWithoutCurriculum = rows.map(({ curriculum_id, ...rest }) => rest);
-                const retry = await supabase
-                  .from("submissions")
-                  .insert(rowsWithoutCurriculum);
-                insertError = retry.error;
+              let effectiveDueAt = plan.dueAt;
+              if (
+                normalizedOpt === "grace_period" ||
+                normalizedOpt === "extra_time" ||
+                normalizedOpt === "give_extra_time" ||
+                normalizedOpt === "option_a" ||
+                normalizedOpt.includes("extra") ||
+                normalizedOpt.includes("grace") ||
+                plan.origin === "NEW_FACULTY_GRACE"
+              ) {
+                effectiveDueAt = calculatedDueAt || computedDueAt;
               }
 
-              if (insertError) {
-                throw insertError;
+              const row: Record<string, any> = {
+                id: crypto.randomUUID(),
+                faculty_profile_id: newProfile.id,
+                faculty_assignment_id: assignmentId,
+                requirement_code: template.code,
+                academic_year: academicYear,
+                semester: term,
+                status: plan.status,
+                due_at: effectiveDueAt,
+                remarks: buildOriginRemarks(plan.origin, plan.detail),
+                created_at: nowIso,
+                updated_at: nowIso,
+              };
+
+              if (curriculumId) {
+                row.curriculum_id = curriculumId;
               }
-            }
-          } catch (initErr) {
-            logger.error("faculty_onboarding_requirements_init_failed", {
-              error: initErr instanceof Error ? initErr.message : String(initErr),
-              facultyProfileId: newProfile.id,
+
+              return row;
             });
+
+            console.log(
+              "[DEBUG SUBMISSION INSERT PAYLOAD]",
+              JSON.stringify(rows, null, 2),
+            );
+
+            let { error: insertError } = await supabase
+              .from("submissions")
+              .insert(rows);
+
+            if (
+              insertError &&
+              curriculumId &&
+              insertError.message?.toLowerCase().includes("curriculum")
+            ) {
+              const rowsWithoutCurriculum = rows.map(
+                ({ curriculum_id, ...rest }) => rest,
+              );
+              const retry = await supabase
+                .from("submissions")
+                .insert(rowsWithoutCurriculum);
+              insertError = retry.error;
+            }
+
+            if (insertError) {
+              console.error("[SUBMISSION INSERT ERROR]", insertError);
+              return NextResponse.json(
+                { error: insertError.message, details: insertError },
+                { status: 500 },
+              );
+            }
+          } catch (initErr: any) {
+            console.error("[SUBMISSION INSERT ERROR]", initErr);
+            return NextResponse.json(
+              {
+                error: initErr?.message ?? "Failed to initialize faculty submissions",
+                details: initErr,
+              },
+              { status: 500 },
+            );
           }
         }
       } catch (assignError) {
+        console.error("[FACULTY PREINSERT ERROR]", assignError);
         logger.error("faculty_preinsert_failed", {
           error: assignError instanceof Error ? assignError.message : String(assignError),
         });
