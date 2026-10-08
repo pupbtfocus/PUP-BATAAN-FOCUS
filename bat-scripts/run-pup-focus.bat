@@ -32,6 +32,6 @@ echo [INFO] Opening https://pupfocus.cjaayy.dev in browser...
 start https://pupfocus.cjaayy.dev
 
 echo.
-npm run dev -- -p 3001
+npm run dev -- -H 0.0.0.0 -p 3001
 
 endlocal
