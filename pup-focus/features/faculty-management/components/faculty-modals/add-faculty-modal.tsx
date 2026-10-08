@@ -94,6 +94,7 @@ export interface AddFacultyPanelProps {
   onStepChange?: (step: "form" | "onboarding") => void;
   isOpen?: boolean;
   onOpenScheduleLogs?: () => void;
+  onClose?: () => void;
 }
 
 export function AddFacultyPanel({
@@ -111,6 +112,7 @@ export function AddFacultyPanel({
   onStepChange,
   isOpen,
   onOpenScheduleLogs,
+  onClose,
 }: AddFacultyPanelProps) {
   const [degreePrograms, setDegreePrograms] = useState<ProgramOption[]>([]);
   const [diplomaCourses, setDiplomaCourses] = useState<ProgramOption[]>([]);
@@ -499,206 +501,199 @@ export function AddFacultyPanel({
   };
 
   return (
-    <div className={wrapperClassName ?? "flex flex-col w-full"}>
+    <div className={wrapperClassName ?? "flex flex-1 flex-col overflow-hidden min-h-0 w-full"}>
       {currentStep === "onboarding" && onboardingData ? (
         /* ================= ONBOARDING OPTIONS SCREEN ================= */
-        <div className="flex flex-col gap-4">
-          {/* Notice Banner - Solid Amber Background */}
-          <div className="rounded-xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-4 space-y-1.5 shadow-sm">
-            <div className="flex items-center gap-2">
-              <AppIcon icon={WarningTriangle} size="md" color="inherit" className="text-amber-950 dark:text-amber-300" />
-              <span className="font-bold text-sm text-slate-950 dark:text-amber-100">
-                {!hasAnyScheduleHistory ? "No Active Submission Schedule" : "Submissions Are Closed"}
-              </span>
+        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
+          {/* Scrollable Body Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            {/* Notice Banner - Solid Amber Background */}
+            <div className="rounded-xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-4 space-y-1.5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <AppIcon icon={WarningTriangle} size="md" color="inherit" className="text-amber-950 dark:text-amber-300" />
+                <span className="font-bold text-sm text-slate-950 dark:text-amber-100">
+                  {!hasAnyScheduleHistory ? "No Active Submission Schedule" : "Submissions Are Closed"}
+                </span>
+              </div>
+              <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
+                {!hasAnyScheduleHistory ? (
+                  <>No submission schedule has been set for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> yet. Select how to handle the deadline for this new faculty member:</>
+                ) : (
+                  <>Regular submissions for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> have ended. Select how to handle the deadline for this new faculty member:</>
+                )}
+              </p>
             </div>
-            <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
-              {!hasAnyScheduleHistory ? (
-                <>No submission schedule has been set for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> yet. Select how to handle the deadline for this new faculty member:</>
-              ) : (
-                <>Regular submissions for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> have ended. Select how to handle the deadline for this new faculty member:</>
-              )}
-            </p>
-            <div className="pt-1 flex items-center justify-start">
-              <button
-                type="button"
-                onClick={() => onOpenScheduleLogs?.()}
-                className="py-1.5 px-3 rounded-lg bg-white hover:bg-amber-50 text-slate-950 border border-amber-500/60 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.99]"
-              >
-                <AppIcon icon={ClockRotateRight} size="xs" color="inherit" />
-                <span>View Submission Schedule Logs</span>
-              </button>
-            </div>
-          </div>
 
-          {/* Options Cards */}
-          <div className="space-y-3">
-            {/* Option A: Give Extra Time */}
-            <div
-              onClick={() => setSelectedOption("grace_period")}
-              className={`rounded-xl border p-4 transition-all space-y-3 cursor-pointer ${
-                selectedOption === "grace_period"
-                  ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
-                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
+            {/* Options Cards */}
+            <div className="space-y-3">
+              {/* Option A: Give Extra Time */}
+              <div
+                onClick={() => setSelectedOption("grace_period")}
+                className={`rounded-xl border p-4 transition-all space-y-3 cursor-pointer ${
+                  selectedOption === "grace_period"
+                    ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
+                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      checked={selectedOption === "grace_period"}
+                      onChange={() => setSelectedOption("grace_period")}
+                      className="mt-1 accent-amber-500 cursor-pointer"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                          Give Extra Time
+                        </span>
+                        {hasAnyScheduleHistory && (
+                          <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                        Grant extra days to submit requirements starting today for this new faculty member.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedOption === "grace_period" && (
+                  <div className="pl-7 pt-1 space-y-2 border-t border-amber-200 dark:border-amber-900/40 mt-2">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                      Select extra days:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[7, 14, 30].map((days) => (
+                        <button
+                          type="button"
+                          key={days}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setGracePresetDays(days);
+                            const d = new Date();
+                            d.setDate(d.getDate() + days);
+                            const yyyy = d.getFullYear();
+                            const mm = String(d.getMonth() + 1).padStart(2, "0");
+                            const dd = String(d.getDate()).padStart(2, "0");
+                            setCustomGraceDate(`${yyyy}-${mm}-${dd}`);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                            gracePresetDays === days
+                              ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+                          }`}
+                        >
+                          +{days} Days
+                        </button>
+                      ))}
+                      <div className="flex items-center gap-1.5 sm:ml-auto">
+                        <span className="text-xs text-slate-500">Pick date:</span>
+                        <input
+                          type="date"
+                          value={customGraceDate}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            setCustomGraceDate(e.target.value);
+                            setGracePresetDays(0);
+                          }}
+                          className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                      Personal deadline: {customGraceDate || "7 days from today"} at 11:59 PM Manila time.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Option B: Follow Standard Schedule */}
+              <div
+                onClick={() => setSelectedOption("standard")}
+                className={`rounded-xl border p-4 transition-all cursor-pointer ${
+                  selectedOption === "standard"
+                    ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
+                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
+                }`}
+              >
                 <div className="flex items-start gap-3">
                   <input
                     type="radio"
-                    checked={selectedOption === "grace_period"}
-                    onChange={() => setSelectedOption("grace_period")}
+                    checked={selectedOption === "standard"}
+                    onChange={() => setSelectedOption("standard")}
                     className="mt-1 accent-amber-500 cursor-pointer"
                   />
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                        Give Extra Time
+                        Follow Standard Schedule
                       </span>
-                      {hasAnyScheduleHistory && (
+                      {!hasAnyScheduleHistory && (
                         <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
                           Recommended
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      Grant extra days to submit requirements starting today for this new faculty member.
+                      {!hasAnyScheduleHistory
+                        ? "No submission schedule has been set for this term yet. Requirements will automatically follow the deadline once the first submission window is created."
+                        : "Apply the standard deadline for this new faculty member. Uploads remain locked until a new window or extension is granted."}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {selectedOption === "grace_period" && (
-                <div className="pl-7 pt-1 space-y-2 border-t border-amber-200 dark:border-amber-900/40 mt-2">
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                    Select extra days:
-                  </span>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {[7, 14, 30].map((days) => (
-                      <button
-                        type="button"
-                        key={days}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setGracePresetDays(days);
-                          const d = new Date();
-                          d.setDate(d.getDate() + days);
-                          const yyyy = d.getFullYear();
-                          const mm = String(d.getMonth() + 1).padStart(2, "0");
-                          const dd = String(d.getDate()).padStart(2, "0");
-                          setCustomGraceDate(`${yyyy}-${mm}-${dd}`);
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                          gracePresetDays === days
-                            ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
-                        }`}
-                      >
-                        +{days} Days
-                      </button>
-                    ))}
-                    <div className="flex items-center gap-1.5 sm:ml-auto">
-                      <span className="text-xs text-slate-500">Pick date:</span>
-                      <input
-                        type="date"
-                        value={customGraceDate}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          setCustomGraceDate(e.target.value);
-                          setGracePresetDays(0);
-                        }}
-                        className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100"
-                      />
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
-                    Personal deadline: {customGraceDate || "7 days from today"} at 11:59 PM Manila time.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Option B: Follow Standard Schedule */}
-            <div
-              onClick={() => setSelectedOption("standard")}
-              className={`rounded-xl border p-4 transition-all cursor-pointer ${
-                selectedOption === "standard"
-                  ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
-                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <input
-                  type="radio"
-                  checked={selectedOption === "standard"}
-                  onChange={() => setSelectedOption("standard")}
-                  className="mt-1 accent-amber-500 cursor-pointer"
-                />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                      Follow Standard Schedule
-                    </span>
-                    {!hasAnyScheduleHistory && (
-                      <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
-                        Recommended
+              {/* Option C: Mark as Not Required */}
+              <div
+                onClick={() => setSelectedOption("exempt")}
+                className={`rounded-xl border p-4 transition-all cursor-pointer ${
+                  selectedOption === "exempt"
+                    ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
+                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    checked={selectedOption === "exempt"}
+                    onChange={() => setSelectedOption("exempt")}
+                    className="mt-1 accent-amber-500 cursor-pointer"
+                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        Mark as Not Required
                       </span>
-                    )}
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                      No submissions will be required for this new faculty member this term. This will not affect their compliance score.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    {!hasAnyScheduleHistory
-                      ? "No submission schedule has been set for this term yet. Requirements will automatically follow the deadline once the first submission window is created."
-                      : "Apply the standard deadline for this new faculty member. Uploads remain locked until a new window or extension is granted."}
-                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Option C: Mark as Not Required */}
-            <div
-              onClick={() => setSelectedOption("exempt")}
-              className={`rounded-xl border p-4 transition-all cursor-pointer ${
-                selectedOption === "exempt"
-                  ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
-                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <input
-                  type="radio"
-                  checked={selectedOption === "exempt"}
-                  onChange={() => setSelectedOption("exempt")}
-                  className="mt-1 accent-amber-500 cursor-pointer"
-                />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                      Mark as Not Required
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    No submissions will be required for this new faculty member this term. This will not affect their compliance score.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <AlertPopup
+              type="error"
+              message={createError !== dismissedError ? createError : null}
+              position="inline"
+              onClose={() => setDismissedError(createError)}
+            />
+
+            <AlertPopup
+              type="success"
+              message={createSuccess !== dismissedSuccess ? createSuccess : null}
+              position="inline"
+              onClose={() => setDismissedSuccess(createSuccess)}
+            />
           </div>
 
-          <AlertPopup
-            type="error"
-            message={createError !== dismissedError ? createError : null}
-            position="inline"
-            onClose={() => setDismissedError(createError)}
-          />
-
-          <AlertPopup
-            type="success"
-            message={createSuccess !== dismissedSuccess ? createSuccess : null}
-            position="inline"
-            onClose={() => setDismissedSuccess(createSuccess)}
-          />
-
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+          {/* Modal Footer containing action buttons */}
+          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0 z-10 flex items-center justify-between shrink-0">
             <button
               type="button"
               onClick={() => setStep("form")}
@@ -719,10 +714,12 @@ export function AddFacultyPanel({
       ) : (
         /* ================= REGULAR FORM SCREEN ================= */
         <form
-          className={`flex flex-1 w-full flex-col gap-4 ${formClassName ?? ""}`}
+          className={`flex flex-1 flex-col overflow-hidden min-h-0 w-full ${formClassName ?? ""}`}
           onSubmit={form.handleSubmit(handleFormSubmit)}
         >
-          <div className="grid gap-3 md:grid-cols-3">
+          {/* Scrollable Body Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            <div className="grid gap-3 md:grid-cols-3">
             <div>
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="firstName">
                 First Name <span className="text-red-500">*</span>
@@ -909,15 +906,7 @@ export function AddFacultyPanel({
                   ? "No submission schedule has been set for this term yet. Pick how to handle requirements for this faculty member before adding."
                   : "Submissions are closed right now. Pick how to handle requirements for this faculty member before adding."}
               </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onOpenScheduleLogs?.()}
-                  className="flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-amber-50 text-slate-950 border border-amber-500/60 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
-                >
-                  <AppIcon icon={ClockRotateRight} size="xs" color="inherit" />
-                  <span>Schedule Logs</span>
-                </button>
+              <div>
                 <button
                   type="button"
                   onClick={() => {
@@ -925,7 +914,7 @@ export function AddFacultyPanel({
                     setPendingFormInput(values);
                     setStep("onboarding");
                   }}
-                  className="flex-1 py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
+                  className="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
                 >
                   <span>{hasAppliedOptions ? "Change Options →" : "Set Deadline Option →"}</span>
                 </button>
@@ -955,44 +944,60 @@ export function AddFacultyPanel({
             onClose={() => setDismissedError(createError)}
           />
 
-          <AlertPopup
-            type="success"
-            message={createSuccess !== dismissedSuccess ? createSuccess : null}
-            position="inline"
-            onClose={() => setDismissedSuccess(createSuccess)}
-          />
+            <AlertPopup
+              type="success"
+              message={createSuccess !== dismissedSuccess ? createSuccess : null}
+              position="inline"
+              onClose={() => setDismissedSuccess(createSuccess)}
+            />
+          </div>
 
-          {areAllRequiredFieldsFilled && !areOptionsSatisfied ? (
-            <button
-              type="button"
-              onClick={() => {
-                const values = form.getValues();
-                setPendingFormInput(values);
-                setStep("onboarding");
-              }}
-              className="mt-2 w-full py-3 rounded-xl transition-all shadow-md text-sm tracking-wide font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
-            >
-              <span>Set Submission Deadline →</span>
-            </button>
-          ) : (
-            <button
-              className={`mt-2 w-full py-3 rounded-xl transition-all shadow-md text-sm tracking-wide font-bold ${
-                !canSubmit
-                  ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
-                  : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
-              }`}
-              type="submit"
-              disabled={!canSubmit || isCreating || isLoadingPrograms || isLoadingOnboarding}
-            >
-              {isCreating
-                ? "Creating Faculty Account..."
-                : isLoadingOnboarding
-                ? "Checking schedule..."
-                : !areAllRequiredFieldsFilled
-                ? "Fill All Required Fields"
-                : "Create Faculty Account"}
-            </button>
-          )}
+          {/* Modal Footer containing action buttons */}
+          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0 z-10 flex items-center justify-between gap-3 shrink-0">
+            {onClose ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+              >
+                Cancel
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {areAllRequiredFieldsFilled && !areOptionsSatisfied ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const values = form.getValues();
+                  setPendingFormInput(values);
+                  setStep("onboarding");
+                }}
+                className="py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
+              >
+                <span>Set Submission Deadline →</span>
+              </button>
+            ) : (
+              <button
+                className={`py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
+                  !canSubmit
+                    ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
+                    : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
+                }`}
+                type="submit"
+                disabled={!canSubmit || isCreating || isLoadingPrograms || isLoadingOnboarding}
+              >
+                {isCreating
+                  ? "Creating Faculty Account..."
+                  : isLoadingOnboarding
+                  ? "Checking schedule..."
+                  : !areAllRequiredFieldsFilled
+                  ? "Fill All Required Fields"
+                  : "Create Faculty Account"}
+              </button>
+            )}
+          </div>
         </form>
       )}
     </div>
@@ -1026,7 +1031,7 @@ export function AddFacultyModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[92vh] overflow-y-auto">
+        <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] flex flex-col overflow-hidden">
           <ModalHeader
             icon={modalStep === "onboarding" ? Hourglass : UserPlus}
             title={modalStep === "onboarding" ? "Set Submission Deadline" : "Add Faculty Account"}
@@ -1036,15 +1041,15 @@ export function AddFacultyModal({
                 : "Create credentials and assign department permissions"
             }
             onClose={onClose}
-            className="-mx-6 -mt-6 mb-6 rounded-t-2xl"
+            className="rounded-t-2xl shrink-0"
           >
             <button
               type="button"
               onClick={() => setScheduleLogsOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-amber-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 border border-amber-500/60 text-xs font-bold transition shadow-2xs cursor-pointer active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-500 font-bold text-xs transition shadow-xs cursor-pointer active:scale-95"
               title="View Submission Schedule Logs"
             >
-              <AppIcon icon={ClockRotateRight} size="xs" color="inherit" className="text-amber-600 dark:text-amber-400" />
+              <AppIcon icon={ClockRotateRight} size="xs" color="inherit" className="text-slate-950" />
               <span className="hidden sm:inline">Schedule Logs</span>
             </button>
           </ModalHeader>
@@ -1055,6 +1060,7 @@ export function AddFacultyModal({
             step={modalStep}
             onStepChange={setModalStep}
             onOpenScheduleLogs={() => setScheduleLogsOpen(true)}
+            onClose={onClose}
           />
         </div>
       </div>
