@@ -893,50 +893,95 @@ export async function getFacultyPersonalDeadline(
   userId: string,
 ): Promise<FacultyPersonalDeadline | null> {
   try {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, user_id")
-      .or(`user_id.eq.${userId},id.eq.${userId}`)
-      .maybeSingle();
+    let profileId: string | null = null;
+    let authUserId: string | null = null;
 
-    const facultyIds = [userId];
-    if (profile?.id && !facultyIds.includes(profile.id)) {
-      facultyIds.push(profile.id);
+    try {
+      const { data: p1 } = await supabase
+        .from("profiles")
+        .select("id, user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (p1) {
+        profileId = p1.id;
+        authUserId = p1.user_id;
+      }
+    } catch {}
+
+    if (!profileId) {
+      try {
+        const { data: p2 } = await supabase
+          .from("profiles")
+          .select("id, user_id")
+          .eq("id", userId)
+          .maybeSingle();
+        if (p2) {
+          profileId = p2.id;
+          authUserId = p2.user_id;
+        }
+      } catch {}
     }
-    if (profile?.user_id && !facultyIds.includes(profile.user_id)) {
-      facultyIds.push(profile.user_id);
-    }
 
-    let { data: subs } = await supabase
-      .from("submissions")
-      .select("id, status, due_at, requirement_code, submitted_at")
-      .in("faculty_profile_id", facultyIds)
-      .not("due_at", "is", null);
+    const facultyIds = Array.from(
+      new Set([userId, profileId, authUserId].filter((x): x is string => Boolean(x))),
+    );
 
-    if (!subs || subs.length === 0) {
-      const { data: altSubs } = await supabase
+    let subs: any[] = [];
+
+    // Query submissions where faculty_profile_id is in facultyIds
+    try {
+      const { data: profileSubs } = await supabase
+        .from("submissions")
+        .select("id, status, due_at, requirement_code, submitted_at, faculty_profile_id")
+        .in("faculty_profile_id", facultyIds)
+        .not("due_at", "is", null);
+
+      if (profileSubs && profileSubs.length > 0) {
+        subs.push(...profileSubs);
+      }
+    } catch {}
+
+    // Also support faculty_id if column exists
+    try {
+      const anyClient = supabase as any;
+      const { data: idSubs } = await anyClient
         .from("submissions")
         .select("id, status, due_at, requirement_code, submitted_at")
-        .or(`faculty_profile_id.in.(${facultyIds.join(",")}),user_id.in.(${facultyIds.join(",")})`)
+        .in("faculty_id", facultyIds)
         .not("due_at", "is", null);
-      if (altSubs && altSubs.length > 0) {
-        subs = altSubs;
+
+      if (idSubs && idSubs.length > 0) {
+        subs.push(...idSubs);
       }
-    }
+    } catch {}
+
+    // Deduplicate by submission id
+    const seenSubIds = new Set<string>();
+    subs = subs.filter((s) => {
+      if (!s.id || seenSubIds.has(s.id)) return false;
+      seenSubIds.add(s.id);
+      return true;
+    });
 
     const nowMs = Date.now();
     const futurePending: Array<{ dueIso: string; dueMs: number }> = [];
 
-    if (subs && subs.length > 0) {
+    if (subs.length > 0) {
       for (const s of subs) {
         if (!s.due_at) continue;
         const st = (s.status || "").toLowerCase().trim();
         if (st === "validated" || st === "approved" || st === "exempted") {
           continue;
         }
-        const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
-        const dueMs = new Date(iso).getTime();
+
+        let dueMs = new Date(s.due_at).getTime();
+        if (Number.isNaN(dueMs)) {
+          const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
+          dueMs = new Date(iso).getTime();
+        }
+
         if (!Number.isNaN(dueMs) && dueMs > nowMs) {
+          const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
           futurePending.push({ dueIso: iso, dueMs });
         }
       }
@@ -954,9 +999,13 @@ export async function getFacultyPersonalDeadline(
           for (const ext of extData) {
             const extDate = ext.approved_extension_date || ext.requested_extension_date;
             if (!extDate) continue;
-            const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
-            const dueMs = new Date(iso).getTime();
+            let dueMs = new Date(extDate).getTime();
+            if (Number.isNaN(dueMs)) {
+              const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
+              dueMs = new Date(iso).getTime();
+            }
             if (!Number.isNaN(dueMs) && dueMs > nowMs) {
+              const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
               futurePending.push({ dueIso: iso, dueMs });
             }
           }
@@ -971,7 +1020,7 @@ export async function getFacultyPersonalDeadline(
     // Sort to prioritize the upcoming active pending deadline
     futurePending.sort((a, b) => a.dueMs - b.dueMs);
     const target = futurePending[0];
-    const targetDate = new Date(target.dueIso);
+    const targetDate = new Date(target.dueMs);
     const datePart = target.dueIso.split("T")[0];
 
     const dateStr = targetDate.toLocaleDateString("en-PH", {
