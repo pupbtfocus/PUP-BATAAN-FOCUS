@@ -139,9 +139,12 @@ export function SignUpForm() {
 
       if (error) {
         console.error("[SignUp] Supabase signUp error:", error.message, error);
+        const isInvalidSecret = error.message.toLowerCase().includes("invalid-input-secret");
         setToast({
           type: "error",
-          message: error.message || "Failed to create account. Please try again.",
+          message: isInvalidSecret
+            ? "Cloudflare Turnstile Secret Key mismatch in Supabase Dashboard (Authentication > Attack Protection > Captcha). Please update it with your matching Secret Key."
+            : error.message || "Failed to create account. Please try again.",
         });
         return;
       }
