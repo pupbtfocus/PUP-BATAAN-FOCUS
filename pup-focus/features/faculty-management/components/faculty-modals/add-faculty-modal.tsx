@@ -489,21 +489,11 @@ export function AddFacultyPanel({
             <div className="flex items-center gap-2">
               <AppIcon icon={WarningTriangle} size="md" color="inherit" className="text-amber-950 dark:text-amber-300" />
               <span className="font-bold text-sm text-slate-950 dark:text-amber-100">
-                Submissions are closed right now
+                Submissions Are Closed
               </span>
             </div>
             <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
-              The submission schedule for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> is currently closed.
-            </p>
-            <p className="text-xs text-amber-950/85 dark:text-amber-200/80 font-medium">
-              {(() => {
-                const name = `${pendingFormInput?.firstName || form.getValues("firstName") || ""} ${pendingFormInput?.lastName || form.getValues("lastName") || ""}`.trim();
-                return name ? (
-                  <>How would you like to set up requirements for <strong className="text-slate-950 dark:text-white">{name}</strong>?</>
-                ) : (
-                  <>How would you like to set up requirements for <strong className="text-slate-950 dark:text-white">this faculty member</strong>?</>
-                );
-              })()}
+              Regular submissions for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> have ended. How should we set up this teacher&apos;s requirements?
             </p>
             {!hasPastSchedule && (
               <p className="text-[11px] font-semibold text-amber-950 dark:text-amber-200 bg-amber-500/30 dark:bg-amber-900/50 px-2.5 py-1 rounded-lg border border-amber-600/30 dark:border-amber-700/50 inline-block mt-1">
@@ -555,7 +545,14 @@ export function AddFacultyPanel({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+<<<<<<< Updated upstream
                         Option A: Give Extra Days (Grace Period)
+=======
+                        Give Grace Period
+                      </span>
+                      <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
+                        Recommended
+>>>>>>> Stashed changes
                       </span>
                       {hasPastSchedule ? (
                         <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
@@ -568,7 +565,7 @@ export function AddFacultyPanel({
                       )}
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      Give this teacher extra days ({gracePresetDays > 0 ? `${gracePresetDays} days` : "custom date"}) to submit requirements after signing up.
+                      Grants 7 extra days to submit starting from account activation.
                     </p>
                     {!hasPastSchedule && (
                       <p className="text-[11px] text-amber-800 dark:text-amber-400 font-medium mt-1">
@@ -648,7 +645,14 @@ export function AddFacultyPanel({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+<<<<<<< Updated upstream
                       Option B: Normal Add (Same as Everyone)
+=======
+                      Use Standard Deadline
+                    </span>
+                    <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
+                      Locked
+>>>>>>> Stashed changes
                     </span>
                     {!hasPastSchedule ? (
                       <span className="text-[10px] uppercase font-bold bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-bold shadow-xs">
@@ -661,7 +665,11 @@ export function AddFacultyPanel({
                     )}
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+<<<<<<< Updated upstream
                     Add normally like other faculty members. Uploads stay locked until you set and open a submission schedule.
+=======
+                    Applies the regular schedule. Uploads stay locked since the deadline already passed.
+>>>>>>> Stashed changes
                   </p>
                   {!hasPastSchedule && (
                     <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium mt-1">
@@ -702,7 +710,14 @@ export function AddFacultyPanel({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+<<<<<<< Updated upstream
                       Option C: Excuse Requirements (Waived)
+=======
+                      Exempt from Submissions
+                    </span>
+                    <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
+                      Exempted
+>>>>>>> Stashed changes
                     </span>
                     {hasPastSchedule ? (
                       <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
@@ -715,7 +730,11 @@ export function AddFacultyPanel({
                     )}
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+<<<<<<< Updated upstream
                     Excuse past requirements for this faculty member so their compliance score isn't affected.
+=======
+                    Excuses this teacher from uploading. This will not lower their completion rate.
+>>>>>>> Stashed changes
                   </p>
                   {!hasPastSchedule && (
                     <p className="text-[11px] text-amber-800 dark:text-amber-400 font-medium mt-1">
@@ -939,16 +958,22 @@ export function AddFacultyPanel({
                     ? selectedOption === "grace_period"
                       ? `Grace Period (+${gracePresetDays || 7}d)`
                       : selectedOption === "standard"
+<<<<<<< Updated upstream
                       ? "Normal Add"
                       : "Excused"
+=======
+                      ? "Standard Deadline"
+                      : "Exempted"
+>>>>>>> Stashed changes
                     : "Select Option First"}
                 </span>
               </div>
               <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
                 {hasAppliedOptions
-                  ? "Requirement setup chosen and ready to apply."
+                  ? "Submission deadline option chosen and ready to apply."
                   : "Submissions are closed right now. Pick how to handle requirements for this teacher before adding."}
               </p>
+<<<<<<< Updated upstream
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -970,6 +995,19 @@ export function AddFacultyPanel({
                   <span>{hasAppliedOptions ? "Change Options →" : "Customize Options →"}</span>
                 </button>
               </div>
+=======
+              <button
+                type="button"
+                onClick={() => {
+                  const values = form.getValues();
+                  setPendingFormInput(values);
+                  setStep("onboarding");
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-950 hover:bg-slate-900 text-amber-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
+              >
+                <span>{hasAppliedOptions ? "Change Option →" : "Choose Deadline Option →"}</span>
+              </button>
+>>>>>>> Stashed changes
             </div>
           ) : null}
 
@@ -997,7 +1035,7 @@ export function AddFacultyPanel({
               }}
               className="mt-2 w-full py-3 rounded-xl transition-all shadow-md text-sm tracking-wide font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
             >
-              <span>Select Requirement Options →</span>
+              <span>Set Submission Deadline →</span>
             </button>
           ) : (
             <button
@@ -1049,6 +1087,7 @@ export function AddFacultyModal({
   }
 
   return (
+<<<<<<< Updated upstream
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
         <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[92vh] overflow-y-auto">
@@ -1073,6 +1112,21 @@ export function AddFacultyModal({
               <span className="hidden sm:inline">Schedule Logs</span>
             </button>
           </ModalHeader>
+=======
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[92vh] overflow-y-auto">
+        <ModalHeader
+          icon={modalStep === "onboarding" ? Hourglass : UserPlus}
+          title={modalStep === "onboarding" ? "Set Submission Deadline" : "Add Faculty Account"}
+          subtitle={
+            modalStep === "onboarding"
+              ? "Choose a deadline option for this new faculty member."
+              : "Create credentials and assign department permissions"
+          }
+          onClose={onClose}
+          className="-mx-6 -mt-6 mb-6 rounded-t-2xl"
+        />
+>>>>>>> Stashed changes
 
           <AddFacultyPanel
             {...panelProps}
