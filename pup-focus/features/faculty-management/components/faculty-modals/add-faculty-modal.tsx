@@ -490,7 +490,7 @@ export function AddFacultyPanel({
               </span>
             </div>
             <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
-              Regular submissions for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> have ended. How should we set up this faculty member&apos;s requirements?
+              Regular submissions for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> have ended. Select how to handle the deadline for this new faculty member:
             </p>
             <div className="pt-1 flex items-center justify-start">
               <button
@@ -504,33 +504,9 @@ export function AddFacultyPanel({
             </div>
           </div>
 
-          {/* Active Requirements Preview */}
-          {onboardingData.schedules && onboardingData.schedules.length > 0 && (
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                  Requirements to be Assigned ({onboardingData.schedules.length})
-                </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Active Templates
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {onboardingData.schedules.map((s) => (
-                  <span
-                    key={s.code}
-                    className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs"
-                  >
-                    {s.title}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Options Cards */}
           <div className="space-y-3">
-            {/* Option A: Give Extra Time (Grace Period) */}
+            {/* Option A: Give Extra Time */}
             <div
               onClick={() => setSelectedOption("grace_period")}
               className={`rounded-xl border p-4 transition-all space-y-3 cursor-pointer ${
@@ -552,15 +528,12 @@ export function AddFacultyPanel({
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                         Give Extra Time
                       </span>
-                      <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                        (Grace Period)
-                      </span>
                       <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
                         Recommended
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      Grant extra days to submit starting from account creation.
+                      Grant extra days to submit requirements starting today for this new faculty member.
                     </p>
                   </div>
                 </div>
@@ -569,7 +542,7 @@ export function AddFacultyPanel({
               {selectedOption === "grace_period" && (
                 <div className="pl-7 pt-1 space-y-2 border-t border-amber-200 dark:border-amber-900/40 mt-2">
                   <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                    Choose extra days:
+                    Select extra days:
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
                     {[7, 14, 30].map((days) => (
@@ -616,7 +589,7 @@ export function AddFacultyPanel({
               )}
             </div>
 
-            {/* Option B: Follow Standard Schedule (Standard Deadline) */}
+            {/* Option B: Follow Standard Schedule */}
             <div
               onClick={() => setSelectedOption("standard")}
               className={`rounded-xl border p-4 transition-all cursor-pointer ${
@@ -637,18 +610,15 @@ export function AddFacultyPanel({
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                       Follow Standard Schedule
                     </span>
-                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                      (Standard Deadline)
-                    </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Use the same deadline as the rest of faculty. Since the deadline has passed, uploads will stay locked until an extension or new submission window opens.
+                    Apply the standard deadline for this new faculty member. Uploads remain locked until a new window or extension is granted.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Option C: Mark as Not Required (Exempted) */}
+            {/* Option C: Mark as Not Required */}
             <div
               onClick={() => setSelectedOption("exempt")}
               className={`rounded-xl border p-4 transition-all cursor-pointer ${
@@ -669,12 +639,9 @@ export function AddFacultyPanel({
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                       Mark as Not Required
                     </span>
-                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                      (Exempted)
-                    </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Mark all requirement rows as exempted. No submissions will be required from this faculty member, and their compliance score won&apos;t be penalized.
+                    No submissions will be required for this new faculty member this term. This will not affect their compliance score.
                   </p>
                 </div>
               </div>
