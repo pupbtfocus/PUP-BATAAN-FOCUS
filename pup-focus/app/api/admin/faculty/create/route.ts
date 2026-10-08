@@ -101,8 +101,8 @@ const DEFAULT_GRACE_DAYS = 7;
 
 /**
  * Decides how one requirement row is initialized for a brand-new faculty member.
- * - Window open/upcoming: regular pending row due at the window end (STANDARD).
- * - Window closed: honor the selected onboarding option.
+ * - Window open: regular pending row due at the active window end (STANDARD).
+ * - Window closed: honors the selected onboarding option (Give Extra Time, Follow Standard Schedule, Mark as Not Required).
  */
 function buildSubmissionPlan(params: {
   ctx: OnboardingContext;
@@ -113,59 +113,62 @@ function buildSubmissionPlan(params: {
 }): SubmissionPlan {
   const { ctx, requirementCode, option, gracePeriodIso, customDeadlines } = params;
 
-  if (ctx.isWindowActive) {
-    return {
-      status: "pending",
-      origin: "STANDARD",
-      dueAt: ctx.deadline.iso,
-      detail: `Regular submission window until ${ctx.deadline.endDate}`,
-    };
-  }
-
   const nowMs = Date.now();
   const graceDueAt =
     isValidManilaIso(gracePeriodIso) && new Date(gracePeriodIso).getTime() > nowMs
       ? gracePeriodIso
       : buildGraceDueAtIso(DEFAULT_GRACE_DAYS);
 
-  switch (option) {
-    case "exempt":
-      return {
-        status: "exempted",
-        origin: "EXEMPTED",
-        dueAt: null,
-        detail: "Marked as not required during new faculty setup",
-      };
-    case "grace_period":
-      return {
-        status: "pending",
-        origin: "NEW_FACULTY_GRACE",
-        dueAt: graceDueAt,
-        detail: `Extra time granted until ${graceDueAt}`,
-      };
-    case "custom_deadlines": {
-      const custom = customDeadlines?.[requirementCode];
-      const dueAt =
-        isValidManilaIso(custom) && new Date(custom).getTime() > nowMs
-          ? custom
-          : graceDueAt;
-      return {
-        status: "pending",
-        origin: "NEW_FACULTY_CUSTOM",
-        dueAt,
-        detail: `Custom deadline until ${dueAt}`,
-      };
-    }
-    default:
-      // "standard" / "normal" / no option: follow the previous global schedule.
-      // Its deadline has passed, so the row stays locked until an extension or new window.
-      return {
-        status: "pending",
-        origin: "NEW_FACULTY_STANDARD",
-        dueAt: ctx.deadline.iso,
-        detail: `Follows standard schedule (closed since ${ctx.deadline.endDate})`,
-      };
+  // If specific onboarding options are explicitly provided, honor them
+  if (option === "exempt") {
+    return {
+      status: "exempted",
+      origin: "EXEMPTED",
+      dueAt: null,
+      detail: "Marked as not required during new faculty setup",
+    };
   }
+
+  if (option === "grace_period") {
+    return {
+      status: "pending",
+      origin: "NEW_FACULTY_GRACE",
+      dueAt: graceDueAt,
+      detail: `Extra time granted until ${graceDueAt}`,
+    };
+  }
+
+  if (option === "custom_deadlines") {
+    const custom = customDeadlines?.[requirementCode];
+    const dueAt =
+      isValidManilaIso(custom) && new Date(custom).getTime() > nowMs
+        ? custom
+        : graceDueAt;
+    return {
+      status: "pending",
+      origin: "NEW_FACULTY_CUSTOM",
+      dueAt,
+      detail: `Custom deadline until ${dueAt}`,
+    };
+  }
+
+  // If the submission window is OPEN/Upcoming and no special override was chosen
+  if (ctx.isWindowActive) {
+    return {
+      status: "pending",
+      origin: "STANDARD",
+      dueAt: ctx.deadline.iso,
+      detail: `Regular submission window until ${ctx.deadline.endDate} at ${ctx.deadline.endTime}`,
+    };
+  }
+
+  // Window is CLOSED and standard schedule selected (or default)
+  return {
+    status: "pending",
+    origin: "NEW_FACULTY_STANDARD",
+    dueAt: ctx.deadline.iso,
+    detail: `Follows standard schedule (closed since ${ctx.deadline.endDate})`,
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -461,19 +464,32 @@ export async function POST(request: NextRequest) {
 
           // Always initialize requirement rows, whether the window is open or closed.
           try {
-            const { data: curr } = await supabase
-              .from("curricula")
-              .select("id")
-              .limit(1)
-              .maybeSingle();
+            let curriculumId: string | null = null;
+            try {
+              const { data: curr } = await supabase
+                .from("curricula")
+                .select("id")
+                .limit(1)
+                .maybeSingle();
 
-            const curriculumId = curr?.id;
+              curriculumId = curr?.id ?? null;
 
-            if (!curriculumId) {
-              logger.error("faculty_onboarding_no_curriculum", {
-                facultyProfileId: newProfile.id,
-              });
-            } else if (ctx.templates.length > 0) {
+              if (!curriculumId) {
+                const { data: createdCurr } = await supabase
+                  .from("curricula")
+                  .insert({
+                    name: `${programRecord.code} Curriculum`,
+                    program_id: programRecord.id,
+                  })
+                  .select("id")
+                  .maybeSingle();
+                curriculumId = createdCurr?.id ?? null;
+              }
+            } catch {
+              curriculumId = null;
+            }
+
+            if (ctx.templates.length > 0) {
               const nowIso = new Date().toISOString();
               const rows = ctx.templates.map((template) => {
                 const plan = buildSubmissionPlan({
@@ -484,11 +500,10 @@ export async function POST(request: NextRequest) {
                   customDeadlines,
                 });
 
-                return {
+                const row: Record<string, any> = {
                   id: crypto.randomUUID(),
                   faculty_profile_id: newProfile.id,
                   faculty_assignment_id: assignmentId,
-                  curriculum_id: curriculumId,
                   requirement_code: template.code,
                   academic_year: academicYear,
                   semester: term,
@@ -498,11 +513,25 @@ export async function POST(request: NextRequest) {
                   created_at: nowIso,
                   updated_at: nowIso,
                 };
+
+                if (curriculumId) {
+                  row.curriculum_id = curriculumId;
+                }
+
+                return row;
               });
 
-              const { error: insertError } = await supabase
+              let { error: insertError } = await supabase
                 .from("submissions")
                 .insert(rows);
+
+              if (insertError && curriculumId && insertError.message?.toLowerCase().includes("curriculum")) {
+                const rowsWithoutCurriculum = rows.map(({ curriculum_id, ...rest }) => rest);
+                const retry = await supabase
+                  .from("submissions")
+                  .insert(rowsWithoutCurriculum);
+                insertError = retry.error;
+              }
 
               if (insertError) {
                 throw insertError;

@@ -46,10 +46,13 @@ export interface OnboardingScheduleItem {
 export interface OnboardingCheckResult {
   hasPastDeadlines: boolean;
   hasPastSchedule?: boolean;
+  isWindowActive?: boolean;
+  isWindowOpen?: boolean;
   windowStatus?: "Open" | "Upcoming" | "Closed";
   activeTerm?: { academicYear: string; semester: string } | null;
   globalDeadline?: { endDate: string; endTime?: string; iso: string } | null;
   schedules: OnboardingScheduleItem[];
+  templates?: OnboardingScheduleItem[];
 }
 
 export interface OnboardingOptionsPayload {
@@ -136,13 +139,13 @@ export function AddFacultyPanel({
   const [customPerScheduleDeadlines, setCustomPerScheduleDeadlines] = useState<Record<string, { date: string; time: string }>>({});
   const [hasAppliedOptions, setHasAppliedOptions] = useState(false);
 
-  const hasPastSchedule = Boolean(onboardingData?.hasPastSchedule);
+  const hasPastDeadlines = Boolean(onboardingData?.hasPastDeadlines);
 
   useEffect(() => {
     if (onboardingData) {
-      if (!onboardingData.hasPastSchedule) {
+      if (!onboardingData.hasPastDeadlines) {
         setSelectedOption("standard");
-      } else if (selectedOption === "standard") {
+      } else if (selectedOption === "standard" && !hasAppliedOptions) {
         setSelectedOption("grace_period");
       }
     }
@@ -151,7 +154,7 @@ export function AddFacultyPanel({
   useEffect(() => {
     if (isOpen) {
       setHasAppliedOptions(false);
-      if (onboardingData && !onboardingData.hasPastSchedule) {
+      if (onboardingData && !onboardingData.hasPastDeadlines) {
         setSelectedOption("standard");
       }
     }
@@ -215,7 +218,7 @@ export function AddFacultyPanel({
         if (res.ok && isMounted) {
           const data = (await res.json()) as OnboardingCheckResult;
           setOnboardingData(data);
-          if (!data.hasPastSchedule) {
+          if (!data.hasPastDeadlines) {
             setSelectedOption("standard");
           } else {
             setSelectedOption("grace_period");
@@ -396,9 +399,6 @@ export function AddFacultyPanel({
     // If past deadlines exist or submissions are closed
     if (onboardingData?.hasPastDeadlines && onboardingData.schedules.length > 0) {
       if (!hasAppliedOptions) {
-        if (!onboardingData.hasPastSchedule) {
-          setSelectedOption("standard");
-        }
         setPendingFormInput(values);
         setStep("onboarding");
         return;
@@ -446,11 +446,7 @@ export function AddFacultyPanel({
         const fresh = (await res.json()) as OnboardingCheckResult;
         if (fresh?.hasPastDeadlines && fresh.schedules?.length > 0) {
           setOnboardingData(fresh);
-          if (!fresh.hasPastSchedule) {
-            setSelectedOption("standard");
-          } else {
-            setSelectedOption("grace_period");
-          }
+          setSelectedOption((prev) => (prev === "standard" ? "grace_period" : prev));
           setPendingFormInput(values);
           setStep("onboarding");
           return;
@@ -494,13 +490,8 @@ export function AddFacultyPanel({
               </span>
             </div>
             <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
-              Regular submissions for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> have ended. How should we set up this teacher&apos;s requirements?
+              Regular submissions for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> have ended. How should we set up this faculty member&apos;s requirements?
             </p>
-            {!hasPastSchedule && (
-              <p className="text-[11px] font-semibold text-amber-950 dark:text-amber-200 bg-amber-500/30 dark:bg-amber-900/50 px-2.5 py-1 rounded-lg border border-amber-600/30 dark:border-amber-700/50 inline-block mt-1">
-                Notice: No previous submission schedule has concluded for this term yet. Option B (Normal Add) is the only available choice.
-              </p>
-            )}
             <div className="pt-1 flex items-center justify-start">
               <button
                 type="button"
@@ -513,64 +504,69 @@ export function AddFacultyPanel({
             </div>
           </div>
 
+          {/* Active Requirements Preview */}
+          {onboardingData.schedules && onboardingData.schedules.length > 0 && (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Requirements to be Assigned ({onboardingData.schedules.length})
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Active Templates
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {onboardingData.schedules.map((s) => (
+                  <span
+                    key={s.code}
+                    className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs"
+                  >
+                    {s.title}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Options Cards */}
           <div className="space-y-3">
-            {/* Option A: Grace Period */}
+            {/* Option A: Give Extra Time (Grace Period) */}
             <div
-              onClick={() => {
-                if (hasPastSchedule) {
-                  setSelectedOption("grace_period");
-                }
-              }}
-              className={`rounded-xl border p-4 transition-all space-y-3 ${
-                !hasPastSchedule
-                  ? "border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/40 opacity-50 cursor-not-allowed select-none"
-                  : selectedOption === "grace_period"
-                  ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20 cursor-pointer"
-                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300 cursor-pointer"
+              onClick={() => setSelectedOption("grace_period")}
+              className={`rounded-xl border p-4 transition-all space-y-3 cursor-pointer ${
+                selectedOption === "grace_period"
+                  ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
+                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <input
                     type="radio"
-                    disabled={!hasPastSchedule}
-                    checked={hasPastSchedule && selectedOption === "grace_period"}
-                    onChange={() => {
-                      if (hasPastSchedule) {
-                        setSelectedOption("grace_period");
-                      }
-                    }}
-                    className={`mt-1 accent-amber-500 ${hasPastSchedule ? "cursor-pointer" : "cursor-not-allowed"}`}
+                    checked={selectedOption === "grace_period"}
+                    onChange={() => setSelectedOption("grace_period")}
+                    className="mt-1 accent-amber-500 cursor-pointer"
                   />
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                         Give Extra Time
                       </span>
-                      {hasPastSchedule ? (
-                        <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
-                          Recommended
-                        </span>
-                      ) : (
-                        <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
-                          Unavailable
-                        </span>
-                      )}
+                      <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                        (Grace Period)
+                      </span>
+                      <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
+                        Recommended
+                      </span>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      Grants 7 extra days to submit starting from account activation.
+                      Grant extra days to submit starting from account creation.
                     </p>
-                    {!hasPastSchedule && (
-                      <p className="text-[11px] text-amber-800 dark:text-amber-400 font-medium mt-1">
-                        Requires an elapsed past submission schedule to grant grace periods.
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
 
-              {hasPastSchedule && selectedOption === "grace_period" && (
+              {selectedOption === "grace_period" && (
                 <div className="pl-7 pt-1 space-y-2 border-t border-amber-200 dark:border-amber-900/40 mt-2">
                   <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
                     Choose extra days:
@@ -614,13 +610,13 @@ export function AddFacultyPanel({
                     </div>
                   </div>
                   <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
-                    Personal deadline: {customGraceDate || "7 days from today"} at 11:59 PM.
+                    Personal deadline: {customGraceDate || "7 days from today"} at 11:59 PM Manila time.
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Option B: Normal Add */}
+            {/* Option B: Follow Standard Schedule (Standard Deadline) */}
             <div
               onClick={() => setSelectedOption("standard")}
               className={`rounded-xl border p-4 transition-all cursor-pointer ${
@@ -641,78 +637,45 @@ export function AddFacultyPanel({
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                       Follow Standard Schedule
                     </span>
-                    {!hasPastSchedule ? (
-                      <span className="text-[10px] uppercase font-bold bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-bold shadow-xs">
-                        Only Available Choice
-                      </span>
-                    ) : (
-                      <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
-                        Standard
-                      </span>
-                    )}
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                      (Standard Deadline)
+                    </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Use the same deadline as everyone else. Since it has already passed, uploads stay locked until you extend the deadline or open a new submission schedule.
+                    Use the same deadline as the rest of faculty. Since the deadline has passed, uploads will stay locked until an extension or new submission window opens.
                   </p>
-                  {!hasPastSchedule && (
-                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium mt-1">
-                      Faculty account will be added normally and follow future submission schedules.
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
 
-            {/* Option C: Waive / Excuse */}
+            {/* Option C: Mark as Not Required (Exempted) */}
             <div
-              onClick={() => {
-                if (hasPastSchedule) {
-                  setSelectedOption("exempt");
-                }
-              }}
-              className={`rounded-xl border p-4 transition-all ${
-                !hasPastSchedule
-                  ? "border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/40 opacity-50 cursor-not-allowed select-none"
-                  : selectedOption === "exempt"
-                  ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20 cursor-pointer"
-                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300 cursor-pointer"
+              onClick={() => setSelectedOption("exempt")}
+              className={`rounded-xl border p-4 transition-all cursor-pointer ${
+                selectedOption === "exempt"
+                  ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
+                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
               }`}
             >
               <div className="flex items-start gap-3">
                 <input
                   type="radio"
-                  disabled={!hasPastSchedule}
-                  checked={hasPastSchedule && selectedOption === "exempt"}
-                  onChange={() => {
-                    if (hasPastSchedule) {
-                      setSelectedOption("exempt");
-                    }
-                  }}
-                  className={`mt-1 accent-amber-500 ${hasPastSchedule ? "cursor-pointer" : "cursor-not-allowed"}`}
+                  checked={selectedOption === "exempt"}
+                  onChange={() => setSelectedOption("exempt")}
+                  className="mt-1 accent-amber-500 cursor-pointer"
                 />
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                       Mark as Not Required
                     </span>
-                    {hasPastSchedule ? (
-                      <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
-                        Excused
-                      </span>
-                    ) : (
-                      <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
-                        Unavailable
-                      </span>
-                    )}
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                      (Exempted)
+                    </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    No submissions are required from this faculty member, so their compliance score isn't affected.
+                    Mark all requirement rows as exempted. No submissions will be required from this faculty member, and their compliance score won&apos;t be penalized.
                   </p>
-                  {!hasPastSchedule && (
-                    <p className="text-[11px] text-amber-800 dark:text-amber-400 font-medium mt-1">
-                      Requires an elapsed past submission schedule to excuse past deadlines.
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
@@ -928,17 +891,19 @@ export function AddFacultyPanel({
                 >
                   {hasAppliedOptions
                     ? selectedOption === "grace_period"
-                      ? `Extra Time (+${gracePresetDays || 7}d)`
+                      ? `Give Extra Time (+${gracePresetDays || 7}d)`
                       : selectedOption === "standard"
-                      ? "Standard Schedule"
-                      : "Not Required"
+                      ? "Follow Standard Schedule"
+                      : selectedOption === "exempt"
+                      ? "Mark as Not Required"
+                      : "Custom Deadlines"
                     : "Select Option First"}
                 </span>
               </div>
               <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
                 {hasAppliedOptions
                   ? "Submission deadline option chosen and ready to apply."
-                  : "Submissions are closed right now. Pick how to handle requirements for this teacher before adding."}
+                  : "Submissions are closed right now. Pick how to handle requirements for this faculty member before adding."}
               </p>
               <div className="flex items-center gap-2">
                 <button
@@ -958,9 +923,24 @@ export function AddFacultyPanel({
                   }}
                   className="flex-1 py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
                 >
-                  <span>{hasAppliedOptions ? "Change Options →" : "Customize Options →"}</span>
+                  <span>{hasAppliedOptions ? "Change Options →" : "Set Deadline Option →"}</span>
                 </button>
               </div>
+            </div>
+          ) : onboardingData?.schedules && onboardingData.schedules.length > 0 ? (
+            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  Submission Window Open
+                </span>
+                <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-400">
+                  Due: {onboardingData.globalDeadline?.endDate}
+                </span>
+              </div>
+              <p className="text-[11px] text-emerald-800/90 dark:text-emerald-300/80">
+                All {onboardingData.schedules.length} requirement templates will be automatically assigned to this faculty member.
+              </p>
             </div>
           ) : null}
 

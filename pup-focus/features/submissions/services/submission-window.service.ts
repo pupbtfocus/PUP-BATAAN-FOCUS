@@ -580,6 +580,7 @@ export function evaluateSubmissionWindow(
 
 export const SUBMISSION_ORIGINS = [
   "STANDARD",
+  "NEW_FACULTY",
   "NEW_FACULTY_GRACE",
   "NEW_FACULTY_CUSTOM",
   "NEW_FACULTY_STANDARD",
@@ -625,6 +626,26 @@ export function parseSubmissionOrigin(
     remarks.startsWith(prefix),
   );
   return legacy ? legacy[1] : null;
+}
+
+export function isGracePeriodOrigin(origin: SubmissionOrigin | null): boolean {
+  return origin === "NEW_FACULTY_GRACE";
+}
+
+export function isExemptedOrigin(origin: SubmissionOrigin | null): boolean {
+  return origin === "EXEMPTED";
+}
+
+export function isStandardOrigin(origin: SubmissionOrigin | null): boolean {
+  return (
+    origin === "STANDARD" ||
+    origin === "NEW_FACULTY_STANDARD" ||
+    origin === "NEW_FACULTY"
+  );
+}
+
+export function isExtendedOrigin(origin: SubmissionOrigin | null): boolean {
+  return origin === "EXTENDED";
 }
 
 /** Strips the origin tag so only the human-readable detail is shown in the UI. */
