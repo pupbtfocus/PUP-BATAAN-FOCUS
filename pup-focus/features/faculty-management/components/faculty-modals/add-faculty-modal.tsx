@@ -146,37 +146,28 @@ export function AddFacultyPanel({
   const hasAnyScheduleHistory = Boolean(onboardingData?.hasAnyScheduleHistory);
 
   useEffect(() => {
-    if (onboardingData) {
+    if (onboardingData && !hasAppliedOptions) {
       if (!onboardingData.hasAnyScheduleHistory) {
         setSelectedOption("standard");
       } else if (onboardingData.hasPastDeadlines) {
-        if (!hasAppliedOptions) {
-          setSelectedOption("grace_period");
-        }
+        setSelectedOption("grace_period");
       } else {
         setSelectedOption("standard");
       }
     }
-  }, [onboardingData]);
+  }, [onboardingData, hasAppliedOptions]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) {
       setHasAppliedOptions(false);
-      if (onboardingData) {
-        if (!onboardingData.hasAnyScheduleHistory) {
-          setSelectedOption("standard");
-        } else if (onboardingData.hasPastDeadlines) {
-          setSelectedOption("grace_period");
-        } else {
-          setSelectedOption("standard");
-        }
-      }
+      setInternalStep("form");
     }
-  }, [isOpen, onboardingData]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (createSuccess) {
       setHasAppliedOptions(false);
+      setInternalStep("form");
     }
   }, [createSuccess]);
 
@@ -221,6 +212,7 @@ export function AddFacultyPanel({
   // Check onboarding past deadlines for active term
   useEffect(() => {
     let isMounted = true;
+    if (!isOpen) return;
 
     async function checkOnboardingSchedules() {
       setIsLoadingOnboarding(true);
@@ -232,13 +224,16 @@ export function AddFacultyPanel({
         if (res.ok && isMounted) {
           const data = (await res.json()) as OnboardingCheckResult;
           setOnboardingData(data);
-          if (!data.hasAnyScheduleHistory) {
-            setSelectedOption("standard");
-          } else if (data.hasPastDeadlines) {
-            setSelectedOption("grace_period");
-          } else {
-            setSelectedOption("standard");
-          }
+          setSelectedOption((prev) => {
+            if (hasAppliedOptions) return prev;
+            if (!data.hasAnyScheduleHistory) {
+              return "standard";
+            } else if (data.hasPastDeadlines) {
+              return "grace_period";
+            } else {
+              return "standard";
+            }
+          });
 
           // Precompute default 7-day grace date
           const d = new Date();
@@ -247,7 +242,7 @@ export function AddFacultyPanel({
           const mm = String(d.getMonth() + 1).padStart(2, "0");
           const dd = String(d.getDate()).padStart(2, "0");
           const defaultDateStr = `${yyyy}-${mm}-${dd}`;
-          setCustomGraceDate(defaultDateStr);
+          setCustomGraceDate((prev) => prev || defaultDateStr);
 
           // Initialize custom per-schedule map
           const initialMap: Record<string, { date: string; time: string }> = {};
@@ -290,13 +285,16 @@ export function AddFacultyPanel({
                 },
                 schedules: fallbackSchedules,
               });
-              if (!hasAnyHistory) {
-                setSelectedOption("standard");
-              } else if (hasPastFallback) {
-                setSelectedOption("grace_period");
-              } else {
-                setSelectedOption("standard");
-              }
+              setSelectedOption((prev) => {
+                if (hasAppliedOptions) return prev;
+                if (!hasAnyHistory) {
+                  return "standard";
+                } else if (hasPastFallback) {
+                  return "grace_period";
+                } else {
+                  return "standard";
+                }
+              });
             }
           }
         }
@@ -314,7 +312,7 @@ export function AddFacultyPanel({
     return () => {
       isMounted = false;
     };
-  }, [controlledStep, isOpen]);
+  }, [isOpen]);
 
   useEffect(() => {
     let isMounted = true;
@@ -416,15 +414,8 @@ export function AddFacultyPanel({
   };
 
   const handleFormSubmit = async (values: FacultyAccountFormInput) => {
-    // If past deadlines exist or submissions are closed
-    if (onboardingData?.hasPastDeadlines && onboardingData.schedules.length > 0) {
-      if (!hasAppliedOptions) {
-        setPendingFormInput(values);
-        setStep("onboarding");
-        return;
-      }
-
-      // Compute onboarding payload from the applied options
+    // If onboarding options have been chosen and applied, immediately submit with payload
+    if (hasAppliedOptions) {
       let gracePeriodIso = "";
       if (selectedOption === "grace_period") {
         let targetDate = customGraceDate;
@@ -456,6 +447,13 @@ export function AddFacultyPanel({
       return;
     }
 
+    // If options are not yet applied and submissions are closed, prompt user to select an option
+    if (onboardingData?.hasPastDeadlines) {
+      setPendingFormInput(values);
+      setStep("onboarding");
+      return;
+    }
+
     // Double-check live status in case schedule was recently closed or initial check was pending
     try {
       const res = await fetch(`/api/admin/faculty/onboarding-check?_t=${Date.now()}`, {
@@ -464,13 +462,8 @@ export function AddFacultyPanel({
       });
       if (res.ok) {
         const fresh = (await res.json()) as OnboardingCheckResult;
-        if (fresh?.hasPastDeadlines && fresh.schedules?.length > 0) {
+        if (fresh?.hasPastDeadlines && !hasAppliedOptions) {
           setOnboardingData(fresh);
-          if (!fresh.hasAnyScheduleHistory) {
-            setSelectedOption("standard");
-          } else {
-            setSelectedOption((prev) => (prev === "standard" ? "grace_period" : prev));
-          }
           setPendingFormInput(values);
           setStep("onboarding");
           return;
