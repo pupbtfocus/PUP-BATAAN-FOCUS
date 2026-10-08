@@ -567,7 +567,6 @@ export async function POST(request: NextRequest) {
                 faculty_profile_id: newProfile.id,
                 faculty_assignment_id: assignmentId,
                 requirement_code: template.code,
-                academic_year: academicYear,
                 semester: term,
                 status: plan.status,
                 due_at: effectiveDueAt,
@@ -592,18 +591,25 @@ export async function POST(request: NextRequest) {
               .from("submissions")
               .insert(rows);
 
-            if (
-              insertError &&
-              curriculumId &&
-              insertError.message?.toLowerCase().includes("curriculum")
-            ) {
-              const rowsWithoutCurriculum = rows.map(
-                ({ curriculum_id, ...rest }) => rest,
-              );
-              const retry = await supabase
-                .from("submissions")
-                .insert(rowsWithoutCurriculum);
-              insertError = retry.error;
+            if (insertError) {
+              const errMsg = insertError.message?.toLowerCase() ?? "";
+              if (
+                errMsg.includes("curriculum") ||
+                errMsg.includes("academic_year") ||
+                errMsg.includes("semester")
+              ) {
+                const sanitizedRows = rows.map((r) => {
+                  const copy = { ...r };
+                  if (errMsg.includes("curriculum")) delete copy.curriculum_id;
+                  if (errMsg.includes("academic_year")) delete copy.academic_year;
+                  if (errMsg.includes("semester")) delete copy.semester;
+                  return copy;
+                });
+                const retry = await supabase
+                  .from("submissions")
+                  .insert(sanitizedRows);
+                insertError = retry.error;
+              }
             }
 
             if (insertError) {
