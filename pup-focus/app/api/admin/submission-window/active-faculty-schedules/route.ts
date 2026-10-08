@@ -42,13 +42,13 @@ export async function GET() {
     const supabase = getServiceRoleClient();
     const nowIso = new Date().toISOString();
 
-    // 1. Query pending submissions that have a future due_at
+    // 1. Query pending submissions that have a future due_at (works whether global window is open or closed)
     let activeSubmissions: any[] = [];
 
     const { data: subData, error: subError } = await supabase
       .from("submissions")
       .select("id, faculty_profile_id, requirement_code, status, due_at, remarks, academic_year, semester, created_at")
-      .gt("due_at", nowIso)
+      .not("due_at", "is", null)
       .eq("status", "pending")
       .order("due_at", { ascending: true });
 
@@ -57,7 +57,7 @@ export async function GET() {
       const { data: fallbackSubData, error: fallbackError } = await supabase
         .from("submissions")
         .select("id, faculty_profile_id, requirement_code, status, due_at, remarks, created_at")
-        .gt("due_at", nowIso)
+        .not("due_at", "is", null)
         .eq("status", "pending")
         .order("due_at", { ascending: true });
 
@@ -68,10 +68,13 @@ export async function GET() {
       activeSubmissions = subData;
     }
 
-    // Regular (STANDARD / follow-standard-schedule) rows are not personal schedules.
+    // Filter to ensure due_at is strictly in the future relative to current time
+    const nowMs = Date.now();
     activeSubmissions = activeSubmissions.filter((sub) => {
-      const origin = parseSubmissionOrigin(sub.remarks);
-      return origin !== "STANDARD" && origin !== "NEW_FACULTY_STANDARD";
+      if (!sub.due_at) return false;
+      const dueIso = sub.due_at.includes("T") ? sub.due_at : `${sub.due_at}T23:59:59+08:00`;
+      const dueMs = new Date(dueIso).getTime();
+      return !Number.isNaN(dueMs) && dueMs > nowMs;
     });
 
     // 2. Query approved extension requests that are still active (target deadline >= now)
@@ -147,7 +150,6 @@ export async function GET() {
     }
 
     const schedules: any[] = [];
-    const nowMs = Date.now();
     const processedFacultyIds = new Set<string>();
 
     for (const [key, subs] of facultyMap.entries()) {
@@ -178,15 +180,49 @@ export async function GET() {
         timeRemainingLabel = `${minutes}m remaining`;
       }
 
+      // Tag each faculty based on submission origin:
+      // - "New Faculty" for onboarding grace period assignments
+      // - "Extended" for individually extended deadlines
+      // - "Standard" for active global window schedules
       const isOnboardingSchedule = subs.some((s) => {
         const origin = parseSubmissionOrigin(s.remarks);
-        return origin === "NEW_FACULTY_GRACE" || origin === "NEW_FACULTY_CUSTOM";
+        if (
+          origin === "NEW_FACULTY_GRACE" ||
+          origin === "NEW_FACULTY_CUSTOM" ||
+          origin === "NEW_FACULTY"
+        ) {
+          return true;
+        }
+        const lower = (s.remarks || "").toLowerCase();
+        return (
+          lower.includes("onboarding") ||
+          lower.includes("grace period") ||
+          lower.includes("extra time")
+        );
       });
 
-      const scheduleType = isOnboardingSchedule ? "onboarding" : "extension";
-      const typeLabel = isOnboardingSchedule
-        ? "New Faculty Extra Time"
-        : "Approved Extension";
+      const isExtensionSchedule = subs.some((s) => {
+        const origin = parseSubmissionOrigin(s.remarks);
+        if (origin === "EXTENDED") {
+          return true;
+        }
+        const lower = (s.remarks || "").toLowerCase();
+        return lower.includes("extension") || lower.includes("extended");
+      });
+
+      let scheduleType: "onboarding" | "extension" | "standard" = "standard";
+      let typeLabel: "New Faculty" | "Extended" | "Standard" = "Standard";
+
+      if (isOnboardingSchedule) {
+        scheduleType = "onboarding";
+        typeLabel = "New Faculty";
+      } else if (isExtensionSchedule) {
+        scheduleType = "extension";
+        typeLabel = "Extended";
+      } else {
+        scheduleType = "standard";
+        typeLabel = "Standard";
+      }
 
       const deadlineFormatted = deadlineDate.toLocaleDateString("en-US", {
         month: "long",
@@ -315,7 +351,7 @@ export async function GET() {
         academicYear: ext.academic_year || "Current Term",
         semester: ext.semester || "",
         type: "extension",
-        typeLabel: "Approved Extension",
+        typeLabel: "Extended",
         deadline: deadlineIso,
         deadlineFormatted,
         daysRemaining: days,

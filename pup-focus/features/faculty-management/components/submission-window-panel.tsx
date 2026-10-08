@@ -131,7 +131,7 @@ export interface ActiveFacultySchedule {
   department: string;
   academicYear: string;
   semester: string;
-  type: "onboarding" | "extension" | "custom";
+  type: "onboarding" | "extension" | "custom" | "standard";
   typeLabel: string;
   deadline: string;
   deadlineFormatted: string;
@@ -1885,7 +1885,7 @@ export function SubmissionWindowPanel({
             <ModalHeader
               icon={Calendar}
               title="Faculty on Active Submission Schedule"
-              subtitle="Faculty members with open submission windows (Onboarding Grace Period or Extensions)"
+              subtitle="Faculty members with open submission windows (New Faculty Grace Period, Extensions, or Standard Schedule)"
               onClose={() => setShowActiveFacultyModal(false)}
               className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
             />
@@ -1925,7 +1925,7 @@ export function SubmissionWindowPanel({
                         <tr>
                           <th className="py-3.5 px-3 text-center w-12">#</th>
                           <th className="py-3.5 px-5">Faculty Name</th>
-                          <th className="py-3.5 px-4 text-center">Option</th>
+                          <th className="py-3.5 px-4 text-center">Origin</th>
                           <th className="py-3.5 px-4">Schedule</th>
                           <th className="py-3.5 px-4 text-center">Portal Status</th>
                           <th className="py-3.5 px-5 text-center w-44">Actions</th>
@@ -1979,9 +1979,22 @@ export function SubmissionWindowPanel({
                                 </div>
                               </td>
                               <td className="py-3.5 px-4 align-middle text-center whitespace-nowrap">
-                                <span className="inline-block px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-700 text-white border border-emerald-800 shadow-xs">
-                                  {fac.typeLabel}
-                                </span>
+                                {fac.typeLabel === "New Faculty" ? (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500 text-slate-950 border border-amber-600 shadow-xs">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-950" />
+                                    New Faculty
+                                  </span>
+                                ) : fac.typeLabel === "Extended" ? (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white border border-blue-700 shadow-xs">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-200" />
+                                    Extended
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-700 text-white border border-emerald-800 shadow-xs">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-200" />
+                                    Standard
+                                  </span>
+                                )}
                               </td>
                               <td className="py-3.5 px-4 align-middle whitespace-nowrap">
                                 <div className="flex flex-col gap-1.5 text-xs">
