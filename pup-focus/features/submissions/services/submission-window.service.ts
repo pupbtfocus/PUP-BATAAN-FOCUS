@@ -928,7 +928,7 @@ export async function getFacultyPersonalDeadline(
 
     let subs: any[] = [];
 
-    // Query submissions where faculty_profile_id is in facultyIds
+    // Query submissions strictly by faculty_profile_id
     try {
       const { data: profileSubs } = await supabase
         .from("submissions")
@@ -937,19 +937,6 @@ export async function getFacultyPersonalDeadline(
 
       if (profileSubs && profileSubs.length > 0) {
         subs.push(...profileSubs);
-      }
-    } catch {}
-
-    // Also support faculty_id if column exists
-    try {
-      const anyClient = supabase as any;
-      const { data: idSubs } = await anyClient
-        .from("submissions")
-        .select("id, status, due_at, requirement_code, submitted_at, remarks, created_at")
-        .in("faculty_id", facultyIds);
-
-      if (idSubs && idSubs.length > 0) {
-        subs.push(...idSubs);
       }
     } catch {}
 
