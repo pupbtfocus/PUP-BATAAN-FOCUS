@@ -528,6 +528,12 @@ export async function POST(request: NextRequest) {
                 });
 
                 const normalizedOpt = (onboardingOption || "").toLowerCase().trim();
+                const customDeadlineIso = customDeadlines?.[template.code];
+                const calculatedDueAt =
+                  customDeadlineIso ||
+                  gracePeriodIso ||
+                  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
                 let effectiveDueAt = plan.dueAt;
                 if (
                   (normalizedOpt === "grace_period" ||
@@ -539,7 +545,7 @@ export async function POST(request: NextRequest) {
                     plan.origin === "NEW_FACULTY_GRACE") &&
                   !effectiveDueAt
                 ) {
-                  effectiveDueAt = buildGraceDueAtIso(DEFAULT_GRACE_DAYS);
+                  effectiveDueAt = calculatedDueAt;
                 }
 
                 const row: Record<string, any> = {
