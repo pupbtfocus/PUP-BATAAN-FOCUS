@@ -163,6 +163,15 @@ function buildSubmissionPlan(params: {
   }
 
   // Window is CLOSED and standard schedule selected (or default)
+  if (!ctx.hasAnyScheduleHistory) {
+    return {
+      status: "pending",
+      origin: "NEW_FACULTY_STANDARD",
+      dueAt: null,
+      detail: "Pending first submission window schedule",
+    };
+  }
+
   return {
     status: "pending",
     origin: "NEW_FACULTY_STANDARD",

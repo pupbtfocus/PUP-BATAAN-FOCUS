@@ -678,6 +678,8 @@ export type OnboardingContext = {
   isWindowActive: boolean;
   deadline: GlobalDeadline;
   templates: ActiveRequirementTemplate[];
+  /** True when any submission window schedule has ever been recorded for the active term. */
+  hasAnyScheduleHistory: boolean;
 };
 
 export function toManilaIso(date: string, time24: string): string {
@@ -779,13 +781,15 @@ async function resolveGlobalDeadline(
   term: { academicYear: string; semester: string },
   config: SubmissionWindowConfig | null,
   state: SubmissionWindowState,
-): Promise<GlobalDeadline> {
+): Promise<{ deadline: GlobalDeadline; hasAnyScheduleHistory: boolean }> {
   let endDate: string | null = null;
   let endTime = "";
+  let hasAnyScheduleHistory = false;
 
-  if (state.status !== "Closed") {
+  if (state.status !== "Closed" && (config?.endDate || state.endDate)) {
     endDate = config?.endDate ?? state.endDate;
     endTime = toTime24(config?.endTime ?? state.endTime);
+    hasAnyScheduleHistory = true;
   } else {
     try {
       const { data: termWin } = await supabase
@@ -798,6 +802,7 @@ async function resolveGlobalDeadline(
       if (termWin?.end_date) {
         endDate = termWin.end_date;
         endTime = toTime24(termWin.end_time);
+        hasAnyScheduleHistory = true;
       }
     } catch {
       // Table may not exist yet
@@ -807,32 +812,44 @@ async function resolveGlobalDeadline(
       try {
         const { data: globalWin } = await supabase
           .from("submission_windows")
-          .select("end_date, end_time")
+          .select("end_date, end_time, academic_year, semester")
           .eq("id", 1)
           .maybeSingle();
 
         if (globalWin?.end_date) {
-          endDate = globalWin.end_date;
-          endTime = toTime24(globalWin.end_time);
+          const matchesTerm =
+            !globalWin.academic_year ||
+            (globalWin.academic_year === term.academicYear &&
+              normalizeSemester(globalWin.semester) === normalizeSemester(term.semester));
+          if (matchesTerm) {
+            endDate = globalWin.end_date;
+            endTime = toTime24(globalWin.end_time);
+            hasAnyScheduleHistory = true;
+          }
         }
       } catch {
         // Ignore
       }
     }
 
-    if (!endDate) {
-      endDate = config?.endDate ?? state.endDate;
-      endTime = toTime24(config?.endTime ?? state.endTime);
+    if (!endDate && config?.endDate) {
+      endDate = config.endDate;
+      endTime = toTime24(config.endTime);
+      hasAnyScheduleHistory = true;
     }
   }
 
   if (!endDate) {
     endDate = getTodayInManila();
     endTime = toTime24(getCurrentTimeInManila());
+    hasAnyScheduleHistory = false;
   }
 
   const time24 = endTime || "23:59:59";
-  return { endDate, endTime: time24, iso: toManilaIso(endDate, time24) };
+  return {
+    deadline: { endDate, endTime: time24, iso: toManilaIso(endDate, time24) },
+    hasAnyScheduleHistory,
+  };
 }
 
 export async function resolveOnboardingContext(
@@ -846,7 +863,7 @@ export async function resolveOnboardingContext(
     undefined,
     term,
   );
-  const [deadline, templates] = await Promise.all([
+  const [{ deadline, hasAnyScheduleHistory }, templates] = await Promise.all([
     resolveGlobalDeadline(supabase, term, config, windowState),
     getActiveRequirementTemplates(supabase),
   ]);
@@ -857,5 +874,6 @@ export async function resolveOnboardingContext(
     isWindowActive: windowState.status !== "Closed",
     deadline,
     templates,
+    hasAnyScheduleHistory,
   };
 }

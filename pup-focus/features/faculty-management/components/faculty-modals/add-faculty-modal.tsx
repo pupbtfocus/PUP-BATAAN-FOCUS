@@ -46,6 +46,7 @@ export interface OnboardingScheduleItem {
 export interface OnboardingCheckResult {
   hasPastDeadlines: boolean;
   hasPastSchedule?: boolean;
+  hasAnyScheduleHistory?: boolean;
   isWindowActive?: boolean;
   isWindowOpen?: boolean;
   windowStatus?: "Open" | "Upcoming" | "Closed";
@@ -140,13 +141,18 @@ export function AddFacultyPanel({
   const [hasAppliedOptions, setHasAppliedOptions] = useState(false);
 
   const hasPastDeadlines = Boolean(onboardingData?.hasPastDeadlines);
+  const hasAnyScheduleHistory = Boolean(onboardingData?.hasAnyScheduleHistory);
 
   useEffect(() => {
     if (onboardingData) {
-      if (!onboardingData.hasPastDeadlines) {
+      if (!onboardingData.hasAnyScheduleHistory) {
         setSelectedOption("standard");
-      } else if (selectedOption === "standard" && !hasAppliedOptions) {
-        setSelectedOption("grace_period");
+      } else if (onboardingData.hasPastDeadlines) {
+        if (!hasAppliedOptions) {
+          setSelectedOption("grace_period");
+        }
+      } else {
+        setSelectedOption("standard");
       }
     }
   }, [onboardingData]);
@@ -154,8 +160,14 @@ export function AddFacultyPanel({
   useEffect(() => {
     if (isOpen) {
       setHasAppliedOptions(false);
-      if (onboardingData && !onboardingData.hasPastDeadlines) {
-        setSelectedOption("standard");
+      if (onboardingData) {
+        if (!onboardingData.hasAnyScheduleHistory) {
+          setSelectedOption("standard");
+        } else if (onboardingData.hasPastDeadlines) {
+          setSelectedOption("grace_period");
+        } else {
+          setSelectedOption("standard");
+        }
       }
     }
   }, [isOpen, onboardingData]);
@@ -218,10 +230,12 @@ export function AddFacultyPanel({
         if (res.ok && isMounted) {
           const data = (await res.json()) as OnboardingCheckResult;
           setOnboardingData(data);
-          if (!data.hasPastDeadlines) {
+          if (!data.hasAnyScheduleHistory) {
             setSelectedOption("standard");
-          } else {
+          } else if (data.hasPastDeadlines) {
             setSelectedOption("grace_period");
+          } else {
+            setSelectedOption("standard");
           }
 
           // Precompute default 7-day grace date
@@ -258,9 +272,11 @@ export function AddFacultyPanel({
                     `${winData.endDate}T${winData.endTime || "23:59:59"}`,
                   ).getTime() < Date.now(),
               );
+              const hasAnyHistory = Boolean(winData.endDate);
               setOnboardingData({
                 hasPastDeadlines: true,
                 hasPastSchedule: hasPastFallback,
+                hasAnyScheduleHistory: hasAnyHistory,
                 activeTerm: {
                   academicYear: winData.academicYear || "2026-2027",
                   semester: winData.semester || "1st Semester",
@@ -272,10 +288,12 @@ export function AddFacultyPanel({
                 },
                 schedules: fallbackSchedules,
               });
-              if (!hasPastFallback) {
+              if (!hasAnyHistory) {
                 setSelectedOption("standard");
-              } else {
+              } else if (hasPastFallback) {
                 setSelectedOption("grace_period");
+              } else {
+                setSelectedOption("standard");
               }
             }
           }
@@ -446,7 +464,11 @@ export function AddFacultyPanel({
         const fresh = (await res.json()) as OnboardingCheckResult;
         if (fresh?.hasPastDeadlines && fresh.schedules?.length > 0) {
           setOnboardingData(fresh);
-          setSelectedOption((prev) => (prev === "standard" ? "grace_period" : prev));
+          if (!fresh.hasAnyScheduleHistory) {
+            setSelectedOption("standard");
+          } else {
+            setSelectedOption((prev) => (prev === "standard" ? "grace_period" : prev));
+          }
           setPendingFormInput(values);
           setStep("onboarding");
           return;
@@ -486,11 +508,15 @@ export function AddFacultyPanel({
             <div className="flex items-center gap-2">
               <AppIcon icon={WarningTriangle} size="md" color="inherit" className="text-amber-950 dark:text-amber-300" />
               <span className="font-bold text-sm text-slate-950 dark:text-amber-100">
-                Submissions Are Closed
+                {!hasAnyScheduleHistory ? "No Active Submission Schedule" : "Submissions Are Closed"}
               </span>
             </div>
             <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
-              Regular submissions for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> have ended. Select how to handle the deadline for this new faculty member:
+              {!hasAnyScheduleHistory ? (
+                <>No submission schedule has been set for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> yet. Select how to handle the deadline for this new faculty member:</>
+              ) : (
+                <>Regular submissions for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> have ended. Select how to handle the deadline for this new faculty member:</>
+              )}
             </p>
             <div className="pt-1 flex items-center justify-start">
               <button
@@ -528,9 +554,11 @@ export function AddFacultyPanel({
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                         Give Extra Time
                       </span>
-                      <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
-                        Recommended
-                      </span>
+                      {hasAnyScheduleHistory && (
+                        <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
+                          Recommended
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                       Grant extra days to submit requirements starting today for this new faculty member.
@@ -610,9 +638,16 @@ export function AddFacultyPanel({
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                       Follow Standard Schedule
                     </span>
+                    {!hasAnyScheduleHistory && (
+                      <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
+                        Recommended
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Apply the standard deadline for this new faculty member. Uploads remain locked until a new window or extension is granted.
+                    {!hasAnyScheduleHistory
+                      ? "No submission schedule has been set for this term yet. Requirements will automatically follow the deadline once the first submission window is created."
+                      : "Apply the standard deadline for this new faculty member. Uploads remain locked until a new window or extension is granted."}
                   </p>
                 </div>
               </div>
@@ -846,7 +881,7 @@ export function AddFacultyPanel({
                 <div className="flex items-center gap-2">
                   <AppIcon icon={WarningTriangle} size="sm" color="inherit" className="text-amber-950 dark:text-amber-300" />
                   <span className="font-bold text-xs text-slate-950 dark:text-amber-100">
-                    Submissions are closed
+                    {!hasAnyScheduleHistory ? "No Active Submission Schedule" : "Submissions are closed"}
                   </span>
                 </div>
                 <span
@@ -870,6 +905,8 @@ export function AddFacultyPanel({
               <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
                 {hasAppliedOptions
                   ? "Submission deadline option chosen and ready to apply."
+                  : !hasAnyScheduleHistory
+                  ? "No submission schedule has been set for this term yet. Pick how to handle requirements for this faculty member before adding."
                   : "Submissions are closed right now. Pick how to handle requirements for this faculty member before adding."}
               </p>
               <div className="flex items-center gap-2">
