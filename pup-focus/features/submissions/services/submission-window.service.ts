@@ -932,9 +932,8 @@ export async function getFacultyPersonalDeadline(
     try {
       const { data: profileSubs } = await supabase
         .from("submissions")
-        .select("id, status, due_at, requirement_code, submitted_at, faculty_profile_id")
-        .in("faculty_profile_id", facultyIds)
-        .not("due_at", "is", null);
+        .select("id, status, due_at, requirement_code, submitted_at, faculty_profile_id, remarks, created_at")
+        .in("faculty_profile_id", facultyIds);
 
       if (profileSubs && profileSubs.length > 0) {
         subs.push(...profileSubs);
@@ -946,9 +945,8 @@ export async function getFacultyPersonalDeadline(
       const anyClient = supabase as any;
       const { data: idSubs } = await anyClient
         .from("submissions")
-        .select("id, status, due_at, requirement_code, submitted_at")
-        .in("faculty_id", facultyIds)
-        .not("due_at", "is", null);
+        .select("id, status, due_at, requirement_code, submitted_at, remarks, created_at")
+        .in("faculty_id", facultyIds);
 
       if (idSubs && idSubs.length > 0) {
         subs.push(...idSubs);
@@ -968,24 +966,49 @@ export async function getFacultyPersonalDeadline(
 
     if (subs.length > 0) {
       for (const s of subs) {
-        if (!s.due_at) continue;
         const st = (s.status || "").toLowerCase().trim();
         if (st === "validated" || st === "approved" || st === "exempted") {
           continue;
         }
 
-        let dueMs = new Date(s.due_at).getTime();
+        let dueAtStr = s.due_at;
+
+        // Self-heal: If due_at is null but remarks indicate grace period was granted
+        if (!dueAtStr && s.remarks && (s.remarks.includes("NEW_FACULTY_GRACE") || s.remarks.includes("Extra time granted"))) {
+          const match = s.remarks.match(/\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2})?/);
+          if (match) {
+            dueAtStr = match[0].includes("T") ? match[0] : `${match[0]}T23:59:59+08:00`;
+          } else if (s.created_at) {
+            const createdDate = new Date(s.created_at);
+            createdDate.setDate(createdDate.getDate() + 7);
+            dueAtStr = createdDate.toISOString();
+          }
+          if (dueAtStr && s.id) {
+            void supabase.from("submissions").update({ due_at: dueAtStr }).eq("id", s.id);
+          }
+        }
+
+        if (!dueAtStr) continue;
+
+        let dueMs = new Date(dueAtStr).getTime();
         if (Number.isNaN(dueMs)) {
-          const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
+          const iso = dueAtStr.includes("T") ? dueAtStr : `${dueAtStr}T23:59:59+08:00`;
           dueMs = new Date(iso).getTime();
         }
 
         if (!Number.isNaN(dueMs) && dueMs > nowMs) {
-          const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
+          const iso = dueAtStr.includes("T") ? dueAtStr : `${dueAtStr}T23:59:59+08:00`;
           futurePending.push({ dueIso: iso, dueMs });
         }
       }
     }
+
+    console.log("[DEBUG PERSONAL DEADLINE]", {
+      userId,
+      facultyIds,
+      foundRows: subs.length,
+      futurePendingCount: futurePending.length,
+    });
 
     if (futurePending.length === 0) {
       try {
