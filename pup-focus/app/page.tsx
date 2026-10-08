@@ -364,6 +364,7 @@ export default function Home() {
         const isInvalidCredentials =
           rawMessage.toLowerCase().includes("invalid login credentials") ||
           rawMessage.toLowerCase().includes("invalid credentials");
+        const isInvalidSecret = rawMessage.toLowerCase().includes("invalid-input-secret");
 
         if (isInvalidCredentials) {
           console.warn("[Auth] Supabase sign-in failed:", rawMessage);
@@ -371,6 +372,18 @@ export default function Home() {
             title: "Invalid Credentials",
             message: "The email address or password you entered is incorrect. Please try again.",
             actionLabel: "Try again",
+            variant: "error",
+          });
+        } else if (isInvalidSecret) {
+          console.error("[Auth] Turnstile secret mismatch in Supabase:", rawMessage, signInError);
+          const friendlyMsg =
+            "Cloudflare Turnstile Secret Key mismatch: The secret key configured in your Supabase Dashboard (Authentication > Attack Protection > Captcha) does not match this production widget. Please update it with your Cloudflare Turnstile Secret Key.";
+          setError(friendlyMsg);
+          setNotice({ type: "error", message: friendlyMsg });
+          setAuthModal({
+            title: "Captcha Configuration Error",
+            message: friendlyMsg,
+            actionLabel: "Understood",
             variant: "error",
           });
         } else {

@@ -153,6 +153,12 @@ export function ForgotPasswordModal({
                 message:
                   "Rate limit reached. You have requested several reset links recently. Please check your inbox or wait a few minutes before trying again.",
               });
+            } else if (fallbackMsg.toLowerCase().includes("invalid-input-secret")) {
+              setToast({
+                type: "error",
+                message:
+                  "Cloudflare Turnstile Secret Key mismatch in Supabase Dashboard (Authentication > Attack Protection > Captcha). Please update it with your matching Secret Key.",
+              });
             } else {
               setToast({
                 type: "error",
