@@ -11,6 +11,9 @@ import {
   ComplianceListSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type PageProps = {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };

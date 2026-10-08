@@ -40,8 +40,8 @@ async function readRequestPayload(request: NextRequest) {
         formData.get("profileImage") instanceof File
           ? (formData.get("profileImage") as File)
           : null,
-      onboardingOption: readString("onboardingOption") || null,
-      gracePeriodIso: readString("gracePeriodIso") || null,
+      onboardingOption: readString("onboardingOption") || readString("deadlineOption") || null,
+      gracePeriodIso: readString("gracePeriodIso") || readString("due_at") || null,
       customDeadlines: (() => {
         const raw = readString("customDeadlines");
         if (!raw) return null;
@@ -63,7 +63,9 @@ async function readRequestPayload(request: NextRequest) {
     program_id?: string;
     fullName?: string;
     onboardingOption?: string;
+    deadlineOption?: string;
     gracePeriodIso?: string;
+    due_at?: string;
     customDeadlines?: Record<string, string>;
   };
 
@@ -84,8 +86,8 @@ async function readRequestPayload(request: NextRequest) {
     email: body.email ?? "",
     programId: (body.programId ?? body.program_id ?? "").trim(),
     profileImage: null,
-    onboardingOption: body.onboardingOption || null,
-    gracePeriodIso: body.gracePeriodIso || null,
+    onboardingOption: body.onboardingOption || body.deadlineOption || null,
+    gracePeriodIso: body.gracePeriodIso || body.due_at || null,
     customDeadlines: body.customDeadlines || null,
   };
 }
@@ -114,13 +116,19 @@ function buildSubmissionPlan(params: {
   const { ctx, requirementCode, option, gracePeriodIso, customDeadlines } = params;
 
   const nowMs = Date.now();
-  const graceDueAt =
-    isValidManilaIso(gracePeriodIso) && new Date(gracePeriodIso).getTime() > nowMs
-      ? gracePeriodIso
-      : buildGraceDueAtIso(DEFAULT_GRACE_DAYS);
+  let graceDueAt: string;
+  if (gracePeriodIso) {
+    const rawIso = gracePeriodIso.includes("T") ? gracePeriodIso : `${gracePeriodIso}T23:59:59+08:00`;
+    const parsed = new Date(rawIso).getTime();
+    graceDueAt = !Number.isNaN(parsed) && parsed > nowMs ? rawIso : buildGraceDueAtIso(DEFAULT_GRACE_DAYS);
+  } else {
+    graceDueAt = buildGraceDueAtIso(DEFAULT_GRACE_DAYS);
+  }
+
+  const opt = (option || "").toLowerCase().trim();
 
   // If specific onboarding options are explicitly provided, honor them
-  if (option === "exempt") {
+  if (opt === "exempt") {
     return {
       status: "exempted",
       origin: "EXEMPTED",
@@ -129,12 +137,22 @@ function buildSubmissionPlan(params: {
     };
   }
 
-  if (option === "grace_period") {
+  if (
+    opt === "grace_period" ||
+    opt === "extra_time" ||
+    opt === "give_extra_time" ||
+    opt === "option_a" ||
+    opt === "give extra time" ||
+    opt.includes("extra") ||
+    opt.includes("grace") ||
+    (!ctx.isWindowActive && gracePeriodIso)
+  ) {
+    const calculatedDueAt = graceDueAt || buildGraceDueAtIso(DEFAULT_GRACE_DAYS);
     return {
       status: "pending",
       origin: "NEW_FACULTY_GRACE",
-      dueAt: graceDueAt,
-      detail: `Extra time granted until ${graceDueAt}`,
+      dueAt: calculatedDueAt,
+      detail: `Extra time granted until ${calculatedDueAt}`,
     };
   }
 
@@ -509,6 +527,21 @@ export async function POST(request: NextRequest) {
                   customDeadlines,
                 });
 
+                const normalizedOpt = (onboardingOption || "").toLowerCase().trim();
+                let effectiveDueAt = plan.dueAt;
+                if (
+                  (normalizedOpt === "grace_period" ||
+                    normalizedOpt === "extra_time" ||
+                    normalizedOpt === "give_extra_time" ||
+                    normalizedOpt === "option_a" ||
+                    normalizedOpt.includes("extra") ||
+                    normalizedOpt.includes("grace") ||
+                    plan.origin === "NEW_FACULTY_GRACE") &&
+                  !effectiveDueAt
+                ) {
+                  effectiveDueAt = buildGraceDueAtIso(DEFAULT_GRACE_DAYS);
+                }
+
                 const row: Record<string, any> = {
                   id: crypto.randomUUID(),
                   faculty_profile_id: newProfile.id,
@@ -517,7 +550,7 @@ export async function POST(request: NextRequest) {
                   academic_year: academicYear,
                   semester: term,
                   status: plan.status,
-                  due_at: plan.dueAt,
+                  due_at: effectiveDueAt,
                   remarks: buildOriginRemarks(plan.origin, plan.detail),
                   created_at: nowIso,
                   updated_at: nowIso,
