@@ -9,6 +9,7 @@ import {
 import {
   evaluateSubmissionWindow,
   format24HourTo12Hour,
+  getFacultyPersonalDeadline,
   getSubmissionWindow,
   normalizeSemester,
   normalizeTime24Hour,
@@ -79,6 +80,11 @@ export type SubmissionWindowStateData = {
   startTimeLabel?: string | null;
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
+  isGracePeriod?: boolean;
+  isPersonalDeadline?: boolean;
+  effectiveDeadline?: string | null;
+  formattedDueAt?: string | null;
+  badgeLabel?: string | null;
 };
 
 export type PastSubmissionData = {
@@ -473,6 +479,12 @@ export async function getFacultyInitialData(
 
   // 8. Map Active Term Statuses using Hard Deadline & Status Calculation rules
   const nowMs = Date.now();
+  const globalWindowLocked = !submissionWindow.isOpen || !submissionWindow.isConfigured;
+  let personalDeadline = null;
+  if (globalWindowLocked) {
+    personalDeadline = await getFacultyPersonalDeadline(supabase, authUserId);
+  }
+
   const globalDeadlineIso = submissionWindow.endDate
     ? `${submissionWindow.endDate}T${submissionWindow.endTime ? normalizeTime24Hour(submissionWindow.endTime) || "23:59:59" : "23:59:59"}+08:00`
     : null;
@@ -523,9 +535,9 @@ export async function getFacultyInitialData(
     const isExtensionActive = Boolean(extDeadlineMs && nowMs <= extDeadlineMs);
 
     // Effective deadline determination:
-    // Individual custom due date if one exists; otherwise, approved extension date or schedule's global deadline
-    let effectiveDeadlineIso = globalDeadlineIso;
-    let effectiveDeadlineMs = globalDeadlineMs;
+    // Individual custom due date if one exists; otherwise, approved extension date, personal deadline, or schedule's global deadline
+    let effectiveDeadlineIso = personalDeadline ? personalDeadline.effectiveDeadline : globalDeadlineIso;
+    let effectiveDeadlineMs = personalDeadline ? new Date(personalDeadline.effectiveDeadline).getTime() : globalDeadlineMs;
     let customDueDate: string | null = null;
 
     if (isExtensionActive && extDeadlineIso && extDeadlineMs) {
@@ -716,30 +728,12 @@ export async function getFacultyInitialData(
     });
   }
 
-  const globalWindowLocked = !submissionWindow.isOpen || !submissionWindow.isConfigured;
-  let earliestGraceDueMs: number | null = null;
-  let earliestGraceIso: string | null = null;
-
-  for (const r of requirementStatuses) {
-    if (r.due_at) {
-      const dueIso = r.due_at.includes("T") ? r.due_at : `${r.due_at}T23:59:59+08:00`;
-      const dueMs = new Date(dueIso).getTime();
-      if (!Number.isNaN(dueMs) && nowMs <= dueMs) {
-        if (earliestGraceDueMs === null || dueMs < earliestGraceDueMs) {
-          earliestGraceDueMs = dueMs;
-          earliestGraceIso = dueIso;
-        }
-      }
-    }
-  }
-
-  const hasActiveGracePeriod = globalWindowLocked && earliestGraceDueMs !== null;
+  const hasActiveGracePeriod = Boolean(personalDeadline);
 
   // Personalize submission window: if global is closed/off but this faculty has an active grace period,
   // unlock the window strictly for THIS faculty member. Otherwise, lock it for other faculty.
-  let effectiveSubmissionWindow = submissionWindow;
-  if (hasActiveGracePeriod && earliestGraceIso) {
-    const endDate = earliestGraceIso.split("T")[0];
+  let effectiveSubmissionWindow: SubmissionWindowStateData = submissionWindow;
+  if (personalDeadline) {
     effectiveSubmissionWindow = {
       isConfigured: true,
       isOpen: true,
@@ -747,7 +741,7 @@ export async function getFacultyInitialData(
       today: submissionWindow.today,
       currentTime: submissionWindow.currentTime,
       startDate: submissionWindow.startDate || submissionWindow.today,
-      endDate,
+      endDate: personalDeadline.endDate,
       startTime: "00:00:00",
       endTime: "23:59:59",
       academicYear: activeAcademicYear,
@@ -755,6 +749,11 @@ export async function getFacultyInitialData(
       startTimeLabel: "12:00 AM",
       endTimeLabel: "11:59 PM",
       currentTimeLabel: submissionWindow.currentTimeLabel,
+      isGracePeriod: true,
+      isPersonalDeadline: true,
+      effectiveDeadline: personalDeadline.effectiveDeadline,
+      formattedDueAt: personalDeadline.formattedDueAt,
+      badgeLabel: "Personal Deadline Active",
     };
   } else if (globalWindowLocked) {
     effectiveSubmissionWindow = {

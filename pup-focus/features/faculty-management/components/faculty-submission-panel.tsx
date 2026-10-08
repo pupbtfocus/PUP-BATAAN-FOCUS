@@ -269,6 +269,9 @@ type SubmissionWindowState = {
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
   isGracePeriod?: boolean;
+  isPersonalDeadline?: boolean;
+  effectiveDeadline?: string | null;
+  formattedDueAt?: string | null;
   badgeLabel?: string | null;
 };
 function buildAcademicYears(count = 5): string[] {
@@ -1315,10 +1318,12 @@ function FacultySubmissionPanelContent({
       const isExtensionActive = Boolean(extDeadlineMs && nowMs <= extDeadlineMs);
 
       // Effective deadline determination:
-      // Individual custom due date if one exists; otherwise, approved extension date or schedule's global deadline
+      // Individual custom due date if one exists; otherwise, approved extension date, personal deadline, or schedule's global deadline
       const existingCustomDue = live?.customDueDate || live?.due_at || (match as any)?.due_at;
-      let effectiveDeadlineIso = globalDeadlineIso;
-      let effectiveDeadlineMs = globalDeadlineMs;
+      const windowDeadlineIso = submissionWindow?.effectiveDeadline || globalDeadlineIso;
+      const windowDeadlineMs = windowDeadlineIso ? new Date(windowDeadlineIso).getTime() : globalDeadlineMs;
+      let effectiveDeadlineIso = windowDeadlineIso;
+      let effectiveDeadlineMs = windowDeadlineMs;
       let customDueDate: string | null = null;
 
       if (isExtensionActive && extDeadlineIso && extDeadlineMs) {
@@ -1489,10 +1494,11 @@ function FacultySubmissionPanelContent({
   // True when admin has not configured any schedule (e.g. schedules deleted from database)
   const isWindowNotConfigured = !isLoadingSubmissionWindow && !isWindowConfigured;
 
-  // True when the global window is off but this specific faculty has an active grace period due_at
+  // True when the global window is off but this specific faculty has an active grace period / personal deadline
   const now = Date.now();
   const hasActiveGracePeriod =
     Boolean(submissionWindow?.isGracePeriod) ||
+    Boolean(submissionWindow?.isPersonalDeadline) ||
     (!isSubmissionAvailable &&
       displayedRequirementStatuses.some((r) => {
         const due = (r as any).due_at || (r as any).customDueDate;
@@ -1513,6 +1519,7 @@ function FacultySubmissionPanelContent({
         })
         .filter(Boolean)
         .sort((a, b) => (a as Date).getTime() - (b as Date).getTime())[0] as Date | null) ||
+      (submissionWindow?.effectiveDeadline ? new Date(submissionWindow.effectiveDeadline) : null) ||
       (submissionWindow?.endDate ? new Date(`${submissionWindow.endDate}T23:59:59+08:00`) : null)
     : null;
 
@@ -1525,10 +1532,15 @@ function FacultySubmissionPanelContent({
       })
     : null;
 
+  const personalDeadlineFormatted =
+    submissionWindow?.formattedDueAt ||
+    (gracePeriodDeadlineLabel ? `${gracePeriodDeadlineLabel} at 11:59 PM` : null) ||
+    (submissionWindow?.endDate ? `${submissionWindow.endDate} at 11:59 PM` : null);
+
   const isEffectivelyOpen = isSubmissionAvailable || hasActiveGracePeriod;
 
   const effectiveSubmissionWindow = useMemo(() => {
-    if (isSubmissionAvailable && submissionWindow?.isOpen && !submissionWindow?.isGracePeriod) {
+    if (isSubmissionAvailable && submissionWindow?.isOpen && !submissionWindow?.isGracePeriod && !submissionWindow?.isPersonalDeadline) {
       return submissionWindow;
     }
     if (hasActiveGracePeriod && earliestGracePeriodDeadline) {
@@ -1550,10 +1562,13 @@ function FacultySubmissionPanelContent({
         endTimeLabel: "11:59 PM",
         currentTimeLabel: format24HourTo12Hour(getCurrentTimeInManila()),
         isGracePeriod: true,
-        badgeLabel: "Option A Grace Period",
+        isPersonalDeadline: true,
+        badgeLabel: "Personal Deadline Active",
+        effectiveDeadline: iso,
+        formattedDueAt: personalDeadlineFormatted,
       };
     }
-    if (submissionWindow?.isGracePeriod) {
+    if (submissionWindow?.isGracePeriod || submissionWindow?.isPersonalDeadline) {
       return submissionWindow;
     }
     if (!submissionWindow || !submissionWindow.isConfigured) {
@@ -1583,6 +1598,7 @@ function FacultySubmissionPanelContent({
     earliestGracePeriodDeadline,
     statusAcademicYear,
     statusSemester,
+    personalDeadlineFormatted,
   ]);
 
   // Lacking requirements only count mandatory requirements that are unsubmitted or rejected
@@ -2556,7 +2572,7 @@ function FacultySubmissionPanelContent({
                         {isAllValidated
                           ? "Done All for This Sem"
                           : hasActiveGracePeriod
-                            ? "Grace Period Active"
+                            ? "Personal Deadline Active"
                             : isWindowNotConfigured
                               ? "Schedule Not Set"
                               : isWindowClosed
@@ -2566,8 +2582,8 @@ function FacultySubmissionPanelContent({
                       <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
                         {isAllValidated
                           ? "All requirements completed for this term"
-                          : hasActiveGracePeriod && gracePeriodDeadlineLabel
-                            ? `Personal deadline: ${gracePeriodDeadlineLabel}`
+                          : hasActiveGracePeriod && personalDeadlineFormatted
+                            ? `Personal deadline: ${personalDeadlineFormatted}`
                             : windowDeadlineDisplay
                               ? `Deadline: ${windowDeadlineDisplay}`
                               : "Awaiting admin schedule"}
@@ -2577,7 +2593,7 @@ function FacultySubmissionPanelContent({
                       {isAllValidated
                         ? "Requirements locked in validated status"
                         : hasActiveGracePeriod
-                          ? "Uploads are enabled via your personal onboarding grace period"
+                          ? "Uploads are enabled via your personal deadline"
                           : isSubmissionAvailable
                             ? "Uploads and resubmissions are currently enabled"
                             : isWindowNotConfigured
@@ -3067,34 +3083,15 @@ function FacultySubmissionPanelContent({
                     </div>
                 )}
 
-                {/* 0. Grace Period Active Banner — shown when global window is off but faculty has personal due_at */}
-                {hasActiveGracePeriod && !isAllValidated && (
-                  <div className="p-3 sm:p-4 rounded-xl border border-emerald-400 dark:border-emerald-700/60 bg-emerald-50/70 dark:bg-emerald-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 dark:text-slate-300">
-                    <div className="flex items-start sm:items-center gap-2.5">
-                      <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 shrink-0">
-                        <AppIcon icon={Check} size="md" color="inherit" />
-                      </div>
-                      <div>
-                        <div>
-                          <span className="font-bold text-emerald-900 dark:text-emerald-300 mr-1.5">
-                            Grace Period Active:
-                          </span>
-                          Your account was recently registered. A personal submission window has been granted for you to upload your requirements.
-                        </div>
-                        {gracePeriodDeadlineLabel && (
-                          <div className="mt-1.5 text-emerald-800 dark:text-emerald-400 font-semibold">
-                            Your personal deadline: {gracePeriodDeadlineLabel} at 11:59 PM
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="shrink-0">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-300 border border-emerald-500/40 text-[11px] font-bold">
-                        <AppIcon icon={Check} size="xs" color="inherit" />
-                        <span>Uploads Unlocked</span>
-                      </span>
-                    </div>
-                  </div>
+                {/* 0. Personal Deadline Active Banner / Lock Banner */}
+                {!isAllValidated && hasActiveGracePeriod && (
+                  <SubmissionLockBanner
+                    isLocked={false}
+                    isConfigured={isWindowConfigured}
+                    isOpen={isEffectivelyOpen}
+                    isPersonalDeadline={true}
+                    formattedDueAt={personalDeadlineFormatted}
+                  />
                 )}
 
                 {/* 1. Schedule Not Set Banner (No Schedule Configured in Database) */}
