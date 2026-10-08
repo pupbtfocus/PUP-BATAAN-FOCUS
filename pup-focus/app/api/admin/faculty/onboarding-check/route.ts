@@ -64,7 +64,14 @@ export async function GET() {
     }
 
     const ctx = await resolveOnboardingContext(supabase);
-    const { term, windowState, deadline, templates, isWindowActive } = ctx;
+    const {
+      term,
+      windowState,
+      deadline,
+      templates,
+      isWindowActive,
+      hasAnyScheduleHistory,
+    } = ctx;
 
     // Requirement templates are always returned so the UI knows exactly what
     // will be assigned, whether submissions are open or closed.
@@ -80,7 +87,8 @@ export async function GET() {
     return NextResponse.json({
       // Only a closed window requires choosing an onboarding option.
       hasPastDeadlines: !isWindowActive,
-      hasPastSchedule: !isWindowActive,
+      hasPastSchedule: !isWindowActive && hasAnyScheduleHistory,
+      hasAnyScheduleHistory,
       isWindowActive,
       isWindowOpen: windowState.isOpen,
       windowStatus: windowState.status,

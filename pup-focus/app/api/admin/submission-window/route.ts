@@ -11,6 +11,7 @@ import {
   isMissingSubmissionWindowColumnsError,
   normalizeSemester,
   validateSubmissionWindow,
+  toManilaIso,
   type SubmissionWindowSemester,
 } from "@/features/submissions/services/submission-window.service";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -272,6 +273,21 @@ export async function PUT(request: NextRequest) {
           );
         }
 
+        // Auto-inherit due_at for pending submissions that had no deadline set (zero-history state)
+        try {
+          const windowDueAtIso = toManilaIso(endDate, "17:00:00");
+          await supabase
+            .from("submissions")
+            .update({
+              due_at: windowDueAtIso,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("academic_year", academicYear)
+            .eq("semester", semester)
+            .eq("status", "pending")
+            .is("due_at", null);
+        } catch {}
+
         const fallbackStatus = evaluateSubmissionWindow({
           startDate,
           endDate,
@@ -298,6 +314,25 @@ export async function PUT(request: NextRequest) {
         },
         { status: 500 },
       );
+    }
+
+    // Auto-inherit due_at for pending standard submissions that had no deadline set (zero-history state)
+    try {
+      const windowDueAtIso = toManilaIso(endDate, endTime24 || "23:59:59");
+      await supabase
+        .from("submissions")
+        .update({
+          due_at: windowDueAtIso,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("academic_year", academicYear)
+        .eq("semester", semester)
+        .eq("status", "pending")
+        .is("due_at", null);
+    } catch (inheritErr) {
+      logger.warn("pending_submissions_inherit_due_at_failed", {
+        error: inheritErr instanceof Error ? inheritErr.message : String(inheritErr),
+      });
     }
 
     const status = evaluateSubmissionWindow({
