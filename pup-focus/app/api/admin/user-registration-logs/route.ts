@@ -6,7 +6,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
 import { sendInviteEmail, sendTempPasswordEmail } from "@/lib/email/send-invite";
-import { generateTempPassword } from "@/app/api/auth/invite/complete/route";
+import { generateTempPassword } from "@/lib/auth/temp-password";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import { isValidEmailAddress } from "@/lib/validation/email";
 
