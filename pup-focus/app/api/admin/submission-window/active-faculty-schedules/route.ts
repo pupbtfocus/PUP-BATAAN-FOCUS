@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { ROLE } from "@/config/roles";
+import {
+  parseSubmissionOrigin,
+  stripOriginTag,
+} from "@/features/submissions/services/submission-window.service";
 
 function isAdminRole(role: string | undefined) {
   return role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN;
@@ -63,6 +67,12 @@ export async function GET() {
     } else if (Array.isArray(subData)) {
       activeSubmissions = subData;
     }
+
+    // Regular (STANDARD / follow-standard-schedule) rows are not personal schedules.
+    activeSubmissions = activeSubmissions.filter((sub) => {
+      const origin = parseSubmissionOrigin(sub.remarks);
+      return origin !== "STANDARD" && origin !== "NEW_FACULTY_STANDARD";
+    });
 
     // 2. Query approved extension requests that are still active (target deadline >= now)
     let approvedExtensions: any[] = [];
@@ -168,15 +178,14 @@ export async function GET() {
         timeRemainingLabel = `${minutes}m remaining`;
       }
 
-      const hasOnboardingRemark = subs.some(
-        (s) =>
-          s.remarks?.toLowerCase().includes("onboarding") ||
-          s.remarks?.toLowerCase().includes("grace period")
-      );
+      const isOnboardingSchedule = subs.some((s) => {
+        const origin = parseSubmissionOrigin(s.remarks);
+        return origin === "NEW_FACULTY_GRACE" || origin === "NEW_FACULTY_CUSTOM";
+      });
 
-      const scheduleType = hasOnboardingRemark ? "onboarding" : "extension";
-      const typeLabel = hasOnboardingRemark
-        ? "Option A Onboarding Grace Period"
+      const scheduleType = isOnboardingSchedule ? "onboarding" : "extension";
+      const typeLabel = isOnboardingSchedule
+        ? "New Faculty Extra Time"
         : "Approved Extension";
 
       const deadlineFormatted = deadlineDate.toLocaleDateString("en-US", {
@@ -240,7 +249,7 @@ export async function GET() {
         closeDateFormatted,
         unlockedRequirements: uniqueCodes,
         unlockedCount: uniqueCodes.length,
-        remarks: subs[0]?.remarks || "Active individual submission schedule",
+        remarks: stripOriginTag(subs[0]?.remarks) || "Active individual submission schedule",
       });
     }
 
