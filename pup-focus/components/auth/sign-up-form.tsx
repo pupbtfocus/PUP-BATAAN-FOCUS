@@ -99,14 +99,17 @@ export function SignUpForm() {
     setCaptchaToken(token);
   }
 
-  function handleTurnstileError() {
+  function handleTurnstileError(err?: unknown) {
     setIsSubmitting(false);
     setCaptchaToken(null);
     pendingSignUpRef.current = null;
     turnstileRef.current?.reset();
+    const isDomainNotAllowed = String(err) === "110200";
     setToast({
       type: "error",
-      message: "Security verification challenge failed. Please try again.",
+      message: isDomainNotAllowed
+        ? "Turnstile domain not allowed (110200). Add 'localhost' to Cloudflare Allowed Domains or use testing sitekey in .env.local."
+        : "Security verification challenge failed. Please try again.",
     });
   }
 
