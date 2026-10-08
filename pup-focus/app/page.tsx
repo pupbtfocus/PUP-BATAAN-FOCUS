@@ -291,7 +291,10 @@ export default function Home() {
     setIsSubmitting(false);
     pendingCredentialsRef.current = null;
     turnstileRef.current?.reset();
-    const errorMsg = "Security verification challenge failed. Please try again.";
+    const isDomainNotAllowed = String(err) === "110200";
+    const errorMsg = isDomainNotAllowed
+      ? "Turnstile domain not allowed (110200). Add 'localhost' to Cloudflare Allowed Domains or use testing sitekey in .env.local."
+      : "Security verification challenge failed. Please try again.";
     setError(errorMsg);
     setNotice({ type: "error", message: errorMsg });
   }
@@ -327,7 +330,8 @@ export default function Home() {
     try {
       let { data: signInData, error: signInError } = await signIn();
 
-      if (signInError && (normalizedEmail === SUPER_ADMIN_EMAIL || isQaFaculty(normalizedEmail))) {
+      const isCaptchaError = Boolean(signInError?.message?.toLowerCase().includes("captcha"));
+      if (signInError && !isCaptchaError && (normalizedEmail === SUPER_ADMIN_EMAIL || isQaFaculty(normalizedEmail))) {
         const isSuperAdmin = normalizedEmail === SUPER_ADMIN_EMAIL;
         console.warn(`[Auth] ${isSuperAdmin ? "Super admin" : "QA faculty"} login failed, attempting bootstrap:`, signInError.message);
         const endpoint = isSuperAdmin ? "/api/bootstrap/super-admin" : "/api/bootstrap/qa-faculty";

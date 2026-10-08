@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
 
 const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
 
@@ -566,5 +567,274 @@ export function evaluateSubmissionWindow(
     endTime: config.endTime,
     academicYear: config.academicYear ?? activeTerm?.academicYear ?? null,
     semester: config.semester ?? (activeTerm?.semester ? normalizeSemester(activeTerm.semester) : null),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Submission origin classification
+//
+// `submissions` has no dedicated origin column, so the origin is stored as a
+// structured tag at the start of `remarks`:  "[origin:NEW_FACULTY_GRACE] detail".
+// Always read it through `parseSubmissionOrigin` instead of searching text.
+// ---------------------------------------------------------------------------
+
+export const SUBMISSION_ORIGINS = [
+  "STANDARD",
+  "NEW_FACULTY_GRACE",
+  "NEW_FACULTY_CUSTOM",
+  "NEW_FACULTY_STANDARD",
+  "EXEMPTED",
+  "EXTENDED",
+] as const;
+
+export type SubmissionOrigin = (typeof SUBMISSION_ORIGINS)[number];
+
+const ORIGIN_TAG_PATTERN = /^\[origin:([A-Z_]+)\]\s*/;
+
+export function buildOriginRemarks(
+  origin: SubmissionOrigin,
+  detail?: string | null,
+): string {
+  const tag = `[origin:${origin}]`;
+  return detail ? `${tag} ${detail}` : tag;
+}
+
+// Exact prefixes written by earlier versions of the app (before origin tags).
+const LEGACY_REMARK_ORIGINS: ReadonlyArray<[string, SubmissionOrigin]> = [
+  ["Initialized with 7-day onboarding grace period", "NEW_FACULTY_GRACE"],
+  ["Initialized with custom onboarding deadline", "NEW_FACULTY_CUSTOM"],
+  ["Exempted during new faculty onboarding", "EXEMPTED"],
+  ["Standard registration (no personal schedule set)", "NEW_FACULTY_STANDARD"],
+  ["Extension granted (", "EXTENDED"],
+];
+
+export function parseSubmissionOrigin(
+  remarks: string | null | undefined,
+): SubmissionOrigin | null {
+  if (!remarks) {
+    return null;
+  }
+
+  const match = remarks.match(ORIGIN_TAG_PATTERN);
+  if (match) {
+    const candidate = match[1] as SubmissionOrigin;
+    return SUBMISSION_ORIGINS.includes(candidate) ? candidate : null;
+  }
+
+  const legacy = LEGACY_REMARK_ORIGINS.find(([prefix]) =>
+    remarks.startsWith(prefix),
+  );
+  return legacy ? legacy[1] : null;
+}
+
+/** Strips the origin tag so only the human-readable detail is shown in the UI. */
+export function stripOriginTag(remarks: string | null | undefined): string {
+  return (remarks ?? "").replace(ORIGIN_TAG_PATTERN, "").trim();
+}
+
+// ---------------------------------------------------------------------------
+// Onboarding context (shared by faculty create + onboarding-check)
+// ---------------------------------------------------------------------------
+
+export type ActiveRequirementTemplate = {
+  code: string;
+  title: string;
+  description?: string | null;
+};
+
+export type GlobalDeadline = {
+  endDate: string;
+  /** HH:MM:SS (24h) */
+  endTime: string;
+  /** ISO timestamp with Manila offset */
+  iso: string;
+};
+
+export type OnboardingContext = {
+  term: { academicYear: string; semester: SubmissionWindowSemester };
+  windowState: SubmissionWindowState;
+  /** True when the window is Open or Upcoming, i.e. submissions are not closed. */
+  isWindowActive: boolean;
+  deadline: GlobalDeadline;
+  templates: ActiveRequirementTemplate[];
+};
+
+export function toManilaIso(date: string, time24: string): string {
+  return `${date}T${normalizeTime24Hour(time24) || "23:59:59"}+08:00`;
+}
+
+function toTime24(value: string | null | undefined): string {
+  if (!value) {
+    return "";
+  }
+  const trimmed = value.trim();
+  return isValid12HourTimeInput(trimmed)
+    ? convert12HourTo24Hour(trimmed)
+    : normalizeTime24Hour(trimmed);
+}
+
+export function addDaysToDateString(date: string, days: number): string {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days))
+    .toISOString()
+    .slice(0, 10);
+}
+
+/** `today (Manila) + days`, expressed as 23:59:59 Manila time. */
+export function buildGraceDueAtIso(days: number): string {
+  return toManilaIso(addDaysToDateString(getTodayInManila(), days), "23:59:59");
+}
+
+export function isValidManilaIso(value: string | null | undefined): value is string {
+  return (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(
+      value,
+    ) &&
+    !Number.isNaN(new Date(value).getTime())
+  );
+}
+
+export async function resolveActiveTerm(
+  supabase: SupabaseClient,
+): Promise<{ academicYear: string; semester: SubmissionWindowSemester }> {
+  try {
+    const { data: termRows } = await supabase
+      .from("academic_terms")
+      .select("academic_year, semester, status")
+      .order("academic_year", { ascending: false });
+
+    if (Array.isArray(termRows) && termRows.length > 0) {
+      const found = termRows.find((t) => {
+        const status = (t.status || "").trim().toLowerCase();
+        return status === "current" || status === "active";
+      });
+      const row = found || termRows[0];
+      if (row?.academic_year && row?.semester) {
+        return {
+          academicYear: row.academic_year.trim(),
+          semester: normalizeSemester(row.semester),
+        };
+      }
+    }
+  } catch {
+    // Fall through to default term
+  }
+
+  return { academicYear: "2026-2027", semester: "1st Semester" };
+}
+
+export async function getActiveRequirementTemplates(
+  supabase: SupabaseClient,
+): Promise<ActiveRequirementTemplate[]> {
+  try {
+    const { data: templates } = await supabase
+      .from("requirement_templates")
+      .select("code, title, description")
+      .eq("is_active", true)
+      .order("title", { ascending: true });
+
+    if (Array.isArray(templates) && templates.length > 0) {
+      return templates as ActiveRequirementTemplate[];
+    }
+  } catch {
+    // Fall back to defaults
+  }
+
+  return DEFAULT_REQUIREMENTS.map((code) => ({
+    code,
+    title: REQUIREMENT_LABEL[code] || code,
+    description: null,
+  }));
+}
+
+/**
+ * Resolves the deadline that applies to everyone for the active term. When
+ * submissions are closed this is the *previous* schedule's end; if none was ever
+ * recorded it falls back to the current moment.
+ */
+async function resolveGlobalDeadline(
+  supabase: SupabaseClient,
+  term: { academicYear: string; semester: string },
+  config: SubmissionWindowConfig | null,
+  state: SubmissionWindowState,
+): Promise<GlobalDeadline> {
+  let endDate: string | null = null;
+  let endTime = "";
+
+  if (state.status !== "Closed") {
+    endDate = config?.endDate ?? state.endDate;
+    endTime = toTime24(config?.endTime ?? state.endTime);
+  } else {
+    try {
+      const { data: termWin } = await supabase
+        .from("submission_window_terms")
+        .select("end_date, end_time")
+        .eq("academic_year", term.academicYear)
+        .eq("semester", term.semester)
+        .maybeSingle();
+
+      if (termWin?.end_date) {
+        endDate = termWin.end_date;
+        endTime = toTime24(termWin.end_time);
+      }
+    } catch {
+      // Table may not exist yet
+    }
+
+    if (!endDate) {
+      try {
+        const { data: globalWin } = await supabase
+          .from("submission_windows")
+          .select("end_date, end_time")
+          .eq("id", 1)
+          .maybeSingle();
+
+        if (globalWin?.end_date) {
+          endDate = globalWin.end_date;
+          endTime = toTime24(globalWin.end_time);
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
+    if (!endDate) {
+      endDate = config?.endDate ?? state.endDate;
+      endTime = toTime24(config?.endTime ?? state.endTime);
+    }
+  }
+
+  if (!endDate) {
+    endDate = getTodayInManila();
+    endTime = toTime24(getCurrentTimeInManila());
+  }
+
+  const time24 = endTime || "23:59:59";
+  return { endDate, endTime: time24, iso: toManilaIso(endDate, time24) };
+}
+
+export async function resolveOnboardingContext(
+  supabase: SupabaseClient,
+): Promise<OnboardingContext> {
+  const term = await resolveActiveTerm(supabase);
+  const config = await getSubmissionWindow(supabase, term);
+  const windowState = evaluateSubmissionWindow(
+    config,
+    undefined,
+    undefined,
+    term,
+  );
+  const [deadline, templates] = await Promise.all([
+    resolveGlobalDeadline(supabase, term, config, windowState),
+    getActiveRequirementTemplates(supabase),
+  ]);
+
+  return {
+    term,
+    windowState,
+    isWindowActive: windowState.status !== "Closed",
+    deadline,
+    templates,
   };
 }

@@ -143,7 +143,13 @@ export const Turnstile = forwardRef<TurnstileInstance, TurnstileProps>(
             },
             "error-callback": (err: unknown) => {
               if (isMounted) {
-                console.error("[Turnstile] Challenge error callback:", err);
+                if (String(err) === "110200") {
+                  console.error(
+                    `[Turnstile] Challenge error 110200: Domain "${typeof window !== "undefined" ? window.location.hostname : ""}" is not allowed for sitekey "${siteKey}". Add "localhost" to Allowed Domains in Cloudflare Turnstile dashboard, or set NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA in .env.local for local development.`
+                  );
+                } else {
+                  console.error("[Turnstile] Challenge error callback:", err);
+                }
                 onErrorRef.current?.(err);
               }
             },
