@@ -5,6 +5,7 @@ import { ROLE } from "@/config/roles";
 import { logger } from "@/lib/observability/logger";
 import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service";
 import {
+  buildOriginRemarks,
   convert12HourTo24Hour,
   evaluateSubmissionWindow,
   format24HourTo12Hour,
@@ -263,7 +264,10 @@ export async function POST(request: NextRequest) {
           .from("submissions")
           .update({
             due_at: newDueAt,
-            remarks: `Extension granted (${preset}) until ${newEndDate} at ${endTimeLabel}`,
+            remarks: buildOriginRemarks(
+              "EXTENDED",
+              `Extension granted (${preset}) until ${newEndDate} at ${endTimeLabel}`,
+            ),
           })
           .in("faculty_profile_id", profileIds)
           .eq("status", "pending");

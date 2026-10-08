@@ -43,6 +43,7 @@ export interface OnboardingScheduleItem {
 
 export interface OnboardingCheckResult {
   hasPastDeadlines: boolean;
+  windowStatus?: "Open" | "Upcoming" | "Closed";
   activeTerm?: { academicYear: string; semester: string } | null;
   globalDeadline?: { endDate: string; endTime?: string; iso: string } | null;
   schedules: OnboardingScheduleItem[];
@@ -484,7 +485,7 @@ export function AddFacultyPanel({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                        Option A: Give Extra Days (Grace Period)
+                        Give Extra Time
                       </span>
                       <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
                         Recommended
@@ -566,14 +567,14 @@ export function AddFacultyPanel({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                      Option B: Normal Add (Same as Everyone)
+                      Follow Standard Schedule
                     </span>
                     <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
                       Standard
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Add normally like other faculty members. Uploads stay locked until you set and open a submission schedule.
+                    Use the same deadline as everyone else. Since it has already passed, uploads stay locked until you extend the deadline or open a new submission schedule.
                   </p>
                 </div>
               </div>
@@ -598,14 +599,14 @@ export function AddFacultyPanel({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                      Option C: Excuse Requirements (Waived)
+                      Mark as Not Required
                     </span>
                     <span className="text-[10px] uppercase font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-300 dark:border-slate-700">
-                      Excused
+                      Not Required
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Excuse past requirements for this faculty member so their compliance score isn't affected.
+                    No submissions are required from this faculty member, so their compliance score isn't affected.
                   </p>
                 </div>
               </div>
@@ -822,10 +823,10 @@ export function AddFacultyPanel({
                 >
                   {hasAppliedOptions
                     ? selectedOption === "grace_period"
-                      ? `Grace Period (+${gracePresetDays || 7}d)`
+                      ? `Extra Time (+${gracePresetDays || 7}d)`
                       : selectedOption === "standard"
-                      ? "Normal Add"
-                      : "Excused"
+                      ? "Standard Schedule"
+                      : "Not Required"
                     : "Select Option First"}
                 </span>
               </div>
