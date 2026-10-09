@@ -24,20 +24,20 @@ export function SubmissionLockBanner({
   if (isPersonalDeadline) {
     return (
       <div
-        className={`mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-emerald-400 dark:border-emerald-700/60 bg-emerald-50/80 dark:bg-emerald-950/40 p-3.5 sm:p-4 text-xs shadow-sm ${className || ""}`}
+        className={`mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#08412a] bg-[#0b5336] p-4 text-xs text-white shadow-md ${className || ""}`}
         role="alert"
       >
         <div className="flex items-start sm:items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-            <AppIcon icon={Check} size="md" color="inherit" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white border border-white/30 shadow-2xs">
+            <AppIcon icon={Check} size="md" color="white" />
           </div>
           <div>
-            <div className="font-bold text-emerald-900 dark:text-emerald-200">
+            <div className="text-sm font-bold text-white tracking-wide">
               Personal Deadline Active
             </div>
-            <p className="mt-0.5 text-slate-700 dark:text-slate-300 leading-relaxed">
+            <p className="mt-0.5 text-xs text-emerald-100/95 leading-relaxed">
               You have been granted extra time to submit requirements. Your deadline is{" "}
-              <strong className="font-semibold text-emerald-800 dark:text-emerald-300">
+              <strong className="font-bold text-white underline decoration-emerald-300/50 underline-offset-2">
                 {formattedDueAt || "approaching"}
               </strong>
               .
@@ -45,8 +45,8 @@ export function SubmissionLockBanner({
           </div>
         </div>
         <div className="shrink-0">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-300 border border-emerald-500/40 text-[11px] font-bold">
-            <AppIcon icon={Check} size="xs" color="inherit" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 text-white border border-white/25 text-[11px] font-bold shadow-2xs">
+            <AppIcon icon={Check} size="xs" color="white" />
             <span>Uploads Unlocked</span>
           </span>
         </div>
