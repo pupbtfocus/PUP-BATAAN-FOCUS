@@ -49,7 +49,7 @@ export async function GET() {
       .from("submissions")
       .select("id, faculty_profile_id, requirement_code, status, due_at, remarks, academic_year, semester, created_at")
       .not("due_at", "is", null)
-      .eq("status", "pending")
+      .in("status", ["pending", "unsubmitted"])
       .order("due_at", { ascending: true });
 
     if (subError) {
@@ -58,7 +58,7 @@ export async function GET() {
         .from("submissions")
         .select("id, faculty_profile_id, requirement_code, status, due_at, remarks, created_at")
         .not("due_at", "is", null)
-        .eq("status", "pending")
+        .in("status", ["pending", "unsubmitted"])
         .order("due_at", { ascending: true });
 
       if (!fallbackError && Array.isArray(fallbackSubData)) {

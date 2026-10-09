@@ -284,7 +284,7 @@ export async function PUT(request: NextRequest) {
             })
             .eq("academic_year", academicYear)
             .eq("semester", semester)
-            .eq("status", "pending")
+            .in("status", ["pending", "unsubmitted"])
             .is("due_at", null);
         } catch {}
 
@@ -327,7 +327,7 @@ export async function PUT(request: NextRequest) {
         })
         .eq("academic_year", academicYear)
         .eq("semester", semester)
-        .eq("status", "pending")
+        .in("status", ["pending", "unsubmitted"])
         .is("due_at", null);
     } catch (inheritErr) {
       logger.warn("pending_submissions_inherit_due_at_failed", {

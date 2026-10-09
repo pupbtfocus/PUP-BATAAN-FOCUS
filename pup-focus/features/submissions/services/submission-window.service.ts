@@ -930,15 +930,22 @@ export async function getFacultyPersonalDeadline(
 
     // Query submissions strictly by faculty_profile_id
     try {
-      const { data: profileSubs } = await supabase
+      const { data: profileSubs, error: subError } = await supabase
         .from("submissions")
         .select("id, status, due_at, requirement_code, submitted_at, faculty_profile_id, remarks, created_at")
-        .in("faculty_profile_id", facultyIds);
+        .in("faculty_profile_id", facultyIds)
+        .in("status", ["pending", "unsubmitted"]);
+
+      if (subError) {
+        console.error("[DEBUG PERSONAL DEADLINE SUBMISSIONS ERROR]", subError.message);
+      }
 
       if (profileSubs && profileSubs.length > 0) {
         subs.push(...profileSubs);
       }
-    } catch {}
+    } catch (err) {
+      console.error("[DEBUG PERSONAL DEADLINE SUBMISSIONS CATCH]", err);
+    }
 
     // Deduplicate by submission id
     const seenSubIds = new Set<string>();
