@@ -13,6 +13,7 @@ import {
 import { logger } from "@/lib/observability/logger";
 import {
   evaluateSubmissionWindow,
+  getFacultyPersonalDeadline,
   getSubmissionWindow,
   normalizeTime24Hour,
 } from "@/features/submissions/services/submission-window.service";
@@ -78,6 +79,7 @@ function isRequirementCode(value: string): value is RequirementCode {
 function hasDocumentVersion(submission: {
   id?: string;
   document_versions?: Array<{ id: string }> | null;
+  submitted_at?: string | null;
 }): boolean {
   if (
     Array.isArray(submission.document_versions) &&
@@ -85,7 +87,7 @@ function hasDocumentVersion(submission: {
   ) {
     return true;
   }
-  return Boolean(submission.id);
+  return Boolean(submission.submitted_at);
 }
 
 function isMissingRemarksColumnError(
@@ -711,6 +713,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (!activePersonalDeadlineIso) {
+      try {
+        const personalDead = await getFacultyPersonalDeadline(supabase, profileRow?.id || user.id);
+        if (personalDead?.effectiveDeadline) {
+          activePersonalDeadlineIso = personalDead.effectiveDeadline;
+          activePersonalDeadlineMs = new Date(personalDead.effectiveDeadline).getTime();
+        }
+      } catch {}
+    }
+
     const globalDeadlineIso = localWindowEnd ? `${localWindowEnd}+08:00` : null;
     const globalDeadlineMs = globalDeadlineIso ? new Date(globalDeadlineIso).getTime() : null;
 
@@ -858,9 +870,9 @@ export async function GET(request: NextRequest) {
         note: facultyNote,
         remarks: facultyNote,
         submittedAt: submission?.submitted_at || undefined,
-        latestSubmissionId: submission?.id,
-        storagePath: storagePath || undefined,
-        fileName: fileName || undefined,
+        latestSubmissionId: (hasDoc || Boolean(submission?.submitted_at)) ? submission?.id : undefined,
+        storagePath: (hasDoc || Boolean(submission?.submitted_at)) ? storagePath : undefined,
+        fileName: (hasDoc || Boolean(submission?.submitted_at)) ? fileName : undefined,
         is_read: Boolean(submission?.is_read),
         isViewed: Boolean(submission?.is_read),
         viewed_at: submission?.viewed_at || undefined,

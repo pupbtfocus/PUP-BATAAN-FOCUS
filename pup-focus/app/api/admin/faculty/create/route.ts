@@ -599,19 +599,30 @@ export async function POST(request: NextRequest) {
           // Persist approved personal deadline so submission window evaluation services recognize active grace period
           if (isGracePeriodOption && createdAuthUser?.id) {
             try {
+              const reqDate = computedDueAt.split("T")[0];
+              const reqTime = computedDueAt.includes("T")
+                ? computedDueAt.split("T")[1]?.slice(0, 8) || "23:59:59"
+                : "23:59:59";
               await supabase.from("extension_requests").insert({
                 faculty_user_id: createdAuthUser.id,
-                status: "approved",
-                approved_extension_date: computedDueAt,
-                requested_extension_date: computedDueAt,
+                faculty_name: fullName,
+                faculty_email: normalizedEmail,
+                department: programRecord.name || programRecord.code,
                 academic_year: academicYear,
                 semester: term,
                 reason: "Onboarding Grace Period (Option A)",
+                requested_preset: "+7 Days",
+                requirement_codes: [],
+                requested_date: reqDate,
+                requested_time: reqTime,
+                status: "approved",
               });
-            } catch {}
+            } catch (extErr) {
+              console.error("[EXT REQUEST INSERT ERROR]", extErr);
+            }
           }
 
-          // Generate initial requirement rows with 'unsubmitted' status
+          // Generate initial requirement rows with 'pending' status
           try {
             // Resolve active curriculum ID for this program with fallbacks
             let resolvedCurriculumId: string | null = null;
@@ -701,7 +712,7 @@ export async function POST(request: NextRequest) {
                 : plan.dueAt;
 
               const initialStatus =
-                plan.status === "exempted" ? "exempted" : "unsubmitted";
+                plan.status === "exempted" ? "exempted" : "pending";
 
               const row: Record<string, any> = {
                 id: crypto.randomUUID(),

@@ -965,6 +965,12 @@ export async function getFacultyPersonalDeadline(
           continue;
         }
 
+        // Heal initial unsubmitted status to pending
+        if ((st === "unsubmitted" || !st) && s.id) {
+          s.status = "pending";
+          void supabase.from("submissions").update({ status: "pending" }).eq("id", s.id);
+        }
+
         let dueAtStr = s.due_at;
 
         // Self-heal: If due_at is null but remarks indicate grace period was granted
@@ -1008,21 +1014,43 @@ export async function getFacultyPersonalDeadline(
       try {
         const { data: extData } = await supabase
           .from("extension_requests")
-          .select("approved_extension_date, requested_extension_date, status")
+          .select("requested_date, requested_time, status")
           .in("faculty_user_id", facultyIds)
           .eq("status", "approved");
 
         if (extData && extData.length > 0) {
           for (const ext of extData) {
-            const extDate = ext.approved_extension_date || ext.requested_extension_date;
+            const extDate = ext.requested_date;
             if (!extDate) continue;
-            let dueMs = new Date(extDate).getTime();
+            const timePart = ext.requested_time || "23:59:59";
+            const iso = `${extDate}T${timePart}+08:00`;
+            const dueMs = new Date(iso).getTime();
+            if (!Number.isNaN(dueMs) && dueMs > nowMs) {
+              futurePending.push({ dueIso: iso, dueMs });
+            }
+          }
+        }
+      } catch {}
+    }
+
+    if (futurePending.length === 0) {
+      try {
+        const { data: assignData } = await supabase
+          .from("faculty_program_assignments")
+          .select("due_at, grace_period_until")
+          .in("faculty_profile_id", facultyIds);
+
+        if (assignData && assignData.length > 0) {
+          for (const a of assignData) {
+            const dt = a.due_at || a.grace_period_until;
+            if (!dt) continue;
+            let dueMs = new Date(dt).getTime();
             if (Number.isNaN(dueMs)) {
-              const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
+              const iso = dt.includes("T") ? dt : `${dt}T23:59:59+08:00`;
               dueMs = new Date(iso).getTime();
             }
             if (!Number.isNaN(dueMs) && dueMs > nowMs) {
-              const iso = extDate.includes("T") ? extDate : `${extDate}T23:59:59+08:00`;
+              const iso = dt.includes("T") ? dt : `${dt}T23:59:59+08:00`;
               futurePending.push({ dueIso: iso, dueMs });
             }
           }

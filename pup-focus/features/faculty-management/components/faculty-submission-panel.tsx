@@ -1353,12 +1353,18 @@ function FacultySubmissionPanelContent({
         ? live
         : match || live;
 
-      const subId =
-        (subSource as RequirementStatus)?.latestSubmissionId ||
-        (subSource as PastSubmission)?.id ||
-        (match as any)?.id;
+      const hasFile = Boolean(
+        subSource?.submittedAt ||
+        (subSource as any)?.storagePath ||
+        (subSource as any)?.fileName ||
+        (match as any)?.submitted_at
+      );
 
-      const hasFile = Boolean(subSource?.submittedAt || subId);
+      const subId = hasFile
+        ? (subSource as RequirementStatus)?.latestSubmissionId ||
+          (subSource as PastSubmission)?.id ||
+          (match as any)?.id
+        : undefined;
 
       const rawStatus = (subSource?.status || "").toLowerCase().trim();
       const isExempted = rawStatus === "exempted" || rawStatus === "exempt";
@@ -1387,7 +1393,7 @@ function FacultySubmissionPanelContent({
           (!globalDeadlineMs || effectiveDeadlineMs > globalDeadlineMs)
         );
         if (isExtensionActive || isCustomDueExtended) {
-          evaluatedStatus = "Extended";
+          evaluatedStatus = "Pending";
         } else if (isPastEffectiveDeadline) {
           evaluatedStatus = "Overdue";
         } else {
@@ -3371,7 +3377,8 @@ function FacultySubmissionPanelContent({
                                     req.status !== "Exempted" &&
                                     req.status !== "Overdue" &&
                                     (!req.isExtended || req.latestSubmissionId) &&
-                                    req.latestSubmissionId ? (
+                                    req.latestSubmissionId &&
+                                    Boolean(req.submittedAt || req.storagePath || req.fileName) ? (
                                       <button
                                         type="button"
                                         onClick={() => openSubmissionPreview(req)}
@@ -3382,16 +3389,15 @@ function FacultySubmissionPanelContent({
                                       </button>
                                     ) : null}
 
-                                    {/* 4. EXTENDED: Temporarily unlock upload portal until approved extended date */}
+                                    {/* 4. EXTENDED: Normal Upload UI */}
                                     {req.status === "Extended" && !req.latestSubmissionId && (
                                       <button
                                         type="button"
                                         onClick={() => openDirectUploadModal(req.code)}
-                                        className="inline-flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-700 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
-                                        title={req.extendedUntil ? `Upload unlocked until extended date: ${formatDeadlineDate(req.extendedUntil)}` : "Upload unlocked via approved extension"}
+                                        className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 font-semibold w-36 h-8 rounded-xl text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer"
                                       >
-                                        <AppIcon icon={Upload} size="sm" color="white" />
-                                        <span>Upload (Extended)</span>
+                                        <AppIcon icon={Upload} size="sm" color="inherit" />
+                                        <span>Upload</span>
                                       </button>
                                     )}
 
@@ -3419,7 +3425,7 @@ function FacultySubmissionPanelContent({
                                     )}
 
                                     {/* 6. PENDING: Current date is on or before effective deadline, enable file upload */}
-                                    {(req.status === "Pending" && !req.latestSubmissionId) ||
+                                    {(req.status === "Pending" && (!req.latestSubmissionId || !req.submittedAt)) ||
                                     (req.status === "Not Submitted") ? (
                                       ((isWindowClosed || isWindowNotConfigured) && !req.customDueDate && !hasActiveGracePeriod && !isEffectivelyOpen) ? (
                                         <button
@@ -3451,10 +3457,11 @@ function FacultySubmissionPanelContent({
                                     <SubmissionStatusBadge
                                       status={
                                         req.status === "Pending" &&
+                                        req.submittedAt &&
                                         req.latestSubmissionId &&
                                         (req.hasPriorRevision || req.isRevision)
                                           ? "Revision Under Review"
-                                          : req.status === "Pending" && req.latestSubmissionId
+                                          : req.status === "Pending" && req.submittedAt && req.latestSubmissionId
                                             ? "Pending Review"
                                             : req.status
                                       }

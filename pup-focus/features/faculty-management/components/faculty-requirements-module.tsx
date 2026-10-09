@@ -664,6 +664,7 @@ export function FacultyRequirementsModule({
                             </button>
                           )}
                           {(status === "Pending" || status === "Validated") &&
+                            item?.submittedAt &&
                             item?.latestSubmissionId && (
                               <button
                                 type="button"
@@ -806,6 +807,7 @@ export function FacultyRequirementsModule({
                         </button>
                       )}
                       {(status === "Pending" || status === "Validated") &&
+                        item?.submittedAt &&
                         item?.latestSubmissionId && (
                           <button
                             type="button"

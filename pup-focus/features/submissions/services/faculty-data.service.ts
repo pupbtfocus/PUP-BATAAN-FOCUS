@@ -638,24 +638,26 @@ export async function getFacultyInitialData(
       effectiveDeadlineMs && nowMs > effectiveDeadlineMs,
     );
 
-    const isSubmitted = Boolean(
+    const hasActualFile = Boolean(
       sub?.submitted_at ||
-      rawStatus === "pending" ||
       rawStatus === "uploaded" ||
       rawStatus === "submitted" ||
       rawStatus === "under_review" ||
       rawStatus === "pending_review" ||
       rawStatus === "validated" ||
-      rawStatus === "approved" ||
-      rawStatus === "rejected",
+      rawStatus === "approved",
     );
 
-    const isPendingReview =
-      rawStatus === "pending" ||
-      rawStatus === "uploaded" ||
-      rawStatus === "submitted" ||
-      rawStatus === "under_review" ||
-      rawStatus === "pending_review";
+    const isSubmitted = hasActualFile;
+
+    const isPendingReview = Boolean(
+      hasActualFile &&
+      (rawStatus === "pending" ||
+       rawStatus === "uploaded" ||
+       rawStatus === "submitted" ||
+       rawStatus === "under_review" ||
+       rawStatus === "pending_review")
+    );
 
     const hasPriorRejection =
       latestDecision === "rejected" ||
@@ -706,8 +708,8 @@ export async function getFacultyInitialData(
       adminRemarks: adminFeedback,
       note: facultyNote,
       remarks: facultyNote,
-      submittedAt: sub?.submitted_at || sub?.created_at || undefined,
-      latestSubmissionId: sub?.id,
+      submittedAt: sub?.submitted_at || undefined,
+      latestSubmissionId: hasActualFile ? sub?.id : undefined,
       is_read: Boolean(sub?.is_read),
       isViewed: Boolean(sub?.is_read),
       viewed_at: sub?.viewed_at || undefined,
