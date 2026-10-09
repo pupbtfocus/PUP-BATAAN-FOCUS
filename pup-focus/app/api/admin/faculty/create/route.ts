@@ -613,6 +613,63 @@ export async function POST(request: NextRequest) {
 
           // Generate initial requirement rows with 'unsubmitted' status
           try {
+            // Resolve active curriculum ID for this program with fallbacks
+            let resolvedCurriculumId: string | null = null;
+            try {
+              const { data: progCurr } = await supabase
+                .from("curricula")
+                .select("id")
+                .eq("program_id", programRecord.id)
+                .eq("is_active", true)
+                .limit(1)
+                .maybeSingle();
+
+              resolvedCurriculumId = progCurr?.id ?? null;
+
+              if (!resolvedCurriculumId) {
+                const { data: anyProgCurr } = await supabase
+                  .from("curricula")
+                  .select("id")
+                  .eq("program_id", programRecord.id)
+                  .limit(1)
+                  .maybeSingle();
+                resolvedCurriculumId = anyProgCurr?.id ?? null;
+              }
+
+              if (!resolvedCurriculumId) {
+                const { data: anyActiveCurr } = await supabase
+                  .from("curricula")
+                  .select("id")
+                  .eq("is_active", true)
+                  .limit(1)
+                  .maybeSingle();
+                resolvedCurriculumId = anyActiveCurr?.id ?? null;
+              }
+
+              if (!resolvedCurriculumId) {
+                const { data: anyCurr } = await supabase
+                  .from("curricula")
+                  .select("id")
+                  .limit(1)
+                  .maybeSingle();
+                resolvedCurriculumId = anyCurr?.id ?? null;
+              }
+
+              if (!resolvedCurriculumId) {
+                const { data: createdCurr } = await supabase
+                  .from("curricula")
+                  .insert({
+                    name: `${programRecord.code} Curriculum`,
+                    code: programRecord.code,
+                    program_id: programRecord.id,
+                    is_active: true,
+                  })
+                  .select("id")
+                  .maybeSingle();
+                resolvedCurriculumId = createdCurr?.id ?? null;
+              }
+            } catch {}
+
             const DEFAULT_FALLBACK_CODES = [
               "grade_sheet",
               "syllabus",
@@ -650,6 +707,7 @@ export async function POST(request: NextRequest) {
                 id: crypto.randomUUID(),
                 faculty_profile_id: newProfile.id,
                 requirement_code: template.code,
+                curriculum_id: resolvedCurriculumId,
                 semester: term,
                 status: initialStatus,
                 due_at: effectiveDueAt,
