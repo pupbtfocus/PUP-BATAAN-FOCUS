@@ -549,162 +549,66 @@ export async function POST(request: NextRequest) {
           const academicYear = ctx.term.academicYear;
           const term = ctx.term.semester;
 
-          // Insert program assignment and capture the ID
-          const { data: assignmentRow } = await supabase
+          const normalizedOpt = (onboardingOption || "").toLowerCase().trim();
+          const isGracePeriodOption =
+            normalizedOpt === "grace_period" ||
+            normalizedOpt === "extra_time" ||
+            normalizedOpt === "give_extra_time" ||
+            normalizedOpt === "option_a" ||
+            normalizedOpt.includes("extra") ||
+            normalizedOpt.includes("grace");
+
+          const computedDueAt =
+            gracePeriodIso ||
+            new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+          // Persist assignment and onboarding grace period deadline
+          const assignmentPayload: Record<string, any> = {
+            faculty_profile_id: newProfile.id,
+            program_id: programRecord.id,
+            academic_year: academicYear,
+            term: term,
+          };
+
+          if (isGracePeriodOption) {
+            assignmentPayload.due_at = computedDueAt;
+            assignmentPayload.grace_period_until = computedDueAt;
+            assignmentPayload.remarks = `[origin:NEW_FACULTY_GRACE] Extra time granted until ${computedDueAt}`;
+          }
+
+          let { error: assignErr } = await supabase
             .from("faculty_program_assignments")
-            .upsert(
-              {
-                faculty_profile_id: newProfile.id,
-                program_id: programRecord.id,
-                academic_year: academicYear,
-                term: term,
-              },
-              { onConflict: "faculty_profile_id,program_id,academic_year,term" },
-            )
-            .select("id")
-            .maybeSingle();
-
-          const assignmentId = assignmentRow?.id ?? null;
-
-          // Always initialize requirement rows, whether the window is open or closed.
-          try {
-            let curriculumId: string | null = null;
-            try {
-              const { data: curr } = await supabase
-                .from("curricula")
-                .select("id")
-                .limit(1)
-                .maybeSingle();
-
-              curriculumId = curr?.id ?? null;
-
-              if (!curriculumId) {
-                const { data: createdCurr } = await supabase
-                  .from("curricula")
-                  .insert({
-                    name: `${programRecord.code} Curriculum`,
-                    program_id: programRecord.id,
-                  })
-                  .select("id")
-                  .maybeSingle();
-                curriculumId = createdCurr?.id ?? null;
-              }
-            } catch {
-              curriculumId = null;
-            }
-
-            const DEFAULT_FALLBACK_CODES = [
-              "grade_sheet",
-              "syllabus",
-              "class_orientation",
-              "midterm_exam",
-              "final_exam",
-              "tos",
-            ];
-
-            const activeTemplates =
-              ctx.templates && ctx.templates.length > 0
-                ? ctx.templates
-                : DEFAULT_FALLBACK_CODES.map((code) => ({ code, title: code }));
-
-            const nowIso = new Date().toISOString();
-            const computedDueAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-            const rows = activeTemplates.map((template) => {
-              const plan = buildSubmissionPlan({
-                ctx,
-                requirementCode: template.code,
-                option: onboardingOption,
-                gracePeriodIso,
-                customDeadlines,
-              });
-
-              const normalizedOpt = (onboardingOption || "").toLowerCase().trim();
-              const customDeadlineIso = customDeadlines?.[template.code];
-              const calculatedDueAt =
-                customDeadlineIso ||
-                gracePeriodIso ||
-                computedDueAt;
-
-              let effectiveDueAt = plan.dueAt;
-              if (
-                normalizedOpt === "grace_period" ||
-                normalizedOpt === "extra_time" ||
-                normalizedOpt === "give_extra_time" ||
-                normalizedOpt === "option_a" ||
-                normalizedOpt.includes("extra") ||
-                normalizedOpt.includes("grace") ||
-                plan.origin === "NEW_FACULTY_GRACE"
-              ) {
-                effectiveDueAt = calculatedDueAt || computedDueAt;
-              }
-
-              const row: Record<string, any> = {
-                id: crypto.randomUUID(),
-                faculty_profile_id: newProfile.id,
-                faculty_assignment_id: assignmentId,
-                requirement_code: template.code,
-                semester: term,
-                status: plan.status,
-                due_at: effectiveDueAt,
-                remarks: buildOriginRemarks(plan.origin, plan.detail),
-                created_at: nowIso,
-                updated_at: nowIso,
-              };
-
-              if (curriculumId) {
-                row.curriculum_id = curriculumId;
-              }
-
-              return row;
+            .upsert(assignmentPayload, {
+              onConflict: "faculty_profile_id,program_id,academic_year,term",
             });
 
-            console.log(
-              "[DEBUG SUBMISSION INSERT PAYLOAD]",
-              JSON.stringify(rows, null, 2),
-            );
-
-            let { error: insertError } = await supabase
-              .from("submissions")
-              .insert(rows);
-
-            if (insertError) {
-              const errMsg = insertError.message?.toLowerCase() ?? "";
-              if (
-                errMsg.includes("curriculum") ||
-                errMsg.includes("academic_year") ||
-                errMsg.includes("semester")
-              ) {
-                const sanitizedRows = rows.map((r) => {
-                  const copy = { ...r };
-                  if (errMsg.includes("curriculum")) delete copy.curriculum_id;
-                  if (errMsg.includes("academic_year")) delete copy.academic_year;
-                  if (errMsg.includes("semester")) delete copy.semester;
-                  return copy;
-                });
-                const retry = await supabase
-                  .from("submissions")
-                  .insert(sanitizedRows);
-                insertError = retry.error;
-              }
-            }
-
-            if (insertError) {
-              console.error("[SUBMISSION INSERT ERROR]", insertError);
-              return NextResponse.json(
-                { error: insertError.message, details: insertError },
-                { status: 500 },
+          if (assignErr) {
+            await supabase
+              .from("faculty_program_assignments")
+              .upsert(
+                {
+                  faculty_profile_id: newProfile.id,
+                  program_id: programRecord.id,
+                  academic_year: academicYear,
+                  term: term,
+                },
+                { onConflict: "faculty_profile_id,program_id,academic_year,term" },
               );
-            }
-          } catch (initErr: any) {
-            console.error("[SUBMISSION INSERT ERROR]", initErr);
-            return NextResponse.json(
-              {
-                error: initErr?.message ?? "Failed to initialize faculty submissions",
-                details: initErr,
-              },
-              { status: 500 },
-            );
+          }
+
+          // Persist approved personal deadline so submission window evaluation services recognize active grace period without dummy submission rows
+          if (isGracePeriodOption && createdAuthUser?.id) {
+            try {
+              await supabase.from("extension_requests").insert({
+                faculty_user_id: createdAuthUser.id,
+                status: "approved",
+                approved_extension_date: computedDueAt,
+                requested_extension_date: computedDueAt,
+                academic_year: academicYear,
+                semester: term,
+                reason: "Onboarding Grace Period (Option A)",
+              });
+            } catch {}
           }
         }
       } catch (assignError) {
