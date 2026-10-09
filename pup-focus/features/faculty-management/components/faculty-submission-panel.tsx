@@ -3226,6 +3226,7 @@ function FacultySubmissionPanelContent({
                         <table className="w-full text-left text-sm min-w-[640px]">
                           <thead>
                             <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
+                              <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-10 text-center">#</th>
                               <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-[45%]">Document</th>
                               <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[15%]">Type</th>
                               <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center w-[25%]">Actions</th>
@@ -3233,61 +3234,66 @@ function FacultySubmissionPanelContent({
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                            {displayedRequirementStatuses.map((req) => (
+                            {displayedRequirementStatuses.map((req, index) => (
                               <tr
                                 key={req.code}
                                 id={`requirement-${req.code}`}
                                 className="bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/40 transition-colors"
                               >
+                                {/* # column */}
+                                <td className="px-3 py-3.5 text-center text-xs font-mono text-slate-400 dark:text-slate-500 align-middle">
+                                  {index + 1}
+                                </td>
+
                                 {/* Document column */}
                                 <td className="px-5 py-3.5 align-middle">
                                   <div className="flex-1 min-w-0">
                                     <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                       {getRequirementTitle(req.code)}
                                     </h4>
-                                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
-                                      {req.submittedAt &&
-                                      formatSubmittedDateTime(req.submittedAt) ? (
-                                        <span>
-                                          Submitted:{" "}
-                                          {formatSubmittedDateTime(req.submittedAt)}
-                                        </span>
-                                      ) : (
-                                        <span>No submission recorded yet</span>
-                                      )}
-                                      {req.reviewedAt && (
-                                        <span>• Reviewed: {req.reviewedAt}</span>
-                                      )}
-                                      {req.effectiveDeadline && !req.submittedAt && req.status !== "Exempted" && (
-                                        <span
-                                          className={
-                                            req.status === "Overdue"
-                                              ? "text-[#780000] dark:text-rose-400 font-semibold"
-                                              : req.status === "Extended"
-                                                ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-                                                : ""
-                                          }
-                                        >
-                                          • Due: {formatDeadlineDate(req.effectiveDeadline)}
-                                        </span>
+                                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-500 dark:text-slate-400">
+                                        {req.submittedAt &&
+                                        formatSubmittedDateTime(req.submittedAt) ? (
+                                          <span>
+                                            Submitted:{" "}
+                                            {formatSubmittedDateTime(req.submittedAt)}
+                                          </span>
+                                        ) : (
+                                          <span>No submission recorded yet</span>
+                                        )}
+                                        {req.reviewedAt && (
+                                          <span>• Reviewed: {req.reviewedAt}</span>
+                                        )}
+                                        {req.effectiveDeadline && !req.submittedAt && req.status !== "Exempted" && (
+                                          <span
+                                            className={
+                                              req.status === "Overdue"
+                                                ? "text-[#780000] dark:text-rose-400 font-semibold"
+                                                : req.status === "Extended"
+                                                  ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+                                                  : ""
+                                            }
+                                          >
+                                            • Due: {formatDeadlineDate(req.effectiveDeadline)}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {/* Inline Revision Note */}
+                                      {req.status === "Rejected" && (
+                                        <p className="text-xs text-[#780000] dark:text-rose-400 flex items-center gap-1.5 mt-1 font-medium">
+                                          <AppIcon icon={WarningCircle} size="sm" color="danger" />
+                                          <span className="italic truncate">
+                                            &ldquo;
+                                            {req.adminRemarks ||
+                                              req.admin_remarks ||
+                                              req.feedback ||
+                                              "Revision requested. Please check and resubmit."}
+                                            &rdquo;
+                                          </span>
+                                        </p>
                                       )}
                                     </div>
-                                    {/* Inline Revision Note */}
-                                    {req.status === "Rejected" && (
-                                      <p className="text-xs text-[#780000] dark:text-rose-400 flex items-center gap-1.5 mt-1 font-medium">
-                                        <AppIcon icon={WarningCircle} size="sm" color="danger" />
-                                        <span className="italic truncate">
-                                          &ldquo;
-                                          {req.adminRemarks ||
-                                            req.admin_remarks ||
-                                            req.feedback ||
-                                            "Revision requested. Please check and resubmit."}
-                                          &rdquo;
-                                        </span>
-                                      </p>
-                                    )}
-                                  </div>
-                                </td>
+                                  </td>
 
                                 {/* Type (Required / Optional) column */}
                                 <td className="px-4 py-3.5 align-middle text-center">
