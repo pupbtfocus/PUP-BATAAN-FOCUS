@@ -596,7 +596,7 @@ export async function POST(request: NextRequest) {
               );
           }
 
-          // Persist approved personal deadline so submission window evaluation services recognize active grace period without dummy submission rows
+          // Persist approved personal deadline so submission window evaluation services recognize active grace period
           if (isGracePeriodOption && createdAuthUser?.id) {
             try {
               await supabase.from("extension_requests").insert({
@@ -609,6 +609,102 @@ export async function POST(request: NextRequest) {
                 reason: "Onboarding Grace Period (Option A)",
               });
             } catch {}
+          }
+
+          // Generate initial requirement rows with 'unsubmitted' status
+          try {
+            const DEFAULT_FALLBACK_CODES = [
+              "grade_sheet",
+              "syllabus",
+              "class_orientation",
+              "midterm_exam",
+              "final_exam",
+              "tos",
+            ];
+
+            const activeTemplates =
+              ctx.templates && ctx.templates.length > 0
+                ? ctx.templates
+                : DEFAULT_FALLBACK_CODES.map((code) => ({ code, title: code }));
+
+            const nowIso = new Date().toISOString();
+
+            const rows = activeTemplates.map((template) => {
+              const plan = buildSubmissionPlan({
+                ctx,
+                requirementCode: template.code,
+                option: onboardingOption,
+                gracePeriodIso,
+                customDeadlines,
+              });
+
+              const customDeadlineIso = customDeadlines?.[template.code];
+              const effectiveDueAt = isGracePeriodOption
+                ? customDeadlineIso || computedDueAt
+                : plan.dueAt;
+
+              const initialStatus =
+                plan.status === "exempted" ? "exempted" : "unsubmitted";
+
+              const row: Record<string, any> = {
+                id: crypto.randomUUID(),
+                faculty_profile_id: newProfile.id,
+                requirement_code: template.code,
+                semester: term,
+                status: initialStatus,
+                due_at: effectiveDueAt,
+                submitted_at: null,
+                file_path: null,
+                file_name: null,
+                remarks: buildOriginRemarks(plan.origin, plan.detail),
+                created_at: nowIso,
+                updated_at: nowIso,
+              };
+
+              return row;
+            });
+
+            console.log(
+              "[DEBUG SUBMISSION INSERT PAYLOAD]",
+              JSON.stringify(rows, null, 2),
+            );
+
+            let { error: insertError } = await supabase
+              .from("submissions")
+              .insert(rows);
+
+            if (insertError) {
+              const errMsg = insertError.message?.toLowerCase() ?? "";
+              if (
+                errMsg.includes("curriculum") ||
+                errMsg.includes("academic_year") ||
+                errMsg.includes("semester") ||
+                errMsg.includes("file_path") ||
+                errMsg.includes("file_name") ||
+                errMsg.includes("submitted_at")
+              ) {
+                const sanitizedRows = rows.map((r) => {
+                  const copy = { ...r };
+                  if (errMsg.includes("curriculum")) delete copy.curriculum_id;
+                  if (errMsg.includes("academic_year")) delete copy.academic_year;
+                  if (errMsg.includes("semester")) delete copy.semester;
+                  if (errMsg.includes("file_path")) delete copy.file_path;
+                  if (errMsg.includes("file_name")) delete copy.file_name;
+                  if (errMsg.includes("submitted_at")) delete copy.submitted_at;
+                  return copy;
+                });
+                const retry = await supabase
+                  .from("submissions")
+                  .insert(sanitizedRows);
+                insertError = retry.error;
+              }
+            }
+
+            if (insertError) {
+              console.error("[SUBMISSION INSERT ERROR]", insertError);
+            }
+          } catch (initErr) {
+            console.error("[SUBMISSION INIT ERROR]", initErr);
           }
         }
       } catch (assignError) {
