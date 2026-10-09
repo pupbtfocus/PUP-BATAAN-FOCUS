@@ -136,7 +136,7 @@ export function AddFacultyPanel({
   const [onboardingData, setOnboardingData] = useState<OnboardingCheckResult | null>(null);
   const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
   const [pendingFormInput, setPendingFormInput] = useState<FacultyAccountFormInput | null>(null);
-  const [selectedOption, setSelectedOption] = useState<"grace_period" | "custom_deadlines" | "exempt" | "standard">("grace_period");
+  const [selectedOption, setSelectedOption] = useState<"grace_period" | "custom_deadlines" | "standard">("grace_period");
   const [gracePresetDays, setGracePresetDays] = useState<number>(7);
   const [customGraceDate, setCustomGraceDate] = useState<string>("");
   const [customPerScheduleDeadlines, setCustomPerScheduleDeadlines] = useState<Record<string, { date: string; time: string }>>({});
@@ -639,35 +639,6 @@ export function AddFacultyPanel({
                   </div>
                 </div>
               </div>
-
-              {/* Option C: Mark as Not Required */}
-              <div
-                onClick={() => setSelectedOption("exempt")}
-                className={`rounded-xl border p-4 transition-all cursor-pointer ${
-                  selectedOption === "exempt"
-                    ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="radio"
-                    checked={selectedOption === "exempt"}
-                    onChange={() => setSelectedOption("exempt")}
-                    className="mt-1 accent-amber-500 cursor-pointer"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                        Mark as Not Required
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      No submissions will be required for this new faculty member this term. This will not affect their compliance score.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <AlertPopup
@@ -886,8 +857,6 @@ export function AddFacultyPanel({
                       ? `Give Extra Time (+${gracePresetDays || 7}d)`
                       : selectedOption === "standard"
                       ? "Follow Standard Schedule"
-                      : selectedOption === "exempt"
-                      ? "Mark as Not Required"
                       : "Custom Deadlines"
                     : "Select Option First"}
                 </span>
