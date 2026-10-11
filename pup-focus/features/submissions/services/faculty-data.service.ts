@@ -13,6 +13,7 @@ import {
   getSubmissionWindow,
   normalizeSemester,
   normalizeTime24Hour,
+  parseSubmissionOrigin,
 } from "@/features/submissions/services/submission-window.service";
 import { logger } from "@/lib/observability/logger";
 
@@ -487,6 +488,19 @@ export async function getFacultyInitialData(
       if (!s.due_at) return false;
       const st = (s.status || "").toLowerCase().trim();
       if (st === "validated" || st === "approved" || st === "exempted") return false;
+      const remarksText = typeof s.remarks === "string" ? s.remarks : "";
+      const origin = parseSubmissionOrigin(remarksText);
+      const isPersonalOverride =
+        origin === "NEW_FACULTY_GRACE" ||
+        origin === "NEW_FACULTY_CUSTOM" ||
+        origin === "EXTENDED" ||
+        (remarksText.length > 0 &&
+          !remarksText.includes("NEW_FACULTY_STANDARD") &&
+          (remarksText.includes("NEW_FACULTY_GRACE") ||
+            remarksText.includes("NEW_FACULTY_CUSTOM") ||
+            remarksText.includes("Extra time granted") ||
+            remarksText.includes("EXTENDED")));
+      if (!isPersonalOverride) return false;
       let dueMs = new Date(s.due_at).getTime();
       if (Number.isNaN(dueMs)) {
         const iso = s.due_at.includes("T") ? s.due_at : `${s.due_at}T23:59:59+08:00`;
