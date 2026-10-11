@@ -2,9 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, NavArrowRight, WarningTriangle, Xmark } from "iconoir-react";
-import { AppIcon } from "@/components/ui/app-icon";
-import failedIcon from "@/assets/icons animations/fail.svg";
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  Mail,
+  X,
+} from "lucide-react";
 
 export interface CancelledInviteModalProps {
   isOpen: boolean;
@@ -45,68 +49,57 @@ export function CancelledInviteModal({
     }
   };
 
-  const failedSrc =
-    typeof failedIcon === "string"
-      ? failedIcon
-      : (failedIcon as any)?.src ?? "/icons-animations/fail.svg";
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[420px] overflow-hidden rounded-[2rem] border border-rose-500/50 bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 sm:p-8 text-[#fff8e7] backdrop-blur-xl shadow-2xl shadow-black/80 transition-all duration-300 animate-in zoom-in-95 cursor-default"
+        className="relative w-full max-w-[420px] bg-white border border-slate-200 rounded-2xl shadow-xl border-t-4 border-[#7A0000] p-6 sm:p-8 text-slate-900 transition-all duration-200 animate-in zoom-in-95 cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top ambient glow accent line */}
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent" />
-
         {/* Top-Right Dismiss 'X' Button */}
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-xs"
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             aria-label="Close modal"
           >
-            <AppIcon icon={Xmark} size="md" color="inherit" />
+            <X className="w-5 h-5" />
           </button>
         )}
 
         <div className="flex flex-col items-center text-center">
-          {/* Animated Fail / Cancelled Icon Badge */}
-          <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-[#180000] border-2 border-rose-500/60 shadow-inner my-2">
-            <img
-              src={failedSrc}
-              alt="Invitation Cancelled"
-              className="h-14 w-14 object-contain"
-            />
+          {/* Centered soft red alert icon badge */}
+          <div className="w-13 h-13 p-3 rounded-full bg-rose-50 text-rose-600 border border-rose-100 mb-4 flex items-center justify-center">
+            <AlertCircle className="w-7 h-7" />
           </div>
 
           {/* Heading */}
-          <h2 className="mt-3 text-2xl font-black uppercase tracking-wider text-rose-200">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 mb-2">
             Invitation Cancelled
           </h2>
-          <div className="mx-auto my-3 h-0.5 w-16 rounded-full bg-gradient-to-r from-transparent via-rose-500/80 to-transparent shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
 
           {/* Subtitle Badge */}
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-950/70 border border-rose-500/40 text-xs font-semibold text-rose-300 mb-3 shadow-inner">
-            <AppIcon icon={WarningTriangle} size="xs" color="inherit" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/80 text-xs font-semibold text-rose-700 mb-4">
+            <AlertTriangle className="w-3.5 h-3.5" />
             <span>Access Revoked by Administrator</span>
           </span>
 
-          {/* Recipient Details (if available) */}
+          {/* Recipient Details */}
           {(email || fullName) && (
-            <div className="w-full mb-3 rounded-xl border border-amber-400/30 bg-black/40 p-2.5 text-left text-xs">
+            <div className="w-full mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left">
               {fullName ? (
-                <div className="font-bold text-amber-200 truncate">{fullName}</div>
+                <div className="text-xs font-semibold text-slate-900 truncate">
+                  {fullName}
+                </div>
               ) : null}
               {email ? (
-                <div className="text-[11px] text-slate-300 font-mono truncate flex items-center gap-1.5 mt-0.5">
-                  <AppIcon icon={Mail} size="xs" color="inherit" />
+                <div className="text-xs font-mono text-slate-500 truncate flex items-center gap-1.5 mt-0.5">
+                  <Mail className="w-3.5 h-3.5 shrink-0 text-slate-400" />
                   <span>{email}</span>
                 </div>
               ) : null}
@@ -114,31 +107,31 @@ export function CancelledInviteModal({
           )}
 
           {/* Detailed Message */}
-          <div className="text-rose-100/90 text-xs sm:text-sm font-medium tracking-wide leading-relaxed space-y-2 max-w-[340px]">
-            <p>
+          <div className="w-full rounded-xl border border-rose-100/90 bg-rose-50/70 p-4 text-xs text-rose-900 text-left leading-relaxed space-y-1.5 mb-6">
+            <p className="font-medium">
               This account invitation has been cancelled or revoked by the institutional administrator.
             </p>
-            <p className="text-[11px] sm:text-xs text-rose-200/75 leading-normal">
+            <p className="text-rose-800/80">
               The link in your email is no longer active. If you believe this cancellation was made in mistake, please contact your department chairperson or PUP Bataan administrator.
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 w-full space-y-2">
+          <div className="w-full space-y-2">
             <button
               type="button"
               onClick={handleReturn}
-              className="h-11 sm:h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/40 flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-2 bg-[#7A0000] hover:bg-[#5E0000] text-white font-medium text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#7A0000]/30 cursor-pointer"
             >
               <span>Return to Sign In</span>
-              <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+              <ArrowRight className="w-4 h-4" />
             </button>
 
             {onClose && (
               <button
                 type="button"
                 onClick={onClose}
-                className="h-9 w-full rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-semibold transition cursor-pointer shadow-xs"
+                className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 font-medium text-sm py-2 px-4 rounded-xl transition-all cursor-pointer"
               >
                 Dismiss
               </button>
