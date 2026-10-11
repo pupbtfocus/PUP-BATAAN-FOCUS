@@ -137,6 +137,11 @@ function buildSubmissionPlan(params: {
   }
 
   const opt = (option || "").toLowerCase().trim();
+  const isStandardOption =
+    opt === "standard" ||
+    opt === "follow_standard" ||
+    opt === "follow_standard_schedule" ||
+    opt.includes("standard");
 
   // If specific onboarding options are explicitly provided, honor them
   if (opt === "exempt") {
@@ -148,15 +153,41 @@ function buildSubmissionPlan(params: {
     };
   }
 
+  if (isStandardOption) {
+    if (!ctx.isWindowActive) {
+      // Submissions are closed globally. Uploads remain locked until a new window or extension is granted.
+      const pastOrNullDueAt =
+        ctx.hasAnyScheduleHistory && ctx.deadline.iso && new Date(ctx.deadline.iso).getTime() <= nowMs
+          ? ctx.deadline.iso
+          : null;
+      return {
+        status: "pending",
+        origin: "NEW_FACULTY_STANDARD",
+        dueAt: pastOrNullDueAt,
+        detail: ctx.hasAnyScheduleHistory
+          ? `Follows standard schedule (closed since ${ctx.deadline.endDate})`
+          : "Follows standard schedule (closed)",
+      };
+    }
+
+    return {
+      status: "pending",
+      origin: "STANDARD",
+      dueAt: ctx.deadline.iso,
+      detail: `Regular submission window until ${ctx.deadline.endDate} at ${ctx.deadline.endTime}`,
+    };
+  }
+
   if (
-    opt === "grace_period" ||
-    opt === "extra_time" ||
-    opt === "give_extra_time" ||
-    opt === "option_a" ||
-    opt === "give extra time" ||
-    opt.includes("extra") ||
-    opt.includes("grace") ||
-    (!ctx.isWindowActive && gracePeriodIso)
+    !isStandardOption &&
+    (opt === "grace_period" ||
+      opt === "extra_time" ||
+      opt === "give_extra_time" ||
+      opt === "option_a" ||
+      opt === "give extra time" ||
+      opt.includes("extra") ||
+      opt.includes("grace") ||
+      (!ctx.isWindowActive && gracePeriodIso))
   ) {
     const calculatedDueAt = graceDueAt || buildGraceDueAtIso(DEFAULT_GRACE_DAYS);
     return {
@@ -550,13 +581,21 @@ export async function POST(request: NextRequest) {
           const term = ctx.term.semester;
 
           const normalizedOpt = (onboardingOption || "").toLowerCase().trim();
+          const isStandardOption =
+            normalizedOpt === "standard" ||
+            normalizedOpt === "follow_standard" ||
+            normalizedOpt === "follow_standard_schedule" ||
+            normalizedOpt.includes("standard");
+
           const isGracePeriodOption =
-            normalizedOpt === "grace_period" ||
-            normalizedOpt === "extra_time" ||
-            normalizedOpt === "give_extra_time" ||
-            normalizedOpt === "option_a" ||
-            normalizedOpt.includes("extra") ||
-            normalizedOpt.includes("grace");
+            !isStandardOption &&
+            normalizedOpt !== "exempt" &&
+            (normalizedOpt === "grace_period" ||
+              normalizedOpt === "extra_time" ||
+              normalizedOpt === "give_extra_time" ||
+              normalizedOpt === "option_a" ||
+              normalizedOpt.includes("extra") ||
+              normalizedOpt.includes("grace"));
 
           const computedDueAt =
             gracePeriodIso ||

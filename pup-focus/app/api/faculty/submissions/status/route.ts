@@ -16,6 +16,7 @@ import {
   getFacultyPersonalDeadline,
   getSubmissionWindow,
   normalizeTime24Hour,
+  parseSubmissionOrigin,
 } from "@/features/submissions/services/submission-window.service";
 
 type RequirementStatus = {
@@ -702,6 +703,20 @@ export async function GET(request: NextRequest) {
     let activePersonalDeadlineMs: number | null = null;
     for (const sub of (submissions || [])) {
       if (sub.due_at) {
+        const remarksText = typeof sub.remarks === "string" ? sub.remarks : "";
+        const origin = parseSubmissionOrigin(remarksText);
+        const isPersonalOverride =
+          origin === "NEW_FACULTY_GRACE" ||
+          origin === "NEW_FACULTY_CUSTOM" ||
+          origin === "EXTENDED" ||
+          (remarksText.length > 0 &&
+            !remarksText.includes("NEW_FACULTY_STANDARD") &&
+            (remarksText.includes("NEW_FACULTY_GRACE") ||
+              remarksText.includes("NEW_FACULTY_CUSTOM") ||
+              remarksText.includes("Extra time granted") ||
+              remarksText.includes("EXTENDED")));
+        if (!isPersonalOverride) continue;
+
         const iso = sub.due_at.includes("T") ? sub.due_at : `${sub.due_at}T23:59:59+08:00`;
         const ms = new Date(iso).getTime();
         if (!Number.isNaN(ms) && nowMs <= ms) {
@@ -916,6 +931,18 @@ export async function GET(request: NextRequest) {
       globalWindowLocked &&
       requirementStatuses.some((r) => {
         if (!r.due_at) return false;
+        const isPersonalOverride =
+          Boolean((r as any).isGracePeriod) ||
+          Boolean((r as any).isPersonalDeadline) ||
+          Boolean((r as any).isExtended) ||
+          Boolean((r as any).extendedUntil) ||
+          (Boolean((r as any).remarks) &&
+            !(r as any).remarks.includes("NEW_FACULTY_STANDARD") &&
+            ((r as any).remarks.includes("NEW_FACULTY_GRACE") ||
+              (r as any).remarks.includes("NEW_FACULTY_CUSTOM") ||
+              (r as any).remarks.includes("Extra time granted") ||
+              (r as any).remarks.includes("EXTENDED")));
+        if (!isPersonalOverride && !activePersonalDeadlineIso) return false;
         const dueIso = r.due_at.includes("T") ? r.due_at : `${r.due_at}T23:59:59+08:00`;
         const dueMs = new Date(dueIso).getTime();
         return !Number.isNaN(dueMs) && nowMs <= dueMs;

@@ -141,12 +141,13 @@ export function AddFacultyPanel({
   const [customGraceDate, setCustomGraceDate] = useState<string>("");
   const [customPerScheduleDeadlines, setCustomPerScheduleDeadlines] = useState<Record<string, { date: string; time: string }>>({});
   const [hasAppliedOptions, setHasAppliedOptions] = useState(false);
+  const [hasUserSelectedOption, setHasUserSelectedOption] = useState(false);
 
   const hasPastDeadlines = Boolean(onboardingData?.hasPastDeadlines);
   const hasAnyScheduleHistory = Boolean(onboardingData?.hasAnyScheduleHistory);
 
   useEffect(() => {
-    if (onboardingData && !hasAppliedOptions) {
+    if (onboardingData && !hasAppliedOptions && !hasUserSelectedOption) {
       if (!onboardingData.hasAnyScheduleHistory) {
         setSelectedOption("standard");
       } else if (onboardingData.hasPastDeadlines) {
@@ -155,19 +156,23 @@ export function AddFacultyPanel({
         setSelectedOption("standard");
       }
     }
-  }, [onboardingData, hasAppliedOptions]);
+  }, [onboardingData, hasAppliedOptions, hasUserSelectedOption]);
 
   useEffect(() => {
     if (!isOpen) {
       setHasAppliedOptions(false);
+      setHasUserSelectedOption(false);
       setInternalStep("form");
+      setPendingFormInput(null);
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (createSuccess) {
       setHasAppliedOptions(false);
+      setHasUserSelectedOption(false);
       setInternalStep("form");
+      setPendingFormInput(null);
     }
   }, [createSuccess]);
 
@@ -478,13 +483,58 @@ export function AddFacultyPanel({
 
   const handleApplyOptions = () => {
     setHasAppliedOptions(true);
+
+    const currentValues = form.getValues();
+    const isFormFullyComplete = Boolean(
+      currentValues.firstName?.trim() &&
+      currentValues.lastName?.trim() &&
+      currentValues.programId?.trim() &&
+      currentValues.email?.trim() &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentValues.email.trim())
+    );
+
+    // Only submit immediately if the user already submitted the form and all required fields (including programId) are present!
+    if (pendingFormInput && isFormFullyComplete) {
+      let gracePeriodIso = "";
+      if (selectedOption === "grace_period") {
+        let targetDate = customGraceDate;
+        if (!targetDate) {
+          const d = new Date();
+          d.setDate(d.getDate() + (gracePresetDays || 7));
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          targetDate = `${yyyy}-${mm}-${dd}`;
+        }
+        gracePeriodIso = `${targetDate}T23:59:59+08:00`;
+      }
+
+      const customDeadlinesFormatted: Record<string, string> = {};
+      if (selectedOption === "custom_deadlines") {
+        Object.entries(customPerScheduleDeadlines).forEach(([code, val]) => {
+          if (val.date) {
+            customDeadlinesFormatted[code] = `${val.date}T${val.time || "23:59"}:00+08:00`;
+          }
+        });
+      }
+
+      onAddFaculty(currentValues, {
+        onboardingOption: selectedOption,
+        gracePeriodIso: gracePeriodIso || undefined,
+        customDeadlines: selectedOption === "custom_deadlines" ? customDeadlinesFormatted : undefined,
+      });
+      return;
+    }
+
     setStep("form");
 
-    // Direct focus to input field for name (or email if name already provided)
+    // Direct focus to the first missing field
     setTimeout(() => {
-      const currentValues = form.getValues();
       if (!currentValues.firstName?.trim()) {
         firstNameInputRef.current?.focus();
+      } else if (!currentValues.programId?.trim()) {
+        const progEl = document.getElementById("programId");
+        progEl?.focus();
       } else if (!currentValues.email?.trim()) {
         emailInputRef.current?.focus();
       } else {
@@ -521,7 +571,10 @@ export function AddFacultyPanel({
             <div className="space-y-3">
               {/* Option A: Give Extra Time */}
               <div
-                onClick={() => setSelectedOption("grace_period")}
+                onClick={() => {
+                  setSelectedOption("grace_period");
+                  setHasUserSelectedOption(true);
+                }}
                 className={`rounded-xl border p-4 transition-all space-y-3 cursor-pointer ${
                   selectedOption === "grace_period"
                     ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
@@ -533,7 +586,10 @@ export function AddFacultyPanel({
                     <input
                       type="radio"
                       checked={selectedOption === "grace_period"}
-                      onChange={() => setSelectedOption("grace_period")}
+                      onChange={() => {
+                        setSelectedOption("grace_period");
+                        setHasUserSelectedOption(true);
+                      }}
                       className="mt-1 accent-amber-500 cursor-pointer"
                     />
                     <div>
@@ -573,6 +629,7 @@ export function AddFacultyPanel({
                             const mm = String(d.getMonth() + 1).padStart(2, "0");
                             const dd = String(d.getDate()).padStart(2, "0");
                             setCustomGraceDate(`${yyyy}-${mm}-${dd}`);
+                            setHasUserSelectedOption(true);
                           }}
                           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                             gracePresetDays === days
@@ -592,6 +649,7 @@ export function AddFacultyPanel({
                           onChange={(e) => {
                             setCustomGraceDate(e.target.value);
                             setGracePresetDays(0);
+                            setHasUserSelectedOption(true);
                           }}
                           className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100"
                         />
@@ -606,7 +664,10 @@ export function AddFacultyPanel({
 
               {/* Option B: Follow Standard Schedule */}
               <div
-                onClick={() => setSelectedOption("standard")}
+                onClick={() => {
+                  setSelectedOption("standard");
+                  setHasUserSelectedOption(true);
+                }}
                 className={`rounded-xl border p-4 transition-all cursor-pointer ${
                   selectedOption === "standard"
                     ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
@@ -617,7 +678,10 @@ export function AddFacultyPanel({
                   <input
                     type="radio"
                     checked={selectedOption === "standard"}
-                    onChange={() => setSelectedOption("standard")}
+                    onChange={() => {
+                      setSelectedOption("standard");
+                      setHasUserSelectedOption(true);
+                    }}
                     className="mt-1 accent-amber-500 cursor-pointer"
                   />
                   <div>
@@ -872,8 +936,7 @@ export function AddFacultyPanel({
                 <button
                   type="button"
                   onClick={() => {
-                    const values = form.getValues();
-                    setPendingFormInput(values);
+                    setPendingFormInput(null);
                     setStep("onboarding");
                   }}
                   className="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"

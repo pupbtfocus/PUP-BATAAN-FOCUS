@@ -988,6 +988,24 @@ export async function getFacultyPersonalDeadline(
           }
         }
 
+        // Standard registrations must follow global schedule and should NEVER trigger a personal deadline
+        const remarksText = typeof s.remarks === "string" ? s.remarks : "";
+        const origin = parseSubmissionOrigin(remarksText);
+        const isPersonalOverride =
+          origin === "NEW_FACULTY_GRACE" ||
+          origin === "NEW_FACULTY_CUSTOM" ||
+          origin === "EXTENDED" ||
+          (remarksText.length > 0 &&
+            !remarksText.includes("NEW_FACULTY_STANDARD") &&
+            (remarksText.includes("NEW_FACULTY_GRACE") ||
+              remarksText.includes("NEW_FACULTY_CUSTOM") ||
+              remarksText.includes("Extra time granted") ||
+              remarksText.includes("EXTENDED")));
+
+        if (!isPersonalOverride) {
+          continue;
+        }
+
         if (!dueAtStr) continue;
 
         let dueMs = new Date(dueAtStr).getTime();

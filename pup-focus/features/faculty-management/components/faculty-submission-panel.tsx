@@ -1498,6 +1498,17 @@ function FacultySubmissionPanelContent({
     Boolean(submissionWindow?.isGracePeriod) ||
     Boolean(submissionWindow?.isPersonalDeadline) ||
     displayedRequirementStatuses.some((r) => {
+      const isPersonalOverride =
+        Boolean((r as any).isGracePeriod) ||
+        Boolean((r as any).isPersonalDeadline) ||
+        Boolean((r as any).isExtended) ||
+        (Boolean((r as any).remarks) &&
+          !(r as any).remarks.includes("NEW_FACULTY_STANDARD") &&
+          ((r as any).remarks.includes("NEW_FACULTY_GRACE") ||
+            (r as any).remarks.includes("NEW_FACULTY_CUSTOM") ||
+            (r as any).remarks.includes("Extra time granted") ||
+            (r as any).remarks.includes("EXTENDED")));
+      if (!isPersonalOverride) return false;
       const due = (r as any).due_at || (r as any).customDueDate;
       if (!due) return false;
       const dueIso = due.includes("T") ? due : `${due}T23:59:59+08:00`;
