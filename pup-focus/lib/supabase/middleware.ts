@@ -9,25 +9,7 @@ export type MiddlewareResult = {
   supabase: SupabaseClient | null;
 };
 
-function isInvalidRefreshTokenError(error: unknown) {
-  if (!error || typeof error !== "object") {
-    return false;
-  }
-
-  const authError = error as {
-    code?: string;
-    status?: number;
-    message?: string;
-    __isAuthError?: boolean;
-  };
-
-  return (
-    authError.__isAuthError === true &&
-    (authError.code === "refresh_token_not_found" ||
-      authError.message?.includes("Invalid Refresh Token") ||
-      authError.status === 400)
-  );
-}
+import { isInvalidRefreshTokenError } from "@/lib/supabase/auth-errors";
 
 function clearSupabaseCookies(request: NextRequest, response: NextResponse) {
   request.cookies.getAll().forEach((cookie) => {
@@ -36,7 +18,11 @@ function clearSupabaseCookies(request: NextRequest, response: NextResponse) {
     }
 
     request.cookies.delete(cookie.name);
-    response.cookies.delete(cookie.name);
+    response.cookies.set(cookie.name, "", {
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
   });
 }
 
