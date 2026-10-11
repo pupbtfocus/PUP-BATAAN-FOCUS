@@ -93,7 +93,7 @@ function createRedirectResponse(
 
   if (baseResponse) {
     baseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+      redirectResponse.cookies.set(cookie);
     });
   }
 
