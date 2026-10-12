@@ -5,40 +5,54 @@ import { setActiveSession } from "@/lib/auth/session-tracker";
 
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.json().catch(() => ({}));
     let user: any = null;
 
-    // 1. Try server cookies
-    try {
-      const userClient = await createServerSupabaseClient();
-      const { data: cookieUserData } = await userClient.auth.getUser();
-      if (cookieUserData?.user) {
-        user = cookieUserData.user;
+    // 1. Try Bearer header
+    const authHeader = request.headers.get("authorization");
+    const bearerToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : null;
+
+    if (bearerToken) {
+      const serviceClient = getServiceRoleClient();
+      const { data: tokenUserData } = await serviceClient.auth.getUser(bearerToken);
+      if (tokenUserData?.user) {
+        user = tokenUserData.user;
       }
-    } catch {
-      // Fallback
     }
 
-    // 2. Try Bearer header
+    // 2. Try server cookies
     if (!user) {
-      const authHeader = request.headers.get("authorization");
-      const bearerToken = authHeader?.startsWith("Bearer ")
-        ? authHeader.slice(7).trim()
-        : null;
-
-      if (bearerToken) {
-        const serviceClient = getServiceRoleClient();
-        const { data: tokenUserData } = await serviceClient.auth.getUser(bearerToken);
-        if (tokenUserData?.user) {
-          user = tokenUserData.user;
+      try {
+        const userClient = await createServerSupabaseClient();
+        const { data: cookieUserData } = await userClient.auth.getUser();
+        if (cookieUserData?.user) {
+          user = cookieUserData.user;
         }
+      } catch {
+        // Fallback
+      }
+    }
+
+    // 3. Try body.userId with service role client verification
+    if (!user && typeof body.userId === "string" && body.userId.trim()) {
+      try {
+        const serviceClient = getServiceRoleClient();
+        const { data: directUser } = await serviceClient.auth.admin.getUserById(
+          body.userId.trim(),
+        );
+        if (directUser?.user) {
+          user = directUser.user;
+        }
+      } catch {
+        // Fallback
       }
     }
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const body = await request.json().catch(() => ({}));
     const sessionId =
       typeof body.sessionId === "string" && body.sessionId.trim().length > 0
         ? body.sessionId.trim()

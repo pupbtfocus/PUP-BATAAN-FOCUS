@@ -13,6 +13,7 @@ export function SingleSessionEnforcer() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const checkingRef = useRef(false);
   const conflictDetectedRef = useRef(false);
+  const mySessionIdRef = useRef<string | null>(null);
 
   const isPublicAuthPage =
     !pathname ||
@@ -28,10 +29,15 @@ export function SingleSessionEnforcer() {
 
     try {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("pup_focus_session_id");
+        // Only clear localStorage if it still matches THIS tab's superseded session ID
+        const currentStored = localStorage.getItem("pup_focus_session_id");
+        if (!currentStored || currentStored === mySessionIdRef.current) {
+          localStorage.removeItem("pup_focus_session_id");
+          document.cookie =
+            "pup_focus_session_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
         sessionStorage.removeItem("pup_focus_session_id");
-        document.cookie =
-          "pup_focus_session_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        sessionStorage.setItem("pup_focus_logged_out", "true");
       }
     } catch {
       // Ignore storage errors
@@ -44,14 +50,16 @@ export function SingleSessionEnforcer() {
     }
 
     try {
+      // SCOPE: 'local' is CRITICAL so we only sign out this browser instance
+      // without revoking the active session token for the other user on the server!
       const supabase = createClient();
-      await supabase.auth.signOut().catch(() => null);
+      await supabase.auth.signOut({ scope: "local" }).catch(() => null);
     } catch {
       // Ignore auth error
     }
 
     if (typeof window !== "undefined") {
-      window.location.replace("/");
+      window.location.replace("/login?reason=concurrent_logout");
     }
   }, [isLoggingOut]);
 
@@ -63,35 +71,61 @@ export function SingleSessionEnforcer() {
     checkingRef.current = true;
 
     try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
+      const token = sessionData?.session?.access_token;
+
+      if (!user) {
+        // Not signed in; nothing to verify
+        return;
+      }
+
       let localSessionId =
         typeof window !== "undefined"
-          ? localStorage.getItem("pup_focus_session_id")
+          ? sessionStorage.getItem("pup_focus_session_id") ||
+            localStorage.getItem("pup_focus_session_id")
           : null;
 
-      // If user is authenticated in Supabase but lacks a local sessionId, claim one
-      if (!localSessionId) {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getSession();
-        if (data?.session?.user) {
+      // Bind this client to its initial session ID
+      if (!mySessionIdRef.current) {
+        if (localSessionId) {
+          mySessionIdRef.current = localSessionId;
+          sessionStorage.setItem("pup_focus_session_id", localSessionId);
+        } else {
+          // If no local session ID exists yet, create and register one
           const newId = crypto.randomUUID();
+          mySessionIdRef.current = newId;
           localStorage.setItem("pup_focus_session_id", newId);
-          localSessionId = newId;
+          sessionStorage.setItem("pup_focus_session_id", newId);
+          document.cookie = `pup_focus_session_id=${newId}; path=/; max-age=604800; SameSite=Lax`;
 
           await fetch("/api/auth/session/register", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: newId }),
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+            body: JSON.stringify({ sessionId: newId, userId: user.id }),
           }).catch(() => null);
-        } else {
-          // Unauthenticated, nothing to enforce
           return;
         }
       }
 
+      const activeClientSession = mySessionIdRef.current || localSessionId;
+
       const res = await fetch("/api/auth/session/verify", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: localSessionId }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          sessionId: activeClientSession,
+          userId: user.id,
+        }),
       });
 
       if (!res.ok) {
