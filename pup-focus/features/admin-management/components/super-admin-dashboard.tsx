@@ -1171,47 +1171,36 @@ export function SuperAdminDashboard({
 
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const email = sessionData?.session?.user?.email || settingsEmail;
 
-      const currentEmail = user?.email ?? "";
-      if (!currentEmail) {
-        setPasswordError("Unable to resolve current account email.");
-        setIsSavingPassword(false);
-        return;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const { error: oldPasswordError } =
-        await supabase.auth.signInWithPassword({
-          email: currentEmail,
-          password: settingsOldPassword,
-        });
-
-      if (oldPasswordError) {
-        setPasswordError("Old password is incorrect.");
-        setIsSavingPassword(false);
-        return;
-      }
-
-      const response = await fetch("/api/super-admin/account", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers,
         body: JSON.stringify({
           oldPassword: settingsOldPassword,
-          password: settingsPassword,
+          newPassword: settingsPassword,
+          email,
         }),
       });
 
-      const data = (await response.json()) as SuperAdminAccountResult;
+      const data = await response.json();
 
       if (!response.ok) {
         setPasswordError(data.error ?? "Failed to update password");
         setIsSavingPassword(false);
         return;
       }
+
+      await supabase.auth.refreshSession().catch(() => null);
 
       setPasswordSuccess("Password updated successfully.");
       setSettingsOldPassword("");

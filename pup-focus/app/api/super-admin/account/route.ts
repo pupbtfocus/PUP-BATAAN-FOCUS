@@ -123,10 +123,9 @@ export async function PATCH(request: NextRequest) {
 
     if (!wantsAccountUpdate) {
       const supabase = getServiceRoleClient();
-      const verifier = await createServerSupabaseClient();
 
       const { error: oldPasswordError } =
-        await verifier.auth.signInWithPassword({
+        await supabase.auth.signInWithPassword({
           email: user.email ?? "",
           password: payload.oldPassword!,
         });
@@ -193,9 +192,8 @@ export async function PATCH(request: NextRequest) {
       "";
 
     if (wantsPasswordUpdate) {
-      const verifier = await createServerSupabaseClient();
       const { error: oldPasswordError } =
-        await verifier.auth.signInWithPassword({
+        await supabase.auth.signInWithPassword({
           email: previousEmail,
           password: payload.oldPassword!,
         });
