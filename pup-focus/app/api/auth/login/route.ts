@@ -33,11 +33,28 @@ export async function POST(request: NextRequest) {
     const userClient = await createServerSupabaseClient();
     await userClient.auth.setSession(signInData.session).catch(() => null);
 
-    return NextResponse.json({
+    // Register active single-session ID
+    const sessionId =
+      (typeof body.sessionId === "string" && body.sessionId.trim()) ||
+      crypto.randomUUID();
+    const { setActiveSession } = await import("@/lib/auth/session-tracker");
+    await setActiveSession(signInData.user.id, sessionId);
+
+    const response = NextResponse.json({
       success: true,
       user: signInData.user,
       session: signInData.session,
+      sessionId,
     });
+
+    response.cookies.set("pup_focus_session_id", sessionId, {
+      path: "/",
+      sameSite: "lax",
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
   } catch (err) {
     return NextResponse.json(
       {
