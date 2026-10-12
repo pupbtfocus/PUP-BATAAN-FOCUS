@@ -320,87 +320,58 @@ export default function Home() {
     const supabase = createClient();
     console.log("[Auth] Signing in with password for:", normalizedEmail, { hasCaptcha: Boolean(token) });
 
-    const signIn = async (withoutCaptcha = false) => {
-      try {
-        return await supabase.auth.signInWithPassword({
-          email: normalizedEmail,
-          password: currentPassword,
-          options: !withoutCaptcha && token ? { captchaToken: token } : undefined,
-        });
-      } catch (err: unknown) {
-        const isFetchError =
-          err instanceof TypeError ||
-          (err instanceof Error &&
-            (err.message.toLowerCase().includes("fetch") ||
-              err.message.toLowerCase().includes("network")));
-
-        if (isFetchError) {
-          try {
-            const res = await fetch("/api/auth/login", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                email: normalizedEmail,
-                password: currentPassword,
-                captchaToken: !withoutCaptcha && token ? token : undefined,
-              }),
-            });
-            const json = await res.json().catch(() => ({}));
-            if (!res.ok) {
-              return {
-                data: { user: null, session: null },
-                error: new Error(json.error || "Failed to sign in. Please verify your credentials."),
-              };
-            }
-            if (json.session) {
-              await supabase.auth.setSession(json.session).catch(() => null);
-            }
-            return {
-              data: { user: json.user, session: json.session },
-              error: null,
-            };
-          } catch {
-            return {
-              data: { user: null, session: null },
-              error: new Error("Unable to reach authentication service. Please check your network connection."),
-            };
-          }
-        }
-        throw err;
-      }
-    };
-
     try {
-      let { data: signInData, error: signInError } = await signIn();
+      let signInData: { user: any; session: any } | null = null;
+      let signInError: any = null;
 
-      const isCaptchaError = Boolean(signInError?.message?.toLowerCase().includes("captcha"));
-      if (signInError && !isCaptchaError && (normalizedEmail === SUPER_ADMIN_EMAIL || isQaFaculty(normalizedEmail))) {
-        const isSuperAdmin = normalizedEmail === SUPER_ADMIN_EMAIL;
-        console.warn(`[Auth] ${isSuperAdmin ? "Super admin" : "QA faculty"} login failed, attempting bootstrap:`, signInError.message);
-        const endpoint = isSuperAdmin ? "/api/bootstrap/super-admin" : "/api/bootstrap/qa-faculty";
-        const bootstrapResponse = await fetch(endpoint, {
+      try {
+      const res = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password: currentPassword,
+        options: token ? { captchaToken: token } : undefined,
+      });
+      signInData = res.data;
+      signInError = res.error;
+    } catch (err: unknown) {
+      signInError = err instanceof Error ? err : new Error(String(err));
+    }
+
+    const rawErrorMsg = (signInError?.message || "").toLowerCase();
+    const isCaptchaIssue =
+      rawErrorMsg.includes("captcha") ||
+      rawErrorMsg.includes("disallowed");
+    const isFetchIssue =
+      rawErrorMsg.includes("fetch") ||
+      rawErrorMsg.includes("network") ||
+      rawErrorMsg.includes("failed to fetch");
+
+    // If client-side Supabase failed due to Captcha token issues (common on mobile) or network drops,
+    // seamlessly fall back to server-side authentication route
+    if (signInError && (isCaptchaIssue || isFetchIssue)) {
+      console.warn("[Auth] Client-side auth issue, attempting server-side fallback:", signInError.message);
+      try {
+        const res = await fetch("/api/auth/login", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            password: currentPassword,
+          }),
         });
-
-        if (!bootstrapResponse.ok) {
-          try {
-            const body = (await bootstrapResponse.json()) as { error?: string };
-            const errText = body.error ?? `Unable to initialize the ${isSuperAdmin ? "super admin" : "QA faculty"} account.`;
-            console.error("[Auth] Bootstrap failed:", errText);
-            setError(errText);
-            setNotice({ type: "error", message: errText });
-          } catch {
-            setError(`Unable to initialize the ${isSuperAdmin ? "super admin" : "QA faculty"} account.`);
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json.session && json.user) {
+          if (json.session) {
+            await supabase.auth.setSession(json.session).catch(() => null);
           }
-          turnstileRef.current?.reset();
-          setCaptchaToken(null);
-          pendingCredentialsRef.current = null;
-          setIsSubmitting(false);
-          return;
+          signInData = { user: json.user, session: json.session };
+          signInError = null;
+        } else {
+          signInError = new Error(json.error || "Invalid login credentials.");
         }
-
-        ({ data: signInData, error: signInError } = await signIn(true));
+      } catch (serverErr) {
+        console.error("[Auth] Server-side fallback failed:", serverErr);
       }
+    }
 
       if (signInError || !signInData?.user) {
         const rawMessage = signInError?.message ?? "Sign in failed";

@@ -185,7 +185,7 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
             <div className="mt-5 w-full">
               <Button
                 type="button"
-                className="h-11 sm:h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2"
+                className="h-11 sm:h-12 w-full rounded-2xl bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] font-extrabold text-white tracking-widest uppercase text-xs transition-all duration-300 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2"
                 onClick={onClose}
               >
                 <AppIcon icon={Refresh} size="sm" color="inherit" />
