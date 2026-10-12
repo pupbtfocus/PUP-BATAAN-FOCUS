@@ -361,14 +361,21 @@ export async function POST(request: NextRequest) {
     // Validate requirement code against database templates or defaults
     const { data: matchedTpl } = await supabaseAdmin
       .from("requirement_templates")
-      .select("id, code, is_active")
-      .eq("code", payload.requirementCode)
+      .select("id, code, is_active, max_size_mb, allowed_formats")
+      .ilike("code", payload.requirementCode)
       .maybeSingle();
 
     if (matchedTpl) {
       if (!matchedTpl.is_active) {
         return NextResponse.json(
           { error: "This requirement is currently inactive or hidden from submissions." },
+          { status: 400 },
+        );
+      }
+      const maxMb = matchedTpl.max_size_mb ? Number(matchedTpl.max_size_mb) : 50;
+      if (fileSize > 0 && fileSize > maxMb * 1024 * 1024) {
+        return NextResponse.json(
+          { error: `File size exceeds the configured limit of ${maxMb}MB for this requirement.` },
           { status: 400 },
         );
       }

@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const { data: template } = await supabaseAdmin
       .from("requirement_templates")
       .select("max_size_mb, is_active")
-      .eq("code", requirementCode)
+      .ilike("code", requirementCode)
       .maybeSingle();
 
     if (template && !template.is_active) {
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const maxAllowedMb = template?.max_size_mb || 50;
+    const maxAllowedMb = template?.max_size_mb ? Number(template.max_size_mb) : 50;
     if (fileSize > 0 && fileSize > maxAllowedMb * 1024 * 1024) {
       return NextResponse.json(
         {

@@ -186,8 +186,11 @@ export function FacultyRequirementsModule({
         code: t.code,
         title: t.title,
         is_mandatory: t.is_mandatory !== false,
-        maxSizeMb: t.max_size_mb || 10,
-        allowedFormats: t.allowed_formats || ["PDF", "DOCX", "XLSX"],
+        maxSizeMb: t.max_size_mb ? Number(t.max_size_mb) : 50,
+        allowedFormats:
+          Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0
+            ? t.allowed_formats
+            : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
       }));
     }
     return DEFAULT_REQUIREMENTS.map((code) => ({
@@ -195,7 +198,7 @@ export function FacultyRequirementsModule({
       title: REQUIREMENT_LABEL[code] ?? code,
       is_mandatory: true,
       maxSizeMb: 10,
-      allowedFormats: ["PDF", "DOCX", "XLSX"],
+      allowedFormats: ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
     }));
   }, [requirementTemplates]);
 
@@ -1025,9 +1028,9 @@ export function FacultyRequirementsModule({
                 <DocumentUploadZone
                   selectedFile={selectedFile}
                   onFileSelect={setSelectedFile}
-                  maxSizeMb={selectedTemplate?.maxSizeMb || 10}
+                  maxSizeMb={selectedTemplate?.maxSizeMb || 50}
                   allowedFormats={
-                    selectedTemplate?.allowedFormats || ["PDF", "DOCX", "XLSX"]
+                    selectedTemplate?.allowedFormats || ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"]
                   }
                   currentStatus={
                     isRevisionModal || selectedReqStatus?.status === "Rejected"

@@ -1052,6 +1052,34 @@ function FacultySubmissionPanelContent({
     return () => window.removeEventListener("pup-focus-select-view", handleCustomSelectView);
   }, []);
   useEffect(() => {
+    fetch("/api/admin/requirement-templates?active=true", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.templates)
+            ? data.templates
+            : Array.isArray(data?.requirementTemplates)
+              ? data.requirementTemplates
+              : [];
+        if (list.length > 0) {
+          setRequirementTemplates(
+            list.map((t: any) => ({
+              code: t.code,
+              title: t.title,
+              is_mandatory: t.is_mandatory !== false,
+              max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 50,
+              allowed_formats:
+                Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0
+                  ? t.allowed_formats
+                  : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
+            })),
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
     if (submissionWindow?.academicYear && submissionWindow?.semester) {
       void fetchStatuses(
         submissionWindow.academicYear,
@@ -1212,8 +1240,8 @@ function FacultySubmissionPanelContent({
       code,
       title: REQUIREMENT_LABEL[code] || code,
       is_mandatory: true,
-      max_size_mb: 10,
-      allowed_formats: ["PDF", "DOCX", "XLSX"],
+      max_size_mb: 50,
+      allowed_formats: ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
     }));
   }, [requirementTemplates]);
 
@@ -1800,6 +1828,34 @@ function FacultySubmissionPanelContent({
     setDirectUploadFile(null);
     setDirectUploadRemarks("");
     setDirectUploadMessage(null);
+
+    // Refresh active templates immediately so any recent change in admin is active
+    fetch("/api/admin/requirement-templates?active=true", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.templates)
+            ? data.templates
+            : Array.isArray(data?.requirementTemplates)
+              ? data.requirementTemplates
+              : [];
+        if (list.length > 0) {
+          setRequirementTemplates(
+            list.map((t: any) => ({
+              code: t.code,
+              title: t.title,
+              is_mandatory: t.is_mandatory !== false,
+              max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 50,
+              allowed_formats:
+                Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0
+                  ? t.allowed_formats
+                  : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
+            })),
+          );
+        }
+      })
+      .catch(() => {});
   }
   function closeDirectUploadModal() {
     if (isUploadingDirect) return;
@@ -1818,8 +1874,22 @@ function FacultySubmissionPanelContent({
       setDirectUploadMessage("Please select a file to submit.");
       return;
     }
-    if (directUploadFile.size > 10 * 1024 * 1024) {
-      setDirectUploadMessage("File size exceeds 10MB limit.");
+    const reqCodeClean = (selectedRequirementForUpload || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[-_\s]+/g, "");
+    const currentTemplate =
+      activeTemplates.find((t) => t.code === selectedRequirementForUpload) ||
+      activeTemplates.find((t) => t.code.toLowerCase().trim() === (selectedRequirementForUpload || "").toLowerCase().trim()) ||
+      activeTemplates.find((t) => t.code.toLowerCase().trim().replace(/[-_\s]+/g, "") === reqCodeClean) ||
+      activeTemplates.find((t) => t.title.toLowerCase().trim() === (selectedRequirementForUpload || "").toLowerCase().trim()) ||
+      activeTemplates.find((t) => t.title.toLowerCase().trim().replace(/[-_\s]+/g, "") === reqCodeClean);
+
+    const maxAllowedMb = currentTemplate?.max_size_mb
+      ? Number(currentTemplate.max_size_mb)
+      : 50;
+    if (directUploadFile.size > maxAllowedMb * 1024 * 1024) {
+      setDirectUploadMessage(`File size exceeds ${maxAllowedMb}MB limit.`);
       return;
     }
     setIsUploadingDirect(true);
@@ -3429,6 +3499,15 @@ function FacultySubmissionPanelContent({
                                             • Due: {formatDeadlineDate(req.effectiveDeadline)}
                                           </span>
                                         )}
+                                        {(() => {
+                                          const tpl = activeTemplates.find((t) => t.code === req.code);
+                                          const maxMb = tpl?.max_size_mb ? Number(tpl.max_size_mb) : 10;
+                                          return (
+                                            <span className="text-slate-500 dark:text-slate-400 font-medium">
+                                              • Max {maxMb} MB
+                                            </span>
+                                          );
+                                        })()}
                                       </div>
                                       {/* Inline Revision Note */}
                                       {req.status === "Rejected" && (
@@ -3703,13 +3782,35 @@ function FacultySubmissionPanelContent({
                       })()}
 
                       <div>
-                        <DocumentUploadZone
-                          selectedFile={directUploadFile}
-                          onFileSelect={setDirectUploadFile}
-                          isUploading={isUploadingDirect}
-                          uploadProgress={directUploadPercent}
-                          maxSizeMb={10}
-                          allowedFormats={["PDF", "DOCX", "XLSX", "JPG", "PNG"]}
+                        {(() => {
+                          const reqCodeClean = (selectedRequirementForUpload || "")
+                            .toLowerCase()
+                            .trim()
+                            .replace(/[-_\s]+/g, "");
+                          const currentTemplate =
+                            activeTemplates.find((t) => t.code === selectedRequirementForUpload) ||
+                            activeTemplates.find((t) => t.code.toLowerCase().trim() === (selectedRequirementForUpload || "").toLowerCase().trim()) ||
+                            activeTemplates.find((t) => t.code.toLowerCase().trim().replace(/[-_\s]+/g, "") === reqCodeClean) ||
+                            activeTemplates.find((t) => t.title.toLowerCase().trim() === (selectedRequirementForUpload || "").toLowerCase().trim()) ||
+                            activeTemplates.find((t) => t.title.toLowerCase().trim().replace(/[-_\s]+/g, "") === reqCodeClean);
+
+                          const maxSizeMb = currentTemplate?.max_size_mb
+                            ? Number(currentTemplate.max_size_mb)
+                            : 50;
+                          const allowedFormats =
+                            Array.isArray(currentTemplate?.allowed_formats) &&
+                            currentTemplate.allowed_formats.length > 0
+                              ? currentTemplate.allowed_formats
+                              : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"];
+
+                          return (
+                            <DocumentUploadZone
+                              selectedFile={directUploadFile}
+                              onFileSelect={setDirectUploadFile}
+                              isUploading={isUploadingDirect}
+                              uploadProgress={directUploadPercent}
+                              maxSizeMb={maxSizeMb}
+                              allowedFormats={allowedFormats}
                           currentStatus={
                             isRevisionUpload || (selectedRequirementForUpload && getRequirementStatus(selectedRequirementForUpload) === "Rejected")
                               ? undefined
@@ -3727,7 +3828,9 @@ function FacultySubmissionPanelContent({
                                 : null)
                           }
                         />
-                      </div>
+                      );
+                    })()}
+                  </div>
 
                       <div>
                         <label
