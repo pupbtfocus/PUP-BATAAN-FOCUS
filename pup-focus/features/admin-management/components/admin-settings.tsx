@@ -1489,11 +1489,7 @@ export function AdminSettings({
             <button
               type="button"
               onClick={() => setFeedbackModal(null)}
-              className={
-                feedbackModal.type === "success"
-                  ? "w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
-                  : "w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
-              }
+              className="w-full bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] text-white font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
             >
               {feedbackModal.type === "success" ? "Done" : "Dismiss"}
             </button>
