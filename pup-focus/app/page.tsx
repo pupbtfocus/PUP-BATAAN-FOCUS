@@ -196,22 +196,31 @@ export default function Home() {
         return;
       }
 
+      // If user was explicitly logged out due to concurrent session, do not auto-redirect
+      if (
+        typeof window !== "undefined" &&
+        sessionStorage.getItem("pup_focus_logged_out") === "true"
+      ) {
+        return;
+      }
+
       // If active session was claimed by another login, clear credentials and stay on login page
       const localSessionId =
         typeof window !== "undefined"
-          ? localStorage.getItem("pup_focus_session_id")
+          ? sessionStorage.getItem("pup_focus_session_id") ||
+            localStorage.getItem("pup_focus_session_id")
           : null;
       if (localSessionId) {
         try {
           const verifyRes = await fetch("/api/auth/session/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: localSessionId }),
+            body: JSON.stringify({ sessionId: localSessionId, userId: user.id }),
           });
           const verifyData = await verifyRes.json();
           if (verifyData && verifyData.valid === false) {
-            await supabase.auth.signOut().catch(() => null);
-            localStorage.removeItem("pup_focus_session_id");
+            await supabase.auth.signOut({ scope: "local" }).catch(() => null);
+            sessionStorage.removeItem("pup_focus_session_id");
             return;
           }
         } catch {
@@ -508,11 +517,22 @@ export default function Home() {
       const newSessionId = crypto.randomUUID();
       try {
         localStorage.setItem("pup_focus_session_id", newSessionId);
+        sessionStorage.setItem("pup_focus_session_id", newSessionId);
+        sessionStorage.removeItem("pup_focus_logged_out");
         document.cookie = `pup_focus_session_id=${newSessionId}; path=/; max-age=604800; SameSite=Lax`;
+
+        const accessToken = signInData?.session?.access_token;
         await fetch("/api/auth/session/register", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId: newSessionId }),
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            sessionId: newSessionId,
+            userId: user.id,
+          }),
         }).catch((e) => console.warn("[Auth] Session register error:", e));
       } catch (storageErr) {
         console.warn("[Auth] Could not register active session ID:", storageErr);
