@@ -299,8 +299,8 @@ export async function GET(request: NextRequest) {
           code: t.code,
           title: t.title,
           is_mandatory: t.is_mandatory,
-          max_size_mb: t.max_size_mb || 5,
-          allowed_formats: t.allowed_formats || ["PDF"],
+          max_size_mb: t.max_size_mb ? Number(t.max_size_mb) : 10,
+          allowed_formats: Array.isArray(t.allowed_formats) && t.allowed_formats.length > 0 ? t.allowed_formats : ["PDF", "DOCX", "XLSX", "PNG", "JPG", "ZIP"],
         }));
       }
     } catch {
