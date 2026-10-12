@@ -1167,6 +1167,11 @@ export function SuperAdminDashboard({
       return;
     }
 
+    if (settingsOldPassword === settingsPassword) {
+      setPasswordError("New password cannot be the same as your current password.");
+      return;
+    }
+
     setIsSavingPassword(true);
 
     try {
@@ -1200,7 +1205,11 @@ export function SuperAdminDashboard({
         return;
       }
 
-      await supabase.auth.refreshSession().catch(() => null);
+      if (data.session) {
+        await supabase.auth.setSession(data.session).catch(() => null);
+      } else {
+        await supabase.auth.refreshSession().catch(() => null);
+      }
 
       setPasswordSuccess("Password updated successfully.");
       setSettingsOldPassword("");

@@ -597,6 +597,16 @@ export function AdminSettings({
       return;
     }
 
+    if (oldPassword === newPassword) {
+      setFeedbackModal({
+        isOpen: true,
+        title: "Same Password",
+        message: "New password cannot be the same as your current password.",
+        type: "error",
+      });
+      return;
+    }
+
     setIsChangingPassword(true);
 
     try {
@@ -627,7 +637,11 @@ export function AdminSettings({
         throw new Error(payload.error || "Failed to update password.");
       }
 
-      await supabase.auth.refreshSession().catch(() => null);
+      if (payload.session) {
+        await supabase.auth.setSession(payload.session).catch(() => null);
+      } else {
+        await supabase.auth.refreshSession().catch(() => null);
+      }
 
       setOldPassword("");
       setNewPassword("");
