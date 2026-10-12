@@ -204,33 +204,20 @@ export default function Home() {
         return;
       }
 
-      // If active session was claimed by another login, clear credentials and stay on login page
-      const localSessionId =
+      // If active session was superseded by a newer login elsewhere, clear credentials and stay on login page
+      const localLoginTime =
         typeof window !== "undefined"
-          ? sessionStorage.getItem("pup_focus_session_id") ||
-            localStorage.getItem("pup_focus_session_id")
+          ? sessionStorage.getItem("pup_focus_login_time") ||
+            localStorage.getItem("pup_focus_login_time")
           : null;
-      if (localSessionId) {
-        try {
-          const { data: sessionData } = await supabase.auth.getSession();
-          const token = sessionData?.session?.access_token;
-          const verifyRes = await fetch("/api/auth/session/verify", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            credentials: "include",
-            body: JSON.stringify({ sessionId: localSessionId, userId: user.id }),
-          });
-          const verifyData = await verifyRes.json();
-          if (verifyData && verifyData.valid === false) {
-            await supabase.auth.signOut({ scope: "local" }).catch(() => null);
-            sessionStorage.removeItem("pup_focus_session_id");
-            return;
-          }
-        } catch {
-          // On network error continue
+      if (localLoginTime && user.last_sign_in_at) {
+        const clientTime = new Date(localLoginTime).getTime();
+        const serverTime = new Date(user.last_sign_in_at).getTime();
+        if (serverTime - clientTime > 3000) {
+          await supabase.auth.signOut({ scope: "local" }).catch(() => null);
+          sessionStorage.removeItem("pup_focus_login_time");
+          localStorage.removeItem("pup_focus_login_time");
+          return;
         }
       }
 
@@ -519,29 +506,15 @@ export default function Home() {
       // Always reset all role active views/tabs so every new session starts fresh on the Dashboard
       resetDashboardNavigationState();
 
-      // Register this device as the active single session, invalidating any concurrent session elsewhere
-      const newSessionId = crypto.randomUUID();
+      // Store this session's sign-in timestamp to enforce single-session concurrency
+      const loginTime =
+        user.last_sign_in_at || new Date().toISOString();
       try {
-        localStorage.setItem("pup_focus_session_id", newSessionId);
-        sessionStorage.setItem("pup_focus_session_id", newSessionId);
+        localStorage.setItem("pup_focus_login_time", loginTime);
+        sessionStorage.setItem("pup_focus_login_time", loginTime);
         sessionStorage.removeItem("pup_focus_logged_out");
-        document.cookie = `pup_focus_session_id=${newSessionId}; path=/; max-age=604800; SameSite=Lax`;
-
-        const accessToken = signInData?.session?.access_token;
-        await fetch("/api/auth/session/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            sessionId: newSessionId,
-            userId: user.id,
-          }),
-        }).catch((e) => console.warn("[Auth] Session register error:", e));
       } catch (storageErr) {
-        console.warn("[Auth] Could not register active session ID:", storageErr);
+        console.warn("[Auth] Could not save login time:", storageErr);
       }
 
       setIsSubmitting(false);

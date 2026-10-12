@@ -1,36 +1,35 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { getActiveSession, setActiveSession } from "@/lib/auth/session-tracker";
 
 export async function POST(request: NextRequest) {
   try {
     let user: any = null;
 
-    // 1. Try server cookies
-    try {
-      const userClient = await createServerSupabaseClient();
-      const { data: cookieUserData } = await userClient.auth.getUser();
-      if (cookieUserData?.user) {
-        user = cookieUserData.user;
+    // 1. Try Bearer header
+    const authHeader = request.headers.get("authorization");
+    const bearerToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : null;
+
+    if (bearerToken) {
+      const serviceClient = getServiceRoleClient();
+      const { data: tokenUserData } = await serviceClient.auth.getUser(bearerToken);
+      if (tokenUserData?.user) {
+        user = tokenUserData.user;
       }
-    } catch {
-      // Fallback
     }
 
-    // 2. Try Bearer header
+    // 2. Try server cookies
     if (!user) {
-      const authHeader = request.headers.get("authorization");
-      const bearerToken = authHeader?.startsWith("Bearer ")
-        ? authHeader.slice(7).trim()
-        : null;
-
-      if (bearerToken) {
-        const serviceClient = getServiceRoleClient();
-        const { data: tokenUserData } = await serviceClient.auth.getUser(bearerToken);
-        if (tokenUserData?.user) {
-          user = tokenUserData.user;
+      try {
+        const userClient = await createServerSupabaseClient();
+        const { data: cookieUserData } = await userClient.auth.getUser();
+        if (cookieUserData?.user) {
+          user = cookieUserData.user;
         }
+      } catch {
+        // Fallback
       }
     }
 
@@ -40,22 +39,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const clientSessionId =
-      (typeof body.sessionId === "string" && body.sessionId.trim()) ||
-      request.cookies.get("pup_focus_session_id")?.value?.trim() ||
-      request.headers.get("x-session-id")?.trim() ||
+    const clientLoginTimeStr =
+      (typeof body.loginTime === "string" && body.loginTime.trim()) ||
       null;
 
-    const activeSessionId = await getActiveSession(user.id);
-
-    // If no active session recorded yet and client sent one, claim it
-    if (!activeSessionId && clientSessionId) {
-      await setActiveSession(user.id, clientSessionId);
-      return NextResponse.json({ valid: true });
+    // If client hasn't provided login time yet or user has no last_sign_in_at, allow
+    if (!clientLoginTimeStr || !user.last_sign_in_at) {
+      return NextResponse.json({
+        valid: true,
+        lastSignInAt: user.last_sign_in_at ?? null,
+      });
     }
 
-    // If active session exists and client has a differing session ID -> CONFLICT!
-    if (activeSessionId && clientSessionId && activeSessionId !== clientSessionId) {
+    const clientTime = new Date(clientLoginTimeStr).getTime();
+    const serverTime = new Date(user.last_sign_in_at).getTime();
+
+    // If Supabase records a sign-in timestamp newer than this client's by > 3 seconds,
+    // another login has taken place on another browser/device.
+    if (serverTime - clientTime > 3000) {
       return NextResponse.json({
         valid: false,
         reason: "concurrent_login",
@@ -63,10 +64,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ valid: true });
+    return NextResponse.json({
+      valid: true,
+      lastSignInAt: user.last_sign_in_at,
+    });
   } catch (error) {
     console.error("[SessionVerify] Error:", error);
-    // On unexpected error, do not aggressively kick user
     return NextResponse.json({ valid: true, error: true });
   }
 }
