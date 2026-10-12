@@ -1856,7 +1856,7 @@ function FacultySubmissionPanelContent({
         setDirectUploadPercent((prev) => Math.max(prev, currentProgress));
       }, 150);
 
-      let result: { submissionId: string };
+      let result: { submissionId: string } = { submissionId: "" };
       let directUploadSucceeded = false;
 
       // Try direct-to-storage signed URL upload first (bypasses Vercel/Next.js 4.5MB payload limit & HTTP 413)
