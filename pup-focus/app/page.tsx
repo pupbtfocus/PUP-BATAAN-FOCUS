@@ -212,9 +212,15 @@ export default function Home() {
           : null;
       if (localSessionId) {
         try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData?.session?.access_token;
           const verifyRes = await fetch("/api/auth/session/verify", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
             body: JSON.stringify({ sessionId: localSessionId, userId: user.id }),
           });
           const verifyData = await verifyRes.json();
