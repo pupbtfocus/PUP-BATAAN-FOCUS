@@ -19,6 +19,7 @@ import {
 } from "@/features/submissions/components/submission-skeletons";
 import { DocumentPreviewModal, type DocumentPreviewSubmission } from "@/features/submissions/components/document-preview-modal";
 import type { SubmissionWindowState } from "@/features/submissions/services/submission-window.service";
+import { createClient } from "@/lib/supabase/client";
 
 export type { SubmissionWindowState };
 
@@ -359,22 +360,87 @@ export function FacultyRequirementsModule({
 
     try {
       setIsSubmitting(true);
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-      formData.append("academicYear", form.academicYear);
-      formData.append("semester", form.semester);
-      formData.append("requirementCode", form.requirementCode);
-      formData.append("remarks", form.remarks);
+      let data: any = null;
+      let directUploadDone = false;
 
-      const response = await fetch("/api/faculty/submissions/create", {
-        method: "POST",
-        body: formData,
-      });
+      // Try direct-to-storage signed URL upload first (bypasses 4.5MB payload limit & HTTP 413)
+      try {
+        const urlRes = await fetch("/api/faculty/submissions/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: selectedFile.name,
+            requirementCode: form.requirementCode,
+            fileSize: selectedFile.size,
+          }),
+        });
 
-      const data = await response.json();
+        if (urlRes.ok) {
+          const urlData = await urlRes.json();
+          if (urlData?.path && urlData?.token) {
+            const supabase = createClient();
+            const { error: storageErr } = await supabase.storage
+              .from("faculty-submissions")
+              .uploadToSignedUrl(urlData.path, urlData.token, selectedFile, {
+                contentType: selectedFile.type || "application/octet-stream",
+              });
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to submit requirement");
+            if (storageErr) {
+              throw new Error(storageErr.message || "Failed to upload file to storage.");
+            }
+
+            const createRes = await fetch("/api/faculty/submissions/create", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                storagePath: urlData.storagePath,
+                fileName: selectedFile.name,
+                fileSize: selectedFile.size,
+                mimeType: selectedFile.type || "application/octet-stream",
+                academicYear: form.academicYear,
+                semester: form.semester,
+                requirementCode: form.requirementCode,
+                remarks: form.remarks,
+              }),
+            });
+
+            if (!createRes.ok) {
+              const errJson = await createRes.json().catch(() => ({}));
+              throw new Error(errJson.error || `Failed to submit requirement (HTTP ${createRes.status})`);
+            }
+
+            data = await createRes.json();
+            directUploadDone = true;
+          }
+        }
+      } catch (directErr) {
+        console.warn("Direct upload fallback:", directErr);
+      }
+
+      if (!directUploadDone) {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        formData.append("academicYear", form.academicYear);
+        formData.append("semester", form.semester);
+        formData.append("requirementCode", form.requirementCode);
+        formData.append("remarks", form.remarks);
+
+        const response = await fetch("/api/faculty/submissions/create", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          if (response.status === 413) {
+            throw new Error(
+              "File size exceeds server upload limit (HTTP 413 Payload Too Large). Please ensure the file is under the allowed limit.",
+            );
+          }
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Failed to submit requirement (HTTP ${response.status})`);
+        }
+
+        data = await response.json();
       }
 
       setMessage(
