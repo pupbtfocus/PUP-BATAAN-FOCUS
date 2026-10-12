@@ -58,6 +58,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (oldPassword === newPassword) {
+      return NextResponse.json(
+        { error: "New password cannot be the same as your current password." },
+        { status: 400 },
+      );
+    }
+
     // Resolve user email
     if (!user.email) {
       const { data: adminUser } = await serviceClient.auth.admin.getUserById(user.id);
@@ -113,9 +120,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Re-authenticate user with the new password so the session remains active and refreshed
+    let newSession = null;
+    let newUser = null;
+
+    for (const emailToLogin of candidateEmails) {
+      const { data: signInData, error: signInErr } = await serviceClient.auth.signInWithPassword({
+        email: emailToLogin,
+        password: newPassword,
+      });
+      if (!signInErr && signInData?.session) {
+        newSession = signInData.session;
+        newUser = signInData.user;
+        break;
+      }
+    }
+
+    if (newSession) {
+      try {
+        const userClient = await createServerSupabaseClient();
+        await userClient.auth.setSession(newSession).catch(() => null);
+      } catch {
+        // Fallback
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: "Password updated successfully.",
+      session: newSession,
+      user: newUser,
     });
   } catch (err) {
     return NextResponse.json(
