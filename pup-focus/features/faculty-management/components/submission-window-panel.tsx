@@ -272,6 +272,29 @@ export function SubmissionWindowPanel({
 
   const nowIso = getNowIsoLocal();
 
+  const activePreset = useMemo(() => {
+    if (isAlwaysOpen || closeDateTime === "2099-12-31T23:59") {
+      return "always";
+    }
+    if (!closeDateTime) {
+      return null;
+    }
+
+    const getPresetString = (days: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      d.setHours(23, 59, 0, 0);
+      return toDateTimeLocal(d);
+    };
+
+    if (closeDateTime === getPresetString(0)) return "today";
+    if (closeDateTime === getPresetString(3)) return "+3d";
+    if (closeDateTime === getPresetString(7)) return "+1w";
+    if (closeDateTime === getPresetString(14)) return "+2w";
+
+    return null;
+  }, [closeDateTime, isAlwaysOpen]);
+
   function formatDisplayDateTime(isoDateTime: string): string | null {
     if (!isoDateTime) return null;
     const parsed = new Date(isoDateTime);
@@ -1068,81 +1091,110 @@ export function SubmissionWindowPanel({
                     Configured Deadline
                   </span>
                 </div>
-              ) : isAlwaysOpen ? (
-                <div className="rounded-xl border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/30 p-3.5 flex items-center justify-between gap-3 shadow-2xs">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
-                        Always Open Option Active
-                      </p>
-                      <p className="text-[11px] text-emerald-700 dark:text-emerald-300/80">
-                        Faculty can upload compliance documents indefinitely without an expiration deadline.
-                      </p>
-                    </div>
-                  </div>
-                  <span className="shrink-0 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-600 text-white shadow-2xs">
-                    No Deadline
-                  </span>
-                </div>
               ) : (
                 <>
-                  <input
-                    id="closing-schedule"
-                    type="datetime-local"
-                    min={openDateTime || nowIso}
-                    value={closeDateTime}
-                    onChange={(e) => setCloseDateTime(e.target.value)}
-                    disabled={!isEditingSchedule || isLoading || isSaving}
-                    className={`w-full px-3.5 py-2 text-sm rounded-lg outline-none transition-colors ${
-                      isEditingSchedule
-                        ? "bg-white border-2 border-amber-500/60 text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:bg-slate-900 dark:border-amber-500/60 dark:text-slate-100 dark:focus:border-amber-400 shadow-xs"
-                        : "bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 cursor-not-allowed opacity-90"
-                    }`}
-                  />
+                  {isAlwaysOpen ? (
+                    <div className="rounded-xl border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/30 p-3.5 flex items-center justify-between gap-3 shadow-2xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                            Always Open Option Active
+                          </p>
+                          <p className="text-[11px] text-emerald-700 dark:text-emerald-300/80">
+                            Faculty can upload compliance documents indefinitely without an expiration deadline.
+                          </p>
+                        </div>
+                      </div>
+                      <span className="shrink-0 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-600 text-white shadow-2xs">
+                        No Deadline
+                      </span>
+                    </div>
+                  ) : (
+                    <input
+                      id="closing-schedule"
+                      type="datetime-local"
+                      min={openDateTime || nowIso}
+                      value={closeDateTime}
+                      onChange={(e) => {
+                        setCloseDateTime(e.target.value);
+                        setIsAlwaysOpen(false);
+                      }}
+                      disabled={!isEditingSchedule || isLoading || isSaving}
+                      className={`w-full px-3.5 py-2 text-sm rounded-lg outline-none transition-colors ${
+                        isEditingSchedule
+                          ? "bg-white border-2 border-amber-500/60 text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:bg-slate-900 dark:border-amber-500/60 dark:text-slate-100 dark:focus:border-amber-400 shadow-xs"
+                          : "bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 cursor-not-allowed opacity-90"
+                      }`}
+                    />
+                  )}
+
                   {isEditingSchedule ? (
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => {
+                          setIsAlwaysOpen(false);
                           const d = new Date();
                           d.setHours(23, 59, 0, 0);
                           setCloseDateTime(toDateTimeLocal(d));
                         }}
-                        className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
+                          activePreset === "today"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-500 shadow-2xs"
+                            : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                        }`}
                       >
                         <span>Today (End of Day)</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => {
+                          setIsAlwaysOpen(false);
                           const d = new Date();
                           d.setDate(d.getDate() + 3);
+                          d.setHours(23, 59, 0, 0);
                           setCloseDateTime(toDateTimeLocal(d));
                         }}
-                        className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
+                          activePreset === "+3d"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-500 shadow-2xs"
+                            : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                        }`}
                       >
                         <span>+3 Days</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => {
+                          setIsAlwaysOpen(false);
                           const d = new Date();
                           d.setDate(d.getDate() + 7);
+                          d.setHours(23, 59, 0, 0);
                           setCloseDateTime(toDateTimeLocal(d));
                         }}
-                        className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
+                          activePreset === "+1w"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-500 shadow-2xs"
+                            : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                        }`}
                       >
                         <span>+1 Week</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => {
+                          setIsAlwaysOpen(false);
                           const d = new Date();
                           d.setDate(d.getDate() + 14);
+                          d.setHours(23, 59, 0, 0);
                           setCloseDateTime(toDateTimeLocal(d));
                         }}
-                        className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
+                          activePreset === "+2w"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-500 shadow-2xs"
+                            : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                        }`}
                       >
                         <span>+2 Weeks</span>
                       </button>
@@ -1152,7 +1204,11 @@ export function SubmissionWindowPanel({
                           setIsAlwaysOpen(true);
                           setCloseDateTime("2099-12-31T23:59");
                         }}
-                        className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-2xs"
+                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition cursor-pointer ${
+                          activePreset === "always"
+                            ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-500 shadow-2xs"
+                            : "font-medium bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                        }`}
                       >
                         <span>Always Open</span>
                       </button>
