@@ -1856,40 +1856,105 @@ function FacultySubmissionPanelContent({
         setDirectUploadPercent((prev) => Math.max(prev, currentProgress));
       }, 150);
 
-      const result = await new Promise<{ submissionId: string }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/faculty/submissions/create");
+      let result: { submissionId: string };
+      let directUploadSucceeded = false;
 
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable && event.total > 0) {
-            const rawPercent = Math.min(95, Math.round((event.loaded / event.total) * 95));
-            setDirectUploadPercent((prev) => Math.max(prev, rawPercent));
-          }
-        };
+      // Try direct-to-storage signed URL upload first (bypasses Vercel/Next.js 4.5MB payload limit & HTTP 413)
+      try {
+        const urlRes = await fetch("/api/faculty/submissions/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: directUploadFile.name,
+            requirementCode: selectedRequirementForUpload,
+            fileSize: directUploadFile.size,
+          }),
+        });
 
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const res = JSON.parse(xhr.responseText);
-              resolve(res);
-            } catch {
-              reject(new Error("Invalid response from server"));
+        if (urlRes.ok) {
+          const urlData = await urlRes.json();
+          if (urlData?.path && urlData?.token) {
+            const supabase = createClient();
+            const { error: storageErr } = await supabase.storage
+              .from("faculty-submissions")
+              .uploadToSignedUrl(urlData.path, urlData.token, directUploadFile, {
+                contentType: directUploadFile.type || "application/octet-stream",
+              });
+
+            if (storageErr) {
+              throw new Error(storageErr.message || "Failed to upload file to storage.");
             }
-          } else {
-            try {
-              const err = JSON.parse(xhr.responseText);
-              reject(new Error(err.error || `Failed to submit requirement (HTTP ${xhr.status})`));
-            } catch {
-              reject(new Error(`Failed to submit requirement (HTTP ${xhr.status})`));
+
+            const createRes = await fetch("/api/faculty/submissions/create", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                storagePath: urlData.storagePath,
+                fileName: directUploadFile.name,
+                fileSize: directUploadFile.size,
+                mimeType: directUploadFile.type || "application/octet-stream",
+                academicYear: activeAY,
+                semester: activeSem,
+                requirementCode: selectedRequirementForUpload,
+                remarks: directUploadRemarks,
+              }),
+            });
+
+            if (!createRes.ok) {
+              const errData = await createRes.json().catch(() => ({}));
+              throw new Error(errData.error || `Failed to submit requirement (HTTP ${createRes.status})`);
             }
+
+            result = await createRes.json();
+            directUploadSucceeded = true;
           }
-        };
+        }
+      } catch (directErr) {
+        console.warn("Direct signed upload fallback to standard POST:", directErr);
+      }
 
-        xhr.onerror = () => reject(new Error("Network error during document upload"));
-        xhr.onabort = () => reject(new Error("Upload cancelled"));
+      if (!directUploadSucceeded) {
+        result = await new Promise<{ submissionId: string }>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "/api/faculty/submissions/create");
 
-        xhr.send(formData);
-      });
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable && event.total > 0) {
+              const rawPercent = Math.min(95, Math.round((event.loaded / event.total) * 95));
+              setDirectUploadPercent((prev) => Math.max(prev, rawPercent));
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const res = JSON.parse(xhr.responseText);
+                resolve(res);
+              } catch {
+                reject(new Error("Invalid response from server"));
+              }
+            } else if (xhr.status === 413) {
+              reject(
+                new Error(
+                  "File size exceeds server upload limit (HTTP 413 Payload Too Large). Please ensure the file is under the allowed limit.",
+                ),
+              );
+            } else {
+              try {
+                const err = JSON.parse(xhr.responseText);
+                reject(new Error(err.error || `Failed to submit requirement (HTTP ${xhr.status})`));
+              } catch {
+                reject(new Error(`Failed to submit requirement (HTTP ${xhr.status})`));
+              }
+            }
+          };
+
+          xhr.onerror = () => reject(new Error("Network error during document upload"));
+          xhr.onabort = () => reject(new Error("Upload cancelled"));
+
+          xhr.send(formData);
+        });
+      }
 
       if (progressTimer) clearInterval(progressTimer);
       setDirectUploadPercent(100);
@@ -2107,30 +2172,94 @@ function FacultySubmissionPanelContent({
         setSubmissionMessage("Please select a file to submit.");
         return;
       }
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("academicYear", form.academicYear);
-      formData.append("semester", form.semester);
-      formData.append("requirementCode", form.requirementCode);
-      formData.append("remarks", form.remarks);
-      const response = await fetch("/api/faculty/submissions/create", {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) {
-        try {
-          const errorData = await response.json();
-          setSubmissionMessage(
-            `Error: ${errorData.error || "Failed to submit requirement"}`,
-          );
-        } catch {
-          setSubmissionMessage(
-            `Error: Failed to submit requirement (HTTP ${response.status})`,
-          );
+      let result: any = null;
+      let directUploadDone = false;
+
+      try {
+        const urlRes = await fetch("/api/faculty/submissions/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            requirementCode: form.requirementCode,
+            fileSize: file.size,
+          }),
+        });
+
+        if (urlRes.ok) {
+          const urlData = await urlRes.json();
+          if (urlData?.path && urlData?.token) {
+            const supabase = createClient();
+            const { error: storageErr } = await supabase.storage
+              .from("faculty-submissions")
+              .uploadToSignedUrl(urlData.path, urlData.token, file, {
+                contentType: file.type || "application/octet-stream",
+              });
+
+            if (storageErr) {
+              throw new Error(storageErr.message || "Failed to upload file to storage.");
+            }
+
+            const createRes = await fetch("/api/faculty/submissions/create", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                storagePath: urlData.storagePath,
+                fileName: file.name,
+                fileSize: file.size,
+                mimeType: file.type || "application/octet-stream",
+                academicYear: form.academicYear,
+                semester: form.semester,
+                requirementCode: form.requirementCode,
+                remarks: form.remarks,
+              }),
+            });
+
+            if (!createRes.ok) {
+              const errorData = await createRes.json().catch(() => ({}));
+              throw new Error(errorData.error || `Failed to submit requirement (HTTP ${createRes.status})`);
+            }
+
+            result = await createRes.json();
+            directUploadDone = true;
+          }
         }
-        return;
+      } catch (directErr) {
+        console.warn("Direct upload fallback:", directErr);
       }
-      const result = await response.json();
+
+      if (!directUploadDone) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("academicYear", form.academicYear);
+        formData.append("semester", form.semester);
+        formData.append("requirementCode", form.requirementCode);
+        formData.append("remarks", form.remarks);
+        const response = await fetch("/api/faculty/submissions/create", {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) {
+          if (response.status === 413) {
+            setSubmissionMessage(
+              "Error: File size exceeds server upload limit (HTTP 413 Payload Too Large). Please ensure the file is under the allowed limit.",
+            );
+          } else {
+            try {
+              const errorData = await response.json();
+              setSubmissionMessage(
+                `Error: ${errorData.error || "Failed to submit requirement"}`,
+              );
+            } catch {
+              setSubmissionMessage(
+                `Error: Failed to submit requirement (HTTP ${response.status})`,
+              );
+            }
+          }
+          return;
+        }
+        result = await response.json();
+      }
       setSubmissionMessage(
         `Successfully submitted ${getRequirementTitle(form.requirementCode)} for S.Y. ${form.academicYear} ${form.semester}. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
       );

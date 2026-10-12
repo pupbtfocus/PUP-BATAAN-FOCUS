@@ -85,11 +85,57 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = getServiceRoleClient();
 
-    // 1. Get form data & parse metadata first
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    // 1. Get request data (supports JSON with direct storagePath, or FormData)
+    const contentType = request.headers.get("content-type") || "";
+    let file: File | null = null;
+    let fileName = "";
+    let fileSize = 0;
+    let fileMimeType = "application/octet-stream";
+    let directStoragePath = "";
+    let clientChecksumSha256 = "";
+    let requirementCodeInput = "";
+    let rawAcademicYear = "";
+    let rawSemester = "";
+    let rawRemarks = "";
 
-    if (!file) {
+    if (contentType.includes("application/json")) {
+      const json = await request.json().catch(() => ({}));
+      directStoragePath = json.storagePath || "";
+      fileName = json.fileName || "document";
+      fileSize = Number(json.fileSize) || 0;
+      fileMimeType = json.mimeType || "application/octet-stream";
+      clientChecksumSha256 = json.checksumSha256 || "";
+      requirementCodeInput = json.requirementCode || json.requirement_type || "";
+      rawAcademicYear = json.academicYear || "";
+      rawSemester = json.semester || "";
+      rawRemarks = json.remarks || json.notes || "";
+    } else {
+      const formData = await request.formData();
+      file = formData.get("file") as File | null;
+      directStoragePath = (formData.get("storagePath") as string) || "";
+      if (directStoragePath) {
+        fileName = (formData.get("fileName") as string) || file?.name || "document";
+        fileSize = Number(formData.get("fileSize")) || file?.size || 0;
+        fileMimeType = (formData.get("mimeType") as string) || file?.type || "application/octet-stream";
+        clientChecksumSha256 = (formData.get("checksumSha256") as string) || "";
+      } else if (file) {
+        fileName = file.name;
+        fileSize = file.size;
+        fileMimeType = file.type || "application/octet-stream";
+      }
+      requirementCodeInput =
+        (formData.get("requirementCode") as string) ||
+        (formData.get("requirement_type") as string) ||
+        "";
+      rawAcademicYear = (formData.get("academicYear") as string) || "";
+      rawSemester = (formData.get("semester") as string) || "";
+      rawRemarks =
+        (formData.get("remarks") as string) ||
+        (formData.get("notes") as string) ||
+        "";
+    }
+
+    if (!file && !directStoragePath) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
@@ -99,11 +145,6 @@ export async function POST(request: NextRequest) {
       .select("id, academic_year, semester")
       .eq("status", "Current")
       .maybeSingle();
-
-    const requirementCodeInput =
-      (formData.get("requirementCode") as string) ||
-      (formData.get("requirement_type") as string) ||
-      "";
 
     // 2. Validate if submissions are currently open or unlocked via approved extension / custom due date
     const submissionWindow = await getSubmissionWindow(supabaseAdmin);
@@ -238,13 +279,13 @@ export async function POST(request: NextRequest) {
     }
 
     const activeAcademicYear =
-      (formData.get("academicYear") as string) ||
+      rawAcademicYear ||
       submissionWindow?.academicYear ||
       dbCurrentTerm?.academic_year ||
       "2026-2027";
 
     const activeSemester = normalizeSemester(
-      (formData.get("semester") as string) ||
+      rawSemester ||
       submissionWindow?.semester ||
       dbCurrentTerm?.semester ||
       "2nd Semester",
@@ -254,10 +295,7 @@ export async function POST(request: NextRequest) {
       academicYear: activeAcademicYear,
       semester: activeSemester,
       requirementCode: requirementCodeInput,
-      remarks:
-        (formData.get("remarks") as string) ||
-        (formData.get("notes") as string) ||
-        "",
+      remarks: rawRemarks,
     };
 
     // Validate inputs
@@ -569,14 +607,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare File & Hash Checksum for storage and submission record
-    const fileName = file.name;
-    const fileBuffer = await file.arrayBuffer();
+    let checksumSha256 = clientChecksumSha256;
+    let fileBufferLength = fileSize;
 
-    const hashBuffer = await crypto.subtle.digest("SHA-256", fileBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const checksumSha256 = hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
+    if (file) {
+      const fileBuffer = await file.arrayBuffer();
+      fileBufferLength = fileBuffer.byteLength;
+      if (!checksumSha256) {
+        const hashBuffer = await crypto.subtle.digest("SHA-256", fileBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        checksumSha256 = hashArray
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+    }
 
     const trimmedRemarks = payload.remarks?.trim();
 
@@ -591,25 +635,29 @@ export async function POST(request: NextRequest) {
       );
 
       const timestamp = Date.now();
-      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/${timestamp}_${fileName}`;
+      const storagePath =
+        directStoragePath ||
+        `faculty-submissions/${profile.id}/${targetSubmissionId}/${timestamp}_${fileName}`;
 
-      // Upload new file to Supabase Storage
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from("faculty-submissions")
-        .upload(storagePath, file, {
-          contentType: file.type,
-          upsert: true,
-        });
+      // Upload new file to Supabase Storage only if not already uploaded directly by client
+      if (!directStoragePath && file) {
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from("faculty-submissions")
+          .upload(storagePath, file, {
+            contentType: fileMimeType,
+            upsert: true,
+          });
 
-      if (uploadError) {
-        logger.error("file_resubmit_upload_failed", {
-          submissionId: targetSubmissionId,
-          error: uploadError.message,
-        });
-        return NextResponse.json(
-          { error: "Failed to upload file to storage" },
-          { status: 500 },
-        );
+        if (uploadError) {
+          logger.error("file_resubmit_upload_failed", {
+            submissionId: targetSubmissionId,
+            error: uploadError.message,
+          });
+          return NextResponse.json(
+            { error: "Failed to upload file to storage" },
+            { status: 500 },
+          );
+        }
       }
 
       // Default document record metadata
@@ -632,9 +680,9 @@ export async function POST(request: NextRequest) {
             submission_id: targetSubmissionId,
             version_number: 1,
             storage_path: storagePath,
-            mime_type: file.type || "application/octet-stream",
-            size_bytes: fileBuffer.byteLength,
-            checksum_sha256: checksumSha256,
+            mime_type: fileMimeType,
+            size_bytes: fileBufferLength,
+            checksum_sha256: checksumSha256 || null,
             created_by: user.id,
             created_at: new Date().toISOString(),
           })
@@ -697,24 +745,28 @@ export async function POST(request: NextRequest) {
       targetSubmissionId = crypto.randomUUID();
 
       const timestamp = Date.now();
-      const storagePath = `faculty-submissions/${profile.id}/${targetSubmissionId}/${timestamp}_${fileName}`;
+      const storagePath =
+        directStoragePath ||
+        `faculty-submissions/${profile.id}/${targetSubmissionId}/${timestamp}_${fileName}`;
 
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from("faculty-submissions")
-        .upload(storagePath, file, {
-          contentType: file.type,
-          upsert: true,
-        });
+      if (!directStoragePath && file) {
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from("faculty-submissions")
+          .upload(storagePath, file, {
+            contentType: fileMimeType,
+            upsert: true,
+          });
 
-      if (uploadError) {
-        logger.error("file_upload_failed", {
-          submissionId: targetSubmissionId,
-          error: uploadError.message,
-        });
-        return NextResponse.json(
-          { error: "Failed to upload file to storage" },
-          { status: 500 },
-        );
+        if (uploadError) {
+          logger.error("file_upload_failed", {
+            submissionId: targetSubmissionId,
+            error: uploadError.message,
+          });
+          return NextResponse.json(
+            { error: "Failed to upload file to storage" },
+            { status: 500 },
+          );
+        }
       }
 
       const submissionPayload: Record<string, any> = {
@@ -795,9 +847,9 @@ export async function POST(request: NextRequest) {
             submission_id: targetSubmissionId,
             version_number: 1,
             storage_path: storagePath,
-            mime_type: file.type || "application/octet-stream",
-            size_bytes: fileBuffer.byteLength,
-            checksum_sha256: checksumSha256,
+            mime_type: fileMimeType,
+            size_bytes: fileBufferLength,
+            checksum_sha256: checksumSha256 || null,
             created_by: user.id,
             created_at: new Date().toISOString(),
           })
