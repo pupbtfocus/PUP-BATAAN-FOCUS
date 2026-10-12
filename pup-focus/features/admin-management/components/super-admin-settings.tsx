@@ -382,32 +382,24 @@ export function SuperAdminSettings({
 
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const email = sessionData?.session?.user?.email || savedEmail;
 
-      const currentAccountEmail = user?.email || savedEmail;
-      if (!currentAccountEmail) {
-        throw new Error("Unable to resolve current super administrator email.");
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
       }
 
-      // Verify old password
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: currentAccountEmail,
-        password: oldPassword,
-      });
-
-      if (signInError) {
-        throw new Error("Current password is incorrect. Please check your credentials.");
-      }
-
-      // Update password via server API endpoint
-      const response = await fetch("/api/super-admin/account", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers,
         body: JSON.stringify({
           oldPassword,
-          password: newPassword,
+          newPassword,
+          email,
         }),
       });
 
@@ -415,6 +407,8 @@ export function SuperAdminSettings({
       if (!response.ok) {
         throw new Error(payload.error || "Failed to update password.");
       }
+
+      await supabase.auth.refreshSession().catch(() => null);
 
       setOldPassword("");
       setNewPassword("");
@@ -1180,7 +1174,7 @@ export function SuperAdminSettings({
           onClick={() => setFeedbackModal(null)}
         >
           <div
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-2xl rounded-3xl p-7 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800/80 shadow-2xl rounded-3xl p-7 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
             onClick={(event) => event.stopPropagation()}
           >
             {feedbackModal.type === "error" ? (
@@ -1194,9 +1188,9 @@ export function SuperAdminSettings({
               </div>
             ) : (
               <div className="relative mb-5 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl dark:bg-emerald-500/30" />
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 p-3 ring-8 ring-emerald-500/5 dark:bg-emerald-500/20 dark:ring-emerald-500/10">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg">
+                <div className="absolute inset-0 rounded-full bg-slate-500/20 blur-xl dark:bg-slate-500/30" />
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-500/10 p-3 ring-8 ring-slate-500/5 dark:bg-slate-500/20 dark:ring-slate-500/10">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg">
                     <AppIcon icon={ShieldCheck} size="lg" color="inherit" strokeWidth={2.2} />
                   </div>
                 </div>

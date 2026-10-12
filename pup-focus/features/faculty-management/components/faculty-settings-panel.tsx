@@ -381,25 +381,33 @@ export function FacultySettingsPanel({
 
     try {
       const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const email = sessionData?.session?.user?.email || account.email;
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: account.email,
-        password: oldPassword,
-      });
-
-      if (signInError) {
-        throw new Error(
-          "Incorrect current password. Please check your credentials and try again.",
-        );
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword,
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          oldPassword,
+          newPassword,
+          email,
+        }),
       });
 
-      if (updateError) {
-        throw new Error(updateError.message);
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to update password.");
       }
+
+      await supabase.auth.refreshSession().catch(() => null);
 
       setOldPassword("");
       setNewPassword("");

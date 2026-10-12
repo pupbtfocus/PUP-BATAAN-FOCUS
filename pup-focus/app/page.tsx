@@ -320,12 +320,55 @@ export default function Home() {
     const supabase = createClient();
     console.log("[Auth] Signing in with password for:", normalizedEmail, { hasCaptcha: Boolean(token) });
 
-    const signIn = (withoutCaptcha = false) =>
-      supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password: currentPassword,
-        options: !withoutCaptcha && token ? { captchaToken: token } : undefined,
-      });
+    const signIn = async (withoutCaptcha = false) => {
+      try {
+        return await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password: currentPassword,
+          options: !withoutCaptcha && token ? { captchaToken: token } : undefined,
+        });
+      } catch (err: unknown) {
+        const isFetchError =
+          err instanceof TypeError ||
+          (err instanceof Error &&
+            (err.message.toLowerCase().includes("fetch") ||
+              err.message.toLowerCase().includes("network")));
+
+        if (isFetchError) {
+          try {
+            const res = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: normalizedEmail,
+                password: currentPassword,
+                captchaToken: !withoutCaptcha && token ? token : undefined,
+              }),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              return {
+                data: { user: null, session: null },
+                error: new Error(json.error || "Failed to sign in. Please verify your credentials."),
+              };
+            }
+            if (json.session) {
+              await supabase.auth.setSession(json.session).catch(() => null);
+            }
+            return {
+              data: { user: json.user, session: json.session },
+              error: null,
+            };
+          } catch {
+            return {
+              data: { user: null, session: null },
+              error: new Error("Unable to reach authentication service. Please check your network connection."),
+            };
+          }
+        }
+        throw err;
+      }
+    };
 
     try {
       let { data: signInData, error: signInError } = await signIn();
@@ -475,8 +518,12 @@ export default function Home() {
         redirectTo: nextTarget,
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "An unexpected error occurred during sign in.";
-      console.error("[Auth] Unexpected sign in exception:", msg);
+      const rawMsg = err instanceof Error ? err.message : "An unexpected error occurred during sign in.";
+      const isFetchError = rawMsg.toLowerCase().includes("failed to fetch") || rawMsg.toLowerCase().includes("network");
+      const msg = isFetchError
+        ? "Unable to reach the authentication service. Please check your internet connection or ad-blockers and try again."
+        : rawMsg;
+      console.error("[Auth] Unexpected sign in exception:", rawMsg);
       setError(msg);
       setNotice({ type: "error", message: msg });
       setIsSubmitting(false);
