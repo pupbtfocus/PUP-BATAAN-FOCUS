@@ -67,9 +67,10 @@ export function HistoricalSubmissionsModal({
         params.set("status", statusFilter);
       }
 
+      params.set("_t", String(Date.now()));
       const res = await fetch(
         `/api/admin/academic-terms/submissions?${params.toString()}`,
-        { credentials: "include" },
+        { credentials: "include", cache: "no-store" },
       );
       const data = await res.json();
 

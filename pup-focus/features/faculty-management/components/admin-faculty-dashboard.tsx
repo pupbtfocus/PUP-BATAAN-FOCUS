@@ -112,7 +112,13 @@ export function AdminFacultyDashboard({
 
   const [facultyAccounts, setFacultyAccounts] = useState<FacultyAccount[]>([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
-    null,
+    () => {
+      if (typeof window !== "undefined") {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get("facultyId") || sessionStorage.getItem("activeFacultyId") || null;
+      }
+      return null;
+    },
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -158,6 +164,23 @@ export function AdminFacultyDashboard({
         localStorage.removeItem("activeAdminSection");
         const url = new URL(window.location.href);
         url.searchParams.set("tab", section);
+        window.history.replaceState(null, "", url.toString());
+      } catch {}
+    }
+  };
+
+  const handleSelectFaculty = (facultyId: string | null) => {
+    setSelectedFacultyId(facultyId);
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        if (facultyId) {
+          url.searchParams.set("facultyId", facultyId);
+          sessionStorage.setItem("activeFacultyId", facultyId);
+        } else {
+          url.searchParams.delete("facultyId");
+          sessionStorage.removeItem("activeFacultyId");
+        }
         window.history.replaceState(null, "", url.toString());
       } catch {}
     }
@@ -385,6 +408,10 @@ export function AdminFacultyDashboard({
   }
 
   async function refreshCurrentPanel() {
+    if (typeof window !== "undefined") {
+      window.location.reload();
+      return;
+    }
     await Promise.all([loadFacultyFromDatabase(), loadDashboardStats()]);
     setVerificationResetTrigger((prev) => prev + 1);
   }
@@ -807,7 +834,7 @@ export function AdminFacultyDashboard({
                         <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 sm:ml-auto">
                           <button
                             type="button"
-                            onClick={() => void loadDashboardStats()}
+                            onClick={() => void refreshCurrentPanel()}
                             disabled={isLoadingStats}
                             title="Refresh dashboard"
                             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
@@ -1165,7 +1192,7 @@ export function AdminFacultyDashboard({
                     <FacultyTable
                       facultyAccounts={facultyAccounts}
                       isLoading={isLoading}
-                      onSelectFaculty={setSelectedFacultyId}
+                      onSelectFaculty={handleSelectFaculty}
                       onDeleteFaculty={onDeleteFaculty}
                       onViewDetails={(facultyId) => {
                         setViewDetailsFacultyId(facultyId);
@@ -1219,7 +1246,7 @@ export function AdminFacultyDashboard({
                     <RequirementsPanel
                       facultyAccounts={facultyAccounts}
                       selectedFaculty={selectedFaculty}
-                      onSelectFaculty={setSelectedFacultyId}
+                      onSelectFaculty={handleSelectFaculty}
                       resetTrigger={verificationResetTrigger}
                       initialReviewFacultyId={initialReviewFacultyId}
                       initialRequirementCode={initialHighlightRequirementCode}

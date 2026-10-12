@@ -2445,7 +2445,11 @@ function FacultySubmissionPanelContent({
                     <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0 sm:ml-auto w-full sm:w-auto">
                       <button
                         type="button"
-                        onClick={() => void fetchStatuses()}
+                        onClick={() => {
+                          if (typeof window !== "undefined") {
+                            window.location.reload();
+                          }
+                        }}
                         disabled={isLoadingStatuses}
                         title="Refresh dashboard"
                         className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
@@ -3002,7 +3006,11 @@ function FacultySubmissionPanelContent({
                       </p>
                       <button
                         type="button"
-                        onClick={() => void fetchStatuses()}
+                        onClick={() => {
+                          if (typeof window !== "undefined") {
+                            window.location.reload();
+                          }
+                        }}
                         disabled={isLoadingStatuses}
                         title="Refresh status"
                         className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
@@ -3040,7 +3048,11 @@ function FacultySubmissionPanelContent({
                       </button>
                       <button
                         type="button"
-                        onClick={() => void fetchStatuses()}
+                        onClick={() => {
+                          if (typeof window !== "undefined") {
+                            window.location.reload();
+                          }
+                        }}
                         disabled={isLoadingStatuses}
                         title="Refresh status"
                         className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"

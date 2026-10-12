@@ -74,7 +74,10 @@ export function SubmissionScheduleLogsModal({
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch("/api/admin/submission-window/logs", { credentials: "include" });
+      const res = await fetch(`/api/admin/submission-window/logs?_t=${Date.now()}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
       if (!res.ok) {
         throw new Error(`Failed to load schedule logs (${res.status})`);
       }

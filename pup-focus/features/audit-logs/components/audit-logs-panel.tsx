@@ -309,6 +309,10 @@ export function AuditLogsPanel() {
   }, [fetchLogs]);
 
   function handleRefresh() {
+    if (typeof window !== "undefined") {
+      window.location.reload();
+      return;
+    }
     void fetchLogs();
   }
 
