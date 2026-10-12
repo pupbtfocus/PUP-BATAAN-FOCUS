@@ -13,7 +13,6 @@ export function SingleSessionEnforcer() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const checkingRef = useRef(false);
   const conflictDetectedRef = useRef(false);
-  const mySessionIdRef = useRef<string | null>(null);
 
   const isPublicAuthPage =
     !pathname ||
@@ -29,15 +28,13 @@ export function SingleSessionEnforcer() {
 
     try {
       if (typeof window !== "undefined") {
-        // Only clear localStorage if it still matches THIS tab's superseded session ID
-        const currentStored = localStorage.getItem("pup_focus_session_id");
-        if (!currentStored || currentStored === mySessionIdRef.current) {
-          localStorage.removeItem("pup_focus_session_id");
-          document.cookie =
-            "pup_focus_session_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        }
+        localStorage.removeItem("pup_focus_login_time");
+        sessionStorage.removeItem("pup_focus_login_time");
+        localStorage.removeItem("pup_focus_session_id");
         sessionStorage.removeItem("pup_focus_session_id");
         sessionStorage.setItem("pup_focus_logged_out", "true");
+        document.cookie =
+          "pup_focus_session_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     } catch {
       // Ignore storage errors
@@ -50,8 +47,7 @@ export function SingleSessionEnforcer() {
     }
 
     try {
-      // SCOPE: 'local' is CRITICAL so we only sign out this browser instance
-      // without revoking the active session token for the other user on the server!
+      // Local scope ensures only this browser clears its session
       const supabase = createClient();
       await supabase.auth.signOut({ scope: "local" }).catch(() => null);
     } catch {
@@ -81,39 +77,23 @@ export function SingleSessionEnforcer() {
         return;
       }
 
-      let localSessionId =
+      let localLoginTime =
         typeof window !== "undefined"
-          ? sessionStorage.getItem("pup_focus_session_id") ||
-            localStorage.getItem("pup_focus_session_id")
+          ? sessionStorage.getItem("pup_focus_login_time") ||
+            localStorage.getItem("pup_focus_login_time")
           : null;
 
-      // Bind this client to its initial session ID
-      if (!mySessionIdRef.current) {
-        if (localSessionId) {
-          mySessionIdRef.current = localSessionId;
-          sessionStorage.setItem("pup_focus_session_id", localSessionId);
-        } else {
-          // If no local session ID exists yet, create and register one
-          const newId = crypto.randomUUID();
-          mySessionIdRef.current = newId;
-          localStorage.setItem("pup_focus_session_id", newId);
-          sessionStorage.setItem("pup_focus_session_id", newId);
-          document.cookie = `pup_focus_session_id=${newId}; path=/; max-age=604800; SameSite=Lax`;
-
-          await fetch("/api/auth/session/register", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            credentials: "include",
-            body: JSON.stringify({ sessionId: newId, userId: user.id }),
-          }).catch(() => null);
-          return;
-        }
+      // If no local login time recorded yet, initialize with current user's last_sign_in_at
+      if (!localLoginTime && user.last_sign_in_at) {
+        const fallbackTime = user.last_sign_in_at;
+        localLoginTime = fallbackTime;
+        sessionStorage.setItem("pup_focus_login_time", fallbackTime);
+        localStorage.setItem("pup_focus_login_time", fallbackTime);
       }
 
-      const activeClientSession = mySessionIdRef.current || localSessionId;
+      if (!localLoginTime) {
+        return;
+      }
 
       const res = await fetch("/api/auth/session/verify", {
         method: "POST",
@@ -123,7 +103,7 @@ export function SingleSessionEnforcer() {
         },
         credentials: "include",
         body: JSON.stringify({
-          sessionId: activeClientSession,
+          loginTime: localLoginTime,
           userId: user.id,
         }),
       });
