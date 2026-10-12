@@ -62,8 +62,9 @@ next-env.d.ts
 .LSOverride
 
 # Logs
-logs/
+/logs/
 *.log
+!app/**/logs/
 
 # Runtime data
 pids/
