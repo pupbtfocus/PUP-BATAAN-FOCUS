@@ -196,6 +196,29 @@ export default function Home() {
         return;
       }
 
+      // If active session was claimed by another login, clear credentials and stay on login page
+      const localSessionId =
+        typeof window !== "undefined"
+          ? localStorage.getItem("pup_focus_session_id")
+          : null;
+      if (localSessionId) {
+        try {
+          const verifyRes = await fetch("/api/auth/session/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: localSessionId }),
+          });
+          const verifyData = await verifyRes.json();
+          if (verifyData && verifyData.valid === false) {
+            await supabase.auth.signOut().catch(() => null);
+            localStorage.removeItem("pup_focus_session_id");
+            return;
+          }
+        } catch {
+          // On network error continue
+        }
+      }
+
       const mustChange =
         (user.user_metadata as any)?.must_change_password === true ||
         (user.user_metadata as any)?.force_password_change === true;
@@ -480,6 +503,20 @@ export default function Home() {
 
       // Always reset all role active views/tabs so every new session starts fresh on the Dashboard
       resetDashboardNavigationState();
+
+      // Register this device as the active single session, invalidating any concurrent session elsewhere
+      const newSessionId = crypto.randomUUID();
+      try {
+        localStorage.setItem("pup_focus_session_id", newSessionId);
+        document.cookie = `pup_focus_session_id=${newSessionId}; path=/; max-age=604800; SameSite=Lax`;
+        await fetch("/api/auth/session/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: newSessionId }),
+        }).catch((e) => console.warn("[Auth] Session register error:", e));
+      } catch (storageErr) {
+        console.warn("[Auth] Could not register active session ID:", storageErr);
+      }
 
       setIsSubmitting(false);
       setAuthModal({
