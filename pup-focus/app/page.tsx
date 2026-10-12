@@ -13,7 +13,7 @@ import {
 } from "@/components/auth/auth-feedback-modal";
 import { APP_CONFIG } from "@/config/app";
 import { getPublicEnvSafe } from "@/config/env";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, clearBrowserSupabaseSession } from "@/lib/supabase/client";
 import { ROUTE_BY_ROLE, resetDashboardNavigationState } from "@/config/routes";
 import { ROLE, ROLE_LABEL, type AppRole, isQaFaculty } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
@@ -214,7 +214,7 @@ export default function Home() {
         const clientTime = new Date(localLoginTime).getTime();
         const serverTime = new Date(user.last_sign_in_at).getTime();
         if (serverTime - clientTime > 3000) {
-          await supabase.auth.signOut({ scope: "local" }).catch(() => null);
+          clearBrowserSupabaseSession();
           sessionStorage.removeItem("pup_focus_login_time");
           localStorage.removeItem("pup_focus_login_time");
           return;
@@ -507,8 +507,22 @@ export default function Home() {
       resetDashboardNavigationState();
 
       // Store this session's sign-in timestamp to enforce single-session concurrency
-      const loginTime =
-        user.last_sign_in_at || new Date().toISOString();
+      let loginTime: string = "";
+      try {
+        const { data: freshUserData } = await supabase.auth.getUser();
+        if (typeof freshUserData?.user?.last_sign_in_at === "string") {
+          loginTime = freshUserData.user.last_sign_in_at;
+        }
+      } catch {
+        // Fallback to returned user
+      }
+
+      if (!loginTime) {
+        loginTime =
+          (typeof user.last_sign_in_at === "string" && user.last_sign_in_at) ||
+          new Date().toISOString();
+      }
+
       try {
         localStorage.setItem("pup_focus_login_time", loginTime);
         sessionStorage.setItem("pup_focus_login_time", loginTime);

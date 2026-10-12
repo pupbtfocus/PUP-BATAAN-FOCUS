@@ -99,7 +99,7 @@ function createMissingSupabaseClient() {
   };
 }
 
-function clearBrowserSupabaseSession() {
+export function clearBrowserSupabaseSession() {
   if (typeof window === "undefined") {
     return;
   }
