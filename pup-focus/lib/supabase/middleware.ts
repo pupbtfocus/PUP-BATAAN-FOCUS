@@ -66,8 +66,9 @@ export async function updateSupabaseSession(
       return { response, user: null, supabase };
     }
 
-    // Optionally handle other errors, or just log them.
-    console.error("Supabase auth error:", error.message);
+    if (error.message !== "Auth session missing!") {
+      console.error("Supabase auth error:", error.message);
+    }
   }
 
   return { response, user: user ?? null, supabase };
