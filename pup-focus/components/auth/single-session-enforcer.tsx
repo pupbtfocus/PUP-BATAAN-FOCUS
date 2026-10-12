@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, clearBrowserSupabaseSession } from "@/lib/supabase/client";
 import { WarningTriangle, LogOut } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { resetDashboardNavigationState } from "@/config/routes";
@@ -13,6 +13,7 @@ export function SingleSessionEnforcer() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const checkingRef = useRef(false);
   const conflictDetectedRef = useRef(false);
+  const myLoginTimeRef = useRef<string | null>(null);
 
   const isPublicAuthPage =
     !pathname ||
@@ -28,13 +29,25 @@ export function SingleSessionEnforcer() {
 
     try {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("pup_focus_login_time");
+        const currentActiveLogin = localStorage.getItem("pup_focus_login_time");
+        const isSameBrowserReplaced = Boolean(
+          currentActiveLogin &&
+            myLoginTimeRef.current &&
+            currentActiveLogin !== myLoginTimeRef.current
+        );
+
+        // If another session was started in this same browser, DO NOT touch shared cookies or localStorage!
+        if (!isSameBrowserReplaced) {
+          localStorage.removeItem("pup_focus_login_time");
+          localStorage.removeItem("pup_focus_session_id");
+          document.cookie =
+            "pup_focus_session_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          clearBrowserSupabaseSession();
+        }
+
         sessionStorage.removeItem("pup_focus_login_time");
-        localStorage.removeItem("pup_focus_session_id");
         sessionStorage.removeItem("pup_focus_session_id");
         sessionStorage.setItem("pup_focus_logged_out", "true");
-        document.cookie =
-          "pup_focus_session_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     } catch {
       // Ignore storage errors
@@ -46,13 +59,10 @@ export function SingleSessionEnforcer() {
       // Ignore reset error
     }
 
-    try {
-      // Local scope ensures only this browser clears its session
-      const supabase = createClient();
-      await supabase.auth.signOut({ scope: "local" }).catch(() => null);
-    } catch {
-      // Ignore auth error
-    }
+    // CRITICAL: DO NOT call supabase.auth.signOut() here.
+    // supabase.auth.signOut() sends a server request to revoke tokens globally in Supabase,
+    // which invalidates the new user's active session on other devices/tabs upon page refresh.
+    // The superseded tab's local state is cleanly cleared above.
 
     if (typeof window !== "undefined") {
       window.location.replace("/login?reason=concurrent_logout");
@@ -77,15 +87,16 @@ export function SingleSessionEnforcer() {
         return;
       }
 
-      let localLoginTime =
-        typeof window !== "undefined"
+      let localLoginTime: string | null =
+        myLoginTimeRef.current ||
+        (typeof window !== "undefined"
           ? sessionStorage.getItem("pup_focus_login_time") ||
             localStorage.getItem("pup_focus_login_time")
-          : null;
+          : null);
 
       // If no local login time recorded yet, initialize with current user's last_sign_in_at
-      if (!localLoginTime && user.last_sign_in_at) {
-        const fallbackTime = user.last_sign_in_at;
+      if (!localLoginTime && typeof user.last_sign_in_at === "string") {
+        const fallbackTime: string = user.last_sign_in_at;
         localLoginTime = fallbackTime;
         sessionStorage.setItem("pup_focus_login_time", fallbackTime);
         localStorage.setItem("pup_focus_login_time", fallbackTime);
@@ -94,6 +105,8 @@ export function SingleSessionEnforcer() {
       if (!localLoginTime) {
         return;
       }
+
+      myLoginTimeRef.current = localLoginTime;
 
       const res = await fetch("/api/auth/session/verify", {
         method: "POST",
@@ -117,6 +130,19 @@ export function SingleSessionEnforcer() {
       if (data && data.valid === false && data.reason === "concurrent_login") {
         conflictDetectedRef.current = true;
         setConflictModalOpen(true);
+      } else if (data && data.valid === true && typeof data.lastSignInAt === "string") {
+        // Keep client timestamp in sync with server to ensure refresh never triggers a false conflict
+        myLoginTimeRef.current = data.lastSignInAt;
+        try {
+          sessionStorage.setItem("pup_focus_login_time", data.lastSignInAt);
+          const currentLocal = localStorage.getItem("pup_focus_login_time");
+          if (
+            !currentLocal ||
+            new Date(data.lastSignInAt).getTime() >= new Date(currentLocal).getTime()
+          ) {
+            localStorage.setItem("pup_focus_login_time", data.lastSignInAt);
+          }
+        } catch {}
       }
     } catch (err) {
       // Do not block normal use on network hiccups
