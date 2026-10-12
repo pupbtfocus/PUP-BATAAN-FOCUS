@@ -371,7 +371,30 @@ export function SuperAdminDashboard({
 
   // Faculty Management State
   const [facultyAccounts, setFacultyAccounts] = useState<FacultyAccount[]>([]);
-  const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(null);
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get("facultyId") || sessionStorage.getItem("activeSuperAdminFacultyId") || null;
+    }
+    return null;
+  });
+
+  const handleSelectFaculty = (facultyId: string | null) => {
+    setSelectedFacultyId(facultyId);
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        if (facultyId) {
+          url.searchParams.set("facultyId", facultyId);
+          sessionStorage.setItem("activeSuperAdminFacultyId", facultyId);
+        } else {
+          url.searchParams.delete("facultyId");
+          sessionStorage.removeItem("activeSuperAdminFacultyId");
+        }
+        window.history.replaceState(null, "", url.toString());
+      } catch {}
+    }
+  };
 
   // Sync target faculty when URL parameter changes (e.g. notification click)
   useEffect(() => {
@@ -859,6 +882,10 @@ export function SuperAdminDashboard({
   }
 
   async function refreshCurrentPanel() {
+    if (typeof window !== "undefined") {
+      window.location.reload();
+      return;
+    }
     if (activeSection === "accounts") {
       await loadAdminAccounts();
     } else if (activeSection === "faculty" || activeSection === "verification") {
@@ -1942,7 +1969,7 @@ export function SuperAdminDashboard({
                 <FacultyTable
                   facultyAccounts={facultyAccounts}
                   isLoading={isLoadingFaculty}
-                  onSelectFaculty={setSelectedFacultyId}
+                  onSelectFaculty={handleSelectFaculty}
                   onDeleteFaculty={onDeleteFaculty}
                   onViewDetails={(facultyId) => {
                     setViewFacultyDetailsId(facultyId);
@@ -1996,7 +2023,7 @@ export function SuperAdminDashboard({
                 <RequirementsPanel
                   facultyAccounts={facultyAccounts}
                   selectedFaculty={selectedFaculty}
-                  onSelectFaculty={setSelectedFacultyId}
+                  onSelectFaculty={handleSelectFaculty}
                   resetTrigger={verificationResetTrigger}
                   initialReviewFacultyId={searchParams?.get("facultyId") || null}
                   initialRequirementCode={searchParams?.get("reqCode") || null}
@@ -2086,7 +2113,7 @@ export function SuperAdminDashboard({
                   <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
-                      onClick={() => setTemplatesRefreshTrigger((prev) => prev + 1)}
+                      onClick={() => void refreshCurrentPanel()}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <Refresh className="h-3.5 w-3.5" strokeWidth={2} />

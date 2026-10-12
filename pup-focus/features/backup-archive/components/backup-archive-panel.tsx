@@ -519,7 +519,11 @@ export function BackupArchivePanel() {
 
           <button
             type="button"
-            onClick={() => void loadBackupData()}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.location.reload();
+              }
+            }}
             disabled={isLoading}
             className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs disabled:opacity-50 active:scale-[0.98]"
             title="Refresh backups and terms"

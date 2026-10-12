@@ -791,6 +791,10 @@ function FacultyVerificationDrawer({
   };
 
   const handleRefresh = async () => {
+    if (typeof window !== "undefined") {
+      window.location.reload();
+      return;
+    }
     if (!faculty.id || isRefreshing) return;
     setIsRefreshing(true);
     try {
