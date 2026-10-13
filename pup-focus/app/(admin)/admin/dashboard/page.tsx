@@ -4,12 +4,12 @@ import { ROLE } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/session";
 import { SuperAdminDashboard } from "@/features/admin-management/components/super-admin-dashboard";
 
-export default async function SuperAdminDashboardPage(props: {
+export default async function AdminDashboardPage(props: {
   searchParams?: Promise<{ tab?: string; section?: string }>;
 }) {
   const user = await getCurrentUser();
 
-  if (!user || (user.role !== ROLE.SUPER_ADMIN && user.role !== ROLE.ADMIN)) {
+  if (!user || (user.role !== ROLE.ADMIN && user.role !== "super_admin")) {
     redirect("/");
   }
 
@@ -17,7 +17,7 @@ export default async function SuperAdminDashboardPage(props: {
   const initialTab = searchParams?.tab || searchParams?.section || null;
 
   return (
-    <AppShell title="PUP FOCUS" nav={[]} fullBleed role="super_admin">
+    <AppShell title="PUP FOCUS" nav={[]} fullBleed role="admin">
       <SuperAdminDashboard
         adminName={user?.fullName ?? null}
         adminEmail={user?.email ?? null}

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       (user?.user_metadata?.role as string | undefined) ??
       (user?.app_metadata?.role as string | undefined);
 
-    if (requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== ROLE.ADMIN) {
+    if (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -122,13 +122,14 @@ export async function GET() {
       (users ?? [])
         .filter((u) => {
           const userRole = u.user_metadata?.role || u.app_metadata?.role;
-          const isAdmin = (
+          const isAdminOrStaff = (
+            userRole === ROLE.STAFF ||
             userRole === ROLE.ADMIN ||
-            userRole === ROLE.SUPER_ADMIN ||
+            userRole === "staff" ||
             userRole === "admin" ||
             userRole === "super_admin"
           );
-          if (!isAdmin) return false;
+          if (!isAdminOrStaff) return false;
 
           // Don't show in the admin list until they accept the invitation!
           const isPending = Boolean(

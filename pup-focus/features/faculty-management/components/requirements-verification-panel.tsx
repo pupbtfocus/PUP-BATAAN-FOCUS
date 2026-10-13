@@ -426,7 +426,7 @@ function FacultyVerificationDrawer({
     let isCancelled = false;
     async function loadTemplates() {
       try {
-        const res = await fetch("/api/admin/requirement-templates");
+        const res = await fetch("/api/staff/requirement-templates");
         if (res.ok && !isCancelled) {
           const data = await res.json();
           if (Array.isArray(data.templates) && data.templates.length > 0) {
@@ -695,7 +695,7 @@ function FacultyVerificationDrawer({
       setIsLoading(true);
       try {
         const subRes = await fetch(
-          `/api/admin/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(academicYear)}&semester=${encodeURIComponent(semester)}`,
+          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(academicYear)}&semester=${encodeURIComponent(semester)}`,
           { credentials: "include", cache: "no-store" }
         );
 
@@ -725,7 +725,7 @@ function FacultyVerificationDrawer({
       if (!faculty.id) return;
       try {
         const verRes = await fetch(
-          `/api/admin/faculty/requirements/verification?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(academicYear)}&semester=${encodeURIComponent(semester)}`,
+          `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(academicYear)}&semester=${encodeURIComponent(semester)}`,
           { credentials: "include" }
         );
 
@@ -761,7 +761,7 @@ function FacultyVerificationDrawer({
       setIsLoadingHistory(true);
       try {
         const res = await fetch(
-          `/api/admin/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(selectedHistoryAy)}&semester=${encodeURIComponent(selectedHistorySem)}`,
+          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(selectedHistoryAy)}&semester=${encodeURIComponent(selectedHistorySem)}`,
           { credentials: "include", cache: "no-store" }
         );
         if (res.ok && !isCancelled) {
@@ -800,7 +800,7 @@ function FacultyVerificationDrawer({
     try {
       if (activeTab === "current") {
         const subRes = await fetch(
-          `/api/admin/faculty/submissions?facultyId=${encodeURIComponent(
+          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(
             faculty.id
           )}&academicYear=${encodeURIComponent(
             academicYear
@@ -814,7 +814,7 @@ function FacultyVerificationDrawer({
       } else {
         if (selectedHistoryAy && selectedHistorySem) {
           const res = await fetch(
-            `/api/admin/faculty/submissions?facultyId=${encodeURIComponent(
+            `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(
               faculty.id
             )}&academicYear=${encodeURIComponent(
               selectedHistoryAy
@@ -902,7 +902,7 @@ function FacultyVerificationDrawer({
       const remarksToSend = (
         customRemarks !== undefined ? customRemarks : remarksInput[code] || ""
       ).trim();
-      const response = await fetch("/api/admin/faculty/submissions/review", {
+      const response = await fetch("/api/staff/faculty/submissions/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -1291,7 +1291,7 @@ function FacultyVerificationDrawer({
       const remarksToSend = bulkValidateNotes.trim();
       await Promise.all(
         pendingSubmissions.map((sub) =>
-          fetch("/api/admin/faculty/submissions/review", {
+          fetch("/api/staff/faculty/submissions/review", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -2887,7 +2887,7 @@ export function RequirementsPanel({
     let isCancelled = false;
     async function loadTemplates() {
       try {
-        const res = await fetch("/api/admin/requirement-templates");
+        const res = await fetch("/api/staff/requirement-templates");
         if (res.ok && !isCancelled) {
           const data = await res.json();
           if (Array.isArray(data.templates) && data.templates.length > 0) {
@@ -2944,7 +2944,7 @@ export function RequirementsPanel({
       try {
         const dummyFacultyId = facultyAccounts[0]?.id || "";
         const res = await fetch(
-          `/api/admin/faculty/requirements/verification?facultyId=${encodeURIComponent(
+          `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(
             dummyFacultyId
           )}`,
           { credentials: "include" }
@@ -2984,7 +2984,7 @@ export function RequirementsPanel({
         facultyAccounts.map(async (faculty) => {
           try {
             const res = await fetch(
-              `/api/admin/faculty/requirements/verification?facultyId=${encodeURIComponent(
+              `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(
                 faculty.id
               )}&academicYear=${encodeURIComponent(ay)}&semester=${encodeURIComponent(
                 sem

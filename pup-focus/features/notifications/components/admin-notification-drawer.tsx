@@ -91,7 +91,7 @@ export function AdminNotificationDrawer({
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await fetch(`/api/admin/notifications?_t=${Date.now()}`, {
+      const response = await fetch(`/api/staff/notifications?_t=${Date.now()}`, {
         cache: "no-store",
       });
       if (!response.ok) return;
@@ -141,7 +141,7 @@ export function AdminNotificationDrawer({
     setUnreadCount(0);
 
     try {
-      await fetch("/api/admin/notifications", {
+      await fetch("/api/staff/notifications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ markAll: true }),
@@ -165,7 +165,7 @@ export function AdminNotificationDrawer({
     setUnreadCount(0);
 
     try {
-      const res = await fetch("/api/admin/notifications", {
+      const res = await fetch("/api/staff/notifications", {
         method: "DELETE",
       });
       if (res.ok) {
@@ -191,7 +191,7 @@ export function AdminNotificationDrawer({
       setUnreadCount((prev) => Math.max(0, prev - 1));
 
       try {
-        await fetch("/api/admin/notifications", {
+        await fetch("/api/staff/notifications", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ notificationId: notification.id }),
@@ -220,52 +220,52 @@ export function AdminNotificationDrawer({
       if (isSuperAdminPath) {
         if (notification.isSubmission || reqCode) {
           router.push(
-            `/super-admin/dashboard?tab=verification${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}${reqCode ? `&reqCode=${encodeURIComponent(reqCode)}` : ""}`
+            `/staff/dashboard?tab=verification${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}${reqCode ? `&reqCode=${encodeURIComponent(reqCode)}` : ""}`
           );
         } else if (
           notification.type?.includes("WINDOW") ||
           notification.title?.toLowerCase().includes("window")
         ) {
-          router.push("/super-admin/dashboard?tab=window");
+          router.push("/staff/dashboard?tab=window");
         } else if (
           notification.type?.includes("TERM") ||
           notification.title?.toLowerCase().includes("term")
         ) {
-          router.push("/super-admin/dashboard?tab=terms");
+          router.push("/staff/dashboard?tab=terms");
         } else if (
           notification.type?.includes("FACULTY") ||
           notification.title?.toLowerCase().includes("faculty")
         ) {
           router.push(
-            `/super-admin/dashboard?tab=faculty${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}`
+            `/staff/dashboard?tab=faculty${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}`
           );
         } else {
-          router.push("/super-admin/dashboard?tab=verification");
+          router.push("/staff/dashboard?tab=verification");
         }
       } else {
         if (notification.isSubmission || reqCode) {
           router.push(
-            `/admin/dashboard?section=requirements${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}${reqCode ? `&reqCode=${encodeURIComponent(reqCode)}` : ""}`
+            `/staff/dashboard?section=requirements${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}${reqCode ? `&reqCode=${encodeURIComponent(reqCode)}` : ""}`
           );
         } else if (
           notification.type?.includes("WINDOW") ||
           notification.title?.toLowerCase().includes("window")
         ) {
-          router.push("/admin/dashboard?section=submissionWindow");
+          router.push("/staff/dashboard?section=submissionWindow");
         } else if (
           notification.type?.includes("TERM") ||
           notification.title?.toLowerCase().includes("term")
         ) {
-          router.push("/admin/dashboard?section=academicTerms");
+          router.push("/staff/dashboard?section=academicTerms");
         } else if (
           notification.type?.includes("FACULTY") ||
           notification.title?.toLowerCase().includes("faculty")
         ) {
           router.push(
-            `/admin/dashboard?section=facultyManagement${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}`
+            `/staff/dashboard?section=facultyManagement${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}`
           );
         } else {
-          router.push("/admin/dashboard?section=requirements");
+          router.push("/staff/dashboard?section=requirements");
         }
       }
     }

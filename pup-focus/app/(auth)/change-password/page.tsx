@@ -22,10 +22,11 @@ import {
 
 import { resetDashboardNavigationState } from "@/config/routes";
 
-const ROUTE_BY_ROLE: Record<AppRole, string> = {
-  [ROLE.SUPER_ADMIN]: "/super-admin/dashboard",
+const ROUTE_BY_ROLE: Record<string, string> = {
   [ROLE.ADMIN]: "/admin/dashboard",
+  [ROLE.STAFF]: "/staff/dashboard",
   [ROLE.FACULTY]: "/faculty/dashboard",
+  super_admin: "/admin/dashboard",
 };
 
 export default function ChangePasswordPage() {

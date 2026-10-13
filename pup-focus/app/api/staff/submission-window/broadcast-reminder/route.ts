@@ -11,7 +11,7 @@ import { logAuditEvent } from "@/features/audit-logs/services/audit-log.service"
 import { logger } from "@/lib/observability/logger";
 
 function isAdminRole(role: string | undefined): boolean {
-  return role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN;
+  return role === ROLE.STAFF || role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN || role === "staff";
 }
 
 function formatEndDate(dateStr: string, time24Str?: string | null): string {

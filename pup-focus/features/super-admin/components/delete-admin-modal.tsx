@@ -48,7 +48,7 @@ export function DeleteAdminModal({
   const isConfirmed = !isDeleteAction || confirmText.trim().toLowerCase() === "delete";
 
   const isSuperAdmin = (activeAdmin.role || "").toLowerCase().includes("super");
-  const roleLabel = isSuperAdmin ? "Super Admin" : "Admin";
+  const roleLabel = isSuperAdmin ? "Admin" : "Staff";
 
   const handleConfirm = () => {
     if (!isConfirmed || isLoading) return;

@@ -84,7 +84,7 @@ export function RequirementTemplateModal({
 
     try {
       if (isEditing && templateToEdit) {
-        const res = await fetch("/api/admin/requirement-templates", {
+        const res = await fetch("/api/staff/requirement-templates", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -111,7 +111,7 @@ export function RequirementTemplateModal({
             .replace(/[^a-z0-9]+/g, "_")
             .replace(/^_+|_+$/g, "") || `req_${Date.now()}`;
 
-        const res = await fetch("/api/admin/requirement-templates", {
+        const res = await fetch("/api/staff/requirement-templates", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

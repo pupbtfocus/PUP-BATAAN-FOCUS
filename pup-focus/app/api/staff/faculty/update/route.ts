@@ -74,7 +74,7 @@ export async function PATCH(request: NextRequest) {
 
     if (
       !user ||
-      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
+      (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff")
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

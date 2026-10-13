@@ -222,7 +222,7 @@ export function AddFacultyPanel({
     async function checkOnboardingSchedules() {
       setIsLoadingOnboarding(true);
       try {
-        const res = await fetch(`/api/admin/faculty/onboarding-check?_t=${Date.now()}`, {
+        const res = await fetch(`/api/staff/faculty/onboarding-check?_t=${Date.now()}`, {
           cache: "no-store",
           credentials: "include",
         });
@@ -256,8 +256,8 @@ export function AddFacultyPanel({
           });
           setCustomPerScheduleDeadlines(initialMap);
         } else {
-          // Fallback to checking /api/admin/submission-window directly
-          const winRes = await fetch(`/api/admin/submission-window?_t=${Date.now()}`);
+          // Fallback to checking /api/staff/submission-window directly
+          const winRes = await fetch(`/api/staff/submission-window?_t=${Date.now()}`);
           if (winRes.ok && isMounted) {
             const winData = await winRes.json();
             if (winData.status === "Closed" || !winData.isOpen) {
@@ -461,7 +461,7 @@ export function AddFacultyPanel({
 
     // Double-check live status in case schedule was recently closed or initial check was pending
     try {
-      const res = await fetch(`/api/admin/faculty/onboarding-check?_t=${Date.now()}`, {
+      const res = await fetch(`/api/staff/faculty/onboarding-check?_t=${Date.now()}`, {
         cache: "no-store",
         credentials: "include",
       });

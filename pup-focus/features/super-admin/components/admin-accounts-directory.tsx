@@ -171,7 +171,7 @@ export function AdminFilterBar({
         >
           <option value="all">All Roles</option>
           <option value={ROLE.ADMIN}>Admin</option>
-          <option value={ROLE.SUPER_ADMIN}>Super Admin</option>
+          <option value={ROLE.ADMIN}>Admin</option>
         </select>
 
         <div className="flex items-center justify-start gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
@@ -243,7 +243,7 @@ export function AdminAccountsTable({
     if (roleFilter !== "all") {
       result = result.filter((a) => {
         const r = (a.role || "").toLowerCase().trim();
-        if (roleFilter === ROLE.SUPER_ADMIN) {
+        if (roleFilter === ROLE.ADMIN) {
           return r.includes("super");
         }
         return !r.includes("super");
@@ -434,7 +434,7 @@ export function AdminAccountsTable({
                     {/* Role Badge */}
                     <td className="px-4 py-2.5 font-medium text-xs">
                       <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2 py-0.5 text-xs font-semibold rounded-md inline-flex items-center">
-                        {isSuperAdmin ? "Super Admin" : "Admin"}
+                        {isSuperAdmin ? "Admin" : "Staff"}
                       </span>
                     </td>
 

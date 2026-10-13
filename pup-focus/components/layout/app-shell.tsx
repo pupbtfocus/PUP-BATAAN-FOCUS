@@ -20,7 +20,7 @@ type AppShellProps = {
   children: React.ReactNode;
   fullBleed?: boolean;
   showNotifications?: boolean;
-  role?: "admin" | "super_admin" | "faculty";
+  role?: "admin" | "staff" | "super_admin" | "faculty";
 };
 
 export function AppShell({
@@ -35,8 +35,12 @@ export function AppShell({
   const pathname = usePathname() || "";
   const isStaff =
     role === "admin" ||
+    role === "staff" ||
     role === "super_admin" ||
-    (!role && (pathname.startsWith("/admin") || pathname.startsWith("/super-admin")));
+    (!role &&
+      (pathname.startsWith("/admin") ||
+        pathname.startsWith("/staff") ||
+        pathname.startsWith("/super-admin")));
   const mainClassName = fullBleed
     ? "mx-auto flex h-screen w-full max-w-none overflow-hidden px-0 pt-14"
     : "mx-auto w-full max-w-7xl px-6 py-8 pt-24 h-[calc(100vh-6rem)] overflow-hidden";

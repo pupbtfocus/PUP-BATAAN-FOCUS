@@ -329,8 +329,8 @@ export function AdminFacultyDashboard({
     try {
       setIsLoadingStats(true);
       const [res, winRes] = await Promise.all([
-        fetch(`/api/admin/dashboard/stats?_t=${Date.now()}`, { cache: "no-store" }),
-        fetch(`/api/admin/submission-window?_t=${Date.now()}`, { cache: "no-store", credentials: "include" }),
+        fetch(`/api/staff/dashboard/stats?_t=${Date.now()}`, { cache: "no-store" }),
+        fetch(`/api/staff/submission-window?_t=${Date.now()}`, { cache: "no-store", credentials: "include" }),
       ]);
       if (res.ok) {
         const data = await res.json();
@@ -361,7 +361,7 @@ export function AdminFacultyDashboard({
 
     async function loadAdminAvatar() {
       try {
-        const res = await fetch("/api/admin/profile");
+        const res = await fetch("/api/staff/profile");
         if (res.ok) {
           const data = await res.json();
           if (data.avatar_url || data.profileImageUrl) {
@@ -390,7 +390,7 @@ export function AdminFacultyDashboard({
   async function loadFacultyFromDatabase() {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/admin/faculty/list?_t=${Date.now()}`, {
+      const response = await fetch(`/api/staff/faculty/list?_t=${Date.now()}`, {
         cache: "no-store",
       });
       if (response.ok) {
@@ -499,7 +499,7 @@ export function AdminFacultyDashboard({
         }
       }
 
-      const response = await fetch("/api/admin/faculty/create", {
+      const response = await fetch("/api/staff/faculty/create", {
         method: "POST",
         body: payload,
       });
@@ -552,7 +552,7 @@ export function AdminFacultyDashboard({
     setDeleteSuccess(null);
 
     try {
-      const response = await fetch("/api/admin/faculty/delete", {
+      const response = await fetch("/api/staff/faculty/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ facultyProfileId: facultyId }),
@@ -615,7 +615,7 @@ export function AdminFacultyDashboard({
     setFacultyActionError(null);
 
     try {
-      const response = await fetch("/api/admin/faculty/deactivate", {
+      const response = await fetch("/api/staff/faculty/deactivate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ facultyProfileId: facultyId }),
@@ -664,7 +664,7 @@ export function AdminFacultyDashboard({
     setFacultyActionError(null);
 
     try {
-      const response = await fetch("/api/admin/faculty/activate", {
+      const response = await fetch("/api/staff/faculty/activate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ facultyProfileId: facultyId }),
@@ -758,7 +758,7 @@ export function AdminFacultyDashboard({
             activeSection={activeSection}
             setActiveSection={handleSetActiveSection}
             adminName={currentAdminName || adminName}
-            roleTitle="Admin"
+            roleTitle="Staff"
             profileImageUrl={adminAvatarUrl}
           />
         </aside>
@@ -793,7 +793,7 @@ export function AdminFacultyDashboard({
                 activeSection={activeSection}
                 setActiveSection={handleSetActiveSection}
                 adminName={currentAdminName || adminName}
-                roleTitle="Admin"
+                roleTitle="Staff"
                 profileImageUrl={adminAvatarUrl}
                 onNavigate={() => setIsMobileMenuOpen(false)}
               />

@@ -90,8 +90,10 @@ export async function GET(request: NextRequest) {
         (user?.app_metadata?.role as string | undefined);
 
       let isAllowed =
+        requesterRole === ROLE.STAFF ||
         requesterRole === ROLE.ADMIN ||
         requesterRole === ROLE.SUPER_ADMIN ||
+        requesterRole === "staff" ||
         (Boolean(requesterRole) && String(requesterRole).toLowerCase().includes("admin"));
 
       // Fallback: check database user_roles and admins tables if metadata is missing/incomplete
@@ -103,7 +105,7 @@ export async function GET(request: NextRequest) {
           .eq("profile_id", user.id);
 
         const dbRoles = (dbUserRoles ?? []).map((r: any) => r.roles?.code);
-        if (dbRoles.includes(ROLE.ADMIN) || dbRoles.includes(ROLE.SUPER_ADMIN)) {
+        if (dbRoles.includes(ROLE.STAFF) || dbRoles.includes(ROLE.ADMIN) || dbRoles.includes(ROLE.SUPER_ADMIN) || dbRoles.includes("staff")) {
           isAllowed = true;
         }
 
@@ -115,7 +117,7 @@ export async function GET(request: NextRequest) {
             .maybeSingle();
 
           const pRoles = ((profile?.user_roles as any[]) ?? []).map((r: any) => r.roles?.code);
-          if (pRoles.includes(ROLE.ADMIN) || pRoles.includes(ROLE.SUPER_ADMIN)) {
+          if (pRoles.includes(ROLE.STAFF) || pRoles.includes(ROLE.ADMIN) || pRoles.includes(ROLE.SUPER_ADMIN) || pRoles.includes("staff")) {
             isAllowed = true;
           }
         }

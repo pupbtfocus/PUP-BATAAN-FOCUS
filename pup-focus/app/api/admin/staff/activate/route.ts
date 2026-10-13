@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const targetRole =
       (targetUser.user_metadata?.role as string | undefined) ??
       (targetUser.app_metadata?.role as string | undefined) ??
-      ROLE.ADMIN;
+      ROLE.STAFF;
 
     const allowed = canManageAdminAccount({
       targetEmail,

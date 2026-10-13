@@ -75,7 +75,13 @@ export async function bootstrapInvitedFacultyAccount(user: {
     throw new Error(profileError?.message ?? "Failed to create profile");
   }
 
-  // 1. Remove from admins table if mistakenly present
+  // 1. Remove from staff or admins table if mistakenly present
+  try {
+    await serviceRoleClient
+      .from("staff")
+      .delete()
+      .or(`profile_id.eq.${profile.id},email.eq.${email}`);
+  } catch {}
   try {
     await serviceRoleClient
       .from("admins")

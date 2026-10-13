@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
             full_name: fullName,
             profile_image_bucket: profileImageMetadata.profile_image_bucket,
             profile_image_path: profileImageMetadata.profile_image_path,
-            role: ROLE.ADMIN,
+            role: ROLE.STAFF,
             created_via: "super_admin_admin_panel",
             created_by_super_admin_id: user.id,
             must_change_password: true,
@@ -269,7 +269,22 @@ export async function POST(request: NextRequest) {
               );
           }
 
-          // 3. Upsert into admins table
+          // 3. Upsert into staff and admins table
+          try {
+            await supabase
+              .from("staff")
+              .upsert(
+                {
+                  profile_id: newProfile.id,
+                  full_name: fullName,
+                  email: normalizedEmail,
+                  is_active: true,
+                  updated_at: new Date().toISOString(),
+                },
+                { onConflict: "profile_id" },
+              );
+          } catch {}
+
           try {
             await supabase
               .from("admins")
@@ -304,7 +319,7 @@ export async function POST(request: NextRequest) {
           link: actionLink,
           firstName: trimmedFirstName,
           fullName,
-          invitedRole: ROLE.ADMIN,
+          invitedRole: ROLE.STAFF,
         });
         sent = true;
       } catch (e) {

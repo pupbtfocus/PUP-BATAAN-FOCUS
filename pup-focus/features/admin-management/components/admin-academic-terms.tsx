@@ -150,7 +150,7 @@ export function AdminAcademicTerms({
     setSuccess(null);
 
     try {
-      const response = await fetch("/api/admin/academic-terms", {
+      const response = await fetch("/api/staff/academic-terms", {
         credentials: "include",
       });
       const data = await response.json();
@@ -188,7 +188,7 @@ export function AdminAcademicTerms({
     setSuccess(null);
 
     try {
-      const response = await fetch("/api/admin/academic-terms", {
+      const response = await fetch("/api/staff/academic-terms", {
         method: "POST",
         credentials: "include",
       });
@@ -241,7 +241,7 @@ export function AdminAcademicTerms({
 
     try {
       const response = await fetch(
-        `/api/admin/academic-terms?academicYear=${encodeURIComponent(
+        `/api/staff/academic-terms?academicYear=${encodeURIComponent(
           termToSetCurrent.academicYear,
         )}&semester=${encodeURIComponent(termToSetCurrent.semester)}`,
         {
@@ -309,7 +309,7 @@ export function AdminAcademicTerms({
 
     try {
       const response = await fetch(
-        `/api/admin/academic-terms?academicYear=${encodeURIComponent(
+        `/api/staff/academic-terms?academicYear=${encodeURIComponent(
           termToDelete.academicYear,
         )}&semester=${encodeURIComponent(termToDelete.semester)}`,
         {
@@ -925,10 +925,10 @@ export function AdminAcademicTerms({
                             window.location.pathname.startsWith("/super-admin"));
                         if (isSuper) {
                           window.location.href =
-                            "/super-admin/dashboard?tab=verification";
+                            "/staff/dashboard?tab=verification";
                         } else {
                           window.location.href =
-                            "/admin/dashboard?tab=requirements";
+                            "/staff/dashboard?tab=requirements";
                         }
                       }}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98]"
@@ -951,7 +951,7 @@ export function AdminAcademicTerms({
                           return;
                         }
                         window.location.href =
-                          "/super-admin/dashboard?tab=backups";
+                          "/staff/dashboard?tab=backups";
                       }}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white border border-slate-900 dark:border-slate-100 font-semibold text-xs transition-all cursor-pointer shadow-xs active:scale-[0.98]"
                     >

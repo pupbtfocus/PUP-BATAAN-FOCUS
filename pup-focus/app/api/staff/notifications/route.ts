@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    if (user && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN) {
+    if (user && requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff") {
       const { data: userRoleRow } = await supabase
         .from("user_roles")
         .select("roles!inner(code)")
@@ -65,14 +65,14 @@ export async function GET(request: NextRequest) {
         .maybeSingle();
 
       const dbCode = (userRoleRow?.roles as any)?.code;
-      if (dbCode === ROLE.ADMIN || dbCode === ROLE.SUPER_ADMIN) {
+      if (dbCode === ROLE.STAFF || dbCode === ROLE.ADMIN || dbCode === ROLE.SUPER_ADMIN || dbCode === "staff") {
         requesterRole = dbCode;
       }
     }
 
     if (
       !user ||
-      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
+      (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff")
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -247,7 +247,7 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    if (user && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN) {
+    if (user && requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff") {
       const { data: userRoleRow } = await supabase
         .from("user_roles")
         .select("roles!inner(code)")
@@ -255,14 +255,14 @@ export async function PATCH(request: NextRequest) {
         .maybeSingle();
 
       const dbCode = (userRoleRow?.roles as any)?.code;
-      if (dbCode === ROLE.ADMIN || dbCode === ROLE.SUPER_ADMIN) {
+      if (dbCode === ROLE.STAFF || dbCode === ROLE.ADMIN || dbCode === ROLE.SUPER_ADMIN || dbCode === "staff") {
         requesterRole = dbCode;
       }
     }
 
     if (
       !user ||
-      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
+      (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff")
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -318,7 +318,7 @@ export async function DELETE(request: NextRequest) {
 
     const supabase = getServiceRoleClient();
 
-    if (user && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN) {
+    if (user && requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff") {
       const { data: userRoleRow } = await supabase
         .from("user_roles")
         .select("roles!inner(code)")
@@ -326,14 +326,14 @@ export async function DELETE(request: NextRequest) {
         .maybeSingle();
 
       const dbCode = (userRoleRow?.roles as any)?.code;
-      if (dbCode === ROLE.ADMIN || dbCode === ROLE.SUPER_ADMIN) {
+      if (dbCode === ROLE.STAFF || dbCode === ROLE.ADMIN || dbCode === ROLE.SUPER_ADMIN || dbCode === "staff") {
         requesterRole = dbCode;
       }
     }
 
     if (
       !user ||
-      (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN)
+      (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff")
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
