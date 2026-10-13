@@ -120,11 +120,12 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        if (!isAllowed) {
+        if (!isAllowed && requesterRole !== ROLE.FACULTY) {
           const { data: adminRecord } = await adminSupabase
             .from("admins")
             .select("id")
             .eq("email", user.email?.toLowerCase())
+            .eq("is_active", true)
             .maybeSingle();
           if (adminRecord) {
             isAllowed = true;
