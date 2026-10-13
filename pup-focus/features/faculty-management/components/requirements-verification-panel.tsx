@@ -16,6 +16,8 @@ import {
   InfoCircle,
   Minus,
   NavArrowDown,
+  NavArrowLeft,
+  NavArrowRight,
   Notes,
   OpenNewWindow,
   Package,
@@ -423,7 +425,7 @@ function FacultyVerificationDrawer({
       section_code: string;
     }>
   >([]);
-  const [selectedClassFilter, setSelectedClassFilter] = useState<string>("all");
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [reviewingCode, setReviewingCode] = useState<string | null>(null);
   const [submittingAction, setSubmittingAction] = useState<"validate" | "revision" | null>(null);
@@ -530,22 +532,11 @@ function FacultyVerificationDrawer({
     };
   }, []);
 
-  // Highlight and scroll to target requirement if requested
+  // Reset selected class whenever faculty or active term changes
   useEffect(() => {
-    if (!initialRequirementCode || isLoading) return;
-    const timeout = setTimeout(() => {
-      const element = document.getElementById(`req-row-${initialRequirementCode}`);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
-        element.classList.add("ring-2", "ring-amber-400", "bg-amber-500/15", "dark:bg-amber-500/25");
-        const removeTimeout = setTimeout(() => {
-          element.classList.remove("ring-2", "ring-amber-400", "bg-amber-500/15", "dark:bg-amber-500/25");
-        }, 4000);
-        return () => clearTimeout(removeTimeout);
-      }
-    }, 350);
-    return () => clearTimeout(timeout);
-  }, [initialRequirementCode, isLoading]);
+    setSelectedClassId(null);
+  }, [faculty.id, academicYear, semester]);
+
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -754,57 +745,143 @@ function FacultyVerificationDrawer({
     return groups;
   }, [facultyClasses, submissions]);
 
-  const displayedClassGroups = useMemo(() => {
-    let result = classGroups;
-    if (selectedClassFilter !== "all") {
-      result = result.filter((g) => g.key === selectedClassFilter);
-    }
+  const selectedGroup = useMemo<SubmissionClassGroup | null>(() => {
+    if (!selectedClassId) return null;
+    return (
+      classGroups.find(
+        (g) => g.key === selectedClassId || (g.classId && g.classId === selectedClassId)
+      ) || null
+    );
+  }, [selectedClassId, classGroups]);
 
-    if (filterMode === "all") {
-      return result;
-    }
+  const selectedGroupPendingCount = useMemo(() => {
+    if (!selectedGroup) return 0;
+    return selectedGroup.submissions.filter((s) => {
+      const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
+      const sLower = (s.status || "").toLowerCase();
+      const isPending =
+        sLower === "uploaded" ||
+        sLower === "pending" ||
+        sLower === "submitted" ||
+        sLower === "under_review" ||
+        sLower === "pending_review";
+      return matchesTerm && isPending;
+    }).length;
+  }, [selectedGroup, academicYear, semester]);
 
-    // When a filter is active, only show groups that have matching requirements
-    return result.filter((group) => {
-      return allRequirements.some((req) => {
-        const code = req.code;
-        const matchingSub = group.submissions.find((s) => {
+  const selectedGroupRevisionsUploadedCount = useMemo(() => {
+    if (!selectedGroup) return 0;
+    return selectedGroup.submissions.filter((s) => {
+      const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
+      if (!matchesTerm) return false;
+      const sLower = (s.status || "").toLowerCase();
+      const isPending =
+        sLower === "uploaded" ||
+        sLower === "pending" ||
+        sLower === "submitted" ||
+        sLower === "under_review" ||
+        sLower === "pending_review";
+      const hasPriorRejection = (s.review_decisions || []).some(
+        (d) => (d.decision || "").toLowerCase() === "rejected"
+      );
+      const hasMultipleVersions = (s.document_versions || []).length > 1;
+      return isPending && (hasPriorRejection || hasMultipleVersions);
+    }).length;
+  }, [selectedGroup, academicYear, semester]);
+
+  const selectedGroupValidatedCount = useMemo(() => {
+    if (!selectedGroup) return 0;
+    return selectedGroup.submissions.filter((s) => {
+      const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
+      const sLower = (s.status || "").toLowerCase();
+      return matchesTerm && (sLower === "validated" || sLower === "approved");
+    }).length;
+  }, [selectedGroup, academicYear, semester]);
+
+  const selectedGroupRevisionCount = useMemo(() => {
+    if (!selectedGroup) return 0;
+    return selectedGroup.submissions.filter((s) => {
+      const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
+      const sLower = (s.status || "").toLowerCase();
+      return matchesTerm && (sLower === "rejected" || sLower === "needs_revision");
+    }).length;
+  }, [selectedGroup, academicYear, semester]);
+
+  const selectedGroupRequirements = useMemo(() => {
+    if (!selectedGroup) return [];
+    return allRequirements.filter((req) => {
+      if (filterMode === "all") return true;
+      const code = req.code;
+      const matchingSub = selectedGroup.submissions.find((s) => {
+        const codeMatched =
+          matchRequirementCode(
+            s.requirement_code,
+            (s as { requirement_id?: string }).requirement_id
+          ) === code || s.requirement_code === code;
+        return (
+          codeMatched && doesSubmissionMatchTerm(s, academicYear, semester)
+        );
+      });
+      const rawStatus = matchingSub
+        ? (matchingSub.status || "").toLowerCase()
+        : "not_submitted";
+      const isValidated = rawStatus === "validated" || rawStatus === "approved";
+      const isRevision =
+        rawStatus === "rejected" || rawStatus === "needs_revision";
+      const isPending =
+        rawStatus === "uploaded" ||
+        rawStatus === "pending" ||
+        rawStatus === "submitted" ||
+        rawStatus === "under_review" ||
+        rawStatus === "pending_review";
+      const hasPriorRejection = (matchingSub?.review_decisions || []).some(
+        (d) => (d.decision || "").toLowerCase() === "rejected"
+      );
+      const isRevisionUploaded =
+        isPending &&
+        (hasPriorRejection || (matchingSub?.document_versions || []).length > 1);
+
+      if (filterMode === "pending") return isPending;
+      if (filterMode === "revision_uploaded") return isRevisionUploaded;
+      if (filterMode === "validated") return isValidated;
+      if (filterMode === "revision") return isRevision;
+      return true;
+    });
+  }, [selectedGroup, allRequirements, filterMode, academicYear, semester]);
+
+  // Highlight and scroll to target requirement if requested
+  useEffect(() => {
+    if (!initialRequirementCode || isLoading) return;
+    if (!selectedClassId && classGroups.length > 0) {
+      const matchedGroup = classGroups.find((g) =>
+        g.submissions.some((s) => {
           const codeMatched =
             matchRequirementCode(
               s.requirement_code,
               (s as { requirement_id?: string }).requirement_id
-            ) === code || s.requirement_code === code;
-          return (
-            codeMatched && doesSubmissionMatchTerm(s, academicYear, semester)
-          );
-        });
-        const rawStatus = matchingSub
-          ? (matchingSub.status || "").toLowerCase()
-          : "not_submitted";
-        const isValidated = rawStatus === "validated" || rawStatus === "approved";
-        const isRevision =
-          rawStatus === "rejected" || rawStatus === "needs_revision";
-        const isPending =
-          rawStatus === "uploaded" ||
-          rawStatus === "pending" ||
-          rawStatus === "submitted" ||
-          rawStatus === "under_review" ||
-          rawStatus === "pending_review";
-        const hasPriorRejection = (matchingSub?.review_decisions || []).some(
-          (d) => (d.decision || "").toLowerCase() === "rejected"
-        );
-        const isRevisionUploaded =
-          isPending &&
-          (hasPriorRejection || (matchingSub?.document_versions || []).length > 1);
-
-        if (filterMode === "pending") return isPending;
-        if (filterMode === "revision_uploaded") return isRevisionUploaded;
-        if (filterMode === "validated") return isValidated;
-        if (filterMode === "revision") return isRevision;
-        return true;
-      });
-    });
-  }, [classGroups, selectedClassFilter, filterMode, allRequirements, academicYear, semester]);
+            ) === initialRequirementCode || s.requirement_code === initialRequirementCode;
+          return codeMatched;
+        })
+      );
+      if (matchedGroup) {
+        setSelectedClassId(matchedGroup.key);
+      } else {
+        setSelectedClassId(classGroups[0].key);
+      }
+    }
+    const timeout = setTimeout(() => {
+      const element = document.getElementById(`req-row-${initialRequirementCode}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.classList.add("ring-2", "ring-amber-400", "bg-amber-500/15", "dark:bg-amber-500/25");
+        const removeTimeout = setTimeout(() => {
+          element.classList.remove("ring-2", "ring-amber-400", "bg-amber-500/15", "dark:bg-amber-500/25");
+        }, 4000);
+        return () => clearTimeout(removeTimeout);
+      }
+    }, 450);
+    return () => clearTimeout(timeout);
+  }, [initialRequirementCode, isLoading, classGroups, selectedClassId]);
 
   // 1. Fetch current term submissions (only on faculty/term change, without retriggering on history state updates)
   useEffect(() => {
@@ -906,6 +983,7 @@ function FacultyVerificationDrawer({
   }, [activeTab, faculty.id, selectedHistoryAy, selectedHistorySem]);
 
   const handleClose = () => {
+    setSelectedClassId(null);
     setRemarksInput({});
     setRevisionModalData(null);
     setValidateModalData(null);
@@ -1173,13 +1251,17 @@ function FacultyVerificationDrawer({
   async function handleDownloadZip() {
     setIsDownloadingZip(true);
     try {
-      const zipFilename = `${faculty.fullName}_${academicYear}_${semester}_Requirements.zip`.replace(
+      const classSuffix = selectedGroup
+        ? `_${selectedGroup.isGeneral ? "General" : `${selectedGroup.sectionCode}_${selectedGroup.subjectCode}`}`
+        : "";
+      const zipFilename = `${faculty.fullName}_${academicYear}_${semester}${classSuffix}_Requirements.zip`.replace(
         /[\\/:*?"<>|]+/g,
         "_"
       );
 
       // Check uploaded requirement files
-      const uploadedSubmissions = submissions.filter((s) => {
+      const targetSubmissions = selectedGroup ? selectedGroup.submissions : submissions;
+      const uploadedSubmissions = targetSubmissions.filter((s) => {
         const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
         return matchesTerm && Boolean(s.id);
       });
@@ -1187,7 +1269,9 @@ function FacultyVerificationDrawer({
       if (uploadedSubmissions.length === 0) {
         setNoticeModalData({
           title: "No Downloadable Requirements",
-          message: `There are no uploaded requirement files available for download for ${faculty.fullName} for A.Y. ${academicYear} • ${semester}.`,
+          message: selectedGroup
+            ? `There are no uploaded requirement files available for download for ${selectedGroup.isGeneral ? "General Requirements" : `${selectedGroup.sectionCode} • ${selectedGroup.subjectCode}`}.`
+            : `There are no uploaded requirement files available for download for ${faculty.fullName} for A.Y. ${academicYear} • ${semester}.`,
         });
         return;
       }
@@ -1371,20 +1455,24 @@ function FacultyVerificationDrawer({
 
   // 2. "Validate All" Bulk Action Pop-up Modal Trigger
   function triggerValidateAllPendingModal() {
-    const pendingSubmissions = submissions.filter((s) => {
+    const targetSource = selectedGroup ? selectedGroup.submissions : submissions;
+    const pendingSubmissions = targetSource.filter((s) => {
       const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
       const isPending =
         s.status === "uploaded" ||
         s.status === "pending" ||
         s.status === "submitted" ||
-        s.status === "under_review";
+        s.status === "under_review" ||
+        s.status === "pending_review";
       return matchesTerm && isPending && Boolean(s.id);
     });
 
     if (pendingSubmissions.length === 0) {
       setNoticeModalData({
         title: "No Pending Requirements",
-        message: `No pending requirement submissions are available to validate for ${faculty.fullName} (A.Y. ${academicYear} • ${semester}).`,
+        message: selectedGroup
+          ? `No pending requirement submissions are available to validate for ${selectedGroup.isGeneral ? "General Requirements" : `${selectedGroup.sectionCode} • ${selectedGroup.subjectCode}`}.`
+          : `No pending requirement submissions are available to validate for ${faculty.fullName} (A.Y. ${academicYear} • ${semester}).`,
       });
       return;
     }
@@ -1395,13 +1483,15 @@ function FacultyVerificationDrawer({
   }
 
   async function executeValidateAllPending() {
-    const pendingSubmissions = submissions.filter((s) => {
+    const targetSource = selectedGroup ? selectedGroup.submissions : submissions;
+    const pendingSubmissions = targetSource.filter((s) => {
       const matchesTerm = doesSubmissionMatchTerm(s, academicYear, semester);
       const isPending =
         s.status === "uploaded" ||
         s.status === "pending" ||
         s.status === "submitted" ||
-        s.status === "under_review";
+        s.status === "under_review" ||
+        s.status === "pending_review";
       return matchesTerm && isPending && Boolean(s.id);
     });
 
@@ -1409,7 +1499,9 @@ function FacultyVerificationDrawer({
       setIsValidateModalOpen(false);
       setNoticeModalData({
         title: "No Pending Requirements",
-        message: `No pending requirement submissions are available to validate for ${faculty.fullName}.`,
+        message: selectedGroup
+          ? `No pending requirement submissions are available to validate for ${selectedGroup.isGeneral ? "General Requirements" : `${selectedGroup.sectionCode} • ${selectedGroup.subjectCode}`}.`
+          : `No pending requirement submissions are available to validate for ${faculty.fullName}.`,
       });
       return;
     }
@@ -1574,407 +1666,495 @@ function FacultyVerificationDrawer({
             <SystemLoadingScreen fullScreen={false} text="Loading faculty requirements..." />
           ) : activeTab === "current" ? (
             /* Tab 1: Current Submissions */
-            <div className="space-y-4">
-              {/* Bulk Actions & Filter Toolbar */}
-              <div className="flex items-center justify-between gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-2 sm:p-2.5 shadow-2xs overflow-x-auto">
-                {/* Filter Chips */}
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setFilterMode("all")}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
-                      filterMode === "all"
-                        ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
-                        : "bg-white text-slate-600 hover:border-amber-500/50 hover:bg-amber-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800"
-                    }`}
-                  >
-                    <span
-                      className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
-                        filterMode === "all"
-                          ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
-                      }`}
-                    >
-                      <AppIcon icon={Page} size="xs" color="inherit" />
-                    </span>
-                    <span>All Files</span>
-                    <span
-                      className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
-                        filterMode === "all"
-                          ? "bg-slate-950/20 text-slate-950"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                      }`}
-                    >
-                      {allRequirements.length}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFilterMode("pending")}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
-                      filterMode === "pending"
-                        ? "bg-amber-500 text-slate-950 shadow-xs font-bold"
-                        : "bg-white text-slate-600 hover:border-amber-500/50 hover:bg-amber-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800"
-                    }`}
-                  >
-                    <span
-                      className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
-                        filterMode === "pending"
-                          ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
-                          : "bg-amber-500 text-slate-950 border border-amber-600"
-                      }`}
-                    >
-                      <AppIcon icon={Hourglass} size="xs" color="inherit" />
-                    </span>
-                    <span>Need Review</span>
-                    <span
-                      className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
-                        filterMode === "pending"
-                          ? "bg-slate-950/20 text-slate-950"
-                          : "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300"
-                      }`}
-                    >
-                      {pendingSubmissionsCount}
-                    </span>
-                  </button>
-                  {revisionsUploadedCount > 0 ? (
+            selectedClassId === null || !selectedGroup ? (
+              /* Step 1: Class Selection Step (Default) */
+              <div className="space-y-5">
+                {/* Summary Header & Actions Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xs">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <span>Assigned Classes &amp; Subject Loads</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                        {classGroups.length} {classGroups.length === 1 ? "Class" : "Classes"}
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Select a class load below to review and verify submitted requirements for A.Y. {academicYear} &bull; {semester}.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setFilterMode("revision_uploaded")}
+                      disabled={isRefreshing || isLoading}
+                      onClick={handleRefresh}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
+                      title="Refresh current submissions"
+                    >
+                      <SystemRestart
+                        className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+                      />
+                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isDownloadingZip}
+                      onClick={handleDownloadZip}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
+                    >
+                      <AppIcon icon={Download} size="xs" color="inherit" className="text-slate-950" />
+                      <span>{isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Responsive Grid of Class Cards */}
+                {classGroups.length === 0 ? (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-14 text-center text-slate-500 dark:text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                      <AppIcon icon={InfoCircle} size="lg" color="muted" />
+                      <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                        No Classes Registered
+                      </h5>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        This faculty member does not have any classes or subject loads assigned for A.Y. {academicYear} &bull; {semester}.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {classGroups.map((group) => {
+                      const groupPendingCount = group.submissions.filter((s) => {
+                        const st = (s.status || "").toLowerCase();
+                        return (
+                          doesSubmissionMatchTerm(s, academicYear, semester) &&
+                          (st === "uploaded" ||
+                            st === "pending" ||
+                            st === "submitted" ||
+                            st === "under_review" ||
+                            st === "pending_review")
+                        );
+                      }).length;
+
+                      const groupRevisionCount = group.submissions.filter((s) => {
+                        const st = (s.status || "").toLowerCase();
+                        return (
+                          doesSubmissionMatchTerm(s, academicYear, semester) &&
+                          (st === "rejected" || st === "needs_revision")
+                        );
+                      }).length;
+
+                      const groupValidatedCount = group.submissions.filter((s) => {
+                        const st = (s.status || "").toLowerCase();
+                        return (
+                          doesSubmissionMatchTerm(s, academicYear, semester) &&
+                          (st === "validated" || st === "approved")
+                        );
+                      }).length;
+
+                      const totalReqs = allRequirements.length;
+                      const progressPct = totalReqs > 0 ? Math.round((groupValidatedCount / totalReqs) * 100) : 0;
+
+                      return (
+                        <div
+                          key={group.key}
+                          onClick={() => setSelectedClassId(group.key)}
+                          className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 hover:border-amber-500/80 dark:hover:border-amber-500/70 hover:shadow-md transition-all duration-200 cursor-pointer text-left"
+                        >
+                          <div>
+                            {/* Subject Code & Section Code Badge */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {group.isGeneral ? (
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-100 tracking-wide shadow-2xs">
+                                    General
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-[#780000] text-white tracking-wide shadow-2xs">
+                                    {group.sectionCode}
+                                  </span>
+                                )}
+                                {!group.isGeneral && (
+                                  <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400">
+                                    {group.subjectCode}
+                                  </span>
+                                )}
+                              </div>
+
+                              {group.units !== null ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                  {group.units.toFixed(1)} Units
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                  Institutional
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Description */}
+                            <h5 className="mt-3 text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
+                              {group.description}
+                            </h5>
+
+                            {/* Progress bar */}
+                            <div className="mt-4">
+                              <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                                <span>Validation Progress</span>
+                                <span className="font-bold text-slate-700 dark:text-slate-300">{progressPct}%</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-300 rounded-full"
+                                  style={{ width: `${progressPct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Card Footer: Progress Badge & Status Summary */}
+                          <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {groupPendingCount > 0 ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-2 py-0.5 text-[10.5px] font-bold">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                  {groupPendingCount} Pending Review
+                                </span>
+                              ) : null}
+                              {groupRevisionCount > 0 ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-300 px-2 py-0.5 text-[10.5px] font-bold">
+                                  {groupRevisionCount} Revision
+                                </span>
+                              ) : null}
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10.5px] font-bold">
+                                {groupValidatedCount} / {totalReqs} Validated
+                              </span>
+                            </div>
+
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0">
+                              <span>Open</span>
+                              <NavArrowRight className="h-3.5 w-3.5" />
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Step 2: Class Detail Step */
+              <div className="space-y-4">
+                {/* Top Navigation Bar: Back Button, Header Banner & Dropdown Switcher */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedClassId(null)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                    >
+                      <NavArrowLeft className="h-4 w-4" />
+                      <span>Back to Class List</span>
+                    </button>
+
+                    <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+
+                    {/* Active Class Header Banner */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {selectedGroup.isGeneral ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-100 tracking-wide shadow-2xs">
+                          General
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-[#780000] text-white tracking-wide shadow-2xs">
+                          {selectedGroup.sectionCode}
+                        </span>
+                      )}
+                      {!selectedGroup.isGeneral && (
+                        <span className="text-xs font-bold font-mono text-amber-700 dark:text-amber-400">
+                          {selectedGroup.subjectCode}
+                        </span>
+                      )}
+                      {!selectedGroup.isGeneral && (
+                        <span className="text-slate-300 dark:text-slate-700">&bull;</span>
+                      )}
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        {selectedGroup.description}
+                      </span>
+                      {selectedGroup.units !== null ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          {selectedGroup.units.toFixed(1)} Units
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Quick Dropdown Select */}
+                  {classGroups.length > 1 && (
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor="quick-class-switcher"
+                        className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0"
+                      >
+                        Switch Class:
+                      </label>
+                      <select
+                        id="quick-class-switcher"
+                        value={selectedGroup.key}
+                        onChange={(e) => setSelectedClassId(e.target.value)}
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-semibold outline-none transition focus:border-amber-500 cursor-pointer shadow-2xs"
+                      >
+                        {classGroups.map((g) => (
+                          <option key={g.key} value={g.key}>
+                            {g.isGeneral ? "General Requirements" : `${g.sectionCode} • ${g.subjectCode}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {/* Scoped Filter Toolbar & Bulk Actions */}
+                <div className="flex items-center justify-between gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 p-2 sm:p-2.5 shadow-2xs overflow-x-auto">
+                  {/* Filter Chips */}
+                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setFilterMode("all")}
                       className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
-                        filterMode === "revision_uploaded"
-                          ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
+                        filterMode === "all"
+                          ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 shadow-xs font-bold"
                           : "bg-white text-slate-600 hover:border-amber-500/50 hover:bg-amber-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800"
                       }`}
                     >
                       <span
                         className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
-                          filterMode === "revision_uploaded"
+                          filterMode === "all"
                             ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
-                            : "bg-amber-500 text-slate-950 border border-amber-600"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
                         }`}
                       >
-                        <AppIcon icon={WarningCircle} size="xs" color="inherit" />
+                        <AppIcon icon={Page} size="xs" color="inherit" />
                       </span>
-                      <span>Revisions Uploaded</span>
+                      <span>All Files</span>
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
-                          filterMode === "revision_uploaded"
+                          filterMode === "all"
                             ? "bg-slate-950/20 text-slate-950"
-                            : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
-                        {revisionsUploadedCount}
+                        {allRequirements.length}
                       </span>
                     </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => setFilterMode("validated")}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
-                      filterMode === "validated"
-                        ? "bg-[#0b5336] text-white shadow-xs ring-1 ring-[#08412a] font-bold"
-                        : "bg-white text-slate-600 hover:border-emerald-500/50 hover:bg-emerald-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/20 border border-slate-200 dark:border-slate-800"
-                    }`}
-                  >
-                    <span
-                      className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
-                        filterMode === "validated"
-                          ? "bg-white/20 text-white border border-white/30"
-                          : "bg-[#0b5336] text-white border border-[#08412a]"
-                      }`}
-                    >
-                      <AppIcon icon={Check} size="xs" color="white" strokeWidth={2.5} />
-                    </span>
-                    <span>Validated</span>
-                    <span
-                      className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
-                        filterMode === "validated"
-                          ? "bg-white/20 text-white"
-                          : "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300"
-                      }`}
-                    >
-                      {validatedSubmissionsCount}
-                    </span>
-                  </button>
-                  {revisionSubmissionsCount > 0 ? (
+
                     <button
                       type="button"
-                      onClick={() => setFilterMode("revision")}
+                      onClick={() => setFilterMode("pending")}
                       className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
-                        filterMode === "revision"
-                          ? "bg-[#780000] text-white shadow-xs ring-1 ring-[#5e0000] font-bold"
-                          : "bg-white text-slate-600 hover:border-rose-500/50 hover:bg-rose-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-rose-950/20 border border-slate-200 dark:border-slate-800"
+                        filterMode === "pending"
+                          ? "bg-amber-500 text-slate-950 shadow-xs font-bold"
+                          : "bg-white text-slate-600 hover:border-amber-500/50 hover:bg-amber-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800"
                       }`}
                     >
                       <span
                         className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
-                          filterMode === "revision"
-                            ? "bg-white/20 text-white border border-white/30"
-                            : "bg-[#780000] text-white border border-[#5e0000]"
+                          filterMode === "pending"
+                            ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
+                            : "bg-amber-500 text-slate-950 border border-amber-600"
                         }`}
                       >
-                        <AppIcon icon={Xmark} size="xs" color="white" strokeWidth={2.5} />
+                        <AppIcon icon={Hourglass} size="xs" color="inherit" />
                       </span>
-                      <span>Needs Revision</span>
+                      <span>Need Review</span>
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
-                          filterMode === "revision"
-                            ? "bg-white/20 text-white"
-                            : "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300"
+                          filterMode === "pending"
+                            ? "bg-slate-950/20 text-slate-950"
+                            : "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300"
                         }`}
                       >
-                        {revisionSubmissionsCount}
+                        {selectedGroupPendingCount}
                       </span>
                     </button>
-                  ) : null}
-                </div>
 
-                {/* Bulk Actions */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    disabled={isRefreshing || isLoading}
-                    onClick={handleRefresh}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
-                    title="Refresh current submissions"
-                  >
-                    <SystemRestart
-                      className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                    />
-                    <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                  </button>
+                    {selectedGroupRevisionsUploadedCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setFilterMode("revision_uploaded")}
+                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                          filterMode === "revision_uploaded"
+                            ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
+                            : "bg-white text-slate-600 hover:border-amber-500/50 hover:bg-amber-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/20 border border-slate-200 dark:border-slate-800"
+                        }`}
+                      >
+                        <span
+                          className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
+                            filterMode === "revision_uploaded"
+                              ? "bg-slate-950/20 text-slate-950 border border-slate-950/30"
+                              : "bg-amber-500 text-slate-950 border border-amber-600"
+                          }`}
+                        >
+                          <AppIcon icon={WarningCircle} size="xs" color="inherit" />
+                        </span>
+                        <span>Revisions Uploaded</span>
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                            filterMode === "revision_uploaded"
+                              ? "bg-slate-950/20 text-slate-950"
+                              : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                          }`}
+                        >
+                          {selectedGroupRevisionsUploadedCount}
+                        </span>
+                      </button>
+                    ) : null}
 
-                  <button
-                    type="button"
-                    disabled={isValidatingAll || pendingSubmissionsCount === 0}
-                    onClick={triggerValidateAllPendingModal}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-white/20 text-white border border-white/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
-                      <AppIcon icon={Check} size="xs" color="white" strokeWidth={2.5} />
-                    </span>
-                    <span>
-                      {isValidatingAll
-                        ? "Validating..."
-                        : `Validate All Pending (${pendingSubmissionsCount})`}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={isDownloadingZip}
-                    onClick={handleDownloadZip}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
-                  >
-                    <AppIcon icon={Download} size="xs" color="inherit" className="text-slate-950" />
-                    <span>{isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Class Filter Bar */}
-              {classGroups.length > 1 ? (
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0">
-                    Class Filter:
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedClassFilter("all")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 shadow-2xs ${
-                      selectedClassFilter === "all"
-                        ? "bg-[#780000] text-white shadow-xs ring-1 ring-[#5e0000] font-bold"
-                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    All Classes ({classGroups.length})
-                  </button>
-                  {classGroups.map((g) => (
                     <button
-                      key={g.key}
                       type="button"
-                      onClick={() => setSelectedClassFilter(g.key)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 shadow-2xs flex items-center gap-1.5 ${
-                        selectedClassFilter === g.key
-                          ? "bg-[#780000] text-white shadow-xs ring-1 ring-[#5e0000] font-bold"
-                          : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      onClick={() => setFilterMode("validated")}
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                        filterMode === "validated"
+                          ? "bg-[#0b5336] text-white shadow-xs ring-1 ring-[#08412a] font-bold"
+                          : "bg-white text-slate-600 hover:border-emerald-500/50 hover:bg-emerald-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/20 border border-slate-200 dark:border-slate-800"
                       }`}
                     >
-                      <span className="font-bold">{g.sectionCode}</span>
-                      {!g.isGeneral && (
-                        <span className="opacity-75 font-mono text-[11px]">({g.subjectCode})</span>
-                      )}
+                      <span
+                        className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
+                          filterMode === "validated"
+                            ? "bg-white/20 text-white border border-white/30"
+                            : "bg-[#0b5336] text-white border border-[#08412a]"
+                        }`}
+                      >
+                        <AppIcon icon={Check} size="xs" color="white" strokeWidth={2.5} />
+                      </span>
+                      <span>Validated</span>
+                      <span
+                        className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                          filterMode === "validated"
+                            ? "bg-white/20 text-white"
+                            : "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300"
+                        }`}
+                      >
+                        {selectedGroupValidatedCount}
+                      </span>
                     </button>
-                  ))}
-                </div>
-              ) : null}
 
-              {/* Grouped Class Sections or Empty State */}
-              {displayedClassGroups.length === 0 ? (
-                <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-12 text-center text-slate-500 dark:text-slate-400">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <AppIcon icon={CheckCircle} size="md" color="success" />
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                      {filterMode === "pending"
-                        ? "All submitted files have been reviewed and verified!"
-                        : "No requirements match the selected filter."}
-                    </p>
+                    {selectedGroupRevisionCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setFilterMode("revision")}
+                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer shadow-2xs ${
+                          filterMode === "revision"
+                            ? "bg-[#780000] text-white shadow-xs ring-1 ring-[#5e0000] font-bold"
+                            : "bg-white text-slate-600 hover:border-rose-500/50 hover:bg-rose-50/40 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-rose-950/20 border border-slate-200 dark:border-slate-800"
+                        }`}
+                      >
+                        <span
+                          className={`inline-flex items-center justify-center h-4 w-4 rounded-full shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5 ${
+                            filterMode === "revision"
+                              ? "bg-white/20 text-white border border-white/30"
+                              : "bg-[#780000] text-white border border-[#5e0000]"
+                          }`}
+                        >
+                          <AppIcon icon={Xmark} size="xs" color="white" strokeWidth={2.5} />
+                        </span>
+                        <span>Needs Revision</span>
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${
+                            filterMode === "revision"
+                              ? "bg-white/20 text-white"
+                              : "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300"
+                          }`}
+                        >
+                          {selectedGroupRevisionCount}
+                        </span>
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {/* Bulk Actions */}
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
-                      onClick={() => setFilterMode("all")}
-                      className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                      disabled={isRefreshing || isLoading}
+                      onClick={handleRefresh}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
+                      title="Refresh current submissions"
                     >
-                      View All Files
+                      <SystemRestart
+                        className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+                      />
+                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isValidatingAll || selectedGroupPendingCount === 0}
+                      onClick={triggerValidateAllPendingModal}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-white/20 text-white border border-white/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                        <AppIcon icon={Check} size="xs" color="white" strokeWidth={2.5} />
+                      </span>
+                      <span>
+                        {isValidatingAll
+                          ? "Validating..."
+                          : `Validate Class Pending (${selectedGroupPendingCount})`}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isDownloadingZip}
+                      onClick={handleDownloadZip}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
+                    >
+                      <AppIcon icon={Download} size="xs" color="inherit" className="text-slate-950" />
+                      <span>{isDownloadingZip ? "Zipping..." : "Download ZIP"}</span>
                     </button>
                   </div>
                 </div>
-              ) : (
-                displayedClassGroups.map((group) => {
-                  const groupPendingCount = group.submissions.filter((s) => {
-                    const st = (s.status || "").toLowerCase();
-                    return (
-                      doesSubmissionMatchTerm(s, academicYear, semester) &&
-                      (st === "uploaded" ||
-                        st === "pending" ||
-                        st === "submitted" ||
-                        st === "under_review" ||
-                        st === "pending_review")
-                    );
-                  }).length;
 
-                  const groupRevisionCount = group.submissions.filter((s) => {
-                    const st = (s.status || "").toLowerCase();
-                    return (
-                      doesSubmissionMatchTerm(s, academicYear, semester) &&
-                      (st === "rejected" || st === "needs_revision")
-                    );
-                  }).length;
-
-                  const groupValidatedCount = group.submissions.filter((s) => {
-                    const st = (s.status || "").toLowerCase();
-                    return (
-                      doesSubmissionMatchTerm(s, academicYear, semester) &&
-                      (st === "validated" || st === "approved")
-                    );
-                  }).length;
-
-                  const groupRequirements = allRequirements.filter((req) => {
-                    if (filterMode === "all") return true;
-                    const code = req.code;
-                    const matchingSub = group.submissions.find((s) => {
-                      const codeMatched =
-                        matchRequirementCode(
-                          s.requirement_code,
-                          (s as { requirement_id?: string }).requirement_id
-                        ) === code || s.requirement_code === code;
-                      return (
-                        codeMatched &&
-                        doesSubmissionMatchTerm(s, academicYear, semester)
-                      );
-                    });
-                    const rawStatus = matchingSub
-                      ? (matchingSub.status || "").toLowerCase()
-                      : "not_submitted";
-                    const isValidated =
-                      rawStatus === "validated" || rawStatus === "approved";
-                    const isRevision =
-                      rawStatus === "rejected" || rawStatus === "needs_revision";
-                    const isPending =
-                      rawStatus === "uploaded" ||
-                      rawStatus === "pending" ||
-                      rawStatus === "submitted" ||
-                      rawStatus === "under_review" ||
-                      rawStatus === "pending_review";
-                    const hasPriorRejection = (
-                      matchingSub?.review_decisions || []
-                    ).some((d) => (d.decision || "").toLowerCase() === "rejected");
-                    const isRevisionUploaded =
-                      isPending &&
-                      (hasPriorRejection ||
-                        (matchingSub?.document_versions || []).length > 1);
-
-                    if (filterMode === "pending") return isPending;
-                    if (filterMode === "revision_uploaded")
-                      return isRevisionUploaded;
-                    if (filterMode === "validated") return isValidated;
-                    if (filterMode === "revision") return isRevision;
-                    return true;
-                  });
-
-                  return (
-                    <div
-                      key={group.key}
-                      className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs"
-                    >
-                      {/* Class Header Banner */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent dark:from-slate-950/80 dark:via-slate-950/50 dark:to-transparent border-b border-slate-200 dark:border-slate-800">
-                        <div className="flex flex-wrap items-center gap-3">
-                          {group.isGeneral ? (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-100 tracking-wide shadow-2xs">
-                              General
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-[#780000] text-white tracking-wide shadow-2xs">
-                              {group.sectionCode}
-                            </span>
-                          )}
-                          <div className="flex flex-wrap items-center gap-2">
-                            {!group.isGeneral && (
-                              <span className="text-xs font-bold text-amber-700 dark:text-amber-400 font-mono">
-                                {group.subjectCode}
-                              </span>
-                            )}
-                            {!group.isGeneral && (
-                              <span className="text-slate-300 dark:text-slate-600">•</span>
-                            )}
-                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                              {group.description}
-                            </span>
-                            {group.units ? (
-                              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                                ({group.units} Units)
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        {/* Class Group Compliance Badges */}
-                        <div className="flex items-center gap-2">
-                          {groupPendingCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-2 py-0.5 text-[10.5px] font-bold">
-                              {groupPendingCount} Pending
-                            </span>
-                          ) : null}
-                          {groupRevisionCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-300 px-2 py-0.5 text-[10.5px] font-bold">
-                              {groupRevisionCount} Revision
-                            </span>
-                          ) : null}
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10.5px] font-bold">
-                            {groupValidatedCount} / {allRequirements.length} Validated
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Class Requirements Table */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
-                          <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            <tr>
-                              <th className="px-4 py-2.5 w-[26%]">Requirement</th>
-                              <th className="px-3 py-2.5 w-[12%] text-center">Type</th>
-                              <th className="px-4 py-2.5 w-[24%]">Attached File</th>
-                              <th className="px-4 py-2.5 w-[22%]">Notes &amp; Feedback</th>
-                              <th className="px-4 py-2.5 w-[16%] text-center">Status &amp; Action</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
-                            {groupRequirements.map((req) => {
-                              const code = req.code;
-                              const reqLabel = req.title;
-                              const isMandatory = req.isMandatory;
-                              const matchingSubmission = group.submissions.find((s) => {
+                {/* Class Specific Requirements Table or Empty State */}
+                {selectedGroupRequirements.length === 0 ? (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-12 text-center text-slate-500 dark:text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <AppIcon icon={CheckCircle} size="md" color="success" />
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        {filterMode === "pending"
+                          ? "All submitted files for this class have been reviewed and verified!"
+                          : "No requirements match the selected filter."}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setFilterMode("all")}
+                        className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                      >
+                        View All Files
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
+                        <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          <tr>
+                            <th className="px-4 py-2.5 w-[26%]">Requirement</th>
+                            <th className="px-3 py-2.5 w-[12%] text-center">Type</th>
+                            <th className="px-4 py-2.5 w-[24%]">Attached File</th>
+                            <th className="px-4 py-2.5 w-[22%]">Notes &amp; Feedback</th>
+                            <th className="px-4 py-2.5 w-[16%] text-center">Status &amp; Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                          {selectedGroupRequirements.map((req) => {
+                            const code = req.code;
+                            const reqLabel = req.title;
+                            const isMandatory = req.isMandatory;
+                            const matchingSubmission = selectedGroup.submissions.find((s) => {
                                 const codeMatched =
                                   matchRequirementCode(
                                     s.requirement_code,
@@ -2058,7 +2238,7 @@ function FacultyVerificationDrawer({
 
                               return (
                                 <tr
-                                  key={`${group.key}-${code}`}
+                                  key={`${selectedGroup.key}-${code}`}
                                   id={`req-row-${code}`}
                                   className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                                 >
@@ -2390,10 +2570,9 @@ function FacultyVerificationDrawer({
                         </table>
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
+                  )}
+                </div>
+              )
           ) : (
             /* Tab 2: Verification History */
             <div className="space-y-4">
