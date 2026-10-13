@@ -69,6 +69,14 @@ export async function bootstrapInvitedAdminAccount(user: {
     throw new Error(profileError?.message ?? "Failed to create profile");
   }
 
+  // 1. Remove from faculty table if mistakenly present
+  try {
+    await serviceRoleClient
+      .from("faculty")
+      .delete()
+      .or(`profile_id.eq.${profile.id},email.eq.${email}`);
+  } catch {}
+
   const { data: adminRole, error: adminRoleError } = await serviceRoleClient
     .from("roles")
     .select("id")
@@ -78,6 +86,15 @@ export async function bootstrapInvitedAdminAccount(user: {
   if (adminRoleError || !adminRole) {
     throw new Error("Admin role not found. Seed roles first.");
   }
+
+  // 2. Remove conflicting faculty roles from user_roles
+  try {
+    await serviceRoleClient
+      .from("user_roles")
+      .delete()
+      .eq("profile_id", profile.id)
+      .neq("role_id", adminRole.id);
+  } catch {}
 
   const { error: userRoleError } = await serviceRoleClient
     .from("user_roles")
@@ -102,8 +119,9 @@ export async function bootstrapInvitedAdminAccount(user: {
           full_name: fullName,
           email,
           is_active: true,
+          updated_at: new Date().toISOString(),
         },
-        { onConflict: "email" },
+        { onConflict: "profile_id" },
       );
   } catch {
     // Optional table

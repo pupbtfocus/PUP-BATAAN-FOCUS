@@ -234,6 +234,15 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (newProfile?.id) {
+          // 1. Remove from faculty table if mistakenly present
+          try {
+            await supabase
+              .from("faculty")
+              .delete()
+              .or(`profile_id.eq.${newProfile.id},email.eq.${normalizedEmail}`);
+          } catch {}
+
+          // 2. Set user_roles (remove conflicting faculty role)
           const { data: adminRoleRow } = await supabase
             .from("roles")
             .select("id")
@@ -241,6 +250,14 @@ export async function POST(request: NextRequest) {
             .maybeSingle();
 
           if (adminRoleRow?.id) {
+            try {
+              await supabase
+                .from("user_roles")
+                .delete()
+                .eq("profile_id", newProfile.id)
+                .neq("role_id", adminRoleRow.id);
+            } catch {}
+
             await supabase
               .from("user_roles")
               .upsert(
@@ -250,6 +267,24 @@ export async function POST(request: NextRequest) {
                 },
                 { onConflict: "profile_id,role_id" },
               );
+          }
+
+          // 3. Upsert into admins table
+          try {
+            await supabase
+              .from("admins")
+              .upsert(
+                {
+                  profile_id: newProfile.id,
+                  full_name: fullName,
+                  email: normalizedEmail,
+                  is_active: true,
+                  updated_at: new Date().toISOString(),
+                },
+                { onConflict: "profile_id" },
+              );
+          } catch (adminErr) {
+            console.error("Failed to upsert admins table:", adminErr);
           }
         }
       } catch (assignError) {
