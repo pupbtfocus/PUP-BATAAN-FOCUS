@@ -1,4 +1,4 @@
-export const FACULTY_PROFILE_IMAGE_BUCKET = "compliance-private";
+export const FACULTY_PROFILE_IMAGE_BUCKET = "profile-pictures";
 
 export function buildFacultyFullName(input: {
   firstName?: string | null;

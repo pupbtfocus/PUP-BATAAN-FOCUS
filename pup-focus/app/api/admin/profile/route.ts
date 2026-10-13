@@ -271,15 +271,15 @@ export async function PATCH(request: NextRequest) {
       fullName ||
       previousFullName;
 
-    // 2. Handle Avatar Upload or Removal in compliance-private bucket
+    // 2. Handle Avatar Upload or Removal in profile-pictures bucket
     let newAvatarUrl: string | null = null;
     let newProfileImagePath: string | null = previousMetadata.profile_image_path || null;
-    let newProfileImageBucket: string | null = previousMetadata.profile_image_bucket || "compliance-private";
+    let newProfileImageBucket: string | null = previousMetadata.profile_image_bucket || "profile-pictures";
 
     if (removeAvatar) {
       if (previousMetadata.profile_image_path) {
         await supabaseAdmin.storage
-          .from(previousMetadata.profile_image_bucket || "compliance-private")
+          .from(previousMetadata.profile_image_bucket || "profile-pictures")
           .remove([previousMetadata.profile_image_path])
           .catch(() => null);
       }
@@ -307,7 +307,7 @@ export async function PATCH(request: NextRequest) {
       const arrayBuffer = await avatarFile.arrayBuffer();
 
       const { error: uploadError } = await supabaseAdmin.storage
-        .from("compliance-private")
+        .from("profile-pictures")
         .upload(storagePath, arrayBuffer, {
           contentType: avatarFile.type || "application/octet-stream",
           upsert: true,
@@ -321,11 +321,11 @@ export async function PATCH(request: NextRequest) {
       }
 
       const { data: signedData } = await supabaseAdmin.storage
-        .from("compliance-private")
+        .from("profile-pictures")
         .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
 
       newProfileImagePath = storagePath;
-      newProfileImageBucket = "compliance-private";
+      newProfileImageBucket = "profile-pictures";
       newAvatarUrl = signedData?.signedUrl || null;
 
       // Clean up previous image if different
@@ -334,7 +334,7 @@ export async function PATCH(request: NextRequest) {
         previousMetadata.profile_image_path !== storagePath
       ) {
         await supabaseAdmin.storage
-          .from(previousMetadata.profile_image_bucket || "compliance-private")
+          .from(previousMetadata.profile_image_bucket || "profile-pictures")
           .remove([previousMetadata.profile_image_path])
           .catch(() => null);
       }

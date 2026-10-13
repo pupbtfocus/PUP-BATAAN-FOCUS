@@ -21,8 +21,8 @@ async function resolveAvatarUrl(
     let storagePath = rawAvatarUrl;
     if (storagePath.includes("/avatars/")) {
       storagePath = storagePath.split("/avatars/")[1].split("?")[0];
-    } else if (storagePath.includes("/compliance-private/")) {
-      storagePath = storagePath.split("/compliance-private/")[1].split("?")[0];
+    } else if (storagePath.includes("/profile-pictures/")) {
+      storagePath = storagePath.split("/profile-pictures/")[1].split("?")[0];
     }
 
     const { data: publicData } = supabaseAdmin.storage
@@ -52,17 +52,17 @@ async function resolveAvatarUrl(
       }
     }
 
-    // Legacy fallback: Search compliance-private bucket under admin-profile-images/${email}
+    // Legacy fallback: Search profile-pictures bucket under admin-profile-images/${email}
     const legacyFolderPath = `admin-profile-images/${email}`;
     const { data: legacyFiles } = await supabaseAdmin.storage
-      .from("compliance-private")
+      .from("profile-pictures")
       .list(legacyFolderPath, { limit: 10, sortBy: { column: "created_at", order: "desc" } });
 
     if (legacyFiles && legacyFiles.length > 0) {
       const latestFile = legacyFiles[0];
       const filePath = `${legacyFolderPath}/${latestFile.name}`;
       const { data, error } = await supabaseAdmin.storage
-        .from("compliance-private")
+        .from("profile-pictures")
         .createSignedUrl(filePath, 60 * 60 * 24);
 
       if (!error && data?.signedUrl) {

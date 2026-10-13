@@ -10,9 +10,9 @@ export async function resolveAdminAvatarUrl(
   const email = user.email || "";
   const userId = user.id;
 
-  // 1. Direct check: profile_image_path stored in user_metadata (compliance-private)
+  // 1. Direct check: profile_image_path stored in user_metadata (profile-pictures)
   const profileImagePath = metadata.profile_image_path;
-  const profileImageBucket = metadata.profile_image_bucket || "compliance-private";
+  const profileImageBucket = metadata.profile_image_bucket || "profile-pictures";
   if (profileImagePath && typeof profileImagePath === "string" && profileImagePath.trim()) {
     try {
       const cleanPath = profileImagePath.trim().replace(/^\/+/, "");
@@ -26,19 +26,19 @@ export async function resolveAdminAvatarUrl(
     } catch {}
   }
 
-  // 2. Search compliance-private bucket under admin-profile-images/${email}
+  // 2. Search profile-pictures bucket under admin-profile-images/${email}
   if (email) {
     try {
       const folderPath = `admin-profile-images/${email}`;
       const { data: files } = await supabaseAdmin.storage
-        .from("compliance-private")
+        .from("profile-pictures")
         .list(folderPath, { limit: 5, sortBy: { column: "created_at", order: "desc" } });
 
       if (files && files.length > 0) {
         const latestFile = files[0];
         const filePath = `${folderPath}/${latestFile.name}`;
         const { data: signed, error } = await supabaseAdmin.storage
-          .from("compliance-private")
+          .from("profile-pictures")
           .createSignedUrl(filePath, 60 * 60 * 24 * 7);
 
         if (!error && signed?.signedUrl) {
@@ -48,19 +48,19 @@ export async function resolveAdminAvatarUrl(
     } catch {}
   }
 
-  // 3. Search compliance-private bucket under faculty-profile-images/${email}
+  // 3. Search profile-pictures bucket under faculty-profile-images/${email}
   if (email) {
     try {
       const folderPath = `faculty-profile-images/${email}`;
       const { data: files } = await supabaseAdmin.storage
-        .from("compliance-private")
+        .from("profile-pictures")
         .list(folderPath, { limit: 5, sortBy: { column: "created_at", order: "desc" } });
 
       if (files && files.length > 0) {
         const latestFile = files[0];
         const filePath = `${folderPath}/${latestFile.name}`;
         const { data: signed, error } = await supabaseAdmin.storage
-          .from("compliance-private")
+          .from("profile-pictures")
           .createSignedUrl(filePath, 60 * 60 * 24 * 7);
 
         if (!error && signed?.signedUrl) {
@@ -83,11 +83,11 @@ export async function resolveAdminAvatarUrl(
       return trimmed;
     }
 
-    if (trimmed.includes("compliance-private/")) {
-      const path = trimmed.split("compliance-private/")[1].split("?")[0];
+    if (trimmed.includes("profile-pictures/")) {
+      const path = trimmed.split("profile-pictures/")[1].split("?")[0];
       try {
         const { data: signed } = await supabaseAdmin.storage
-          .from("compliance-private")
+          .from("profile-pictures")
           .createSignedUrl(path, 60 * 60 * 24 * 7);
         if (signed?.signedUrl) return signed.signedUrl;
       } catch {}
