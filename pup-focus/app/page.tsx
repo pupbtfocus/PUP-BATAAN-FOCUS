@@ -205,8 +205,13 @@ export default function Home() {
       }
 
       // If active session was superseded by a newer login elsewhere, clear credentials and stay on login page
-      const localLoginTime =
+      const storedLoginUser =
         typeof window !== "undefined"
+          ? sessionStorage.getItem("pup_focus_login_user") ||
+            localStorage.getItem("pup_focus_login_user")
+          : null;
+      const localLoginTime =
+        typeof window !== "undefined" && storedLoginUser === user.id
           ? sessionStorage.getItem("pup_focus_login_time") ||
             localStorage.getItem("pup_focus_login_time")
           : null;
@@ -526,6 +531,8 @@ export default function Home() {
       try {
         localStorage.setItem("pup_focus_login_time", loginTime);
         sessionStorage.setItem("pup_focus_login_time", loginTime);
+        localStorage.setItem("pup_focus_login_user", user.id);
+        sessionStorage.setItem("pup_focus_login_user", user.id);
         sessionStorage.removeItem("pup_focus_logged_out");
       } catch (storageErr) {
         console.warn("[Auth] Could not save login time:", storageErr);
