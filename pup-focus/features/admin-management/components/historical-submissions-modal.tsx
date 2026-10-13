@@ -12,7 +12,7 @@ import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
-import type { HistoricalSubmissionItem } from "@/app/api/admin/academic-terms/submissions/route";
+import type { HistoricalSubmissionItem } from "@/app/api/staff/academic-terms/submissions/route";
 
 interface HistoricalSubmissionsModalProps {
   isOpen: boolean;
@@ -69,7 +69,7 @@ export function HistoricalSubmissionsModal({
 
       params.set("_t", String(Date.now()));
       const res = await fetch(
-        `/api/admin/academic-terms/submissions?${params.toString()}`,
+        `/api/staff/academic-terms/submissions?${params.toString()}`,
         { credentials: "include", cache: "no-store" },
       );
       const data = await res.json();
@@ -231,8 +231,10 @@ export function HistoricalSubmissionsModal({
               {isCurrentTerm && (
                 <a
                   href={
-                    typeof window !== "undefined" && window.location.pathname.startsWith("/super-admin")
-                      ? "/staff/dashboard?tab=verification"
+                    typeof window !== "undefined" &&
+                    (window.location.pathname.startsWith("/admin") ||
+                      window.location.pathname.startsWith("/super-admin"))
+                      ? "/admin/dashboard?tab=verification"
                       : "/staff/dashboard?tab=requirements"
                   }
                   className="font-bold underline text-amber-200 hover:text-white inline-flex items-center gap-1 transition-colors"
@@ -285,8 +287,10 @@ export function HistoricalSubmissionsModal({
               {isCurrentTerm && (
                 <a
                   href={
-                    typeof window !== "undefined" && window.location.pathname.startsWith("/super-admin")
-                      ? "/staff/dashboard?tab=verification"
+                    typeof window !== "undefined" &&
+                    (window.location.pathname.startsWith("/admin") ||
+                      window.location.pathname.startsWith("/super-admin"))
+                      ? "/admin/dashboard?tab=verification"
                       : "/staff/dashboard?tab=requirements"
                   }
                   className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-4 py-2 text-xs font-semibold shadow-xs transition-all cursor-pointer"

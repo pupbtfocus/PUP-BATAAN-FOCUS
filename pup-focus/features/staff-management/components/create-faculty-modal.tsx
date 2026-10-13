@@ -418,7 +418,7 @@ export function CreateFacultyModal({
         payload.append("profileImage", profileImageFile);
       }
 
-      const response = await fetch("/api/super-admin/faculty/create", {
+      const response = await fetch("/api/admin/faculty/create", {
         method: "POST",
         body: payload,
       });

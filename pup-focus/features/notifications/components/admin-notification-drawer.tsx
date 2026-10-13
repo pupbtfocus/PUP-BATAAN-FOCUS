@@ -205,9 +205,10 @@ export function AdminNotificationDrawer({
     if (onNavigateToTarget) {
       onNavigateToTarget(notification);
     } else {
-      const isSuperAdminPath =
+      const isAdminPath =
         typeof window !== "undefined" &&
-        window.location.pathname.includes("super-admin");
+        (window.location.pathname.startsWith("/admin") ||
+          window.location.pathname.includes("super-admin"));
       const targetFacultyId =
         notification.facultyId ||
         notification.metadata?.faculty_id ||
@@ -217,30 +218,30 @@ export function AdminNotificationDrawer({
         notification.metadata?.requirement_code ||
         notification.metadata?.requirementCode;
 
-      if (isSuperAdminPath) {
+      if (isAdminPath) {
         if (notification.isSubmission || reqCode) {
           router.push(
-            `/staff/dashboard?tab=verification${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}${reqCode ? `&reqCode=${encodeURIComponent(reqCode)}` : ""}`
+            `/admin/dashboard?tab=verification${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}${reqCode ? `&reqCode=${encodeURIComponent(reqCode)}` : ""}`
           );
         } else if (
           notification.type?.includes("WINDOW") ||
           notification.title?.toLowerCase().includes("window")
         ) {
-          router.push("/staff/dashboard?tab=window");
+          router.push("/admin/dashboard?tab=window");
         } else if (
           notification.type?.includes("TERM") ||
           notification.title?.toLowerCase().includes("term")
         ) {
-          router.push("/staff/dashboard?tab=terms");
+          router.push("/admin/dashboard?tab=terms");
         } else if (
           notification.type?.includes("FACULTY") ||
           notification.title?.toLowerCase().includes("faculty")
         ) {
           router.push(
-            `/staff/dashboard?tab=faculty${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}`
+            `/admin/dashboard?tab=faculty${targetFacultyId ? `&facultyId=${encodeURIComponent(targetFacultyId)}` : ""}`
           );
         } else {
-          router.push("/staff/dashboard?tab=verification");
+          router.push("/admin/dashboard?tab=verification");
         }
       } else {
         if (notification.isSubmission || reqCode) {
