@@ -147,45 +147,48 @@ export async function GET(request: NextRequest) {
       admin_remarks?: string | null;
     }> = [];
 
-    if (targetAssignmentIds.length > 0) {
-      const primaryRes = await supabase
+    // Include uploads whose faculty_assignment_id is null (e.g. rows re-created after a reset)
+    const assignmentFilter = targetAssignmentIds.length > 0
+      ? `faculty_assignment_id.in.(${targetAssignmentIds.join(",")}),faculty_assignment_id.is.null`
+      : "faculty_assignment_id.is.null";
+
+    const baseCols =
+      "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, faculty_assignment_id";
+
+    const primaryRes = await supabase
+      .from("submissions")
+      .select(`${baseCols}, storage_path, file_name, mime_type, size_bytes`)
+      .eq("faculty_profile_id", facultyProfileId)
+      .or(assignmentFilter)
+      .order("submitted_at", { ascending: false });
+
+    let subData: any[] | null = primaryRes.data;
+    let subError = primaryRes.error;
+
+    if (subError) {
+      const fallbackRes = await supabase
         .from("submissions")
-        .select(
-          "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, faculty_assignment_id",
-        )
+        .select(baseCols)
         .eq("faculty_profile_id", facultyProfileId)
-        .in("faculty_assignment_id", targetAssignmentIds)
+        .or(assignmentFilter)
         .order("submitted_at", { ascending: false });
 
-      let subData: any[] | null = primaryRes.data;
-      let subError = primaryRes.error;
+      subData = fallbackRes.data;
+      subError = fallbackRes.error;
+    }
 
-      if (subError) {
-        const fallbackRes = await supabase
-          .from("submissions")
-          .select(
-            "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, faculty_assignment_id",
-          )
-          .eq("faculty_profile_id", facultyProfileId)
-          .in("faculty_assignment_id", targetAssignmentIds)
-          .order("submitted_at", { ascending: false });
+    if (subError) {
+      console.error(
+        "Failed to fetch submissions in /api/admin/faculty/submissions:",
+        subError,
+      );
+    }
 
-        subData = fallbackRes.data;
-        subError = fallbackRes.error;
-      }
-
-      if (subError) {
-        console.error(
-          "Failed to fetch submissions in /api/admin/faculty/submissions:",
-          subError,
-        );
-      }
-
-      if (subData) {
-        rawSubmissions = subData;
-      }
-    } else {
-      rawSubmissions = [];
+    if (subData) {
+      // Null-assignment rows only count if the faculty actually uploaded something
+      rawSubmissions = subData.filter(
+        (s) => s.faculty_assignment_id || s.submitted_at,
+      );
     }
 
     const submissionIds = rawSubmissions.map((s) => s.id);
@@ -233,7 +236,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const submissions: SubmissionRow[] = rawSubmissions.map((s) => {
+    const submissions: SubmissionRow[] = rawSubmissions.map((s: any) => {
       const docs = docVersionsMap.get(s.id) || [];
       if (
         docs.length === 0 &&
@@ -246,9 +249,10 @@ export async function GET(request: NextRequest) {
           id: s.id,
           submission_id: s.id,
           version_number: 1,
-          storage_path: `faculty-submissions/${facultyProfileId}/${s.id}`,
-          mime_type: "application/pdf",
-          size_bytes: null,
+          storage_path:
+            s.storage_path || `faculty-submissions/${facultyProfileId}/${s.id}`,
+          mime_type: s.mime_type || "application/pdf",
+          size_bytes: s.size_bytes ?? null,
           created_at: s.submitted_at || s.created_at,
         });
       }
