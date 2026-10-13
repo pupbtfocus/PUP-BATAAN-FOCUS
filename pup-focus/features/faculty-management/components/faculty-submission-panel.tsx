@@ -50,7 +50,7 @@ import {
   DashboardMetricsSkeleton,
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
-import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, Eye, Hourglass, Lock, Menu, Minus, NavArrowRight, OpenNewWindow, Page, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, Eye, Hourglass, Lock, Menu, Minus, NavArrowLeft, NavArrowRight, OpenNewWindow, Page, Plus, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { LogoutButton } from "@/components/shared/logout-button";
@@ -60,6 +60,16 @@ import { DocumentPreviewModal, type DocumentPreviewSubmission } from "@/features
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { FacultyIncompleteRequirementsModal } from "./faculty-incomplete-requirements-modal";
+export interface FacultyClass {
+  id: string;
+  faculty_profile_id?: string;
+  academic_term_id?: string;
+  subject_code: string;
+  description: string;
+  units: number;
+  section_code: string;
+  created_at?: string;
+}
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
 export function getFileType(fileNameOrUrl: string): {
   type: DetectedFileType;
@@ -720,6 +730,19 @@ function FacultySubmissionPanelContent({
   const [extensionRequestToast, setExtensionRequestToast] = useState<
     string | null
   >(null);
+  // ─── Class / Subject Load Management States ──────────────────────
+  const [facultyClasses, setFacultyClasses] = useState<FacultyClass[]>([]);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
+  const [isSubmittingClass, setIsSubmittingClass] = useState(false);
+  const [classForm, setClassForm] = useState({
+    subject_code: "",
+    description: "",
+    units: 3.0,
+    section_code: "",
+  });
+  const [classFormError, setClassFormError] = useState<string | null>(null);
   const [hasPromptedTermCompletion, setHasPromptedTermCompletion] =
     useState(false);
   const hasSubmissionWindowAcademicTerm = Boolean(
@@ -847,7 +870,7 @@ function FacultySubmissionPanelContent({
       setBulkDownloadProgressText("");
     }
   }
-  async function fetchStatuses(year?: string, sem?: string) {
+  async function fetchStatuses(year?: string, sem?: string, classId?: string | null) {
     try {
       setIsLoadingStatuses(true);
       setStatusError(null);
@@ -867,6 +890,10 @@ function FacultySubmissionPanelContent({
       if (targetYear && targetSem) {
         params.set("academicYear", targetYear);
         params.set("semester", targetSem);
+      }
+      const targetClassId = classId !== undefined ? classId : selectedClassId;
+      if (targetClassId) {
+        params.set("classId", targetClassId);
       }
       const response = await fetch(
         `/api/faculty/submissions/status?${params.toString()}`,
@@ -1298,6 +1325,89 @@ function FacultySubmissionPanelContent({
       return isoOrDateStr;
     }
   }, []);
+
+  const selectedClass = useMemo(() => {
+    return facultyClasses.find((c) => c.id === selectedClassId) || null;
+  }, [facultyClasses, selectedClassId]);
+
+  const fetchFacultyClasses = useCallback(async () => {
+    try {
+      setIsLoadingClasses(true);
+      const params = new URLSearchParams();
+      if (activeAY) params.set("academicYear", activeAY);
+      if (activeSem) params.set("semester", activeSem);
+      const res = await fetch(`/api/faculty/classes?${params.toString()}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFacultyClasses(data.classes || []);
+      }
+    } catch (err) {
+      console.error("Failed to load faculty classes:", err);
+    } finally {
+      setIsLoadingClasses(false);
+    }
+  }, [activeAY, activeSem]);
+
+  useEffect(() => {
+    if (isMounted) {
+      void fetchFacultyClasses();
+    }
+  }, [isMounted, fetchFacultyClasses]);
+
+  const handleAddClassSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!classForm.subject_code.trim()) {
+      setClassFormError("Subject Code is required.");
+      return;
+    }
+    if (!classForm.description.trim()) {
+      setClassFormError("Description is required.");
+      return;
+    }
+    if (!classForm.section_code.trim()) {
+      setClassFormError("Section Code is required.");
+      return;
+    }
+    setIsSubmittingClass(true);
+    setClassFormError(null);
+    try {
+      const res = await fetch("/api/faculty/classes/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject_code: classForm.subject_code.trim(),
+          description: classForm.description.trim(),
+          units: Number(classForm.units) || 3.0,
+          section_code: classForm.section_code.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Failed to create class load (HTTP ${res.status})`);
+      }
+
+      const resData = await res.json();
+      const newClass: FacultyClass = resData.class;
+      await fetchFacultyClasses();
+      setSelectedClassId(newClass.id);
+      void fetchStatuses(activeAY, activeSem, newClass.id);
+      setIsAddClassModalOpen(false);
+      setClassForm({
+        subject_code: "",
+        description: "",
+        units: 3.0,
+        section_code: "",
+      });
+      setSubmissionMessage(`Class ${newClass.subject_code} (${newClass.section_code}) created successfully.`);
+    } catch (err) {
+      setClassFormError(err instanceof Error ? err.message : "Failed to create class load.");
+    } finally {
+      setIsSubmittingClass(false);
+    }
+  };
 
   const displayedRequirementStatuses = useMemo<RequirementStatus[]>(() => {
     const normActiveAY = normalizeAcademicYear(activeAY);
@@ -1918,6 +2028,10 @@ function FacultySubmissionPanelContent({
       formData.append("requirement_type", selectedRequirementForUpload);
       formData.append("remarks", directUploadRemarks);
       formData.append("notes", directUploadRemarks);
+      if (selectedClassId) {
+        formData.append("class_id", selectedClassId);
+        formData.append("classId", selectedClassId);
+      }
 
       // Smooth progress ticker for realistic UX progression
       let currentProgress = 15;
@@ -1967,6 +2081,8 @@ function FacultySubmissionPanelContent({
                 semester: activeSem,
                 requirementCode: selectedRequirementForUpload,
                 remarks: directUploadRemarks,
+                class_id: selectedClassId,
+                classId: selectedClassId,
               }),
             });
 
@@ -2282,6 +2398,8 @@ function FacultySubmissionPanelContent({
                 semester: form.semester,
                 requirementCode: form.requirementCode,
                 remarks: form.remarks,
+                class_id: selectedClassId,
+                classId: selectedClassId,
               }),
             });
 
@@ -2305,6 +2423,10 @@ function FacultySubmissionPanelContent({
         formData.append("semester", form.semester);
         formData.append("requirementCode", form.requirementCode);
         formData.append("remarks", form.remarks);
+        if (selectedClassId) {
+          formData.append("class_id", selectedClassId);
+          formData.append("classId", selectedClassId);
+        }
         const response = await fetch("/api/faculty/submissions/create", {
           method: "POST",
           body: formData,
@@ -3166,24 +3288,213 @@ function FacultySubmissionPanelContent({
             )}
             {activeView === "status" && (
               <article className="space-y-5 p-2 sm:p-4 md:p-5">
-                {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
-                  <div>
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
-                        Documents to be Submitted
-                      </h1>
-                      {isAllValidated && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b5336] text-white text-xs font-bold shadow-xs">
-                          <AppIcon icon={CheckCircle} size="sm" color="inherit" />
-                          Done All for This Semester
-                        </span>
-                      )}
+                {selectedClassId === null ? (
+                  /* ─── STEP 1: CLASS / SUBJECT LOAD SELECTION ─────────────────── */
+                  <div className="space-y-5">
+                    {/* Solid Amber Card Header */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-2">
+                      <div>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                            Documents to be Submitted
+                          </h1>
+                        </div>
+                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                          Select your assigned class or subject load below before viewing and uploading required compliance documents for this term.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
+                        <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
+                          A.Y. {activeAY} • {activeSem} &bull; {facultyClasses.length} Registered Class Load{facultyClasses.length === 1 ? "" : "s"}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setClassFormError(null);
+                              setIsAddClassModalOpen(true);
+                            }}
+                            className="inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          >
+                            <AppIcon icon={Plus} size="sm" color="white" />
+                            <span>+ Add Class / Subject Load</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={openHistoryModal}
+                            className="inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                            title="View validated documents history"
+                          >
+                            <AppIcon icon={CheckCircle} size="md" color="white" />
+                            <span>Validation History</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-                      View, upload, and track the status of your required faculty compliance documents for this academic term.
-                    </p>
+
+                    {/* Classes Grid / Loading / Empty */}
+                    {isLoadingClasses ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-2">
+                        {[1, 2, 3].map((i) => (
+                          <div
+                            key={i}
+                            className="h-44 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 animate-pulse p-5"
+                          />
+                        ))}
+                      </div>
+                    ) : facultyClasses.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-amber-400/80 dark:border-amber-500/40 bg-white dark:bg-slate-900/60 p-8 sm:p-14 text-center">
+                        <div className="h-16 w-16 rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center justify-center mb-4 shadow-2xs">
+                          <AppIcon icon={TaskList} size="lg" color="inherit" />
+                        </div>
+                        <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                          No Classes or Subject Loads Added Yet
+                        </h3>
+                        <p className="mt-2 max-w-md text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                          Faculty requirements are organized per assigned subject load. Please add your first class section (e.g., COMP 023 • BSIT-BT 4-1) to unlock the document upload zone.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setClassFormError(null);
+                            setIsAddClassModalOpen(true);
+                          }}
+                          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95"
+                        >
+                          <AppIcon icon={Plus} size="sm" color="inherit" />
+                          <span>+ Add Class / Subject Load</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between px-1">
+                          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Your Assigned Classes ({facultyClasses.length})
+                          </h2>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            Click any class to upload requirements
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                          {facultyClasses.map((cls) => (
+                            <div
+                              key={cls.id}
+                              onClick={() => {
+                                setSelectedClassId(cls.id);
+                                void fetchStatuses(activeAY, activeSem, cls.id);
+                              }}
+                              className="group relative flex flex-col justify-between rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs hover:border-amber-500 dark:hover:border-amber-500 hover:shadow-md transition-all cursor-pointer text-left"
+                            >
+                              <div>
+                                <div className="flex items-center justify-between gap-2 mb-3">
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black tracking-wide bg-amber-400 text-slate-950 dark:bg-amber-500/20 dark:text-amber-300 dark:border dark:border-amber-500/40">
+                                    {cls.section_code}
+                                  </span>
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                    {cls.units} Units
+                                  </span>
+                                </div>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                  {cls.subject_code}
+                                </h3>
+                                <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                                  {cls.description}
+                                </p>
+                              </div>
+
+                              <div className="mt-6 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform">
+                                <span>Open Requirements Upload Zone</span>
+                                <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  /* ─── STEP 2: CLASS REQUIREMENTS UPLOAD ZONE ─────────────────── */
+                  <div className="space-y-5">
+                    {/* Class Context Navigation Bar */}
+                    <div className="rounded-2xl border-2 border-amber-400/80 dark:border-amber-500/60 bg-amber-50/80 dark:bg-amber-950/20 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedClassId(null)}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+                          title="Return to Class List"
+                        >
+                          <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
+                          <span>&larr; Back to Class List</span>
+                        </button>
+                        {selectedClass && (
+                          <div className="min-w-0 truncate pl-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-slate-950">
+                                {selectedClass.section_code}
+                              </span>
+                              <span className="text-xs sm:text-sm font-black text-slate-950 dark:text-amber-100 truncate">
+                                {selectedClass.subject_code} &bull; {selectedClass.description}
+                              </span>
+                              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                ({selectedClass.units} Units)
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Quick Switcher dropdown & Add class */}
+                      <div className="flex items-center gap-2 shrink-0 sm:ml-auto">
+                        <select
+                          value={selectedClassId}
+                          onChange={(e) => {
+                            setSelectedClassId(e.target.value);
+                            void fetchStatuses(activeAY, activeSem, e.target.value);
+                          }}
+                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+                        >
+                          {facultyClasses.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.section_code} - {c.subject_code}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setClassFormError(null);
+                            setIsAddClassModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-amber-500/50 bg-amber-400/20 hover:bg-amber-400/30 text-amber-900 dark:text-amber-200 text-xs font-bold transition cursor-pointer"
+                          title="Add another class load"
+                        >
+                          <AppIcon icon={Plus} size="xs" color="inherit" />
+                          <span>Add Class</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Solid Amber Card Header */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
+                      <div>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                            Documents to be Submitted
+                          </h1>
+                          {isAllValidated && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b5336] text-white text-xs font-bold shadow-xs">
+                              <AppIcon icon={CheckCircle} size="sm" color="inherit" />
+                              Done All for This Semester
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                          View, upload, and track the status of your required faculty compliance documents for this academic term.
+                        </p>
+                      </div>
 
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
                     <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
@@ -3715,8 +4026,10 @@ function FacultySubmissionPanelContent({
                     </div>
                   </div>
                 )}
-              </article>
+              </div>
             )}
+          </article>
+        )}
             {isMounted && selectedRequirementForUpload && (
               <div
                 className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 p-3 sm:p-6 flex min-h-full items-center justify-center backdrop-blur-sm"
@@ -4500,7 +4813,141 @@ function FacultySubmissionPanelContent({
                       Close
                     </button>
                   </div>
-                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add Class / Subject Load Modal */}
+          {isAddClassModalOpen && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="add-class-modal-title"
+                onClick={() => {
+                  if (!isSubmittingClass) {
+                    setIsAddClassModalOpen(false);
+                    setClassFormError(null);
+                  }
+                }}
+              >
+                <div
+                  className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ModalHeader
+                    icon={Plus}
+                    title="Add Class / Subject Load"
+                    subtitle={`Register a subject load for A.Y. ${activeAY} • ${activeSem}`}
+                    onClose={() => {
+                      if (!isSubmittingClass) {
+                        setIsAddClassModalOpen(false);
+                        setClassFormError(null);
+                      }
+                    }}
+                    closeAriaLabel="Close modal"
+                  />
+
+                  <form onSubmit={handleAddClassSubmit} className="p-5 sm:p-6 space-y-4">
+                    {classFormError && (
+                      <div className="rounded-xl border border-rose-300 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 p-3 flex items-center gap-2 text-xs text-[#780000] dark:text-rose-400 font-medium">
+                        <AppIcon icon={WarningCircle} size="sm" color="danger" className="shrink-0" />
+                        <span>{classFormError}</span>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Subject Code <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={classForm.subject_code}
+                        onChange={(e) => setClassForm((prev) => ({ ...prev, subject_code: e.target.value }))}
+                        placeholder="e.g. COMP 023"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Description / Subject Title <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={classForm.description}
+                        onChange={(e) => setClassForm((prev) => ({ ...prev, description: e.target.value }))}
+                        placeholder="e.g. Social and Professional Issues in Computing"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Section Code <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={classForm.section_code}
+                          onChange={(e) => setClassForm((prev) => ({ ...prev, section_code: e.target.value }))}
+                          placeholder="e.g. BSIT-BT 4-1"
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Units <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0.5"
+                          max="12"
+                          required
+                          value={classForm.units}
+                          onChange={(e) => setClassForm((prev) => ({ ...prev, units: Number(e.target.value) || 3.0 }))}
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                      <button
+                        type="button"
+                        disabled={isSubmittingClass}
+                        onClick={() => {
+                          setIsAddClassModalOpen(false);
+                          setClassFormError(null);
+                        }}
+                        className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmittingClass}
+                        className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                      >
+                        {isSubmittingClass ? (
+                          <>
+                            <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <>
+                            <AppIcon icon={Check} size="sm" color="inherit" />
+                            <span>Save Class Load</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}

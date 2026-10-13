@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
     let rawAcademicYear = "";
     let rawSemester = "";
     let rawRemarks = "";
+    let rawClassId = "";
 
     if (contentType.includes("application/json")) {
       const json = await request.json().catch(() => ({}));
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
       rawAcademicYear = json.academicYear || "";
       rawSemester = json.semester || "";
       rawRemarks = json.remarks || json.notes || "";
+      rawClassId = json.class_id || json.classId || "";
     } else {
       const formData = await request.formData();
       file = formData.get("file") as File | null;
@@ -132,6 +134,10 @@ export async function POST(request: NextRequest) {
       rawRemarks =
         (formData.get("remarks") as string) ||
         (formData.get("notes") as string) ||
+        "";
+      rawClassId =
+        (formData.get("class_id") as string) ||
+        (formData.get("classId") as string) ||
         "";
     }
 
@@ -296,6 +302,7 @@ export async function POST(request: NextRequest) {
       semester: activeSemester,
       requirementCode: requirementCodeInput,
       remarks: rawRemarks,
+      classId: rawClassId ? rawClassId.trim() : null,
     };
 
     // Validate inputs
@@ -521,7 +528,7 @@ export async function POST(request: NextRequest) {
     const { data: allFacultySubmissions } = await supabaseAdmin
       .from("submissions")
       .select(
-        "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks",
+        "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks, class_id",
       )
       .in("faculty_profile_id", facultyProfileIds)
       .order("created_at", { ascending: true });
@@ -532,7 +539,7 @@ export async function POST(request: NextRequest) {
       const { data: assignSubs } = await supabaseAdmin
         .from("submissions")
         .select(
-          "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks",
+          "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks, class_id",
         )
         .eq("faculty_assignment_id", facultyAssignmentId)
         .order("created_at", { ascending: true });
@@ -556,7 +563,7 @@ export async function POST(request: NextRequest) {
       const subCodeNormalized = normalize(sub.requirement_code || "");
       const matched = matchRequirementCode(sub.requirement_code);
 
-      return (
+      const codeMatches =
         sub.requirement_code === payload.requirementCode ||
         subCodeNormalized === targetCodeNormalized ||
         (Boolean(targetCodeNormalized) &&
@@ -565,8 +572,12 @@ export async function POST(request: NextRequest) {
             subCodeNormalized.includes(targetCodeNormalized))) ||
         (Boolean(matched) &&
           Boolean(targetMatchedCode) &&
-          matched === targetMatchedCode)
-      );
+          matched === targetMatchedCode);
+
+      if (payload.classId) {
+        return codeMatches && (sub as any).class_id === payload.classId;
+      }
+      return codeMatches;
     });
 
     const existingSubmission: {
@@ -723,6 +734,7 @@ export async function POST(request: NextRequest) {
       if (curriculumId) updatePayload.curriculum_id = curriculumId;
       if (facultyAssignmentId)
         updatePayload.faculty_assignment_id = facultyAssignmentId;
+      if (payload.classId) updatePayload.class_id = payload.classId;
 
       let { error: updateSubError } = await supabaseAdmin
         .from("submissions")
@@ -806,6 +818,7 @@ export async function POST(request: NextRequest) {
         mime_type: fileMimeType,
         size_bytes: fileBufferLength || null,
         checksum_sha256: checksumSha256 || null,
+        class_id: payload.classId || null,
       };
 
       if (trimmedRemarks) {
