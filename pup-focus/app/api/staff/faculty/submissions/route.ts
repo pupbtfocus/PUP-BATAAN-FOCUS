@@ -18,6 +18,14 @@ type SubmissionRow = {
   remarks?: string | null;
   notes?: string | null;
   admin_remarks?: string | null;
+  class_id?: string | null;
+  faculty_class?: {
+    id: string;
+    subject_code: string;
+    description: string;
+    units: number;
+    section_code: string;
+  } | null;
   document_versions?: Array<{
     id: string;
     storage_path: string;
@@ -153,7 +161,7 @@ export async function GET(request: NextRequest) {
       : "faculty_assignment_id.is.null";
 
     const baseCols =
-      "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, faculty_assignment_id";
+      "id, requirement_code, status, submitted_at, created_at, remarks, admin_remarks, faculty_assignment_id, class_id";
 
     const primaryRes = await supabase
       .from("submissions")
@@ -236,6 +244,42 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const classIds = Array.from(new Set(rawSubmissions.map((s: any) => s.class_id).filter(Boolean)));
+    const classesMap = new Map<string, any>();
+    let facultyClassesList: any[] = [];
+
+    try {
+      const { data: allFacultyClasses } = await supabase
+        .from("faculty_classes")
+        .select("id, subject_code, description, units, section_code, academic_term_id")
+        .eq("faculty_profile_id", facultyProfileId);
+
+      if (allFacultyClasses) {
+        facultyClassesList = allFacultyClasses;
+        for (const c of allFacultyClasses) {
+          classesMap.set(c.id, c);
+        }
+      }
+
+      const missingClassIds = classIds.filter((cid) => !classesMap.has(cid));
+      if (missingClassIds.length > 0) {
+        const { data: extraClasses } = await supabase
+          .from("faculty_classes")
+          .select("id, subject_code, description, units, section_code")
+          .in("id", missingClassIds);
+        if (extraClasses) {
+          for (const c of extraClasses) {
+            classesMap.set(c.id, c);
+            if (!facultyClassesList.some((fc) => fc.id === c.id)) {
+              facultyClassesList.push(c);
+            }
+          }
+        }
+      }
+    } catch {
+      // faculty_classes optional
+    }
+
     const submissions: SubmissionRow[] = rawSubmissions.map((s: any) => {
       const docs = docVersionsMap.get(s.id) || [];
       if (
@@ -258,6 +302,8 @@ export async function GET(request: NextRequest) {
       }
       return {
         ...s,
+        class_id: s.class_id || null,
+        faculty_class: s.class_id ? classesMap.get(s.class_id) || null : null,
         document_versions: docs,
         review_decisions: reviewDecisionsMap.get(s.id) || [],
       };
@@ -265,6 +311,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       submissions,
+      classes: facultyClassesList,
       total: submissions.length,
     });
   } catch (error) {

@@ -174,6 +174,14 @@ import type {
 interface FacultyRequirementSubmission {
   id: string;
   requirement_code: string;
+  class_id?: string | null;
+  faculty_class?: {
+    id: string;
+    subject_code: string;
+    description: string;
+    units: number;
+    section_code: string;
+  } | null;
   status: string | null;
   submitted_at?: string | null;
   created_at?: string | null;
@@ -406,6 +414,16 @@ function FacultyVerificationDrawer({
 }: FacultyVerificationDrawerProps) {
   const [activeTab, setActiveTab] = useState<"current" | "history">("current");
   const [submissions, setSubmissions] = useState<FacultyRequirementSubmission[]>([]);
+  const [facultyClasses, setFacultyClasses] = useState<
+    Array<{
+      id: string;
+      subject_code: string;
+      description: string;
+      units: number;
+      section_code: string;
+    }>
+  >([]);
+  const [selectedClassFilter, setSelectedClassFilter] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [reviewingCode, setReviewingCode] = useState<string | null>(null);
   const [submittingAction, setSubmittingAction] = useState<"validate" | "revision" | null>(null);
@@ -646,46 +664,147 @@ function FacultyVerificationDrawer({
     return items;
   }, [dbTemplates, submissions, historySubmissions]);
 
-  const displayedRequirements = useMemo(() => {
-    return allRequirements.filter((req) => {
-      const code = req.code;
-      if (filterMode === "all") return true;
-      const matchingSub = submissions.find((s) => {
-        const codeMatched =
-          matchRequirementCode(
-            s.requirement_code,
-            (s as { requirement_id?: string }).requirement_id
-          ) === code || s.requirement_code === code;
-        return (
-          codeMatched && doesSubmissionMatchTerm(s, academicYear, semester)
-        );
-      });
-      const rawStatus = matchingSub
-        ? (matchingSub.status || "").toLowerCase()
-        : "not_submitted";
-      const isValidated = rawStatus === "validated" || rawStatus === "approved";
-      const isRevision =
-        rawStatus === "rejected" || rawStatus === "needs_revision";
-      const isPending =
-        rawStatus === "uploaded" ||
-        rawStatus === "pending" ||
-        rawStatus === "submitted" ||
-        rawStatus === "under_review" ||
-        rawStatus === "pending_review";
-      const hasPriorRejection = (matchingSub?.review_decisions || []).some(
-        (d) => (d.decision || "").toLowerCase() === "rejected"
-      );
-      const isRevisionUploaded =
-        isPending &&
-        (hasPriorRejection || (matchingSub?.document_versions || []).length > 1);
+  interface SubmissionClassGroup {
+    key: string;
+    classId: string | null;
+    sectionCode: string;
+    subjectCode: string;
+    description: string;
+    units: number | null;
+    submissions: FacultyRequirementSubmission[];
+    isGeneral?: boolean;
+  }
 
-      if (filterMode === "pending") return isPending;
-      if (filterMode === "revision_uploaded") return isRevisionUploaded;
-      if (filterMode === "validated") return isValidated;
-      if (filterMode === "revision") return isRevision;
-      return true;
+  const classGroups = useMemo<SubmissionClassGroup[]>(() => {
+    const groups: SubmissionClassGroup[] = [];
+    const classMap = new Map<string, SubmissionClassGroup>();
+
+    // 1. Registered faculty classes
+    facultyClasses.forEach((fc) => {
+      const key = fc.id || `${fc.section_code}_${fc.subject_code}`;
+      const group: SubmissionClassGroup = {
+        key,
+        classId: fc.id || null,
+        sectionCode: fc.section_code,
+        subjectCode: fc.subject_code,
+        description: fc.description,
+        units: fc.units,
+        submissions: [],
+      };
+      groups.push(group);
+      classMap.set(key, group);
+      if (fc.id) classMap.set(fc.id, group);
     });
-  }, [allRequirements, filterMode, submissions, academicYear, semester]);
+
+    // 2. Discover any extra classes directly attached to submissions
+    submissions.forEach((sub) => {
+      if (sub.faculty_class) {
+        const fc = sub.faculty_class;
+        const key = fc.id || `${fc.section_code}_${fc.subject_code}`;
+        if (!classMap.has(key) && !(fc.id && classMap.has(fc.id))) {
+          const group: SubmissionClassGroup = {
+            key,
+            classId: fc.id || null,
+            sectionCode: fc.section_code,
+            subjectCode: fc.subject_code,
+            description: fc.description,
+            units: fc.units,
+            submissions: [],
+          };
+          groups.push(group);
+          classMap.set(key, group);
+          if (fc.id) classMap.set(fc.id, group);
+        }
+      }
+    });
+
+    // 3. Map submissions to their corresponding class group
+    const unassignedSubmissions: FacultyRequirementSubmission[] = [];
+
+    submissions.forEach((sub) => {
+      let target: SubmissionClassGroup | undefined;
+      if (sub.class_id && classMap.has(sub.class_id)) {
+        target = classMap.get(sub.class_id);
+      } else if (sub.faculty_class) {
+        const key = sub.faculty_class.id || `${sub.faculty_class.section_code}_${sub.faculty_class.subject_code}`;
+        target = classMap.get(key);
+      }
+
+      if (target) {
+        target.submissions.push(sub);
+      } else {
+        unassignedSubmissions.push(sub);
+      }
+    });
+
+    // 4. Provide the General Requirements group if there are unassigned submissions or no classes exist
+    if (unassignedSubmissions.length > 0 || groups.length === 0) {
+      groups.unshift({
+        key: "general",
+        classId: null,
+        sectionCode: "General Requirements",
+        subjectCode: "GENERAL",
+        description: "General / Institutional Requirements",
+        units: null,
+        submissions: unassignedSubmissions,
+        isGeneral: true,
+      });
+    }
+
+    return groups;
+  }, [facultyClasses, submissions]);
+
+  const displayedClassGroups = useMemo(() => {
+    let result = classGroups;
+    if (selectedClassFilter !== "all") {
+      result = result.filter((g) => g.key === selectedClassFilter);
+    }
+
+    if (filterMode === "all") {
+      return result;
+    }
+
+    // When a filter is active, only show groups that have matching requirements
+    return result.filter((group) => {
+      return allRequirements.some((req) => {
+        const code = req.code;
+        const matchingSub = group.submissions.find((s) => {
+          const codeMatched =
+            matchRequirementCode(
+              s.requirement_code,
+              (s as { requirement_id?: string }).requirement_id
+            ) === code || s.requirement_code === code;
+          return (
+            codeMatched && doesSubmissionMatchTerm(s, academicYear, semester)
+          );
+        });
+        const rawStatus = matchingSub
+          ? (matchingSub.status || "").toLowerCase()
+          : "not_submitted";
+        const isValidated = rawStatus === "validated" || rawStatus === "approved";
+        const isRevision =
+          rawStatus === "rejected" || rawStatus === "needs_revision";
+        const isPending =
+          rawStatus === "uploaded" ||
+          rawStatus === "pending" ||
+          rawStatus === "submitted" ||
+          rawStatus === "under_review" ||
+          rawStatus === "pending_review";
+        const hasPriorRejection = (matchingSub?.review_decisions || []).some(
+          (d) => (d.decision || "").toLowerCase() === "rejected"
+        );
+        const isRevisionUploaded =
+          isPending &&
+          (hasPriorRejection || (matchingSub?.document_versions || []).length > 1);
+
+        if (filterMode === "pending") return isPending;
+        if (filterMode === "revision_uploaded") return isRevisionUploaded;
+        if (filterMode === "validated") return isValidated;
+        if (filterMode === "revision") return isRevision;
+        return true;
+      });
+    });
+  }, [classGroups, selectedClassFilter, filterMode, allRequirements, academicYear, semester]);
 
   // 1. Fetch current term submissions (only on faculty/term change, without retriggering on history state updates)
   useEffect(() => {
@@ -702,6 +821,9 @@ function FacultyVerificationDrawer({
         if (subRes.ok && !isCancelled) {
           const subData = await subRes.json();
           setSubmissions(subData.submissions || []);
+          if (Array.isArray(subData.classes)) {
+            setFacultyClasses(subData.classes);
+          }
         }
       } catch (err) {
         console.error("Failed to load current submissions:", err);
@@ -810,6 +932,9 @@ function FacultyVerificationDrawer({
         if (subRes.ok) {
           const subData = await subRes.json();
           setSubmissions(subData.submissions || []);
+          if (Array.isArray(subData.classes)) {
+            setFacultyClasses(subData.classes);
+          }
         }
       } else {
         if (selectedHistoryAy && selectedHistorySem) {
@@ -1084,6 +1209,9 @@ function FacultyVerificationDrawer({
       for (const sub of uploadedSubmissions) {
         const label = getFriendlyRequirementName(sub.requirement_code);
         const docs = sub.document_versions || [];
+        const classFolder = sub.faculty_class
+          ? `${sub.faculty_class.section_code}_${sub.faculty_class.subject_code}`.replace(/[\\/:*?"<>|]+/g, "_")
+          : "General_Requirements";
 
         for (const doc of docs) {
           if (!doc.storage_path) continue;
@@ -1091,7 +1219,7 @@ function FacultyVerificationDrawer({
           setZipProgressData({
             status: "zipping",
             title: "Packaging Requirements (ZIP)",
-            message: `Fetching "${label}"...`,
+            message: `Fetching "${label}" (${classFolder})...`,
             progressText: `Processing file ${processedCount} of ${totalCount}...`,
           });
 
@@ -1103,7 +1231,7 @@ function FacultyVerificationDrawer({
             const fileBlob = await fileRes.blob();
             const ext = doc.storage_path.match(/\.[^.]+$/)?.[0] || ".pdf";
             const fileName = `${label}${ext}`;
-            zip.file(`${label}/${fileName}`, fileBlob);
+            zip.file(`${classFolder}/${label}/${fileName}`, fileBlob);
           }
         }
       }
@@ -1645,417 +1773,626 @@ function FacultyVerificationDrawer({
                 </div>
               </div>
 
+              {/* Class Filter Bar */}
+              {classGroups.length > 1 ? (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0">
+                    Class Filter:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedClassFilter("all")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 shadow-2xs ${
+                      selectedClassFilter === "all"
+                        ? "bg-[#780000] text-white shadow-xs ring-1 ring-[#5e0000] font-bold"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    All Classes ({classGroups.length})
+                  </button>
+                  {classGroups.map((g) => (
+                    <button
+                      key={g.key}
+                      type="button"
+                      onClick={() => setSelectedClassFilter(g.key)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 shadow-2xs flex items-center gap-1.5 ${
+                        selectedClassFilter === g.key
+                          ? "bg-[#780000] text-white shadow-xs ring-1 ring-[#5e0000] font-bold"
+                          : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span className="font-bold">{g.sectionCode}</span>
+                      {!g.isGeneral && (
+                        <span className="opacity-75 font-mono text-[11px]">({g.subjectCode})</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
 
+              {/* Grouped Class Sections or Empty State */}
+              {displayedClassGroups.length === 0 ? (
+                <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-12 text-center text-slate-500 dark:text-slate-400">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <AppIcon icon={CheckCircle} size="md" color="success" />
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      {filterMode === "pending"
+                        ? "All submitted files have been reviewed and verified!"
+                        : "No requirements match the selected filter."}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setFilterMode("all")}
+                      className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                    >
+                      View All Files
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                displayedClassGroups.map((group) => {
+                  const groupPendingCount = group.submissions.filter((s) => {
+                    const st = (s.status || "").toLowerCase();
+                    return (
+                      doesSubmissionMatchTerm(s, academicYear, semester) &&
+                      (st === "uploaded" ||
+                        st === "pending" ||
+                        st === "submitted" ||
+                        st === "under_review" ||
+                        st === "pending_review")
+                    );
+                  }).length;
 
-              {/* Compressed List Table */}
-              <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
-                    <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      <tr>
-                        <th className="px-4 py-3 w-[26%]">Requirement</th>
-                        <th className="px-3 py-3 w-[12%] text-center">Type</th>
-                        <th className="px-4 py-3 w-[24%]">Attached File</th>
-                        <th className="px-4 py-3 w-[22%]">Notes &amp; Feedback</th>
-                        <th className="px-4 py-3 w-[16%] text-center">Status &amp; Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
-                      {displayedRequirements.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="py-12 text-center text-slate-500 dark:text-slate-400"
-                          >
-                            <div className="flex flex-col items-center justify-center gap-2">
-                              <AppIcon icon={CheckCircle} size="md" color="success" />
-                              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                {filterMode === "pending"
-                                  ? "All submitted files have been reviewed and verified!"
-                                  : "No requirements match the selected filter."}
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => setFilterMode("all")}
-                                className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
-                              >
-                                View All Files
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : (
-                        displayedRequirements.map((req) => {
-                          const code = req.code;
-                          const reqLabel = req.title;
-                          const isMandatory = req.isMandatory;
-                          const matchingSubmission = submissions.find((s) => {
-                            const codeMatched =
-                              matchRequirementCode(
-                                s.requirement_code,
-                                (s as { requirement_id?: string }).requirement_id
-                              ) === code || s.requirement_code === code;
-                            return (
-                              codeMatched &&
-                              doesSubmissionMatchTerm(s, academicYear, semester)
-                            );
-                          });
+                  const groupRevisionCount = group.submissions.filter((s) => {
+                    const st = (s.status || "").toLowerCase();
+                    return (
+                      doesSubmissionMatchTerm(s, academicYear, semester) &&
+                      (st === "rejected" || st === "needs_revision")
+                    );
+                  }).length;
 
-                          const documents =
-                            matchingSubmission?.document_versions ?? [];
-                          const firstDoc = documents[0] ?? null;
+                  const groupValidatedCount = group.submissions.filter((s) => {
+                    const st = (s.status || "").toLowerCase();
+                    return (
+                      doesSubmissionMatchTerm(s, academicYear, semester) &&
+                      (st === "validated" || st === "approved")
+                    );
+                  }).length;
 
-                          const rawStatus = matchingSubmission
-                            ? (matchingSubmission.status || "").toLowerCase()
-                            : "not_submitted";
-                          const isValidated =
-                            rawStatus === "validated" || rawStatus === "approved";
-                          const isRevisionRequested =
-                            rawStatus === "rejected" ||
-                            rawStatus === "needs_revision";
-                          const isPending =
-                            rawStatus === "uploaded" ||
-                            rawStatus === "pending" ||
-                            rawStatus === "submitted" ||
-                            rawStatus === "under_review" ||
-                            rawStatus === "pending_review";
-                          const hasPriorRejection = (
-                            matchingSubmission?.review_decisions || []
-                          ).some(
-                            (d) => (d.decision || "").toLowerCase() === "rejected"
-                          );
-                          const isRevisionUploaded =
-                            isPending &&
-                            (hasPriorRejection || documents.length > 1);
-                          const versionNum =
-                            firstDoc?.version_number ??
-                            (documents.length > 1
-                              ? documents.length
-                              : isRevisionUploaded
-                              ? 2
-                              : 1);
+                  const groupRequirements = allRequirements.filter((req) => {
+                    if (filterMode === "all") return true;
+                    const code = req.code;
+                    const matchingSub = group.submissions.find((s) => {
+                      const codeMatched =
+                        matchRequirementCode(
+                          s.requirement_code,
+                          (s as { requirement_id?: string }).requirement_id
+                        ) === code || s.requirement_code === code;
+                      return (
+                        codeMatched &&
+                        doesSubmissionMatchTerm(s, academicYear, semester)
+                      );
+                    });
+                    const rawStatus = matchingSub
+                      ? (matchingSub.status || "").toLowerCase()
+                      : "not_submitted";
+                    const isValidated =
+                      rawStatus === "validated" || rawStatus === "approved";
+                    const isRevision =
+                      rawStatus === "rejected" || rawStatus === "needs_revision";
+                    const isPending =
+                      rawStatus === "uploaded" ||
+                      rawStatus === "pending" ||
+                      rawStatus === "submitted" ||
+                      rawStatus === "under_review" ||
+                      rawStatus === "pending_review";
+                    const hasPriorRejection = (
+                      matchingSub?.review_decisions || []
+                    ).some((d) => (d.decision || "").toLowerCase() === "rejected");
+                    const isRevisionUploaded =
+                      isPending &&
+                      (hasPriorRejection ||
+                        (matchingSub?.document_versions || []).length > 1);
 
-                          const hasFile =
-                            documents.length > 0 &&
-                            Boolean(firstDoc?.storage_path);
-                          const fileDownloadUrl = hasFile
-                            ? `/api/storage/download?path=${encodeURIComponent(
-                                firstDoc!.storage_path
-                              )}`
-                            : null;
-                          const rawFileName =
-                            firstDoc?.storage_path?.split("/").pop() ||
-                            `${reqLabel}.pdf`;
-                          const fileName = cleanDisplayFileName(rawFileName);
-                          const fileSize = formatBytes(firstDoc?.size_bytes);
-                          const submittedDateText = matchingSubmission
-                            ? formatFullDateTime(
-                                matchingSubmission.submitted_at ||
-                                  matchingSubmission.created_at
-                              )
-                            : null;
+                    if (filterMode === "pending") return isPending;
+                    if (filterMode === "revision_uploaded")
+                      return isRevisionUploaded;
+                    if (filterMode === "validated") return isValidated;
+                    if (filterMode === "revision") return isRevision;
+                    return true;
+                  });
 
-                          const adminNote =
-                            matchingSubmission?.review_decisions?.[0]?.remarks ||
-                            matchingSubmission?.admin_remarks;
-                          const rawFacultyNote =
-                            matchingSubmission?.notes ||
-                            matchingSubmission?.remarks;
-                          const facultyNote = rawFacultyNote || null;
-                          const priorRejectionDecision = (
-                            matchingSubmission?.review_decisions || []
-                          ).find(
-                            (d) => (d.decision || "").toLowerCase() === "rejected"
-                          );
-                          const priorRejectionNote =
-                            priorRejectionDecision?.remarks ||
-                            (isRevisionRequested ? adminNote : null);
+                  return (
+                    <div
+                      key={group.key}
+                      className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs"
+                    >
+                      {/* Class Header Banner */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent dark:from-slate-950/80 dark:via-slate-950/50 dark:to-transparent border-b border-slate-200 dark:border-slate-800">
+                        <div className="flex flex-wrap items-center gap-3">
+                          {group.isGeneral ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-100 tracking-wide shadow-2xs">
+                              General
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-[#780000] text-white tracking-wide shadow-2xs">
+                              {group.sectionCode}
+                            </span>
+                          )}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {!group.isGeneral && (
+                              <span className="text-xs font-bold text-amber-700 dark:text-amber-400 font-mono">
+                                {group.subjectCode}
+                              </span>
+                            )}
+                            {!group.isGeneral && (
+                              <span className="text-slate-300 dark:text-slate-600">•</span>
+                            )}
+                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                              {group.description}
+                            </span>
+                            {group.units ? (
+                              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                ({group.units} Units)
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
 
-                          return (
-                            <tr
-                              key={code}
-                              id={`req-row-${code}`}
-                              className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
-                            >
-                              {/* Column 1: Requirement */}
-                              <td className="px-4 py-3.5 align-middle">
-                                <div className="space-y-1">
-                                  <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
-                                    {reqLabel}
-                                  </span>
-                                  {submittedDateText ? (
-                                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
-                                      Submitted: {submittedDateText}
-                                    </span>
-                                  ) : (
-                                    <span className="text-[11px] text-slate-400 dark:text-slate-500 italic block">
-                                      Not submitted
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
+                        {/* Class Group Compliance Badges */}
+                        <div className="flex items-center gap-2">
+                          {groupPendingCount > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-2 py-0.5 text-[10.5px] font-bold">
+                              {groupPendingCount} Pending
+                            </span>
+                          ) : null}
+                          {groupRevisionCount > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-300 px-2 py-0.5 text-[10.5px] font-bold">
+                              {groupRevisionCount} Revision
+                            </span>
+                          ) : null}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10.5px] font-bold">
+                            {groupValidatedCount} / {allRequirements.length} Validated
+                          </span>
+                        </div>
+                      </div>
 
-                              {/* Column 2: Type (Centered) */}
-                              <td className="px-3 py-3.5 align-middle text-center">
-                                {isMandatory ? (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
-                                    Required
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
-                                    Optional
-                                  </span>
-                                )}
-                              </td>
+                      {/* Class Requirements Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
+                          <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            <tr>
+                              <th className="px-4 py-2.5 w-[26%]">Requirement</th>
+                              <th className="px-3 py-2.5 w-[12%] text-center">Type</th>
+                              <th className="px-4 py-2.5 w-[24%]">Attached File</th>
+                              <th className="px-4 py-2.5 w-[22%]">Notes &amp; Feedback</th>
+                              <th className="px-4 py-2.5 w-[16%] text-center">Status &amp; Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                            {groupRequirements.map((req) => {
+                              const code = req.code;
+                              const reqLabel = req.title;
+                              const isMandatory = req.isMandatory;
+                              const matchingSubmission = group.submissions.find((s) => {
+                                const codeMatched =
+                                  matchRequirementCode(
+                                    s.requirement_code,
+                                    (s as { requirement_id?: string }).requirement_id
+                                  ) === code || s.requirement_code === code;
+                                return (
+                                  codeMatched &&
+                                  doesSubmissionMatchTerm(s, academicYear, semester)
+                                );
+                              });
 
-                              {/* Column 3: Attached File */}
-                              <td className="px-4 py-3.5 align-middle">
-                                {hasFile && fileDownloadUrl ? (
-                                  <div className="space-y-1.5">
-                                    <div>
-                                      <span
-                                        className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug max-w-[200px] xl:max-w-[260px]"
-                                        title={rawFileName}
-                                      >
-                                        {fileName}
+                              const documents =
+                                matchingSubmission?.document_versions ?? [];
+                              const firstDoc = documents[0] ?? null;
+
+                              const rawStatus = matchingSubmission
+                                ? (matchingSubmission.status || "").toLowerCase()
+                                : "not_submitted";
+                              const isValidated =
+                                rawStatus === "validated" || rawStatus === "approved";
+                              const isRevisionRequested =
+                                rawStatus === "rejected" ||
+                                rawStatus === "needs_revision";
+                              const isPending =
+                                rawStatus === "uploaded" ||
+                                rawStatus === "pending" ||
+                                rawStatus === "submitted" ||
+                                rawStatus === "under_review" ||
+                                rawStatus === "pending_review";
+                              const hasPriorRejection = (
+                                matchingSubmission?.review_decisions || []
+                              ).some(
+                                (d) => (d.decision || "").toLowerCase() === "rejected"
+                              );
+                              const isRevisionUploaded =
+                                isPending &&
+                                (hasPriorRejection || documents.length > 1);
+                              const versionNum =
+                                firstDoc?.version_number ??
+                                (documents.length > 1
+                                  ? documents.length
+                                  : isRevisionUploaded
+                                  ? 2
+                                  : 1);
+
+                              const hasFile =
+                                documents.length > 0 &&
+                                Boolean(firstDoc?.storage_path);
+                              const fileDownloadUrl = hasFile
+                                ? `/api/storage/download?path=${encodeURIComponent(
+                                    firstDoc!.storage_path
+                                  )}`
+                                : null;
+                              const rawFileName =
+                                firstDoc?.storage_path?.split("/").pop() ||
+                                `${reqLabel}.pdf`;
+                              const fileName = cleanDisplayFileName(rawFileName);
+                              const fileSize = formatBytes(firstDoc?.size_bytes);
+                              const submittedDateText = matchingSubmission
+                                ? formatFullDateTime(
+                                    matchingSubmission.submitted_at ||
+                                      matchingSubmission.created_at
+                                  )
+                                : null;
+
+                              const adminNote =
+                                matchingSubmission?.review_decisions?.[0]?.remarks ||
+                                matchingSubmission?.admin_remarks;
+                              const rawFacultyNote =
+                                matchingSubmission?.notes ||
+                                matchingSubmission?.remarks;
+                              const facultyNote = rawFacultyNote || null;
+                              const priorRejectionDecision = (
+                                matchingSubmission?.review_decisions || []
+                              ).find(
+                                (d) => (d.decision || "").toLowerCase() === "rejected"
+                              );
+                              const priorRejectionNote =
+                                priorRejectionDecision?.remarks ||
+                                (isRevisionRequested ? adminNote : null);
+
+                              return (
+                                <tr
+                                  key={`${group.key}-${code}`}
+                                  id={`req-row-${code}`}
+                                  className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                                >
+                                  {/* Column 1: Requirement */}
+                                  <td className="px-4 py-3.5 align-middle">
+                                    <div className="space-y-1">
+                                      <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs block leading-snug">
+                                        {reqLabel}
                                       </span>
-                                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                                        {fileSize ? <span>{fileSize}</span> : null}
-                                        {isRevisionUploaded ? (
-                                          <span className="font-sans font-bold text-amber-600 dark:text-amber-400">
-                                            • (Revised)
+                                      {submittedDateText ? (
+                                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                          Submitted: {submittedDateText}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[11px] text-slate-400 dark:text-slate-500 italic block">
+                                          Not submitted
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                  {/* Column 2: Type (Centered) */}
+                                  <td className="px-3 py-3.5 align-middle text-center">
+                                    {isMandatory ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
+                                        Required
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-white border border-slate-600 shadow-2xs">
+                                        Optional
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* Column 3: Attached File */}
+                                  <td className="px-4 py-3.5 align-middle">
+                                    {hasFile && fileDownloadUrl ? (
+                                      <div className="space-y-1.5">
+                                        <div>
+                                          <span
+                                            className="font-medium text-slate-900 dark:text-slate-100 truncate block text-xs leading-snug max-w-[200px] xl:max-w-[260px]"
+                                            title={rawFileName}
+                                          >
+                                            {fileName}
                                           </span>
+                                          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                            {fileSize ? <span>{fileSize}</span> : null}
+                                            {isRevisionUploaded ? (
+                                              <span className="font-sans font-bold text-amber-600 dark:text-amber-400">
+                                                • (Revised)
+                                              </span>
+                                            ) : null}
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-1.5 pt-0.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setPreviewSubmission({
+                                                code: code,
+                                                title: reqLabel,
+                                                fileName: fileName,
+                                                fileSize: firstDoc?.size_bytes || null,
+                                                storagePath: firstDoc?.storage_path,
+                                                fileUrl: fileDownloadUrl || undefined,
+                                                submittedAt:
+                                                  matchingSubmission?.submitted_at ||
+                                                  matchingSubmission?.created_at ||
+                                                  undefined,
+                                                note: facultyNote,
+                                                notes: facultyNote,
+                                                remarks: facultyNote,
+                                                facultyNote: facultyNote,
+                                                feedback: adminNote,
+                                                admin_remarks: adminNote,
+                                                adminRemarks: adminNote,
+                                                reviewedAt:
+                                                  matchingSubmission?.review_decisions?.[0]
+                                                    ?.created_at ||
+                                                  (matchingSubmission?.status ===
+                                                  "validated"
+                                                    ? matchingSubmission?.created_at
+                                                    : undefined),
+                                                latestSubmissionId:
+                                                  matchingSubmission?.id,
+                                                status: isRevisionRequested
+                                                  ? "Needs Revision"
+                                                  : isRevisionUploaded
+                                                  ? "Revision Under Review"
+                                                  : matchingSubmission?.status ||
+                                                    "Pending",
+                                                academicYear: academicYear,
+                                                semester: semester,
+                                                facultyName: faculty.fullName,
+                                                isAdminView: true,
+                                                hasPriorRevision: Boolean(
+                                                  priorRejectionDecision ||
+                                                    isRevisionRequested
+                                                ),
+                                                isRevision: isRevisionUploaded,
+                                              });
+                                            }}
+                                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
+                                            title="Preview File"
+                                          >
+                                            <AppIcon icon={Eye} size="sm" color="inherit" />
+                                            <span>Preview</span>
+                                          </button>
+
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleSingleFileDownload(
+                                                firstDoc?.storage_path,
+                                                fileName
+                                              )
+                                            }
+                                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
+                                            title="Download File"
+                                          >
+                                            <AppIcon icon={Download} size="sm" color="inherit" />
+                                            <span>Download</span>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs text-slate-400 dark:text-slate-500 italic block">
+                                        No file attached
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* Column 3: Notes & Feedback */}
+                                  <td className="px-4 py-3.5 align-middle">
+                                    {facultyNote ||
+                                    isRevisionRequested ||
+                                    (isValidated && adminNote) ||
+                                    (isRevisionUploaded && priorRejectionNote) ? (
+                                      <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
+                                        {facultyNote ? (
+                                          <div className="flex items-start gap-1.5 leading-snug">
+                                            <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                              <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                                <AppIcon icon={ChatBubble} size="xs" color="active" />
+                                              </span>
+                                              {isRevisionUploaded
+                                                ? "Faculty Remarks (Revision):"
+                                                : "Faculty Remarks:"}
+                                            </span>
+                                            <p
+                                              className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
+                                              title={facultyNote}
+                                            >
+                                              &ldquo;{facultyNote}&rdquo;
+                                            </p>
+                                          </div>
+                                        ) : null}
+
+                                        {isRevisionUploaded && priorRejectionNote ? (
+                                          <div
+                                            className={`flex items-start gap-1.5 leading-snug ${
+                                              facultyNote
+                                                ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80"
+                                                : ""
+                                            }`}
+                                          >
+                                            <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                              <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#780000]/15 dark:bg-[#780000]/30 text-[#780000] dark:text-rose-400 border border-[#780000]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                                <AppIcon
+                                                  icon={Xmark}
+                                                  size="xs"
+                                                  color="danger"
+                                                  strokeWidth={2.5}
+                                                />
+                                              </span>
+                                              Prior Revision Request:
+                                            </span>
+                                            <p
+                                              className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
+                                              title={priorRejectionNote}
+                                            >
+                                              &ldquo;{priorRejectionNote}&rdquo;
+                                            </p>
+                                          </div>
+                                        ) : isRevisionRequested ? (
+                                          <div
+                                            className={`flex items-start gap-1.5 leading-snug ${
+                                              facultyNote
+                                                ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80"
+                                                : ""
+                                            }`}
+                                          >
+                                            <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                              <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#780000]/15 dark:bg-[#780000]/30 text-[#780000] dark:text-rose-400 border border-[#780000]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                                <AppIcon
+                                                  icon={Xmark}
+                                                  size="xs"
+                                                  color="danger"
+                                                  strokeWidth={2.5}
+                                                />
+                                              </span>
+                                              Revision Sent:
+                                            </span>
+                                            <p
+                                              className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
+                                              title={adminNote || ""}
+                                            >
+                                              &ldquo;
+                                              {adminNote ||
+                                                "Please review and re-upload the corrected requirement document."}
+                                              &rdquo;
+                                            </p>
+                                          </div>
+                                        ) : isValidated && adminNote ? (
+                                          <div
+                                            className={`flex items-start gap-1.5 leading-snug ${
+                                              facultyNote
+                                                ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80"
+                                                : ""
+                                            }`}
+                                          >
+                                            <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1.5">
+                                              <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#0b5336]/15 dark:bg-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 border border-[#0b5336]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
+                                                <AppIcon
+                                                  icon={Check}
+                                                  size="xs"
+                                                  color="success"
+                                                  strokeWidth={2.5}
+                                                />
+                                              </span>
+                                              Validated Remarks:
+                                            </span>
+                                            <p
+                                              className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
+                                              title={adminNote}
+                                            >
+                                              &ldquo;{adminNote}&rdquo;
+                                            </p>
+                                          </div>
                                         ) : null}
                                       </div>
-                                    </div>
+                                    ) : (
+                                      <span className="text-slate-400 dark:text-slate-600 text-xs italic block">
+                                        &mdash;
+                                      </span>
+                                    )}
+                                  </td>
 
-                                    <div className="flex items-center gap-1.5 pt-0.5">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setPreviewSubmission({
-                                            code: code,
-                                            title: reqLabel,
-                                            fileName: fileName,
-                                            fileSize: firstDoc?.size_bytes || null,
-                                            storagePath: firstDoc?.storage_path,
-                                            fileUrl: fileDownloadUrl || undefined,
-                                            submittedAt:
-                                              matchingSubmission?.submitted_at ||
-                                              matchingSubmission?.created_at ||
-                                              undefined,
-                                            note: facultyNote,
-                                            notes: facultyNote,
-                                            remarks: facultyNote,
-                                            facultyNote: facultyNote,
-                                            feedback: adminNote,
-                                            admin_remarks: adminNote,
-                                            adminRemarks: adminNote,
-                                            reviewedAt:
-                                              matchingSubmission?.review_decisions?.[0]
-                                                ?.created_at ||
-                                              (matchingSubmission?.status ===
-                                              "validated"
-                                                ? matchingSubmission?.created_at
-                                                : undefined),
-                                            latestSubmissionId:
-                                              matchingSubmission?.id,
-                                            status: isRevisionRequested
-                                              ? "Needs Revision"
-                                              : isRevisionUploaded
-                                              ? "Revision Under Review"
-                                              : matchingSubmission?.status ||
-                                                "Pending",
-                                            academicYear: academicYear,
-                                            semester: semester,
-                                            facultyName: faculty.fullName,
-                                            isAdminView: true,
-                                            hasPriorRevision: Boolean(
-                                              priorRejectionDecision ||
-                                                isRevisionRequested
-                                            ),
-                                            isRevision: isRevisionUploaded,
-                                          });
-                                        }}
-                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
-                                        title="Preview File"
-                                      >
-                                        <AppIcon icon={Eye} size="sm" color="inherit" />
-                                        <span>Preview</span>
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          handleSingleFileDownload(
-                                            firstDoc?.storage_path,
-                                            fileName
-                                          )
-                                        }
-                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
-                                        title="Download File"
-                                      >
-                                        <AppIcon icon={Download} size="sm" color="inherit" />
-                                        <span>Download</span>
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-slate-400 dark:text-slate-500 italic block">
-                                    No file attached
-                                  </span>
-                                )}
-                              </td>
-
-                              {/* Column 3: Notes & Feedback (Unified compact container, prevents row stretching) */}
-                              <td className="px-4 py-3.5 align-middle">
-                                {facultyNote || isRevisionRequested || (isValidated && adminNote) || (isRevisionUploaded && priorRejectionNote) ? (
-                                  <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60 p-2.5 text-xs max-w-[320px] space-y-1.5 shadow-2xs">
-                                    {facultyNote ? (
-                                      <div className="flex items-start gap-1.5 leading-snug">
-                                        <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
-                                            <AppIcon icon={ChatBubble} size="xs" color="active" />
-                                          </span>
-                                          {isRevisionUploaded ? "Faculty Remarks (Revision):" : "Faculty Remarks:"}
-                                        </span>
-                                        <p
-                                          className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
-                                          title={facultyNote}
-                                        >
-                                          &ldquo;{facultyNote}&rdquo;
-                                        </p>
-                                      </div>
-                                    ) : null}
-
-                                    {isRevisionUploaded && priorRejectionNote ? (
-                                      <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#780000]/15 dark:bg-[#780000]/30 text-[#780000] dark:text-rose-400 border border-[#780000]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
-                                            <AppIcon icon={Xmark} size="xs" color="danger" strokeWidth={2.5} />
-                                          </span>
-                                          Prior Revision Request:
-                                        </span>
-                                        <p
-                                          className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
-                                          title={priorRejectionNote}
-                                        >
-                                          &ldquo;{priorRejectionNote}&rdquo;
-                                        </p>
+                                  {/* Column 4: Status / Action */}
+                                  <td className="px-4 py-3.5 align-middle text-center">
+                                    {isValidated ? (
+                                      <div className="flex items-center justify-center">
+                                        <SubmissionStatusBadge status="Validated" size="md" />
                                       </div>
                                     ) : isRevisionRequested ? (
-                                      <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-bold text-[10.5px] text-[#780000] dark:text-rose-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#780000]/15 dark:bg-[#780000]/30 text-[#780000] dark:text-rose-400 border border-[#780000]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
-                                            <AppIcon icon={Xmark} size="xs" color="danger" strokeWidth={2.5} />
-                                          </span>
-                                          Revision Sent:
-                                        </span>
-                                        <p
-                                          className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
-                                          title={adminNote || ""}
-                                        >
-                                          &ldquo;{adminNote ||
-                                            "Please review and re-upload the corrected requirement document."}&rdquo;
-                                        </p>
+                                      <div className="flex items-center justify-center">
+                                        <SubmissionStatusBadge status="Needs Revision" size="md" />
                                       </div>
-                                    ) : isValidated && adminNote ? (
-                                      <div className={`flex items-start gap-1.5 leading-snug ${facultyNote ? "pt-1.5 border-t border-slate-200/70 dark:border-slate-800/80" : ""}`}>
-                                        <span className="font-bold text-[10.5px] text-[#0b5336] dark:text-emerald-400 shrink-0 mt-0.5 flex items-center gap-1.5">
-                                          <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-[#0b5336]/15 dark:bg-[#0b5336]/30 text-[#0b5336] dark:text-emerald-400 border border-[#0b5336]/30 shrink-0 shadow-2xs [&>svg]:h-2.5 [&>svg]:w-2.5">
-                                            <AppIcon icon={Check} size="xs" color="success" strokeWidth={2.5} />
-                                          </span>
-                                          Validated Remarks:
-                                        </span>
-                                        <p
-                                          className="text-slate-700 dark:text-slate-300 italic line-clamp-2"
-                                          title={adminNote}
+                                    ) : matchingSubmission ? (
+                                      <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            submittingAction !== null ||
+                                            reviewingCode !== null ||
+                                            isValidatingSingle ||
+                                            isSubmittingRevision
+                                          }
+                                          onClick={() =>
+                                            openValidateModal(
+                                              matchingSubmission.id,
+                                              code,
+                                              reqLabel
+                                            )
+                                          }
+                                          title="Validate Requirement"
+                                          aria-label="Validate Requirement"
+                                          className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white shadow-2xs transition-all hover:scale-110 active:scale-95 disabled:opacity-50 cursor-pointer"
                                         >
-                                          &ldquo;{adminNote}&rdquo;
-                                        </p>
+                                          <AppIcon
+                                            icon={Check}
+                                            size="sm"
+                                            color="white"
+                                            strokeWidth={2.5}
+                                          />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            submittingAction !== null ||
+                                            reviewingCode !== null ||
+                                            isValidatingSingle ||
+                                            isSubmittingRevision
+                                          }
+                                          onClick={() =>
+                                            openRevisionModal(
+                                              matchingSubmission.id,
+                                              code,
+                                              reqLabel
+                                            )
+                                          }
+                                          title="Request Revision"
+                                          aria-label="Request Revision"
+                                          className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white shadow-2xs transition-all hover:scale-110 active:scale-95 disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <AppIcon
+                                            icon={Xmark}
+                                            size="sm"
+                                            color="white"
+                                            strokeWidth={2.5}
+                                          />
+                                        </button>
                                       </div>
-                                    ) : null}
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-400 dark:text-slate-600 text-xs italic block">
-                                    &mdash;
-                                  </span>
-                                )}
-                              </td>
-
-                              {/* Column 4: Status / Action (Matching Documents to be Submitted badges & check/x button icons) */}
-                              <td className="px-4 py-3.5 align-middle text-center">
-                                {isValidated ? (
-                                  <div className="flex items-center justify-center">
-                                    <SubmissionStatusBadge status="Validated" size="md" />
-                                  </div>
-                                ) : isRevisionRequested ? (
-                                  <div className="flex items-center justify-center">
-                                    <SubmissionStatusBadge status="Needs Revision" size="md" />
-                                  </div>
-                                ) : matchingSubmission ? (
-                                  <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-                                    <button
-                                      type="button"
-                                      disabled={
-                                        submittingAction !== null ||
-                                        reviewingCode !== null ||
-                                        isValidatingSingle ||
-                                        isSubmittingRevision
-                                      }
-                                      onClick={() =>
-                                        openValidateModal(
-                                          matchingSubmission.id,
-                                          code,
-                                          reqLabel
-                                        )
-                                      }
-                                      title="Validate Requirement"
-                                      aria-label="Validate Requirement"
-                                      className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-[#08412a] bg-[#0b5336] hover:bg-[#073d2a] text-white shadow-2xs transition-all hover:scale-110 active:scale-95 disabled:opacity-50 cursor-pointer"
-                                    >
-                                      <AppIcon icon={Check} size="sm" color="white" strokeWidth={2.5} />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      disabled={
-                                        submittingAction !== null ||
-                                        reviewingCode !== null ||
-                                        isValidatingSingle ||
-                                        isSubmittingRevision
-                                      }
-                                      onClick={() =>
-                                        openRevisionModal(
-                                          matchingSubmission.id,
-                                          code,
-                                          reqLabel
-                                        )
-                                      }
-                                      title="Request Revision"
-                                      aria-label="Request Revision"
-                                      className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white shadow-2xs transition-all hover:scale-110 active:scale-95 disabled:opacity-50 cursor-pointer"
-                                    >
-                                      <AppIcon icon={Xmark} size="sm" color="white" strokeWidth={2.5} />
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center justify-center">
-                                    <SubmissionStatusBadge
-                                      status="Not Submitted"
-                                      label="Awaiting Submission"
-                                      size="md"
-                                    />
-                                  </div>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                                    ) : (
+                                      <div className="flex items-center justify-center">
+                                        <SubmissionStatusBadge
+                                          status="Not Submitted"
+                                          label="Awaiting Submission"
+                                          size="md"
+                                        />
+                                      </div>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           ) : (
             /* Tab 2: Verification History */

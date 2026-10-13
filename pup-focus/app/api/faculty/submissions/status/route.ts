@@ -177,6 +177,10 @@ export async function GET(request: NextRequest) {
       url.searchParams.get("semester") ||
       request.nextUrl?.searchParams?.get("semester")
     )?.trim();
+    const requestedClassId = (
+      url.searchParams.get("classId") ||
+      request.nextUrl?.searchParams?.get("classId")
+    )?.trim();
 
     // 2. Resolve currently active academic term strictly
     const { data: dbCurrentTerm } = await supabase
@@ -451,7 +455,7 @@ export async function GET(request: NextRequest) {
       const { data, error } = await supabase
         .from("submissions")
         .select(
-          "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id",
+          "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, class_id",
         )
         .or(
           `faculty_profile_id.in.(${facultyIdList.join(",")}),user_id.in.(${facultyIdList.join(",")}),created_by.in.(${facultyIdList.join(",")})`,
@@ -503,6 +507,10 @@ export async function GET(request: NextRequest) {
           rawSubmissions = altData as typeof rawSubmissions;
         }
       } catch {}
+    }
+
+    if (requestedClassId) {
+      rawSubmissions = rawSubmissions.filter((s: any) => s.class_id === requestedClassId);
     }
 
     // 5.1 Query approved extension requests for this faculty user
