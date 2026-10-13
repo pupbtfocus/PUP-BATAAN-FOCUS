@@ -1024,7 +1024,7 @@ export function UserRegistrationLogsModal({
               {selectedLogForDetails.status === "Pending" ? (
                 <div className="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
                   <span className="font-semibold">Notice:</span> This account is pending invitation acceptance. It will not appear in the active{" "}
-                  {selectedLogForDetails.role === "Faculty" ? "Faculty Management" : "Admin Management"} list until the user verifies their email and completes setup.
+                  {selectedLogForDetails.role === "Faculty" ? "Faculty Management" : "Staff Management"} list until the user verifies their email and completes setup.
                 </div>
               ) : null}
 

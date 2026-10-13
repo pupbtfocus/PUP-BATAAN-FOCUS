@@ -7,7 +7,7 @@ import { isValidEmailAddress } from "@/lib/validation/email";
 const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
 const SUPER_ADMIN_PASSWORD =
   process.env.SUPER_ADMIN_PASSWORD?.trim() || "SuperAdmin123!";
-const SUPER_ADMIN_FULL_NAME = "PUP FOCUS Super Admin";
+const SUPER_ADMIN_FULL_NAME = "PUP FOCUS Admin";
 
 export async function POST() {
   try {
@@ -230,6 +230,8 @@ export async function POST() {
           await supabase.from("admins").insert(adminPayload);
         }
       }
+      // Ensure admin account is never in staff table
+      await supabase.from("staff").delete().eq("profile_id", profileId);
     } catch {
       // Optional table: ignore if admins table does not exist in schema cache
     }

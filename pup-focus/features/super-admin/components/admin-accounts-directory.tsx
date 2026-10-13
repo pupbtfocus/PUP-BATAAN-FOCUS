@@ -103,30 +103,30 @@ export function AdminStatsCards({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-      {/* 1. TOTAL ADMINS */}
+      {/* 1. TOTAL STAFF */}
       <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-          Total Admins
+          Total Staff
         </p>
         <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : totalCount}
         </p>
       </div>
 
-      {/* 2. ACTIVE ADMINS */}
+      {/* 2. ACTIVE STAFF */}
       <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-          Active Admins
+          Active Staff
         </p>
         <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : activeCount}
         </p>
       </div>
 
-      {/* 3. INACTIVE ADMINS */}
+      {/* 3. INACTIVE STAFF */}
       <div className="rounded-2xl bg-white text-slate-900 border border-slate-200 shadow-xs dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 p-5 transition-colors">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-          Inactive Admins
+          Inactive Staff
         </p>
         <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
           {isLoading ? "..." : inactiveCount}
@@ -143,7 +143,7 @@ export function AdminFilterBar({
   onRoleFilterChange,
   statusFilter,
   onStatusFilterChange,
-  placeholder = "Search admin by name or email...",
+  placeholder = "Search staff by name or email...",
 }: {
   searchTerm: string;
   onSearchChange: (value: string) => void;
@@ -170,7 +170,7 @@ export function AdminFilterBar({
           className="w-full sm:w-44 h-9 rounded-xl bg-white text-slate-900 border border-slate-200 focus:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800 dark:focus:border-slate-600 px-3 text-xs outline-none transition cursor-pointer"
         >
           <option value="all">All Roles</option>
-          <option value={ROLE.ADMIN}>Admin</option>
+          <option value={ROLE.STAFF}>Staff</option>
           <option value={ROLE.ADMIN}>Admin</option>
         </select>
 
@@ -335,7 +335,7 @@ export function AdminAccountsTable({
           <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-[10px] text-slate-600 dark:text-slate-400">
             <tr>
               <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
-              <th className="px-4 py-2.5 font-semibold">Admin Member</th>
+              <th className="px-4 py-2.5 font-semibold">Staff Member</th>
               <th className="px-4 py-2.5 font-semibold">Role</th>
               <th className="px-4 py-2.5 font-semibold">Status</th>
               <th className="px-4 py-2.5 font-semibold">Last Login</th>
@@ -346,18 +346,22 @@ export function AdminAccountsTable({
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                  Loading admin accounts...
+                  Loading accounts...
                 </td>
               </tr>
             ) : filteredAccounts.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                  No admin members match the selected criteria.
+                  No staff members match the selected criteria.
                 </td>
               </tr>
             ) : (
               filteredAccounts.map((admin, index) => {
-                const isSuperAdmin = (admin.role || "").toLowerCase().includes("super");
+                const isSuperAdmin =
+                  (admin.role || "").toLowerCase() === "admin" ||
+                  (admin.role || "").toLowerCase().includes("super") ||
+                  admin.email?.toLowerCase() === "pupbataanfocus.superadmin@gmail.com" ||
+                  admin.email?.toLowerCase() === "pupbataanfocus.admin@gmail.com";
                 const hasAvatar = admin.profileImageUrl && !failedImageIds.has(admin.profile_id);
                 const isDeactivatingOrActivating = loadingAdminIds.has(admin.profile_id);
                 const isDeleting = deletingAdminIds.has(admin.profile_id);

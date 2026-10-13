@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
               );
           }
 
-          // 3. Upsert into staff and admins table
+          // 3. Upsert into staff table and remove from admins table
           try {
             await supabase
               .from("staff")
@@ -283,23 +283,12 @@ export async function POST(request: NextRequest) {
                 },
                 { onConflict: "profile_id" },
               );
-          } catch {}
-
-          try {
             await supabase
               .from("admins")
-              .upsert(
-                {
-                  profile_id: newProfile.id,
-                  full_name: fullName,
-                  email: normalizedEmail,
-                  is_active: true,
-                  updated_at: new Date().toISOString(),
-                },
-                { onConflict: "profile_id" },
-              );
-          } catch (adminErr) {
-            console.error("Failed to upsert admins table:", adminErr);
+              .delete()
+              .eq("profile_id", newProfile.id);
+          } catch (staffErr) {
+            console.error("Failed to upsert staff table:", staffErr);
           }
         }
       } catch (assignError) {

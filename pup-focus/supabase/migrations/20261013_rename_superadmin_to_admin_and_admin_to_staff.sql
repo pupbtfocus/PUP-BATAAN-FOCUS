@@ -67,6 +67,36 @@ BEGIN
       '"admin"'::jsonb
     )
   WHERE (raw_user_meta_data->>'role' = 'super_admin' OR raw_app_meta_data->>'role' = 'super_admin');
+
+  -- Ensure primary administrator account has role 'admin' and updated full_name
+  UPDATE auth.users
+  SET
+    raw_user_meta_data = jsonb_set(
+      jsonb_set(
+        COALESCE(raw_user_meta_data, '{}'::jsonb),
+        '{role}',
+        '"admin"'::jsonb
+      ),
+      '{full_name}',
+      '"PUP FOCUS Admin"'::jsonb
+    ),
+    raw_app_meta_data = jsonb_set(
+      COALESCE(raw_app_meta_data, '{}'::jsonb),
+      '{role}',
+      '"admin"'::jsonb
+    )
+  WHERE email IN ('pupbataanfocus.superadmin@gmail.com', 'pupbataanfocus.admin@gmail.com');
+
+  UPDATE public.profiles
+  SET full_name = 'PUP FOCUS Admin'
+  WHERE email IN ('pupbataanfocus.superadmin@gmail.com', 'pupbataanfocus.admin@gmail.com');
+
+  UPDATE public.user_roles ur
+  SET role_id = r.id
+  FROM public.roles r, public.profiles p
+  WHERE r.code = 'admin'
+    AND p.id = ur.profile_id
+    AND p.email IN ('pupbataanfocus.superadmin@gmail.com', 'pupbataanfocus.admin@gmail.com');
 END $$;
 
 -- 3. Rename public.admins to public.staff (if exists) and provide backward-compatible view

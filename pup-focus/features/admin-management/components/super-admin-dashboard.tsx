@@ -1849,10 +1849,10 @@ export function SuperAdminDashboard({
                 <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
-                      Admin Management
+                      Staff Management
                     </h1>
                     <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-                      Configure and oversee administrative staff privileges and account accesses.
+                      Configure and oversee staff privileges and account accesses.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
@@ -1861,7 +1861,7 @@ export function SuperAdminDashboard({
                       onClick={openCreateAdminModal}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
                     >
-                      + Create Admin
+                      + Create Staff
                     </button>
                     <button
                       type="button"
@@ -2184,7 +2184,7 @@ export function SuperAdminDashboard({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
             <ModalHeader
-              title="Add Admin Account"
+              title="Add Staff Account"
               icon={UserPlus}
               onClose={closeCreateAdminModal}
               closeAriaLabel="Close modal"
@@ -2357,7 +2357,7 @@ export function SuperAdminDashboard({
                 disabled={isSubmitting}
                 className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-md mt-2 disabled:opacity-50 cursor-pointer text-sm tracking-wide"
               >
-                {isSubmitting ? "Creating Admin..." : "Create Admin Account"}
+                {isSubmitting ? "Creating Staff..." : "Create Staff Account"}
               </button>
             </form>
             </div>
@@ -2728,7 +2728,7 @@ function AdminDetailsModal({
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-3 sm:p-5 backdrop-blur-sm">
       <div className="w-full max-w-2xl sm:max-w-3xl rounded-2xl border-2 border-amber-400 dark:border-amber-500/70 bg-white dark:bg-slate-950 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
         <ModalHeader
-          title={canEdit ? "Edit Admin Account" : "View Admin Account"}
+          title={canEdit ? "Edit Staff Account" : "View Staff Account"}
           icon={User}
         />
         <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
