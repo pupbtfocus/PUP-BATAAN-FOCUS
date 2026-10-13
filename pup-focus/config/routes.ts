@@ -1,9 +1,10 @@
 import { ROLE, type AppRole } from "./roles";
 
-export const ROUTE_BY_ROLE: Record<AppRole, string> = {
-  [ROLE.SUPER_ADMIN]: "/super-admin/dashboard",
-  [ROLE.FACULTY]: "/faculty/dashboard",
+export const ROUTE_BY_ROLE: Record<string, string> = {
   [ROLE.ADMIN]: "/admin/dashboard",
+  [ROLE.FACULTY]: "/faculty/dashboard",
+  [ROLE.STAFF]: "/staff/dashboard",
+  super_admin: "/admin/dashboard",
 };
 
 export const AUTH_ROUTES = [
@@ -16,14 +17,16 @@ export const AUTH_ROUTES = [
   "/forgot-password",
   "/auth/confirm",
 ];
+
 /**
  * Maps a URL path prefix to the role(s) permitted to access routes under it.
  * Used by the middleware to enforce role-based route guards.
  */
 export const ROLE_ROUTE_PREFIX: Record<string, AppRole[]> = {
-  "/admin": [ROLE.ADMIN, ROLE.SUPER_ADMIN],
+  "/admin": [ROLE.ADMIN],
+  "/staff": [ROLE.STAFF, ROLE.ADMIN],
   "/faculty": [ROLE.FACULTY],
-  "/super-admin": [ROLE.SUPER_ADMIN],
+  "/super-admin": [ROLE.ADMIN],
 };
 
 export const PUBLIC_ROUTES = [
@@ -32,6 +35,7 @@ export const PUBLIC_ROUTES = [
   "/contact",
   "/auth/callback",
   "/api/auth/callback",
+  "/api/bootstrap/admin",
   "/api/bootstrap/super-admin",
   "/email-preview",
   "/api/email/preview",
@@ -39,7 +43,7 @@ export const PUBLIC_ROUTES = [
 ];
 
 /**
- * Resets all stored navigation and active tab states across Faculty, Admin, and Super Admin.
+ * Resets all stored navigation and active tab states across Faculty, Staff, and Admin.
  * Call this on login, logout, and password initialization so that every new session
  * reliably lands on the Dashboard view as its starting point.
  */
@@ -49,10 +53,14 @@ export function resetDashboardNavigationState(): void {
     sessionStorage.setItem("pup_focus_faculty_active_view", "dashboard");
     sessionStorage.removeItem("activeAdminTab");
     sessionStorage.removeItem("activeAdminSection");
+    sessionStorage.removeItem("activeStaffTab");
+    sessionStorage.removeItem("activeStaffSection");
     sessionStorage.removeItem("activeSuperAdminTab");
     sessionStorage.removeItem("activeSuperAdminSection");
     localStorage.removeItem("activeAdminTab");
     localStorage.removeItem("activeAdminSection");
+    localStorage.removeItem("activeStaffTab");
+    localStorage.removeItem("activeStaffSection");
     localStorage.removeItem("activeSuperAdminTab");
     localStorage.removeItem("activeSuperAdminSection");
   } catch {

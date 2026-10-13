@@ -336,7 +336,7 @@ export function SubmissionWindowPanel({
   const fetchLogs = useCallback(async () => {
     try {
       setIsLoadingLogs(true);
-      const res = await fetch("/api/admin/submission-window/logs", { credentials: "include" });
+      const res = await fetch("/api/staff/submission-window/logs", { credentials: "include" });
       if (res.ok) {
         const body = await res.json();
         setExtensionLogs(body.logs || []);
@@ -354,7 +354,7 @@ export function SubmissionWindowPanel({
 
   const fetchExtensionRequests = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/submission-window/extension-requests?status=all", {
+      const res = await fetch("/api/staff/submission-window/extension-requests?status=all", {
         credentials: "include",
       });
       if (res.ok) {
@@ -369,7 +369,7 @@ export function SubmissionWindowPanel({
 
   const fetchActiveFacultySchedules = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/submission-window/active-faculty-schedules", {
+      const res = await fetch("/api/staff/submission-window/active-faculty-schedules", {
         credentials: "include",
       });
       if (res.ok) {
@@ -391,7 +391,7 @@ export function SubmissionWindowPanel({
     const fac = facultyToClose;
     setClosingFacultyId(fac.facultyProfileId);
     try {
-      const res = await fetch("/api/admin/submission-window/active-faculty-schedules", {
+      const res = await fetch("/api/staff/submission-window/active-faculty-schedules", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -418,7 +418,7 @@ export function SubmissionWindowPanel({
     setError(null);
 
     try {
-      const response = await fetch("/api/admin/submission-window", { credentials: "include" });
+      const response = await fetch("/api/staff/submission-window", { credentials: "include" });
       const body = await readApiBody(response);
 
       if (!response.ok) {
@@ -441,7 +441,7 @@ export function SubmissionWindowPanel({
       // Ensure active academic term is populated even if window status config was previously uninitialized
       if (!data.academicYear || !data.semester) {
         try {
-          const termsRes = await fetch("/api/admin/academic-terms", { credentials: "include" });
+          const termsRes = await fetch("/api/staff/academic-terms", { credentials: "include" });
           if (termsRes.ok) {
             const termsJson = await termsRes.json();
             const termsList = Array.isArray(termsJson?.terms) ? termsJson.terms : [];
@@ -552,7 +552,7 @@ export function SubmissionWindowPanel({
       if (closeDateTime <= nowLocal) {
         setOpenDateTime("");
         setCloseDateTime("");
-        fetch("/api/admin/submission-window", {
+        fetch("/api/staff/submission-window", {
           method: "DELETE",
           credentials: "include",
         })
@@ -579,7 +579,7 @@ export function SubmissionWindowPanel({
 
     if (!currentAY || !currentSem) {
       try {
-        const termsRes = await fetch("/api/admin/academic-terms", { credentials: "include" });
+        const termsRes = await fetch("/api/staff/academic-terms", { credentials: "include" });
         if (termsRes.ok) {
           const termsJson = await termsRes.json();
           const termsList = Array.isArray(termsJson?.terms) ? termsJson.terms : [];
@@ -624,7 +624,7 @@ export function SubmissionWindowPanel({
     const endTimeLabel = isAlwaysOpen ? "11:59 PM" : toTimeLabel(endTime24);
 
     try {
-      const response = await fetch("/api/admin/submission-window", {
+      const response = await fetch("/api/staff/submission-window", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -682,7 +682,7 @@ export function SubmissionWindowPanel({
     setSuccess(null);
 
     try {
-      const response = await fetch("/api/admin/submission-window", {
+      const response = await fetch("/api/staff/submission-window", {
         method: "DELETE",
         credentials: "include",
       });
@@ -750,7 +750,7 @@ export function SubmissionWindowPanel({
     setIsReviewingRequest(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/submission-window/extension-requests", {
+      const res = await fetch("/api/staff/submission-window/extension-requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -803,7 +803,7 @@ export function SubmissionWindowPanel({
     setIsApprovingRequest(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/submission-window/extension-requests", {
+      const res = await fetch("/api/staff/submission-window/extension-requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -1920,9 +1920,9 @@ export function SubmissionWindowPanel({
                     (typeof window !== "undefined" &&
                       window.location.pathname.startsWith("/super-admin"));
                   if (isSuper) {
-                    window.location.href = "/super-admin/dashboard?tab=verification";
+                    window.location.href = "/staff/dashboard?tab=verification";
                   } else {
-                    window.location.href = "/admin/dashboard?tab=requirements";
+                    window.location.href = "/staff/dashboard?tab=requirements";
                   }
                 }}
                 className="flex-1 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs shadow-xs active:scale-[0.98] transition-colors cursor-pointer"

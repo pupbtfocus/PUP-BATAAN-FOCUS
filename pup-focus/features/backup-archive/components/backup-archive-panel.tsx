@@ -75,7 +75,7 @@ export function BackupArchivePanel() {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch("/api/admin/backups");
+      const res = await fetch("/api/staff/backups");
       if (!res.ok) {
         throw new Error("Failed to load backups and archive records");
       }
@@ -202,7 +202,7 @@ export function BackupArchivePanel() {
         faculty_name: selectedFacultyObj ? selectedFacultyObj.name : undefined,
       };
 
-      const res = await fetch("/api/admin/backups/create", {
+      const res = await fetch("/api/staff/backups/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -291,7 +291,7 @@ export function BackupArchivePanel() {
         setExportProgress("Finalizing ZIP archive... 90%");
       }, 1400);
 
-      const res = await fetch(`/api/admin/backups/export-zip?${params.toString()}`);
+      const res = await fetch(`/api/staff/backups/export-zip?${params.toString()}`);
       clearTimeout(timer1);
       clearTimeout(timer2);
 
@@ -355,7 +355,7 @@ export function BackupArchivePanel() {
       const t1 = setTimeout(() => setRowExportProgress("Zipping documents... 60%"), 600);
       const t2 = setTimeout(() => setRowExportProgress("Finalizing... 90%"), 1400);
 
-      const res = await fetch(`/api/admin/backups/export-zip?${params.toString()}`);
+      const res = await fetch(`/api/staff/backups/export-zip?${params.toString()}`);
       clearTimeout(t1);
       clearTimeout(t2);
 
@@ -403,7 +403,7 @@ export function BackupArchivePanel() {
     try {
       setIsDeleting(true);
       setError(null);
-      const res = await fetch(`/api/admin/backups?id=${backupToDelete.id}`, {
+      const res = await fetch(`/api/staff/backups?id=${backupToDelete.id}`, {
         method: "DELETE",
       });
 
@@ -900,7 +900,7 @@ export function BackupArchivePanel() {
                             </button>
 
                             <a
-                              href={`/api/admin/backups/download?id=${bk.id}`}
+                              href={`/api/staff/backups/download?id=${bk.id}`}
                               download
                               className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer flex items-center gap-1 shadow-xs"
                               title="Download JSON Snapshot"
@@ -1191,7 +1191,7 @@ export function BackupArchivePanel() {
 
             <div className="flex items-center justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-800">
               <a
-                href={`/api/admin/backups/download?id=${inspectedBackup.id}`}
+                href={`/api/staff/backups/download?id=${inspectedBackup.id}`}
                 download
                 className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 transition cursor-pointer flex items-center gap-1.5 shadow-xs"
               >

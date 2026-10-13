@@ -1052,7 +1052,7 @@ function FacultySubmissionPanelContent({
     return () => window.removeEventListener("pup-focus-select-view", handleCustomSelectView);
   }, []);
   useEffect(() => {
-    fetch("/api/admin/requirement-templates?active=true", { cache: "no-store" })
+    fetch("/api/staff/requirement-templates?active=true", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         const list = Array.isArray(data)
@@ -1830,7 +1830,7 @@ function FacultySubmissionPanelContent({
     setDirectUploadMessage(null);
 
     // Refresh active templates immediately so any recent change in admin is active
-    fetch("/api/admin/requirement-templates?active=true", { cache: "no-store" })
+    fetch("/api/staff/requirement-templates?active=true", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         const list = Array.isArray(data)

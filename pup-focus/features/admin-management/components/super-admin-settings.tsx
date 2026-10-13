@@ -54,7 +54,7 @@ export function SuperAdminSettings({
   const isUserDirty = useRef(false);
 
   // Profile data state
-  const initialName = adminName || "Super Administrator";
+  const initialName = adminName || "Administrator";
   const initialEmail = adminEmail || "";
   const [fullName, setFullName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
@@ -140,13 +140,13 @@ export function SuperAdminSettings({
       setIsRefreshing(true);
 
       // Fetch super-admin account
-      const accountRes = await fetch(`/api/super-admin/account?_t=${Date.now()}`, {
+      const accountRes = await fetch(`/api/admin/account?_t=${Date.now()}`, {
         cache: "no-store",
       });
       if (accountRes.ok) {
         const accountData = await accountRes.json();
         if (accountData.account) {
-          const loadedName = accountData.account.fullName || adminName || "Super Administrator";
+          const loadedName = accountData.account.fullName || adminName || "Administrator";
           const loadedEmail = accountData.account.email || adminEmail || "";
           const loadedAvatar =
             accountData.account.avatar_url ||
@@ -285,10 +285,10 @@ export function SuperAdminSettings({
         updatedAvatar = profilePayload.avatar_url;
       }
 
-      // 2. If email changed, also patch via /api/super-admin/account
+      // 2. If email changed, also patch via /api/admin/account
       const emailHasChanged = email.trim().toLowerCase() !== savedEmail.trim().toLowerCase();
       if (emailHasChanged) {
-        const accountResponse = await fetch("/api/super-admin/account", {
+        const accountResponse = await fetch("/api/admin/account", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -491,16 +491,16 @@ export function SuperAdminSettings({
     }
   }
 
-  const DEFAULT_SUPER_ADMIN_AVATAR = "/icons/pup-seal.png";
+  const DEFAULT_ADMIN_AVATAR = "/icons/pup-seal.png";
 
   // Active avatar resolution: defaults to PUP logo
   const displayedProfileImage = isAvatarMarkedForRemoval
-    ? DEFAULT_SUPER_ADMIN_AVATAR
-    : profileImagePreviewUrl || avatarUrl || DEFAULT_SUPER_ADMIN_AVATAR;
+    ? DEFAULT_ADMIN_AVATAR
+    : profileImagePreviewUrl || avatarUrl || DEFAULT_ADMIN_AVATAR;
 
   const isUsingCustomAvatar =
     !isAvatarMarkedForRemoval &&
-    Boolean(profileImagePreviewUrl || (avatarUrl && avatarUrl !== DEFAULT_SUPER_ADMIN_AVATAR));
+    Boolean(profileImagePreviewUrl || (avatarUrl && avatarUrl !== DEFAULT_ADMIN_AVATAR));
 
   // Validation flags
   const isProfileChanged =
@@ -585,11 +585,11 @@ export function SuperAdminSettings({
                 <div className="relative h-20 w-20 rounded-full border-2 border-amber-500/40 overflow-hidden flex items-center justify-center shadow-md">
                   <img
                     src={displayedProfileImage}
-                    alt="PUP FOCUS Super Administrator"
+                    alt="PUP FOCUS Administrator"
                     loading="eager"
                     fetchPriority="high"
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = DEFAULT_SUPER_ADMIN_AVATAR;
+                      (e.currentTarget as HTMLImageElement).src = DEFAULT_ADMIN_AVATAR;
                     }}
                     className="absolute inset-0 h-full w-full object-cover"
                   />
@@ -616,7 +616,7 @@ export function SuperAdminSettings({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    Super Administrator
+                    Administrator
                   </h3>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide uppercase bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/80 shrink-0">
                     <AppIcon icon={Shield} size="md" color="inherit" /> Root
@@ -677,7 +677,7 @@ export function SuperAdminSettings({
 
             {/* Form Input Fields */}
             <div className="grid gap-4 sm:grid-cols-2">
-              {/* 1 Single Input for Full Name of Super Admin */}
+              {/* 1 Single Input for Full Name of Admin */}
               <div className="sm:col-span-2">
                 <label
                   htmlFor="super-admin-full-name"
@@ -785,7 +785,7 @@ export function SuperAdminSettings({
                 </label>
                 <input
                   className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
-                  value="Super Administrator — System Oversight & Security"
+                  value="Administrator — System Oversight & Security"
                   disabled
                   readOnly
                 />
@@ -1317,7 +1317,7 @@ export function SuperAdminSettings({
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
-              title={fullName || "Super Administrator"}
+              title={fullName || "Administrator"}
               icon={User}
               onClose={() => setIsFullImageOpen(false)}
               closeAriaLabel="Close"
@@ -1325,7 +1325,7 @@ export function SuperAdminSettings({
             />
             <img
               src={displayedProfileImage}
-              alt={fullName || "Super Administrator"}
+              alt={fullName || "Administrator"}
               className="max-h-[70vh] w-auto rounded-xl object-contain shadow-lg"
             />
           </div>

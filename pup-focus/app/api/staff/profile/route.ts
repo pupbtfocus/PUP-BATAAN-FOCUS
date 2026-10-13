@@ -28,7 +28,7 @@ export async function GET() {
       (user.user_metadata?.role as string | undefined) ??
       (user.app_metadata?.role as string | undefined);
 
-    if (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN) {
+    if (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -152,7 +152,7 @@ export async function PATCH(request: NextRequest) {
       (user.user_metadata?.role as string | undefined) ??
       (user.app_metadata?.role as string | undefined);
 
-    if (requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN) {
+    if (requesterRole !== ROLE.STAFF && requesterRole !== ROLE.ADMIN && requesterRole !== ROLE.SUPER_ADMIN && requesterRole !== "staff") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

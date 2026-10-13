@@ -22,8 +22,8 @@ const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
 const PUBLIC_ENV = getPublicEnvSafe();
 const PREFETCH_ROUTES = [
   "/faculty/dashboard",
+  "/staff/dashboard",
   "/admin/dashboard",
-  "/super-admin/dashboard",
 ] as const;
 
 export default function Home() {

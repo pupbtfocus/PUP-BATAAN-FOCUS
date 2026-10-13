@@ -270,7 +270,7 @@ export function SuperAdminDashboard({
   const [adminDetailsOpen, setAdminDetailsOpen] = useState(false);
   const [adminDetailsEditable, setAdminDetailsEditable] = useState(false);
   const [currentAdminName, setCurrentAdminName] = useState(
-    adminName || "Super Administrator"
+    adminName || "Administrator"
   );
   const [currentAdminEmail, setCurrentAdminEmail] = useState(adminEmail || "");
 
@@ -783,7 +783,7 @@ export function SuperAdminDashboard({
       setIsLoadingAccounts(true);
       setAccountsError(null);
 
-      let response = await fetch(`/api/super-admin/accounts?_t=${Date.now()}`, {
+      let response = await fetch(`/api/admin/accounts?_t=${Date.now()}`, {
         cache: "no-store",
       });
       if (response.ok) {
@@ -794,7 +794,7 @@ export function SuperAdminDashboard({
         const mapped = rawAccounts.map((acc: any) => {
           const rawRole = (acc.role || "").toLowerCase().trim();
           const normalizedRole = rawRole.includes("super")
-            ? ROLE.SUPER_ADMIN
+            ? ROLE.ADMIN
             : ROLE.ADMIN;
           return {
             id: acc.id,
@@ -824,7 +824,7 @@ export function SuperAdminDashboard({
         return;
       }
 
-      response = await fetch(`/api/super-admin/admin/list?_t=${Date.now()}`, {
+      response = await fetch(`/api/admin/staff/list?_t=${Date.now()}`, {
         cache: "no-store",
       });
       if (!response.ok) {
@@ -851,7 +851,7 @@ export function SuperAdminDashboard({
       setIsLoadingSettings(true);
       setSettingsError(null);
 
-      const response = await fetch("/api/super-admin/account");
+      const response = await fetch("/api/admin/account");
       const data = (await response.json()) as any;
 
       if (!response.ok || !data.account) {
@@ -960,7 +960,7 @@ export function SuperAdminDashboard({
         return (
           r === "admin" ||
           r === ROLE.ADMIN ||
-          (!r.includes("super") && r !== ROLE.SUPER_ADMIN)
+          (!r.includes("super") && r !== ROLE.ADMIN)
         );
       }),
     [adminAccounts],
@@ -971,9 +971,9 @@ export function SuperAdminDashboard({
       adminAccounts.filter((admin) => {
         const r = (admin.role || "").toLowerCase().trim();
         return (
-          r === "super_admin" ||
+          r === "admin" ||
           r === "superadmin" ||
-          r === ROLE.SUPER_ADMIN ||
+          r === ROLE.ADMIN ||
           r.includes("super")
         );
       }),
@@ -989,8 +989,8 @@ export function SuperAdminDashboard({
           emptyMessage: "No admin accounts found.",
         },
         {
-          key: ROLE.SUPER_ADMIN,
-          title: "Super Admin Accounts",
+          key: ROLE.ADMIN,
+          title: "Admin Accounts",
           accounts: superAdminAccounts,
           emptyMessage: "No super admin accounts found.",
         },
@@ -1003,7 +1003,7 @@ export function SuperAdminDashboard({
         title:
           accountViewRole === ROLE.ADMIN
             ? "Admin Accounts"
-            : "Super Admin Accounts",
+            : "Admin Accounts",
         accounts:
           accountViewRole === ROLE.ADMIN
             ? adminRoleAccounts
@@ -1061,7 +1061,7 @@ export function SuperAdminDashboard({
         body.append("profileImage", createAdminProfileImage);
       }
 
-      const response = await fetch("/api/super-admin/admin/create", {
+      const response = await fetch("/api/admin/staff/create", {
         method: "POST",
         body,
       });
@@ -1116,7 +1116,7 @@ export function SuperAdminDashboard({
     setIsSavingSettings(true);
 
     try {
-      const response = await fetch("/api/super-admin/account", {
+      const response = await fetch("/api/admin/account", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -1135,7 +1135,7 @@ export function SuperAdminDashboard({
         return;
       }
 
-      setSettingsSuccess("Super Admin account updated successfully.");
+      setSettingsSuccess("Admin account updated successfully.");
       if (data.account) {
         setSettingsFullName(data.account.fullName ?? "");
         setSettingsEmail(data.account.email ?? "");
@@ -1232,7 +1232,7 @@ export function SuperAdminDashboard({
     setAccountActionSuccess(null);
 
     try {
-      const response = await fetch("/api/super-admin/admin/deactivate", {
+      const response = await fetch("/api/admin/staff/deactivate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profileId }),
@@ -1278,7 +1278,7 @@ export function SuperAdminDashboard({
     setAccountActionSuccess(null);
 
     try {
-      const response = await fetch("/api/super-admin/admin/activate", {
+      const response = await fetch("/api/admin/staff/activate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profileId }),
@@ -1325,7 +1325,7 @@ export function SuperAdminDashboard({
     setAccountActionSuccess(null);
 
     try {
-      const response = await fetch("/api/super-admin/admin/delete", {
+      const response = await fetch("/api/admin/staff/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profileId }),
@@ -1407,7 +1407,7 @@ export function SuperAdminDashboard({
 
     try {
       const response = await fetch(
-        `/api/super-admin/admin/details?profileId=${encodeURIComponent(profileId)}&_t=${Date.now()}`,
+        `/api/admin/staff/details?profileId=${encodeURIComponent(profileId)}&_t=${Date.now()}`,
         { cache: "no-store" },
       );
       const data = await response.json();
@@ -1462,7 +1462,7 @@ export function SuperAdminDashboard({
 
     try {
       const response = await fetch(
-        `/api/super-admin/admin/details?profileId=${encodeURIComponent(
+        `/api/admin/staff/details?profileId=${encodeURIComponent(
           profileId,
         )}&_t=${Date.now()}`,
         { cache: "no-store" },
@@ -1537,7 +1537,7 @@ export function SuperAdminDashboard({
                   <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm">
                     {getInitials(
                       admin.full_name,
-                      admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
+                      admin.role === ROLE.ADMIN ? "SA" : "AD"
                     )}
                   </div>
                 )}
@@ -1653,7 +1653,7 @@ export function SuperAdminDashboard({
         activeSection={activeSection}
         setActiveSection={handleSetActiveSection}
         adminName={currentAdminName}
-        roleTitle="Super Admin"
+        roleTitle="Admin"
         isSuperAdmin={true}
         profileImageUrl={superAdminAvatarUrl}
       />
@@ -1687,7 +1687,7 @@ export function SuperAdminDashboard({
               activeSection={activeSection}
               setActiveSection={handleSetActiveSection}
               adminName={currentAdminName}
-              roleTitle="Super Admin"
+              roleTitle="Admin"
               isSuperAdmin={true}
               profileImageUrl={superAdminAvatarUrl}
               onNavigate={() => setIsMobileMenuOpen(false)}
@@ -1809,7 +1809,7 @@ export function SuperAdminDashboard({
                                   ) : (
                                     getInitials(
                                       admin.full_name,
-                                      admin.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
+                                      admin.role === ROLE.ADMIN ? "SA" : "AD"
                                     )
                                   )}
                                 </div>
@@ -2054,7 +2054,7 @@ export function SuperAdminDashboard({
                 </div>
 
                 <AdminAcademicTerms
-                  adminName={adminName ?? "Super Admin"}
+                  adminName={adminName ?? "Admin"}
                   isSuperAdmin={true}
                   onNavigateToRequirements={() => handleSetActiveSection("verification")}
                   onNavigateToBackups={() => handleSetActiveSection("backups")}
@@ -2688,7 +2688,7 @@ function AdminDetailsModal({
     setIsSaving(true);
 
     try {
-      const response = await fetch("/api/super-admin/admin/details", {
+      const response = await fetch("/api/admin/staff/details", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -2748,7 +2748,7 @@ function AdminDetailsModal({
                 <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-base flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-950 shrink-0">
                   {getInitials(
                     details.full_name,
-                    details.role === ROLE.SUPER_ADMIN ? "SA" : "AD"
+                    details.role === ROLE.ADMIN ? "SA" : "AD"
                   )}
                 </div>
               )}

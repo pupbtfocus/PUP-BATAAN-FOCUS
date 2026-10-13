@@ -96,7 +96,10 @@ export function SidebarContent({
 
   const isSuperAdmin =
     isSuperAdminProp ??
-    Boolean((roleTitle || "").toLowerCase().includes("super"));
+    Boolean(
+      (roleTitle || "").toLowerCase().includes("super") ||
+        (roleTitle || "").toLowerCase() === "admin",
+    );
 
   // Check active states supporting both short and legacy tokens
   const isDashboardActive = activeSection === "dashboard";
@@ -280,7 +283,7 @@ export function SidebarContent({
                       isAccountsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
                     }`}
                   />
-                  <span>Admin Management</span>
+                  <span>Staff Management</span>
                 </button>
                 <button
                   type="button"

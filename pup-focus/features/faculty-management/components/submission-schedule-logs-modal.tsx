@@ -74,7 +74,7 @@ export function SubmissionScheduleLogsModal({
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch(`/api/admin/submission-window/logs?_t=${Date.now()}`, {
+      const res = await fetch(`/api/staff/submission-window/logs?_t=${Date.now()}`, {
         credentials: "include",
         cache: "no-store",
       });

@@ -24,7 +24,7 @@ interface ProfileRow {
 }
 
 function isAdminRole(role: string | undefined) {
-  return role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN;
+  return role === ROLE.STAFF || role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN || role === "staff";
 }
 
 function sanitizeSegment(value: string): string {

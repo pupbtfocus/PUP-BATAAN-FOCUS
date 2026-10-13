@@ -17,7 +17,7 @@ import {
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
-import type { RegistrationLogItem } from "@/app/api/admin/user-registration-logs/route";
+import type { RegistrationLogItem } from "@/app/api/staff/user-registration-logs/route";
 
 export interface UserRegistrationLogsModalProps {
   isOpen: boolean;
@@ -157,7 +157,7 @@ export function UserRegistrationLogsModal({
     try {
       const roleParam = targetRole !== "all" ? `&role=${targetRole}` : "";
       const response = await fetch(
-        `/api/admin/user-registration-logs?_t=${Date.now()}${roleParam}`,
+        `/api/staff/user-registration-logs?_t=${Date.now()}${roleParam}`,
         { cache: "no-store" }
       );
       if (!response.ok) {
@@ -202,7 +202,7 @@ export function UserRegistrationLogsModal({
     setResendingEmail(log.email);
     setFeedbackMessage(null);
     try {
-      const res = await fetch("/api/admin/user-registration-logs", {
+      const res = await fetch("/api/staff/user-registration-logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -236,7 +236,7 @@ export function UserRegistrationLogsModal({
     setIsCancelling(true);
     setCancelError(null);
     try {
-      const res = await fetch("/api/admin/user-registration-logs", {
+      const res = await fetch("/api/staff/user-registration-logs", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -284,12 +284,12 @@ export function UserRegistrationLogsModal({
     return logs.filter((item) => {
       // Role filter
       if (targetRole === "admin") {
-        if (adminRoleFilter === "super" && item.role !== "Super Admin") return false;
+        if (adminRoleFilter === "super" && item.role !== "Admin") return false;
         if (adminRoleFilter === "regular" && item.role !== "Admin") return false;
       } else if (targetRole === "all" && adminRoleFilter !== "all") {
         if (adminRoleFilter === "faculty" && item.role !== "Faculty") return false;
         if (adminRoleFilter === "regular" && item.role !== "Admin") return false;
-        if (adminRoleFilter === "super" && item.role !== "Super Admin") return false;
+        if (adminRoleFilter === "super" && item.role !== "Admin") return false;
       }
 
       // Status match
@@ -447,7 +447,7 @@ export function UserRegistrationLogsModal({
                   >
                     <option value="all">All Roles</option>
                     <option value="regular">Admin</option>
-                    <option value="super">Super Admin</option>
+                    <option value="super">Admin</option>
                   </select>
                 ) : targetRole === "all" ? (
                   <select
@@ -458,7 +458,7 @@ export function UserRegistrationLogsModal({
                     <option value="all">All Roles</option>
                     <option value="faculty">Faculty</option>
                     <option value="regular">Admin</option>
-                    <option value="super">Super Admin</option>
+                    <option value="super">Admin</option>
                   </select>
                 ) : null}
 

@@ -153,7 +153,7 @@ export function ExtendSubmissionWindowModal({
   useEffect(() => {
     if (isOpen) {
       setIsLoadingFaculty(true);
-      fetch(`/api/admin/faculty/list?_t=${Date.now()}`)
+      fetch(`/api/staff/faculty/list?_t=${Date.now()}`)
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data.faculty)) {
@@ -284,7 +284,7 @@ export function ExtendSubmissionWindowModal({
         linkedRequestId: linkedRequestId || null,
       };
 
-      const response = await fetch("/api/admin/submission-window/extend", {
+      const response = await fetch("/api/staff/submission-window/extend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -300,7 +300,7 @@ export function ExtendSubmissionWindowModal({
 
       if (linkedRequestId) {
         try {
-          await fetch("/api/admin/submission-window/extension-requests", {
+          await fetch("/api/staff/submission-window/extension-requests", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             credentials: "include",

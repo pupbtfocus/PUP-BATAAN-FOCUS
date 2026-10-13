@@ -233,7 +233,7 @@ export function EditFacultyModal({
         formData.append("profileImage", profileImageFile);
       }
 
-      const response = await fetch("/api/admin/faculty/update", {
+      const response = await fetch("/api/staff/faculty/update", {
         method: "PATCH",
         body: formData,
       });

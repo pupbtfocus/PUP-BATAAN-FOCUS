@@ -232,8 +232,8 @@ export function HistoricalSubmissionsModal({
                 <a
                   href={
                     typeof window !== "undefined" && window.location.pathname.startsWith("/super-admin")
-                      ? "/super-admin/dashboard?tab=verification"
-                      : "/admin/dashboard?tab=requirements"
+                      ? "/staff/dashboard?tab=verification"
+                      : "/staff/dashboard?tab=requirements"
                   }
                   className="font-bold underline text-amber-200 hover:text-white inline-flex items-center gap-1 transition-colors"
                 >
@@ -286,8 +286,8 @@ export function HistoricalSubmissionsModal({
                 <a
                   href={
                     typeof window !== "undefined" && window.location.pathname.startsWith("/super-admin")
-                      ? "/super-admin/dashboard?tab=verification"
-                      : "/admin/dashboard?tab=requirements"
+                      ? "/staff/dashboard?tab=verification"
+                      : "/staff/dashboard?tab=requirements"
                   }
                   className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-4 py-2 text-xs font-semibold shadow-xs transition-all cursor-pointer"
                 >

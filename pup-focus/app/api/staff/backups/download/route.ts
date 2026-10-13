@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 function isAdminRole(role: string | undefined) {
-  return role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN;
+  return role === ROLE.STAFF || role === ROLE.ADMIN || role === ROLE.SUPER_ADMIN || role === "staff";
 }
 
 export async function GET(request: NextRequest) {

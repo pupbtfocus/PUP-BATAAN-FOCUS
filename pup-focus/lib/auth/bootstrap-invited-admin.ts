@@ -18,10 +18,16 @@ export async function bootstrapInvitedAdminAccount(user: {
   const lastName =
     typeof metadata.last_name === "string" ? metadata.last_name.trim() : "";
 
-  if (
-    metadata.role !== ROLE.ADMIN ||
-    metadata.created_via !== "super_admin_admin_panel"
-  ) {
+  const isStaffRole =
+    metadata.role === ROLE.STAFF ||
+    metadata.role === "admin" ||
+    metadata.role === ROLE.ADMIN;
+  const isCreatedViaPanel =
+    metadata.created_via === "super_admin_admin_panel" ||
+    metadata.created_via === "admin_staff_panel" ||
+    metadata.created_via === "admin_panel";
+
+  if (!isStaffRole || !isCreatedViaPanel) {
     return;
   }
 
@@ -77,14 +83,24 @@ export async function bootstrapInvitedAdminAccount(user: {
       .or(`profile_id.eq.${profile.id},email.eq.${email}`);
   } catch {}
 
-  const { data: adminRole, error: adminRoleError } = await serviceRoleClient
+  const targetRoleCode = metadata.role === ROLE.ADMIN ? ROLE.ADMIN : ROLE.STAFF;
+  let { data: roleRecord } = await serviceRoleClient
     .from("roles")
     .select("id")
-    .eq("code", ROLE.ADMIN)
-    .single();
+    .eq("code", targetRoleCode)
+    .maybeSingle();
 
-  if (adminRoleError || !adminRole) {
-    throw new Error("Admin role not found. Seed roles first.");
+  if (!roleRecord) {
+    const { data: fallbackRole } = await serviceRoleClient
+      .from("roles")
+      .select("id")
+      .in("code", [ROLE.STAFF, ROLE.ADMIN, "staff", "admin"])
+      .maybeSingle();
+    roleRecord = fallbackRole;
+  }
+
+  if (!roleRecord) {
+    throw new Error("Staff or Admin role not found. Seed roles first.");
   }
 
   // 2. Remove conflicting faculty roles from user_roles
@@ -93,7 +109,7 @@ export async function bootstrapInvitedAdminAccount(user: {
       .from("user_roles")
       .delete()
       .eq("profile_id", profile.id)
-      .neq("role_id", adminRole.id);
+      .neq("role_id", roleRecord.id);
   } catch {}
 
   const { error: userRoleError } = await serviceRoleClient
@@ -101,7 +117,7 @@ export async function bootstrapInvitedAdminAccount(user: {
     .upsert(
       {
         profile_id: profile.id,
-        role_id: adminRole.id,
+        role_id: roleRecord.id,
       },
       { onConflict: "profile_id,role_id" },
     );
@@ -109,6 +125,21 @@ export async function bootstrapInvitedAdminAccount(user: {
   if (userRoleError) {
     throw new Error(userRoleError.message);
   }
+
+  try {
+    await serviceRoleClient
+      .from("staff")
+      .upsert(
+        {
+          profile_id: profile.id,
+          full_name: fullName,
+          email,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "profile_id" },
+      );
+  } catch {}
 
   try {
     await serviceRoleClient

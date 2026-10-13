@@ -48,7 +48,7 @@ export function RequirementTemplatesPanel({
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch("/api/admin/requirement-templates");
+      const res = await fetch("/api/staff/requirement-templates");
       if (!res.ok) {
         throw new Error("Failed to load requirement templates");
       }
@@ -137,7 +137,7 @@ export function RequirementTemplatesPanel({
     try {
       setIsTogglingStatus(tpl.id);
       setError(null);
-      const res = await fetch("/api/admin/requirement-templates", {
+      const res = await fetch("/api/staff/requirement-templates", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -183,7 +183,7 @@ export function RequirementTemplatesPanel({
     try {
       setIsDeleting(true);
       setError(null);
-      const res = await fetch(`/api/admin/requirement-templates?id=${templateToDelete.id}`, {
+      const res = await fetch(`/api/staff/requirement-templates?id=${templateToDelete.id}`, {
         method: "DELETE",
       });
 

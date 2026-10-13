@@ -1,12 +1,13 @@
 import { ROLE, type AppRole } from "@/config/roles";
 
-const PERMISSIONS: Record<AppRole, string[]> = {
-  [ROLE.SUPER_ADMIN]: ["*"],
-  [ROLE.FACULTY]: ["submission:create", "submission:view:own"],
+const PERMISSIONS: Record<string, string[]> = {
   [ROLE.ADMIN]: ["*"],
+  [ROLE.STAFF]: ["*"],
+  [ROLE.FACULTY]: ["submission:create", "submission:view:own"],
+  super_admin: ["*"],
 };
 
-export function hasPermission(role: AppRole, permission: string): boolean {
+export function hasPermission(role: AppRole | string, permission: string): boolean {
   const permissions = PERMISSIONS[role] ?? [];
   return permissions.includes("*") || permissions.includes(permission);
 }
