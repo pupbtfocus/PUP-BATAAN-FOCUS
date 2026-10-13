@@ -268,6 +268,13 @@ export async function PATCH(request: NextRequest) {
       .update({ full_name: fullName, email })
       .eq("profile_id", profileId);
 
+    try {
+      await supabase
+        .from("staff")
+        .delete()
+        .eq("profile_id", profileId);
+    } catch {}
+
     return NextResponse.json({
       success: true,
       account: {

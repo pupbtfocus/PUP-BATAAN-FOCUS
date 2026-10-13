@@ -86,14 +86,14 @@ export async function bootstrapInvitedAdminAccount(user: {
   const targetRoleCode = metadata.role === ROLE.ADMIN ? ROLE.ADMIN : ROLE.STAFF;
   let { data: roleRecord } = await serviceRoleClient
     .from("roles")
-    .select("id")
+    .select("id, code")
     .eq("code", targetRoleCode)
     .maybeSingle();
 
   if (!roleRecord) {
     const { data: fallbackRole } = await serviceRoleClient
       .from("roles")
-      .select("id")
+      .select("id, code")
       .in("code", [ROLE.STAFF, ROLE.ADMIN, "staff", "admin"])
       .maybeSingle();
     roleRecord = fallbackRole;
@@ -126,35 +126,43 @@ export async function bootstrapInvitedAdminAccount(user: {
     throw new Error(userRoleError.message);
   }
 
-  try {
-    await serviceRoleClient
-      .from("staff")
-      .upsert(
-        {
-          profile_id: profile.id,
-          full_name: fullName,
-          email,
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "profile_id" },
-      );
-  } catch {}
-
-  try {
-    await serviceRoleClient
-      .from("admins")
-      .upsert(
-        {
-          profile_id: profile.id,
-          full_name: fullName,
-          email,
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "profile_id" },
-      );
-  } catch {
-    // Optional table
+  if (targetRoleCode === ROLE.ADMIN || roleRecord.code === "admin") {
+    try {
+      await serviceRoleClient
+        .from("admins")
+        .upsert(
+          {
+            profile_id: profile.id,
+            full_name: fullName,
+            email,
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "profile_id" },
+        );
+      await serviceRoleClient
+        .from("staff")
+        .delete()
+        .eq("profile_id", profile.id);
+    } catch {}
+  } else {
+    try {
+      await serviceRoleClient
+        .from("staff")
+        .upsert(
+          {
+            profile_id: profile.id,
+            full_name: fullName,
+            email,
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "profile_id" },
+        );
+      await serviceRoleClient
+        .from("admins")
+        .delete()
+        .eq("profile_id", profile.id);
+    } catch {}
   }
 }
