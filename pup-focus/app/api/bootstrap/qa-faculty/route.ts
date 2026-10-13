@@ -210,6 +210,26 @@ async function bootstrapQaFaculty() {
             );
         }
 
+        // Upsert Faculty Table
+        if (profileId) {
+          try {
+            await supabase
+              .from("faculty")
+              .upsert(
+                {
+                  profile_id: profileId,
+                  user_id: authUserId,
+                  full_name: acc.fullName,
+                  email: normalizedEmail,
+                  department: acc.programName || acc.programCode,
+                  is_active: true,
+                  updated_at: new Date().toISOString(),
+                },
+                { onConflict: "profile_id" }
+              );
+          } catch {}
+        }
+
         // Upsert Faculty Program Assignment
         if (programId && profileId) {
           await supabase.from("faculty_program_assignments").upsert(

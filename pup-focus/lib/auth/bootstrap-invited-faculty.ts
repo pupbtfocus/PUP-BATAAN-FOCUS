@@ -75,6 +75,14 @@ export async function bootstrapInvitedFacultyAccount(user: {
     throw new Error(profileError?.message ?? "Failed to create profile");
   }
 
+  // 1. Remove from admins table if mistakenly present
+  try {
+    await serviceRoleClient
+      .from("admins")
+      .delete()
+      .or(`profile_id.eq.${profile.id},email.eq.${email}`);
+  } catch {}
+
   const { data: facultyRole, error: facultyRoleError } = await serviceRoleClient
     .from("roles")
     .select("id")
@@ -84,6 +92,15 @@ export async function bootstrapInvitedFacultyAccount(user: {
   if (facultyRoleError || !facultyRole) {
     throw new Error("Faculty role not found. Seed roles first.");
   }
+
+  // 2. Remove conflicting admin roles from user_roles
+  try {
+    await serviceRoleClient
+      .from("user_roles")
+      .delete()
+      .eq("profile_id", profile.id)
+      .neq("role_id", facultyRole.id);
+  } catch {}
 
   const { error: userRoleError } = await serviceRoleClient
     .from("user_roles")
@@ -97,6 +114,25 @@ export async function bootstrapInvitedFacultyAccount(user: {
 
   if (userRoleError) {
     throw new Error(userRoleError.message);
+  }
+
+  // 3. Explicitly insert/upsert into faculty table
+  try {
+    await serviceRoleClient
+      .from("faculty")
+      .upsert(
+        {
+          profile_id: profile.id,
+          user_id: user.id,
+          full_name: fullName,
+          email,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "profile_id" },
+      );
+  } catch (facErr) {
+    console.error("Failed to upsert faculty table:", facErr);
   }
 
   // Ensure faculty program assignment is persisted strictly under the currently active Academic Term

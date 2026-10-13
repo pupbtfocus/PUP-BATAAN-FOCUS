@@ -246,6 +246,16 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    try {
+      await supabase
+        .from("faculty")
+        .update({
+          full_name: updatedFullName,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("profile_id", profile.id);
+    } catch {}
+
     if (resolvedProgramId) {
       try {
         const { data: activeTerm } = await supabase
