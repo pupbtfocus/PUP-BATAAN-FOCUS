@@ -25,12 +25,13 @@ function formatInviteError(message: string) {
     return "This invitation was cancelled by an administrator. Please contact your institution if you need a new invite.";
   }
 
-  if (normalized.includes("access_denied")) {
-    return "This invite link was already used or revoked. Please ask an administrator to send a new invite or sign in if your account is already set up.";
-  }
-
-  if (normalized.includes("expired")) {
-    return "This invitation link has expired. Please ask an administrator to send a new invite.";
+  if (
+    normalized.includes("otp_expired") ||
+    normalized.includes("expired") ||
+    normalized.includes("invalid") ||
+    normalized.includes("access_denied")
+  ) {
+    return "This invitation link has expired or was already used. If your account is already set up, please sign in. Otherwise, ask an administrator to send a new invite.";
   }
 
   return message;
@@ -94,13 +95,12 @@ function AuthConfirmContent() {
           // ignore check error
         }
 
+        // Only genuine admin cancellations open the "Invitation Cancelled" modal.
+        // Expired / already-used links (access_denied, otp_expired) get their own message.
         const isCancelledError =
           isCancelled ||
           isExplicitCancelled ||
-          errorMessage.toLowerCase().includes("cancel") ||
-          errorMessage.toLowerCase().includes("access_denied") ||
-          errorMessage.toLowerCase().includes("otp_expired") ||
-          errorMessage.toLowerCase().includes("revoked");
+          errorMessage.toLowerCase().includes("cancel");
 
         if (isCancelledError) {
           setStatus("error");
