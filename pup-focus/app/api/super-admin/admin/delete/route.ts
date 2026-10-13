@@ -63,13 +63,71 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 1. Clean up dependent references in public tables
     try {
-      await supabase.from("profiles").delete().eq("id", profileId);
+      await supabase.from("audit_logs").update({ actor_id: null }).eq("actor_id", profileId);
     } catch {}
 
     try {
-      await supabase.auth.admin.deleteUser(profileId);
+      await supabase.from("submission_window_logs").update({ extended_by: null }).eq("extended_by", profileId);
     } catch {}
+
+    try {
+      await supabase.from("submission_windows").update({ updated_by: null }).eq("updated_by", profileId);
+    } catch {}
+
+    try {
+      await supabase.from("submission_window_used_terms").update({ created_by: null }).eq("created_by", profileId);
+    } catch {}
+
+    try {
+      await supabase.from("academic_terms").update({ created_by: null }).eq("created_by", profileId);
+    } catch {}
+
+    try {
+      await supabase.from("extension_requests").update({ reviewed_by: null }).eq("reviewed_by", profileId);
+    } catch {}
+
+    try {
+      await supabase.from("notifications").delete().eq("user_id", profileId);
+    } catch {}
+
+    try {
+      await supabase.from("user_roles").delete().eq("profile_id", profileId);
+    } catch {}
+
+    try {
+      await supabase.from("faculty").delete().eq("profile_id", profileId);
+    } catch {}
+
+    try {
+      await supabase.from("app_users").delete().or(`profile_id.eq.${profileId},auth_user_id.eq.${profileId}`);
+    } catch {}
+
+    try {
+      await supabase.from("profiles").delete().or(`id.eq.${profileId},user_id.eq.${profileId}`);
+    } catch {}
+
+    // Clean up avatar storage files
+    if (targetEmail) {
+      try {
+        const folderPath = `admin/${targetEmail}`;
+        const { data: files } = await supabase.storage.from("avatars").list(folderPath);
+        if (files && files.length > 0) {
+          await supabase.storage.from("avatars").remove(files.map((f) => `${folderPath}/${f.name}`));
+        }
+      } catch {}
+    }
+
+    // 2. Delete the user from auth.users
+    const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(profileId);
+
+    if (deleteAuthError) {
+      return NextResponse.json(
+        { error: deleteAuthError.message || "Failed to delete user from authentication provider" },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
