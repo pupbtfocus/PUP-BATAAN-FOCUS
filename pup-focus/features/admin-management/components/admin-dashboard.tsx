@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FormEvent, useEffect, useMemo, useState, useRef } from "react";
+import React, { FormEvent, useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
@@ -379,22 +379,27 @@ export function SuperAdminDashboard({
     return null;
   });
 
-  const handleSelectFaculty = (facultyId: string | null) => {
-    setSelectedFacultyId(facultyId);
+  const handleSelectFaculty = useCallback((facultyId: string | null) => {
+    setSelectedFacultyId((prev) => (prev === facultyId ? prev : facultyId));
     if (typeof window !== "undefined") {
       try {
         const url = new URL(window.location.href);
         if (facultyId) {
-          url.searchParams.set("facultyId", facultyId);
-          sessionStorage.setItem("activeSuperAdminFacultyId", facultyId);
+          if (url.searchParams.get("facultyId") !== facultyId) {
+            url.searchParams.set("facultyId", facultyId);
+            sessionStorage.setItem("activeSuperAdminFacultyId", facultyId);
+            window.history.replaceState(null, "", url.toString());
+          }
         } else {
-          url.searchParams.delete("facultyId");
-          sessionStorage.removeItem("activeSuperAdminFacultyId");
+          if (url.searchParams.has("facultyId")) {
+            url.searchParams.delete("facultyId");
+            sessionStorage.removeItem("activeSuperAdminFacultyId");
+            window.history.replaceState(null, "", url.toString());
+          }
         }
-        window.history.replaceState(null, "", url.toString());
       } catch {}
     }
-  };
+  }, []);
 
   // Sync target faculty when URL parameter changes (e.g. notification click)
   useEffect(() => {

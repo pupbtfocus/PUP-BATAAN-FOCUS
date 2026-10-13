@@ -381,7 +381,7 @@ function doesSubmissionMatchTerm(
   return true;
 }
 
-interface FacultyVerificationDrawerProps {
+export interface FacultyVerificationDrawerProps {
   faculty: FacultyAccount;
   academicYear: string;
   semester: SemesterOption;
@@ -392,9 +392,11 @@ interface FacultyVerificationDrawerProps {
     is_mandatory: boolean;
     is_active?: boolean;
   }>;
-  onClose: () => void;
-  onStatusUpdated: () => void;
+  onClose?: () => void;
+  onBack?: () => void;
+  onStatusUpdated?: () => void;
 }
+export type FacultyDetailInlineSectionProps = FacultyVerificationDrawerProps;
 
 const REVISION_PRESETS = [
   "Missing required signature(s)",
@@ -405,15 +407,18 @@ const REVISION_PRESETS = [
   "Missing grading criteria breakdown",
 ];
 
-function FacultyVerificationDrawer({
+export function FacultyVerificationDrawer({
   faculty,
   academicYear,
   semester,
   initialRequirementCode,
   requirementTemplates: requirementTemplatesProp,
   onClose,
+  onBack,
   onStatusUpdated,
 }: FacultyVerificationDrawerProps) {
+  const activeAy = academicYear || "2026-2027";
+  const activeSem = semester || "1st Semester";
   const [activeTab, setActiveTab] = useState<"current" | "history">("current");
   const [submissions, setSubmissions] = useState<FacultyRequirementSubmission[]>([]);
   const [facultyClasses, setFacultyClasses] = useState<
@@ -522,15 +527,6 @@ function FacultyVerificationDrawer({
     message: string;
     progressText?: string;
   } | null>(null);
-
-  // Scroll lock when drawer is open
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, []);
 
   // Reset selected class whenever faculty or active term changes
   useEffect(() => {
@@ -851,8 +847,8 @@ function FacultyVerificationDrawer({
 
   // Highlight and scroll to target requirement if requested
   useEffect(() => {
-    if (!initialRequirementCode || isLoading) return;
-    if (!selectedClassId && classGroups.length > 0) {
+    if (!initialRequirementCode || isLoading || classGroups.length === 0) return;
+    if (!selectedClassId) {
       const matchedGroup = classGroups.find((g) =>
         g.submissions.some((s) => {
           const codeMatched =
@@ -863,11 +859,8 @@ function FacultyVerificationDrawer({
           return codeMatched;
         })
       );
-      if (matchedGroup) {
-        setSelectedClassId(matchedGroup.key);
-      } else {
-        setSelectedClassId(classGroups[0].key);
-      }
+      setSelectedClassId(matchedGroup ? matchedGroup.key : classGroups[0].key);
+      return;
     }
     const timeout = setTimeout(() => {
       const element = document.getElementById(`req-row-${initialRequirementCode}`);
@@ -887,11 +880,14 @@ function FacultyVerificationDrawer({
   useEffect(() => {
     let isCancelled = false;
     async function loadCurrentSubmissions() {
-      if (!faculty.id || !academicYear || !semester) return;
+      if (!faculty.id) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const subRes = await fetch(
-          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(academicYear)}&semester=${encodeURIComponent(semester)}`,
+          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(activeAy)}&semester=${encodeURIComponent(activeSem)}`,
           { credentials: "include", cache: "no-store" }
         );
 
@@ -915,7 +911,7 @@ function FacultyVerificationDrawer({
     return () => {
       isCancelled = true;
     };
-  }, [faculty.id, academicYear, semester]);
+  }, [faculty.id, activeAy, activeSem]);
 
   // 2. Fetch history academic years once on mount (isolated from current submissions to prevent double reload)
   useEffect(() => {
@@ -924,7 +920,7 @@ function FacultyVerificationDrawer({
       if (!faculty.id) return;
       try {
         const verRes = await fetch(
-          `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(academicYear)}&semester=${encodeURIComponent(semester)}`,
+          `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(activeAy)}&semester=${encodeURIComponent(activeSem)}`,
           { credentials: "include" }
         );
 
@@ -936,7 +932,7 @@ function FacultyVerificationDrawer({
             setSelectedHistoryAy((prev) => {
               if (prev) return prev;
               const pastYear =
-                years.find((y) => y !== academicYear) || years[0] || "2025-2026";
+                years.find((y) => y !== activeAy) || years[0] || "2025-2026";
               return pastYear;
             });
           }
@@ -950,7 +946,7 @@ function FacultyVerificationDrawer({
     return () => {
       isCancelled = true;
     };
-  }, [faculty.id, academicYear, semester]);
+  }, [faculty.id, activeAy, activeSem]);
 
   // 3. Fetch history submissions on-demand when history tab is active
   useEffect(() => {
@@ -987,7 +983,11 @@ function FacultyVerificationDrawer({
     setRemarksInput({});
     setRevisionModalData(null);
     setValidateModalData(null);
-    onClose();
+    if (onBack) {
+      onBack();
+    } else {
+      onClose?.();
+    }
   };
 
   const handleRefresh = async () => {
@@ -1003,8 +1003,8 @@ function FacultyVerificationDrawer({
           `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(
             faculty.id
           )}&academicYear=${encodeURIComponent(
-            academicYear
-          )}&semester=${encodeURIComponent(semester)}`,
+            activeAy
+          )}&semester=${encodeURIComponent(activeSem)}`,
           { credentials: "include", cache: "no-store" }
         );
         if (subRes.ok) {
@@ -1030,7 +1030,7 @@ function FacultyVerificationDrawer({
           }
         }
       }
-      onStatusUpdated();
+      onStatusUpdated?.();
       setActionFeedback({
         type: "info",
         message: "Requirements data refreshed successfully.",
@@ -1150,7 +1150,7 @@ function FacultyVerificationDrawer({
               : "Revision request submitted. Faculty has been notified.",
         });
         setTimeout(() => setActionFeedback(null), 4000);
-        onStatusUpdated();
+        onStatusUpdated?.();
       } else {
         const errData = await response.json().catch(() => ({}));
         setActionFeedback({
@@ -1551,7 +1551,7 @@ function FacultyVerificationDrawer({
         message: `Successfully validated ${pendingSubmissions.length} requirement(s)!`,
       });
       setTimeout(() => setActionFeedback(null), 4000);
-      onStatusUpdated();
+      onStatusUpdated?.();
       setIsValidateModalOpen(false);
       setBulkValidateNotes("");
     } catch (err) {
@@ -1570,53 +1570,60 @@ function FacultyVerificationDrawer({
     faculty.program?.name || faculty.program?.code || "Department";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 sm:p-6 backdrop-blur-sm animate-in fade-in duration-150"
-      onClick={handleClose}
-    >
-      <div
-        className="flex max-h-[92vh] w-full max-w-6xl xl:max-w-7xl flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl transition-all"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <>
+      <div className="w-full flex flex-col rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150">
         <AlertPopup
           type={actionFeedback?.type}
           message={actionFeedback?.message}
           onClose={() => setActionFeedback(null)}
         />
-        {/* Modal Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-4 bg-slate-50/50 dark:bg-slate-950/30">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
-              {faculty.profileImageUrl ? (
-                <img
-                  src={faculty.profileImageUrl}
-                  alt={faculty.fullName}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span>{buildFacultyInitials(faculty.fullName)}</span>
-              )}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  {faculty.fullName}
-                </h3>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                  {departmentLabel}
-                </span>
+        {/* Inline Section Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-4 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl">
+          <div className="flex items-center gap-3.5 flex-wrap">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold transition cursor-pointer shadow-xs active:scale-[0.98]"
+              title="Return to Faculty List"
+            >
+              <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
+              <span>Back to Faculty List</span>
+            </button>
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
+                {faculty.profileImageUrl ? (
+                  <img
+                    src={faculty.profileImageUrl}
+                    alt={faculty.fullName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span>{buildFacultyInitials(faculty.fullName)}</span>
+                )}
               </div>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Active Term: A.Y. {academicYear} &bull; {semester}
-              </p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    {faculty.fullName}
+                  </h3>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                    {departmentLabel}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  Active Term: A.Y. {academicYear} &bull; {semester}
+                </p>
+              </div>
             </div>
           </div>
 
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs"
-            aria-label="Close modal"
+            className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer shadow-xs"
+            aria-label="Back to faculty list"
+            title="Back to Faculty List"
           >
             <AppIcon icon={Xmark} size="md" color="inherit" />
           </button>
@@ -1661,7 +1668,7 @@ function FacultyVerificationDrawer({
         </div>
 
         {/* Body Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="px-6 py-5">
           {activeTab === "current" && isLoading ? (
             <SystemLoadingScreen fullScreen={false} text="Loading faculty requirements..." />
           ) : activeTab === "current" ? (
@@ -3353,14 +3360,16 @@ function FacultyVerificationDrawer({
           </div>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }
+
+export const FacultyDetailInlineSection = FacultyVerificationDrawer;
 
 export interface RequirementsPanelProps {
   facultyAccounts: FacultyAccount[];
   selectedFaculty?: FacultyAccount | null;
-  onSelectFaculty?: (facultyId: string) => void;
+  onSelectFaculty?: (facultyId: string | null) => void;
   resetTrigger?: number;
   initialReviewFacultyId?: string | null;
   initialRequirementCode?: string | null;
@@ -3382,7 +3391,7 @@ export function RequirementsPanel({
     "all" | "completed" | "optional_review" | "pending_review" | "needs_revision" | "not_submitted"
   >("all");
 
-  const [academicYear, setAcademicYear] = useState("");
+  const [academicYear, setAcademicYear] = useState("2026-2027");
   const [semester, setSemester] = useState<SemesterOption>("1st Semester");
 
   const [facultyStatuses, setFacultyStatuses] = useState<
@@ -3428,19 +3437,25 @@ export function RequirementsPanel({
   }, []);
 
   const [reviewingFaculty, setReviewingFaculty] = useState<FacultyAccount | null>(
-    null
+    selectedFaculty || null
   );
+
+  // Sync with selectedFaculty prop from parent
+  useEffect(() => {
+    if (selectedFaculty !== undefined) {
+      setReviewingFaculty((prev) => (prev?.id === selectedFaculty?.id ? prev : selectedFaculty));
+    }
+  }, [selectedFaculty]);
 
   // Auto-open review drawer if initialReviewFacultyId is provided
   useEffect(() => {
     if (initialReviewFacultyId && facultyAccounts.length > 0) {
       const target = facultyAccounts.find((f) => f.id === initialReviewFacultyId);
       if (target) {
-        setReviewingFaculty(target);
-        onSelectFaculty?.(target.id);
+        setReviewingFaculty((prev) => (prev?.id === target.id ? prev : target));
       }
     }
-  }, [initialReviewFacultyId, facultyAccounts, onSelectFaculty]);
+  }, [initialReviewFacultyId, facultyAccounts]);
 
   // Derive unique programs from facultyAccounts
   const availablePrograms = useMemo(() => {
@@ -3456,12 +3471,22 @@ export function RequirementsPanel({
   useEffect(() => {
     let isMounted = true;
     async function loadActiveTermAndStatuses() {
+      const targetFacultyId =
+        reviewingFaculty?.id ||
+        selectedFaculty?.id ||
+        facultyAccounts[0]?.id ||
+        "";
+
+      if (!targetFacultyId) {
+        setIsLoadingStatuses(false);
+        return;
+      }
+
       setIsLoadingStatuses(true);
       try {
-        const dummyFacultyId = facultyAccounts[0]?.id || "";
         const res = await fetch(
           `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(
-            dummyFacultyId
+            targetFacultyId
           )}`,
           { credentials: "include" }
         );
@@ -3490,20 +3515,23 @@ export function RequirementsPanel({
     return () => {
       isMounted = false;
     };
-  }, [facultyAccounts, resetTrigger]);
+  }, [facultyAccounts, reviewingFaculty?.id, selectedFaculty?.id, resetTrigger]);
 
   async function fetchAllStatuses(ay: string, sem: SemesterOption) {
     if (facultyAccounts.length === 0) return;
+    const safeAy = ay || "2026-2027";
+    const safeSem = sem || "1st Semester";
     setIsLoadingStatuses(true);
     try {
       const results = await Promise.all(
         facultyAccounts.map(async (faculty) => {
+          if (!faculty?.id) return { facultyId: "", status: null };
           try {
             const res = await fetch(
               `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(
                 faculty.id
-              )}&academicYear=${encodeURIComponent(ay)}&semester=${encodeURIComponent(
-                sem
+              )}&academicYear=${encodeURIComponent(safeAy)}&semester=${encodeURIComponent(
+                safeSem
               )}`,
               { credentials: "include", cache: "no-store" }
             );
@@ -3748,8 +3776,31 @@ export function RequirementsPanel({
 
   return (
     <div className="w-full">
-      {/* 1. Top Control Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-4 shadow-xs">
+      {reviewingFaculty ? (
+        <FacultyVerificationDrawer
+          faculty={reviewingFaculty}
+          academicYear={academicYear}
+          semester={semester}
+          initialRequirementCode={initialRequirementCode}
+          requirementTemplates={requirementTemplates}
+          onBack={() => {
+            setReviewingFaculty(null);
+            onSelectFaculty?.(null);
+          }}
+          onClose={() => {
+            setReviewingFaculty(null);
+            onSelectFaculty?.(null);
+          }}
+          onStatusUpdated={() => {
+            if (academicYear && semester) {
+              fetchAllStatuses(academicYear, semester);
+            }
+          }}
+        />
+      ) : (
+        <>
+          {/* 1. Top Control Bar */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-4 shadow-xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
           {/* Search Input */}
           <input
@@ -4022,7 +4073,10 @@ export function RequirementsPanel({
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
-                          onClick={() => setReviewingFaculty(faculty)}
+                          onClick={() => {
+                            setReviewingFaculty(faculty);
+                            onSelectFaculty?.(faculty.id);
+                          }}
                           className={`${actionButtonClass} px-3.5 py-1.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition cursor-pointer`}
                         >
                           {actionButtonText}
@@ -4035,23 +4089,8 @@ export function RequirementsPanel({
             </tbody>
           </table>
       </div>
-
-      {/* 3. Faculty Verification Modal / Slide-over Drawer */}
-      {reviewingFaculty ? (
-        <FacultyVerificationDrawer
-          faculty={reviewingFaculty}
-          academicYear={academicYear}
-          semester={semester}
-          initialRequirementCode={initialRequirementCode}
-          requirementTemplates={requirementTemplates}
-          onClose={() => setReviewingFaculty(null)}
-          onStatusUpdated={() => {
-            if (academicYear && semester) {
-              fetchAllStatuses(academicYear, semester);
-            }
-          }}
-        />
-      ) : null}
+        </>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -169,22 +169,27 @@ export function AdminFacultyDashboard({
     }
   };
 
-  const handleSelectFaculty = (facultyId: string | null) => {
-    setSelectedFacultyId(facultyId);
+  const handleSelectFaculty = useCallback((facultyId: string | null) => {
+    setSelectedFacultyId((prev) => (prev === facultyId ? prev : facultyId));
     if (typeof window !== "undefined") {
       try {
         const url = new URL(window.location.href);
         if (facultyId) {
-          url.searchParams.set("facultyId", facultyId);
-          sessionStorage.setItem("activeFacultyId", facultyId);
+          if (url.searchParams.get("facultyId") !== facultyId) {
+            url.searchParams.set("facultyId", facultyId);
+            sessionStorage.setItem("activeFacultyId", facultyId);
+            window.history.replaceState(null, "", url.toString());
+          }
         } else {
-          url.searchParams.delete("facultyId");
-          sessionStorage.removeItem("activeFacultyId");
+          if (url.searchParams.has("facultyId")) {
+            url.searchParams.delete("facultyId");
+            sessionStorage.removeItem("activeFacultyId");
+            window.history.replaceState(null, "", url.toString());
+          }
         }
-        window.history.replaceState(null, "", url.toString());
       } catch {}
     }
-  };
+  }, []);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
