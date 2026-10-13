@@ -39,6 +39,7 @@ export function SingleSessionEnforcer() {
         // If another session was started in this same browser, DO NOT touch shared cookies or localStorage!
         if (!isSameBrowserReplaced) {
           localStorage.removeItem("pup_focus_login_time");
+          localStorage.removeItem("pup_focus_login_user");
           localStorage.removeItem("pup_focus_session_id");
           document.cookie =
             "pup_focus_session_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -46,6 +47,7 @@ export function SingleSessionEnforcer() {
         }
 
         sessionStorage.removeItem("pup_focus_login_time");
+        sessionStorage.removeItem("pup_focus_login_user");
         sessionStorage.removeItem("pup_focus_session_id");
         sessionStorage.setItem("pup_focus_logged_out", "true");
       }
@@ -87,25 +89,50 @@ export function SingleSessionEnforcer() {
         return;
       }
 
+      const tabUserId = sessionStorage.getItem("pup_focus_login_user");
+      const sharedUserId = localStorage.getItem("pup_focus_login_user");
+      const sharedLoginTime = localStorage.getItem("pup_focus_login_time");
+
+      // Auth cookies are shared per browser. If another tab signed in with a DIFFERENT account,
+      // this tab now belongs to that account: it's an account switch, not a concurrent login.
+      if (tabUserId && tabUserId !== user.id) {
+        sessionStorage.setItem("pup_focus_login_user", user.id);
+        if (sharedUserId === user.id && sharedLoginTime) {
+          sessionStorage.setItem("pup_focus_login_time", sharedLoginTime);
+        } else {
+          sessionStorage.removeItem("pup_focus_login_time");
+        }
+        myLoginTimeRef.current = null;
+        window.location.reload();
+        return;
+      }
+
       let localLoginTime: string | null =
-        myLoginTimeRef.current ||
-        (typeof window !== "undefined"
-          ? sessionStorage.getItem("pup_focus_login_time") ||
-            localStorage.getItem("pup_focus_login_time")
-          : null);
+        myLoginTimeRef.current || sessionStorage.getItem("pup_focus_login_time");
+
+      // Same account re-signed in from another tab of THIS browser: adopt the newer shared timestamp
+      if (
+        sharedUserId === user.id &&
+        sharedLoginTime &&
+        (!localLoginTime ||
+          new Date(sharedLoginTime).getTime() > new Date(localLoginTime).getTime())
+      ) {
+        localLoginTime = sharedLoginTime;
+      }
 
       // If no local login time recorded yet, initialize with current user's last_sign_in_at
       if (!localLoginTime && typeof user.last_sign_in_at === "string") {
-        const fallbackTime: string = user.last_sign_in_at;
-        localLoginTime = fallbackTime;
-        sessionStorage.setItem("pup_focus_login_time", fallbackTime);
-        localStorage.setItem("pup_focus_login_time", fallbackTime);
+        localLoginTime = user.last_sign_in_at;
+        localStorage.setItem("pup_focus_login_time", user.last_sign_in_at);
+        localStorage.setItem("pup_focus_login_user", user.id);
       }
 
       if (!localLoginTime) {
         return;
       }
 
+      sessionStorage.setItem("pup_focus_login_time", localLoginTime);
+      sessionStorage.setItem("pup_focus_login_user", user.id);
       myLoginTimeRef.current = localLoginTime;
 
       const res = await fetch("/api/auth/session/verify", {
@@ -135,12 +162,16 @@ export function SingleSessionEnforcer() {
         myLoginTimeRef.current = data.lastSignInAt;
         try {
           sessionStorage.setItem("pup_focus_login_time", data.lastSignInAt);
+          sessionStorage.setItem("pup_focus_login_user", user.id);
           const currentLocal = localStorage.getItem("pup_focus_login_time");
+          const currentLocalUser = localStorage.getItem("pup_focus_login_user");
           if (
             !currentLocal ||
+            currentLocalUser !== user.id ||
             new Date(data.lastSignInAt).getTime() >= new Date(currentLocal).getTime()
           ) {
             localStorage.setItem("pup_focus_login_time", data.lastSignInAt);
+            localStorage.setItem("pup_focus_login_user", user.id);
           }
         } catch {}
       }
