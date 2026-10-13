@@ -18,7 +18,7 @@ export async function uploadDocumentAction(payload: DocumentUploadInput) {
 
   const input = documentUploadSchema.parse(payload);
 
-  const storagePath = `compliance-private/${input.submissionId}/${input.requirementCode}`;
+  const storagePath = `profile-pictures/${input.submissionId}/${input.requirementCode}`;
 
   logger.info("document_upload_recorded", {
     submissionId: input.submissionId,
