@@ -922,10 +922,11 @@ export function AdminAcademicTerms({
                         const isSuper =
                           isSuperAdmin ||
                           (typeof window !== "undefined" &&
-                            window.location.pathname.startsWith("/super-admin"));
+                            (window.location.pathname.startsWith("/admin") ||
+                              window.location.pathname.startsWith("/super-admin")));
                         if (isSuper) {
                           window.location.href =
-                            "/staff/dashboard?tab=verification";
+                            "/admin/dashboard?tab=verification";
                         } else {
                           window.location.href =
                             "/staff/dashboard?tab=requirements";

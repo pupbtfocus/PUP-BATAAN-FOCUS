@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { ROLE } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/session";
-import { SuperAdminDashboard } from "@/features/admin-management/components/super-admin-dashboard";
+import { AdminDashboard } from "@/features/admin-management/components/admin-dashboard";
 
 export default async function AdminDashboardPage(props: {
   searchParams?: Promise<{ tab?: string; section?: string }>;
@@ -18,7 +18,7 @@ export default async function AdminDashboardPage(props: {
 
   return (
     <AppShell title="PUP FOCUS" nav={[]} fullBleed role="admin">
-      <SuperAdminDashboard
+      <AdminDashboard
         adminName={user?.fullName ?? null}
         adminEmail={user?.email ?? null}
         initialTab={initialTab}

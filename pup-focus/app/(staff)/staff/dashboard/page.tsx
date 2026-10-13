@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { AdminFacultyDashboard } from "@/features/faculty-management/components/admin-faculty-dashboard";
+import { StaffDashboard } from "@/features/faculty-management/components/staff-dashboard";
 import { ROLE } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -16,7 +16,7 @@ export default async function StaffDashboardPage(props: {
   const initialTab = searchParams?.tab || searchParams?.section || null;
 
   return (
-    <AdminFacultyDashboard
+    <StaffDashboard
       adminName={user?.fullName ?? null}
       adminEmail={user?.email ?? null}
       initialTab={initialTab}

@@ -1,1 +1,1 @@
-export { POST } from "@/app/api/admin/faculty/create/route";
+export { POST } from "@/app/api/staff/faculty/create/route";

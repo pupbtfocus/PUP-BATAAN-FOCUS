@@ -15,7 +15,7 @@ import { AlertPopup } from "@/components/ui/alert-popup";
 import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { Sidebar, SidebarContent } from "@/components/sidebar";
-import { AdminAccountsTable } from "@/features/super-admin/components/admin-accounts-directory";
+import { AdminAccountsTable } from "@/features/staff-management/components/staff-accounts-directory";
 import { FacultyTable } from "@/features/faculty-management/components/faculty-table";
 import { RequirementsPanel } from "@/features/faculty-management/components/requirements-verification-panel";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
@@ -23,7 +23,7 @@ import { SubmissionWindowPanel } from "@/features/faculty-management/components/
 import { RequirementTemplatesPanel } from "@/features/requirement-templates/components/requirement-templates-panel";
 import { BackupArchivePanel } from "@/features/backup-archive/components/backup-archive-panel";
 import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
-import { SuperAdminSettings } from "@/features/admin-management/components/super-admin-settings";
+import { SuperAdminSettings } from "@/features/admin-management/components/admin-settings";
 import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
 import { AddFacultyModal } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
 import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
@@ -32,7 +32,7 @@ import { DeleteFacultyModal } from "@/features/faculty-management/components/fac
 import {
   DeleteAdminModal,
   type PendingAdminAction,
-} from "@/features/super-admin/components/delete-admin-modal";
+} from "@/features/staff-management/components/delete-staff-modal";
 import { InviteStatusModal } from "@/features/faculty-management/components/faculty-modals/invite-status-modal";
 import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
 import { SubmissionScheduleLogsModal } from "@/features/faculty-management/components/submission-schedule-logs-modal";
@@ -3079,3 +3079,6 @@ function AdminDetailsModal({
     </div>
   );
 }
+
+export const AdminDashboard = SuperAdminDashboard;
+export default AdminDashboard;

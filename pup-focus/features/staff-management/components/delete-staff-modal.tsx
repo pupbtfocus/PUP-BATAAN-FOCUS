@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Trash, UserBadgeCheck, UserXmark } from "iconoir-react";
 import { Button } from "@/components/ui/button";
 import { ModalHeader } from "@/components/ui/modal-header";
-import type { AdminAccount } from "@/features/super-admin/components/admin-accounts-directory";
+import type { AdminAccount } from "./staff-accounts-directory";
 
 export type PendingAdminAction = {
   kind: "delete" | "deactivate" | "activate";

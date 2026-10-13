@@ -20,7 +20,7 @@ import {
 } from "@/features/notifications/components/admin-notification-drawer";
 import { extractFirstName } from "@/lib/faculty-profile";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
-import { AdminSettings } from "@/features/admin-management/components/admin-settings";
+import { StaffSettings as AdminSettings } from "@/features/admin-management/components/staff-settings";
 import { createClient } from "@/lib/supabase/client";
 import {
   facultyAccountSchema,
@@ -1419,3 +1419,6 @@ export function AdminFacultyDashboard({
     </div>
   );
 }
+
+export const StaffDashboard = AdminFacultyDashboard;
+export default StaffDashboard;

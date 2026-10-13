@@ -2,199 +2,86 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildFacultyInitials } from "@/lib/faculty-profile";
-import { createClient } from "@/lib/supabase/client";
 import {
-  Bell,
-  Camera,
-  Check,
-  Circle,
-  EditPencil,
-  Eye,
-  EyeClosed,
-  FloppyDisk,
-  Hourglass,
-  Refresh,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
-  SystemRestart,
-  Trash,
-  User,
-  Xmark,
-} from "iconoir-react";
+  buildFacultyFullName,
+  buildFacultyInitials,
+  parseFullNameFallback,
+} from "@/lib/faculty-profile";
+import { createClient } from "@/lib/supabase/client";
+import { Bell, Camera, Check, Circle, EditPencil, Eye, EyeClosed, FloppyDisk, Hourglass, Refresh, ShieldAlert, ShieldCheck, SystemRestart, Trash, User, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 
-export interface SuperAdminSettingsProps {
+export interface AdminAccountResponse {
+  id?: string;
+  profileId?: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  profileImageUrl: string | null;
+  avatar_url?: string | null;
+  autoEmailReminders?: boolean;
+  newSubmissionAlerts?: boolean;
+  sessionTimeoutMinutes?: string;
+}
+
+export interface AdminSettingsInitialData {
+  fullName?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+  autoEmailReminders?: boolean;
+  newSubmissionAlerts?: boolean;
+  sessionTimeout?: string;
+  userId?: string | null;
+  firstName?: string | null;
+  middleName?: string | null;
+  lastName?: string | null;
+}
+
+export interface AdminSettingsProps {
   adminName?: string | null;
   adminEmail?: string | null;
   profileImageUrl?: string | null;
+  initialData?: AdminSettingsInitialData | null;
+  onProfileImageChange?: (file: File | null) => void;
   onProfileUpdated?: (updated: {
     fullName?: string;
-    email?: string;
     avatarUrl?: string | null;
   }) => void;
 }
 
-export function SuperAdminSettings({
+type NameFormState = {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+};
+
+export function AdminSettings({
   adminName,
   adminEmail,
   profileImageUrl,
+  initialData,
+  onProfileImageChange,
   onProfileUpdated,
-}: SuperAdminSettingsProps) {
+}: AdminSettingsProps = {}) {
   const router = useRouter();
   const profileImageInputRef = useRef<HTMLInputElement>(null);
-  const fullNameInputRef = useRef<HTMLInputElement>(null);
-  const emailInputRef = useRef<HTMLInputElement>(null);
+  const firstNameInputRef = useRef<HTMLInputElement>(null);
+  const middleNameInputRef = useRef<HTMLInputElement>(null);
+  const lastNameInputRef = useRef<HTMLInputElement>(null);
   const currentPasswordRef = useRef<HTMLInputElement>(null);
 
-  const [activeField, setActiveField] = useState<"fullName" | "email" | null>(null);
+  const [activeField, setActiveField] = useState<
+    "firstName" | "middleName" | "lastName" | null
+  >(null);
   const [isPasswordEditing, setIsPasswordEditing] = useState(false);
   const isUserDirty = useRef(false);
 
-  // Profile data state
-  const initialName = adminName || "Administrator";
-  const initialEmail = adminEmail || "";
-  const [fullName, setFullName] = useState(initialName);
-  const [email, setEmail] = useState(initialEmail);
-  const [savedFullName, setSavedFullName] = useState(initialName);
-  const [savedEmail, setSavedEmail] = useState(initialEmail);
-
-  // Avatar state
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(profileImageUrl ?? null);
-  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
-  const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<string | null>(null);
-  const [isProfileImageMenuOpen, setIsProfileImageMenuOpen] = useState(false);
-  const [isFullImageOpen, setIsFullImageOpen] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const [isAvatarMarkedForRemoval, setIsAvatarMarkedForRemoval] = useState(false);
-
-  // Password state
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showOldPassword, setShowOldPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // System Preferences state
-  const [emailReminders, setEmailReminders] = useState<boolean>(true);
-  const [submissionAlerts, setSubmissionAlerts] = useState<boolean>(true);
-  const [sessionTimeout, setSessionTimeout] = useState<string>("60");
-  const [initialPreferences, setInitialPreferences] = useState({
-    emailReminders: true,
-    submissionAlerts: true,
-    sessionTimeout: "60",
-  });
-
-  // Action status states
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
-
-  // Feedback modal
-  const [feedbackModal, setFeedbackModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    type: "success" | "error";
-  } | null>(null);
-
-  // Update image preview URL when file changes
-  useEffect(() => {
-    if (!profileImageFile) {
-      setProfileImagePreviewUrl(null);
-      return;
-    }
-    const objectUrl = URL.createObjectURL(profileImageFile);
-    setProfileImagePreviewUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [profileImageFile]);
-
-  // Keep prop changes in sync if not edited
-  useEffect(() => {
-    if (!isUserDirty.current) {
-      if (adminName) {
-        setFullName(adminName);
-        setSavedFullName(adminName);
-      }
-      if (adminEmail) {
-        setEmail(adminEmail);
-        setSavedEmail(adminEmail);
-      }
-      if (profileImageUrl !== undefined) {
-        setAvatarUrl(profileImageUrl);
-      }
-    }
-  }, [adminName, adminEmail, profileImageUrl]);
-
-  // Load account settings from backend on mount
-  useEffect(() => {
-    void refreshAccount();
-  }, []);
-
-  async function refreshAccount() {
-    try {
-      setIsRefreshing(true);
-
-      // Fetch super-admin account
-      const accountRes = await fetch(`/api/admin/account?_t=${Date.now()}`, {
-        cache: "no-store",
-      });
-      if (accountRes.ok) {
-        const accountData = await accountRes.json();
-        if (accountData.account) {
-          const loadedName = accountData.account.fullName || adminName || "Administrator";
-          const loadedEmail = accountData.account.email || adminEmail || "";
-          const loadedAvatar =
-            accountData.account.avatar_url ||
-            accountData.account.profileImageUrl ||
-            null;
-
-          setFullName(loadedName);
-          setSavedFullName(loadedName);
-          setEmail(loadedEmail);
-          setSavedEmail(loadedEmail);
-          if (loadedAvatar) {
-            setAvatarUrl(loadedAvatar);
-            setImageError(false);
-          }
-        }
-      }
-
-      // Fetch preferences from admin profile route
-      const profileRes = await fetch(`/api/admin/profile?_t=${Date.now()}`, {
-        cache: "no-store",
-      });
-      if (profileRes.ok) {
-        const profileData = await profileRes.json();
-        if (profileData.account) {
-          const autoReminders = profileData.account.autoEmailReminders ?? true;
-          const alerts = profileData.account.newSubmissionAlerts ?? true;
-          const timeout = String(profileData.account.sessionTimeoutMinutes ?? "60");
-
-          setEmailReminders(autoReminders);
-          setSubmissionAlerts(alerts);
-          setSessionTimeout(timeout);
-          setInitialPreferences({
-            emailReminders: autoReminders,
-            submissionAlerts: alerts,
-            sessionTimeout: timeout,
-          });
-        }
-      }
-    } catch {
-      // Retain current state gracefully
-    } finally {
-      setIsRefreshing(false);
-    }
-  }
-
   function handleFocusField(
-    fieldKey: "fullName" | "email",
-    ref: React.RefObject<HTMLInputElement | null>
+    fieldKey: "firstName" | "middleName" | "lastName",
+    ref: React.RefObject<HTMLInputElement | null>,
   ) {
     setActiveField(fieldKey);
     setTimeout(() => {
@@ -206,22 +93,24 @@ export function SuperAdminSettings({
     }, 0);
   }
 
-  function handleCancelEdit(fieldKey: "fullName" | "email") {
-    if (fieldKey === "fullName") {
-      setFullName(savedFullName);
-    } else {
-      setEmail(savedEmail);
-    }
+  function handleCancelEdit(fieldKey: "firstName" | "middleName" | "lastName") {
+    setForm((prev) => ({
+      ...prev,
+      [fieldKey]: account[fieldKey],
+    }));
     setActiveField(null);
   }
 
-  function handleResetProfile() {
-    setFullName(savedFullName);
-    setEmail(savedEmail);
+  function handleResetForm() {
+    setAccount(account);
+    isUserDirty.current = false;
+    setForm({
+      firstName: account.firstName,
+      middleName: account.middleName,
+      lastName: account.lastName,
+    });
     setProfileImageFile(null);
     setIsAvatarMarkedForRemoval(false);
-    setActiveField(null);
-    isUserDirty.current = false;
     if (profileImageInputRef.current) {
       profileImageInputRef.current.value = "";
     }
@@ -236,116 +125,445 @@ export function SuperAdminSettings({
     }, 0);
   }
 
-  function handleCancelPasswordEditing() {
-    setIsPasswordEditing(false);
-    setOldPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  }
+  // Synchronous, non-blocking initial state from session props
+  const [account, setAccount] = useState<AdminAccountResponse>(() => {
+    const rawName =
+      initialData?.fullName ?? adminName ?? "Admin User";
+    const parsed = parseFullNameFallback(rawName);
 
-  // Profile Save
-  async function handleSaveProfile(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!fullName.trim()) {
-      setFeedbackModal({
-        isOpen: true,
-        title: "Name Required",
-        message: "Please enter your full name before saving.",
-        type: "error",
-      });
+    const firstName =
+      initialData?.firstName || parsed.firstName || "Admin";
+    const middleName =
+      initialData?.middleName || parsed.middleName || "";
+    const lastName =
+      initialData?.lastName || parsed.lastName || "User";
+    const fullName =
+      initialData?.fullName ??
+      adminName ??
+      buildFacultyFullName({ firstName, middleName, lastName }) ??
+      "Admin User";
+    const email = initialData?.email ?? adminEmail ?? "";
+    const resolvedAvatar =
+      initialData?.avatarUrl ?? profileImageUrl ?? null;
+
+    return {
+      profileId: initialData?.userId ?? "",
+      id: initialData?.userId ?? "",
+      firstName,
+      middleName,
+      lastName,
+      fullName,
+      email,
+      profileImageUrl: resolvedAvatar,
+      avatar_url: resolvedAvatar,
+    };
+  });
+
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
+    string | null
+  >(null);
+  const [isProfileImageMenuOpen, setIsProfileImageMenuOpen] = useState(false);
+  const [isFullImageOpen, setIsFullImageOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isAvatarMarkedForRemoval, setIsAvatarMarkedForRemoval] = useState(false);
+
+  const [form, setForm] = useState<NameFormState>(() => {
+    const rawName =
+      initialData?.fullName ?? adminName ?? "Admin User";
+    const parsed = parseFullNameFallback(rawName);
+
+    return {
+      firstName: initialData?.firstName || parsed.firstName || "Admin",
+      middleName: initialData?.middleName || parsed.middleName || "",
+      lastName: initialData?.lastName || parsed.lastName || "User",
+    };
+  });
+
+  // System and notification preferences
+  const [emailReminders, setEmailReminders] = useState<boolean>(
+    initialData?.autoEmailReminders ?? true
+  );
+  const [submissionAlerts, setSubmissionAlerts] = useState<boolean>(
+    initialData?.newSubmissionAlerts ?? true
+  );
+  const [sessionTimeout, setSessionTimeout] = useState<string>(
+    initialData?.sessionTimeout || "60"
+  );
+
+  const [initialPreferences, setInitialPreferences] = useState({
+    emailReminders: initialData?.autoEmailReminders ?? true,
+    submissionAlerts: initialData?.newSubmissionAlerts ?? true,
+    sessionTimeout: initialData?.sessionTimeout || "60",
+  });
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
+
+  // Password state
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Modal feedback state
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "error" | "success";
+  } | null>(null);
+
+  const displayedProfileImage = isAvatarMarkedForRemoval
+    ? null
+    : profileImagePreviewUrl ??
+      account.profileImageUrl ??
+      account.avatar_url ??
+      profileImageUrl ??
+      null;
+
+  useEffect(() => {
+    if (!profileImageFile) {
+      setProfileImagePreviewUrl(null);
       return;
     }
 
-    setIsSavingProfile(true);
+    const previewUrl = URL.createObjectURL(profileImageFile);
+    setProfileImagePreviewUrl(previewUrl);
+
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [profileImageFile]);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [displayedProfileImage]);
+
+  // Synchronize when external profileImageUrl changes
+  useEffect(() => {
+    if (profileImageUrl && !profileImageFile && !isAvatarMarkedForRemoval) {
+      setAccount((prev) => ({
+        ...prev,
+        profileImageUrl,
+        avatar_url: profileImageUrl,
+      }));
+      setImageError(false);
+    }
+  }, [profileImageUrl, profileImageFile, isAvatarMarkedForRemoval]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // Fast client-side session hydration
+    async function hydrateLocalSession() {
+      try {
+        const supabase = createClient();
+        const result = await supabase.auth.getUser();
+        const user = result.data?.user;
+        if (!isMounted || !user) return;
+        const meta = (user.user_metadata || {}) as Record<string, unknown>;
+
+        const rawFullName =
+          (meta.full_name as string) ||
+          (user.user_metadata?.name as string) ||
+          adminName ||
+          "";
+        const parsedFallback = parseFullNameFallback(rawFullName);
+        const metaFirst =
+          (meta.first_name as string) || parsedFallback.firstName;
+        const metaMiddle =
+          (meta.middle_name as string) || parsedFallback.middleName;
+        const metaLast =
+          (meta.last_name as string) || parsedFallback.lastName;
+        const metaFull =
+          (meta.full_name as string) ||
+          buildFacultyFullName({
+            firstName: metaFirst,
+            middleName: metaMiddle,
+            lastName: metaLast,
+          }) ||
+          user.email ||
+          "Admin";
+
+        setAccount((prev) => {
+          return {
+            ...prev,
+            profileId: prev.profileId || user.id,
+            id: prev.id || user.id,
+            firstName: metaFirst || prev.firstName,
+            middleName: typeof meta.middle_name === "string" ? metaMiddle : prev.middleName,
+            lastName: metaLast || prev.lastName,
+            fullName: metaFull || prev.fullName,
+            email: prev.email || user.email || "",
+            profileImageUrl:
+              prev.profileImageUrl ||
+              (meta.avatar_url as string) ||
+              (meta.picture as string) ||
+              null,
+            avatar_url:
+              prev.avatar_url ||
+              (meta.avatar_url as string) ||
+              (meta.picture as string) ||
+              null,
+          };
+        });
+
+        setForm((prev) => {
+          if (isUserDirty.current) return prev;
+          return {
+            firstName: metaFirst,
+            middleName: metaMiddle,
+            lastName: metaLast,
+          };
+        });
+      } catch {
+        // Ignore client supabase error
+      }
+    }
+
+    void hydrateLocalSession();
+
+    // Authoritative background fetch from /api/admin/profile
+    async function loadAccount() {
+      try {
+        const response = await fetch("/api/admin/profile");
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!isMounted || !data.success) return;
+
+        const rawFullName = data.full_name || data.fullName || "Admin";
+        const parsedFallback = parseFullNameFallback(rawFullName);
+        const fetchedFirstName = data.firstName || data.first_name || parsedFallback.firstName;
+        const fetchedMiddleName = data.middleName || data.middle_name || parsedFallback.middleName;
+        const fetchedLastName = data.lastName || data.last_name || parsedFallback.lastName;
+        const profileImg = data.avatar_url || data.profileImageUrl || null;
+
+        setAccount((prev) => ({
+          ...prev,
+          id: data.id || prev.id,
+          profileId: data.profileId || data.id || prev.profileId,
+          firstName: fetchedFirstName,
+          middleName: fetchedMiddleName,
+          lastName: fetchedLastName,
+          fullName: rawFullName,
+          email: data.email || prev.email || "",
+          profileImageUrl: profileImg,
+          avatar_url: profileImg,
+        }));
+
+        if (profileImg) {
+          setImageError(false);
+        }
+
+        setForm((prev) => {
+          if (isUserDirty.current) return prev;
+
+          return {
+            firstName: fetchedFirstName,
+            middleName: fetchedMiddleName,
+            lastName: fetchedLastName,
+          };
+        });
+
+        if (typeof data.auto_email_reminders === "boolean") {
+          setEmailReminders(data.auto_email_reminders);
+        }
+        if (typeof data.new_submission_alerts === "boolean") {
+          setSubmissionAlerts(data.new_submission_alerts);
+        }
+        if (data.session_timeout_minutes !== undefined) {
+          setSessionTimeout(String(data.session_timeout_minutes));
+        }
+
+        setInitialPreferences({
+          emailReminders:
+            typeof data.auto_email_reminders === "boolean"
+              ? data.auto_email_reminders
+              : true,
+          submissionAlerts:
+            typeof data.new_submission_alerts === "boolean"
+              ? data.new_submission_alerts
+              : true,
+          sessionTimeout: String(data.session_timeout_minutes ?? "60"),
+        });
+      } catch {
+        // Silent background fetch
+      }
+    }
+
+    void loadAccount();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [adminName]);
+
+  async function refreshAccount() {
+    if (typeof window !== "undefined") {
+      window.location.reload();
+      return;
+    }
+    try {
+      setIsRefreshing(true);
+      const response = await fetch("/api/admin/profile");
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (!data.success) return;
+
+      const rawFullName = data.full_name || data.fullName || "Admin";
+      const parsedFallback = parseFullNameFallback(rawFullName);
+      const fetchedFirstName = data.firstName || data.first_name || parsedFallback.firstName;
+      const fetchedMiddleName = data.middleName || data.middle_name || parsedFallback.middleName;
+      const fetchedLastName = data.lastName || data.last_name || parsedFallback.lastName;
+
+      const profileImg = data.avatar_url || data.profileImageUrl || null;
+
+      setAccount((prev) => ({
+        ...prev,
+        id: data.id || prev.id,
+        profileId: data.profileId || data.id || prev.profileId,
+        firstName: fetchedFirstName,
+        middleName: fetchedMiddleName,
+        lastName: fetchedLastName,
+        fullName: rawFullName,
+        email: data.email || prev.email || "",
+        profileImageUrl: profileImg,
+        avatar_url: profileImg,
+      }));
+
+      if (profileImg) {
+        setImageError(false);
+      }
+
+      setForm((prev) => {
+        if (isUserDirty.current) return prev;
+
+        return {
+          firstName: fetchedFirstName,
+          middleName: fetchedMiddleName,
+          lastName: fetchedLastName,
+        };
+      });
+
+      if (typeof data.auto_email_reminders === "boolean") {
+        setEmailReminders(data.auto_email_reminders);
+      }
+      if (typeof data.new_submission_alerts === "boolean") {
+        setSubmissionAlerts(data.new_submission_alerts);
+      }
+      if (data.session_timeout_minutes !== undefined) {
+        setSessionTimeout(String(data.session_timeout_minutes));
+      }
+
+      setInitialPreferences({
+        emailReminders:
+          typeof data.auto_email_reminders === "boolean"
+            ? data.auto_email_reminders
+            : true,
+        submissionAlerts:
+          typeof data.new_submission_alerts === "boolean"
+            ? data.new_submission_alerts
+            : true,
+        sessionTimeout: String(data.session_timeout_minutes ?? "60"),
+      });
+    } catch {
+      // Retain existing state silently
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
+
+  async function handleSaveName(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSaving(true);
 
     try {
-      let updatedAvatar = avatarUrl;
-
-      // 1. Upload or remove avatar & update full_name via /api/admin/profile
       const formData = new FormData();
-      formData.append("fullName", fullName.trim());
+      formData.append("firstName", form.firstName.trim());
+      formData.append("middleName", form.middleName.trim());
+      formData.append("lastName", form.lastName.trim());
+
       if (isAvatarMarkedForRemoval) {
         formData.append("removeAvatar", "true");
-        updatedAvatar = null;
       } else if (profileImageFile) {
         formData.append("profileImage", profileImageFile);
       }
 
-      const profileResponse = await fetch("/api/admin/profile", {
+      const response = await fetch("/api/admin/profile", {
         method: "PATCH",
         body: formData,
       });
 
-      const profilePayload = await profileResponse.json();
-      if (!profileResponse.ok || !profilePayload.success) {
-        throw new Error(profilePayload.error || "Failed to update profile details");
+      const payload = await response.json();
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || "Failed to update administrator profile");
       }
 
-      if (profilePayload.avatar_url !== undefined) {
-        updatedAvatar = profilePayload.avatar_url;
-      }
-
-      // 2. If email changed, also patch via /api/admin/account
-      const emailHasChanged = email.trim().toLowerCase() !== savedEmail.trim().toLowerCase();
-      if (emailHasChanged) {
-        const accountResponse = await fetch("/api/admin/account", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fullName: fullName.trim(),
-            email: email.trim(),
-          }),
+      const updatedFullName =
+        payload.full_name ||
+        buildFacultyFullName({
+          firstName: form.firstName,
+          middleName: form.middleName,
+          lastName: form.lastName,
         });
 
-        const accountPayload = await accountResponse.json();
-        if (!accountResponse.ok) {
-          throw new Error(accountPayload.error || "Failed to update email address");
-        }
-      }
+      const updatedAvatar = payload.avatar_url ?? null;
 
-      const finalizedName = fullName.trim();
-      const finalizedEmail = email.trim();
+      setAccount((prev) => ({
+        ...prev,
+        firstName: form.firstName,
+        middleName: form.middleName,
+        lastName: form.lastName,
+        fullName: updatedFullName,
+        profileImageUrl: updatedAvatar,
+        avatar_url: updatedAvatar,
+      }));
 
-      setSavedFullName(finalizedName);
-      setSavedEmail(finalizedEmail);
-      setAvatarUrl(updatedAvatar);
       setProfileImageFile(null);
       setIsAvatarMarkedForRemoval(false);
-      setActiveField(null);
       isUserDirty.current = false;
 
-      if (profileImageInputRef.current) {
-        profileImageInputRef.current.value = "";
+      if (onProfileImageChange) {
+        onProfileImageChange(null);
       }
-
-      onProfileUpdated?.({
-        fullName: finalizedName,
-        email: finalizedEmail,
-        avatarUrl: updatedAvatar,
-      });
 
       setFeedbackModal({
         isOpen: true,
         title: "Profile Updated Successfully",
-        message: "Your super administrator credentials and profile details have been saved.",
+        message: "Your profile information and changes have been saved.",
         type: "success",
       });
 
+      onProfileUpdated?.({
+        fullName: updatedFullName,
+        avatarUrl: updatedAvatar,
+      });
+
       router.refresh();
-    } catch (err: any) {
+    } catch (saveError) {
       setFeedbackModal({
         isOpen: true,
         title: "Profile Update Failed",
-        message: err instanceof Error ? err.message : "Failed to update super administrator profile.",
+        message:
+          saveError instanceof Error
+            ? saveError.message
+            : "Failed to update administrator profile",
         type: "error",
       });
     } finally {
-      setIsSavingProfile(false);
+      setIsSaving(false);
     }
   }
 
-  // Password Submit
-  async function handleChangePasswordSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleChangePasswordSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
     if (!oldPassword.trim()) {
@@ -372,7 +590,8 @@ export function SuperAdminSettings({
       setFeedbackModal({
         isOpen: true,
         title: "Passwords Do Not Match",
-        message: "The new password and confirmation password do not match. Please verify and try again.",
+        message:
+          "The new password and confirmation password do not match. Please verify and try again.",
         type: "error",
       });
       return;
@@ -394,7 +613,7 @@ export function SuperAdminSettings({
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-      const email = sessionData?.session?.user?.email || savedEmail;
+      const email = sessionData?.session?.user?.email || account.email;
 
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -428,18 +647,18 @@ export function SuperAdminSettings({
       setNewPassword("");
       setConfirmPassword("");
       setIsPasswordEditing(false);
-
       setFeedbackModal({
         isOpen: true,
         title: "Password Updated Successfully",
-        message: "Your super administrator password has been updated securely.",
+        message: "Your administrator account password has been updated securely.",
         type: "success",
       });
-    } catch (err: any) {
+    } catch (err) {
       setFeedbackModal({
         isOpen: true,
         title: "Password Update Failed",
-        message: err instanceof Error ? err.message : "Failed to update password.",
+        message:
+          err instanceof Error ? err.message : "Failed to update password.",
         type: "error",
       });
     } finally {
@@ -447,7 +666,6 @@ export function SuperAdminSettings({
     }
   }
 
-  // Preferences Submit
   async function handleSavePreferences() {
     setIsSavingPreferences(true);
 
@@ -464,7 +682,7 @@ export function SuperAdminSettings({
 
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.error || "Failed to update system preferences.");
+        throw new Error(payload.error || "Failed to update system preferences");
       }
 
       setInitialPreferences({
@@ -479,11 +697,14 @@ export function SuperAdminSettings({
         message: "Your notification and session lifecycle preferences have been updated.",
         type: "success",
       });
-    } catch (err: any) {
+    } catch (err) {
       setFeedbackModal({
         isOpen: true,
         title: "Preferences Update Failed",
-        message: err instanceof Error ? err.message : "Failed to update system preferences.",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to update system preferences.",
         type: "error",
       });
     } finally {
@@ -491,23 +712,12 @@ export function SuperAdminSettings({
     }
   }
 
-  const DEFAULT_ADMIN_AVATAR = "/icons/pup-seal.png";
-
-  // Active avatar resolution: defaults to PUP logo
-  const displayedProfileImage = isAvatarMarkedForRemoval
-    ? DEFAULT_ADMIN_AVATAR
-    : profileImagePreviewUrl || avatarUrl || DEFAULT_ADMIN_AVATAR;
-
-  const isUsingCustomAvatar =
-    !isAvatarMarkedForRemoval &&
-    Boolean(profileImagePreviewUrl || (avatarUrl && avatarUrl !== DEFAULT_ADMIN_AVATAR));
-
-  // Validation flags
   const isProfileChanged =
     Boolean(profileImageFile) ||
     isAvatarMarkedForRemoval ||
-    fullName.trim() !== savedFullName.trim() ||
-    email.trim() !== savedEmail.trim();
+    form.firstName.trim() !== account.firstName.trim() ||
+    form.middleName.trim() !== account.middleName.trim() ||
+    form.lastName.trim() !== account.lastName.trim();
 
   const isPreferencesChanged =
     emailReminders !== initialPreferences.emailReminders ||
@@ -520,6 +730,7 @@ export function SuperAdminSettings({
     newPassword.length > 0 &&
     confirmPassword.length > 0 &&
     newPassword === confirmPassword;
+
   const isPasswordFormValid =
     isCurrentPasswordFilled && isLengthValid && isMatching;
 
@@ -532,7 +743,7 @@ export function SuperAdminSettings({
             Settings
           </h1>
           <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-            Manage your super administrator account details, security settings, and system preferences.
+            Manage your administrator account details, security settings, and system preferences.
           </p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
@@ -562,11 +773,11 @@ export function SuperAdminSettings({
               Profile Details
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 font-normal">
-              View and update your super administrator credentials and identity.
+              View and update your administrator credentials and identity.
             </p>
           </div>
 
-          <form onSubmit={handleSaveProfile} className="mt-5 space-y-5">
+          <form onSubmit={handleSaveName} className="mt-5 space-y-5">
             {/* Profile Avatar Layout */}
             <div className="flex items-center gap-4">
               <div
@@ -582,19 +793,23 @@ export function SuperAdminSettings({
                 }}
                 aria-label="Profile photo options"
               >
-                <div className="relative h-20 w-20 rounded-full border-2 border-amber-500/40 overflow-hidden flex items-center justify-center shadow-md">
-                  <img
-                    src={displayedProfileImage}
-                    alt="PUP FOCUS Administrator"
-                    loading="eager"
-                    fetchPriority="high"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = DEFAULT_ADMIN_AVATAR;
-                    }}
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                </div>
+                <div className="relative h-20 w-20 rounded-full border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-950 overflow-hidden flex items-center justify-center text-lg font-semibold text-slate-800 dark:text-slate-200 shadow-xs">
+                  {/* Clean initials rendered immediately */}
+                  <span className="select-none font-semibold text-slate-700 dark:text-slate-300">
+                    {buildFacultyInitials(account.fullName || "Admin User")}
+                  </span>
 
+                  {displayedProfileImage && !imageError ? (
+                    <img
+                      src={displayedProfileImage}
+                      alt={account.fullName || "Administrator"}
+                      loading="eager"
+                      fetchPriority="high"
+                      onError={() => setImageError(true)}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : null}
+                </div>
                 {/* Hover darken overlay */}
                 <div
                   className="absolute inset-0 rounded-full bg-black/40 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center pointer-events-none"
@@ -614,19 +829,11 @@ export function SuperAdminSettings({
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    Administrator
-                  </h3>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide uppercase bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/80 shrink-0">
-                    <AppIcon icon={Shield} size="md" color="inherit" /> Root
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Office of Institutional System Administration
-                </p>
-                <p className="text-[11px] text-amber-600 dark:text-amber-400/90 mt-1 font-medium">
-                  Click avatar to upload or modify photo
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                  {account.fullName || "Administrator"}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 truncate mt-0.5">
+                  {account.email || "No email on record"}
                 </p>
               </div>
 
@@ -640,6 +847,9 @@ export function SuperAdminSettings({
                   setProfileImageFile(file);
                   setIsAvatarMarkedForRemoval(false);
                   setIsProfileImageMenuOpen(false);
+                  if (onProfileImageChange) {
+                    onProfileImageChange(file);
+                  }
                 }}
               />
             </div>
@@ -654,6 +864,9 @@ export function SuperAdminSettings({
                     if (profileImageInputRef.current) {
                       profileImageInputRef.current.value = "";
                     }
+                    if (onProfileImageChange) {
+                      onProfileImageChange(null);
+                    }
                   }}
                   className="ml-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 shrink-0 cursor-pointer"
                 >
@@ -664,7 +877,7 @@ export function SuperAdminSettings({
 
             {isAvatarMarkedForRemoval && (
               <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/30 px-3.5 py-2 text-xs text-rose-800 dark:text-rose-300 font-medium">
-                <span className="truncate">Avatar will reset to default PUP FOCUS emblem upon saving</span>
+                <span className="truncate">Avatar marked for removal upon saving</span>
                 <button
                   type="button"
                   onClick={() => setIsAvatarMarkedForRemoval(false)}
@@ -677,37 +890,36 @@ export function SuperAdminSettings({
 
             {/* Form Input Fields */}
             <div className="grid gap-4 sm:grid-cols-2">
-              {/* 1 Single Input for Full Name of Admin */}
-              <div className="sm:col-span-2">
+              <div>
                 <label
-                  htmlFor="super-admin-full-name"
+                  htmlFor="admin-first-name"
                   className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
                 >
-                  Full Name
+                  First Name
                 </label>
                 <div className="relative flex items-center">
                   <input
-                    id="super-admin-full-name"
-                    ref={fullNameInputRef}
-                    readOnly={activeField !== "fullName"}
+                    id="admin-first-name"
+                    ref={firstNameInputRef}
+                    readOnly={activeField !== "firstName"}
                     className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
-                      activeField === "fullName"
+                      activeField === "firstName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                     }`}
-                    value={fullName}
+                    value={form.firstName}
                     onChange={(e) => {
                       isUserDirty.current = true;
-                      setFullName(e.target.value);
+                      setForm((prev) => ({ ...prev, firstName: e.target.value }));
                     }}
                     onBlur={() => setActiveField(null)}
-                    placeholder="Enter full name"
+                    placeholder="First name"
                   />
-                  {activeField === "fullName" ? (
+                  {activeField === "firstName" ? (
                     <button
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleCancelEdit("fullName")}
+                      onClick={() => handleCancelEdit("firstName")}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={Xmark} size="sm" color="inherit" />
@@ -717,7 +929,7 @@ export function SuperAdminSettings({
                     <button
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleFocusField("fullName", fullNameInputRef)}
+                      onClick={() => handleFocusField("firstName", firstNameInputRef)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={EditPencil} size="sm" color="inherit" />
@@ -727,88 +939,145 @@ export function SuperAdminSettings({
                 </div>
               </div>
 
-              {/* Email Address */}
-              <div className="sm:col-span-2">
+              <div>
                 <label
-                  htmlFor="super-admin-email"
+                  htmlFor="admin-middle-name"
                   className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
                 >
+                  Middle Name
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="admin-middle-name"
+                    ref={middleNameInputRef}
+                    readOnly={activeField !== "middleName"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "middleName"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={form.middleName}
+                    onChange={(e) => {
+                      isUserDirty.current = true;
+                      setForm((prev) => ({ ...prev, middleName: e.target.value }));
+                    }}
+                    onBlur={() => setActiveField(null)}
+                    placeholder="Middle name"
+                  />
+                  {activeField === "middleName" ? (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("middleName")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={Xmark} size="sm" color="inherit" />
+                      <span>Cancel</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("middleName", middleNameInputRef)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={EditPencil} size="sm" color="inherit" />
+                      <span>Edit</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="admin-last-name"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                >
+                  Last Name
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="admin-last-name"
+                    ref={lastNameInputRef}
+                    readOnly={activeField !== "lastName"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "lastName"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={form.lastName}
+                    onChange={(e) => {
+                      isUserDirty.current = true;
+                      setForm((prev) => ({ ...prev, lastName: e.target.value }));
+                    }}
+                    onBlur={() => setActiveField(null)}
+                    placeholder="Last name"
+                  />
+                  {activeField === "lastName" ? (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("lastName")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={Xmark} size="sm" color="inherit" />
+                      <span>Cancel</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("lastName", lastNameInputRef)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={EditPencil} size="sm" color="inherit" />
+                      <span>Edit</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                   Email Address
                 </label>
-                <div className="relative flex items-center">
-                  <input
-                    id="super-admin-email"
-                    ref={emailInputRef}
-                    type="email"
-                    readOnly={activeField !== "email"}
-                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
-                      activeField === "email"
-                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
-                    }`}
-                    value={email}
-                    onChange={(e) => {
-                      isUserDirty.current = true;
-                      setEmail(e.target.value);
-                    }}
-                    onBlur={() => setActiveField(null)}
-                    placeholder="Enter email address"
-                  />
-                  {activeField === "email" ? (
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleCancelEdit("email")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
-                    >
-                      <AppIcon icon={Xmark} size="sm" color="inherit" />
-                      <span>Cancel</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleFocusField("email", emailInputRef)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
-                    >
-                      <AppIcon icon={EditPencil} size="sm" color="inherit" />
-                      <span>Edit</span>
-                    </button>
-                  )}
-                </div>
+                <input
+                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
+                  value={account.email || ""}
+                  disabled
+                  readOnly
+                />
               </div>
 
-              {/* Role / Access Level */}
               <div className="sm:col-span-2">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                   Role / Campus Office
                 </label>
                 <input
                   className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 cursor-not-allowed rounded-xl px-4 py-2.5 text-xs font-medium"
-                  value="Administrator — System Oversight & Security"
+                  value="Administrator — Office of Academic Affairs"
                   disabled
                   readOnly
                 />
               </div>
             </div>
 
-            {/* Card Buttons */}
             <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
                 type="button"
-                onClick={handleResetProfile}
-                disabled={!isProfileChanged || isSavingProfile}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
+                onClick={handleResetForm}
+                disabled={!isProfileChanged || isSaving}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-semibold shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800/80 cursor-pointer active:scale-[0.98]"
               >
                 <AppIcon icon={Refresh} size="sm" color="inherit" />
                 <span>Reset</span>
               </button>
               <button
                 type="submit"
-                disabled={isSavingProfile || !isProfileChanged}
+                disabled={isSaving || !isProfileChanged}
                 className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
               >
-                {isSavingProfile ? "Saving..." : "Save Profile Changes"}
+                {isSaving ? "Saving..." : "Save Profile Changes"}
               </button>
             </div>
           </form>
@@ -839,7 +1108,12 @@ export function SuperAdminSettings({
             ) : (
               <button
                 type="button"
-                onClick={handleCancelPasswordEditing}
+                onClick={() => {
+                  setIsPasswordEditing(false);
+                  setOldPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }}
                 className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="Cancel Change Password"
                 aria-label="Cancel Change Password"
@@ -1193,8 +1467,12 @@ export function SuperAdminSettings({
           >
             {feedbackModal.type === "error" ? (
               <div className="relative mb-5 flex items-center justify-center">
+                {/* Ambient Backdrop Glow */}
                 <div className="absolute inset-0 rounded-full bg-rose-500/20 blur-xl dark:bg-rose-500/30" />
+
+                {/* Outer Layer Ring */}
                 <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 p-3 ring-8 ring-rose-500/5 dark:bg-rose-500/20 dark:ring-rose-500/10">
+                  {/* Inner Shield Icon */}
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-600 text-white shadow-lg">
                     <AppIcon icon={ShieldAlert} size="lg" color="inherit" strokeWidth={2.2} />
                   </div>
@@ -1202,8 +1480,12 @@ export function SuperAdminSettings({
               </div>
             ) : (
               <div className="relative mb-5 flex items-center justify-center">
+                {/* Ambient Backdrop Glow */}
                 <div className="absolute inset-0 rounded-full bg-slate-500/20 blur-xl dark:bg-slate-500/30" />
+
+                {/* Outer Layer Ring */}
                 <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-500/10 p-3 ring-8 ring-slate-500/5 dark:bg-slate-500/20 dark:ring-slate-500/10">
+                  {/* Inner Shield Icon */}
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg">
                     <AppIcon icon={ShieldCheck} size="lg" color="inherit" strokeWidth={2.2} />
                   </div>
@@ -1282,20 +1564,23 @@ export function SuperAdminSettings({
                 </button>
               )}
 
-              {isUsingCustomAvatar && (
+              {displayedProfileImage && (
                 <button
                   type="button"
                   onClick={() => {
                     setIsProfileImageMenuOpen(false);
                     setProfileImageFile(null);
                     setIsAvatarMarkedForRemoval(true);
+                    if (profileImageInputRef.current) {
+                      profileImageInputRef.current.value = "";
+                    }
                   }}
-                  className="flex w-full items-center justify-between rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/70 dark:border-rose-900/60 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 px-4 py-3.5 text-left text-rose-800 dark:text-rose-300 transition cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/60 dark:border-rose-900/40 dark:bg-rose-950/20 px-4 py-3.5 text-left text-rose-700 dark:text-rose-300 transition cursor-pointer"
                 >
                   <div>
-                    <p className="text-xs font-semibold">Reset to Default Logo</p>
+                    <p className="text-xs font-semibold">Remove Photo</p>
                     <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5 font-normal">
-                      Reset avatar to PUP FOCUS emblem logo
+                      Remove current photo and restore fallback initials
                     </p>
                   </div>
                   <AppIcon icon={Trash} size="md" color="danger" />
@@ -1309,28 +1594,35 @@ export function SuperAdminSettings({
       {/* Full Image Preview Modal */}
       {isFullImageOpen && displayedProfileImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setIsFullImageOpen(false)}
         >
           <div
-            className="relative max-w-lg w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl p-2 flex flex-col items-center"
-            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
+            onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
-              title={fullName || "Administrator"}
+              title={account.fullName || "Profile Photo"}
               icon={User}
               onClose={() => setIsFullImageOpen(false)}
               closeAriaLabel="Close"
-              className="w-full bg-transparent border-slate-800 px-3 py-2 mb-2"
             />
-            <img
-              src={displayedProfileImage}
-              alt={fullName || "Administrator"}
-              className="max-h-[70vh] w-auto rounded-xl object-contain shadow-lg"
-            />
+            <div className="p-6 flex items-center justify-center">
+              <div className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 max-h-[60vh]">
+                <img
+                  src={displayedProfileImage}
+                  alt={account.fullName || "Administrator"}
+                  className="max-h-[60vh] max-w-full object-contain"
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
+
+export const StaffSettings = AdminSettings;
+export type StaffSettingsProps = AdminSettingsProps;
+export default StaffSettings;
