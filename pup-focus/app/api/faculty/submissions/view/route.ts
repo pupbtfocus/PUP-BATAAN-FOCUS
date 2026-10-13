@@ -346,11 +346,22 @@ export async function GET(request: NextRequest) {
         ? { download: targetFileName || true }
         : undefined;
 
+    // 3b. Use file path embedded in submissions row (migration 0026)
+    let embeddedPath: string | null = null;
+    if (!docVer?.storage_path) {
+      const { data: embedded } = await adminClient
+        .from("submissions")
+        .select("storage_path")
+        .eq("id", submissionId)
+        .maybeSingle();
+      embeddedPath = (embedded as { storage_path?: string | null } | null)?.storage_path ?? null;
+    }
+
     // 4. Discover & Sign File in Storage
     const signResult = await discoverAndSignFile(
       adminClient,
       sub,
-      docVer?.storage_path,
+      docVer?.storage_path || embeddedPath,
       downloadOptions,
     );
 

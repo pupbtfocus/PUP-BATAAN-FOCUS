@@ -714,6 +714,12 @@ export async function POST(request: NextRequest) {
         updatePayload.remarks = trimmedRemarks;
       }
 
+      updatePayload.storage_path = storagePath;
+      updatePayload.file_name = fileName;
+      updatePayload.mime_type = fileMimeType;
+      updatePayload.size_bytes = fileBufferLength || null;
+      updatePayload.checksum_sha256 = checksumSha256 || null;
+
       if (curriculumId) updatePayload.curriculum_id = curriculumId;
       if (facultyAssignmentId)
         updatePayload.faculty_assignment_id = facultyAssignmentId;
@@ -722,6 +728,17 @@ export async function POST(request: NextRequest) {
         .from("submissions")
         .update(updatePayload)
         .eq("id", targetSubmissionId);
+
+      if (updateSubError && "storage_path" in updatePayload) {
+        for (const k of ["storage_path", "file_name", "mime_type", "size_bytes", "checksum_sha256"]) {
+          delete updatePayload[k];
+        }
+        const retryRes = await supabaseAdmin
+          .from("submissions")
+          .update(updatePayload)
+          .eq("id", targetSubmissionId);
+        updateSubError = retryRes.error;
+      }
 
       if (updateSubError && updatePayload.remarks) {
         delete updatePayload.remarks;
@@ -784,6 +801,11 @@ export async function POST(request: NextRequest) {
         requirement_code: payload.requirementCode,
         status: "uploaded",
         submitted_at: new Date().toISOString(),
+        storage_path: storagePath,
+        file_name: fileName,
+        mime_type: fileMimeType,
+        size_bytes: fileBufferLength || null,
+        checksum_sha256: checksumSha256 || null,
       };
 
       if (trimmedRemarks) {
