@@ -715,40 +715,34 @@ export function AdminFacultyDashboard({
 
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans transition-colors duration-200">
-      {/* Consolidated Top Header (All Views) - Fixed 56px matching Faculty AppShell */}
-      <header className="fixed inset-x-0 top-0 h-14 z-50 border-t-2 border-amber-500 border-b border-amber-500/30 bg-gradient-to-r from-[#5a0000] via-[#480000] to-[#360000] shadow-md flex items-center transition-colors duration-200">
+      <header className="fixed inset-x-0 md:left-72 top-0 h-14 z-40 border-b-4 border-amber-500 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xs flex items-center transition-colors duration-200">
         <div className="relative flex w-full h-full items-center justify-between pl-4 pr-3 sm:pr-6">
-          {/* Left: Mobile Menu Trigger & Title */}
-          <div className="flex items-center gap-2 sm:gap-3 z-10">
+          {/* Left: Mobile Menu Trigger & Title (Mobile only) */}
+          <div className="flex md:hidden items-center gap-2 sm:gap-3 z-10">
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden inline-flex items-center justify-center p-1.5 rounded-xl border border-amber-500/30 bg-[#7a0000]/70 hover:bg-[#8d0000] hover:border-amber-400/50 text-amber-100 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
+              className="inline-flex items-center justify-center p-1.5 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
               aria-label="Open Navigation Menu"
             >
               <AppIcon icon={Menu} size="lg" color="inherit" />
             </button>
 
-            <BrandMark size={44} className="shrink-0" />
-            <div className="flex flex-col min-w-0">
-              <span className="hidden md:block text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
-                PUP FOCUS
-              </span>
-              <span className="md:hidden text-[10px] xs:text-[11px] font-medium text-white tracking-tight leading-tight line-clamp-2 max-w-[260px]">
-                <HighlightedSystemTitle />
-              </span>
-            </div>
+            <BrandMark size={36} className="shrink-0" />
+            <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white whitespace-nowrap leading-tight">
+              <span className="text-[#800000] dark:text-amber-500">PUP</span> FOCUS
+            </span>
           </div>
 
-          {/* Centered System Title for Desktop */}
-          <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-4">
-            <span className="text-xs lg:text-sm xl:text-base font-semibold text-white tracking-wide text-center truncate max-w-[48vw]">
+          {/* Desktop Centered System Title */}
+          <div className="hidden md:flex absolute inset-0 items-center justify-center pointer-events-none px-24">
+            <span className="text-sm lg:text-base xl:text-[17px] font-semibold tracking-normal text-center truncate max-w-[65vw]">
               <HighlightedSystemTitle />
             </span>
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-2 sm:gap-3 z-10">
+          <div className="flex items-center gap-2 sm:gap-3 z-10 ml-auto shrink-0">
             <AdminNotificationDrawer onNavigateToTarget={handleNotificationNavigate} />
             <LogoutButton />
           </div>
@@ -756,9 +750,9 @@ export function AdminFacultyDashboard({
       </header>
 
       {/* Body Wrapper */}
-      <div className="flex flex-1 h-screen pt-14 overflow-hidden relative">
+      <div className="flex flex-1 h-screen pt-14 overflow-hidden relative md:pl-72">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-3.5 shadow-md transition-colors duration-200">
+        <aside className="hidden md:flex md:flex-col fixed left-0 top-0 h-screen w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-3.5 shadow-md z-50 transition-colors duration-200">
           <SidebarContent
             activeSection={activeSection}
             setActiveSection={handleSetActiveSection}
@@ -775,7 +769,7 @@ export function AdminFacultyDashboard({
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <aside
-              className="relative flex flex-col h-full w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-4 shadow-2xl overflow-y-auto transition-colors duration-200"
+              className="relative flex flex-col h-full w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-4 shadow-2xl overflow-y-auto transition-colors duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">
@@ -801,6 +795,7 @@ export function AdminFacultyDashboard({
                 roleTitle="Staff"
                 profileImageUrl={adminAvatarUrl}
                 onNavigate={() => setIsMobileMenuOpen(false)}
+                showBrand={false}
               />
             </aside>
           </div>

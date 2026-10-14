@@ -1,25 +1,25 @@
 import React from "react";
 
-export function HighlightedSystemTitle() {
+export function HighlightedSystemTitle({ className }: { className?: string }) {
   return (
-    <span className="text-white">
-      <span className="text-amber-300 font-black text-[1.18em] drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
+    <span className={className ?? "text-slate-800 dark:text-slate-100 font-semibold tracking-normal text-sm sm:text-base lg:text-[17px]"}>
+      <span className="text-[#781113] dark:text-amber-400 font-black text-[1.15em]">
         F
       </span>
       aculty{" "}
-      <span className="text-amber-300 font-black text-[1.18em] drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
+      <span className="text-[#781113] dark:text-amber-400 font-black text-[1.15em]">
         O
       </span>
       nline{" "}
-      <span className="text-amber-300 font-black text-[1.18em] drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
+      <span className="text-[#781113] dark:text-amber-400 font-black text-[1.15em]">
         C
       </span>
       ompliance and{" "}
-      <span className="text-amber-300 font-black text-[1.18em] drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
+      <span className="text-[#781113] dark:text-amber-400 font-black text-[1.15em]">
         U
       </span>
       ploading{" "}
-      <span className="text-amber-300 font-black text-[1.18em] drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
+      <span className="text-[#781113] dark:text-amber-400 font-black text-[1.15em]">
         S
       </span>
       ystem

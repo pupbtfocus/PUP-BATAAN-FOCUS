@@ -1646,7 +1646,7 @@ export function SuperAdminDashboard({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-2 sm:left-3 top-2.5 z-[55] md:hidden inline-flex items-center justify-center p-1.5 rounded-xl border border-amber-500/30 bg-[#7a0000]/70 hover:bg-[#8d0000] hover:border-amber-400/50 text-amber-100 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
+          className="fixed left-2 sm:left-3 top-2.5 z-[55] md:hidden inline-flex items-center justify-center p-1.5 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
           aria-label="Open Navigation Menu"
         >
           <AppIcon icon={Menu} size="lg" color="inherit" />
@@ -1670,12 +1670,12 @@ export function SuperAdminDashboard({
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 h-full p-4 border-r-2 border-amber-400/60 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
-            <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">
+          <aside className="relative w-72 max-w-[85%] bg-[#800000] text-amber-50 h-full p-4 border-r-4 border-amber-500 flex flex-col z-10 shadow-2xl overflow-y-auto transition-colors">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-2">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
                 <BrandMark size={38} className="shrink-0" />
                 <span className="text-lg font-black tracking-tight text-white leading-tight">
-                  PUP FOCUS
+                  <span className="text-amber-400">PUP</span> FOCUS
                 </span>
               </div>
               <button
@@ -1696,6 +1696,7 @@ export function SuperAdminDashboard({
               isSuperAdmin={true}
               profileImageUrl={superAdminAvatarUrl}
               onNavigate={() => setIsMobileMenuOpen(false)}
+              showBrand={false}
             />
           </aside>
         </div>

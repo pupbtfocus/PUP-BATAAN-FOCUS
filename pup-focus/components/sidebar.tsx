@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Activity, Archive, Calendar, ClipboardCheck, Eye, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, UserBadgeCheck, ViewGrid } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { extractFirstName } from "@/lib/faculty-profile";
 
 export interface SidebarProps {
@@ -13,6 +14,7 @@ export interface SidebarProps {
   isSuperAdmin?: boolean;
   profileImageUrl?: string | null;
   onNavigate?: () => void;
+  showBrand?: boolean;
 }
 
 function getRoleBadgeClasses(roleTitle?: string): string {
@@ -87,6 +89,7 @@ export function SidebarContent({
   isSuperAdmin: isSuperAdminProp,
   profileImageUrl,
   onNavigate,
+  showBrand = true,
 }: SidebarProps) {
   const [hasAvatarError, setHasAvatarError] = useState(false);
 
@@ -167,7 +170,22 @@ export function SidebarContent({
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="my-1 bg-[#6b0000]/80 border border-amber-400/40 p-3.5 sm:p-4 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
+      {/* Brand Header */}
+      {showBrand && (
+        <div className="flex items-center gap-2.5 px-1 py-1 pb-3 mb-1 border-b border-white/10 shrink-0">
+          <BrandMark size={38} className="shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <span className="font-extrabold text-white text-lg tracking-tight whitespace-nowrap leading-tight">
+              <span className="text-amber-400">PUP</span> FOCUS
+            </span>
+            <span className="text-[10px] text-amber-200/80 font-medium tracking-wide truncate">
+              Bataan Campus
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="my-1 bg-black/15 border border-white/10 p-3.5 sm:p-4 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
         <button
           type="button"
           onClick={() => handleSelect("settings")}
@@ -178,17 +196,17 @@ export function SidebarContent({
             <img
               src={profileImageUrl}
               alt={adminName ?? "User"}
-              className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/70 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+              className="w-20 h-20 rounded-full object-cover border-2 border-amber-400 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-300 transition-colors"
               onError={() => setHasAvatarError(true)}
             />
           ) : isSuperAdmin ? (
             <img
               src="/icons/pup-seal.png"
               alt="PUP"
-              className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/60 ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+              className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/80 ring-2 ring-amber-400/30 group-hover:border-amber-300 transition-colors"
             />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/40 font-bold text-xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
+            <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/60 font-bold text-xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-300 transition-colors">
               {getSidebarInitials(adminName, "AD")}
             </div>
           )}
@@ -205,16 +223,16 @@ export function SidebarContent({
           {extractFirstName(adminName, roleTitle)}
         </p>
 
-        <div className="my-2 h-px w-full bg-amber-400/50" />
+        <div className="my-2.5 h-px w-full bg-white/10" />
 
         <span
-          className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-3 py-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-full shadow-2xs"
+          className="mt-0.5 inline-flex items-center justify-center bg-amber-400/20 text-amber-300 border border-amber-400/40 px-3 py-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-full shadow-2xs"
         >
           {roleTitle}
         </span>
       </div>
 
-      <div className="my-2 h-px w-full bg-amber-400/50" />
+      <div className="my-2.5 h-px w-full bg-white/10" />
 
       <nav className="mt-1.5 space-y-1.5 flex-1">
         {/* 1. Dashboard */}
@@ -480,7 +498,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-3.5 shadow-md z-30 transition-colors duration-200">
+    <aside className="hidden md:flex md:flex-col fixed left-0 top-0 h-screen w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-3.5 shadow-md z-50 transition-colors duration-200">
       <SidebarContent {...props} />
     </aside>
   );
