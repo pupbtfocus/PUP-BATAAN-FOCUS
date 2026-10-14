@@ -118,12 +118,26 @@ async function wipeTable(table, apply) {
 
 async function main() {
   const users = await listAllUsers();
-  const supers = users.filter(isSuper);
+  let supers = users.filter(isSuper);
+  if (supers.length === 0) {
+    const { data: rows, error } = await supabase
+      .from("user_roles")
+      .select("profiles!inner(user_id), roles!inner(name)")
+      .eq("roles.name", "super_admin");
+    if (error) console.log(`  (role lookup failed: ${error.message})`);
+    const ids = new Set((rows || []).map((r) => r.profiles?.user_id));
+    supers = users.filter((u) => ids.has(u.id));
+  }
+  if (supers.length === 0 && (process.env.SUPER_ADMIN_EMAIL || env.SUPER_ADMIN_EMAIL)) {
+    const em = (process.env.SUPER_ADMIN_EMAIL || env.SUPER_ADMIN_EMAIL).toLowerCase();
+    supers = users.filter((u) => u.email?.toLowerCase() === em);
+  }
+  const superIds = new Set(supers.map((u) => u.id));
   if (supers.length === 0) {
     console.error("No super_admin account found. Aborting so you don't lock yourself out.");
     process.exit(1);
   }
-  const toDelete = users.filter((u) => !isSuper(u));
+  const toDelete = users.filter((u) => !superIds.has(u.id));
   console.log(`Keeping super admin(s): ${supers.map((u) => u.email).join(", ")}`);
   console.log(`Will delete ${toDelete.length} other account(s), all data rows, and all bucket files.`);
   if (!(await confirm())) {

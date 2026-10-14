@@ -62,3 +62,8 @@ temp/
 # QA test scripts with credentials
 pup-focus/scripts/create-qa-accounts.mjs
 scripts/create-qa-accounts.mjs
+
+# All scripts
+scripts/
+**/scripts/
+bat-scripts/
