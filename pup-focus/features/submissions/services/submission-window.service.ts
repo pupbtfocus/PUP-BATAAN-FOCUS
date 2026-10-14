@@ -1021,12 +1021,6 @@ export async function getFacultyPersonalDeadline(
       }
     }
 
-    console.log("[DEBUG PERSONAL DEADLINE]", {
-      userId,
-      facultyIds,
-      foundRows: subs.length,
-      futurePendingCount: futurePending.length,
-    });
 
     if (futurePending.length === 0) {
       try {

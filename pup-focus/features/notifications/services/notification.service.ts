@@ -221,11 +221,6 @@ export async function getUserNotifications(
         metadata: row.metadata ?? undefined,
       }));
 
-    console.log("[NOTIF_FETCH_SERVICE]", {
-      userId,
-      targetUserIds,
-      count: results.length,
-    });
 
     return results;
   } catch (err) {
