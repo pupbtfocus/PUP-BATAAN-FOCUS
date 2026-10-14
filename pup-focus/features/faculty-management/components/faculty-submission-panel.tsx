@@ -2509,15 +2509,28 @@ function FacultySubmissionPanelContent({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-2 sm:left-3 top-2.5 z-[55] md:hidden inline-flex items-center justify-center p-1.5 rounded-xl border border-amber-500/30 bg-[#7a0000]/70 hover:bg-[#8d0000] hover:border-amber-400/50 text-amber-100 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
+          className="fixed left-2 sm:left-3 top-2.5 z-[55] md:hidden inline-flex items-center justify-center p-1.5 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
           aria-label="Open Navigation Menu"
         >
           <AppIcon icon={Menu} size="lg" color="inherit" />
         </button>
       )}
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-3.5 shadow-md transition-colors duration-200">
-        <div className="my-1 bg-[#6b0000]/80 border border-amber-400/40 p-3.5 sm:p-4 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-0 h-screen w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-3.5 shadow-md z-50 transition-colors duration-200">
+        {/* Brand Header */}
+        <div className="flex items-center gap-2.5 px-1 py-1 pb-3 mb-1 border-b border-white/10 shrink-0">
+          <BrandMark size={38} className="shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <span className="font-extrabold text-white text-lg tracking-tight whitespace-nowrap leading-tight">
+              <span className="text-amber-400">PUP</span> FOCUS
+            </span>
+            <span className="text-[10px] text-amber-200/80 font-medium tracking-wide truncate">
+              Bataan Campus
+            </span>
+          </div>
+        </div>
+
+        <div className="my-1 bg-black/15 border border-white/10 p-3.5 sm:p-4 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
           <button
             type="button"
             onClick={() => navigateToView("settings")}
@@ -2528,11 +2541,11 @@ function FacultySubmissionPanelContent({
               <img
                 src={currentAvatarUrl}
                 alt={currentFacultyName || "Faculty Profile"}
-                className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/70 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+                className="w-20 h-20 rounded-full object-cover border-2 border-amber-400 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-300 transition-colors"
                 onError={() => setHasAvatarError(true)}
               />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/40 font-bold text-xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
+              <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/60 font-bold text-xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-300 transition-colors">
                 {facultyInitials}
               </div>
             )}
@@ -2547,12 +2560,12 @@ function FacultySubmissionPanelContent({
           <p className="mt-0.5 font-bold text-white text-center text-lg sm:text-xl tracking-tight leading-snug break-words max-w-full px-1">
             {facultyFirstName}
           </p>
-          <div className="my-2 h-px w-full bg-amber-400/50" />
-          <span className="mt-0.5 inline-flex items-center justify-center bg-amber-400/15 text-amber-300 border border-amber-400/40 px-3 py-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-full shadow-2xs">
+          <div className="my-2.5 h-px w-full bg-white/10" />
+          <span className="mt-0.5 inline-flex items-center justify-center bg-amber-400/20 text-amber-300 border border-amber-400/40 px-3 py-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-full shadow-2xs">
             Faculty
           </span>
         </div>
-        <div className="my-2 h-px w-full bg-amber-400/50" />
+        <div className="my-2.5 h-px w-full bg-white/10" />
         <div className="my-1.5">
           <SubmissionWindowCountdown
             window={effectiveSubmissionWindow}
@@ -2561,7 +2574,7 @@ function FacultySubmissionPanelContent({
             isAllValidated={isAllValidated}
           />
         </div>
-        <div className="my-2 h-px w-full bg-amber-400/50" />
+        <div className="my-2.5 h-px w-full bg-white/10" />
         <nav className="mt-1.5 space-y-1.5">
           {[
             { key: "dashboard", label: "Dashboard", Icon: ViewGrid },
@@ -2610,14 +2623,14 @@ function FacultySubmissionPanelContent({
           onClick={() => setIsMobileMenuOpen(false)}
         >
           <aside
-            className="relative flex flex-col h-full w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-2 border-amber-400/60 p-4 shadow-2xl transition-colors duration-200"
+            className="relative flex flex-col h-full w-72 max-w-[85%] bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-4 shadow-2xl transition-colors duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-amber-400/50 mb-2">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-2">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
                 <BrandMark size={38} className="shrink-0" />
                 <span className="text-lg font-black tracking-tight text-white leading-tight">
-                  PUP FOCUS
+                  <span className="text-amber-400">PUP</span> FOCUS
                 </span>
               </div>
               <button
@@ -2629,7 +2642,7 @@ function FacultySubmissionPanelContent({
                 <AppIcon icon={Xmark} size="md" color="inherit" />
               </button>
             </div>
-            <div className="my-1.5 bg-[#6b0000]/80 border border-amber-400/40 p-4 sm:p-5 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
+            <div className="my-1.5 bg-black/15 border border-white/10 p-4 sm:p-5 rounded-2xl text-center flex flex-col items-center transition-colors shadow-xs">
               <button
                 type="button"
                 onClick={() => {
@@ -2643,11 +2656,11 @@ function FacultySubmissionPanelContent({
                   <img
                     src={currentAvatarUrl}
                     alt={currentFacultyName || "Faculty Profile"}
-                    className="w-20 h-20 rounded-full object-cover border-2 border-amber-400/70 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-amber-400 shadow-md ring-2 ring-amber-400/30 group-hover:border-amber-300 transition-colors"
                     onError={() => setHasAvatarError(true)}
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/40 font-bold text-xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-400 transition-colors">
+                  <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-200 border-2 border-amber-400/60 font-bold text-xl flex items-center justify-center shadow-xs ring-2 ring-amber-400/30 group-hover:border-amber-300 transition-colors">
                     {facultyInitials}
                   </div>
                 )}
