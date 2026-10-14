@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SingleSessionEnforcer } from "@/components/auth/single-session-enforcer";
+import { RealtimeRefresher } from "@/components/providers/realtime-refresher";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -60,6 +61,7 @@ export default function RootLayout({
         >
           {children}
           <SingleSessionEnforcer />
+          <RealtimeRefresher />
         </ThemeProvider>
       </body>
     </html>
