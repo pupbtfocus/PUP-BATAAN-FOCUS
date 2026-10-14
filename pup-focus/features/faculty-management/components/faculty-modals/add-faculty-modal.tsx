@@ -194,11 +194,7 @@ export function AddFacultyPanel({
     isEmailValid
   );
 
-  const areOptionsSatisfied = onboardingData?.hasPastDeadlines
-    ? hasAppliedOptions
-    : true;
-
-  const canSubmit = areAllRequiredFieldsFilled && areOptionsSatisfied;
+  const canSubmit = areAllRequiredFieldsFilled;
 
   useEffect(() => {
     if (!profileImageFile) {
@@ -419,65 +415,6 @@ export function AddFacultyPanel({
   };
 
   const handleFormSubmit = async (values: FacultyAccountFormInput) => {
-    // If onboarding options have been chosen and applied, immediately submit with payload
-    if (hasAppliedOptions) {
-      let gracePeriodIso = "";
-      if (selectedOption === "grace_period") {
-        let targetDate = customGraceDate;
-        if (!targetDate) {
-          const d = new Date();
-          d.setDate(d.getDate() + (gracePresetDays || 7));
-          const yyyy = d.getFullYear();
-          const mm = String(d.getMonth() + 1).padStart(2, "0");
-          const dd = String(d.getDate()).padStart(2, "0");
-          targetDate = `${yyyy}-${mm}-${dd}`;
-        }
-        gracePeriodIso = `${targetDate}T23:59:59+08:00`;
-      }
-
-      const customDeadlinesFormatted: Record<string, string> = {};
-      if (selectedOption === "custom_deadlines") {
-        Object.entries(customPerScheduleDeadlines).forEach(([code, val]) => {
-          if (val.date) {
-            customDeadlinesFormatted[code] = `${val.date}T${val.time || "23:59"}:00+08:00`;
-          }
-        });
-      }
-
-      onAddFaculty(values, {
-        onboardingOption: selectedOption,
-        gracePeriodIso: gracePeriodIso || undefined,
-        customDeadlines: selectedOption === "custom_deadlines" ? customDeadlinesFormatted : undefined,
-      });
-      return;
-    }
-
-    // If options are not yet applied and submissions are closed, prompt user to select an option
-    if (onboardingData?.hasPastDeadlines) {
-      setPendingFormInput(values);
-      setStep("onboarding");
-      return;
-    }
-
-    // Double-check live status in case schedule was recently closed or initial check was pending
-    try {
-      const res = await fetch(`/api/staff/faculty/onboarding-check?_t=${Date.now()}`, {
-        cache: "no-store",
-        credentials: "include",
-      });
-      if (res.ok) {
-        const fresh = (await res.json()) as OnboardingCheckResult;
-        if (fresh?.hasPastDeadlines && !hasAppliedOptions) {
-          setOnboardingData(fresh);
-          setPendingFormInput(values);
-          setStep("onboarding");
-          return;
-        }
-      }
-    } catch {
-      // Proceed to direct add if check fails
-    }
-
     onAddFaculty(values);
   };
 
@@ -545,206 +482,10 @@ export function AddFacultyPanel({
 
   return (
     <div className={wrapperClassName ?? "flex flex-1 flex-col overflow-hidden min-h-0 w-full"}>
-      {currentStep === "onboarding" && onboardingData ? (
-        /* ================= ONBOARDING OPTIONS SCREEN ================= */
-        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
-          {/* Scrollable Body Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-5">
-            {/* Notice Banner - Solid Amber Background */}
-            <div className="rounded-xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-4 space-y-1.5 shadow-sm">
-              <div className="flex items-center gap-2">
-                <AppIcon icon={WarningTriangle} size="md" color="inherit" className="text-amber-950 dark:text-amber-300" />
-                <span className="font-bold text-sm text-slate-950 dark:text-amber-100">
-                  {!hasAnyScheduleHistory ? "No Active Submission Schedule" : "Submissions Are Closed"}
-                </span>
-              </div>
-              <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
-                {!hasAnyScheduleHistory ? (
-                  <>No submission schedule has been set for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> yet. Select how to handle the deadline for this new faculty member:</>
-                ) : (
-                  <>Regular submissions for <span className="font-bold text-slate-950 dark:text-amber-100">{onboardingData.activeTerm?.academicYear} • {onboardingData.activeTerm?.semester}</span> have ended. Select how to handle the deadline for this new faculty member:</>
-                )}
-              </p>
-            </div>
-
-            {/* Options Cards */}
-            <div className="space-y-3">
-              {/* Option A: Give Extra Time */}
-              <div
-                onClick={() => {
-                  setSelectedOption("grace_period");
-                  setHasUserSelectedOption(true);
-                }}
-                className={`rounded-xl border p-4 transition-all space-y-3 cursor-pointer ${
-                  selectedOption === "grace_period"
-                    ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="radio"
-                      checked={selectedOption === "grace_period"}
-                      onChange={() => {
-                        setSelectedOption("grace_period");
-                        setHasUserSelectedOption(true);
-                      }}
-                      className="mt-1 accent-amber-500 cursor-pointer"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                          Give Extra Time
-                        </span>
-                        {hasAnyScheduleHistory && (
-                          <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
-                            Recommended
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                        Grant extra days to submit requirements starting today for this new faculty member.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedOption === "grace_period" && (
-                  <div className="pl-7 pt-1 space-y-2 border-t border-amber-200 dark:border-amber-900/40 mt-2">
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                      Select extra days:
-                    </span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {[7, 14, 30].map((days) => (
-                        <button
-                          type="button"
-                          key={days}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setGracePresetDays(days);
-                            const d = new Date();
-                            d.setDate(d.getDate() + days);
-                            const yyyy = d.getFullYear();
-                            const mm = String(d.getMonth() + 1).padStart(2, "0");
-                            const dd = String(d.getDate()).padStart(2, "0");
-                            setCustomGraceDate(`${yyyy}-${mm}-${dd}`);
-                            setHasUserSelectedOption(true);
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                            gracePresetDays === days
-                              ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
-                          }`}
-                        >
-                          +{days} Days
-                        </button>
-                      ))}
-                      <div className="flex items-center gap-1.5 sm:ml-auto">
-                        <span className="text-xs text-slate-500">Pick date:</span>
-                        <input
-                          type="date"
-                          value={customGraceDate}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            setCustomGraceDate(e.target.value);
-                            setGracePresetDays(0);
-                            setHasUserSelectedOption(true);
-                          }}
-                          className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
-                      Personal deadline: {customGraceDate || "7 days from today"} at 11:59 PM Manila time.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Option B: Follow Standard Schedule */}
-              <div
-                onClick={() => {
-                  setSelectedOption("standard");
-                  setHasUserSelectedOption(true);
-                }}
-                className={`rounded-xl border p-4 transition-all cursor-pointer ${
-                  selectedOption === "standard"
-                    ? "border-2 border-amber-500 bg-white dark:bg-slate-900 ring-2 ring-amber-500/20"
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="radio"
-                    checked={selectedOption === "standard"}
-                    onChange={() => {
-                      setSelectedOption("standard");
-                      setHasUserSelectedOption(true);
-                    }}
-                    className="mt-1 accent-amber-500 cursor-pointer"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                        Follow Standard Schedule
-                      </span>
-                      {!hasAnyScheduleHistory && (
-                        <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
-                          Recommended
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      {!hasAnyScheduleHistory
-                        ? "No submission schedule has been set for this term yet. Requirements will automatically follow the deadline once the first submission window is created."
-                        : "Apply the standard deadline for this new faculty member. Uploads remain locked until a new window or extension is granted."}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <AlertPopup
-              type="error"
-              message={createError !== dismissedError ? createError : null}
-              position="inline"
-              onClose={() => setDismissedError(createError)}
-            />
-
-            <AlertPopup
-              type="success"
-              message={createSuccess !== dismissedSuccess ? createSuccess : null}
-              position="inline"
-              onClose={() => setDismissedSuccess(createSuccess)}
-            />
-          </div>
-
-          {/* Modal Footer containing action buttons */}
-          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0 z-10 flex items-center justify-between shrink-0">
-            <button
-              type="button"
-              onClick={() => setStep("form")}
-              className="px-5 py-2.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98]"
-            >
-              ← Back
-            </button>
-
-            <button
-              type="button"
-              onClick={handleApplyOptions}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-xs shadow-md transition cursor-pointer active:scale-[0.98]"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* ================= REGULAR FORM SCREEN ================= */
-        <form
-          className={`flex flex-1 flex-col overflow-hidden min-h-0 w-full ${formClassName ?? ""}`}
-          onSubmit={form.handleSubmit(handleFormSubmit)}
-        >
+      <form
+        className={`flex flex-1 flex-col overflow-hidden min-h-0 w-full ${formClassName ?? ""}`}
+        onSubmit={form.handleSubmit(handleFormSubmit)}
+      >
           {/* Scrollable Body Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-5">
             <div className="grid gap-3 md:grid-cols-3">
@@ -899,132 +640,23 @@ export function AddFacultyPanel({
             <FieldError message={form.formState.errors.email?.message} />
           </div>
 
-          {/* Onboarding Policy Options Banner & Action Button */}
-          {onboardingData?.hasPastDeadlines ? (
-            <div className="rounded-xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <AppIcon icon={WarningTriangle} size="sm" color="inherit" className="text-amber-950 dark:text-amber-300" />
-                  <span className="font-bold text-xs text-slate-950 dark:text-amber-100">
-                    {!hasAnyScheduleHistory ? "No Active Submission Schedule" : "Submissions are closed"}
-                  </span>
-                </div>
-                <span
-                  className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border shadow-2xs ${
-                    hasAppliedOptions
-                      ? "bg-emerald-600 text-white border-emerald-700"
-                      : "bg-white text-amber-950 border-amber-500/60"
-                  }`}
-                >
-                  {hasAppliedOptions
-                    ? selectedOption === "grace_period"
-                      ? `Give Extra Time (+${gracePresetDays || 7}d)`
-                      : selectedOption === "standard"
-                      ? "Follow Standard Schedule"
-                      : "Custom Deadlines"
-                    : "Select Option First"}
-                </span>
-              </div>
-              <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
-                {hasAppliedOptions
-                  ? "Submission deadline option chosen and ready to apply."
-                  : !hasAnyScheduleHistory
-                  ? "No submission schedule has been set for this term yet. Pick how to handle requirements for this faculty member before adding."
-                  : "Submissions are closed right now. Pick how to handle requirements for this faculty member before adding."}
-              </p>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPendingFormInput(null);
-                    setStep("onboarding");
-                  }}
-                  className="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.99]"
-                >
-                  <span>{hasAppliedOptions ? "Change Options →" : "Set Deadline Option →"}</span>
-                </button>
-              </div>
-            </div>
-          ) : onboardingData?.schedules && onboardingData.schedules.length > 0 ? (
-            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-3 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  Submission Window Open
-                </span>
-                <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-400">
-                  Due: {onboardingData.globalDeadline?.endDate}
-                </span>
-              </div>
-              <p className="text-[11px] text-emerald-800/90 dark:text-emerald-300/80">
-                All {onboardingData.schedules.length} requirement templates will be automatically assigned to this faculty member.
-              </p>
-            </div>
-          ) : null}
-
-          <AlertPopup
-            type="error"
-            message={createError !== dismissedError ? createError : null}
-            position="inline"
-            onClose={() => setDismissedError(createError)}
-          />
-
-            <AlertPopup
-              type="success"
-              message={createSuccess !== dismissedSuccess ? createSuccess : null}
-              position="inline"
-              onClose={() => setDismissedSuccess(createSuccess)}
-            />
-          </div>
-
-          {/* Modal Footer containing action buttons */}
-          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0 z-10 flex items-center justify-between gap-3 shrink-0">
-            {onClose ? (
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-5 py-2.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98]"
-              >
-                Cancel
-              </button>
-            ) : (
-              <div />
-            )}
-
-            {areAllRequiredFieldsFilled && !areOptionsSatisfied ? (
-              <button
-                type="button"
-                onClick={() => {
-                  const values = form.getValues();
-                  setPendingFormInput(values);
-                  setStep("onboarding");
-                }}
-                className="py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
-              >
-                <span>Set Submission Deadline →</span>
-              </button>
-            ) : (
-              <button
-                className={`py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
-                  !canSubmit
-                    ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
-                    : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
-                }`}
-                type="submit"
-                disabled={!canSubmit || isCreating || isLoadingPrograms || isLoadingOnboarding}
-              >
-                {isCreating
-                  ? "Creating Faculty Account..."
-                  : isLoadingOnboarding
-                  ? "Checking schedule..."
-                  : !areAllRequiredFieldsFilled
-                  ? "Fill All Required Fields"
-                  : "Create Faculty Account"}
-              </button>
-            )}
+            <button
+              className={`py-2.5 px-6 rounded-xl transition-all shadow-md text-xs tracking-wide font-bold ${
+                !canSubmit || isCreating || isLoadingPrograms
+                  ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
+                  : "bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer active:scale-[0.99]"
+              }`}
+              type="submit"
+              disabled={!canSubmit || isCreating || isLoadingPrograms}
+            >
+              {isCreating
+                ? "Creating Faculty Account..."
+                : !areAllRequiredFieldsFilled
+                ? "Fill All Required Fields"
+                : "Create Faculty Account"}
+            </button>
           </div>
         </form>
-      )}
     </div>
   );
 }
@@ -1058,13 +690,9 @@ export function AddFacultyModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
         <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] flex flex-col overflow-hidden">
           <ModalHeader
-            icon={modalStep === "onboarding" ? Hourglass : UserPlus}
-            title={modalStep === "onboarding" ? "Set Submission Deadline" : "Add Faculty Account"}
-            subtitle={
-              modalStep === "onboarding"
-                ? "Choose a deadline option for this new faculty member."
-                : "Create credentials and assign department permissions"
-            }
+            icon={UserPlus}
+            title="Add Faculty Account"
+            subtitle="Create credentials and assign department permissions"
             onClose={onClose}
             className="rounded-t-2xl shrink-0"
           >

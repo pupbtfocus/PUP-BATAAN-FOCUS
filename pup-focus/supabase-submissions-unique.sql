@@ -1,18 +1,10 @@
--- 1) Remove pending placeholders that already have an uploaded/reviewed sibling
-DELETE FROM public.submissions p
-WHERE p.status = 'pending'
-  AND p.storage_path IS NULL
-  AND p.class_id IS NULL
-  AND EXISTS (
-    SELECT 1 FROM public.submissions s
-    WHERE s.id <> p.id
-      AND s.faculty_profile_id = p.faculty_profile_id
-      AND s.requirement_code = p.requirement_code
-      AND s.is_archived = p.is_archived
-      AND s.storage_path IS NOT NULL
-  );
+-- 1) Remove all onboarding placeholder rows (rows without storage path or class)
+DELETE FROM public.submissions
+WHERE class_id IS NULL
+  AND storage_path IS NULL
+  AND status = 'pending';
 
--- 2) Remove remaining exact duplicates (keeping the newest one)
+-- 2) Remove any remaining duplicate rows (keeping newest)
 WITH duplicates_to_delete AS (
   SELECT a.id
   FROM public.submissions a
@@ -28,7 +20,7 @@ WITH duplicates_to_delete AS (
 DELETE FROM public.submissions
 WHERE id IN (SELECT id FROM duplicates_to_delete);
 
--- 3) Database-level unique index to permanently block future duplicates
+-- 3) Database-level unique index: each faculty has at most one active submission per requirement per class
 CREATE UNIQUE INDEX IF NOT EXISTS submissions_unique_active
 ON public.submissions (
   faculty_profile_id,
