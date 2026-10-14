@@ -810,9 +810,28 @@ export async function POST(request: NextRequest) {
               JSON.stringify(rows, null, 2),
             );
 
-            let { error: insertError } = await supabase
+            // Verify existing submissions for this faculty to prevent duplicates
+            const { data: existingRows } = await supabase
               .from("submissions")
-              .insert(rows);
+              .select("requirement_code")
+              .eq("faculty_profile_id", newProfile.id)
+              .eq("is_archived", false);
+
+            const existingCodes = new Set(
+              (existingRows || []).map((r) => r.requirement_code),
+            );
+
+            const rowsToInsert = rows.filter(
+              (r) => !existingCodes.has(r.requirement_code),
+            );
+
+            let insertError = null;
+            if (rowsToInsert.length > 0) {
+              const res = await supabase
+                .from("submissions")
+                .insert(rowsToInsert);
+              insertError = res.error;
+            }
 
             if (insertError) {
               const errMsg = insertError.message?.toLowerCase() ?? "";

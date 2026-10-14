@@ -560,6 +560,7 @@ export async function POST(request: NextRequest) {
     const targetMatchedCode = matchRequirementCode(payload.requirementCode);
 
     const matchingSubmissions = combinedSubs.filter((sub) => {
+      if ((sub as any).is_archived) return false;
       const subCodeNormalized = normalize(sub.requirement_code || "");
       const matched = matchRequirementCode(sub.requirement_code);
 
@@ -574,10 +575,34 @@ export async function POST(request: NextRequest) {
           Boolean(targetMatchedCode) &&
           matched === targetMatchedCode);
 
+      if (!codeMatches) return false;
+
       if (payload.classId) {
-        return codeMatches && (sub as any).class_id === payload.classId;
+        const subClass = (sub as any).class_id;
+        return subClass === payload.classId || !subClass;
       }
-      return codeMatches;
+      return true;
+    });
+
+    matchingSubmissions.sort((a, b) => {
+      if (payload.classId) {
+        const aClassMatch = (a as any).class_id === payload.classId ? 0 : 1;
+        const bClassMatch = (b as any).class_id === payload.classId ? 0 : 1;
+        if (aClassMatch !== bClassMatch) return aClassMatch - bClassMatch;
+      } else {
+        const aNullClass = !(a as any).class_id ? 0 : 1;
+        const bNullClass = !(b as any).class_id ? 0 : 1;
+        if (aNullClass !== bNullClass) return aNullClass - bNullClass;
+      }
+
+      const aHasFile = a.submitted_at || a.status === "uploaded" ? 0 : 1;
+      const bHasFile = b.submitted_at || b.status === "uploaded" ? 0 : 1;
+      if (aHasFile !== bHasFile) return aHasFile - bHasFile;
+
+      return (
+        new Date(b.created_at || 0).getTime() -
+        new Date(a.created_at || 0).getTime()
+      );
     });
 
     const existingSubmission: {
@@ -648,9 +673,21 @@ export async function POST(request: NextRequest) {
     if (existingSubmission) {
       // REUSE EXISTING SUBMISSION ROW - DO NOT INSERT DUPLICATE
       targetSubmissionId = existingSubmission.id;
-      const allRelatedSubmissionIds = Array.from(
-        new Set([targetSubmissionId, ...matchingSubmissions.map((s) => s.id)]),
-      );
+
+      // Clean up any other orphaned pending placeholder rows for this requirement to prevent duplicates
+      const orphanIds = matchingSubmissions
+        .map((s) => s.id)
+        .filter((id) => id !== targetSubmissionId);
+      if (orphanIds.length > 0) {
+        try {
+          await supabaseAdmin
+            .from("submissions")
+            .delete()
+            .in("id", orphanIds)
+            .is("storage_path", null)
+            .eq("status", "pending");
+        } catch {}
+      }
 
       const timestamp = Date.now();
       const storagePath =
@@ -857,6 +894,34 @@ export async function POST(request: NextRequest) {
           .insert(fallbackPayload)
           .select()
           .single());
+      }
+
+      if (
+        submissionError &&
+        (submissionError.code === "23505" ||
+          submissionError.message?.toLowerCase().includes("duplicate key") ||
+          submissionError.message?.toLowerCase().includes("unique"))
+      ) {
+        // Unique conflict detected: update the existing active row instead of failing
+        let updateQuery = supabaseAdmin
+          .from("submissions")
+          .update(submissionPayload)
+          .eq("faculty_profile_id", profile.id)
+          .eq("requirement_code", payload.requirementCode)
+          .eq("is_archived", false);
+
+        if (payload.classId) {
+          updateQuery = updateQuery.eq("class_id", payload.classId);
+        }
+
+        const { data: updatedSub, error: updateErr } = await updateQuery
+          .select()
+          .maybeSingle();
+
+        if (!updateErr && updatedSub) {
+          newSub = updatedSub;
+          submissionError = null;
+        }
       }
 
       if (submissionError) {
