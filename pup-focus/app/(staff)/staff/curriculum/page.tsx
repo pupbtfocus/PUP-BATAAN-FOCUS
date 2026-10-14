@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { AppShell } from "@/components/layout/app-shell";
-import { FacultySubmissionPanel } from "@/features/faculty-management/components/faculty-submission-panel";
+import { CurriculumManagementPanel } from "@/features/curriculum-management/components/curriculum-management-panel";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function AdminCurriculumPage() {
@@ -22,7 +22,7 @@ export default async function AdminCurriculumPage() {
           </div>
         }
       >
-        <FacultySubmissionPanel facultyName={user?.fullName ?? null} />
+        <CurriculumManagementPanel />
       </Suspense>
     </AppShell>
   );
