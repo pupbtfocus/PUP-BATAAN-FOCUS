@@ -64,6 +64,8 @@ export interface FacultyClass {
   id: string;
   faculty_profile_id?: string;
   academic_term_id?: string;
+  academic_year?: string;
+  semester?: string;
   subject_code: string;
   description: string;
   units: number;
@@ -1381,6 +1383,8 @@ function FacultySubmissionPanelContent({
           description: classForm.description.trim(),
           units: Number(classForm.units) || 3.0,
           section_code: classForm.section_code.trim(),
+          academic_year: activeAY,
+          semester: activeSem,
         }),
       });
 

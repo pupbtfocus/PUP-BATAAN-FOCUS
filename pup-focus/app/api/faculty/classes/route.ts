@@ -35,55 +35,55 @@ export async function GET(request: NextRequest) {
     const requestedYear = url.searchParams.get("academicYear")?.trim();
     const requestedSem = url.searchParams.get("semester")?.trim();
 
-    let termId: string | null = null;
-    let activeTermRow: { id: string; academic_year: string; semester: string } | null = null;
+    let targetYear = requestedYear || null;
+    let targetSem = requestedSem || null;
+    let activeTermRow: { academic_year: string; semester: string } | null = null;
 
-    if (requestedYear && requestedSem) {
-      const { data: matchedTerm } = await supabaseAdmin
-        .from("academic_terms")
-        .select("*")
-        .eq("academic_year", requestedYear)
-        .ilike("semester", `%${requestedSem}%`)
-        .maybeSingle();
-
-      if (matchedTerm) {
-        termId = (matchedTerm as any).id || null;
-        activeTermRow = matchedTerm;
-      }
-    }
-
-    if (!termId) {
+    if (!targetYear || !targetSem) {
       const { data: currentTerm } = await supabaseAdmin
         .from("academic_terms")
-        .select("*")
+        .select("academic_year, semester, status")
         .eq("status", "Current")
         .maybeSingle();
 
       if (currentTerm) {
-        termId = (currentTerm as any).id || null;
+        targetYear = targetYear || currentTerm.academic_year;
+        targetSem = targetSem || currentTerm.semester;
         activeTermRow = currentTerm;
       }
+    } else {
+      activeTermRow = { academic_year: targetYear, semester: targetSem };
     }
 
     // 3. Query classes for this faculty profile
     const facultyIds = Array.from(new Set([profileId, user.id]));
     let query = supabaseAdmin
       .from("faculty_classes")
-      .select("id, faculty_profile_id, academic_term_id, subject_code, description, units, section_code, created_at")
+      .select("id, faculty_profile_id, academic_year, semester, academic_term_id, subject_code, description, units, section_code, created_at")
       .in("faculty_profile_id", facultyIds)
       .order("created_at", { ascending: false });
 
-    if (termId) {
-      query = query.eq("academic_term_id", termId);
+    if (targetYear && targetSem) {
+      query = query.or(
+        `and(academic_year.eq."${targetYear}",semester.eq."${targetSem}"),and(academic_year.is.null,semester.is.null)`
+      );
     }
 
     const { data: classes, error } = await query;
 
     if (error) {
-      console.error("Failed to query faculty_classes:", error);
-      // Return empty array gracefully if table is fresh or has no entries
+      console.warn(
+        "Failed to query faculty_classes with term scoping, falling back to basic query:",
+        error.message
+      );
+      const { data: fallbackClasses } = await supabaseAdmin
+        .from("faculty_classes")
+        .select("id, faculty_profile_id, academic_term_id, subject_code, description, units, section_code, created_at")
+        .in("faculty_profile_id", facultyIds)
+        .order("created_at", { ascending: false });
+
       return NextResponse.json({
-        classes: [],
+        classes: fallbackClasses || [],
         activeTerm: activeTermRow,
       });
     }

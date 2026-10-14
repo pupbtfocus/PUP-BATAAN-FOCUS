@@ -251,7 +251,7 @@ export async function GET(request: NextRequest) {
     try {
       const { data: allFacultyClasses } = await supabase
         .from("faculty_classes")
-        .select("id, subject_code, description, units, section_code, academic_term_id")
+        .select("id, subject_code, description, units, section_code, academic_year, semester, academic_term_id")
         .eq("faculty_profile_id", facultyProfileId);
 
       if (allFacultyClasses) {
