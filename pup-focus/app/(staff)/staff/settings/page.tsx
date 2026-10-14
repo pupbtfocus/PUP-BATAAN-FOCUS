@@ -2,7 +2,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import {
   AdminSettings,
   type AdminSettingsInitialData,
-} from "@/features/admin-management/components/admin-settings";
+} from "@/features/admin-management/components/staff-settings";
 import { resolveAdminAvatarUrl } from "@/lib/admin-profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
