@@ -81,6 +81,8 @@ function hasDocumentVersion(submission: {
   id?: string;
   document_versions?: Array<{ id: string }> | null;
   submitted_at?: string | null;
+  storage_path?: string | null;
+  status?: string | null;
 }): boolean {
   if (
     Array.isArray(submission.document_versions) &&
@@ -88,7 +90,13 @@ function hasDocumentVersion(submission: {
   ) {
     return true;
   }
-  return Boolean(submission.submitted_at);
+  return Boolean(
+    submission.storage_path ||
+    submission.submitted_at ||
+    submission.status === "uploaded" ||
+    submission.status === "submitted" ||
+    submission.status === "validated"
+  );
 }
 
 function isMissingRemarksColumnError(
@@ -455,31 +463,34 @@ export async function GET(request: NextRequest) {
       const { data, error } = await supabase
         .from("submissions")
         .select(
-          "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, class_id",
+          "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, class_id, storage_path, file_name, created_at, updated_at",
         )
         .or(
           `faculty_profile_id.in.(${facultyIdList.join(",")}),user_id.in.(${facultyIdList.join(",")}),created_by.in.(${facultyIdList.join(",")})`,
         )
-        .order("submitted_at", { ascending: false });
+        .eq("is_archived", false)
+        .order("submitted_at", { ascending: false, nullsFirst: false });
 
       if (error) {
         // Fallback without is_read / viewed_at if columns don't exist
         const { data: fallbackData, error: fallbackError } = await supabase
           .from("submissions")
           .select(
-            "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, faculty_assignment_id",
+            "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, faculty_assignment_id, class_id, storage_path, file_name",
           )
           .in("faculty_profile_id", facultyIdList)
-          .order("submitted_at", { ascending: false });
+          .eq("is_archived", false)
+          .order("submitted_at", { ascending: false, nullsFirst: false });
 
         if (fallbackError) {
           const { data: minimalData } = await supabase
             .from("submissions")
             .select(
-              "id, requirement_code, status, due_at, submitted_at, faculty_assignment_id",
+              "id, requirement_code, status, due_at, submitted_at, faculty_assignment_id, class_id, storage_path, file_name",
             )
             .in("faculty_profile_id", facultyIdList)
-            .order("submitted_at", { ascending: false });
+            .eq("is_archived", false)
+            .order("submitted_at", { ascending: false, nullsFirst: false });
           rawSubmissions = (minimalData as typeof rawSubmissions) || [];
         } else if (fallbackData) {
           rawSubmissions = fallbackData as typeof rawSubmissions;
@@ -628,7 +639,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const submissions: SubmissionRow[] = rawSubmissions.map((s) => ({
+    const submissions: SubmissionRow[] = rawSubmissions.map((s: any) => ({
       id: s.id,
       requirement_code: (s.requirement_code ||
         (s as { requirement_id?: string }).requirement_id ||
@@ -642,10 +653,21 @@ export async function GET(request: NextRequest) {
       is_read: s.is_read,
       viewed_at: s.viewed_at,
       faculty_assignment_id: s.faculty_assignment_id,
+      class_id: s.class_id,
+      storage_path: s.storage_path,
+      file_name: s.file_name,
       document_versions:
         docVersionsMap.get(s.id) ||
-        (s.submitted_at || s.status === "uploaded" || s.status === "submitted" || s.status === "validated"
-          ? [{ id: s.id, storage_path: `faculty-submissions/${profileRow?.id || user.id}/${s.id}` }]
+        (s.storage_path || s.submitted_at || s.status === "uploaded" || s.status === "submitted" || s.status === "validated"
+          ? [
+              {
+                id: s.id,
+                storage_path:
+                  s.storage_path ||
+                  `faculty-submissions/${profileRow?.id || user.id}/${s.id}`,
+                file_name: s.file_name,
+              },
+            ]
           : []),
       review_decisions: reviewDecisionsMap.get(s.id) || [],
     }));
@@ -753,13 +775,26 @@ export async function GET(request: NextRequest) {
 
     for (const tpl of activeTemplateRows) {
       const code = tpl.code;
-      const submission = termFilteredSubmissions.find((s) => {
+      const matchingSubmissionsForCode = termFilteredSubmissions.filter((s) => {
         const matched = matchRequirementCode(
           s.requirement_code,
           (s as { requirement_id?: string }).requirement_id,
         );
         return matched === code;
       });
+
+      // Prefer submitted/uploaded records over empty pending placeholders
+      matchingSubmissionsForCode.sort((a, b) => {
+        const aHasDoc = hasDocumentVersion(a) ? 0 : 1;
+        const bHasDoc = hasDocumentVersion(b) ? 0 : 1;
+        if (aHasDoc !== bHasDoc) return aHasDoc - bHasDoc;
+
+        const aTime = a.submitted_at ? new Date(a.submitted_at).getTime() : 0;
+        const bTime = b.submitted_at ? new Date(b.submitted_at).getTime() : 0;
+        return bTime - aTime;
+      });
+
+      const submission = matchingSubmissionsForCode[0];
 
       const hasDoc = submission ? hasDocumentVersion(submission) : false;
       const reviews = Array.isArray(submission?.review_decisions)
@@ -877,8 +912,12 @@ export async function GET(request: NextRequest) {
       const facultyNote = rawFacultyNote || undefined;
       const docList = submission ? docVersionsMap.get(submission.id) || [] : [];
       const primaryDoc = docList[0];
-      const storagePath = primaryDoc?.storage_path;
-      const fileName = primaryDoc?.file_name || (storagePath ? storagePath.split("/").pop() : undefined);
+      const storagePath =
+        primaryDoc?.storage_path || (submission as any)?.storage_path;
+      const fileName =
+        primaryDoc?.file_name ||
+        (submission as any)?.file_name ||
+        (storagePath ? storagePath.split("/").pop() : undefined);
       const isRevision = Boolean((hasPriorRejection || docList.length > 1) && status === "Pending");
 
       statusMap.set(code, {
