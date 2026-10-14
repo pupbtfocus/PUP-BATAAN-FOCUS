@@ -2516,7 +2516,8 @@ function FacultySubmissionPanelContent({
         </button>
       )}
       {/* Desktop Sidebar (hidden on mobile) */}
-      <aside className="hidden md:flex md:flex-col fixed left-0 top-0 h-screen w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-3.5 shadow-md z-50 transition-colors duration-200">
+      <aside className="hidden md:flex md:flex-col fixed left-0 top-0 h-screen w-72 rounded-none bg-[#800000] text-amber-50 shadow-md z-50 transition-colors duration-200">
+        <div className="flex-1 overflow-y-auto p-3.5 flex flex-col">
         {/* Brand Header */}
         <div className="flex items-center gap-2.5 px-1 py-1 pb-3 mb-1 border-b border-white/10 shrink-0">
           <BrandMark size={38} className="shrink-0" />
@@ -2615,6 +2616,9 @@ function FacultySubmissionPanelContent({
             );
           })}
         </nav>
+        </div>
+        {/* Amber vertical border that starts only below the header (y=56px) */}
+        <div className="absolute right-0 top-14 bottom-0 w-1 bg-amber-500 pointer-events-none" />
       </aside>
       {/* Mobile Drawer (visible only on small screens when drawer is open) */}
       {isMobileMenuOpen && (

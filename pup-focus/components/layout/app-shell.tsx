@@ -47,17 +47,20 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-200">
-      <header className="fixed inset-x-0 md:left-72 top-0 h-14 z-40 border-b-4 border-amber-500 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xs flex items-center transition-colors duration-200">
-        <div className="relative flex w-full h-full items-center justify-between pl-12 sm:pl-14 md:pl-6 pr-3 sm:pr-6">
-          {/* Mobile Only Brand (on desktop it is inside the top of sidebar) */}
-          <div className="flex md:hidden items-center gap-2 sm:gap-2.5 z-10 min-w-0 flex-1 mr-2">
+      <header className="fixed inset-x-0 top-0 h-14 z-40 bg-[#800000] text-white shadow-md flex items-center transition-colors duration-200">
+        {/* Continuous bottom amber border (starts after sidebar on desktop, full width on mobile) */}
+        <div className="absolute left-0 md:left-72 right-0 bottom-0 h-1 bg-amber-500 pointer-events-none" />
+
+        <div className="relative flex w-full h-full items-center justify-between pl-4 pr-3 sm:pr-6">
+          {/* Left: Brand aligned with sidebar column (seamless maroon canopy) */}
+          <div className="flex items-center gap-2.5 z-10 min-w-0 md:w-64">
             <BrandMark size={36} className="shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white whitespace-nowrap leading-tight">
-                <span className="text-[#800000] dark:text-amber-500">PUP</span> FOCUS
+              <span className="font-extrabold text-base sm:text-lg tracking-tight text-white whitespace-nowrap leading-tight">
+                <span className="text-amber-400">PUP</span> FOCUS
               </span>
-              <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300 tracking-tight leading-tight line-clamp-1 max-w-[200px]">
-                {subtitle || <HighlightedSystemTitle />}
+              <span className="hidden sm:inline-block text-[10px] text-amber-200/80 font-medium tracking-wide truncate">
+                Bataan Campus
               </span>
             </div>
           </div>
