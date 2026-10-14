@@ -715,22 +715,22 @@ export function AdminFacultyDashboard({
 
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans transition-colors duration-200">
-      <header className="fixed inset-x-0 md:left-72 top-0 h-14 z-40 border-b-4 border-amber-500 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xs flex items-center transition-colors duration-200">
+      <header className="fixed inset-x-0 md:left-72 top-0 h-14 z-40 border-b-4 border-amber-500 bg-[#800000] text-white shadow-md flex items-center transition-colors duration-200">
         <div className="relative flex w-full h-full items-center justify-between pl-4 pr-3 sm:pr-6">
           {/* Left: Mobile Menu Trigger & Title (Mobile only) */}
           <div className="flex md:hidden items-center gap-2 sm:gap-3 z-10">
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="inline-flex items-center justify-center p-1.5 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
+              className="inline-flex items-center justify-center p-1.5 rounded-xl border border-amber-500/40 bg-[#680000] hover:bg-[#550000] text-amber-100 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
               aria-label="Open Navigation Menu"
             >
               <AppIcon icon={Menu} size="lg" color="inherit" />
             </button>
 
             <BrandMark size={36} className="shrink-0" />
-            <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white whitespace-nowrap leading-tight">
-              <span className="text-[#800000] dark:text-amber-500">PUP</span> FOCUS
+            <span className="text-base font-extrabold tracking-tight text-white whitespace-nowrap leading-tight">
+              <span className="text-amber-400">PUP</span> FOCUS
             </span>
           </div>
 
@@ -752,14 +752,18 @@ export function AdminFacultyDashboard({
       {/* Body Wrapper */}
       <div className="flex flex-1 h-screen pt-14 overflow-hidden relative md:pl-72">
         {/* Desktop Fixed Sidebar */}
-        <aside className="hidden md:flex md:flex-col fixed left-0 top-0 h-screen w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-3.5 shadow-md z-50 transition-colors duration-200">
-          <SidebarContent
-            activeSection={activeSection}
-            setActiveSection={handleSetActiveSection}
-            adminName={currentAdminName || adminName}
-            roleTitle="Staff"
-            profileImageUrl={adminAvatarUrl}
-          />
+        <aside className="hidden md:flex md:flex-col fixed left-0 top-0 h-screen w-72 rounded-none bg-[#800000] text-amber-50 shadow-md z-50 transition-colors duration-200">
+          <div className="flex-1 overflow-y-auto p-3.5 flex flex-col">
+            <SidebarContent
+              activeSection={activeSection}
+              setActiveSection={handleSetActiveSection}
+              adminName={currentAdminName || adminName}
+              roleTitle="Staff"
+              profileImageUrl={adminAvatarUrl}
+            />
+          </div>
+          {/* Amber vertical border that starts only below the header (y=56px) */}
+          <div className="absolute right-0 top-14 bottom-0 w-1 bg-amber-500 pointer-events-none" />
         </aside>
 
         {/* Mobile Navigation Drawer / Sheet */}
