@@ -1438,7 +1438,13 @@ function FacultySubmissionPanelContent({
         if (s.requirementCode !== code) return false;
         const subSem = normalizeSemester(s.semester);
         const subYear = normalizeAcademicYear(s.academicYear);
-        return subSem === normActiveSem && subYear === normActiveAY;
+        const matchTerm = subSem === normActiveSem && subYear === normActiveAY;
+        if (!matchTerm) return false;
+        if (selectedClassId) {
+          const sClass = (s as any).classId || (s as any).class_id;
+          return sClass === selectedClassId;
+        }
+        return !(s as any).classId && !(s as any).class_id;
       });
 
       // Find matching approved extension for this requirement code
@@ -1585,6 +1591,7 @@ function FacultySubmissionPanelContent({
     submissionWindow,
     allExtensionRequests,
     latestApprovedExtension,
+    selectedClassId,
   ]);
 
   const displayedStatusCounts = useMemo(() => {
@@ -2184,7 +2191,7 @@ function FacultySubmissionPanelContent({
       });
       setIsSubmitSuccess(true);
       router.refresh();
-      void fetchStatuses();
+      void fetchStatuses(activeAY, activeSem, selectedClassId);
       void fetchHistory();
     } catch (error) {
       if (progressTimer) clearInterval(progressTimer);
@@ -2465,7 +2472,10 @@ function FacultySubmissionPanelContent({
         }
         return [...prev, { code: form.requirementCode, status: "Pending" }];
       });
-      await Promise.all([fetchStatuses(), fetchHistory()]);
+      await Promise.all([
+        fetchStatuses(activeAY, activeSem, selectedClassId),
+        fetchHistory(),
+      ]);
       router.refresh();
       setForm((prev) => ({
         ...prev,
@@ -3383,6 +3393,7 @@ function FacultySubmissionPanelContent({
                               key={cls.id}
                               onClick={() => {
                                 setSelectedClassId(cls.id);
+                                setRequirementStatuses([]);
                                 void fetchStatuses(activeAY, activeSem, cls.id);
                               }}
                               className="group relative flex flex-col justify-between rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs hover:border-amber-500 dark:hover:border-amber-500 hover:shadow-md transition-all cursor-pointer text-left"
@@ -3422,7 +3433,11 @@ function FacultySubmissionPanelContent({
                       <div className="flex items-center gap-2.5 min-w-0">
                         <button
                           type="button"
-                          onClick={() => setSelectedClassId(null)}
+                          onClick={() => {
+                            setSelectedClassId(null);
+                            setRequirementStatuses([]);
+                            void fetchStatuses(activeAY, activeSem, null);
+                          }}
                           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
                           title="Return to Class List"
                         >
@@ -3451,8 +3466,10 @@ function FacultySubmissionPanelContent({
                         <select
                           value={selectedClassId}
                           onChange={(e) => {
-                            setSelectedClassId(e.target.value);
-                            void fetchStatuses(activeAY, activeSem, e.target.value);
+                            const newClassId = e.target.value;
+                            setSelectedClassId(newClassId);
+                            setRequirementStatuses([]);
+                            void fetchStatuses(activeAY, activeSem, newClassId);
                           }}
                           className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
                         >
