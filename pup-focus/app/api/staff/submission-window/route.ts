@@ -576,6 +576,7 @@ export async function DELETE() {
           end_date: null,
           start_time: null,
           end_time: null,
+          created_by: user.id,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "academic_year,semester" },

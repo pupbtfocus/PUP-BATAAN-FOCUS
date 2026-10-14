@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { subject_code, description, units, section_code, academic_term_id } = body;
+    const { subject_code, description, units, section_code, academic_term_id, academic_year, semester } = body;
 
     // Validation
     if (!subject_code || typeof subject_code !== "string" || !subject_code.trim()) {
@@ -54,44 +54,79 @@ export async function POST(request: NextRequest) {
 
     const profileId = profile?.id || user.id;
 
-    // 2. Resolve target academic term ID
+    // 2. Resolve target academic term (id, academic_year & semester)
     let termId = academic_term_id || null;
-    if (!termId) {
-      try {
-        const { data: activeTerm } = await supabaseAdmin
-          .from("academic_terms")
-          .select("*")
-          .eq("status", "Current")
-          .maybeSingle();
+    let targetYear = (typeof academic_year === "string" ? academic_year.trim() : "") || null;
+    let targetSem = (typeof semester === "string" ? semester.trim() : "") || null;
 
-        if (activeTerm) {
-          termId = (activeTerm as any).id || null;
-        }
-      } catch {
-        // Safe fallback if table structure differs
+    try {
+      const { data: activeTerm } = await supabaseAdmin
+        .from("academic_terms")
+        .select("*")
+        .eq("status", "Current")
+        .maybeSingle();
+
+      if (activeTerm) {
+        termId = termId || (activeTerm as any).id || null;
+        targetYear = targetYear || (activeTerm as any).academic_year || null;
+        targetSem = targetSem || (activeTerm as any).semester || null;
       }
+    } catch {
+      // Safe fallback if table structure differs
     }
 
     // 3. Insert class record into faculty_classes
-    const { data: createdClass, error: insertError } = await supabaseAdmin
+    const insertPayload: Record<string, any> = {
+      faculty_profile_id: profileId,
+      subject_code: subject_code.trim(),
+      description: description.trim(),
+      units: parsedUnits,
+      section_code: section_code.trim(),
+    };
+
+    if (termId) insertPayload.academic_term_id = termId;
+    if (targetYear) insertPayload.academic_year = targetYear;
+    if (targetSem) insertPayload.semester = targetSem;
+
+    let createdClass = null;
+    const { data: initialData, error: insertError } = await supabaseAdmin
       .from("faculty_classes")
-      .insert({
-        faculty_profile_id: profileId,
-        academic_term_id: termId,
-        subject_code: subject_code.trim(),
-        description: description.trim(),
-        units: parsedUnits,
-        section_code: section_code.trim(),
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
     if (insertError) {
-      console.error("Failed to insert into faculty_classes:", insertError);
-      return NextResponse.json(
-        { error: `Failed to create class load: ${insertError.message}` },
-        { status: 500 }
-      );
+      if (insertError.message.includes("column") || insertError.code === "42703") {
+        const fallbackPayload = {
+          faculty_profile_id: profileId,
+          subject_code: subject_code.trim(),
+          description: description.trim(),
+          units: parsedUnits,
+          section_code: section_code.trim(),
+        };
+        const { data: fallbackData, error: fallbackError } = await supabaseAdmin
+          .from("faculty_classes")
+          .insert(fallbackPayload)
+          .select()
+          .single();
+
+        if (fallbackError) {
+          console.error("Failed to insert into faculty_classes (fallback):", fallbackError);
+          return NextResponse.json(
+            { error: `Failed to create class load: ${fallbackError.message}` },
+            { status: 500 }
+          );
+        }
+        createdClass = fallbackData;
+      } else {
+        console.error("Failed to insert into faculty_classes:", insertError);
+        return NextResponse.json(
+          { error: `Failed to create class load: ${insertError.message}` },
+          { status: 500 }
+        );
+      }
+    } else {
+      createdClass = initialData;
     }
 
     return NextResponse.json({

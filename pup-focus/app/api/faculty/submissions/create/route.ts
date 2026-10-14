@@ -842,6 +842,11 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      const computedDueAt =
+        windowState.endDate
+          ? new Date(`${windowState.endDate}T${windowState.endTime || "23:59:59"}`).toISOString()
+          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
       const submissionPayload: Record<string, any> = {
         id: targetSubmissionId,
         faculty_profile_id: profile.id,
@@ -849,6 +854,7 @@ export async function POST(request: NextRequest) {
         faculty_assignment_id: facultyAssignmentId ?? null,
         requirement_code: payload.requirementCode,
         status: "uploaded",
+        due_at: computedDueAt,
         submitted_at: new Date().toISOString(),
         storage_path: storagePath,
         file_name: fileName,

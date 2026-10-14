@@ -637,6 +637,28 @@ export async function POST(request: NextRequest) {
             gracePeriodIso ||
             new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
+          // Resolve curriculum for this program
+          let assignedCurriculumId: string | null = (programRecord as any).curriculum_id || null;
+          if (!assignedCurriculumId) {
+            const { data: progCur } = await supabase
+              .from("curricula")
+              .select("id")
+              .eq("program_id", programRecord.id)
+              .order("is_active", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            assignedCurriculumId = progCur?.id || null;
+          }
+          if (!assignedCurriculumId) {
+            const { data: defaultCur } = await supabase
+              .from("curricula")
+              .select("id")
+              .order("is_active", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            assignedCurriculumId = defaultCur?.id || null;
+          }
+
           // Persist assignment and onboarding grace period deadline
           const assignmentPayload: Record<string, any> = {
             faculty_profile_id: newProfile.id,
@@ -644,6 +666,10 @@ export async function POST(request: NextRequest) {
             academic_year: academicYear,
             term: term,
           };
+
+          if (assignedCurriculumId) {
+            assignmentPayload.curriculum_id = assignedCurriculumId;
+          }
 
           if (isGracePeriodOption) {
             assignmentPayload.due_at = computedDueAt;
