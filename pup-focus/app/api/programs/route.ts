@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 
 const DEFAULT_PROGRAMS = [
@@ -19,19 +19,48 @@ const DEFAULT_PROGRAMS = [
   },
 ];
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const supabase = getServiceRoleClient();
-    const { data: programs, error } = await supabase
+    const url = new URL(req.url);
+    const includeHidden = url.searchParams.get("includeHidden") === "true";
+
+    // Attempt to query with is_hidden and description columns
+    let query = supabase
       .from("programs")
-      .select("id, code, name")
+      .select("id, code, name, description, is_hidden, created_at, curricula(id)")
       .order("code", { ascending: true });
 
+    if (!includeHidden) {
+      query = query.or("is_hidden.is.null,is_hidden.eq.false");
+    }
+
+    const { data: programs, error } = await query;
+
     if (error) {
-      return NextResponse.json(
-        { error: error.message, programs: DEFAULT_PROGRAMS.map((p) => ({ id: p.code, ...p })) },
-        { status: 500 },
-      );
+      // If error might be due to missing columns before migration, fallback to simple select
+      const fallbackQuery = supabase
+        .from("programs")
+        .select("id, code, name")
+        .order("code", { ascending: true });
+
+      const { data: fallbackPrograms, error: fallbackError } = await fallbackQuery;
+
+      if (fallbackError) {
+        return NextResponse.json(
+          { error: fallbackError.message, programs: DEFAULT_PROGRAMS.map((p) => ({ id: p.code, ...p, is_hidden: false })) },
+          { status: 500 },
+        );
+      }
+
+      const formatted = (fallbackPrograms || []).map((p: any) => ({
+        ...p,
+        description: "",
+        is_hidden: false,
+        curricula_count: 0,
+      }));
+
+      return NextResponse.json({ programs: formatted });
     }
 
     if (!programs || programs.length === 0) {
@@ -49,21 +78,158 @@ export async function GET() {
         .order("code", { ascending: true });
 
       if (!insertError && inserted && inserted.length > 0) {
-        return NextResponse.json({ programs: inserted });
+        return NextResponse.json({
+          programs: inserted.map((p) => ({ ...p, is_hidden: false, curricula_count: 0 })),
+        });
       }
 
       return NextResponse.json({
-        programs: DEFAULT_PROGRAMS.map((p) => ({ id: p.code, ...p })),
+        programs: DEFAULT_PROGRAMS.map((p) => ({ id: p.code, ...p, is_hidden: false, curricula_count: 0 })),
       });
     }
 
-    return NextResponse.json({ programs });
+    const formatted = programs.map((p: any) => ({
+      id: p.id,
+      code: p.code,
+      name: p.name,
+      description: p.description || "",
+      is_hidden: Boolean(p.is_hidden),
+      created_at: p.created_at,
+      curricula_count: Array.isArray(p.curricula) ? p.curricula.length : 0,
+    }));
+
+    return NextResponse.json({ programs: formatted });
   } catch (error) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Failed to fetch programs",
-        programs: DEFAULT_PROGRAMS.map((p) => ({ id: p.code, ...p })),
+        programs: DEFAULT_PROGRAMS.map((p) => ({ id: p.code, ...p, is_hidden: false, curricula_count: 0 })),
       },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const supabase = getServiceRoleClient();
+    const body = await req.json();
+
+    const code = (body.code || "").trim().toUpperCase();
+    const name = (body.name || "").trim();
+    const description = (body.description || "").trim();
+
+    if (!code || !name) {
+      return NextResponse.json(
+        { error: "Program code and name are required." },
+        { status: 400 },
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("programs")
+      .insert({
+        code,
+        name,
+        description,
+        is_hidden: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      // If code unique constraint violated
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { error: `Program with code "${code}" already exists.` },
+          { status: 409 },
+        );
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ program: data }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to create program." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const supabase = getServiceRoleClient();
+    const body = await req.json();
+    const { id, code, name, description, is_hidden } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Program ID is required." },
+        { status: 400 },
+      );
+    }
+
+    const updates: Record<string, any> = {};
+    if (code !== undefined) updates.code = String(code).trim().toUpperCase();
+    if (name !== undefined) updates.name = String(name).trim();
+    if (description !== undefined) updates.description = String(description).trim();
+    if (is_hidden !== undefined) updates.is_hidden = Boolean(is_hidden);
+
+    const { data, error } = await supabase
+      .from("programs")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ program: data });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to update program." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const supabase = getServiceRoleClient();
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Program ID is required." },
+        { status: 400 },
+      );
+    }
+
+    // Check if there are associated curricula
+    const { count: curriculaCount, error: countErr } = await supabase
+      .from("curricula")
+      .select("id", { count: "exact", head: true })
+      .eq("program_id", id);
+
+    if (curriculaCount && curriculaCount > 0) {
+      // Delete child curricula first if cascading
+      await supabase.from("curricula").delete().eq("program_id", id);
+    }
+
+    const { error } = await supabase.from("programs").delete().eq("id", id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, deletedId: id });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to delete program." },
       { status: 500 },
     );
   }

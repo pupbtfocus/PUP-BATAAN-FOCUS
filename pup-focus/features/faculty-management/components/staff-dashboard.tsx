@@ -42,6 +42,7 @@ import { SubmissionWindowPanel } from "./submission-window-panel";
 import { RequirementsPanel } from "./requirements-verification-panel";
 import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
 import { SubmissionScheduleLogsModal } from "./submission-schedule-logs-modal";
+import { CurriculumManagementPanel } from "@/features/curriculum-management/components/curriculum-management-panel";
 
 function normalizeAdminSection(raw?: string | null): AdminSection | null {
   if (!raw) return null;
@@ -68,6 +69,13 @@ function normalizeAdminSection(raw?: string | null): AdminSection | null {
     val === "academic-terms"
   )
     return "academicTerms";
+  if (
+    val === "curriculum" ||
+    val === "curricula" ||
+    val === "curriculums" ||
+    val === "programs"
+  )
+    return "curriculum";
   if (
     val === "settings" ||
     val === "admin-settings"
@@ -1324,6 +1332,10 @@ export function AdminFacultyDashboard({
                       onNavigateToRequirements={() => handleSetActiveSection("requirements")}
                     />
                   </article>
+                ) : null}
+
+                {activeSection === "curriculum" ? (
+                  <CurriculumManagementPanel />
                 ) : null}
 
                 {activeSection === "settings" ? (

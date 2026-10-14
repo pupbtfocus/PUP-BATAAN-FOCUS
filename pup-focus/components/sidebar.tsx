@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Activity, Archive, Calendar, ClipboardCheck, Eye, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, UserBadgeCheck, ViewGrid } from "iconoir-react";
+import { Activity, Archive, Calendar, ClipboardCheck, Eye, GraduationCap, Group, Hourglass, NavArrowDown, NavArrowRight, Page, Settings, UserBadgeCheck, ViewGrid } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { extractFirstName } from "@/lib/faculty-profile";
@@ -127,6 +127,10 @@ export function SidebarContent({
     activeSection === "backupArchive" ||
     activeSection === "backup-archive" ||
     activeSection === "archives";
+  const isCurriculumActive =
+    activeSection === "curriculum" ||
+    activeSection === "curriculums" ||
+    activeSection === "programs";
   const isAuditActive =
     activeSection === "audit" ||
     activeSection === "auditLogs" ||
@@ -138,7 +142,7 @@ export function SidebarContent({
   const isSettingsActive = activeSection === "settings";
 
   const isAcademicCycleActive =
-    isTermsActive || isWindowActive || isTemplatesActive || isBackupsActive;
+    isTermsActive || isWindowActive || isTemplatesActive || isBackupsActive || isCurriculumActive;
   const isUserManagementActive = isAccountsActive || isFacultyActive;
 
   const [isUserManagementOpen, setIsUserManagementOpen] = useState<boolean>(
@@ -460,6 +464,29 @@ export function SidebarContent({
                   </button>
                 </>
               )}
+              <button
+                type="button"
+                onClick={() => handleSelect("curriculum")}
+                className={`flex w-full items-center justify-between gap-1.5 px-2.5 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md ${
+                  isCurriculumActive
+                    ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                    : "text-amber-100/80 hover:bg-white/10 hover:text-white"
+                }`}
+                title="Curriculum & Programs (Coming Soon)"
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <GraduationCap
+                    strokeWidth={2}
+                    className={`h-4 w-4 shrink-0 ${
+                      isCurriculumActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                    }`}
+                  />
+                  <span className="truncate">Curriculum & Programs</span>
+                </div>
+                <span className="shrink-0 text-[8.5px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded bg-amber-400/25 text-amber-300 border border-amber-400/50 shadow-2xs whitespace-nowrap">
+                  Coming Soon
+                </span>
+              </button>
             </div>
           )}
         </div>

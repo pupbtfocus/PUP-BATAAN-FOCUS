@@ -22,6 +22,7 @@ import { AdminAcademicTerms } from "@/features/admin-management/components/admin
 import { SubmissionWindowPanel } from "@/features/faculty-management/components/submission-window-panel";
 import { RequirementTemplatesPanel } from "@/features/requirement-templates/components/requirement-templates-panel";
 import { BackupArchivePanel } from "@/features/backup-archive/components/backup-archive-panel";
+import { CurriculumManagementPanel } from "@/features/curriculum-management/components/curriculum-management-panel";
 import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
 import { SuperAdminSettings } from "@/features/admin-management/components/admin-settings";
 import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
@@ -62,6 +63,7 @@ export type SuperAdminSection =
   | "window"
   | "templates"
   | "backups"
+  | "curriculum"
   | "audit"
   | "settings"
   | "previews";
@@ -194,6 +196,13 @@ function normalizeSuperAdminSection(
     val === "archiving"
   )
     return "backups";
+  if (
+    val === "curriculum" ||
+    val === "curricula" ||
+    val === "curriculums" ||
+    val === "programs"
+  )
+    return "curriculum";
   if (val === "audit" || val === "auditlogs" || val === "audit-logs" || val === "logs") return "audit";
   if (val === "settings" || val === "super-admin-settings" || val === "admin-settings") return "settings";
   if (
@@ -2146,6 +2155,10 @@ export function SuperAdminDashboard({
 
                 <BackupArchivePanel />
               </article>
+            ) : null}
+
+            {activeSection === "curriculum" ? (
+              <CurriculumManagementPanel />
             ) : null}
 
             {activeSection === "audit" ? (

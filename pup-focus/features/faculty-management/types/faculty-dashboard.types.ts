@@ -14,6 +14,7 @@ export type AdminSection =
   | "requirements"
   | "submissionWindow"
   | "academicTerms"
+  | "curriculum"
   | "settings"
   | "details";
 
