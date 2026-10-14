@@ -32,6 +32,8 @@ type HistorySubmission = {
   is_read?: boolean;
   isViewed?: boolean;
   viewed_at?: string;
+  classId?: string | null;
+  class_id?: string | null;
 };
 
 type ReviewDecision = {
@@ -56,6 +58,7 @@ type SubmissionRow = {
   storage_path?: string | null;
   file_path?: string | null;
   faculty_assignment_id?: string | null;
+  class_id?: string | null;
 };
 
 function normalizeRequirementCode(rawCode?: string | null): RequirementCode | string {
@@ -164,7 +167,7 @@ export async function GET(request: NextRequest) {
       const { data: subData, error: subError } = await supabase
         .from("submissions")
         .select(
-          "id, requirement_code, status, remarks, admin_remarks, submitted_at, updated_at, created_at, is_read, viewed_at, faculty_assignment_id, storage_path, file_path",
+          "id, requirement_code, status, remarks, admin_remarks, submitted_at, updated_at, created_at, is_read, viewed_at, faculty_assignment_id, storage_path, file_path, class_id",
         )
         .or(
           `faculty_profile_id.in.(${facultyIds.join(",")}),user_id.in.(${facultyIds.join(",")}),created_by.in.(${facultyIds.join(",")})`,
@@ -368,6 +371,8 @@ export async function GET(request: NextRequest) {
         feedback: adminFeedback,
         fileName: fileName || undefined,
         storagePath: storagePath || undefined,
+        classId: (row as any).class_id || undefined,
+        class_id: (row as any).class_id || undefined,
         reviewedAt: (latestReviewWithRemarks || latestReview)?.created_at
           ? new Date((latestReviewWithRemarks || latestReview)!.created_at!)
               .toISOString()
