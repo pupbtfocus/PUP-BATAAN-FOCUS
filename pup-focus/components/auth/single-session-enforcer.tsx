@@ -14,6 +14,7 @@ export function SingleSessionEnforcer() {
   const checkingRef = useRef(false);
   const conflictDetectedRef = useRef(false);
   const myLoginTimeRef = useRef<string | null>(null);
+  const lastCheckTimeRef = useRef<number>(0);
 
   const isPublicAuthPage =
     !pathname ||
@@ -71,10 +72,17 @@ export function SingleSessionEnforcer() {
     }
   }, [isLoggingOut]);
 
-  const verifySession = useCallback(async () => {
+  const verifySession = useCallback(async (force = false) => {
     if (isPublicAuthPage || checkingRef.current || conflictDetectedRef.current) {
       return;
     }
+
+    const now = Date.now();
+    // Throttle to at most once per 15s unless explicitly forced (e.g. route change)
+    if (!force && now - lastCheckTimeRef.current < 15000) {
+      return;
+    }
+    lastCheckTimeRef.current = now;
 
     checkingRef.current = true;
 
@@ -186,7 +194,7 @@ export function SingleSessionEnforcer() {
   // Initial and path-change check
   useEffect(() => {
     if (!isPublicAuthPage) {
-      void verifySession();
+      void verifySession(true);
     }
   }, [pathname, isPublicAuthPage, verifySession]);
 
@@ -196,12 +204,17 @@ export function SingleSessionEnforcer() {
       return;
     }
 
+    // Only poll periodically if tab is actively visible (30 seconds)
     const intervalId = setInterval(() => {
-      void verifySession();
-    }, 4000);
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void verifySession();
+      }
+    }, 30000);
 
     const onFocus = () => {
-      void verifySession();
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void verifySession();
+      }
     };
 
     const onVisibilityChange = () => {
