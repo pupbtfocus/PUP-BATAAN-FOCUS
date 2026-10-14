@@ -18,7 +18,6 @@ export default function DashboardLayout({
   const [activeSection, setActiveSection] = useState("dashboard");
 
   return (
-  return (
     <div className="flex h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans">
       {/* Desktop Fixed Sidebar - Full Height to Top */}
       <aside className="hidden md:flex w-72 flex-col bg-[#800000] text-amber-50 border-r-4 border-amber-500 shrink-0 p-3.5 shadow-md h-screen overflow-y-auto z-40">
