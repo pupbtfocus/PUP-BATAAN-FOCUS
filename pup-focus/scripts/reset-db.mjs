@@ -62,7 +62,8 @@ const ACCOUNT_TABLES_BY_PROFILE = [
 // requirement_templates, compliance_template_items, submission_windows, submission_window_terms
 
 function isSuper(u) {
-  return (u.user_metadata?.role ?? u.app_metadata?.role) === "super_admin";
+  const r = u.user_metadata?.role ?? u.app_metadata?.role;
+  return r === "super_admin" || r === "admin";
 }
 
 async function confirm() {
@@ -122,8 +123,8 @@ async function main() {
   if (supers.length === 0) {
     const { data: rows, error } = await supabase
       .from("user_roles")
-      .select("profiles!inner(user_id), roles!inner(name)")
-      .eq("roles.name", "super_admin");
+      .select("profiles!inner(user_id), roles!inner(code)")
+      .in("roles.code", ["admin", "super_admin"]);
     if (error) console.log(`  (role lookup failed: ${error.message})`);
     const ids = new Set((rows || []).map((r) => r.profiles?.user_id));
     supers = users.filter((u) => ids.has(u.id));
