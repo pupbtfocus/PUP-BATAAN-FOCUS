@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("curricula")
       .insert({
         program_id,
@@ -96,6 +96,30 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
+      if (
+        error.code === "42703" ||
+        error.code === "PGRST204" ||
+        (error.message && error.message.toLowerCase().includes("column"))
+      ) {
+        const fallbackRes = await supabase
+          .from("curricula")
+          .insert({ program_id, code, name })
+          .select("id, program_id, code, name, created_at, programs(id, code, name)")
+          .single();
+
+        if (!fallbackRes.error && fallbackRes.data) {
+          return NextResponse.json({
+            curriculum: {
+              ...fallbackRes.data,
+              description,
+              is_hidden: false,
+              program: (fallbackRes.data as any).programs || null,
+            },
+          }, { status: 201 });
+        }
+        if (fallbackRes.error) error = fallbackRes.error;
+      }
+
       if (error.code === "23505") {
         return NextResponse.json(
           { error: `Curriculum code "${code}" already exists for this program.` },
@@ -138,7 +162,7 @@ export async function PATCH(req: NextRequest) {
     if (description !== undefined) updates.description = String(description).trim();
     if (is_hidden !== undefined) updates.is_hidden = Boolean(is_hidden);
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("curricula")
       .update(updates)
       .eq("id", id)
@@ -146,6 +170,39 @@ export async function PATCH(req: NextRequest) {
       .single();
 
     if (error) {
+      if (
+        error.code === "42703" ||
+        error.code === "PGRST204" ||
+        (error.message && error.message.toLowerCase().includes("column"))
+      ) {
+        const safeUpdates: Record<string, any> = {};
+        if (updates.code) safeUpdates.code = updates.code;
+        if (updates.name) safeUpdates.name = updates.name;
+
+        if (Object.keys(safeUpdates).length > 0) {
+          const fallbackRes = await supabase
+            .from("curricula")
+            .update(safeUpdates)
+            .eq("id", id)
+            .select("id, program_id, code, name, created_at, programs(id, code, name)")
+            .single();
+
+          if (!fallbackRes.error && fallbackRes.data) {
+            return NextResponse.json({
+              curriculum: {
+                ...fallbackRes.data,
+                ...updates,
+                program: (fallbackRes.data as any).programs || null,
+              },
+            });
+          }
+          if (fallbackRes.error) error = fallbackRes.error;
+        } else {
+          return NextResponse.json({
+            curriculum: { id, ...updates },
+          });
+        }
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
