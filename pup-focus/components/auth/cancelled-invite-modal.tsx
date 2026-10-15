@@ -83,8 +83,8 @@ export function CancelledInviteModal({
         <div className="p-6">
           <div className="flex flex-col items-center text-center">
             {/* Subtitle Badge */}
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs font-semibold text-rose-700 dark:text-rose-300 mb-4">
-              <AlertTriangle className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 mb-4">
+              <AlertTriangle className="w-3.5 h-3.5 text-slate-500" />
               <span>Access Revoked by Administrator</span>
             </span>
 
@@ -106,11 +106,11 @@ export function CancelledInviteModal({
             )}
 
             {/* Detailed Message */}
-            <div className="w-full rounded-xl border border-rose-200/80 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/30 p-4 text-xs text-rose-900 dark:text-rose-200 text-left leading-relaxed space-y-1.5 mb-5">
-              <p className="font-medium">
+            <div className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 text-xs text-left leading-relaxed space-y-1.5 mb-5">
+              <p className="font-medium text-slate-800 dark:text-slate-200">
                 This account invitation has been cancelled or revoked by the institutional administrator.
               </p>
-              <p className="text-rose-800/80 dark:text-rose-300/80">
+              <p className="text-slate-600 dark:text-slate-400">
                 The link in your email is no longer active. If you believe this cancellation was made in mistake, please contact your department chairperson or PUP Bataan administrator.
               </p>
             </div>
