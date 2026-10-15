@@ -44,13 +44,7 @@ BEGIN
     WHERE created_by IS NULL;
   END IF;
 
-  UPDATE public.requirement_templates
-  SET description = CASE
-    WHEN code = 'instructional_materials' THEN 'Instructional materials, lecture notes, or module references used for the course.'
-    WHEN code = 'sample_student_work' THEN 'Representative samples of student work, assignments, or projects.'
-    ELSE COALESCE(description, title)
-  END
-  WHERE description IS NULL OR description = '';
+
 
   UPDATE public.submissions
   SET due_at = v_default_due
@@ -137,19 +131,7 @@ CREATE TRIGGER set_submission_window_terms_defaults
   FOR EACH ROW
   EXECUTE FUNCTION trg_submission_window_terms_defaults();
 
--- Requirement templates: auto-populate description
-CREATE OR REPLACE FUNCTION trg_requirement_templates_defaults()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF NEW.description IS NULL OR TRIM(NEW.description) = '' THEN
-    NEW.description := NEW.title;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
+-- Drop legacy description defaults trigger if present
 DROP TRIGGER IF EXISTS set_requirement_templates_defaults ON public.requirement_templates;
-CREATE TRIGGER set_requirement_templates_defaults
-  BEFORE INSERT OR UPDATE ON public.requirement_templates
-  FOR EACH ROW
-  EXECUTE FUNCTION trg_requirement_templates_defaults();
+DROP FUNCTION IF EXISTS public.trg_requirement_templates_defaults();
+
