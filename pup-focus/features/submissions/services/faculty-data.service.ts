@@ -490,6 +490,7 @@ export async function getFacultyInitialData(
       const st = (s.status || "").toLowerCase().trim();
       if (st === "validated" || st === "approved" || st === "exempted") return false;
       const remarksText = typeof s.remarks === "string" ? s.remarks : "";
+      if (remarksText.includes("[origin:CLOSED]") || remarksText.includes("closed by admin")) return false;
       const origin = parseSubmissionOrigin(remarksText);
       const isPersonalOverride =
         origin === "NEW_FACULTY_GRACE" ||
@@ -539,6 +540,7 @@ export async function getFacultyInitialData(
 
   if (!personalDeadline && approvedExtensions.length > 0) {
     for (const ext of approvedExtensions) {
+      if (ext.status === "cancelled" || ext.status === "rejected") continue;
       const extDate = ext.approved_extension_date || ext.requested_extension_date || ext.due_at;
       if (!extDate) continue;
       let dueMs = new Date(extDate).getTime();

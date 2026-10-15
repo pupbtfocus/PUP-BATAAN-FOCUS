@@ -1629,8 +1629,8 @@ function FacultySubmissionPanelContent({
         return reqCodes.length === 0 || reqCodes.includes(code);
       });
 
-      const targetExtDate = matchingExt?.approved_date || matchingExt?.requested_date;
-      const targetExtTime = matchingExt?.approved_time || matchingExt?.requested_time;
+      const targetExtDate = matchingExt?.approved_date;
+      const targetExtTime = matchingExt?.approved_time;
       const extDeadlineIso = targetExtDate
         ? `${targetExtDate}T${targetExtTime ? normalizeTime24Hour(targetExtTime) || "23:59:59" : "23:59:59"}+08:00`
         : null;
@@ -1824,6 +1824,8 @@ function FacultySubmissionPanelContent({
         Boolean((r as any).isPersonalDeadline) ||
         Boolean((r as any).isExtended) ||
         (Boolean((r as any).remarks) &&
+          !(r as any).remarks.includes("[origin:CLOSED]") &&
+          !(r as any).remarks.includes("closed by admin") &&
           !(r as any).remarks.includes("NEW_FACULTY_STANDARD") &&
           ((r as any).remarks.includes("NEW_FACULTY_GRACE") ||
             (r as any).remarks.includes("NEW_FACULTY_CUSTOM") ||

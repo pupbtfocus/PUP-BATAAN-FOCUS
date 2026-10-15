@@ -734,6 +734,7 @@ export async function GET(request: NextRequest) {
     for (const sub of (submissions || [])) {
       if (sub.due_at) {
         const remarksText = typeof sub.remarks === "string" ? sub.remarks : "";
+        if (remarksText.includes("[origin:CLOSED]") || remarksText.includes("closed by admin")) continue;
         const origin = parseSubmissionOrigin(remarksText);
         const isPersonalOverride =
           origin === "NEW_FACULTY_GRACE" ||
@@ -984,6 +985,8 @@ export async function GET(request: NextRequest) {
           Boolean((r as any).isExtended) ||
           Boolean((r as any).extendedUntil) ||
           (Boolean((r as any).remarks) &&
+            !(r as any).remarks.includes("[origin:CLOSED]") &&
+            !(r as any).remarks.includes("closed by admin") &&
             !(r as any).remarks.includes("NEW_FACULTY_STANDARD") &&
             ((r as any).remarks.includes("NEW_FACULTY_GRACE") ||
               (r as any).remarks.includes("NEW_FACULTY_CUSTOM") ||
