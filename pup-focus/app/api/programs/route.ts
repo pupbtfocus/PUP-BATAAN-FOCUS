@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("programs")
       .insert({
         code,
@@ -138,6 +138,29 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
+      // If error is due to missing columns before migration 0032 (e.g. description or is_hidden)
+      if (
+        error.code === "42703" ||
+        error.code === "PGRST204" ||
+        (error.message && error.message.toLowerCase().includes("column"))
+      ) {
+        const fallbackRes = await supabase
+          .from("programs")
+          .insert({ code, name })
+          .select("id, code, name")
+          .single();
+
+        if (!fallbackRes.error && fallbackRes.data) {
+          return NextResponse.json(
+            { program: { ...fallbackRes.data, description, is_hidden: false } },
+            { status: 201 },
+          );
+        }
+        if (fallbackRes.error) {
+          error = fallbackRes.error;
+        }
+      }
+
       // If code unique constraint violated
       if (error.code === "23505") {
         return NextResponse.json(
@@ -176,7 +199,7 @@ export async function PATCH(req: NextRequest) {
     if (description !== undefined) updates.description = String(description).trim();
     if (is_hidden !== undefined) updates.is_hidden = Boolean(is_hidden);
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("programs")
       .update(updates)
       .eq("id", id)
@@ -184,6 +207,35 @@ export async function PATCH(req: NextRequest) {
       .single();
 
     if (error) {
+      if (
+        error.code === "42703" ||
+        error.code === "PGRST204" ||
+        (error.message && error.message.toLowerCase().includes("column"))
+      ) {
+        const safeUpdates: Record<string, any> = {};
+        if (updates.code) safeUpdates.code = updates.code;
+        if (updates.name) safeUpdates.name = updates.name;
+
+        if (Object.keys(safeUpdates).length > 0) {
+          const fallbackRes = await supabase
+            .from("programs")
+            .update(safeUpdates)
+            .eq("id", id)
+            .select("id, code, name")
+            .single();
+
+          if (!fallbackRes.error && fallbackRes.data) {
+            return NextResponse.json({
+              program: { ...fallbackRes.data, ...updates },
+            });
+          }
+          if (fallbackRes.error) error = fallbackRes.error;
+        } else {
+          return NextResponse.json({
+            program: { id, ...updates },
+          });
+        }
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
