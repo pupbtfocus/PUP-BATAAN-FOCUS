@@ -414,13 +414,11 @@ export async function PATCH(request: NextRequest) {
               .limit(1)
               .maybeSingle();
 
-            if (curr?.id) {
               for (const code of missingCodes) {
                 try {
                   await supabase.from("submissions").insert({
                     id: crypto.randomUUID(),
                     faculty_profile_id: profile.id,
-                    curriculum_id: curr.id,
                     requirement_code: code,
                     status: "pending",
                     due_at: approvedIso,
@@ -431,7 +429,6 @@ export async function PATCH(request: NextRequest) {
                   // Non-fatal if unique constraint prevents insert
                 }
               }
-            }
           }
         }
       } catch (subErr) {
