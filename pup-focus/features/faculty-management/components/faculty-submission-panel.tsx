@@ -1618,9 +1618,9 @@ function FacultySubmissionPanelContent({
         if (!matchTerm) return false;
         if (selectedClassId) {
           const sClass = (s as any).classId || (s as any).class_id;
-          return sClass === selectedClassId;
+          return sClass === selectedClassId || !sClass;
         }
-        return !(s as any).classId && !(s as any).class_id;
+        return true;
       });
 
       // Find matching approved extension for this requirement code
@@ -1669,19 +1669,26 @@ function FacultySubmissionPanelContent({
         effectiveDeadlineMs && nowMs > effectiveDeadlineMs,
       );
 
-      const subSource = live?.submittedAt || live?.latestSubmissionId
+      const subSource = (live?.submittedAt || (live as any)?.submitted_at || live?.latestSubmissionId)
         ? live
         : match || live;
 
       const hasFile = Boolean(
         subSource?.submittedAt ||
+        (subSource as any)?.submitted_at ||
         (subSource as any)?.storagePath ||
+        (subSource as any)?.storage_path ||
         (subSource as any)?.fileName ||
-        (match as any)?.submitted_at
+        (subSource as any)?.file_name ||
+        (match as any)?.submitted_at ||
+        (match as any)?.submittedAt ||
+        (match as any)?.storagePath ||
+        (match as any)?.storage_path
       );
 
       const subId = hasFile
         ? (subSource as RequirementStatus)?.latestSubmissionId ||
+          (subSource as any)?.id ||
           (subSource as PastSubmission)?.id ||
           (match as any)?.id
         : undefined;
@@ -1698,9 +1705,9 @@ function FacultySubmissionPanelContent({
 
       if (isExempted) {
         evaluatedStatus = "Exempted";
-      } else if (subSource && subSource.status === "Validated") {
+      } else if (subSource && (subSource.status === "Validated" || rawStatus === "validated" || rawStatus === "approved")) {
         evaluatedStatus = "Validated";
-      } else if (subSource && subSource.status === "Rejected") {
+      } else if (subSource && (subSource.status === "Rejected" || rawStatus === "rejected")) {
         evaluatedStatus = "Rejected";
       } else if (hasFile) {
         evaluatedStatus = "Pending";
@@ -1733,10 +1740,31 @@ function FacultySubmissionPanelContent({
         subSource?.remarks ||
         null;
 
+      const resolvedSubmittedAt =
+        subSource?.submittedAt ||
+        (subSource as any)?.submitted_at ||
+        (match as any)?.submitted_at ||
+        (match as any)?.submittedAt ||
+        undefined;
+
+      const resolvedFileName =
+        (subSource as any)?.fileName ||
+        (subSource as any)?.file_name ||
+        (match as any)?.fileName ||
+        (match as any)?.file_name ||
+        undefined;
+
+      const resolvedStoragePath =
+        (subSource as any)?.storagePath ||
+        (subSource as any)?.storage_path ||
+        (match as any)?.storagePath ||
+        (match as any)?.storage_path ||
+        undefined;
+
       return {
         code,
         status: evaluatedStatus,
-        submittedAt: subSource?.submittedAt,
+        submittedAt: resolvedSubmittedAt,
         reviewedAt: subSource?.reviewedAt,
         note: userNote,
         remarks: userNote || undefined,
@@ -1744,8 +1772,8 @@ function FacultySubmissionPanelContent({
         adminRemarks: adminRemarks,
         admin_remarks: adminRemarks || undefined,
         feedback: adminRemarks || undefined,
-        storagePath: (subSource as any)?.storagePath,
-        fileName: (subSource as any)?.fileName,
+        storagePath: resolvedStoragePath,
+        fileName: resolvedFileName,
         is_read: subSource?.is_read,
         isViewed: subSource?.isViewed,
         viewed_at: subSource?.viewed_at,
