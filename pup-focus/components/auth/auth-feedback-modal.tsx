@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import successfullyIcon from "@/assets/icons animations/successfully.svg";
-import failedIcon from "@/assets/icons animations/fail.svg";
-import loadingIcon from "@/assets/icons animations/loading.svg";
-import { Refresh, SystemRestart, Xmark } from "iconoir-react";
+import { useEffect } from "react";
+import { CheckCircle, Refresh, SystemRestart, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
-import { Logo } from "@/components/ui/logo";
+import { Check as LucideCheck, X as LucideX } from "lucide-react";
 
 export interface AuthModalState {
   title: string;
@@ -23,13 +19,9 @@ interface AuthFeedbackModalProps {
 }
 
 export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
-  const [animationKey, setAnimationKey] = useState(0);
-
   useEffect(() => {
     if (modal) {
-      setAnimationKey(Date.now());
-
-      // Auto-redirect upon successful login after checkmark animation completes
+      // Auto-redirect upon successful login
       if (modal.variant === "success") {
         const timer = setTimeout(() => {
           onClose();
@@ -47,51 +39,23 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
   const isLoading = modal.variant === "loading";
   const isError = modal.variant === "error";
 
-  const successSrc =
-    typeof successfullyIcon === "string"
-      ? successfullyIcon
-      : (successfullyIcon as any)?.src ?? "/icons-animations/successfully.svg";
-  const failedSrc =
-    typeof failedIcon === "string"
-      ? failedIcon
-      : (failedIcon as any)?.src ?? "/icons-animations/fail.svg";
-  const loadingSrc =
-    typeof loadingIcon === "string"
-      ? loadingIcon
-      : (loadingIcon as any)?.src ?? "/icons-animations/loading.svg";
-
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 ${
         isSuccess ? "cursor-default" : "cursor-pointer"
       }`}
       onClick={isSuccess ? undefined : onClose}
     >
       <div
-        className={`relative w-full max-w-[360px] sm:max-w-[380px] overflow-hidden rounded-[2rem] border bg-gradient-to-b from-[#4e0303] via-[#350000] to-[#200000] p-6 sm:p-8 text-[#fff8e7] backdrop-blur-xl shadow-2xl shadow-black/50 transition-all duration-300 animate-in zoom-in-95 cursor-default ${
-          isError
-            ? "border-rose-500/50"
-            : isLoading
-            ? "border-amber-400/80 ring-1 ring-amber-400/30"
-            : "border-amber-400/60"
-        }`}
+        className="relative w-full max-w-[360px] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 text-slate-900 dark:text-slate-100 shadow-2xl transition-all duration-300 animate-in zoom-in-95 cursor-default text-center"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top ambient glow accent line */}
-        <div
-          className={`absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-transparent ${
-            isError
-              ? "via-rose-500 to-transparent"
-              : "via-amber-400 to-transparent"
-          }`}
-        />
-
         {/* Top-Right Dismiss 'X' Button (hidden on success) */}
         {!isSuccess && (
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-3.5 right-3.5 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white p-1.5 transition-colors cursor-pointer shadow-xs"
+            className="absolute top-3.5 right-3.5 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <AppIcon icon={Xmark} size="md" color="inherit" />
@@ -99,39 +63,37 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
         )}
 
         <div className="flex flex-col items-center justify-center text-center">
-          {/* Circular Icon Container */}
-          <div className="relative flex items-center justify-center my-1.5">
-            <div
-              className={`relative flex items-center justify-center w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-[#180000] border-2 ${
-                isError
-                  ? "border-rose-500/50"
-                  : isLoading
-                  ? "border-amber-400/60"
-                  : "border-emerald-500/50"
-              }`}
-            >
-              {isLoading ? (
-                <div className="relative flex items-center justify-center w-full h-full">
-                  <div className="absolute inset-2 rounded-full border-2 border-amber-400/20 border-t-amber-400 border-r-amber-400/60 animate-spin" />
-                  <Logo size={44} className="relative z-10" />
-                </div>
-              ) : (
+          {/* Circular Icon */}
+          {isLoading ? (
+            <div className="relative w-16 h-16 flex items-center justify-center my-2">
+              <div className="absolute inset-0 rounded-full border-[3px] border-slate-200 dark:border-slate-800" />
+              <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#780000] border-r-[#780000] dark:border-t-amber-400 dark:border-r-amber-400 animate-spin" />
+              <div className="relative w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-white shadow-xs p-0.5">
                 <img
-                  key={animationKey}
-                  src={`${isSuccess ? successSrc : failedSrc}?v=${animationKey}`}
-                  alt={isSuccess ? "Success" : "Failed"}
-                  className="h-14 w-14 sm:h-16 sm:w-16 object-contain"
+                  src="/icons/pup-seal.png"
+                  alt="PUP Logo"
+                  className="w-full h-full object-contain"
                 />
-              )}
+              </div>
             </div>
-          </div>
+          ) : isSuccess ? (
+            <div className="relative w-16 h-16 flex items-center justify-center my-2">
+              <div className="absolute inset-0 rounded-full border-[3px] border-emerald-300 dark:border-emerald-700 bg-emerald-100/70 dark:bg-emerald-950/50 animate-auth-ring" />
+              <div className="relative z-10 w-11 h-11 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center shadow-md animate-auth-success">
+                <LucideCheck className="w-7 h-7 stroke-[3.5] animate-auth-check" />
+              </div>
+            </div>
+          ) : (
+            <div className="relative w-16 h-16 flex items-center justify-center my-2">
+              <div className="absolute inset-0 rounded-full border-[3px] border-rose-300 dark:border-rose-700 bg-rose-100/70 dark:bg-rose-950/50 animate-auth-ring" />
+              <div className="relative z-10 w-11 h-11 rounded-full bg-rose-600 dark:bg-rose-500 text-white flex items-center justify-center shadow-md animate-auth-error">
+                <LucideX className="w-7 h-7 stroke-[3.5] animate-auth-x" />
+              </div>
+            </div>
+          )}
 
           {/* Title */}
-          <h3
-            className={`mt-3 text-xl sm:text-2xl font-black uppercase tracking-wider ${
-              isError ? "text-rose-200" : "text-amber-300"
-            }`}
-          >
+          <h3 className="mt-3 text-lg font-bold text-slate-900 dark:text-slate-100">
             {isLoading
               ? modal.title || "Authenticating..."
               : isSuccess
@@ -139,27 +101,8 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
               : modal.title || "Login Failed"}
           </h3>
 
-          {/* Progress Shimmer or Divider */}
-          {isLoading ? (
-            <div className="relative w-36 h-1 rounded-full bg-amber-950/80 overflow-hidden border border-amber-400/25 shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)] my-2.5">
-              <div className="absolute inset-y-0 w-2/5 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-300 to-amber-500/20 animate-pup-shimmer shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
-            </div>
-          ) : (
-            <div
-              className={`h-0.5 w-12 rounded-full my-2 ${
-                isError
-                  ? "bg-gradient-to-r from-transparent via-rose-500/70 to-transparent"
-                  : "bg-gradient-to-r from-transparent via-amber-400/70 to-transparent"
-              }`}
-            />
-          )}
-
-          {/* Context Message */}
-          <p
-            className={`text-xs sm:text-sm font-medium leading-relaxed max-w-[280px] ${
-              isError ? "text-rose-100/80" : "text-amber-100/90"
-            }`}
-          >
+          {/* Message */}
+          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-[280px]">
             {modal.message ||
               (isLoading
                 ? "Verifying institutional credentials with campus security..."
@@ -168,30 +111,30 @@ export function AuthFeedbackModal({ modal, onClose }: AuthFeedbackModalProps) {
                 : "Invalid institutional email address or password. Please verify your credentials and try again.")}
           </p>
 
-          {/* Action Button & Status Indicator */}
-          {isLoading ? (
-            <div className="mt-5 w-full flex flex-col items-center gap-2.5">
-              <div className="flex items-center justify-center gap-2 text-xs font-semibold tracking-wide text-amber-300/90 py-1">
-                <AppIcon icon={SystemRestart} size="md" color="active" className="animate-spin" />
-                <span>Securing institutional session...</span>
-              </div>
+          {/* Status Indicator & Action Button */}
+          {isLoading && (
+            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+              <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin text-[#780000] dark:text-amber-400" />
+              <span>Securing institutional session...</span>
             </div>
-          ) : isSuccess ? (
-            <div className="mt-4 flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold tracking-wide text-amber-300/90 py-1">
-              <AppIcon icon={SystemRestart} size="sm" color="active" className="animate-spin" />
+          )}
+
+          {isSuccess && (
+            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+              <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
               <span>Redirecting to your portal...</span>
             </div>
-          ) : (
-            <div className="mt-5 w-full">
-              <Button
-                type="button"
-                className="h-11 sm:h-12 w-full rounded-2xl bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] font-extrabold text-white tracking-widest uppercase text-xs transition-all duration-300 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2"
-                onClick={onClose}
-              >
-                <AppIcon icon={Refresh} size="sm" color="inherit" />
-                <span>{modal.actionLabel || "Try Again"}</span>
-              </Button>
-            </div>
+          )}
+
+          {isError && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-5 w-full flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
+            >
+              <AppIcon icon={Refresh} size="xs" color="inherit" />
+              <span>{modal.actionLabel || "Try Again"}</span>
+            </button>
           )}
         </div>
       </div>

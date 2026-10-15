@@ -10,6 +10,8 @@ import { Logo } from "@/components/ui/logo";
 import { PupWebBadge } from "@/components/auth/pup-web-badge";
 import { AppIcon } from "@/components/ui/app-icon";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import Image from "next/image";
+import { ArrowRight, Eye as EyeIcon, EyeOff as EyeOffIcon } from "lucide-react";
 import {
   CheckCircle,
   Eye,
@@ -57,6 +59,17 @@ export default function ChangePasswordPage() {
           ? window.location.hash.slice(1)
           : window.location.hash;
         const hashParams = new URLSearchParams(hash);
+
+        // 0. Support preview mode for design testing
+        const isPreview = params.get("preview") === "true";
+        if (isPreview) {
+          if (isMounted) {
+            setUserEmail(params.get("email") || "faculty.sample@bataan.pup.edu.ph");
+            setHasSession(true);
+            setIsCheckingSession(false);
+          }
+          return;
+        }
 
         // 1. Check if Supabase passed an error in query parameters or hash fragment
         const urlError =
@@ -350,139 +363,77 @@ export default function ChangePasswordPage() {
       <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px]" />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-      <div className="relative z-10 w-full max-w-[390px] sm:max-w-md mx-auto my-auto pt-6 sm:pt-10 pb-14 sm:pb-8">
-        <div className="relative w-full mx-auto drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)]">
-          {/* Curved Card Top Header SVG with 3D Golden Crest Lighting */}
-          <div className="relative">
-            <svg
-              viewBox="0 0 400 64"
-              className="w-full h-auto block -mb-1 pointer-events-none overflow-visible"
-            >
-              <defs>
-                <linearGradient id="changePassTopGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#8a0c0c" />
-                  <stop offset="40%" stopColor="#780000" />
-                  <stop offset="85%" stopColor="#680000" />
-                  <stop offset="100%" stopColor="#680000" />
-                </linearGradient>
-                <linearGradient id="changePassTopGoldCrest" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#D97706" stopOpacity="0.8" />
-                  <stop offset="15%" stopColor="#F59E0B" stopOpacity="0.95" />
-                  <stop offset="35%" stopColor="#FDE68A" stopOpacity="1" />
-                  <stop offset="50%" stopColor="#FFFBEB" stopOpacity="1" />
-                  <stop offset="65%" stopColor="#FDE68A" stopOpacity="1" />
-                  <stop offset="85%" stopColor="#F59E0B" stopOpacity="0.95" />
-                  <stop offset="100%" stopColor="#D97706" stopOpacity="0.8" />
-                </linearGradient>
-                <linearGradient id="changePassTopAmbientSheen" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.65" />
-                  <stop offset="60%" stopColor="#F59E0B" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#780000" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-
-              <path
-                d="M 0,64 L 0,20 Q 0,0 20,0 L 142,0 C 158,0 162,37 200,37 C 238,37 242,0 258,0 L 380,0 Q 400,0 400,20 L 400,64 Z"
-                fill="url(#changePassTopGrad)"
-              />
-              <path
-                d="M 2,20 Q 2,2 20,2 L 142,2 C 158,2 162,37 200,37 C 238,37 242,2 258,2 L 380,2 Q 398,2 398,20"
-                fill="none"
-                stroke="url(#changePassTopAmbientSheen)"
-                strokeWidth="5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M 1,64 L 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20 L 399,64"
-                fill="none"
-                stroke="rgba(245, 158, 11, 0.75)"
-                strokeWidth="2"
-              />
-              <path
-                d="M 1,20 Q 1,1 20,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 380,1 Q 399,1 399,20"
-                fill="none"
-                stroke="url(#changePassTopGoldCrest)"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M 25,1 L 142,1 C 158,1 162,37 200,37 C 238,37 242,1 258,1 L 375,1"
-                fill="none"
-                stroke="rgba(255, 255, 255, 0.5)"
-                strokeWidth="1"
-                strokeLinecap="round"
-              />
-            </svg>
-
-            <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
-              <Logo size={115} className="mb-0 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]" />
-            </div>
+      <div className="relative z-10 w-full max-w-md mx-auto my-auto pt-6 sm:pt-10 pb-14 sm:pb-8 px-4">
+        <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden transition-all">
+          {/* Email-style Maroon Header Banner (No Logo, matching Account Ready) */}
+          <div className="bg-gradient-to-br from-[#4d0000] to-[#780000] px-6 py-6 sm:px-8 sm:py-7 text-center">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#fff8e7]">
+              Set New Password
+            </h1>
+            <p className="mt-2 text-xs sm:text-sm text-[#f8e3bc] leading-relaxed max-w-sm mx-auto">
+              Create a permanent password to secure your institutional account
+            </p>
+            {userEmail && (
+              <div className="mt-2.5 inline-block">
+                <span className="text-[11px] font-mono text-[#fff8e7]/90 bg-black/20 px-3 py-1 rounded-full border border-white/10">
+                  {userEmail}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Card Body - Vibrant PUP Brand Maroon matching Login Screen */}
-          <section className="relative rounded-b-[1.75rem] sm:rounded-b-[2rem] border-x-2 border-b-2 border-amber-400/80 bg-gradient-to-b from-[#680000] via-[#5e0000] to-[#4d0000] p-6 pt-7 sm:p-8 sm:pt-8 backdrop-blur-xl">
-            <div className="mt-2 mb-6 sm:mb-7 text-center">
-              <h1 className="text-2xl sm:text-3xl font-black tracking-wider text-amber-300 uppercase mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                Set New Password
-              </h1>
-              <div className="mx-auto my-3 h-0.5 w-14 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
-              <p className="text-amber-100/90 text-xs sm:text-sm font-medium tracking-wide">
-                Create a permanent password to secure your institutional account
-              </p>
-              {userEmail && (
-                <div className="mt-2.5 inline-block">
-                  <span className="text-[11px] font-mono text-amber-200/90 bg-black/40 px-3 py-1 rounded-full border border-amber-400/30">
-                    {userEmail}
-                  </span>
-                </div>
-              )}
-            </div>
-
+          {/* Card Body */}
+          <div className="p-6 sm:p-7">
             {/* State 1: Checking Session Loading */}
             {isCheckingSession && (
-              <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
-                <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-[#180000] border-2 border-amber-400/60 shadow-inner">
-                  <div className="absolute inset-1.5 rounded-full border-2 border-amber-400/20 border-t-amber-400 border-r-amber-400/60 animate-spin" />
-                  <Logo size={36} className="relative z-10" />
+              <div className="flex flex-col items-center text-center py-4 space-y-4">
+                <div className="relative w-16 h-16 flex items-center justify-center my-1">
+                  <div className="absolute inset-0 rounded-full border-[3px] border-slate-200 dark:border-slate-800" />
+                  <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#780000] border-r-[#780000] dark:border-t-amber-400 dark:border-r-amber-400 animate-spin" />
+                  <div className="relative w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-white shadow-xs p-0.5">
+                    <Image
+                      src="/icons/pup-seal.png"
+                      alt="PUP Logo"
+                      width={34}
+                      height={34}
+                      className="object-contain"
+                      priority
+                    />
+                  </div>
                 </div>
-                <p className="text-sm font-bold text-amber-200 tracking-wide uppercase">
-                  Verifying Reset Session...
-                </p>
-                <p className="text-xs text-amber-200/70 max-w-[260px] leading-relaxed">
-                  Securing your session with campus directory...
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs">
+                  Verifying your reset session with campus directory...
                 </p>
               </div>
             )}
 
             {/* State 2: Session Missing or Expired */}
             {!isCheckingSession && hasSession === false && (
-              <div className="py-2 space-y-4 text-center">
-                <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-left flex items-start gap-3 text-xs text-rose-100 shadow-inner">
-                  <AppIcon icon={WarningCircle} size="md" color="danger" className="shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="font-bold text-rose-200 text-sm">
-                      Password Reset Session Expired
-                    </p>
-                    <p className="text-rose-100/90 leading-relaxed">
-                      {error ||
-                        "Your password reset link is invalid, expired, or has already been used. For your security, reset links can only be used once."}
-                    </p>
-                  </div>
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-xs text-slate-700 dark:text-slate-300 text-left leading-relaxed">
+                  <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                    Password Reset Session Expired
+                  </p>
+                  <p>
+                    {error ||
+                      "Your password reset link is invalid, expired, or has already been used. For your security, reset links can only be used once."}
+                  </p>
                 </div>
 
-                <p className="text-xs text-amber-100/75 leading-relaxed pt-1">
-                  Please return to the sign-in screen and request a new password reset link.
-                </p>
+                <Link
+                  href="/sign-in"
+                  className="w-full flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#780000]/30 cursor-pointer"
+                >
+                  <span>Return to Sign In</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
 
-                <div className="pt-2">
-                  <Link
-                    href="/sign-in"
-                    className="h-11 sm:h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2"
-                  >
-                    <span>Return to Sign In</span>
-                    <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
-                  </Link>
-                </div>
+                <Link
+                  href="/change-password?preview=true"
+                  className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition py-1"
+                >
+                  <span>Preview New Design Form</span>
+                </Link>
               </div>
             )}
 
@@ -492,11 +443,10 @@ export default function ChangePasswordPage() {
                 {/* New Password Field */}
                 <div className="space-y-1.5 text-left">
                   <div className="flex items-center justify-between">
-                    <label className="text-[11px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1.5">
-                      <AppIcon icon={Key} size="sm" color="active" />
-                      <span>New Password</span>
+                    <label className="text-xs uppercase font-semibold tracking-wider text-slate-600 dark:text-slate-300">
+                      New Password
                     </label>
-                    <span className="text-[10px] text-amber-200/70 font-medium">Min. 8 characters</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Min. 8 characters</span>
                   </div>
                   <div className="relative flex items-center">
                     <input
@@ -507,19 +457,19 @@ export default function ChangePasswordPage() {
                       minLength={8}
                       placeholder="Enter new password"
                       autoComplete="new-password"
-                      className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-4 pr-11 py-3 text-xs sm:text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-3.5 pr-10 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#780000]/20 focus:border-[#780000] dark:focus:border-amber-400 transition"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-amber-400/80 hover:text-amber-300 transition-colors cursor-pointer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
                       title={showPassword ? "Hide password" : "Show password"}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? (
-                        <AppIcon icon={EyeClosed} size="sm" color="inherit" />
+                        <EyeOffIcon className="w-4 h-4" />
                       ) : (
-                        <AppIcon icon={Eye} size="sm" color="inherit" />
+                        <EyeIcon className="w-4 h-4" />
                       )}
                     </button>
                   </div>
@@ -528,11 +478,10 @@ export default function ChangePasswordPage() {
                 {/* Confirm Password Field */}
                 <div className="space-y-1.5 text-left">
                   <div className="flex items-center justify-between">
-                    <label className="text-[11px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1.5">
-                      <AppIcon icon={Key} size="sm" color="active" />
-                      <span>Confirm Password</span>
+                    <label className="text-xs uppercase font-semibold tracking-wider text-slate-600 dark:text-slate-300">
+                      Confirm Password
                     </label>
-                    <span className="text-[10px] text-amber-200/70 font-medium">Must match</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Must match</span>
                   </div>
                   <div className="relative flex items-center">
                     <input
@@ -543,45 +492,52 @@ export default function ChangePasswordPage() {
                       minLength={8}
                       placeholder="Confirm new password"
                       autoComplete="new-password"
-                      className="pup-login-input w-full rounded-xl border !border-amber-500/40 !bg-[#2b0000] pl-4 pr-11 py-3 text-xs sm:text-sm !text-amber-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_0_rgba(255,215,0,0.12)] outline-none transition-all duration-200 placeholder:!text-amber-200/40 hover:!border-amber-400/80 focus:!border-amber-400 focus:!ring-1 focus:!ring-amber-400/50"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-3.5 pr-10 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#780000]/20 focus:border-[#780000] dark:focus:border-amber-400 transition"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-amber-400/80 hover:text-amber-300 transition-colors cursor-pointer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
                       title={showConfirm ? "Hide password" : "Show password"}
                       aria-label={showConfirm ? "Hide password" : "Show password"}
                     >
                       {showConfirm ? (
-                        <AppIcon icon={EyeClosed} size="sm" color="inherit" />
+                        <EyeOffIcon className="w-4 h-4" />
                       ) : (
-                        <AppIcon icon={Eye} size="sm" color="inherit" />
+                        <EyeIcon className="w-4 h-4" />
                       )}
                     </button>
                   </div>
                 </div>
 
                 {/* Submit Button */}
-                <Button
+                <button
                   type="submit"
                   disabled={isSaving}
-                  className="mt-2 h-11 sm:h-12 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 font-extrabold text-[#3d0000] tracking-widest uppercase text-xs transition-all duration-300 hover:from-amber-300 hover:to-amber-400 active:scale-95 cursor-pointer shadow-md shadow-black/30 flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#780000]/30 cursor-pointer disabled:opacity-50 mt-2"
                 >
                   {isSaving ? (
                     <>
-                      <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       <span>Saving Password...</span>
                     </>
                   ) : (
                     <>
-                      <span>Set Password & Continue</span>
-                      <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+                      <span>Set Password & Proceed</span>
+                      <ArrowRight className="w-4 h-4" />
                     </>
                   )}
-                </Button>
+                </button>
               </form>
             )}
-          </section>
+
+            {/* Footer Note */}
+            <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-center">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
+                If you have questions or need assistance, please contact your PUP Bataan campus administrator.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
