@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const requestedYear = url.searchParams.get("academicYear")?.trim();
     const requestedSem = url.searchParams.get("semester")?.trim();
+    const filterByTerm = url.searchParams.get("filterByTerm") === "true";
 
     let targetYear = requestedYear || null;
     let targetSem = requestedSem || null;
@@ -56,6 +57,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Query classes for this faculty profile
+    // Classes and subjects persist across terms and are NOT reset when an Academic Year or Semester ends.
+    // Only the requirements checklist is reset per term for new uploads.
     const facultyIds = Array.from(new Set([profileId, user.id]));
     let query = supabaseAdmin
       .from("faculty_classes")
@@ -63,7 +66,8 @@ export async function GET(request: NextRequest) {
       .in("faculty_profile_id", facultyIds)
       .order("created_at", { ascending: false });
 
-    if (targetYear && targetSem) {
+    // Only apply term filtering if explicitly requested via filterByTerm=true
+    if (filterByTerm && targetYear && targetSem) {
       query = query.or(
         `and(academic_year.eq."${targetYear}",semester.eq."${targetSem}"),and(academic_year.is.null,semester.is.null)`
       );
