@@ -85,6 +85,10 @@ export interface BackgroundUploadTask {
   isRevision?: boolean;
   classId?: string | null;
   startedAt: number;
+  file?: File;
+  remarks?: string;
+  academicYear?: string;
+  semester?: string;
 }
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
 export function getFileType(fileNameOrUrl: string): {
@@ -721,7 +725,7 @@ function FacultySubmissionPanelContent({
   const [isSubmittingModalOpen, setIsSubmittingModalOpen] = useState(false);
   const [isSubmitSuccess, setIsSubmitSuccess] = useState(false);
   const [uploadTasks, setUploadTasks] = useState<BackgroundUploadTask[]>([]);
-  const [isUploadSectionVisible, setIsUploadSectionVisible] = useState(true);
+  const [isUploadSectionVisible, setIsUploadSectionVisible] = useState(false);
   function handleCloseModalAndRefresh() {
     setIsSubmittingModalOpen(false);
     setIsSubmitSuccess(false);
@@ -2478,6 +2482,10 @@ function FacultySubmissionPanelContent({
         isRevision: isRev,
         classId: targetClassId,
         startedAt: Date.now(),
+        file: targetFile,
+        remarks: targetRemarks,
+        academicYear: activeAY,
+        semester: activeSem,
       },
       ...prev,
     ]);
@@ -2815,37 +2823,79 @@ function FacultySubmissionPanelContent({
     }
   }
 
+  const handleRetryTask = (task: BackgroundUploadTask) => {
+    if (!task.file) {
+      openDirectUploadModal(task.requirementCode, Boolean(task.isRevision));
+      return;
+    }
+
+    setUploadTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id
+          ? { ...t, status: "uploading" as const, progress: 15, errorMessage: undefined }
+          : t,
+      ),
+    );
+
+    void executeBackgroundUpload({
+      taskId: task.id,
+      file: task.file,
+      requirementCode: task.requirementCode,
+      requirementTitle: task.requirementTitle,
+      remarks: task.remarks || "",
+      isRevision: Boolean(task.isRevision),
+      classId: task.classId ?? null,
+      academicYear:
+        task.academicYear ||
+        submissionWindow?.academicYear ||
+        selectedAcademicYear ||
+        form.academicYear ||
+        "2025-2026",
+      semester:
+        task.semester ||
+        submissionWindow?.semester ||
+        selectedSemester ||
+        form.semester ||
+        "1st Semester",
+    });
+  };
+
   const renderUploadNotificationSection = () => {
     if (!isUploadSectionVisible) {
       return (
-        <div className="my-2">
+        <div className="my-2 flex items-center justify-start">
           <button
             type="button"
             onClick={() => setIsUploadSectionVisible(true)}
-            className="inline-flex items-center justify-between w-full p-3 sm:p-3.5 rounded-2xl border-2 border-amber-500/70 bg-amber-50/80 dark:bg-slate-900/90 hover:bg-amber-100/80 dark:hover:bg-slate-850 text-slate-900 dark:text-amber-100 text-xs sm:text-sm font-bold shadow-xs transition cursor-pointer active:scale-[0.99]"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-500/70 bg-amber-50/90 dark:bg-slate-900/90 hover:bg-amber-100 dark:hover:bg-slate-850 text-slate-900 dark:text-amber-100 text-xs font-bold shadow-xs transition cursor-pointer active:scale-95"
             title="Show document upload progress and status"
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="p-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold shadow-2xs shrink-0">
-                <AppIcon icon={CloudUpload} size="sm" color="inherit" />
-              </div>
-              <span className="truncate">Document Upload Progress & Status</span>
-              {uploadTasks.some((t) => t.status === "uploading") && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 animate-pulse shrink-0">
-                  <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
-                  Uploading ({uploadTasks.filter((t) => t.status === "uploading").length})...
-                </span>
-              )}
-              {uploadTasks.length > 0 && (
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold shrink-0">
-                  ({uploadTasks.filter((t) => t.status === "done").length}/{uploadTasks.length} Done)
-                </span>
-              )}
+            <div className="p-1 rounded-md bg-amber-500 text-slate-950 font-bold shrink-0">
+              <AppIcon icon={CloudUpload} size="xs" color="inherit" />
             </div>
-            <span className="inline-flex items-center gap-1.5 text-xs text-amber-900 dark:text-amber-300 font-extrabold hover:underline shrink-0 ml-2">
-              <span>Show / Unhide</span>
-              <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
-            </span>
+            <span>Document Upload Progress & Status</span>
+            {uploadTasks.some((t) => t.status === "uploading") && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 animate-pulse shrink-0">
+                <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
+                ({uploadTasks.filter((t) => t.status === "uploading").length})
+              </span>
+            )}
+            {uploadTasks.some((t) => t.status === "error") && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#780000] text-white shrink-0">
+                <AppIcon icon={WarningCircle} size="xs" color="inherit" />
+                {uploadTasks.filter((t) => t.status === "error").length} Failed
+              </span>
+            )}
+            {uploadTasks.length > 0 ? (
+              <span className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold shrink-0">
+                ({uploadTasks.filter((t) => t.status === "done").length}/{uploadTasks.length} Done)
+              </span>
+            ) : (
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                (0 Active)
+              </span>
+            )}
+            <AppIcon icon={NavArrowRight} size="xs" color="inherit" className="ml-0.5 text-amber-700 dark:text-amber-400" />
           </button>
         </div>
       );
@@ -2973,13 +3023,24 @@ function FacultySubmissionPanelContent({
                     </span>
                   )}
                   {task.status === "error" && (
-                    <span
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#780000] text-white text-xs font-bold shadow-xs"
-                      title={task.errorMessage}
-                    >
-                      <AppIcon icon={WarningCircle} size="xs" color="inherit" />
-                      Failed
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#780000] text-white text-xs font-bold shadow-xs"
+                        title={task.errorMessage}
+                      >
+                        <AppIcon icon={WarningCircle} size="xs" color="inherit" />
+                        Failed
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRetryTask(task)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-xs font-extrabold shadow-xs transition cursor-pointer"
+                        title="Retry upload"
+                      >
+                        <AppIcon icon={SystemRestart} size="xs" color="inherit" />
+                        <span>Retry</span>
+                      </button>
+                    </div>
                   )}
                   <button
                     type="button"
@@ -3865,8 +3926,6 @@ function FacultySubmissionPanelContent({
                       </div>
                     </div>
 
-                    {renderUploadNotificationSection()}
-
                     {/* Classes Grid / Loading / Empty */}
                     {isLoadingClasses ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-2">
@@ -4141,11 +4200,11 @@ function FacultySubmissionPanelContent({
                             setRequirementStatuses([]);
                             void fetchStatuses(activeAY, activeSem, null);
                           }}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
                           title="Return to Class List"
                         >
-                          <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
-                          <span>&larr; Back to Class List</span>
+                          <AppIcon icon={NavArrowLeft} size="sm" color="white" />
+                          <span>Back to Class List</span>
                         </button>
                         {selectedClass && (
                           <div className="min-w-0 truncate pl-1">
@@ -4212,10 +4271,10 @@ function FacultySubmissionPanelContent({
                             setClassFormError(null);
                             setIsAddClassModalOpen(true);
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-amber-500/50 bg-amber-400/20 hover:bg-amber-400/30 text-amber-900 dark:text-amber-200 text-xs font-bold transition cursor-pointer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
                           title="Add another class load"
                         >
-                          <AppIcon icon={Plus} size="xs" color="inherit" />
+                          <AppIcon icon={Plus} size="xs" color="white" />
                           <span>Add Class</span>
                         </button>
                       </div>
