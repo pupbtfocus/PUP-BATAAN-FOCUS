@@ -21,6 +21,16 @@ import {
 } from "@/features/submissions/services/submission-window.service";
 import crypto from "crypto";
 
+function normalizeAcademicYear(ay?: string | null): string {
+  if (!ay) return "";
+  const match = ay.match(/\d{4}\s*[-–—/]\s*\d{4}/);
+  if (match) {
+    const years = match[0].match(/\d{4}/g);
+    if (years && years.length === 2) return `${years[0]}-${years[1]}`;
+  }
+  return ay.trim();
+}
+
 function matchRequirementCode(
   inputCode?: string | null,
   inputReqId?: string | null,
@@ -520,6 +530,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Fetch all assignments for this faculty to isolate current term from past terms
+    const { data: allFacultyAssignments } = await supabaseAdmin
+      .from("faculty_program_assignments")
+      .select("id, academic_year, term")
+      .eq("faculty_profile_id", profile.id);
+
+    const normPayloadYear = normalizeAcademicYear(payload.academicYear);
+    const normPayloadSem = normalizeSemester(payload.semester);
+
+    const currentTermAssignmentIds = new Set<string>();
+    const pastTermAssignmentIds = new Set<string>();
+
+    if (facultyAssignmentId) {
+      currentTermAssignmentIds.add(facultyAssignmentId);
+    }
+
+    for (const a of allFacultyAssignments ?? []) {
+      const aYear = normalizeAcademicYear(a.academic_year);
+      const aSem = normalizeSemester(a.term);
+      if (aYear === normPayloadYear && aSem === normPayloadSem) {
+        currentTermAssignmentIds.add(a.id);
+      } else {
+        pastTermAssignmentIds.add(a.id);
+      }
+    }
+
     // 1. Flexible Submission Lookup: query by faculty_profile_id, user_id, or faculty_assignment_id
     const facultyProfileIds = Array.from(new Set([profile.id, user.id]));
     const { data: allFacultySubmissions } = await supabaseAdmin
@@ -558,6 +594,19 @@ export async function POST(request: NextRequest) {
 
     const matchingSubmissions = combinedSubs.filter((sub) => {
       if ((sub as any).is_archived) return false;
+
+      // Never match submissions belonging to a past/different academic term assignment
+      if (sub.faculty_assignment_id && pastTermAssignmentIds.has(sub.faculty_assignment_id)) {
+        return false;
+      }
+
+      // If we have current term assignment IDs, strictly match submissions belonging to the current term's assignment
+      if (currentTermAssignmentIds.size > 0) {
+        if (!sub.faculty_assignment_id || !currentTermAssignmentIds.has(sub.faculty_assignment_id)) {
+          return false;
+        }
+      }
+
       const subCodeNormalized = normalize(sub.requirement_code || "");
       const matched = matchRequirementCode(sub.requirement_code);
 
