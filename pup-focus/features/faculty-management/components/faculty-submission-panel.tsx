@@ -50,7 +50,7 @@ import {
   DashboardMetricsSkeleton,
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
-import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, Eye, Hourglass, Lock, Menu, Minus, NavArrowLeft, NavArrowRight, OpenNewWindow, Page, Plus, Refresh, Reports, Settings, SystemRestart, TaskList, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, EditPencil, Eye, Hourglass, Lock, Menu, Minus, NavArrowLeft, NavArrowRight, OpenNewWindow, Page, Plus, Refresh, Reports, Settings, SystemRestart, TaskList, Trash, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { LogoutButton } from "@/components/shared/logout-button";
@@ -70,6 +70,7 @@ export interface FacultyClass {
   description: string;
   units: number;
   section_code: string;
+  is_archived?: boolean;
   created_at?: string;
 }
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
@@ -745,6 +746,36 @@ function FacultySubmissionPanelContent({
     section_code: "",
   });
   const [classFormError, setClassFormError] = useState<string | null>(null);
+
+  // Class Edit, Archive, and Delete States
+  const [classTab, setClassTab] = useState<"active" | "archived">("active");
+  const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
+  const [classToEdit, setClassToEdit] = useState<FacultyClass | null>(null);
+  const [editClassForm, setEditClassForm] = useState({
+    subject_code: "",
+    description: "",
+    units: 3.0,
+    section_code: "",
+  });
+  const [editClassError, setEditClassError] = useState<string | null>(null);
+  const [isUpdatingClass, setIsUpdatingClass] = useState(false);
+  const [classToDelete, setClassToDelete] = useState<FacultyClass | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingClass, setIsDeletingClass] = useState(false);
+  const [classActionLoadingId, setClassActionLoadingId] = useState<string | null>(null);
+
+  const activeFacultyClasses = useMemo(() => {
+    return facultyClasses.filter((c) => !c.is_archived);
+  }, [facultyClasses]);
+
+  const archivedFacultyClasses = useMemo(() => {
+    return facultyClasses.filter((c) => Boolean(c.is_archived));
+  }, [facultyClasses]);
+
+  const displayedClasses = useMemo(() => {
+    return classTab === "active" ? activeFacultyClasses : archivedFacultyClasses;
+  }, [classTab, activeFacultyClasses, archivedFacultyClasses]);
+
   const [hasPromptedTermCompletion, setHasPromptedTermCompletion] =
     useState(false);
   const hasSubmissionWindowAcademicTerm = Boolean(
@@ -1410,6 +1441,135 @@ function FacultySubmissionPanelContent({
       setClassFormError(err instanceof Error ? err.message : "Failed to create class load.");
     } finally {
       setIsSubmittingClass(false);
+    }
+  };
+
+  const handleOpenEditClass = (cls: FacultyClass, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setClassToEdit(cls);
+    setEditClassForm({
+      subject_code: cls.subject_code,
+      description: cls.description,
+      units: cls.units || 3.0,
+      section_code: cls.section_code,
+    });
+    setEditClassError(null);
+    setIsEditClassModalOpen(true);
+  };
+
+  const handleEditClassSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!classToEdit) return;
+    if (!editClassForm.subject_code.trim()) {
+      setEditClassError("Subject Code is required.");
+      return;
+    }
+    if (!editClassForm.description.trim()) {
+      setEditClassError("Description is required.");
+      return;
+    }
+    if (!editClassForm.section_code.trim()) {
+      setEditClassError("Section Code is required.");
+      return;
+    }
+    setIsUpdatingClass(true);
+    setEditClassError(null);
+    try {
+      const res = await fetch("/api/faculty/classes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: classToEdit.id,
+          subject_code: editClassForm.subject_code.trim(),
+          description: editClassForm.description.trim(),
+          units: Number(editClassForm.units) || 3.0,
+          section_code: editClassForm.section_code.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Failed to update class (HTTP ${res.status})`);
+      }
+
+      await fetchFacultyClasses();
+      setIsEditClassModalOpen(false);
+      setClassToEdit(null);
+      setSubmissionMessage(`Class ${editClassForm.subject_code.trim()} updated successfully.`);
+    } catch (err) {
+      setEditClassError(err instanceof Error ? err.message : "Failed to update class.");
+    } finally {
+      setIsUpdatingClass(false);
+    }
+  };
+
+  const handleToggleArchiveClass = async (cls: FacultyClass, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const willArchive = !cls.is_archived;
+    setClassActionLoadingId(cls.id);
+    try {
+      const res = await fetch("/api/faculty/classes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: cls.id,
+          is_archived: willArchive,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to update archive status");
+      }
+
+      setFacultyClasses((prev) =>
+        prev.map((c) => (c.id === cls.id ? { ...c, is_archived: willArchive } : c))
+      );
+      if (willArchive && selectedClassId === cls.id) {
+        setSelectedClassId(null);
+      }
+      setSubmissionMessage(
+        willArchive
+          ? `Class ${cls.subject_code} (${cls.section_code}) has been archived.`
+          : `Class ${cls.subject_code} (${cls.section_code}) unarchived and restored to active loads.`
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update archive status");
+    } finally {
+      setClassActionLoadingId(null);
+    }
+  };
+
+  const handleOpenDeleteModal = (cls: FacultyClass, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setClassToDelete(cls);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteClassConfirm = async () => {
+    if (!classToDelete) return;
+    setIsDeletingClass(true);
+    try {
+      const res = await fetch(`/api/faculty/classes?id=${encodeURIComponent(classToDelete.id)}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Failed to delete class (HTTP ${res.status})`);
+      }
+
+      setFacultyClasses((prev) => prev.filter((c) => c.id !== classToDelete.id));
+      if (selectedClassId === classToDelete.id) {
+        setSelectedClassId(null);
+      }
+      setIsDeleteModalOpen(false);
+      setSubmissionMessage(`Class ${classToDelete.subject_code} (${classToDelete.section_code}) deleted.`);
+      setClassToDelete(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete class");
+    } finally {
+      setIsDeletingClass(false);
     }
   };
 
@@ -3399,50 +3559,223 @@ function FacultySubmissionPanelContent({
                         </button>
                       </div>
                     ) : (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between px-1">
-                          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            Your Assigned Classes ({facultyClasses.length})
-                          </h2>
-                          <span className="text-xs text-slate-500 dark:text-slate-400">
-                            Click any class to upload requirements
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                          {facultyClasses.map((cls) => (
-                            <div
-                              key={cls.id}
-                              onClick={() => {
-                                setSelectedClassId(cls.id);
-                                setRequirementStatuses([]);
-                                void fetchStatuses(activeAY, activeSem, cls.id);
-                              }}
-                              className="group relative flex flex-col justify-between rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs hover:border-amber-500 dark:hover:border-amber-500 hover:shadow-md transition-all cursor-pointer text-left"
-                            >
-                              <div>
-                                <div className="flex items-center justify-between gap-2 mb-3">
-                                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black tracking-wide bg-amber-400 text-slate-950 dark:bg-amber-500/20 dark:text-amber-300 dark:border dark:border-amber-500/40">
-                                    {cls.section_code}
-                                  </span>
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                    {cls.units} Units
-                                  </span>
-                                </div>
-                                <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                                  {cls.subject_code}
-                                </h3>
-                                <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                                  {cls.description}
-                                </p>
-                              </div>
-
-                              <div className="mt-6 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform">
-                                <span>Open Requirements Upload Zone</span>
-                                <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
-                              </div>
+                      <div className="space-y-4">
+                        {/* Header & Filter Tabs */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h2 className="text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                                Assigned Subject Loads
+                              </h2>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                {facultyClasses.length} Total
+                              </span>
                             </div>
-                          ))}
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              Click any class to upload requirements, or manage loads using edit, archive, and delete actions.
+                            </p>
+                          </div>
+
+                          {/* Active / Archive Toggle Pills */}
+                          <div className="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
+                            <button
+                              type="button"
+                              onClick={() => setClassTab("active")}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                classTab === "active"
+                                  ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-amber-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                              }`}
+                            >
+                              <span>Active</span>
+                              <span
+                                className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                                  classTab === "active"
+                                    ? "bg-amber-500 text-slate-950"
+                                    : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                                }`}
+                              >
+                                {activeFacultyClasses.length}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setClassTab("archived")}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                classTab === "archived"
+                                  ? "bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                              }`}
+                            >
+                              <AppIcon icon={Archive} size="sm" color="inherit" />
+                              <span>Archived</span>
+                              <span
+                                className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                                  classTab === "archived"
+                                    ? "bg-amber-400 text-slate-950 dark:bg-amber-400 dark:text-slate-950"
+                                    : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                                }`}
+                              >
+                                {archivedFacultyClasses.length}
+                              </span>
+                            </button>
+                          </div>
                         </div>
+
+                        {/* Class Grid or Empty View */}
+                        {displayedClasses.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 p-8 text-center">
+                            <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center mb-3">
+                              <AppIcon icon={classTab === "archived" ? Archive : TaskList} size="md" color="inherit" />
+                            </div>
+                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                              {classTab === "archived"
+                                ? "No Archived Subject Loads"
+                                : "No Active Subject Loads"}
+                            </h4>
+                            <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+                              {classTab === "archived"
+                                ? "Classes you archive when completed or done will appear here. You can unarchive and return them to active anytime."
+                                : "All assigned classes have been archived. You can unarchive them from the Archived tab or add a new class load."}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
+                            {displayedClasses.map((cls) => {
+                              const isArchived = Boolean(cls.is_archived);
+                              return (
+                                <div
+                                  key={cls.id}
+                                  onClick={() => {
+                                    setSelectedClassId(cls.id);
+                                    setRequirementStatuses([]);
+                                    void fetchStatuses(activeAY, activeSem, cls.id);
+                                  }}
+                                  className={`group relative flex flex-col justify-between rounded-2xl border-2 transition-all duration-200 cursor-pointer text-left overflow-hidden bg-white dark:bg-slate-900 ${
+                                    isArchived
+                                      ? "border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500/80 hover:shadow-md"
+                                      : "border-slate-200 dark:border-slate-800 hover:border-amber-500 dark:hover:border-amber-500 hover:shadow-lg hover:-translate-y-0.5"
+                                  }`}
+                                >
+                                  {/* Top Color Accent Strip */}
+                                  <div
+                                    className={`h-1.5 w-full transition-all duration-300 ${
+                                      isArchived
+                                        ? "bg-slate-300 dark:bg-slate-700 group-hover:bg-amber-500"
+                                        : "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 group-hover:from-[#780000] group-hover:via-amber-500 group-hover:to-[#780000]"
+                                    }`}
+                                  />
+
+                                  <div className="p-5 flex-1 flex flex-col justify-between">
+                                    <div>
+                                      {/* Top Row: Badges & Action Buttons */}
+                                      <div className="flex items-center justify-between gap-2 mb-3">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black tracking-wide bg-amber-400 text-slate-950 shadow-2xs">
+                                            {cls.section_code}
+                                          </span>
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                            {cls.units} Units
+                                          </span>
+                                          {isArchived && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                                              <AppIcon icon={Archive} size="xs" color="inherit" />
+                                              Archived
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        {/* Action Buttons Toolbar */}
+                                        <div
+                                          className="flex items-center gap-1 shrink-0"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {/* Edit button */}
+                                          <button
+                                            type="button"
+                                            onClick={(e) => handleOpenEditClass(cls, e)}
+                                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                                            title="Edit class load"
+                                          >
+                                            <AppIcon icon={EditPencil} size="sm" color="inherit" />
+                                          </button>
+
+                                          {/* Archive / Unarchive button */}
+                                          <button
+                                            type="button"
+                                            disabled={classActionLoadingId === cls.id}
+                                            onClick={(e) => handleToggleArchiveClass(cls, e)}
+                                            className={`p-1.5 rounded-lg transition cursor-pointer ${
+                                              isArchived
+                                                ? "text-amber-700 dark:text-amber-400 hover:bg-amber-100/70 dark:hover:bg-amber-950/50"
+                                                : "text-slate-400 hover:text-amber-700 dark:text-slate-500 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                            }`}
+                                            title={
+                                              isArchived
+                                                ? "Unarchive / Restore to active loads"
+                                                : "Archive class (Mark done)"
+                                            }
+                                          >
+                                            {classActionLoadingId === cls.id ? (
+                                              <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                                            ) : isArchived ? (
+                                              <AppIcon icon={Refresh} size="sm" color="inherit" />
+                                            ) : (
+                                              <AppIcon icon={Archive} size="sm" color="inherit" />
+                                            )}
+                                          </button>
+
+                                          {/* Delete button */}
+                                          <button
+                                            type="button"
+                                            onClick={(e) => handleOpenDeleteModal(cls, e)}
+                                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
+                                            title="Delete class load"
+                                          >
+                                            <AppIcon icon={Trash} size="sm" color="inherit" />
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* Subject Code & Description */}
+                                      <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                        {cls.subject_code}
+                                      </h3>
+                                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed min-h-[2rem]">
+                                        {cls.description}
+                                      </p>
+                                    </div>
+
+                                    {/* Bottom Footer */}
+                                    {isArchived ? (
+                                      <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400">
+                                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                                          <AppIcon icon={Archive} size="sm" color="inherit" />
+                                          <span>Archived Load</span>
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => handleToggleArchiveClass(cls, e)}
+                                          className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 hover:underline font-bold"
+                                        >
+                                          <span>Restore to Active &rarr;</span>
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-300">
+                                        <span>Open Requirements Upload Zone</span>
+                                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 group-hover:translate-x-0.5 transition-all">
+                                          <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -3477,6 +3810,30 @@ function FacultySubmissionPanelContent({
                               <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                                 ({selectedClass.units} Units)
                               </span>
+                              {selectedClass.is_archived && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                                  Archived
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => handleOpenEditClass(selectedClass, e)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                                title="Edit this class load"
+                              >
+                                <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={classActionLoadingId === selectedClass.id}
+                                onClick={(e) => handleToggleArchiveClass(selectedClass, e)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                                title={selectedClass.is_archived ? "Restore to active loads" : "Archive class load"}
+                              >
+                                <AppIcon icon={selectedClass.is_archived ? Refresh : Archive} size="xs" color="inherit" />
+                                <span>{selectedClass.is_archived ? "Restore" : "Archive"}</span>
+                              </button>
                             </div>
                           </div>
                         )}
@@ -4986,6 +5343,205 @@ function FacultySubmissionPanelContent({
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* Edit Class / Subject Load Modal */}
+            {isEditClassModalOpen && classToEdit && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+              >
+                <div className="w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-5">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                        <AppIcon icon={EditPencil} size="md" color="inherit" />
+                      </div>
+                      <div>
+                        <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                          Edit Class / Subject Load
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Update the subject code, title, section, or unit weighting.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditClassModalOpen(false);
+                        setClassToEdit(null);
+                        setEditClassError(null);
+                      }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      <AppIcon icon={Xmark} size="md" color="inherit" />
+                    </button>
+                  </div>
+
+                  {editClassError && (
+                    <div className="rounded-xl border border-rose-300 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 p-3 text-xs text-rose-800 dark:text-rose-300 flex items-center gap-2">
+                      <AppIcon icon={WarningCircle} size="sm" color="inherit" />
+                      <span>{editClassError}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleEditClassSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Subject Code <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editClassForm.subject_code}
+                        onChange={(e) => setEditClassForm((prev) => ({ ...prev, subject_code: e.target.value }))}
+                        placeholder="e.g. COMP 023"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Description / Subject Title <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editClassForm.description}
+                        onChange={(e) => setEditClassForm((prev) => ({ ...prev, description: e.target.value }))}
+                        placeholder="e.g. Social and Professional Issues in Computing"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Section Code <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={editClassForm.section_code}
+                          onChange={(e) => setEditClassForm((prev) => ({ ...prev, section_code: e.target.value }))}
+                          placeholder="e.g. BSIT-BT 4-1"
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Units <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0.5"
+                          max="12"
+                          required
+                          value={editClassForm.units}
+                          onChange={(e) => setEditClassForm((prev) => ({ ...prev, units: Number(e.target.value) || 3.0 }))}
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                      <button
+                        type="button"
+                        disabled={isUpdatingClass}
+                        onClick={() => {
+                          setIsEditClassModalOpen(false);
+                          setClassToEdit(null);
+                          setEditClassError(null);
+                        }}
+                        className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isUpdatingClass}
+                        className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                      >
+                        {isUpdatingClass ? (
+                          <>
+                            <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                            <span>Updating...</span>
+                          </>
+                        ) : (
+                          <>
+                            <AppIcon icon={Check} size="sm" color="inherit" />
+                            <span>Save Changes</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && classToDelete && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+              >
+                <div className="w-full max-w-md rounded-3xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                      <AppIcon icon={Trash} size="md" color="inherit" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                        Delete Subject Load?
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Are you sure you want to delete <strong className="text-slate-900 dark:text-slate-200">{classToDelete.subject_code} ({classToDelete.section_code})</strong>?
+                      </p>
+                      <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-400 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20">
+                        Note: Previously uploaded documents will remain preserved in your submission history, but will no longer be linked to this deleted subject load.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      disabled={isDeletingClass}
+                      onClick={() => {
+                        setIsDeleteModalOpen(false);
+                        setClassToDelete(null);
+                      }}
+                      className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDeletingClass}
+                      onClick={handleDeleteClassConfirm}
+                      className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                    >
+                      {isDeletingClass ? (
+                        <>
+                          <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                          <span>Deleting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <AppIcon icon={Trash} size="sm" color="inherit" />
+                          <span>Delete Class</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
