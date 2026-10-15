@@ -927,16 +927,16 @@ function FacultySubmissionPanelContent({
         year ||
         (submissionWindow?.academicYear
           ? submissionWindow.academicYear
-          : statusAcademicYear) ||
-        "2026-2027";
+          : statusAcademicYear);
       const targetSem =
         sem ||
         (submissionWindow?.semester
           ? submissionWindow.semester
-          : statusSemester) ||
-        "1st Semester";
-      if (targetYear && targetSem) {
+          : statusSemester);
+      if (targetYear) {
         params.set("academicYear", targetYear);
+      }
+      if (targetSem) {
         params.set("semester", targetSem);
       }
       const targetClassId = classId !== undefined ? classId : selectedClassId;

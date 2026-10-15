@@ -49,6 +49,8 @@ type RequirementStatus = {
   effectiveDeadline?: string | null;
   isExtended?: boolean;
   extendedUntil?: string | null;
+  classId?: string | null;
+  class_id?: string | null;
 };
 
 type ReviewDecision = {
@@ -463,12 +465,11 @@ export async function GET(request: NextRequest) {
       const { data, error } = await supabase
         .from("submissions")
         .select(
-          "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, class_id, storage_path, file_name, created_at, updated_at",
+          "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, class_id, storage_path, file_name, created_at, updated_at, is_archived",
         )
         .or(
           `faculty_profile_id.in.(${facultyIdList.join(",")}),user_id.in.(${facultyIdList.join(",")}),created_by.in.(${facultyIdList.join(",")})`,
         )
-        .eq("is_archived", false)
         .order("submitted_at", { ascending: false, nullsFirst: false });
 
       if (error) {
@@ -476,27 +477,25 @@ export async function GET(request: NextRequest) {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from("submissions")
           .select(
-            "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, faculty_assignment_id, class_id, storage_path, file_name",
+            "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, faculty_assignment_id, class_id, storage_path, file_name, is_archived",
           )
           .in("faculty_profile_id", facultyIdList)
-          .eq("is_archived", false)
           .order("submitted_at", { ascending: false, nullsFirst: false });
 
         if (fallbackError) {
           const { data: minimalData } = await supabase
             .from("submissions")
             .select(
-              "id, requirement_code, status, due_at, submitted_at, faculty_assignment_id, class_id, storage_path, file_name",
+              "id, requirement_code, status, due_at, submitted_at, faculty_assignment_id, class_id, storage_path, file_name, is_archived",
             )
             .in("faculty_profile_id", facultyIdList)
-            .eq("is_archived", false)
             .order("submitted_at", { ascending: false, nullsFirst: false });
-          rawSubmissions = (minimalData as typeof rawSubmissions) || [];
+          rawSubmissions = ((minimalData as any[]) || []).filter((s) => s.is_archived !== true);
         } else if (fallbackData) {
-          rawSubmissions = fallbackData as typeof rawSubmissions;
+          rawSubmissions = (fallbackData as any[]).filter((s) => s.is_archived !== true);
         }
       } else if (data) {
-        rawSubmissions = data as typeof rawSubmissions;
+        rawSubmissions = (data as any[]).filter((s) => s.is_archived !== true);
       }
     } catch (queryErr) {
       logger.error("status_submissions_query_exception", {
@@ -711,33 +710,22 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // 3. Fallback for submitted rows (match by submission date)
-      if (sub.submitted_at) {
-        const { academicYear: subAY, semester: subSem } =
-          toAcademicYearAndSemester(sub.submitted_at);
-        return (
-          normalizeAcademicYear(subAY) === normActiveYear &&
-          normalizeSemester(subSem) === normActiveSem
-        );
-      }
-
-      // 4. Onboarding grace period rows: no submitted_at but have due_at set.
-      //    Include them if they were created near the current active term (no semester/AY columns).
-      //    These come from admin-assigned grace periods during new faculty onboarding.
-      if (sub.due_at && !sub.submitted_at) {
-        return true;
-      }
-
-      // 5. Preserved uploaded rows: if the faculty member uploaded a file, include it
+      // 3. Preserved uploaded or active submitted rows for this term
       if (
         sub.submitted_at ||
         (sub as any).storage_path ||
         sub.status === "uploaded" ||
         sub.status === "submitted" ||
+        sub.status === "under_review" ||
         sub.status === "pending" ||
         sub.status === "validated" ||
         sub.status === "rejected"
       ) {
+        return true;
+      }
+
+      // 4. Onboarding grace period rows: have due_at set
+      if (sub.due_at) {
         return true;
       }
 
@@ -960,6 +948,8 @@ export async function GET(request: NextRequest) {
         latestSubmissionId: (hasDoc || Boolean(submission?.submitted_at)) ? submission?.id : undefined,
         storagePath: (hasDoc || Boolean(submission?.submitted_at)) ? storagePath : undefined,
         fileName: (hasDoc || Boolean(submission?.submitted_at)) ? fileName : undefined,
+        classId: (submission as any)?.class_id || undefined,
+        class_id: (submission as any)?.class_id || undefined,
         is_read: Boolean(submission?.is_read),
         isViewed: Boolean(submission?.is_read),
         viewed_at: submission?.viewed_at || undefined,
