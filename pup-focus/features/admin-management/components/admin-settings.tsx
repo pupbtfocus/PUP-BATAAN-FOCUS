@@ -2,7 +2,11 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildFacultyInitials } from "@/lib/faculty-profile";
+import {
+  buildFacultyFullName,
+  buildFacultyInitials,
+  parseFullNameFallback,
+} from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
 import {
   Bell,
@@ -15,7 +19,6 @@ import {
   FloppyDisk,
   Hourglass,
   Refresh,
-  Shield,
   ShieldAlert,
   ShieldCheck,
   SystemRestart,
@@ -37,6 +40,12 @@ export interface SuperAdminSettingsProps {
   }) => void;
 }
 
+type NameFormState = {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+};
+
 export function SuperAdminSettings({
   adminName,
   adminEmail,
@@ -45,20 +54,34 @@ export function SuperAdminSettings({
 }: SuperAdminSettingsProps) {
   const router = useRouter();
   const profileImageInputRef = useRef<HTMLInputElement>(null);
-  const fullNameInputRef = useRef<HTMLInputElement>(null);
+  const firstNameInputRef = useRef<HTMLInputElement>(null);
+  const middleNameInputRef = useRef<HTMLInputElement>(null);
+  const lastNameInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const currentPasswordRef = useRef<HTMLInputElement>(null);
 
-  const [activeField, setActiveField] = useState<"fullName" | "email" | null>(null);
+  const [activeField, setActiveField] = useState<
+    "firstName" | "middleName" | "lastName" | "email" | null
+  >(null);
   const [isPasswordEditing, setIsPasswordEditing] = useState(false);
   const isUserDirty = useRef(false);
 
   // Profile data state
   const initialName = adminName || "Administrator";
+  const parsedInitial = parseFullNameFallback(initialName);
   const initialEmail = adminEmail || "";
-  const [fullName, setFullName] = useState(initialName);
+
+  const [form, setForm] = useState<NameFormState>({
+    firstName: parsedInitial.firstName || "Administrator",
+    middleName: parsedInitial.middleName || "",
+    lastName: parsedInitial.lastName || "",
+  });
+  const [savedForm, setSavedForm] = useState<NameFormState>({
+    firstName: parsedInitial.firstName || "Administrator",
+    middleName: parsedInitial.middleName || "",
+    lastName: parsedInitial.lastName || "",
+  });
   const [email, setEmail] = useState(initialEmail);
-  const [savedFullName, setSavedFullName] = useState(initialName);
   const [savedEmail, setSavedEmail] = useState(initialEmail);
 
   // Avatar state
@@ -117,8 +140,14 @@ export function SuperAdminSettings({
   useEffect(() => {
     if (!isUserDirty.current) {
       if (adminName) {
-        setFullName(adminName);
-        setSavedFullName(adminName);
+        const parsed = parseFullNameFallback(adminName);
+        const newForm = {
+          firstName: parsed.firstName || "Administrator",
+          middleName: parsed.middleName || "",
+          lastName: parsed.lastName || "",
+        };
+        setForm(newForm);
+        setSavedForm(newForm);
       }
       if (adminEmail) {
         setEmail(adminEmail);
@@ -147,14 +176,23 @@ export function SuperAdminSettings({
         const accountData = await accountRes.json();
         if (accountData.account) {
           const loadedName = accountData.account.fullName || adminName || "Administrator";
+          const parsed = parseFullNameFallback(loadedName);
+          const loadedFirst = accountData.account.firstName || parsed.firstName || "Administrator";
+          const loadedMiddle = accountData.account.middleName ?? parsed.middleName ?? "";
+          const loadedLast = accountData.account.lastName || parsed.lastName || "";
           const loadedEmail = accountData.account.email || adminEmail || "";
           const loadedAvatar =
             accountData.account.avatar_url ||
             accountData.account.profileImageUrl ||
             null;
 
-          setFullName(loadedName);
-          setSavedFullName(loadedName);
+          const newForm = {
+            firstName: loadedFirst,
+            middleName: loadedMiddle,
+            lastName: loadedLast,
+          };
+          setForm(newForm);
+          setSavedForm(newForm);
           setEmail(loadedEmail);
           setSavedEmail(loadedEmail);
           if (loadedAvatar) {
@@ -193,7 +231,7 @@ export function SuperAdminSettings({
   }
 
   function handleFocusField(
-    fieldKey: "fullName" | "email",
+    fieldKey: "firstName" | "middleName" | "lastName" | "email",
     ref: React.RefObject<HTMLInputElement | null>
   ) {
     setActiveField(fieldKey);
@@ -210,17 +248,26 @@ export function SuperAdminSettings({
     }, 0);
   }
 
-  function handleCancelEdit(fieldKey: "fullName" | "email") {
-    if (fieldKey === "fullName") {
-      setFullName(savedFullName);
-    } else {
+  function handleCancelEdit(
+    fieldKey: "firstName" | "middleName" | "lastName" | "email"
+  ) {
+    if (fieldKey === "email") {
       setEmail(savedEmail);
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [fieldKey]: savedForm[fieldKey],
+      }));
     }
     setActiveField(null);
   }
 
   function handleResetProfile() {
-    setFullName(savedFullName);
+    setForm({
+      firstName: savedForm.firstName,
+      middleName: savedForm.middleName,
+      lastName: savedForm.lastName,
+    });
     setEmail(savedEmail);
     setProfileImageFile(null);
     setIsAvatarMarkedForRemoval(false);
@@ -250,24 +297,56 @@ export function SuperAdminSettings({
   // Profile Save
   async function handleSaveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!fullName.trim()) {
+
+    const firstName = form.firstName.trim();
+    const middleName = form.middleName.trim();
+    const lastName = form.lastName.trim();
+
+    if (!firstName || !lastName) {
       setFeedbackModal({
         isOpen: true,
         title: "Name Required",
-        message: "Please enter your full name before saving.",
+        message: "Please enter your first name and last name before saving.",
         type: "error",
       });
       return;
     }
+
+    const nameRegex = /^[a-zA-Z\sñÑ]+$/;
+    if (
+      !nameRegex.test(firstName) ||
+      !nameRegex.test(lastName) ||
+      (middleName && !nameRegex.test(middleName))
+    ) {
+      setFeedbackModal({
+        isOpen: true,
+        title: "Invalid Characters",
+        message:
+          "Name fields can only contain letters and spaces (no numbers or special characters).",
+        type: "error",
+      });
+      return;
+    }
+
+    const calculatedFullName =
+      buildFacultyFullName({
+        firstName,
+        middleName,
+        lastName,
+      }) || `${firstName} ${lastName}`;
 
     setIsSavingProfile(true);
 
     try {
       let updatedAvatar = avatarUrl;
 
-      // 1. Upload or remove avatar & update full_name via /api/admin/profile
+      // 1. Upload or remove avatar & update names via /api/admin/profile
       const formData = new FormData();
-      formData.append("fullName", fullName.trim());
+      formData.append("firstName", firstName);
+      formData.append("middleName", middleName);
+      formData.append("lastName", lastName);
+      formData.append("fullName", calculatedFullName);
+
       if (isAvatarMarkedForRemoval) {
         formData.append("removeAvatar", "true");
         updatedAvatar = null;
@@ -289,28 +368,33 @@ export function SuperAdminSettings({
         updatedAvatar = profilePayload.avatar_url;
       }
 
-      // 2. If email changed, also patch via /api/admin/account
-      const emailHasChanged = email.trim().toLowerCase() !== savedEmail.trim().toLowerCase();
-      if (emailHasChanged) {
-        const accountResponse = await fetch("/api/admin/account", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fullName: fullName.trim(),
-            email: email.trim(),
-          }),
-        });
+      // 2. Patch via /api/admin/account for names and email
+      const accountResponse = await fetch("/api/admin/account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName,
+          middleName,
+          lastName,
+          fullName: calculatedFullName,
+          email: email.trim(),
+        }),
+      });
 
-        const accountPayload = await accountResponse.json();
-        if (!accountResponse.ok) {
-          throw new Error(accountPayload.error || "Failed to update email address");
-        }
+      const accountPayload = await accountResponse.json();
+      if (!accountResponse.ok) {
+        throw new Error(accountPayload.error || "Failed to update account details");
       }
 
-      const finalizedName = fullName.trim();
       const finalizedEmail = email.trim();
+      const finalizedForm = {
+        firstName,
+        middleName,
+        lastName,
+      };
 
-      setSavedFullName(finalizedName);
+      setSavedForm(finalizedForm);
+      setForm(finalizedForm);
       setSavedEmail(finalizedEmail);
       setAvatarUrl(updatedAvatar);
       setProfileImageFile(null);
@@ -323,7 +407,7 @@ export function SuperAdminSettings({
       }
 
       onProfileUpdated?.({
-        fullName: finalizedName,
+        fullName: calculatedFullName,
         email: finalizedEmail,
         avatarUrl: updatedAvatar,
       });
@@ -331,7 +415,7 @@ export function SuperAdminSettings({
       setFeedbackModal({
         isOpen: true,
         title: "Profile Updated Successfully",
-        message: "Your super administrator credentials and profile details have been saved.",
+        message: "Your administrator credentials and profile details have been saved.",
         type: "success",
       });
 
@@ -510,7 +594,9 @@ export function SuperAdminSettings({
   const isProfileChanged =
     Boolean(profileImageFile) ||
     isAvatarMarkedForRemoval ||
-    fullName.trim() !== savedFullName.trim() ||
+    form.firstName.trim() !== savedForm.firstName.trim() ||
+    form.middleName.trim() !== savedForm.middleName.trim() ||
+    form.lastName.trim() !== savedForm.lastName.trim() ||
     email.trim() !== savedEmail.trim();
 
   const isPreferencesChanged =
@@ -618,17 +704,13 @@ export function SuperAdminSettings({
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    Administrator
-                  </h3>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide uppercase bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/80 shrink-0">
-                    <AppIcon icon={Shield} size="md" color="inherit" /> Root
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Office of Institutional System Administration
-                </p>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                  {buildFacultyFullName({
+                    firstName: savedForm.firstName,
+                    middleName: savedForm.middleName,
+                    lastName: savedForm.lastName,
+                  }) || "Administrator"}
+                </h3>
                 <p className="text-[11px] text-amber-600 dark:text-amber-400/90 mt-1 font-medium">
                   Click avatar to upload or modify photo
                 </p>
@@ -681,37 +763,37 @@ export function SuperAdminSettings({
 
             {/* Form Input Fields */}
             <div className="grid gap-4 sm:grid-cols-2">
-              {/* 1 Single Input for Full Name of Admin */}
-              <div className="sm:col-span-2">
+              {/* First Name */}
+              <div>
                 <label
-                  htmlFor="admin-full-name"
+                  htmlFor="admin-first-name"
                   className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
                 >
-                  Full Name
+                  First Name
                 </label>
                 <div className="relative flex items-center">
                   <input
-                    id="admin-full-name"
-                    ref={fullNameInputRef}
-                    readOnly={activeField !== "fullName"}
+                    id="admin-first-name"
+                    ref={firstNameInputRef}
+                    readOnly={activeField !== "firstName"}
                     className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
-                      activeField === "fullName"
+                      activeField === "firstName"
                         ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
                     }`}
-                    value={fullName}
+                    value={form.firstName}
                     onChange={(e) => {
                       isUserDirty.current = true;
-                      setFullName(e.target.value);
+                      setForm((prev) => ({ ...prev, firstName: e.target.value }));
                     }}
                     onBlur={() => setActiveField(null)}
-                    placeholder="Enter full name"
+                    placeholder="First name"
                   />
-                  {activeField === "fullName" ? (
+                  {activeField === "firstName" ? (
                     <button
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleCancelEdit("fullName")}
+                      onClick={() => handleCancelEdit("firstName")}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={Xmark} size="sm" color="inherit" />
@@ -721,7 +803,107 @@ export function SuperAdminSettings({
                     <button
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleFocusField("fullName", fullNameInputRef)}
+                      onClick={() => handleFocusField("firstName", firstNameInputRef)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={EditPencil} size="sm" color="inherit" />
+                      <span>Edit</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Middle Name */}
+              <div>
+                <label
+                  htmlFor="admin-middle-name"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                >
+                  Middle Name
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="admin-middle-name"
+                    ref={middleNameInputRef}
+                    readOnly={activeField !== "middleName"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "middleName"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={form.middleName}
+                    onChange={(e) => {
+                      isUserDirty.current = true;
+                      setForm((prev) => ({ ...prev, middleName: e.target.value }));
+                    }}
+                    onBlur={() => setActiveField(null)}
+                    placeholder="Middle name"
+                  />
+                  {activeField === "middleName" ? (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("middleName")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={Xmark} size="sm" color="inherit" />
+                      <span>Cancel</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("middleName", middleNameInputRef)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={EditPencil} size="sm" color="inherit" />
+                      <span>Edit</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Last Name */}
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="admin-last-name"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block"
+                >
+                  Last Name
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="admin-last-name"
+                    ref={lastNameInputRef}
+                    readOnly={activeField !== "lastName"}
+                    className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-xl px-4 py-2.5 pr-20 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                      activeField === "lastName"
+                        ? "border-amber-500 ring-2 ring-amber-500/80 dark:ring-amber-500/60"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 cursor-default"
+                    }`}
+                    value={form.lastName}
+                    onChange={(e) => {
+                      isUserDirty.current = true;
+                      setForm((prev) => ({ ...prev, lastName: e.target.value }));
+                    }}
+                    onBlur={() => setActiveField(null)}
+                    placeholder="Last name"
+                  />
+                  {activeField === "lastName" ? (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleCancelEdit("lastName")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <AppIcon icon={Xmark} size="sm" color="inherit" />
+                      <span>Cancel</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFocusField("lastName", lastNameInputRef)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 dark:hover:border-amber-400 dark:hover:text-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                       <AppIcon icon={EditPencil} size="sm" color="inherit" />
@@ -1321,7 +1503,13 @@ export function SuperAdminSettings({
             onClick={(e) => e.stopPropagation()}
           >
             <ModalHeader
-              title={fullName || "Administrator"}
+              title={
+                buildFacultyFullName({
+                  firstName: form.firstName,
+                  middleName: form.middleName,
+                  lastName: form.lastName,
+                }) || "Administrator"
+              }
               icon={User}
               onClose={() => setIsFullImageOpen(false)}
               closeAriaLabel="Close"
@@ -1329,7 +1517,13 @@ export function SuperAdminSettings({
             />
             <img
               src={displayedProfileImage}
-              alt={fullName || "Administrator"}
+              alt={
+                buildFacultyFullName({
+                  firstName: form.firstName,
+                  middleName: form.middleName,
+                  lastName: form.lastName,
+                }) || "Administrator"
+              }
               className="max-h-[70vh] w-auto rounded-xl object-contain shadow-lg"
             />
           </div>
