@@ -3,6 +3,10 @@ import { ROLE } from "@/config/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { isValidEmailAddress } from "@/lib/validation/email";
+import {
+  buildFacultyFullName,
+  parseFullNameFallback,
+} from "@/lib/faculty-profile";
 
 export async function GET() {
   const sessionClient = await createServerSupabaseClient();
@@ -50,13 +54,29 @@ export async function GET() {
       }
     }
 
+    const userMeta = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const rawFullName =
+      profile.full_name ??
+      (userMeta.full_name as string | undefined) ??
+      "";
+    const parsed = parseFullNameFallback(rawFullName);
+    const firstName =
+      (userMeta.first_name as string) || parsed.firstName || "Administrator";
+    const middleName =
+      typeof userMeta.middle_name === "string"
+        ? userMeta.middle_name
+        : parsed.middleName;
+    const lastName = (userMeta.last_name as string) || parsed.lastName || "";
+    const fullName =
+      buildFacultyFullName({ firstName, middleName, lastName }) || rawFullName;
+
     return NextResponse.json({
       success: true,
       account: {
-        fullName:
-          profile.full_name ??
-          (user.user_metadata?.full_name as string | undefined) ??
-          "",
+        firstName,
+        middleName,
+        lastName,
+        fullName,
         email: profile.email ?? user.email ?? "",
         avatar_url: avatarUrl,
         profileImageUrl: avatarUrl,
@@ -90,13 +110,19 @@ export async function PATCH(request: NextRequest) {
   try {
     const payload = (await request.json()) as {
       fullName?: string;
+      firstName?: string;
+      middleName?: string;
+      lastName?: string;
       email?: string;
       oldPassword?: string;
       password?: string;
     };
 
     const wantsAccountUpdate =
-      payload.fullName !== undefined || payload.email !== undefined;
+      payload.fullName !== undefined ||
+      payload.firstName !== undefined ||
+      payload.lastName !== undefined ||
+      payload.email !== undefined;
     const wantsPasswordUpdate =
       typeof payload.password === "string" && payload.password.length > 0;
 
@@ -152,7 +178,21 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: true, passwordUpdated: true });
     }
 
-    const fullName = payload.fullName?.trim() ?? "";
+    let firstName = payload.firstName?.trim();
+    let middleName = payload.middleName?.trim() ?? "";
+    let lastName = payload.lastName?.trim();
+    let fullName = payload.fullName?.trim() ?? "";
+
+    if (firstName || lastName) {
+      fullName =
+        buildFacultyFullName({ firstName, middleName, lastName }) || fullName;
+    } else if (fullName) {
+      const parsed = parseFullNameFallback(fullName);
+      firstName = parsed.firstName;
+      middleName = parsed.middleName;
+      lastName = parsed.lastName;
+    }
+
     const email = payload.email?.trim().toLowerCase() ?? "";
 
     if (!fullName || !email) {
@@ -228,6 +268,9 @@ export async function PATCH(request: NextRequest) {
         email_confirm: true,
         user_metadata: {
           ...(user.user_metadata ?? {}),
+          first_name: firstName,
+          middle_name: middleName,
+          last_name: lastName,
           full_name: fullName,
           role: requesterRole,
         },
@@ -278,6 +321,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({
       success: true,
       account: {
+        firstName,
+        middleName,
+        lastName,
         fullName,
         email,
       },
