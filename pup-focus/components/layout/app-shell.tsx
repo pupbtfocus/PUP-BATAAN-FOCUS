@@ -48,8 +48,8 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-200">
       <header className="fixed inset-x-0 top-0 h-14 z-40 bg-[#800000] text-white shadow-md flex items-center transition-colors duration-200">
-        {/* Continuous bottom amber border (starts after sidebar on desktop, full width on mobile) */}
-        <div className="absolute left-0 md:left-72 right-0 bottom-0 h-1 bg-amber-500 pointer-events-none" />
+        {/* Continuous bottom amber border (starts at the sidebar's outer edge calc(18rem-4px) to form a seamless 90-degree corner) */}
+        <div className={`absolute ${fullBleed ? "left-0 md:left-[calc(18rem-4px)]" : "left-0"} right-0 bottom-0 h-1 bg-amber-500 pointer-events-none`} />
 
         <div className="relative flex w-full h-full items-center justify-between pl-4 pr-3 sm:pr-6">
           {/* Left: Brand aligned with sidebar column (seamless maroon canopy) */}

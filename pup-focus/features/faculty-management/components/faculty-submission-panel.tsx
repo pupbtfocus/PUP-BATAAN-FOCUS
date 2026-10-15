@@ -2617,8 +2617,8 @@ function FacultySubmissionPanelContent({
           })}
         </nav>
         </div>
-        {/* Amber vertical border that starts only below the header (y=56px) */}
-        <div className="absolute right-0 top-14 bottom-0 w-1 bg-amber-500 pointer-events-none" />
+        {/* Amber vertical border that starts at the top edge of the header's bottom border (y=52px) to form a seamless 90-degree corner */}
+        <div className="absolute right-0 top-[calc(3.5rem-4px)] bottom-0 w-1 bg-amber-500 pointer-events-none" />
       </aside>
       {/* Mobile Drawer (visible only on small screens when drawer is open) */}
       {isMobileMenuOpen && (
