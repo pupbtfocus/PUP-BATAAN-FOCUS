@@ -480,6 +480,30 @@ export function AddFacultyPanel({
     }, 60);
   };
 
+  const [nameAlert, setNameAlert] = useState<string | null>(null);
+
+  const handleNameInput = (
+    field: "firstName" | "middleName" | "lastName",
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const raw = e.target.value;
+    if (/[^a-zA-Z\sñÑ]/.test(raw)) {
+      setNameAlert("Cannot use numbers or special characters in name");
+      form.setError(field, {
+        type: "manual",
+        message: "Cannot use numbers or special characters in name",
+      });
+    } else {
+      if (nameAlert === "Cannot use numbers or special characters in name") {
+        setNameAlert(null);
+      }
+      form.clearErrors(field);
+    }
+    const clean = raw.replace(/[^a-zA-Z\sñÑ]/g, "");
+    e.target.value = clean;
+    form.setValue(field, clean, { shouldValidate: true });
+  };
+
   return (
     <div className={wrapperClassName ?? "flex flex-1 flex-col overflow-hidden min-h-0 w-full"}>
       <form
@@ -488,6 +512,13 @@ export function AddFacultyPanel({
       >
           {/* Scrollable Body Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            <AlertPopup
+              type="warning"
+              message={nameAlert}
+              position="inline"
+              autoCloseMs={3500}
+              onClose={() => setNameAlert(null)}
+            />
             <div className="grid gap-3 md:grid-cols-3">
             <div>
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 block" htmlFor="firstName">
@@ -497,9 +528,13 @@ export function AddFacultyPanel({
                 id="firstName"
                 placeholder="e.g. Juan"
                 className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
-                {...form.register("firstName")}
+                {...form.register("firstName", {
+                  onChange: (e) => handleNameInput("firstName", e),
+                })}
                 ref={(el) => {
-                  form.register("firstName").ref(el);
+                  form.register("firstName", {
+                    onChange: (e) => handleNameInput("firstName", e),
+                  }).ref(el);
                   firstNameInputRef.current = el;
                 }}
               />
@@ -514,7 +549,9 @@ export function AddFacultyPanel({
                 id="middleName"
                 placeholder="e.g. Santos"
                 className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
-                {...form.register("middleName")}
+                {...form.register("middleName", {
+                  onChange: (e) => handleNameInput("middleName", e),
+                })}
               />
               <FieldError message={form.formState.errors.middleName?.message} />
             </div>
@@ -527,7 +564,9 @@ export function AddFacultyPanel({
                 id="lastName"
                 placeholder="e.g. Dela Cruz"
                 className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
-                {...form.register("lastName")}
+                {...form.register("lastName", {
+                  onChange: (e) => handleNameInput("lastName", e),
+                })}
               />
               <FieldError message={form.formState.errors.lastName?.message} />
             </div>

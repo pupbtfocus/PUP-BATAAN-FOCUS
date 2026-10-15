@@ -766,10 +766,26 @@ export function SuperAdminDashboard({
     useState<File | null>(null);
   const [createAdminProfileImagePreview, setCreateAdminProfileImagePreview] =
     useState<string | null>(null);
+  const [adminNameAlert, setAdminNameAlert] = useState<string | null>(null);
+
+  function handleAdminNameInput(
+    setter: (val: string) => void,
+    rawVal: string,
+  ) {
+    if (/[^a-zA-Z\sñÑ]/.test(rawVal)) {
+      setAdminNameAlert("Cannot use numbers or special characters in name");
+    } else {
+      if (adminNameAlert === "Cannot use numbers or special characters in name") {
+        setAdminNameAlert(null);
+      }
+    }
+    setter(rawVal.replace(/[^a-zA-Z\sñÑ]/g, ""));
+  }
 
   function openCreateAdminModal() {
     setError(null);
     setSuccess(null);
+    setAdminNameAlert(null);
     setCreateAdminFirstName("");
     setCreateAdminMiddleName("");
     setCreateAdminLastName("");
@@ -784,6 +800,7 @@ export function SuperAdminDashboard({
     setIsSubmitting(false);
     setError(null);
     setSuccess(null);
+    setAdminNameAlert(null);
     if (createAdminProfileImagePreview) {
       URL.revokeObjectURL(createAdminProfileImagePreview);
     }
@@ -1047,6 +1064,17 @@ export function SuperAdminDashboard({
 
     if (!firstName || !lastName) {
       setError("First name and last name are required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const nameRegex = /^[a-zA-Z\sñÑ]+$/;
+    if (
+      !nameRegex.test(firstName) ||
+      !nameRegex.test(lastName) ||
+      (middleName && !nameRegex.test(middleName))
+    ) {
+      setError("Name can only contain letters and spaces (no numbers or special characters).");
       setIsSubmitting(false);
       return;
     }
@@ -2185,6 +2213,14 @@ export function SuperAdminDashboard({
             <div className="p-6 overflow-y-auto">
 
             <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+              <AlertPopup
+                type="warning"
+                message={adminNameAlert}
+                position="inline"
+                autoCloseMs={3500}
+                onClose={() => setAdminNameAlert(null)}
+              />
+
               {/* Row 1: Name Grid (3 Columns) */}
               <div className="grid gap-3 md:grid-cols-3">
                 <div>
@@ -2199,7 +2235,10 @@ export function SuperAdminDashboard({
                     type="text"
                     value={createAdminFirstName}
                     onChange={(event) =>
-                      setCreateAdminFirstName(event.target.value)
+                      handleAdminNameInput(
+                        setCreateAdminFirstName,
+                        event.target.value,
+                      )
                     }
                     required
                     placeholder="e.g. Juan"
@@ -2219,7 +2258,10 @@ export function SuperAdminDashboard({
                     type="text"
                     value={createAdminMiddleName}
                     onChange={(event) =>
-                      setCreateAdminMiddleName(event.target.value)
+                      handleAdminNameInput(
+                        setCreateAdminMiddleName,
+                        event.target.value,
+                      )
                     }
                     placeholder="e.g. Santos"
                     className="mt-1.5 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-slate-900 dark:focus:border-slate-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10"
@@ -2238,7 +2280,10 @@ export function SuperAdminDashboard({
                     type="text"
                     value={createAdminLastName}
                     onChange={(event) =>
-                      setCreateAdminLastName(event.target.value)
+                      handleAdminNameInput(
+                        setCreateAdminLastName,
+                        event.target.value,
+                      )
                     }
                     required
                     placeholder="e.g. Dela Cruz"

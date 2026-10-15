@@ -88,6 +88,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const nameRegex = /^[a-zA-Z\sñÑ]+$/;
+    if (
+      !nameRegex.test(trimmedFirstName) ||
+      !nameRegex.test(trimmedLastName) ||
+      (trimmedMiddleName && !nameRegex.test(trimmedMiddleName))
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Names can only contain letters and spaces (no numbers or special characters).",
+        },
+        { status: 400 },
+      );
+    }
+
     if (!isValidEmailAddress(normalizedEmail)) {
       return NextResponse.json(
         { error: "Please provide a real email address" },
