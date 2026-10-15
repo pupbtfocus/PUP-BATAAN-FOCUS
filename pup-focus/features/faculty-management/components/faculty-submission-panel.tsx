@@ -661,6 +661,9 @@ function FacultySubmissionPanelContent({
     rejected: number;
     pending: number;
     notSubmitted: number;
+    overdue?: number;
+    extended?: number;
+    exempted?: number;
   } | null>(() => initialData?.counts || null);
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(!initialData);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -1724,11 +1727,11 @@ function FacultySubmissionPanelContent({
           (!globalDeadlineMs || effectiveDeadlineMs > globalDeadlineMs)
         );
         if (isExtensionActive || isCustomDueExtended) {
-          evaluatedStatus = "Pending";
+          evaluatedStatus = "Extended";
         } else if (isPastEffectiveDeadline) {
           evaluatedStatus = "Overdue";
         } else {
-          evaluatedStatus = "Pending";
+          evaluatedStatus = "Not Submitted";
         }
       }
 
@@ -1823,7 +1826,7 @@ function FacultySubmissionPanelContent({
       (r) => r.status === "Exempted",
     ).length;
     const notSubmitted = displayedRequirementStatuses.filter(
-      (r) => !r.latestSubmissionId && r.status !== "Validated" && r.status !== "Exempted",
+      (r) => r.status === "Not Submitted",
     ).length;
     return { total, validated, rejected, pending, overdue, extended, exempted, notSubmitted };
   }, [displayedRequirementStatuses, activeTemplates.length]);
@@ -3387,7 +3390,7 @@ function FacultySubmissionPanelContent({
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.validated}</strong> Validated
                         </span>
                       </span>
-                      <span className="inline-flex items-center gap-1.5" title="Pending: Awaiting submission or verification">
+                      <span className="inline-flex items-center gap-1.5" title="Pending: Uploaded document awaiting review or verification">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
                           <AppIcon icon={Hourglass} size="xs" color="inherit" />
                         </span>
@@ -3395,16 +3398,30 @@ function FacultySubmissionPanelContent({
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.pending}</strong> Pending
                         </span>
                       </span>
-                      {displayedStatusCounts.overdue > 0 && !isAllValidated && (
-                        <span className="inline-flex items-center gap-1.5" title="Overdue: Past deadline and no file submitted">
-                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
-                            <AppIcon icon={Xmark} size="xs" color="white" />
-                          </span>
-                          <span>
-                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.overdue}</strong> Overdue
-                          </span>
+                      <span className="inline-flex items-center gap-1.5" title="Needs Revision: Correction requested by reviewer">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+                          <AppIcon icon={Xmark} size="xs" color="white" />
                         </span>
-                      )}
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.rejected}</strong> Needs Revision
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5" title="Not Submitted: Requirement has not been submitted yet">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-500 text-white border border-slate-600 shrink-0 shadow-2xs">
+                          <AppIcon icon={Minus} size="xs" color="white" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.notSubmitted}</strong> Not Submitted
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5" title="Overdue: Past deadline and no file submitted">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+                          <AppIcon icon={ClockRotateRight} size="xs" color="white" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.overdue}</strong> Overdue
+                        </span>
+                      </span>
                       {displayedStatusCounts.extended > 0 && !isAllValidated && (
                         <span className="inline-flex items-center gap-1.5" title="Extended: Extension request approved">
                           <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-indigo-600 text-white border border-indigo-700 shrink-0 shadow-2xs">
@@ -3415,14 +3432,6 @@ function FacultySubmissionPanelContent({
                           </span>
                         </span>
                       )}
-                      <span className="inline-flex items-center gap-1.5" title="Needs Revision: Correction requested by reviewer">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
-                          <AppIcon icon={Xmark} size="xs" color="white" />
-                        </span>
-                        <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.rejected}</strong> Needs Revision
-                        </span>
-                      </span>
                       {displayedStatusCounts.exempted > 0 && (
                         <span className="inline-flex items-center gap-1.5" title="Exempted: Requirement not applicable / excused">
                           <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 shrink-0 shadow-2xs">
@@ -3433,7 +3442,7 @@ function FacultySubmissionPanelContent({
                           </span>
                         </span>
                       )}
-                    </div>
+                  </div>
                 )}
 
 
@@ -4416,7 +4425,7 @@ function FacultySubmissionPanelContent({
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.validated}</strong> Validated
                         </span>
                       </span>
-                      <span className="inline-flex items-center gap-1.5" title="Pending: Awaiting submission or verification">
+                      <span className="inline-flex items-center gap-1.5" title="Pending: Uploaded document awaiting review or verification">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
                           <AppIcon icon={Hourglass} size="xs" color="inherit" />
                         </span>
@@ -4424,16 +4433,30 @@ function FacultySubmissionPanelContent({
                           <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.pending}</strong> Pending
                         </span>
                       </span>
-                      {displayedStatusCounts.overdue > 0 && !isAllValidated && (
-                        <span className="inline-flex items-center gap-1.5" title="Overdue: Past deadline and no file submitted">
-                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
-                            <AppIcon icon={Xmark} size="xs" color="white" />
-                          </span>
-                          <span>
-                            <strong className="text-slate-900 dark:text-slate-100 font-semibold">{displayedStatusCounts.overdue}</strong> Overdue
-                          </span>
+                      <span className="inline-flex items-center gap-1.5" title="Needs Revision: Correction requested by reviewer">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+                          <AppIcon icon={Xmark} size="xs" color="white" />
                         </span>
-                      )}
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.rejected}</strong> Needs Revision
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5" title="Not Submitted: Requirement has not been submitted yet">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-500 text-white border border-slate-600 shrink-0 shadow-2xs">
+                          <AppIcon icon={Minus} size="xs" color="white" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.notSubmitted}</strong> Not Submitted
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5" title="Overdue: Past deadline and no file submitted">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
+                          <AppIcon icon={ClockRotateRight} size="xs" color="white" />
+                        </span>
+                        <span>
+                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.overdue}</strong> Overdue
+                        </span>
+                      </span>
                       {displayedStatusCounts.extended > 0 && !isAllValidated && (
                         <span className="inline-flex items-center gap-1.5" title="Extended: Extension request approved">
                           <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-indigo-600 text-white border border-indigo-700 shrink-0 shadow-2xs">
@@ -4444,14 +4467,6 @@ function FacultySubmissionPanelContent({
                           </span>
                         </span>
                       )}
-                      <span className="inline-flex items-center gap-1.5" title="Needs Revision: Correction requested by reviewer">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
-                          <AppIcon icon={Xmark} size="xs" color="white" />
-                        </span>
-                        <span>
-                          <strong className="text-slate-900 dark:text-slate-100 font-semibold">{isAllValidated ? 0 : displayedStatusCounts.rejected}</strong> Needs Revision
-                        </span>
-                      </span>
                       {displayedStatusCounts.exempted > 0 && (
                         <span className="inline-flex items-center gap-1.5" title="Exempted: Requirement not applicable / excused">
                           <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 shrink-0 shadow-2xs">
@@ -4462,7 +4477,7 @@ function FacultySubmissionPanelContent({
                           </span>
                         </span>
                       )}
-                    </div>
+                  </div>
                 )}
 
                 {renderUploadNotificationSection()}

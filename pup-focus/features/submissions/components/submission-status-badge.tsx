@@ -68,7 +68,7 @@ export function getNormalizedStatus(
   )
     return "Pending Review";
   if (s === "pending") return "Pending";
-  if (s === "not submitted" || s === "not_submitted") return "Pending";
+  if (s === "not submitted" || s === "not_submitted") return "Not Submitted";
   return "Pending";
 }
 
