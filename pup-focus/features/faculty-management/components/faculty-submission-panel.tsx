@@ -781,6 +781,9 @@ function FacultySubmissionPanelContent({
   });
   const [editClassError, setEditClassError] = useState<string | null>(null);
   const [isUpdatingClass, setIsUpdatingClass] = useState(false);
+  const [classToArchive, setClassToArchive] = useState<FacultyClass | null>(null);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [isArchivingClass, setIsArchivingClass] = useState(false);
   const [classToDelete, setClassToDelete] = useState<FacultyClass | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingClass, setIsDeletingClass] = useState(false);
@@ -1556,6 +1559,24 @@ function FacultySubmissionPanelContent({
       alert(err instanceof Error ? err.message : "Failed to update archive status");
     } finally {
       setClassActionLoadingId(null);
+    }
+  };
+
+  const handleOpenArchiveModal = (cls: FacultyClass, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setClassToArchive(cls);
+    setIsArchiveModalOpen(true);
+  };
+
+  const handleArchiveClassConfirm = async () => {
+    if (!classToArchive) return;
+    setIsArchivingClass(true);
+    try {
+      await handleToggleArchiveClass(classToArchive);
+      setIsArchiveModalOpen(false);
+      setClassToArchive(null);
+    } finally {
+      setIsArchivingClass(false);
     }
   };
 
@@ -4116,11 +4137,17 @@ function FacultySubmissionPanelContent({
                                           <button
                                             type="button"
                                             disabled={classActionLoadingId === cls.id}
-                                            onClick={(e) => handleToggleArchiveClass(cls, e)}
+                                            onClick={(e) => {
+                                              if (isArchived) {
+                                                handleToggleArchiveClass(cls, e);
+                                              } else {
+                                                handleOpenArchiveModal(cls, e);
+                                              }
+                                            }}
                                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs active:scale-95 border ${
                                               isArchived
-                                                ? "bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700"
-                                                : "bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border-slate-200 hover:border-amber-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-amber-950/40 dark:hover:text-amber-300 dark:border-slate-700"
+                                                ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600/50 shadow-xs"
+                                                : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:border-slate-700"
                                             }`}
                                             title={
                                               isArchived
@@ -4244,12 +4271,22 @@ function FacultySubmissionPanelContent({
                               <button
                                 type="button"
                                 disabled={classActionLoadingId === selectedClass.id}
-                                onClick={(e) => handleToggleArchiveClass(selectedClass, e)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                                onClick={(e) => {
+                                  if (selectedClass.is_archived) {
+                                    handleToggleArchiveClass(selectedClass, e);
+                                  } else {
+                                    handleOpenArchiveModal(selectedClass, e);
+                                  }
+                                }}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
+                                  selectedClass.is_archived
+                                    ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600/50 shadow-xs"
+                                    : "border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                }`}
                                 title={selectedClass.is_archived ? "Restore to active loads" : "Archive class load"}
                               >
                                 <AppIcon icon={selectedClass.is_archived ? Refresh : Archive} size="xs" color="inherit" />
-                                <span>{selectedClass.is_archived ? "Restore" : "Archive"}</span>
+                                <span>{selectedClass.is_archived ? "Unarchive" : "Archive"}</span>
                               </button>
                             </div>
                           </div>
@@ -5988,6 +6025,66 @@ function FacultySubmissionPanelContent({
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* Archive Confirmation Modal */}
+            {isArchiveModalOpen && classToArchive && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+              >
+                <div className="w-full max-w-md rounded-3xl border border-amber-300 dark:border-amber-700/60 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                      <AppIcon icon={Archive} size="md" color="inherit" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                        Archive Subject Load?
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Are you sure you want to archive <strong className="text-slate-900 dark:text-slate-200">{classToArchive.subject_code} ({classToArchive.section_code})</strong>?
+                      </p>
+                      <p className="mt-2 text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 leading-relaxed">
+                        Archiving will hide this subject load from your active list and lock requirement uploads until unarchived. You can find and unarchive it anytime under the <strong>Archived</strong> tab.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      disabled={isArchivingClass}
+                      onClick={() => {
+                        setIsArchiveModalOpen(false);
+                        setClassToArchive(null);
+                      }}
+                      className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isArchivingClass}
+                      onClick={handleArchiveClassConfirm}
+                      className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 border border-amber-600/40"
+                    >
+                      {isArchivingClass ? (
+                        <>
+                          <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                          <span>Archiving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <AppIcon icon={Archive} size="sm" color="inherit" />
+                          <span>Archive Class</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
