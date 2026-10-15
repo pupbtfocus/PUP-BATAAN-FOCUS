@@ -972,6 +972,12 @@ export async function getFacultyPersonalDeadline(
         }
 
         let dueAtStr = s.due_at;
+        const remarksText = typeof s.remarks === "string" ? s.remarks : "";
+
+        // If explicitly closed by admin, skip and never self-heal
+        if (remarksText.includes("[origin:CLOSED]") || remarksText.includes("closed by admin")) {
+          continue;
+        }
 
         // Self-heal: If due_at is null but remarks indicate grace period was granted
         if (!dueAtStr && s.remarks && (s.remarks.includes("NEW_FACULTY_GRACE") || s.remarks.includes("Extra time granted"))) {
@@ -989,7 +995,6 @@ export async function getFacultyPersonalDeadline(
         }
 
         // Standard registrations must follow global schedule and should NEVER trigger a personal deadline
-        const remarksText = typeof s.remarks === "string" ? s.remarks : "";
         const origin = parseSubmissionOrigin(remarksText);
         const isPersonalOverride =
           origin === "NEW_FACULTY_GRACE" ||
@@ -1026,15 +1031,16 @@ export async function getFacultyPersonalDeadline(
       try {
         const { data: extData } = await supabase
           .from("extension_requests")
-          .select("requested_date, requested_time, status")
+          .select("requested_date, requested_time, approved_date, approved_time, status")
           .in("faculty_user_id", facultyIds)
-          .eq("status", "approved");
+          .eq("status", "approved")
+          .not("approved_date", "is", null);
 
         if (extData && extData.length > 0) {
           for (const ext of extData) {
-            const extDate = ext.requested_date;
+            const extDate = ext.approved_date;
             if (!extDate) continue;
-            const timePart = ext.requested_time || "23:59:59";
+            const timePart = ext.approved_time || "23:59:59";
             const iso = `${extDate}T${timePart}+08:00`;
             const dueMs = new Date(iso).getTime();
             if (!Number.isNaN(dueMs) && dueMs > nowMs) {
@@ -1049,11 +1055,15 @@ export async function getFacultyPersonalDeadline(
       try {
         const { data: assignData } = await supabase
           .from("faculty_program_assignments")
-          .select("due_at, grace_period_until")
+          .select("due_at, grace_period_until, remarks")
           .in("faculty_profile_id", facultyIds);
 
         if (assignData && assignData.length > 0) {
           for (const a of assignData) {
+            const assignRemarks = typeof a.remarks === "string" ? a.remarks : "";
+            if (assignRemarks.includes("[origin:CLOSED]") || assignRemarks.includes("closed by admin")) {
+              continue;
+            }
             const dt = a.due_at || a.grace_period_until;
             if (!dt) continue;
             let dueMs = new Date(dt).getTime();

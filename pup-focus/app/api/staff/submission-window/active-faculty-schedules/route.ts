@@ -68,10 +68,14 @@ export async function GET() {
       activeSubmissions = subData;
     }
 
-    // Filter to ensure due_at is strictly in the future relative to current time
+    // Filter to ensure due_at is strictly in the future relative to current time and not closed
     const nowMs = Date.now();
     activeSubmissions = activeSubmissions.filter((sub) => {
       if (!sub.due_at) return false;
+      const remarksText = typeof sub.remarks === "string" ? sub.remarks : "";
+      if (remarksText.includes("[origin:CLOSED]") || remarksText.includes("closed by admin")) {
+        return false;
+      }
       const dueIso = sub.due_at.includes("T") ? sub.due_at : `${sub.due_at}T23:59:59+08:00`;
       const dueMs = new Date(dueIso).getTime();
       return !Number.isNaN(dueMs) && dueMs > nowMs;
@@ -82,14 +86,16 @@ export async function GET() {
     try {
       const { data: extData, error: extError } = await supabase
         .from("extension_requests")
-        .select("id, faculty_user_id, faculty_name, faculty_email, department, academic_year, semester, requirement_codes, reason, approved_date, approved_time, status")
-        .eq("status", "approved");
+        .select("id, faculty_user_id, faculty_name, faculty_email, department, academic_year, semester, requirement_codes, reason, approved_date, approved_time, requested_date, requested_time, status")
+        .eq("status", "approved")
+        .not("approved_date", "is", null);
 
       if (!extError && Array.isArray(extData)) {
         const todayStr = nowIso.slice(0, 10);
         approvedExtensions = extData.filter((ext) => {
-          if (!ext.approved_date) return false;
-          return ext.approved_date >= todayStr;
+          const extDate = ext.approved_date;
+          if (!extDate) return false;
+          return extDate >= todayStr;
         });
       }
     } catch {
@@ -182,47 +188,9 @@ export async function GET() {
 
       // Tag each faculty based on submission origin:
       // - "New Faculty" for onboarding grace period assignments
-      // - "Extended" for individually extended deadlines
-      // - "Standard" for active global window schedules
-      const isOnboardingSchedule = subs.some((s) => {
-        const origin = parseSubmissionOrigin(s.remarks);
-        if (
-          origin === "NEW_FACULTY_GRACE" ||
-          origin === "NEW_FACULTY_CUSTOM" ||
-          origin === "NEW_FACULTY"
-        ) {
-          return true;
-        }
-        const lower = (s.remarks || "").toLowerCase();
-        return (
-          lower.includes("onboarding") ||
-          lower.includes("grace period") ||
-          lower.includes("extra time")
-        );
-      });
-
-      const isExtensionSchedule = subs.some((s) => {
-        const origin = parseSubmissionOrigin(s.remarks);
-        if (origin === "EXTENDED") {
-          return true;
-        }
-        const lower = (s.remarks || "").toLowerCase();
-        return lower.includes("extension") || lower.includes("extended");
-      });
-
-      let scheduleType: "onboarding" | "extension" | "standard" = "standard";
-      let typeLabel: "New Faculty" | "Extended" | "Standard" = "Standard";
-
-      if (isOnboardingSchedule) {
-        scheduleType = "onboarding";
-        typeLabel = "New Faculty";
-      } else if (isExtensionSchedule) {
-        scheduleType = "extension";
-        typeLabel = "Extended";
-      } else {
-        scheduleType = "standard";
-        typeLabel = "Standard";
-      }
+      // Active individual submission schedule is an approved extension
+      const scheduleType: "extension" = "extension";
+      const typeLabel: "Extended" = "Extended";
 
       const deadlineFormatted = deadlineDate.toLocaleDateString("en-US", {
         month: "long",
@@ -296,9 +264,45 @@ export async function GET() {
         continue;
       }
 
-      const deadlineTime = ext.approved_time || "23:59";
-      const deadlineIso = `${ext.approved_date}T${deadlineTime}:00`;
-      const deadlineDate = new Date(deadlineIso);
+      const extDate = ext.approved_date;
+      const rawDeadlineTime = ext.approved_time || "23:59";
+      
+      // Parse extension date & time safely handling 12h/24h formats
+      let deadlineDate: Date | null = null;
+      let time24 = "23:59";
+      const matchAmpm = (rawDeadlineTime || "").trim().match(/^(0?[1-9]|1[0-2]):([0-5][0-9])\s?(AM|PM)$/i);
+      if (matchAmpm) {
+        let hour = parseInt(matchAmpm[1], 10);
+        const minute = matchAmpm[2];
+        const period = matchAmpm[3].toUpperCase();
+        if (period === "AM" && hour === 12) hour = 0;
+        if (period === "PM" && hour < 12) hour += 12;
+        time24 = `${hour.toString().padStart(2, "0")}:${minute}`;
+      } else if (/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/.test(rawDeadlineTime.trim())) {
+        const parts = rawDeadlineTime.trim().split(":");
+        time24 = `${parts[0].padStart(2, "0")}:${parts[1]}`;
+      }
+
+      if (extDate) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(extDate)) {
+          const parsed = new Date(`${extDate}T${time24}:00`);
+          if (!isNaN(parsed.getTime())) deadlineDate = parsed;
+        }
+        if (!deadlineDate) {
+          const parsed = new Date(extDate);
+          if (!isNaN(parsed.getTime())) {
+            const [h, m] = time24.split(":").map(Number);
+            parsed.setHours(h || 23, m || 59, 0, 0);
+            deadlineDate = parsed;
+          }
+        }
+      }
+
+      if (!deadlineDate || isNaN(deadlineDate.getTime())) {
+        deadlineDate = new Date(nowMs + 7 * 24 * 60 * 60 * 1000);
+      }
+
+      const deadlineIso = deadlineDate.toISOString();
       const msRemaining = Math.max(0, deadlineDate.getTime() - nowMs);
       const days = Math.floor(msRemaining / (1000 * 60 * 60 * 24));
       const hours = Math.floor((msRemaining / (1000 * 60 * 60)) % 24);
@@ -322,8 +326,8 @@ export async function GET() {
         hour12: true,
       });
 
-      const openDateFormatted = ext.approved_date
-        ? new Date(`${ext.approved_date}T00:00:00`).toLocaleDateString("en-US", {
+      const openDateFormatted = extDate && !isNaN(new Date(extDate).getTime())
+        ? new Date(extDate).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
@@ -417,53 +421,132 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { facultyProfileId } = body;
-    if (!facultyProfileId) {
-      return NextResponse.json({ error: "facultyProfileId is required" }, { status: 400 });
+    const { facultyProfileId, email: bodyEmail } = body;
+    if (!facultyProfileId && !bodyEmail) {
+      return NextResponse.json({ error: "facultyProfileId or email is required" }, { status: 400 });
     }
 
     const supabase = getServiceRoleClient();
     const nowIso = new Date().toISOString();
 
-    // 1. Resolve possible profile ID and user_id
+    // 1. Resolve possible profile ID, user_id, and email
+    const queryTerm = facultyProfileId || bodyEmail;
     const { data: profile } = await supabase
       .from("profiles")
-      .select("id, user_id, full_name")
-      .or(`id.eq.${facultyProfileId},user_id.eq.${facultyProfileId}`)
+      .select("id, user_id, email, full_name")
+      .or(`id.eq.${queryTerm},user_id.eq.${queryTerm},email.eq.${queryTerm}`)
       .maybeSingle();
 
     const targetProfileId = profile?.id || facultyProfileId;
     const targetUserId = profile?.user_id;
+    const targetEmail = profile?.email || bodyEmail;
 
-    const targetIds = [targetProfileId, ...(targetUserId ? [targetUserId] : []), ...(facultyProfileId ? [facultyProfileId] : [])];
+    const targetIds = [
+      targetProfileId,
+      ...(targetUserId ? [targetUserId] : []),
+      ...(facultyProfileId ? [facultyProfileId] : []),
+    ];
     const uniqueTargetIds = Array.from(new Set(targetIds.filter(Boolean)));
 
-    // 2. Clear due_at on any active pending submissions for this faculty member
+    // 2. Clear due_at and mark remarks as closed on all submissions for this faculty member (except already validated/approved/exempted)
     const { error: subUpdateErr } = await supabase
       .from("submissions")
       .update({
         due_at: null,
-        remarks: "Individual submission window closed by admin",
+        remarks: "[origin:CLOSED] Individual submission window closed by admin",
+        updated_at: nowIso,
       })
       .in("faculty_profile_id", uniqueTargetIds)
-      .gt("due_at", nowIso)
-      .eq("status", "pending");
+      .neq("status", "validated")
+      .neq("status", "approved")
+      .neq("status", "exempted");
 
     if (subUpdateErr) {
       console.error("Failed to close submissions due_at:", subUpdateErr);
     }
 
-    // 3. Cancel any active extension requests for this faculty member
+    // 3. Clear due_at & grace_period_until in faculty_program_assignments
     try {
       await supabase
-        .from("extension_requests")
+        .from("faculty_program_assignments")
         .update({
-          status: "cancelled",
+          due_at: null,
+          grace_period_until: null,
+          remarks: "[origin:CLOSED] Individual submission window closed by admin",
+          updated_at: nowIso,
         })
-        .in("faculty_user_id", uniqueTargetIds)
-        .eq("status", "approved");
+        .in("faculty_profile_id", uniqueTargetIds);
+    } catch (assignErr) {
+      console.error("Failed to clear faculty_program_assignments:", assignErr);
+    }
+
+    // 4. Close any active extension deadlines for this faculty member
+    // Preserves status as "approved" so historical request record is accurate, but clears approved_date to end the personal deadline
+    try {
+      if (uniqueTargetIds.length > 0) {
+        await supabase
+          .from("extension_requests")
+          .update({
+            approved_date: null,
+            approved_time: null,
+            updated_at: nowIso,
+          })
+          .in("faculty_user_id", uniqueTargetIds)
+          .eq("status", "approved");
+
+        await supabase
+          .from("extension_requests")
+          .update({
+            approved_date: null,
+            approved_time: null,
+            updated_at: nowIso,
+          })
+          .in("id", uniqueTargetIds)
+          .eq("status", "approved");
+      }
+
+      if (targetEmail) {
+        await supabase
+          .from("extension_requests")
+          .update({
+            approved_date: null,
+            approved_time: null,
+            updated_at: nowIso,
+          })
+          .eq("faculty_email", targetEmail)
+          .eq("status", "approved");
+      }
+    } catch (extErr) {
+      console.error("Failed to close extension_requests deadline:", extErr);
+    }
+
+    // 5. Update any notifications for this user that marked an extension as approved
+    try {
+      if (uniqueTargetIds.length > 0) {
+        const { data: notifs } = await supabase
+          .from("notifications")
+          .select("id, message")
+          .eq("type", "EXTENSION_REQUEST")
+          .in("user_id", uniqueTargetIds);
+
+        if (Array.isArray(notifs)) {
+          for (const notif of notifs) {
+            try {
+              const parsed = JSON.parse(notif.message);
+              if (parsed.status === "approved") {
+                parsed.status = "rejected";
+                parsed.admin_remarks = "Individual submission window closed by admin";
+                await supabase
+                  .from("notifications")
+                  .update({ message: JSON.stringify(parsed) })
+                  .eq("id", notif.id);
+              }
+            } catch {}
+          }
+        }
+      }
     } catch {
-      // Best-effort
+      // Non-fatal
     }
 
     return NextResponse.json({

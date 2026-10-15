@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Calendar, CheckCircle, ClockRotateRight, EditPencil, FloppyDisk, Hourglass, NavArrowRight, Page, ShieldAlert, SystemRestart, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Calendar, CheckCircle, ClockRotateRight, EditPencil, FloppyDisk, Hourglass, NavArrowRight, Page, Search, ShieldAlert, SystemRestart, User, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { Button } from "@/components/ui/button";
@@ -209,6 +209,48 @@ export function SubmissionWindowPanel({
   // Edit vs. Save schedule toggle (defaults to editing if no schedule exists yet)
   const [isEditingSchedule, setIsEditingSchedule] = useState(false);
 
+  // 2-Option view switcher: "global" schedule vs "personal" deadline
+  const [scheduleViewMode, setScheduleViewMode] = useState<"global" | "personal">("global");
+  const [personalSearchQuery, setPersonalSearchQuery] = useState("");
+  const [personalTypeFilter, setPersonalTypeFilter] = useState<"all" | "onboarding" | "extension" | "standard">("all");
+
+  // Memoized unique personal deadline faculty list with search & type filtering
+  const { filteredPersonalFaculty, personalCounts } = useMemo(() => {
+    const query = personalSearchQuery.trim().toLowerCase();
+    const seen = new Set<string>();
+    const uniqueList: ActiveFacultySchedule[] = [];
+
+    for (const fac of activeFacultySchedules) {
+      const key = fac.facultyProfileId || fac.email;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      uniqueList.push(fac);
+    }
+
+    const counts = {
+      all: uniqueList.length,
+      onboarding: uniqueList.filter((f) => f.type === "onboarding").length,
+      extension: uniqueList.filter((f) => f.type === "extension").length,
+      standard: uniqueList.filter((f) => f.type === "standard").length,
+    };
+
+    const filtered = uniqueList.filter((fac) => {
+      if (personalTypeFilter !== "all" && fac.type !== personalTypeFilter) {
+        return false;
+      }
+      if (!query) return true;
+      return (
+        fac.facultyName.toLowerCase().includes(query) ||
+        fac.email.toLowerCase().includes(query) ||
+        fac.department.toLowerCase().includes(query) ||
+        (fac.typeLabel || "").toLowerCase().includes(query) ||
+        (fac.academicYear || "").toLowerCase().includes(query)
+      );
+    });
+
+    return { filteredPersonalFaculty: filtered, personalCounts: counts };
+  }, [activeFacultySchedules, personalSearchQuery, personalTypeFilter]);
+
   // 3-second safety countdown for Close Submissions
   const [closeCountdown, setCloseCountdown] = useState(3);
 
@@ -269,6 +311,41 @@ export function SubmissionWindowPanel({
     }
     return "Not Configured";
   }, [isAlwaysOpen, isWindowOpen, isUpcoming, startDateObj, endDateObj, now]);
+
+  const isGlobalConfigured = Boolean(
+    isAlwaysOpen || (startDateObj && endDateObj)
+  );
+
+  const nearestPersonalDeadline = useMemo(() => {
+    if (!activeFacultySchedules || activeFacultySchedules.length === 0) return null;
+    const valid = activeFacultySchedules
+      .map((fac) => {
+        try {
+          const d = new Date(fac.deadline);
+          return isNaN(d.getTime()) ? null : { fac, date: d };
+        } catch {
+          return null;
+        }
+      })
+      .filter((item): item is { fac: ActiveFacultySchedule; date: Date } => item !== null)
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    return valid.length > 0 ? valid[0] : null;
+  }, [activeFacultySchedules]);
+
+  const personalCountdownTime = useMemo(() => {
+    if (!activeFacultySchedules || activeFacultySchedules.length === 0) {
+      return "Not Configured";
+    }
+    if (!nearestPersonalDeadline) {
+      return `${activeFacultySchedules.length} Active`;
+    }
+    const diff = nearestPersonalDeadline.date.getTime() - now.getTime();
+    if (diff > 0) {
+      return formatTimeDifference(diff);
+    }
+    return `Expired ${formatTimeAgo(Math.abs(diff))}`;
+  }, [activeFacultySchedules, nearestPersonalDeadline, now]);
 
   const nowIso = getNowIsoLocal();
 
@@ -395,7 +472,10 @@ export function SubmissionWindowPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ facultyProfileId: fac.facultyProfileId }),
+        body: JSON.stringify({
+          facultyProfileId: fac.facultyProfileId,
+          email: fac.email,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -849,13 +929,46 @@ export function SubmissionWindowPanel({
       {/* Real-time Status Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 dark:bg-slate-950/50 dark:border-slate-800 transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-          {/* Status Badge */}
-          <div className="inline-flex items-center justify-center sm:justify-start gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold rounded-md shadow-2xs">
-            <span className={`w-2 h-2 rounded-full shrink-0 ${
-              isWindowOpen ? "bg-emerald-500 animate-pulse" : isUpcoming ? "bg-amber-500 animate-ping" : "bg-slate-400 dark:bg-slate-500"
-            }`} />
-            <span>{isAlwaysOpen ? "Always Open Window" : isWindowOpen ? "Live Submission Window" : isUpcoming ? "Scheduled Window" : "Window Closed"}</span>
-          </div>
+          {/* Context-aware Status Badge */}
+          {scheduleViewMode === "personal" ? (
+            <div className="inline-flex items-center justify-center sm:justify-start gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold rounded-md shadow-2xs">
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${
+                  activeFacultySchedules.length > 0
+                    ? "bg-emerald-500 animate-pulse"
+                    : "bg-slate-400 dark:bg-slate-500"
+                }`}
+              />
+              <span>
+                {activeFacultySchedules.length > 0
+                  ? `Personal Deadlines Active (${activeFacultySchedules.length})`
+                  : "Not Configured"}
+              </span>
+            </div>
+          ) : (
+            <div className="inline-flex items-center justify-center sm:justify-start gap-2 bg-white text-slate-800 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs font-semibold rounded-md shadow-2xs">
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${
+                  isAlwaysOpen || isWindowOpen
+                    ? "bg-emerald-500 animate-pulse"
+                    : isUpcoming
+                    ? "bg-amber-500 animate-ping"
+                    : "bg-slate-400 dark:bg-slate-500"
+                }`}
+              />
+              <span>
+                {isAlwaysOpen
+                  ? "Always Open Window"
+                  : isWindowOpen
+                  ? "Live Submission Window"
+                  : isUpcoming
+                  ? "Scheduled Window"
+                  : !isGlobalConfigured
+                  ? "Not Configured"
+                  : "Window Closed"}
+              </span>
+            </div>
+          )}
 
           {/* Current Academic Term Badge */}
           <div className="inline-flex items-center justify-center sm:justify-start gap-1.5 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-md shadow-2xs">
@@ -863,19 +976,19 @@ export function SubmissionWindowPanel({
             <span className="font-semibold text-slate-900 dark:text-slate-200">{currentTermLabel}</span>
           </div>
 
-          {/* On Schedule Faculty Badge */}
-          {activeFacultySchedules.length > 0 && (
+          {/* On Schedule Faculty Badge - Shortcut visible on Global view, clicking directs to Personal Deadline view */}
+          {scheduleViewMode === "global" && activeFacultySchedules.length > 0 && (
             <button
               type="button"
-              onClick={() => setShowActiveFacultyModal(true)}
-              className="inline-flex items-center justify-center sm:justify-start gap-2 bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700/60 px-3 py-1.5 text-xs font-semibold rounded-md shadow-2xs hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition cursor-pointer"
-              title="Click to view faculty members with an open individual submission window"
+              onClick={() => setScheduleViewMode("personal")}
+              className="inline-flex items-center justify-center sm:justify-start gap-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white border border-emerald-700 dark:border-emerald-500 px-3 py-1.5 text-xs font-bold rounded-lg shadow-xs transition cursor-pointer active:scale-95"
+              title="Click to switch to Personal Deadline view"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />
               <span>
-                On Schedule: <strong className="font-bold">{activeFacultySchedules.length} Faculty</strong>
+                On Schedule: <strong className="font-extrabold text-white">{activeFacultySchedules.length} Faculty</strong>
               </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-200/80 dark:bg-emerald-800/80 text-emerald-900 dark:text-emerald-100 font-bold uppercase tracking-wider">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-800 text-white font-black uppercase tracking-wider border border-emerald-500/40">
                 View
               </span>
             </button>
@@ -887,11 +1000,21 @@ export function SubmissionWindowPanel({
           <div className="flex items-center gap-2">
             <AppIcon icon={Hourglass} size="md" color="default" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              {isWindowOpen ? "Time Remaining" : isUpcoming ? "Opens In" : "Status"}
+              {scheduleViewMode === "personal"
+                ? activeFacultySchedules.length > 1
+                  ? "Next Deadline"
+                  : activeFacultySchedules.length === 1
+                  ? "Time Remaining"
+                  : "Status"
+                : isWindowOpen
+                ? "Time Remaining"
+                : isUpcoming
+                ? "Opens In"
+                : "Status"}
             </span>
           </div>
           <span className="font-mono text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
-            {formattedCountdownTime}
+            {scheduleViewMode === "personal" ? personalCountdownTime : formattedCountdownTime}
           </span>
         </div>
       </div>
@@ -908,70 +1031,60 @@ export function SubmissionWindowPanel({
         onClose={() => setSuccess(null)}
       />
 
-      {/* Active Faculty Schedules Alert Banner (Option A Onboarding Grace Period / Extensions) - Solid Green with Gold Button */}
-      {activeFacultySchedules.length > 0 && (
-        <div className="rounded-xl border-2 border-emerald-600 dark:border-emerald-500 bg-emerald-700 dark:bg-emerald-900 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md shadow-emerald-700/20 text-white">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-800 dark:bg-emerald-950 text-white shrink-0 border border-emerald-600/50">
-              <AppIcon icon={CheckCircle} size="lg" color="inherit" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-white">
-                  {activeFacultySchedules.length} Faculty Member{activeFacultySchedules.length !== 1 ? "s" : ""} Currently On Active Schedule
-                </p>
-                <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-800 text-emerald-100 border border-emerald-500">
-                  On Schedule
-                </span>
-              </div>
-              <p className="text-xs text-emerald-100 mt-0.5 font-medium leading-relaxed">
-                {isWindowOpen
-                  ? "Faculty members with active individual deadlines or onboarding grace periods."
-                  : "Global submission schedule is currently closed, but these faculty have active personal submission windows (Option A Onboarding or Extensions)."}
-              </p>
-            </div>
-          </div>
+      {/* 2-Option Schedule Switcher: Global Schedule & Personal Deadline */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 w-full sm:w-auto shadow-2xs">
           <button
             type="button"
-            onClick={() => setShowActiveFacultyModal(true)}
-            className="shrink-0 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg transition shadow-xs cursor-pointer flex items-center gap-1.5 active:scale-95 border border-amber-300/80"
+            onClick={() => setScheduleViewMode("global")}
+            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              scheduleViewMode === "global"
+                ? "bg-amber-500 text-slate-950 shadow-xs border border-amber-600 font-extrabold"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-900"
+            }`}
           >
-            <span>View On-Schedule Faculty ({activeFacultySchedules.length})</span>
+            <AppIcon icon={Calendar} size="sm" color="inherit" />
+            <span>Global Schedule</span>
           </button>
-        </div>
-      )}
 
-      {/* Pending Extension Requests Alert Banner - Solid Amber */}
-      {pendingRequestsCount > 0 && (
-        <div className="rounded-xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md shadow-amber-500/10">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/30 text-amber-950 dark:text-amber-300 shrink-0">
-              <AppIcon icon={Hourglass} size="lg" color="inherit" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-slate-950 dark:text-amber-100">
-                {pendingRequestsCount} Pending Faculty Extension Request{pendingRequestsCount !== 1 ? "s" : ""}
-              </p>
-              <p className="text-xs text-amber-950/90 dark:text-amber-200/90">
-                Faculty members have requested deadline extensions for their compliance requirements.
-              </p>
-            </div>
-          </div>
           <button
             type="button"
-            onClick={() => {
-              setShowRequestsModal(true);
-              void fetchExtensionRequests();
-            }}
-            className="shrink-0 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-lg transition shadow-xs cursor-pointer"
+            onClick={() => setScheduleViewMode("personal")}
+            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              scheduleViewMode === "personal"
+                ? "bg-amber-500 text-slate-950 shadow-xs border border-amber-600 font-extrabold"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-900"
+            }`}
           >
-            Review Requests ({pendingRequestsCount})
+            <AppIcon icon={User} size="sm" color="inherit" />
+            <span>Personal Deadline</span>
+            {activeFacultySchedules.length > 0 ? (
+              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
+                scheduleViewMode === "personal"
+                  ? "bg-white text-amber-950 shadow-2xs border border-amber-600/30"
+                  : "bg-emerald-600 text-white"
+              }`}>
+                {activeFacultySchedules.length}
+              </span>
+            ) : null}
           </button>
         </div>
-      )}
 
-      {/* 2. 2-Column Schedule Configuration Grid */}
-      <form onSubmit={handleSave} className="space-y-6">
+        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+          {scheduleViewMode === "global" ? (
+            <span>Campus-wide submission window for all faculty members</span>
+          ) : (
+            <span>
+              <strong>{activeFacultySchedules.length} Faculty</strong> with active personal deadlines
+            </span>
+          )}
+        </div>
+      </div>
+
+      {scheduleViewMode === "global" ? (
+        <>
+          {/* 2. 2-Column Schedule Configuration Grid */}
+          <form onSubmit={handleSave} className="space-y-6">
         {isEditingSchedule ? (
           <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-100 border border-slate-200/90 dark:bg-slate-800/50 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs transition-all">
             <AppIcon icon={EditPencil} size="md" color="default" />
@@ -1227,25 +1340,6 @@ export function SubmissionWindowPanel({
             <button
               type="button"
               onClick={() => {
-                setShowRequestsModal(true);
-                void fetchExtensionRequests();
-              }}
-              className="relative flex items-center justify-center sm:justify-start gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2.5 sm:py-2 text-sm font-medium rounded-xl transition-colors cursor-pointer shadow-2xs w-full sm:w-auto"
-            >
-              <AppIcon icon={Hourglass} size="sm" color="active" />
-              <span>Extension Requests</span>
-              {pendingRequestsCount > 0 ? (
-                <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 animate-pulse">
-                  {pendingRequestsCount} Pending
-                </span>
-              ) : extensionRequests.length > 0 ? (
-                <span className="ml-1 text-xs text-slate-400">({extensionRequests.length})</span>
-              ) : null}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
                 setShowLogsModal(true);
                 refetchLogs();
               }}
@@ -1333,6 +1427,263 @@ export function SubmissionWindowPanel({
           </div>
         </div>
       </form>
+    </>
+      ) : (
+        /* SECTION: Personal Deadline Schedule Management */
+        <div className="space-y-5 animate-in fade-in duration-200">
+          {/* Subtle Informational Banner matching Global Schedule (No duplicate action button) */}
+          <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-100 border border-slate-200/90 dark:bg-slate-800/50 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs">
+            <AppIcon icon={User} size="md" color="default" />
+            <div>
+              <span className="font-bold text-slate-900 dark:text-slate-100">Faculty Personal Deadlines:</span>{" "}
+              <span>
+                {personalCounts.all} faculty member{personalCounts.all !== 1 ? "s" : ""} with approved deadline extensions.
+              </span>
+            </div>
+          </div>
+
+          {/* Pending Extension Requests Alert Banner in Personal Deadline View */}
+          {pendingRequestsCount > 0 && (
+            <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 dark:bg-amber-950/20 dark:border-amber-800/40 text-xs">
+              <div className="flex items-center gap-2.5 text-amber-900 dark:text-amber-200">
+                <AppIcon icon={Hourglass} size="md" color="inherit" />
+                <span>
+                  <strong>{pendingRequestsCount} Pending Request{pendingRequestsCount !== 1 ? "s" : ""}:</strong> Faculty have requested submission deadline extensions.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRequestsModal(true);
+                  void fetchExtensionRequests();
+                }}
+                className="shrink-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-50 border border-amber-300 dark:border-amber-700/60 font-semibold text-xs px-3 py-1.5 rounded-lg transition shadow-2xs cursor-pointer"
+              >
+                Review Requests ({pendingRequestsCount})
+              </button>
+            </div>
+          )}
+
+          {/* Search Toolbar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <AppIcon
+                icon={Search}
+                size="sm"
+                color="default"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500"
+              />
+              <input
+                type="text"
+                placeholder="Search faculty name, email, department..."
+                value={personalSearchQuery}
+                onChange={(e) => setPersonalSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 transition-colors shadow-2xs"
+              />
+              {personalSearchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setPersonalSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  <AppIcon icon={Xmark} size="sm" color="inherit" />
+                </button>
+              ) : null}
+            </div>
+
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Showing <strong>{filteredPersonalFaculty.length}</strong> active extension{filteredPersonalFaculty.length !== 1 ? "s" : ""}
+            </div>
+          </div>
+
+          {/* Table / List View */}
+          {filteredPersonalFaculty.length === 0 ? (
+            <div className="py-12 px-4 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 space-y-3">
+              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+                <AppIcon icon={Calendar} size="lg" color="inherit" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                  {personalSearchQuery ? "No matching faculty found" : "No active personal deadlines"}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                  {personalSearchQuery
+                    ? `No faculty on personal deadline matches "${personalSearchQuery}". Try adjusting your search term.`
+                    : "All faculty are currently following the global schedule. Faculty granted deadline extension requests will appear here."}
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setScheduleViewMode("global")}
+                  className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                >
+                  Switch to Global Schedule
+                </button>
+                {pendingRequestsCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRequestsModal(true);
+                      void fetchExtensionRequests();
+                    }}
+                    className="px-3.5 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer"
+                  >
+                    Review Requests ({pendingRequestsCount})
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3 px-3 text-center w-12">#</th>
+                    <th className="py-3 px-5">Faculty Name</th>
+                    <th className="py-3 px-4 text-center">Type</th>
+                    <th className="py-3 px-4">Personal Schedule</th>
+                    <th className="py-3 px-4 text-center">Portal Status</th>
+                    <th className="py-3 px-5 text-center w-44">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
+                  {filteredPersonalFaculty.map((fac, index) => {
+                    const formattedOpen = (() => {
+                      if (fac.openDateFormatted && fac.openDateFormatted !== "—" && !fac.openDateFormatted.includes("Invalid")) {
+                        return fac.openDateFormatted;
+                      }
+                      return "Active";
+                    })();
+
+                    const formattedClose = (() => {
+                      if (fac.closeDateFormatted && fac.closeDateFormatted !== "—" && !fac.closeDateFormatted.includes("Invalid")) {
+                        return fac.closeDateFormatted;
+                      }
+                      if (fac.deadlineFormatted && !fac.deadlineFormatted.includes("Invalid")) {
+                        return fac.deadlineFormatted;
+                      }
+                      try {
+                        const d = new Date(fac.deadline);
+                        if (!isNaN(d.getTime())) {
+                          return d.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          });
+                        }
+                      } catch {
+                        // ignore
+                      }
+                      return "Active Window";
+                    })();
+
+                    return (
+                      <tr
+                        key={fac.facultyProfileId || fac.email}
+                        className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors"
+                      >
+                        <td className="py-3 px-3 text-center align-middle font-medium text-slate-400 dark:text-slate-500">
+                          {index + 1}
+                        </td>
+                        <td className="py-3 px-5 align-middle">
+                          <div className="space-y-0.5">
+                            <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 block">
+                              {fac.facultyName}
+                            </span>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                              {fac.email} • {fac.department} • {fac.academicYear} {fac.semester}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 align-middle text-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white border border-sky-700 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                            Approved Extension
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 align-middle whitespace-nowrap">
+                          <div className="flex flex-col gap-0.5 text-xs">
+                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                              <span className="text-[11px] font-semibold text-slate-400">Opens:</span>
+                              <span className="font-medium text-slate-700 dark:text-slate-300">{formattedOpen}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                              <span className="text-[11px] font-semibold text-slate-400">Deadline:</span>
+                              <span className="font-bold text-slate-900 dark:text-slate-100">{formattedClose}</span>
+                            </div>
+                            {fac.timeRemainingLabel && !fac.timeRemainingLabel.includes("NaN") ? (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                {fac.timeRemainingLabel}
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 align-middle text-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#0b5336] px-2.5 py-1 rounded-md border border-[#08412a] shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" />
+                            Portal Unlocked
+                          </span>
+                        </td>
+                        <td className="py-3 px-5 align-middle text-center whitespace-nowrap">
+                          <button
+                            type="button"
+                            disabled={closingFacultyId === fac.facultyProfileId}
+                            onClick={() => handleCloseFacultySchedule(fac)}
+                            className="inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
+                            title="Close submission window for this faculty member"
+                          >
+                            <AppIcon icon={ShieldAlert} size="sm" color="white" />
+                            <span>Close Deadline</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Personal Deadline Footer Action Toolbar (Sole location for Extension Requests & Logs) */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-200 dark:border-slate-800 pt-5">
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRequestsModal(true);
+                  void fetchExtensionRequests();
+                }}
+                className="relative inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-xs font-medium rounded-xl transition cursor-pointer shadow-2xs"
+              >
+                <AppIcon icon={Hourglass} size="sm" color="active" />
+                <span>Extension Requests</span>
+                {pendingRequestsCount > 0 ? (
+                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 animate-pulse">
+                    {pendingRequestsCount} Pending
+                  </span>
+                ) : null}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLogsModal(true);
+                  refetchLogs();
+                }}
+                className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-800 px-3.5 py-2 text-xs font-medium rounded-xl transition cursor-pointer"
+              >
+                <AppIcon icon={ClockRotateRight} size="sm" color="default" />
+                <span>Logs {extensionLogs.length > 0 ? `(${extensionLogs.length})` : ""}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Workflow Modal: Extend Submission Window */}
       <ExtendSubmissionWindowModal
@@ -1433,6 +1784,11 @@ export function SubmissionWindowPanel({
                           >
                             {req.status}
                           </span>
+                          {req.status === "approved" && !req.approved_date && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                              Deadline Closed
+                            </span>
+                          )}
                         </div>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400">
                           {req.department || "Faculty"} • {req.academic_year} {req.semester}
@@ -1935,176 +2291,7 @@ export function SubmissionWindowPanel({
         </div>
       ) : null}
 
-      {/* Active Faculty Schedules Modal */}
-      {showActiveFacultyModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-6xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-900 dark:text-slate-100">
-            <ModalHeader
-              icon={Calendar}
-              title="Faculty on Active Submission Schedule"
-              subtitle="Faculty members with open submission windows (New Faculty Grace Period, Extensions, or Standard Schedule)"
-              onClose={() => setShowActiveFacultyModal(false)}
-              className="-mx-6 -mt-6 mb-4 rounded-t-2xl"
-            />
 
-            <div className="p-3.5 rounded-xl bg-emerald-700 dark:bg-emerald-800 border-2 border-emerald-600 dark:border-emerald-700 text-xs text-white flex items-start gap-2.5 shadow-md">
-              <AppIcon icon={CheckCircle} size="md" color="white" className="mt-0.5 shrink-0 text-white" />
-              <p className="leading-relaxed font-medium text-white">
-                These faculty members currently have permission to upload compliance documents even if the global window is closed. Their personal submission deadlines are enforced individually.
-              </p>
-            </div>
-
-            <div className="overflow-y-auto space-y-3 pr-1 flex-1">
-              {(() => {
-                const seenKeys = new Set<string>();
-                const uniqueFacultySchedules = activeFacultySchedules.filter((fac) => {
-                  const key = fac.facultyProfileId || fac.email;
-                  if (!key || seenKeys.has(key)) return false;
-                  seenKeys.add(key);
-                  return true;
-                });
-
-                if (uniqueFacultySchedules.length === 0) {
-                  return (
-                    <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">
-                        No faculty currently on individual schedule.
-                      </p>
-                      <p>Faculty onboarded with Option A or granted extension requests will appear here.</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
-                        <tr>
-                          <th className="py-3.5 px-3 text-center w-12">#</th>
-                          <th className="py-3.5 px-5">Faculty Name</th>
-                          <th className="py-3.5 px-4 text-center">Origin</th>
-                          <th className="py-3.5 px-4">Schedule</th>
-                          <th className="py-3.5 px-4 text-center">Portal Status</th>
-                          <th className="py-3.5 px-5 text-center w-44">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
-                        {uniqueFacultySchedules.map((fac, index) => {
-                          const formattedOpen =
-                            fac.openDateFormatted && fac.openDateFormatted !== "—"
-                              ? fac.openDateFormatted
-                              : (() => {
-                                  try {
-                                    const d = new Date(fac.deadline);
-                                    const openD = new Date(d.getTime() - 7 * 24 * 60 * 60 * 1000);
-                                    return openD.toLocaleDateString("en-US", {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                      hour: "numeric",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
-                                  } catch {
-                                    return "Active";
-                                  }
-                                })();
-
-                          const formattedClose =
-                            fac.closeDateFormatted && fac.closeDateFormatted !== "—"
-                              ? fac.closeDateFormatted
-                              : fac.deadlineFormatted || "—";
-
-                          return (
-                            <tr
-                              key={fac.facultyProfileId}
-                              className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors"
-                            >
-                              <td className="py-3.5 px-3 text-center align-middle font-bold text-slate-500 dark:text-slate-400">
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#780000] text-xs font-bold text-white shadow-xs">
-                                  {index + 1}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-5 align-middle">
-                                <div className="space-y-0.5">
-                                  <span className="font-bold text-sm text-slate-900 dark:text-slate-100 block">
-                                    {fac.facultyName}
-                                  </span>
-                                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                    {fac.email} • {fac.department} • {fac.academicYear} {fac.semester}
-                                  </p>
-                                </div>
-                              </td>
-                              <td className="py-3.5 px-4 align-middle text-center whitespace-nowrap">
-                                {fac.typeLabel === "New Faculty" ? (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500 text-slate-950 border border-amber-600 shadow-xs">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-950" />
-                                    New Faculty
-                                  </span>
-                                ) : fac.typeLabel === "Extended" ? (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white border border-blue-700 shadow-xs">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-200" />
-                                    Extended
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-700 text-white border border-emerald-800 shadow-xs">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-200" />
-                                    Standard
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 align-middle whitespace-nowrap">
-                                <div className="flex flex-col gap-1.5 text-xs">
-                                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500 text-slate-950 border border-amber-600 text-[11px] shadow-xs">
-                                    <span className="text-amber-950 font-bold">Open:</span>
-                                    <span className="font-bold text-slate-950">{formattedOpen}</span>
-                                  </div>
-                                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#780000] text-white border border-[#5e0000] text-[11px] shadow-xs">
-                                    <span className="text-amber-200 font-semibold">Close:</span>
-                                    <strong className="font-bold text-white">{formattedClose}</strong>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-3.5 px-4 align-middle text-center whitespace-nowrap">
-                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-800 shadow-xs">
-                                  <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse shrink-0" />
-                                  Upload Portal Unlocked
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-5 align-middle text-center whitespace-nowrap">
-                                <button
-                                  type="button"
-                                  disabled={closingFacultyId === fac.facultyProfileId}
-                                  onClick={() => handleCloseFacultySchedule(fac)}
-                                  className="inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3.5 py-2 text-xs font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs active:scale-95"
-                                  title="Close submission window for this faculty member"
-                                >
-                                  <AppIcon icon={ShieldAlert} size="sm" color="white" />
-                                  <span>{closingFacultyId === fac.facultyProfileId ? "Closing..." : "Close Submission"}</span>
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })()}
-            </div>
-
-            <div className="flex justify-end pt-2 border-t border-slate-200/70 dark:border-slate-800/70">
-              <button
-                type="button"
-                onClick={() => setShowActiveFacultyModal(false)}
-                className="px-5 py-2 rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold transition cursor-pointer shadow-xs active:scale-95"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

@@ -147,7 +147,7 @@ Used exclusively for document validation, approvals, and setting active/current 
 - **Active Filter Tab ("All")**: `bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium`
 - **Inactive Filter Tabs**: `text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60`
 
-### 2.4 Banned Colors
+### 2.4 Banned Colors & Prohibited Badges
 
 Do not use any of the following in dashboard/admin surfaces:
 
@@ -156,6 +156,7 @@ Do not use any of the following in dashboard/admin surfaces:
 - `shadow-purple-*`, `shadow-cyan-*`
 - Any `shadow-[0_0_...]` with colored RGBA values (glow effects)
 - Any `bg-gradient-to-*` for decorative purposes on admin surfaces
+- **Pitch-Black Badge & Pill Fills**: Never use `bg-slate-950`, `bg-black`, `#020617`, or `#000` for badges, circular count indicators, status pills, or filter chips on gold/amber, light, or accent surfaces. Badges nested inside active buttons must use clean white (`bg-white text-amber-950 border border-amber-600/30`) or subtle neutral tones to maintain institutional contrast and legibility.
 
 ### 2.5 PUP Brand Colors (Auth/Public Pages Only)
 
