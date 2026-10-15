@@ -20,9 +20,8 @@ import { FacultyTable } from "@/features/faculty-management/components/faculty-t
 import { RequirementsPanel } from "@/features/faculty-management/components/requirements-verification-panel";
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { SubmissionWindowPanel } from "@/features/faculty-management/components/submission-window-panel";
-import { RequirementTemplatesPanel } from "@/features/requirement-templates/components/requirement-templates-panel";
 import { BackupArchivePanel } from "@/features/backup-archive/components/backup-archive-panel";
-import { CurriculumManagementPanel } from "@/features/curriculum-management/components/curriculum-management-panel";
+import { TemplatesAndProgramsPanel, CurriculumManagementPanel } from "@/features/curriculum-management/components/curriculum-management-panel";
 import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
 import { SuperAdminSettings } from "@/features/admin-management/components/admin-settings";
 import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
@@ -2111,32 +2110,11 @@ export function SuperAdminDashboard({
               </article>
             ) : null}
 
-            {activeSection === "templates" ? (
-              <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                {/* Solid Amber Card Header */}
-                <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
-                      Requirement Templates
-                    </h1>
-                    <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-                      Define, configure, and standardize required submission document checklists for faculty.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => void refreshCurrentPanel()}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
-                    >
-                      <Refresh className="h-3.5 w-3.5" strokeWidth={2} />
-                      <span>Refresh</span>
-                    </button>
-                  </div>
-                </div>
-
-                <RequirementTemplatesPanel refreshTrigger={templatesRefreshTrigger} />
-              </article>
+            {activeSection === "templates" || activeSection === "curriculum" ? (
+              <TemplatesAndProgramsPanel
+                refreshTrigger={templatesRefreshTrigger}
+                initialTab={activeSection === "curriculum" ? "programs" : "templates"}
+              />
             ) : null}
 
             {activeSection === "backups" ? (
@@ -2155,10 +2133,6 @@ export function SuperAdminDashboard({
 
                 <BackupArchivePanel />
               </article>
-            ) : null}
-
-            {activeSection === "curriculum" ? (
-              <CurriculumManagementPanel />
             ) : null}
 
             {activeSection === "audit" ? (
