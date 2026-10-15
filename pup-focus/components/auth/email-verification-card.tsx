@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
-  Loader2,
   Check,
   Copy,
   Eye,
@@ -80,6 +80,8 @@ export function EmailVerificationCard({
   const defaultErrorMessage =
     "This invitation link was already used or has expired. Please ask an administrator to send a new invite or sign in if your account is already set up.";
 
+  const firstName = fullName?.trim().split(/\s+/)[0];
+
   const headerConfig = {
     loading: {
       title: "Verifying invitation link...",
@@ -87,9 +89,9 @@ export function EmailVerificationCard({
     },
     success: {
       title: "Account Ready",
-      subtitle: fullName
-        ? `Welcome, ${fullName}! Save your temporary credentials before signing in.`
-        : "Welcome! Save your temporary credentials before signing in.",
+      subtitle: firstName
+        ? `Welcome, ${firstName}! We also sent this to your email. Save your temporary credentials before signing in.`
+        : "Welcome! We also sent this to your email. Save your temporary credentials before signing in.",
     },
     error: {
       title: "Verification Failed",
@@ -118,8 +120,22 @@ export function EmailVerificationCard({
         {/* State 1: Loading / Verifying */}
         {status === "loading" && (
           <div className="flex flex-col items-center text-center py-2 space-y-5">
-            <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/50 flex items-center justify-center">
-              <Loader2 className="w-6 h-6 text-[#780000] dark:text-amber-400 animate-spin" />
+            <div className="relative w-16 h-16 flex items-center justify-center my-1">
+              {/* Outer track */}
+              <div className="absolute inset-0 rounded-full border-[3px] border-slate-200 dark:border-slate-800" />
+              {/* Spinning brand arc */}
+              <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#780000] border-r-[#780000] dark:border-t-amber-400 dark:border-r-amber-400 animate-spin" />
+              {/* Center PUP Logo */}
+              <div className="relative w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-white shadow-xs p-0.5">
+                <Image
+                  src="/icons/pup-seal.png"
+                  alt="PUP Logo"
+                  width={34}
+                  height={34}
+                  className="object-contain"
+                  priority
+                />
+              </div>
             </div>
 
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs">
@@ -245,7 +261,7 @@ export function EmailVerificationCard({
         {/* State 3: Verification Failed / Expired Link */}
         {status === "error" && (
           <div className="flex flex-col items-center text-center">
-            <div className="w-full bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/60 rounded-xl p-4 text-xs text-rose-900 dark:text-rose-200 text-left leading-relaxed mb-5">
+            <div className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-xs text-slate-700 dark:text-slate-300 text-left leading-relaxed mb-5">
               {errorMessage || defaultErrorMessage}
             </div>
 
@@ -264,8 +280,8 @@ export function EmailVerificationCard({
         {status === "cancelled" && (
           <div className="flex flex-col items-center text-center">
             <div className="mb-3.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs font-semibold text-rose-700 dark:text-rose-300">
-                <AlertTriangle className="w-3.5 h-3.5" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <AlertTriangle className="w-3.5 h-3.5 text-slate-500" />
                 <span>Access Revoked by Administrator</span>
               </span>
             </div>
@@ -286,11 +302,11 @@ export function EmailVerificationCard({
               </div>
             )}
 
-            <div className="w-full bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/60 rounded-xl p-4 text-xs text-rose-900 dark:text-rose-200 text-left leading-relaxed space-y-1.5 mb-5">
-              <p className="font-medium">
+            <div className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-xs text-left leading-relaxed space-y-1.5 mb-5">
+              <p className="font-medium text-slate-800 dark:text-slate-200">
                 This account invitation has been cancelled or revoked by the institutional administrator.
               </p>
-              <p className="text-rose-800/80 dark:text-rose-300/80">
+              <p className="text-slate-600 dark:text-slate-400">
                 The link in your email is no longer active. If you believe this cancellation was made in mistake, please contact your department chairperson or PUP Bataan administrator.
               </p>
             </div>
