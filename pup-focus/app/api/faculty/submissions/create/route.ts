@@ -78,6 +78,21 @@ function isMissingFacultyAssignmentIdError(
   );
 }
 
+function isMissingCurriculumIdError(
+  error: { message?: string } | null,
+): boolean {
+  const message = (error?.message || "").toLowerCase();
+  return (
+    message.includes("curriculum_id") &&
+    (message.includes("submissions") ||
+      message.includes("faculty_program_assignments") ||
+      message.includes("schema cache") ||
+      message.includes("does not exist") ||
+      message.includes("column") ||
+      message.includes("no field"))
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Authenticate faculty user
@@ -444,14 +459,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Program Assignment and Curriculum lookup
+    // Program Assignment lookup
     let facultyAssignmentId: string | null = null;
     let programId: string | null = null;
     let curriculumId: string | null = null;
 
     const { data: assignments } = await supabaseAdmin
       .from("faculty_program_assignments")
-      .select("id, program_id, curriculum_id")
+      .select("id, program_id")
       .eq("faculty_profile_id", profile.id)
       .eq("academic_year", payload.academicYear)
       .ilike("term", `%${payload.semester}%`);
@@ -459,26 +474,6 @@ export async function POST(request: NextRequest) {
     if (assignments && assignments.length > 0) {
       facultyAssignmentId = assignments[0].id;
       programId = assignments[0].program_id;
-      curriculumId = assignments[0].curriculum_id;
-    }
-
-    if (!curriculumId) {
-      try {
-        const { data: latestAssignment } = await supabaseAdmin
-          .from("faculty_program_assignments")
-          .select("curriculum_id")
-          .eq("faculty_profile_id", profile.id)
-          .not("curriculum_id", "is", null)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (latestAssignment?.curriculum_id) {
-          curriculumId = latestAssignment.curriculum_id;
-        }
-      } catch {
-        // curricula table or column is optional
-      }
     }
 
     if (!facultyAssignmentId) {
@@ -497,7 +492,6 @@ export async function POST(request: NextRequest) {
         term: payload.semester,
       };
       if (programId) insertPayload.program_id = programId;
-      if (curriculumId) insertPayload.curriculum_id = curriculumId;
 
       const { data: createdAssignment, error: createAssignmentError } =
         await supabaseAdmin
@@ -561,7 +555,7 @@ export async function POST(request: NextRequest) {
     const { data: allFacultySubmissions } = await supabaseAdmin
       .from("submissions")
       .select(
-        "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks, class_id",
+        "id, status, requirement_code, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks, class_id",
       )
       .in("faculty_profile_id", facultyProfileIds)
       .order("created_at", { ascending: true });
@@ -572,7 +566,7 @@ export async function POST(request: NextRequest) {
       const { data: assignSubs } = await supabaseAdmin
         .from("submissions")
         .select(
-          "id, status, requirement_code, curriculum_id, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks, class_id",
+          "id, status, requirement_code, faculty_assignment_id, faculty_profile_id, submitted_at, created_at, remarks, class_id",
         )
         .eq("faculty_assignment_id", facultyAssignmentId)
         .order("created_at", { ascending: true });
@@ -814,7 +808,6 @@ export async function POST(request: NextRequest) {
       updatePayload.size_bytes = fileBufferLength || null;
       updatePayload.checksum_sha256 = checksumSha256 || null;
 
-      if (curriculumId) updatePayload.curriculum_id = curriculumId;
       if (facultyAssignmentId)
         updatePayload.faculty_assignment_id = facultyAssignmentId;
       if (payload.classId) updatePayload.class_id = payload.classId;
@@ -896,7 +889,6 @@ export async function POST(request: NextRequest) {
       const submissionPayload: Record<string, any> = {
         id: targetSubmissionId,
         faculty_profile_id: profile.id,
-        curriculum_id: curriculumId,
         faculty_assignment_id: facultyAssignmentId ?? null,
         requirement_code: payload.requirementCode,
         status: "uploaded",
@@ -924,7 +916,6 @@ export async function POST(request: NextRequest) {
         const fallbackPayload: Record<string, any> = {
           id: targetSubmissionId,
           faculty_profile_id: profile.id,
-          curriculum_id: curriculumId,
           requirement_code: payload.requirementCode,
           status: "uploaded",
           submitted_at: submissionPayload.submitted_at,
