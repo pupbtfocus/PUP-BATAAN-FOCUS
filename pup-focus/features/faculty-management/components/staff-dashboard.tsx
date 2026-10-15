@@ -73,7 +73,9 @@ function normalizeAdminSection(raw?: string | null): AdminSection | null {
     val === "curriculum" ||
     val === "curricula" ||
     val === "curriculums" ||
-    val === "programs"
+    val === "programs" ||
+    val === "templates" ||
+    val === "templates-programs"
   )
     return "curriculum";
   if (
@@ -1334,7 +1336,7 @@ export function AdminFacultyDashboard({
                   </article>
                 ) : null}
 
-                {activeSection === "curriculum" ? (
+                {activeSection === "curriculum" || activeSection === "templates" || activeSection === "programs" ? (
                   <CurriculumManagementPanel />
                 ) : null}
 

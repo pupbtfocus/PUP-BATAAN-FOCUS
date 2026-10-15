@@ -453,37 +453,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (!curriculumId) {
-      const { data: latestAssignment } = await supabaseAdmin
-        .from("faculty_program_assignments")
-        .select("curriculum_id")
-        .eq("faculty_profile_id", profile.id)
-        .not("curriculum_id", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (latestAssignment?.curriculum_id) {
-        curriculumId = latestAssignment.curriculum_id;
-      } else {
-        const { data: curriculum } = await supabaseAdmin
-          .from("curricula")
-          .select("id")
+      try {
+        const { data: latestAssignment } = await supabaseAdmin
+          .from("faculty_program_assignments")
+          .select("curriculum_id")
+          .eq("faculty_profile_id", profile.id)
+          .not("curriculum_id", "is", null)
+          .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        if (!curriculum) {
-          logger.error("no_curriculum_available", {
-            facultyId: profile.id,
-          });
-          return NextResponse.json(
-            {
-              error:
-                "No curriculum found in the system. Please contact an administrator.",
-            },
-            { status: 400 },
-          );
+        if (latestAssignment?.curriculum_id) {
+          curriculumId = latestAssignment.curriculum_id;
         }
-        curriculumId = curriculum.id;
+      } catch {
+        // curricula table or column is optional
       }
     }
 
@@ -495,15 +479,6 @@ export async function POST(request: NextRequest) {
           .limit(1)
           .maybeSingle();
         programId = firstProgram?.id ?? null;
-      }
-
-      if (!curriculumId) {
-        const { data: firstCurriculum } = await supabaseAdmin
-          .from("curricula")
-          .select("id")
-          .limit(1)
-          .maybeSingle();
-        curriculumId = firstCurriculum?.id ?? null;
       }
 
       const insertPayload: Record<string, any> = {

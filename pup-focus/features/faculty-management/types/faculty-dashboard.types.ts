@@ -15,6 +15,8 @@ export type AdminSection =
   | "submissionWindow"
   | "academicTerms"
   | "curriculum"
+  | "templates"
+  | "programs"
   | "settings"
   | "details";
 

@@ -25,10 +25,10 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const includeHidden = url.searchParams.get("includeHidden") === "true";
 
-    // Attempt to query with is_hidden and description columns
+    // Query programs without curricula dependency
     let query = supabase
       .from("programs")
-      .select("id, code, name, description, is_hidden, created_at, curricula(id)")
+      .select("id, code, name, description, is_hidden, created_at")
       .order("code", { ascending: true });
 
     if (!includeHidden) {
@@ -95,7 +95,6 @@ export async function GET(req: NextRequest) {
       description: p.description || "",
       is_hidden: Boolean(p.is_hidden),
       created_at: p.created_at,
-      curricula_count: Array.isArray(p.curricula) ? p.curricula.length : 0,
     }));
 
     return NextResponse.json({ programs: formatted });
@@ -261,15 +260,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Check if there are associated curricula
-    const { count: curriculaCount, error: countErr } = await supabase
-      .from("curricula")
-      .select("id", { count: "exact", head: true })
-      .eq("program_id", id);
-
-    if (curriculaCount && curriculaCount > 0) {
-      // Delete child curricula first if cascading
-      await supabase.from("curricula").delete().eq("program_id", id);
+    // Safely unlink or clean up any program assignments referencing this program
+    try {
+      await supabase.from("faculty_program_assignments").delete().eq("program_id", id);
+      await supabase.from("admin_assignments").delete().eq("program_id", id);
+    } catch {
+      // Safe fallback if tables don't exist
     }
 
     const { error } = await supabase.from("programs").delete().eq("id", id);

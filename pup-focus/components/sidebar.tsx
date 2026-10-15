@@ -426,67 +426,45 @@ export function SidebarContent({
                 />
                 <span className="whitespace-nowrap">Submission Schedule</span>
               </button>
-              {isSuperAdmin && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => handleSelect("templates")}
-                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
-                      isTemplatesActive
-                        ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
-                        : "text-amber-100/80 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <Page
-                      strokeWidth={2}
-                      className={`h-4 w-4 shrink-0 ${
-                        isTemplatesActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
-                      }`}
-                    />
-                    <span className="whitespace-nowrap">Requirement Templates</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelect("backups")}
-                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
-                      isBackupsActive
-                        ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
-                        : "text-amber-100/80 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <Archive
-                      strokeWidth={2}
-                      className={`h-4 w-4 shrink-0 ${
-                        isBackupsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
-                      }`}
-                    />
-                    <span className="whitespace-nowrap">Backups & Archive</span>
-                  </button>
-                </>
-              )}
               <button
                 type="button"
-                onClick={() => handleSelect("curriculum")}
-                className={`flex w-full items-center justify-between gap-1.5 px-2.5 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md ${
-                  isCurriculumActive
+                onClick={() => handleSelect("templates")}
+                className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                  isTemplatesActive || isCurriculumActive
                     ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                     : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                 }`}
-                title="Curriculum & Programs (Coming Soon)"
+                title="Requirement Templates & Academic Programs"
               >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <GraduationCap
+                <Page
+                  strokeWidth={2}
+                  className={`h-4 w-4 shrink-0 ${
+                    isTemplatesActive || isCurriculumActive
+                      ? "text-amber-300 stroke-[2]"
+                      : "text-amber-200/70"
+                  }`}
+                />
+                <span className="whitespace-nowrap">Templates & Programs</span>
+              </button>
+              {isSuperAdmin && (
+                <button
+                  type="button"
+                  onClick={() => handleSelect("backups")}
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                    isBackupsActive
+                      ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                      : "text-amber-100/80 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <Archive
                     strokeWidth={2}
                     className={`h-4 w-4 shrink-0 ${
-                      isCurriculumActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                      isBackupsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
                     }`}
                   />
-                  <span className="truncate">Curriculum & Programs</span>
-                </div>
-                <span className="shrink-0 text-[8.5px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded bg-amber-400/25 text-amber-300 border border-amber-400/50 shadow-2xs whitespace-nowrap">
-                  Coming Soon
-                </span>
-              </button>
+                  <span className="whitespace-nowrap">Backups & Archive</span>
+                </button>
+              )}
             </div>
           )}
         </div>
