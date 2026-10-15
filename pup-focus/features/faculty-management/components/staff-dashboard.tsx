@@ -723,7 +723,7 @@ export function AdminFacultyDashboard({
 
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans transition-colors duration-200">
-      <header className="fixed inset-x-0 md:left-72 top-0 h-14 z-40 border-b-4 border-amber-500 bg-[#800000] text-white shadow-md flex items-center transition-colors duration-200">
+      <header className="fixed inset-x-0 md:left-[calc(18rem-4px)] top-0 h-14 z-40 border-b-4 border-amber-500 bg-[#800000] text-white shadow-md flex items-center transition-colors duration-200">
         <div className="relative flex w-full h-full items-center justify-between pl-4 pr-3 sm:pr-6">
           {/* Left: Mobile Menu Trigger & Title (Mobile only) */}
           <div className="flex md:hidden items-center gap-2 sm:gap-3 z-10">
@@ -770,8 +770,8 @@ export function AdminFacultyDashboard({
               profileImageUrl={adminAvatarUrl}
             />
           </div>
-          {/* Amber vertical border that starts only below the header (y=56px) */}
-          <div className="absolute right-0 top-14 bottom-0 w-1 bg-amber-500 pointer-events-none" />
+          {/* Amber vertical border that starts at the top edge of the header's bottom border (y=52px) to form a seamless 90-degree corner */}
+          <div className="absolute right-0 top-[calc(3.5rem-4px)] bottom-0 w-1 bg-amber-500 pointer-events-none" />
         </aside>
 
         {/* Mobile Navigation Drawer / Sheet */}

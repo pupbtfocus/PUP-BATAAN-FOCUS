@@ -525,7 +525,7 @@ export function SidebarContent({
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <aside className="hidden md:flex md:flex-col fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-3.5 shadow-md z-30 transition-colors duration-200">
+    <aside className="hidden md:flex md:flex-col fixed left-0 top-[calc(3.5rem-4px)] h-[calc(100vh-3.5rem+4px)] w-72 overflow-y-auto rounded-none bg-[#800000] text-amber-50 border-r-4 border-amber-500 p-3.5 shadow-md z-30 transition-colors duration-200">
       <SidebarContent {...props} showBrand={false} />
     </aside>
   );

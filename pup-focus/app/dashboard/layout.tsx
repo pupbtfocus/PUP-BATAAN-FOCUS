@@ -27,14 +27,16 @@ export default function DashboardLayout({
             setActiveSection={setActiveSection}
           />
         </div>
-        {/* Amber vertical border that starts only below the header (y=56px) */}
-        <div className="absolute right-0 top-14 bottom-0 w-1 bg-amber-500 pointer-events-none" />
+        {/* Amber vertical border that starts at the top edge of the header's bottom border (y=52px) to form a seamless 90-degree corner */}
+        <div className="absolute right-0 top-[calc(3.5rem-4px)] bottom-0 w-1 bg-amber-500 pointer-events-none" />
       </aside>
 
       {/* Main Column: Header + Content */}
       <div className="flex flex-col flex-1 h-screen overflow-hidden min-w-0">
         {/* Consolidated Top Header */}
         <header className="relative w-full bg-[#800000] text-white border-b-4 border-amber-500 px-4 py-2.5 flex items-center justify-between shrink-0 z-30 shadow-md h-14">
+          {/* Seamless corner bridge into sidebar border */}
+          <div className="hidden md:block absolute -left-1 bottom-0 h-1 w-1 bg-amber-500 pointer-events-none" />
           <div className="flex items-center gap-3 z-10">
             <button
               type="button"
