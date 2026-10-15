@@ -624,31 +624,6 @@ export function SubmissionWindowPanel({
     return () => clearInterval(interval);
   }, [facultyToClose, facultyCloseCountdown]);
 
-  useEffect(() => {
-    if (!closeDateTime || isAlwaysOpen || closeDateTime.startsWith("2099")) return;
-
-    const checkExpiration = () => {
-      const nowLocal = getNowIsoLocal();
-      if (closeDateTime <= nowLocal) {
-        setOpenDateTime("");
-        setCloseDateTime("");
-        fetch("/api/staff/submission-window", {
-          method: "DELETE",
-          credentials: "include",
-        })
-          .then(() => {
-            void loadWindow();
-            onWindowChange?.();
-          })
-          .catch(() => {});
-      }
-    };
-
-    checkExpiration();
-    const interval = setInterval(checkExpiration, 5000);
-    return () => clearInterval(interval);
-  }, [closeDateTime, isAlwaysOpen, onWindowChange]);
-
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -1114,7 +1089,6 @@ export function SubmissionWindowPanel({
                 ref={openingInputRef}
                 id="opening-schedule"
                 type="datetime-local"
-                min={nowIso}
                 value={openDateTime}
                 onChange={(e) => setOpenDateTime(e.target.value)}
                 disabled={!isEditingSchedule || isLoading || isSaving}
@@ -1227,7 +1201,7 @@ export function SubmissionWindowPanel({
                     <input
                       id="closing-schedule"
                       type="datetime-local"
-                      min={openDateTime || nowIso}
+                      min={openDateTime || undefined}
                       value={closeDateTime}
                       onChange={(e) => {
                         setCloseDateTime(e.target.value);
