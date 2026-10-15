@@ -332,7 +332,8 @@ export async function getFacultyInitialData(
     const { data } = await supabase
       .from("faculty_program_assignments")
       .select("id, academic_year, term, program_id, programs(id, code, name)")
-      .in("faculty_profile_id", facultyIdList);
+      .in("faculty_profile_id", facultyIdList)
+      .order("created_at", { ascending: false });
 
     if (Array.isArray(data)) {
       assignmentRows = data;

@@ -267,15 +267,38 @@ export async function PATCH(request: NextRequest) {
         const academicYear = activeTerm?.academic_year || "2026-2027";
         const term = activeTerm?.semester || "1st Semester";
 
-        await supabase.from("faculty_program_assignments").upsert(
-          {
+        const { data: existingAssignments } = await supabase
+          .from("faculty_program_assignments")
+          .select("id")
+          .eq("faculty_profile_id", profile.id)
+          .eq("academic_year", academicYear)
+          .eq("term", term);
+
+        if (existingAssignments && existingAssignments.length > 0) {
+          const primaryId = existingAssignments[0].id;
+          await supabase
+            .from("faculty_program_assignments")
+            .update({
+              program_id: resolvedProgramId,
+              curriculum_id: null,
+            })
+            .eq("id", primaryId);
+
+          if (existingAssignments.length > 1) {
+            const duplicateIds = existingAssignments.slice(1).map((a) => a.id);
+            await supabase
+              .from("faculty_program_assignments")
+              .delete()
+              .in("id", duplicateIds);
+          }
+        } else {
+          await supabase.from("faculty_program_assignments").insert({
             faculty_profile_id: profile.id,
             program_id: resolvedProgramId,
             academic_year: academicYear,
             term,
-          },
-          { onConflict: "faculty_profile_id,program_id,academic_year,term" },
-        );
+          });
+        }
       } catch (assignErr) {
         logger.error("faculty_update_program_assign_error", {
           facultyProfileId,

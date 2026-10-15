@@ -176,7 +176,8 @@ export async function GET(request: NextRequest) {
       supabase.auth.admin.listUsers({ perPage: 1000 }),
       supabase
         .from("faculty_program_assignments")
-        .select("id, faculty_profile_id, program_id, academic_year, term, programs(id, code, name)"),
+        .select("id, faculty_profile_id, program_id, academic_year, term, programs(id, code, name)")
+        .order("created_at", { ascending: false }),
       supabase
         .from("profiles")
         .select("id, user_id, full_name, email, created_at"),
