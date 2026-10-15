@@ -1381,10 +1381,7 @@ function FacultySubmissionPanelContent({
   const fetchFacultyClasses = useCallback(async () => {
     try {
       setIsLoadingClasses(true);
-      const params = new URLSearchParams();
-      if (activeAY) params.set("academicYear", activeAY);
-      if (activeSem) params.set("semester", activeSem);
-      const res = await fetch(`/api/faculty/classes?${params.toString()}`, {
+      const res = await fetch(`/api/faculty/classes`, {
         cache: "no-store",
       });
       if (res.ok) {
@@ -1396,7 +1393,7 @@ function FacultySubmissionPanelContent({
     } finally {
       setIsLoadingClasses(false);
     }
-  }, [activeAY, activeSem]);
+  }, []);
 
   useEffect(() => {
     if (isMounted) {

@@ -153,7 +153,7 @@ export function TermCompletionResetModal({
               Current Semester Compliance:
             </span>
             <span>
-              If the academic year or semester is not changed by the administration, your submissions remain fully completed, locked in validated status, and visible on your checklist.
+              When the Academic Year or Semester ends, your assigned classes and subject loads are preserved and not reset. Only the requirements checklist is reset for fresh uploads for the new term, while all past documents remain permanently accessible in your Validation History.
             </span>
           </div>
 
