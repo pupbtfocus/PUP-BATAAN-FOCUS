@@ -2099,6 +2099,10 @@ function FacultySubmissionPanelContent({
     code: RequirementCode | string,
     isRevision: boolean = false,
   ) {
+    if (selectedClass?.is_archived) {
+      alert("This class load is archived and locked. Please unarchive it before uploading or modifying documents.");
+      return;
+    }
     const matched = displayedRequirementStatuses.find((r) => r.code === code);
     const currentStatus = matched?.status || getRequirementStatus(code);
     if (currentStatus === "Validated" || currentStatus === "Exempted") return;
@@ -2151,6 +2155,10 @@ function FacultySubmissionPanelContent({
     event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
+    if (selectedClass?.is_archived) {
+      setDirectUploadMessage("This class load is archived and locked. Unarchive it before uploading documents.");
+      return;
+    }
     if (!selectedRequirementForUpload || !directUploadFile) {
       setDirectUploadMessage("Please select a file to submit.");
       return;
@@ -3510,7 +3518,7 @@ function FacultySubmissionPanelContent({
                             className="inline-flex items-center justify-center gap-1.5 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
                           >
                             <AppIcon icon={Plus} size="sm" color="white" />
-                            <span>+ Add Class / Subject Load</span>
+                            <span>Add Class / Subject Load</span>
                           </button>
                           <button
                             type="button"
@@ -3555,7 +3563,7 @@ function FacultySubmissionPanelContent({
                           className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95"
                         >
                           <AppIcon icon={Plus} size="sm" color="inherit" />
-                          <span>+ Add Class / Subject Load</span>
+                          <span>Add Class / Subject Load</span>
                         </button>
                       </div>
                     ) : (
@@ -3686,19 +3694,20 @@ function FacultySubmissionPanelContent({
                                           )}
                                         </div>
 
-                                        {/* Action Buttons Toolbar */}
+                                        {/* Action Buttons Toolbar with Labels */}
                                         <div
-                                          className="flex items-center gap-1 shrink-0"
+                                          className="flex items-center gap-1.5 shrink-0"
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           {/* Edit button */}
                                           <button
                                             type="button"
                                             onClick={(e) => handleOpenEditClass(cls, e)}
-                                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs active:scale-95"
                                             title="Edit class load"
                                           >
-                                            <AppIcon icon={EditPencil} size="sm" color="inherit" />
+                                            <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                                            <span>Edit</span>
                                           </button>
 
                                           {/* Archive / Unarchive button */}
@@ -3706,10 +3715,10 @@ function FacultySubmissionPanelContent({
                                             type="button"
                                             disabled={classActionLoadingId === cls.id}
                                             onClick={(e) => handleToggleArchiveClass(cls, e)}
-                                            className={`p-1.5 rounded-lg transition cursor-pointer ${
+                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs active:scale-95 border ${
                                               isArchived
-                                                ? "text-amber-700 dark:text-amber-400 hover:bg-amber-100/70 dark:hover:bg-amber-950/50"
-                                                : "text-slate-400 hover:text-amber-700 dark:text-slate-500 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                                ? "bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700"
+                                                : "bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border-slate-200 hover:border-amber-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-amber-950/40 dark:hover:text-amber-300 dark:border-slate-700"
                                             }`}
                                             title={
                                               isArchived
@@ -3718,33 +3727,37 @@ function FacultySubmissionPanelContent({
                                             }
                                           >
                                             {classActionLoadingId === cls.id ? (
-                                              <AppIcon icon={SystemRestart} size="sm" color="inherit" className="animate-spin" />
+                                              <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
                                             ) : isArchived ? (
-                                              <AppIcon icon={Refresh} size="sm" color="inherit" />
+                                              <AppIcon icon={Refresh} size="xs" color="inherit" />
                                             ) : (
-                                              <AppIcon icon={Archive} size="sm" color="inherit" />
+                                              <AppIcon icon={Archive} size="xs" color="inherit" />
                                             )}
+                                            <span>{isArchived ? "Unarchive" : "Archive"}</span>
                                           </button>
 
                                           {/* Delete button */}
                                           <button
                                             type="button"
                                             onClick={(e) => handleOpenDeleteModal(cls, e)}
-                                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
+                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/60 transition cursor-pointer active:scale-95"
                                             title="Delete class load"
                                           >
-                                            <AppIcon icon={Trash} size="sm" color="inherit" />
+                                            <AppIcon icon={Trash} size="xs" color="inherit" />
+                                            <span>Delete</span>
                                           </button>
                                         </div>
                                       </div>
 
-                                      {/* Subject Code & Description */}
-                                      <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                                        {cls.subject_code}
-                                      </h3>
-                                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed min-h-[2rem]">
-                                        {cls.description}
-                                      </p>
+                                      {/* Subject Code & Description / Title */}
+                                      <div className="mt-2 space-y-1">
+                                        <h3 className="text-2xl font-black tracking-tight text-slate-950 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                          {cls.subject_code}
+                                        </h3>
+                                        <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug">
+                                          {cls.description}
+                                        </p>
+                                      </div>
                                     </div>
 
                                     {/* Bottom Footer */}
@@ -3764,7 +3777,9 @@ function FacultySubmissionPanelContent({
                                       </div>
                                     ) : (
                                       <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-300">
-                                        <span>Open Requirements Upload Zone</span>
+                                        <span className="text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-300">
+                                          View & Upload Documents
+                                        </span>
                                         <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 group-hover:translate-x-0.5 transition-all">
                                           <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
                                         </span>
@@ -3804,7 +3819,7 @@ function FacultySubmissionPanelContent({
                               <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-slate-950">
                                 {selectedClass.section_code}
                               </span>
-                              <span className="text-xs sm:text-sm font-black text-slate-950 dark:text-amber-100 truncate">
+                              <span className="text-sm sm:text-base font-black text-slate-950 dark:text-amber-100 truncate">
                                 {selectedClass.subject_code} &bull; {selectedClass.description}
                               </span>
                               <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -3871,6 +3886,33 @@ function FacultySubmissionPanelContent({
                         </button>
                       </div>
                     </div>
+
+                    {/* Archived Class Warning Banner */}
+                    {selectedClass?.is_archived && (
+                      <div className="mb-6 rounded-2xl border-2 border-amber-500/80 bg-amber-100/90 dark:bg-amber-950/60 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-amber-950 dark:text-amber-100 shadow-md">
+                        <div className="flex items-center gap-3.5">
+                          <div className="p-2.5 rounded-xl bg-amber-400 text-slate-950 shrink-0 shadow-xs">
+                            <AppIcon icon={Lock} size="md" color="inherit" />
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-sm sm:text-base text-amber-950 dark:text-amber-100">
+                              Archived Class Load (Uploads Locked)
+                            </p>
+                            <p className="text-xs sm:text-sm text-amber-900/90 dark:text-amber-200/90 font-medium">
+                              This class is currently in the archive. Document uploads, revisions, and extension requests are locked. Unarchive the class to resume submitting documents.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleArchiveClass(selectedClass)}
+                          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer shrink-0 border border-amber-600/40 active:scale-95"
+                        >
+                          <AppIcon icon={Archive} size="sm" color="inherit" />
+                          <span>Unarchive Class</span>
+                        </button>
+                      </div>
+                    )}
 
                     {/* Solid Amber Card Header */}
                     <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
@@ -4248,6 +4290,33 @@ function FacultySubmissionPanelContent({
                                 {/* Actions column */}
                                 <td className="px-4 py-3.5 align-middle text-center">
                                   <div className="flex flex-col items-center justify-center gap-1.5">
+                                    {selectedClass?.is_archived ? (
+                                      <>
+                                        {/* VIEW FILE: Allow viewing files already submitted before archiving */}
+                                        {req.status !== "Not Submitted" &&
+                                        req.status !== "Exempted" &&
+                                        req.status !== "Overdue" &&
+                                        req.latestSubmissionId &&
+                                        Boolean(req.submittedAt || req.storagePath || req.fileName) && (
+                                          <button
+                                            type="button"
+                                            onClick={() => openSubmissionPreview(req)}
+                                            className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl w-36 h-8 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                                          >
+                                            <AppIcon icon={Eye} size="sm" color="inherit" />
+                                            <span>View File</span>
+                                          </button>
+                                        )}
+                                        <div
+                                          className="inline-flex items-center justify-center gap-1.5 bg-slate-200/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold w-36 h-8 rounded-xl text-xs cursor-not-allowed border border-slate-300 dark:border-slate-700 select-none"
+                                          title="This class is archived. Unarchive it to upload or request extensions."
+                                        >
+                                          <AppIcon icon={Lock} size="sm" color="inherit" />
+                                          <span>Class Archived</span>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
                                     {/* 1. EXEMPTED: Disable both file uploads and extension requests */}
                                     {req.status === "Exempted" && (
                                       <button
@@ -4391,6 +4460,8 @@ function FacultySubmissionPanelContent({
                                         </button>
                                       )
                                     ) : null}
+                                      </>
+                                    )}
                                   </div>
                                 </td>
 

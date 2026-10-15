@@ -145,6 +145,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    // If submission is linked to a class load, verify that the class is not archived
+    if (rawClassId) {
+      try {
+        const { data: classCheck } = await supabaseAdmin
+          .from("faculty_classes")
+          .select("id, is_archived, subject_code, section_code")
+          .eq("id", rawClassId)
+          .maybeSingle();
+
+        if (classCheck && Boolean(classCheck.is_archived)) {
+          return NextResponse.json(
+            {
+              error: `Cannot upload documents to archived class ${classCheck.subject_code} (${classCheck.section_code}). Please unarchive the class first to submit requirements.`,
+            },
+            { status: 400 }
+          );
+        }
+      } catch {
+        // Safe check
+      }
+    }
+
     // Query current active term directly from database
     const { data: dbCurrentTerm } = await supabaseAdmin
       .from("academic_terms")

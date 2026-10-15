@@ -249,28 +249,38 @@ export async function GET(request: NextRequest) {
     let facultyClassesList: any[] = [];
 
     try {
-      const { data: allFacultyClasses } = await supabase
+      const { data: allFacultyClasses, error: classesErr } = await supabase
         .from("faculty_classes")
-        .select("id, subject_code, description, units, section_code, academic_year, semester, academic_term_id")
+        .select("id, subject_code, description, units, section_code, academic_year, semester, academic_term_id, is_archived")
         .eq("faculty_profile_id", facultyProfileId);
 
-      if (allFacultyClasses) {
-        facultyClassesList = allFacultyClasses;
-        for (const c of allFacultyClasses) {
+      let fetchedClasses: any[] | null = allFacultyClasses;
+      if (classesErr) {
+        const { data: fallbackClasses } = await supabase
+          .from("faculty_classes")
+          .select("id, subject_code, description, units, section_code, academic_year, semester, academic_term_id")
+          .eq("faculty_profile_id", facultyProfileId);
+        fetchedClasses = (fallbackClasses || []).map((c) => ({ ...c, is_archived: false }));
+      }
+
+      if (fetchedClasses) {
+        for (const c of fetchedClasses) {
           classesMap.set(c.id, c);
         }
+        // Exclude archived classes so they do not show in admin class list
+        facultyClassesList = fetchedClasses.filter((c: any) => !c.is_archived);
       }
 
       const missingClassIds = classIds.filter((cid) => !classesMap.has(cid));
       if (missingClassIds.length > 0) {
         const { data: extraClasses } = await supabase
           .from("faculty_classes")
-          .select("id, subject_code, description, units, section_code")
+          .select("id, subject_code, description, units, section_code, is_archived")
           .in("id", missingClassIds);
         if (extraClasses) {
           for (const c of extraClasses) {
             classesMap.set(c.id, c);
-            if (!facultyClassesList.some((fc) => fc.id === c.id)) {
+            if (!c.is_archived && !facultyClassesList.some((fc) => fc.id === c.id)) {
               facultyClassesList.push(c);
             }
           }
@@ -280,8 +290,18 @@ export async function GET(request: NextRequest) {
       // faculty_classes optional
     }
 
-    const submissions: SubmissionRow[] = rawSubmissions.map((s: any) => {
-      const docs = docVersionsMap.get(s.id) || [];
+    const submissions: SubmissionRow[] = rawSubmissions
+      .filter((s: any) => {
+        if (s.class_id && classesMap.has(s.class_id)) {
+          const cls = classesMap.get(s.class_id);
+          if (cls && Boolean(cls.is_archived)) {
+            return false;
+          }
+        }
+        return true;
+      })
+      .map((s: any) => {
+        const docs = docVersionsMap.get(s.id) || [];
       if (
         docs.length === 0 &&
         (s.status === "uploaded" ||
