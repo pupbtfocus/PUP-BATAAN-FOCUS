@@ -21,7 +21,8 @@ END $$;
 ALTER TABLE public.faculty_classes 
   ADD COLUMN IF NOT EXISTS academic_term_id UUID,
   ADD COLUMN IF NOT EXISTS academic_year VARCHAR(20),
-  ADD COLUMN IF NOT EXISTS semester VARCHAR(50);
+  ADD COLUMN IF NOT EXISTS semester VARCHAR(50),
+  ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- 3. Backfill academic_term_id, academic_year, and semester in faculty_classes
 -- from the active ('Current') or latest academic term
