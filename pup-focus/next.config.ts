@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Provide an explicit (empty) turbopack config so Next.js
   // doesn't error when a custom `webpack` function is present.
   turbopack: {},
