@@ -2686,8 +2686,12 @@ function AdminDetailsModal({
     setTimeout(() => {
       if (ref.current) {
         ref.current.focus();
-        const length = ref.current.value.length;
-        ref.current.setSelectionRange(length, length);
+        try {
+          const length = ref.current.value.length;
+          ref.current.setSelectionRange(length, length);
+        } catch {
+          // Input type (e.g., email) does not support setSelectionRange
+        }
       }
     }, 0);
   }
