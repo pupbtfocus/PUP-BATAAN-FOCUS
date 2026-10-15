@@ -306,6 +306,11 @@ export default function Home() {
     };
 
     setIsSubmitting(true);
+    setAuthModal({
+      title: "Authenticating...",
+      message: "Verifying institutional credentials with campus security...",
+      variant: "loading",
+    });
     await performSignIn(captchaToken || undefined);
   }
 
@@ -327,6 +332,12 @@ export default function Home() {
       : "Security verification challenge failed. Please try again.";
     setError(errorMsg);
     setNotice({ type: "error", message: errorMsg });
+    setAuthModal({
+      title: "Login Failed",
+      message: errorMsg,
+      actionLabel: "Try Again",
+      variant: "error",
+    });
   }
 
   function handleTurnstileExpire() {
@@ -346,6 +357,14 @@ export default function Home() {
     const normalizedEmail = creds.email;
     const currentPassword = creds.password;
     const activeRememberMe = creds.rememberMe;
+
+    const startTime = Date.now();
+    const ensureMinLoadingTime = async () => {
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 800) {
+        await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
+      }
+    };
 
     const supabase = createClient();
     console.log("[Auth] Signing in with password for:", normalizedEmail, { hasCaptcha: Boolean(token) });
@@ -404,6 +423,7 @@ export default function Home() {
     }
 
       if (signInError || !signInData?.user) {
+        await ensureMinLoadingTime();
         const rawMessage = signInError?.message ?? "Sign in failed";
         const isInvalidCredentials =
           rawMessage.toLowerCase().includes("invalid login credentials") ||
@@ -413,9 +433,9 @@ export default function Home() {
         if (isInvalidCredentials) {
           console.warn("[Auth] Supabase sign-in failed:", rawMessage);
           setAuthModal({
-            title: "Invalid Credentials",
-            message: "The email address or password you entered is incorrect. Please try again.",
-            actionLabel: "Try again",
+            title: "Login Failed",
+            message: "Invalid institutional email address or password. Please verify credentials.",
+            actionLabel: "Try Again",
             variant: "error",
           });
         } else if (isInvalidSecret) {
@@ -425,7 +445,7 @@ export default function Home() {
           setError(friendlyMsg);
           setNotice({ type: "error", message: friendlyMsg });
           setAuthModal({
-            title: "Captcha Configuration Error",
+            title: "Login Failed",
             message: friendlyMsg,
             actionLabel: "Understood",
             variant: "error",
@@ -435,9 +455,9 @@ export default function Home() {
           setError(rawMessage);
           setNotice({ type: "error", message: rawMessage });
           setAuthModal({
-            title: "Authentication Error",
+            title: "Login Failed",
             message: rawMessage,
-            actionLabel: "Try again",
+            actionLabel: "Try Again",
             variant: "error",
           });
         }
@@ -455,8 +475,14 @@ export default function Home() {
         (user.user_metadata as any)?.must_change_password === true ||
         (user.user_metadata as any)?.force_password_change === true;
       if (mustChange) {
+        await ensureMinLoadingTime();
         setIsSubmitting(false);
-        window.location.assign("/auth/change-password");
+        setAuthModal({
+          title: "Login Successful",
+          message: "First-time login detected. Redirecting to set your password...",
+          variant: "success",
+          redirectTo: "/auth/change-password",
+        });
         return;
       }
 
@@ -482,9 +508,18 @@ export default function Home() {
       }
 
       if (isActive === false) {
+        await ensureMinLoadingTime();
         await supabase.auth.signOut();
         console.warn("[Auth] Account is deactivated:", normalizedEmail);
-        setError("Your account has been deactivated. Contact an administrator.");
+        const deactMsg = "Your account has been deactivated. Contact an administrator.";
+        setError(deactMsg);
+        setNotice({ type: "error", message: deactMsg });
+        setAuthModal({
+          title: "Login Failed",
+          message: deactMsg,
+          actionLabel: "Understood",
+          variant: "error",
+        });
         setIsSubmitting(false);
         return;
       }
@@ -538,6 +573,7 @@ export default function Home() {
         console.warn("[Auth] Could not save login time:", storageErr);
       }
 
+      await ensureMinLoadingTime();
       setIsSubmitting(false);
       setAuthModal({
         title: "Login Successful",
@@ -546,6 +582,7 @@ export default function Home() {
         redirectTo: nextTarget,
       });
     } catch (err: unknown) {
+      await ensureMinLoadingTime();
       const rawMsg = err instanceof Error ? err.message : "An unexpected error occurred during sign in.";
       const isFetchError = rawMsg.toLowerCase().includes("failed to fetch") || rawMsg.toLowerCase().includes("network");
       const msg = isFetchError
@@ -554,6 +591,12 @@ export default function Home() {
       console.error("[Auth] Unexpected sign in exception:", rawMsg);
       setError(msg);
       setNotice({ type: "error", message: msg });
+      setAuthModal({
+        title: "Login Failed",
+        message: msg,
+        actionLabel: "Try Again",
+        variant: "error",
+      });
       setIsSubmitting(false);
     } finally {
       // Strictly reset Turnstile widget AFTER the Supabase request finishes
