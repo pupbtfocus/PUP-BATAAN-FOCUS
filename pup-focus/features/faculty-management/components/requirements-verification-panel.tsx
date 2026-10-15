@@ -666,26 +666,28 @@ export function FacultyVerificationDrawer({
     const groups: SubmissionClassGroup[] = [];
     const classMap = new Map<string, SubmissionClassGroup>();
 
-    // 1. Registered faculty classes
-    facultyClasses.forEach((fc) => {
-      const key = fc.id || `${fc.section_code}_${fc.subject_code}`;
-      const group: SubmissionClassGroup = {
-        key,
-        classId: fc.id || null,
-        sectionCode: fc.section_code,
-        subjectCode: fc.subject_code,
-        description: fc.description,
-        units: fc.units,
-        submissions: [],
-      };
-      groups.push(group);
-      classMap.set(key, group);
-      if (fc.id) classMap.set(fc.id, group);
-    });
+    // 1. Registered faculty classes (active only)
+    facultyClasses
+      .filter((fc: any) => !fc.is_archived)
+      .forEach((fc) => {
+        const key = fc.id || `${fc.section_code}_${fc.subject_code}`;
+        const group: SubmissionClassGroup = {
+          key,
+          classId: fc.id || null,
+          sectionCode: fc.section_code,
+          subjectCode: fc.subject_code,
+          description: fc.description,
+          units: fc.units,
+          submissions: [],
+        };
+        groups.push(group);
+        classMap.set(key, group);
+        if (fc.id) classMap.set(fc.id, group);
+      });
 
-    // 2. Discover any extra classes directly attached to submissions
+    // 2. Discover any extra active classes directly attached to submissions
     submissions.forEach((sub) => {
-      if (sub.faculty_class) {
+      if (sub.faculty_class && !(sub.faculty_class as any).is_archived) {
         const fc = sub.faculty_class;
         const key = fc.id || `${fc.section_code}_${fc.subject_code}`;
         if (!classMap.has(key) && !(fc.id && classMap.has(fc.id))) {
@@ -709,6 +711,11 @@ export function FacultyVerificationDrawer({
     const unassignedSubmissions: FacultyRequirementSubmission[] = [];
 
     submissions.forEach((sub) => {
+      // Exclude submissions that belong to archived classes
+      if (sub.faculty_class && Boolean((sub.faculty_class as any).is_archived)) {
+        return;
+      }
+
       let target: SubmissionClassGroup | undefined;
       if (sub.class_id && classMap.has(sub.class_id)) {
         target = classMap.get(sub.class_id);
@@ -719,13 +726,14 @@ export function FacultyVerificationDrawer({
 
       if (target) {
         target.submissions.push(sub);
-      } else {
+      } else if (!sub.class_id) {
+        // Only classify as General Requirements if the submission does not belong to any class
         unassignedSubmissions.push(sub);
       }
     });
 
-    // 4. Provide the General Requirements group if there are unassigned submissions or no classes exist
-    if (unassignedSubmissions.length > 0 || groups.length === 0) {
+    // 4. Provide the General Requirements group only if genuine unassigned general submissions exist
+    if (unassignedSubmissions.length > 0) {
       groups.unshift({
         key: "general",
         classId: null,
