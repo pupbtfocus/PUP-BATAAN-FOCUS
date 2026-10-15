@@ -87,8 +87,12 @@ export function AdminSettings({
     setTimeout(() => {
       if (ref.current) {
         ref.current.focus();
-        const length = ref.current.value.length;
-        ref.current.setSelectionRange(length, length);
+        try {
+          const length = ref.current.value.length;
+          ref.current.setSelectionRange(length, length);
+        } catch {
+          // Input type does not support setSelectionRange
+        }
       }
     }, 0);
   }
