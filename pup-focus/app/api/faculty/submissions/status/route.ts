@@ -907,7 +907,7 @@ export async function GET(request: NextRequest) {
         } else if (isPastEffectiveDeadline) {
           status = "Overdue";
         } else {
-          status = "Pending";
+          status = "Not Submitted";
         }
       }
 
@@ -973,7 +973,7 @@ export async function GET(request: NextRequest) {
       extended: requirementStatuses.filter((r) => r.status === "Extended").length,
       exempted: requirementStatuses.filter((r) => r.status === "Exempted").length,
       notSubmitted: requirementStatuses.filter(
-        (r) => r.status === "Pending" || r.status === "Overdue" || r.status === "Extended",
+        (r) => r.status === "Not Submitted",
       ).length,
     };
 
