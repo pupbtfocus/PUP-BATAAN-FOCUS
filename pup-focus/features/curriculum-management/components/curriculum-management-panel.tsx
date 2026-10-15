@@ -24,7 +24,6 @@ export interface ProgramItem {
   id: string;
   code: string;
   name: string;
-  description?: string;
   is_hidden: boolean;
   created_at?: string;
 }
@@ -75,7 +74,6 @@ export function TemplatesAndProgramsPanel({
 
   const [programCodeInput, setProgramCodeInput] = useState("");
   const [programNameInput, setProgramNameInput] = useState("");
-  const [programDescInput, setProgramDescInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Auto-dismiss feedback
@@ -126,8 +124,7 @@ export function TemplatesAndProgramsPanel({
     return programs.filter((p) => {
       const matchesSearch =
         p.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+        p.name.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesVisibility =
         visibilityFilter === "all" ||
@@ -179,7 +176,6 @@ export function TemplatesAndProgramsPanel({
   const handleOpenAddModal = () => {
     setProgramCodeInput("");
     setProgramNameInput("");
-    setProgramDescInput("");
     setIsAddProgramOpen(true);
   };
 
@@ -188,7 +184,6 @@ export function TemplatesAndProgramsPanel({
     setEditingProgram(prog);
     setProgramCodeInput(prog.code);
     setProgramNameInput(prog.name);
-    setProgramDescInput(prog.description || "");
   };
 
   const handleSubmitProgram = async (e: React.FormEvent) => {
@@ -208,7 +203,6 @@ export function TemplatesAndProgramsPanel({
             id: editingProgram.id,
             code: programCodeInput.trim().toUpperCase(),
             name: programNameInput.trim(),
-            description: programDescInput.trim(),
           }),
         });
 
@@ -225,7 +219,6 @@ export function TemplatesAndProgramsPanel({
                   ...p,
                   code: programCodeInput.trim().toUpperCase(),
                   name: programNameInput.trim(),
-                  description: programDescInput.trim(),
                 }
               : p
           )
@@ -243,7 +236,6 @@ export function TemplatesAndProgramsPanel({
           body: JSON.stringify({
             code: programCodeInput.trim().toUpperCase(),
             name: programNameInput.trim(),
-            description: programDescInput.trim(),
           }),
         });
 
@@ -259,7 +251,6 @@ export function TemplatesAndProgramsPanel({
             id: newProg?.id || `prog-${Date.now()}`,
             code: programCodeInput.trim().toUpperCase(),
             name: programNameInput.trim(),
-            description: programDescInput.trim(),
             is_hidden: false,
           },
           ...prev,
@@ -456,7 +447,7 @@ export function TemplatesAndProgramsPanel({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search programs by code, name, or description..."
+                  placeholder="Search programs by code or name..."
                   className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                 />
               </div>
@@ -532,7 +523,6 @@ export function TemplatesAndProgramsPanel({
                     <tr>
                       <th className="py-3 px-4">Program Code</th>
                       <th className="py-3 px-4">Program Name</th>
-                      <th className="py-3 px-4 hidden lg:table-cell">Description</th>
                       <th className="py-3 px-4">Status</th>
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
@@ -552,9 +542,6 @@ export function TemplatesAndProgramsPanel({
                         </td>
                         <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
                           {prog.name}
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 hidden lg:table-cell text-xs">
-                          {prog.description || "—"}
                         </td>
                         <td className="py-3.5 px-4">
                           <button
@@ -643,19 +630,6 @@ export function TemplatesAndProgramsPanel({
                   onChange={(e) => setProgramNameInput(e.target.value)}
                   placeholder="e.g. Bachelor of Science in Information Technology"
                   className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Description / Department Notes (Optional)
-                </label>
-                <textarea
-                  rows={3}
-                  value={programDescInput}
-                  onChange={(e) => setProgramDescInput(e.target.value)}
-                  placeholder="Optional brief notes or description of this degree offering..."
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
                 />
               </div>
 

@@ -116,7 +116,6 @@ export async function POST(req: NextRequest) {
 
     const code = (body.code || "").trim().toUpperCase();
     const name = (body.name || "").trim();
-    const description = (body.description || "").trim();
 
     if (!code || !name) {
       return NextResponse.json(
@@ -130,7 +129,6 @@ export async function POST(req: NextRequest) {
       .insert({
         code,
         name,
-        description,
         is_hidden: false,
       })
       .select()
@@ -151,7 +149,7 @@ export async function POST(req: NextRequest) {
 
         if (!fallbackRes.error && fallbackRes.data) {
           return NextResponse.json(
-            { program: { ...fallbackRes.data, description, is_hidden: false } },
+            { program: { ...fallbackRes.data, is_hidden: false } },
             { status: 201 },
           );
         }
@@ -183,7 +181,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const supabase = getServiceRoleClient();
     const body = await req.json();
-    const { id, code, name, description, is_hidden } = body;
+    const { id, code, name, is_hidden } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -195,7 +193,6 @@ export async function PATCH(req: NextRequest) {
     const updates: Record<string, any> = {};
     if (code !== undefined) updates.code = String(code).trim().toUpperCase();
     if (name !== undefined) updates.name = String(name).trim();
-    if (description !== undefined) updates.description = String(description).trim();
     if (is_hidden !== undefined) updates.is_hidden = Boolean(is_hidden);
 
     let { data, error } = await supabase
