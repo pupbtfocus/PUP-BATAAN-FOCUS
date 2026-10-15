@@ -73,6 +73,19 @@ export interface FacultyClass {
   is_archived?: boolean;
   created_at?: string;
 }
+export interface BackgroundUploadTask {
+  id: string;
+  requirementCode: string;
+  requirementTitle: string;
+  fileName: string;
+  fileSize: number;
+  progress: number;
+  status: "uploading" | "done" | "error";
+  errorMessage?: string;
+  isRevision?: boolean;
+  classId?: string | null;
+  startedAt: number;
+}
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
 export function getFileType(fileNameOrUrl: string): {
   type: DetectedFileType;
@@ -707,6 +720,8 @@ function FacultySubmissionPanelContent({
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [isSubmittingModalOpen, setIsSubmittingModalOpen] = useState(false);
   const [isSubmitSuccess, setIsSubmitSuccess] = useState(false);
+  const [uploadTasks, setUploadTasks] = useState<BackgroundUploadTask[]>([]);
+  const [isUploadSectionVisible, setIsUploadSectionVisible] = useState(true);
   function handleCloseModalAndRefresh() {
     setIsSubmittingModalOpen(false);
     setIsSubmitSuccess(false);
@@ -2143,7 +2158,6 @@ function FacultySubmissionPanelContent({
       .catch(() => {});
   }
   function closeDirectUploadModal() {
-    if (isUploadingDirect) return;
     setSelectedRequirementForUpload(null);
     setIsRevisionUpload(false);
     setDirectUploadFile(null);
@@ -2151,6 +2165,224 @@ function FacultySubmissionPanelContent({
     setDirectUploadMessage(null);
     setDirectUploadPercent(0);
   }
+
+  async function executeBackgroundUpload({
+    taskId,
+    file,
+    requirementCode,
+    requirementTitle,
+    remarks,
+    isRevision,
+    classId,
+    academicYear,
+    semester,
+  }: {
+    taskId: string;
+    file: File;
+    requirementCode: string;
+    requirementTitle: string;
+    remarks: string;
+    isRevision: boolean;
+    classId: string | null;
+    academicYear: string;
+    semester: string;
+  }) {
+    let progressTimer: NodeJS.Timeout | null = null;
+    let currentProgress = 15;
+
+    const setTaskProgress = (percent: number) => {
+      setUploadTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, progress: Math.max(t.progress, percent) } : t,
+        ),
+      );
+    };
+
+    // Smooth ticker for responsive visual feedback
+    progressTimer = setInterval(() => {
+      currentProgress = Math.min(94, currentProgress + Math.floor(Math.random() * 8 + 4));
+      setTaskProgress(currentProgress);
+    }, 180);
+
+    try {
+      let result: { submissionId: string } = { submissionId: "" };
+      let directUploadSucceeded = false;
+
+      // 1. Try direct-to-storage signed URL upload first
+      try {
+        const urlRes = await fetch("/api/faculty/submissions/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            requirementCode,
+            fileSize: file.size,
+          }),
+        });
+
+        if (urlRes.ok) {
+          const urlData = await urlRes.json();
+          if (urlData?.path && urlData?.token) {
+            const supabase = createClient();
+            const { error: storageErr } = await supabase.storage
+              .from("faculty-submissions")
+              .uploadToSignedUrl(urlData.path, urlData.token, file, {
+                contentType: file.type || "application/octet-stream",
+              });
+
+            if (storageErr) {
+              throw new Error(storageErr.message || "Failed to upload file to storage.");
+            }
+
+            const createRes = await fetch("/api/faculty/submissions/create", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                storagePath: urlData.storagePath,
+                fileName: file.name,
+                fileSize: file.size,
+                mimeType: file.type || "application/octet-stream",
+                academicYear,
+                semester,
+                requirementCode,
+                remarks,
+                class_id: classId,
+                classId,
+              }),
+            });
+
+            if (!createRes.ok) {
+              const errData = await createRes.json().catch(() => ({}));
+              throw new Error(errData.error || `Failed to submit requirement (HTTP ${createRes.status})`);
+            }
+
+            result = await createRes.json();
+            directUploadSucceeded = true;
+          }
+        }
+      } catch (directErr) {
+        console.warn("Direct signed upload fallback to standard POST:", directErr);
+      }
+
+      // 2. Standard XHR fallback with real progress
+      if (!directUploadSucceeded) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("academicYear", academicYear);
+        formData.append("semester", semester);
+        formData.append("requirementCode", requirementCode);
+        formData.append("requirement_type", requirementCode);
+        formData.append("remarks", remarks);
+        formData.append("notes", remarks);
+        if (classId) {
+          formData.append("class_id", classId);
+          formData.append("classId", classId);
+        }
+
+        result = await new Promise<{ submissionId: string }>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "/api/faculty/submissions/create");
+
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable && event.total > 0) {
+              const rawPercent = Math.min(95, Math.round((event.loaded / event.total) * 95));
+              setTaskProgress(rawPercent);
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const res = JSON.parse(xhr.responseText);
+                resolve(res);
+              } catch {
+                reject(new Error("Invalid response from server"));
+              }
+            } else if (xhr.status === 413) {
+              reject(
+                new Error(
+                  "File size exceeds server upload limit (HTTP 413 Payload Too Large).",
+                ),
+              );
+            } else {
+              try {
+                const err = JSON.parse(xhr.responseText);
+                reject(new Error(err.error || `Failed to submit requirement (HTTP ${xhr.status})`));
+              } catch {
+                reject(new Error(`Failed to submit requirement (HTTP ${xhr.status})`));
+              }
+            }
+          };
+
+          xhr.onerror = () => reject(new Error("Network error during document upload"));
+          xhr.onabort = () => reject(new Error("Upload cancelled"));
+
+          xhr.send(formData);
+        });
+      }
+
+      if (progressTimer) clearInterval(progressTimer);
+
+      // Mark task as done (100%)
+      setUploadTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, progress: 100, status: "done" } : t)),
+      );
+
+      // Update requirement statuses with real submission ID
+      setRequirementStatuses((prev) => {
+        const exists = prev.some((r) => r.code === requirementCode);
+        if (exists) {
+          return prev.map((r) =>
+            r.code === requirementCode
+              ? {
+                  ...r,
+                  status: "Pending" as const,
+                  submittedAt: new Date().toISOString(),
+                  latestSubmissionId: result.submissionId,
+                  fileName: file.name,
+                  isRevision: isRevision || Boolean(r.feedback),
+                  hasPriorRevision: true,
+                }
+              : r,
+          );
+        }
+        return [
+          ...prev,
+          {
+            code: requirementCode,
+            status: "Pending" as const,
+            submittedAt: new Date().toISOString(),
+            latestSubmissionId: result.submissionId,
+            fileName: file.name,
+            isRevision,
+            hasPriorRevision: isRevision,
+          },
+        ];
+      });
+
+      // Background sync
+      router.refresh();
+      void fetchStatuses(academicYear, semester, classId);
+      void fetchHistory();
+    } catch (error) {
+      if (progressTimer) clearInterval(progressTimer);
+      const errMsg = error instanceof Error ? error.message : "An unexpected error occurred";
+      setUploadTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                status: "error",
+                errorMessage: errMsg,
+              }
+            : t,
+        ),
+      );
+    } finally {
+      if (progressTimer) clearInterval(progressTimer);
+    }
+  }
+
   async function handleDirectUploadSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
@@ -2181,201 +2413,91 @@ function FacultySubmissionPanelContent({
       setDirectUploadMessage(`File size exceeds ${maxAllowedMb}MB limit.`);
       return;
     }
-    setIsUploadingDirect(true);
-    setIsSubmittingModalOpen(true);
-    setIsSubmitSuccess(false);
-    setDirectUploadPercent(10);
-    setDirectUploadMessage(null);
 
-    let progressTimer: NodeJS.Timeout | null = null;
-    try {
-      const activeAY =
-        submissionWindow?.academicYear ||
-        selectedAcademicYear ||
-        form.academicYear ||
-        "2025-2026";
-      const activeSem =
-        submissionWindow?.semester ||
-        selectedSemester ||
-        form.semester ||
-        "1st Semester";
-      const formData = new FormData();
-      formData.append("file", directUploadFile);
-      formData.append("academicYear", activeAY);
-      formData.append("semester", activeSem);
-      formData.append("requirementCode", selectedRequirementForUpload);
-      formData.append("requirement_type", selectedRequirementForUpload);
-      formData.append("remarks", directUploadRemarks);
-      formData.append("notes", directUploadRemarks);
-      if (selectedClassId) {
-        formData.append("class_id", selectedClassId);
-        formData.append("classId", selectedClassId);
-      }
+    const targetFile = directUploadFile;
+    const targetReqCode = selectedRequirementForUpload;
+    const targetReqTitle =
+      currentTemplate?.title ||
+      getFriendlyRequirementName(selectedRequirementForUpload) ||
+      selectedRequirementForUpload;
+    const targetRemarks = directUploadRemarks;
+    const isRev = isRevisionUpload;
+    const targetClassId = selectedClassId;
+    const taskId = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const activeAY =
+      submissionWindow?.academicYear ||
+      selectedAcademicYear ||
+      form.academicYear ||
+      "2025-2026";
+    const activeSem =
+      submissionWindow?.semester ||
+      selectedSemester ||
+      form.semester ||
+      "1st Semester";
 
-      // Smooth progress ticker for realistic UX progression
-      let currentProgress = 15;
-      progressTimer = setInterval(() => {
-        currentProgress = Math.min(94, currentProgress + Math.floor(Math.random() * 8 + 4));
-        setDirectUploadPercent((prev) => Math.max(prev, currentProgress));
-      }, 150);
+    // Immediately close modal so user can upload other documents without waiting
+    closeDirectUploadModal();
 
-      let result: { submissionId: string } = { submissionId: "" };
-      let directUploadSucceeded = false;
+    // Register upload task with initial progress
+    setUploadTasks((prev) => [
+      {
+        id: taskId,
+        requirementCode: targetReqCode,
+        requirementTitle: targetReqTitle,
+        fileName: targetFile.name,
+        fileSize: targetFile.size,
+        progress: 10,
+        status: "uploading",
+        isRevision: isRev,
+        classId: targetClassId,
+        startedAt: Date.now(),
+      },
+      ...prev,
+    ]);
+    setIsUploadSectionVisible(true);
 
-      // Try direct-to-storage signed URL upload first (bypasses Vercel/Next.js 4.5MB payload limit & HTTP 413)
-      try {
-        const urlRes = await fetch("/api/faculty/submissions/upload-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fileName: directUploadFile.name,
-            requirementCode: selectedRequirementForUpload,
-            fileSize: directUploadFile.size,
-          }),
-        });
-
-        if (urlRes.ok) {
-          const urlData = await urlRes.json();
-          if (urlData?.path && urlData?.token) {
-            const supabase = createClient();
-            const { error: storageErr } = await supabase.storage
-              .from("faculty-submissions")
-              .uploadToSignedUrl(urlData.path, urlData.token, directUploadFile, {
-                contentType: directUploadFile.type || "application/octet-stream",
-              });
-
-            if (storageErr) {
-              throw new Error(storageErr.message || "Failed to upload file to storage.");
-            }
-
-            const createRes = await fetch("/api/faculty/submissions/create", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                storagePath: urlData.storagePath,
-                fileName: directUploadFile.name,
-                fileSize: directUploadFile.size,
-                mimeType: directUploadFile.type || "application/octet-stream",
-                academicYear: activeAY,
-                semester: activeSem,
-                requirementCode: selectedRequirementForUpload,
-                remarks: directUploadRemarks,
-                class_id: selectedClassId,
-                classId: selectedClassId,
-              }),
-            });
-
-            if (!createRes.ok) {
-              const errData = await createRes.json().catch(() => ({}));
-              throw new Error(errData.error || `Failed to submit requirement (HTTP ${createRes.status})`);
-            }
-
-            result = await createRes.json();
-            directUploadSucceeded = true;
-          }
-        }
-      } catch (directErr) {
-        console.warn("Direct signed upload fallback to standard POST:", directErr);
-      }
-
-      if (!directUploadSucceeded) {
-        result = await new Promise<{ submissionId: string }>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", "/api/faculty/submissions/create");
-
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable && event.total > 0) {
-              const rawPercent = Math.min(95, Math.round((event.loaded / event.total) * 95));
-              setDirectUploadPercent((prev) => Math.max(prev, rawPercent));
-            }
-          };
-
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const res = JSON.parse(xhr.responseText);
-                resolve(res);
-              } catch {
-                reject(new Error("Invalid response from server"));
+    // Optimistically update requirement status to Pending immediately
+    setRequirementStatuses((prev) => {
+      const exists = prev.some((r) => r.code === targetReqCode);
+      if (exists) {
+        return prev.map((r) =>
+          r.code === targetReqCode
+            ? {
+                ...r,
+                status: "Pending" as const,
+                submittedAt: new Date().toISOString(),
+                fileName: targetFile.name,
+                isRevision: isRev || Boolean(r.feedback),
+                hasPriorRevision: true,
               }
-            } else if (xhr.status === 413) {
-              reject(
-                new Error(
-                  "File size exceeds server upload limit (HTTP 413 Payload Too Large). Please ensure the file is under the allowed limit.",
-                ),
-              );
-            } else {
-              try {
-                const err = JSON.parse(xhr.responseText);
-                reject(new Error(err.error || `Failed to submit requirement (HTTP ${xhr.status})`));
-              } catch {
-                reject(new Error(`Failed to submit requirement (HTTP ${xhr.status})`));
-              }
-            }
-          };
-
-          xhr.onerror = () => reject(new Error("Network error during document upload"));
-          xhr.onabort = () => reject(new Error("Upload cancelled"));
-
-          xhr.send(formData);
-        });
-      }
-
-      if (progressTimer) clearInterval(progressTimer);
-      setDirectUploadPercent(100);
-      await new Promise((resolve) => setTimeout(resolve, 380));
-
-      setSubmissionMessage(
-        isRevisionUpload
-          ? `Revision submitted successfully for review. Reference ID: ${String(result.submissionId).slice(0, 8)}...`
-          : `Requirement submitted successfully. Reference ID: ${String(result.submissionId).slice(0, 8)}...`,
-      );
-      // Optimistically update status badge to Pending immediately and lock out resubmission
-      setRequirementStatuses((prev) => {
-        const exists = prev.some(
-          (r) => r.code === selectedRequirementForUpload,
+            : r,
         );
-        if (exists) {
-          return prev.map((r) =>
-            r.code === selectedRequirementForUpload
-              ? {
-                  ...r,
-                  status: "Pending" as const,
-                  submittedAt: new Date().toISOString(),
-                  latestSubmissionId: result.submissionId,
-                  isRevision: isRevisionUpload || Boolean(r.feedback),
-                  hasPriorRevision: true,
-                }
-              : r,
-          );
-        }
-        return [
-          ...prev,
-          {
-            code: selectedRequirementForUpload,
-            status: "Pending" as const,
-            submittedAt: new Date().toISOString(),
-            latestSubmissionId: result.submissionId,
-            isRevision: isRevisionUpload,
-            hasPriorRevision: isRevisionUpload,
-          },
-        ];
-      });
-      setIsSubmitSuccess(true);
-      router.refresh();
-      void fetchStatuses(activeAY, activeSem, selectedClassId);
-      void fetchHistory();
-    } catch (error) {
-      if (progressTimer) clearInterval(progressTimer);
-      setIsSubmittingModalOpen(false);
-      setDirectUploadPercent(0);
-      setDirectUploadMessage(
-        `Error: ${error instanceof Error ? error.message : "An unexpected error occurred"}`,
-      );
-    } finally {
-      if (progressTimer) clearInterval(progressTimer);
-      setIsUploadingDirect(false);
-    }
+      }
+      return [
+        ...prev,
+        {
+          code: targetReqCode,
+          status: "Pending" as const,
+          submittedAt: new Date().toISOString(),
+          fileName: targetFile.name,
+          isRevision: isRev,
+          hasPriorRevision: isRev,
+        },
+      ];
+    });
+
+    // Execute upload in background
+    void executeBackgroundUpload({
+      taskId,
+      file: targetFile,
+      requirementCode: targetReqCode,
+      requirementTitle: targetReqTitle,
+      remarks: targetRemarks,
+      isRevision: isRev,
+      classId: targetClassId,
+      academicYear: activeAY,
+      semester: activeSem,
+    });
   }
   function updateField<K extends keyof SubmissionFormState>(
     key: K,
@@ -2665,6 +2787,189 @@ function FacultySubmissionPanelContent({
       setIsSubmitting(false);
     }
   }
+
+  const renderUploadNotificationSection = () => {
+    if (!isUploadSectionVisible) {
+      return (
+        <div className="my-2">
+          <button
+            type="button"
+            onClick={() => setIsUploadSectionVisible(true)}
+            className="inline-flex items-center justify-between w-full p-3 sm:p-3.5 rounded-2xl border-2 border-amber-500/70 bg-amber-50/80 dark:bg-slate-900/90 hover:bg-amber-100/80 dark:hover:bg-slate-850 text-slate-900 dark:text-amber-100 text-xs sm:text-sm font-bold shadow-xs transition cursor-pointer active:scale-[0.99]"
+            title="Show document upload progress and status"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold shadow-2xs shrink-0">
+                <AppIcon icon={CloudUpload} size="sm" color="inherit" />
+              </div>
+              <span className="truncate">Document Upload Progress & Status</span>
+              {uploadTasks.some((t) => t.status === "uploading") && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 animate-pulse shrink-0">
+                  <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
+                  Uploading ({uploadTasks.filter((t) => t.status === "uploading").length})...
+                </span>
+              )}
+              {uploadTasks.length > 0 && (
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold shrink-0">
+                  ({uploadTasks.filter((t) => t.status === "done").length}/{uploadTasks.length} Done)
+                </span>
+              )}
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-xs text-amber-900 dark:text-amber-300 font-extrabold hover:underline shrink-0 ml-2">
+              <span>Show / Unhide</span>
+              <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
+            </span>
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-2xl border-2 border-amber-500/70 bg-gradient-to-br from-amber-50/80 via-white to-amber-100/40 dark:from-slate-900 dark:via-slate-900/90 dark:to-amber-950/30 p-4 sm:p-5 shadow-sm space-y-3 transition-all my-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-amber-200/70 dark:border-amber-900/50">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold shadow-xs">
+              <AppIcon icon={CloudUpload} size="sm" color="inherit" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm sm:text-base text-slate-950 dark:text-amber-100 flex items-center gap-2">
+                Document Upload Progress & Status
+                {uploadTasks.some((t) => t.status === "uploading") && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 animate-pulse">
+                    <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
+                    Uploading in background
+                  </span>
+                )}
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                Files upload in the background so you can continue submitting other documents without waiting.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setIsUploadSectionVisible(false)}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
+              title="Hide document upload progress section"
+            >
+              <AppIcon icon={Minus} size="xs" color="inherit" />
+              <span>Hide</span>
+            </button>
+            {uploadTasks.some((t) => t.status === "done" || t.status === "error") && (
+              <button
+                type="button"
+                onClick={() => setUploadTasks((prev) => prev.filter((t) => t.status === "uploading"))}
+                className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs"
+              >
+                Clear Completed
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Task items list or empty state */}
+        {uploadTasks.length === 0 ? (
+          <div className="p-5 rounded-xl border border-dashed border-amber-300/80 dark:border-amber-900/60 bg-white/70 dark:bg-slate-950/40 text-center space-y-1">
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              No Active Document Uploads
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              When you submit compliance documents, real-time percentage progress and completion status will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {uploadTasks.map((task) => (
+              <div
+                key={task.id}
+                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border transition-all ${
+                  task.status === "done"
+                    ? "bg-[#0b5336]/10 border-[#0b5336]/30 dark:bg-[#0b5336]/20 dark:border-[#0b5336]/40"
+                    : task.status === "error"
+                      ? "bg-[#780000]/10 border-[#780000]/30 dark:bg-[#780000]/20 dark:border-[#780000]/40"
+                      : "bg-white dark:bg-slate-950/60 border-amber-300/70 dark:border-amber-900/50 shadow-2xs"
+                }`}
+              >
+                <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                  <div
+                    className={`p-2 rounded-xl shrink-0 ${
+                      task.status === "done"
+                        ? "bg-[#0b5336] text-white"
+                        : task.status === "error"
+                          ? "bg-[#780000] text-white"
+                          : "bg-amber-500 text-slate-950"
+                    }`}
+                  >
+                    <AppIcon
+                      icon={task.status === "done" ? CheckCircle : task.status === "error" ? WarningCircle : CloudUpload}
+                      size="sm"
+                      color="inherit"
+                      className={task.status === "uploading" ? "animate-pulse" : ""}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
+                        {task.requirementTitle}
+                      </span>
+                      {task.isRevision && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30">
+                          Revision
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {task.fileName} • {(task.fileSize / (1024 * 1024)).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-between sm:justify-end">
+                  {task.status === "uploading" && (
+                    <div className="flex items-center gap-3 w-full sm:w-56">
+                      <div className="flex-1 h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-amber-500 to-amber-600 rounded-full transition-all duration-200"
+                          style={{ width: `${task.progress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-300 w-12 text-right">
+                        {task.progress}%
+                      </span>
+                    </div>
+                  )}
+                  {task.status === "done" && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0b5336] text-white text-xs font-bold shadow-xs">
+                      <AppIcon icon={CheckCircle} size="xs" color="inherit" />
+                      Done (100%)
+                    </span>
+                  )}
+                  {task.status === "error" && (
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#780000] text-white text-xs font-bold shadow-xs"
+                      title={task.errorMessage}
+                    >
+                      <AppIcon icon={WarningCircle} size="xs" color="inherit" />
+                      Failed
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setUploadTasks((prev) => prev.filter((t) => t.id !== task.id))}
+                    className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                    title="Dismiss"
+                  >
+                    <AppIcon icon={Xmark} size="xs" color="inherit" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="relative flex min-h-full w-full items-stretch gap-0">
@@ -3533,6 +3838,8 @@ function FacultySubmissionPanelContent({
                       </div>
                     </div>
 
+                    {renderUploadNotificationSection()}
+
                     {/* Classes Grid / Loading / Empty */}
                     {isLoadingClasses ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-2">
@@ -4072,6 +4379,8 @@ function FacultySubmissionPanelContent({
                     </div>
                 )}
 
+                {renderUploadNotificationSection()}
+
                 {/* 0. Personal Deadline Active Banner / Lock Banner */}
                 {!isAllValidated && hasActiveGracePeriod && (
                   <SubmissionLockBanner
@@ -4316,7 +4625,30 @@ function FacultySubmissionPanelContent({
                                         </div>
                                       </>
                                     ) : (
-                                      <>
+                                      (() => {
+                                        const ongoingUpload = uploadTasks.find(
+                                          (t) =>
+                                            t.requirementCode === req.code &&
+                                            t.status === "uploading" &&
+                                            (t.classId === selectedClassId || !t.classId),
+                                        );
+                                        if (ongoingUpload) {
+                                          return (
+                                            <div className="inline-flex items-center justify-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 font-bold w-36 h-8 rounded-xl text-xs shadow-xs px-2 animate-pulse">
+                                              <AppIcon
+                                                icon={SystemRestart}
+                                                size="xs"
+                                                color="inherit"
+                                                className="animate-spin shrink-0"
+                                              />
+                                              <span className="truncate">
+                                                Uploading {ongoingUpload.progress}%
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                        return (
+                                          <>
                                     {/* 1. EXEMPTED: Disable both file uploads and extension requests */}
                                     {req.status === "Exempted" && (
                                       <button
@@ -4460,7 +4792,9 @@ function FacultySubmissionPanelContent({
                                         </button>
                                       )
                                     ) : null}
-                                      </>
+                                          </>
+                                        );
+                                      })()
                                     )}
                                   </div>
                                 </td>
