@@ -521,7 +521,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (requestedClassId) {
-      rawSubmissions = rawSubmissions.filter((s: any) => s.class_id === requestedClassId);
+      const classMatches = rawSubmissions.filter((s: any) => s.class_id === requestedClassId);
+      if (classMatches.length > 0) {
+        rawSubmissions = classMatches;
+      } else {
+        rawSubmissions = rawSubmissions.filter((s: any) => s.class_id === requestedClassId || !s.class_id);
+      }
     }
 
     // 5.1 Query approved extension requests for this faculty user
@@ -723,6 +728,19 @@ export async function GET(request: NextRequest) {
         return true;
       }
 
+      // 5. Preserved uploaded rows: if the faculty member uploaded a file, include it
+      if (
+        sub.submitted_at ||
+        (sub as any).storage_path ||
+        sub.status === "uploaded" ||
+        sub.status === "submitted" ||
+        sub.status === "pending" ||
+        sub.status === "validated" ||
+        sub.status === "rejected"
+      ) {
+        return true;
+      }
+
       return false;
     });
 
@@ -786,6 +804,12 @@ export async function GET(request: NextRequest) {
 
       // Prefer submitted/uploaded records over empty pending placeholders
       matchingSubmissionsForCode.sort((a, b) => {
+        if (requestedClassId) {
+          const aClass = (a as any).class_id === requestedClassId ? 0 : 1;
+          const bClass = (b as any).class_id === requestedClassId ? 0 : 1;
+          if (aClass !== bClass) return aClass - bClass;
+        }
+
         const aHasDoc = hasDocumentVersion(a) ? 0 : 1;
         const bHasDoc = hasDocumentVersion(b) ? 0 : 1;
         if (aHasDoc !== bHasDoc) return aHasDoc - bHasDoc;

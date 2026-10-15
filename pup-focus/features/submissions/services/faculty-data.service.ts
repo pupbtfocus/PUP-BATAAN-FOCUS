@@ -405,8 +405,9 @@ export async function getFacultyInitialData(
   try {
     const { data } = await supabase
       .from("submissions")
-      .select("id, requirement_code, status, due_at, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id")
+      .select("id, requirement_code, status, due_at, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, storage_path, file_name, class_id")
       .in("faculty_profile_id", facultyIdList)
+      .eq("is_archived", false)
       .order("submitted_at", { ascending: false });
 
     if (data) rawSubmissions = data;
@@ -594,7 +595,7 @@ export async function getFacultyInitialData(
     if (sub.faculty_assignment_id && currentAssignmentIds.length > 0) {
       return currentAssignmentIds.includes(sub.faculty_assignment_id);
     }
-    return currentAssignmentIds.length === 0;
+    return true;
   });
 
   for (const tpl of activeTemplates) {
