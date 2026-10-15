@@ -5,7 +5,6 @@ import type { UseFormReturn } from "react-hook-form";
 import {
   Calendar,
   CheckCircle,
-  ClockRotateRight,
   EditPencil,
   Hourglass,
   UserPlus,
@@ -18,7 +17,6 @@ import { AlertPopup } from "@/components/ui/alert-popup";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
 import type { FacultyAccountFormInput } from "@/features/faculty-management/schemas/faculty-account.schema";
-import { SubmissionScheduleLogsModal } from "@/features/faculty-management/components/submission-schedule-logs-modal";
 
 function FieldError({ message }: { message?: string }) {
   if (!message) {
@@ -711,12 +709,10 @@ export function AddFacultyModal({
   ...panelProps
 }: AddFacultyModalProps) {
   const [modalStep, setModalStep] = useState<"form" | "onboarding">("form");
-  const [scheduleLogsOpen, setScheduleLogsOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setModalStep("form");
-      setScheduleLogsOpen(false);
     }
   }, [isOpen]);
 
@@ -725,42 +721,24 @@ export function AddFacultyModal({
   }
 
   return (
-    <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] flex flex-col overflow-hidden">
-          <ModalHeader
-            icon={UserPlus}
-            title="Add Faculty Account"
-            subtitle="Create credentials and assign department permissions"
-            onClose={onClose}
-            className="rounded-t-2xl shrink-0"
-          >
-            <button
-              type="button"
-              onClick={() => setScheduleLogsOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-500 font-bold text-xs transition shadow-xs cursor-pointer active:scale-95"
-              title="View Submission Schedule Logs"
-            >
-              <AppIcon icon={ClockRotateRight} size="xs" color="inherit" className="text-slate-950" />
-              <span className="hidden sm:inline">Schedule Logs</span>
-            </button>
-          </ModalHeader>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-3xl sm:max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[85vh] flex flex-col overflow-hidden">
+        <ModalHeader
+          icon={UserPlus}
+          title="Add Faculty Account"
+          subtitle="Create credentials and assign department permissions"
+          onClose={onClose}
+          className="rounded-t-2xl shrink-0"
+        />
 
-          <AddFacultyPanel
-            {...panelProps}
-            isOpen={isOpen}
-            step={modalStep}
-            onStepChange={setModalStep}
-            onOpenScheduleLogs={() => setScheduleLogsOpen(true)}
-            onClose={onClose}
-          />
-        </div>
+        <AddFacultyPanel
+          {...panelProps}
+          isOpen={isOpen}
+          step={modalStep}
+          onStepChange={setModalStep}
+          onClose={onClose}
+        />
       </div>
-
-      <SubmissionScheduleLogsModal
-        isOpen={scheduleLogsOpen}
-        onClose={() => setScheduleLogsOpen(false)}
-      />
-    </>
+    </div>
   );
 }
