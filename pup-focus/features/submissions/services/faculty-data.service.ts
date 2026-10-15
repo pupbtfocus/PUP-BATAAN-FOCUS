@@ -45,6 +45,10 @@ export type RequirementStatusData = {
   effectiveDeadline?: string | null;
   isExtended?: boolean;
   extendedUntil?: string | null;
+  storagePath?: string;
+  fileName?: string;
+  classId?: string;
+  class_id?: string;
 };
 
 export type RequirementTemplateData = {
@@ -400,17 +404,29 @@ export async function getFacultyInitialData(
     is_read?: boolean | null;
     viewed_at?: string | null;
     faculty_assignment_id?: string | null;
+    storage_path?: string | null;
+    file_name?: string | null;
+    class_id?: string | null;
+    is_archived?: boolean | null;
   }> = [];
 
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("submissions")
-      .select("id, requirement_code, status, due_at, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, storage_path, file_name, class_id")
-      .in("faculty_profile_id", facultyIdList)
-      .eq("is_archived", false)
+      .select("id, requirement_code, status, due_at, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, storage_path, file_name, class_id, is_archived")
+      .or(`faculty_profile_id.in.(${facultyIdList.join(",")}),user_id.in.(${facultyIdList.join(",")})`)
       .order("submitted_at", { ascending: false });
 
-    if (data) rawSubmissions = data;
+    if (!error && data) {
+      rawSubmissions = (data as any[]).filter((s) => s.is_archived !== true);
+    } else {
+      const { data: fallbackData } = await supabase
+        .from("submissions")
+        .select("id, requirement_code, status, due_at, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, storage_path, file_name, class_id")
+        .in("faculty_profile_id", facultyIdList)
+        .order("submitted_at", { ascending: false });
+      if (fallbackData) rawSubmissions = fallbackData;
+    }
   } catch {}
 
   const submissionIds = rawSubmissions.map((s) => s.id);
@@ -728,6 +744,10 @@ export async function getFacultyInitialData(
       remarks: facultyNote,
       submittedAt: sub?.submitted_at || undefined,
       latestSubmissionId: hasActualFile ? sub?.id : undefined,
+      storagePath: hasActualFile ? sub?.storage_path || undefined : undefined,
+      fileName: hasActualFile ? sub?.file_name || undefined : undefined,
+      classId: (sub as any)?.class_id || undefined,
+      class_id: (sub as any)?.class_id || undefined,
       is_read: Boolean(sub?.is_read),
       isViewed: Boolean(sub?.is_read),
       viewed_at: sub?.viewed_at || undefined,
