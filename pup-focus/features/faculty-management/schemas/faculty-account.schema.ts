@@ -1,15 +1,21 @@
 import { z } from "zod";
 
+const nameRegex = /^[a-zA-Z\sñÑ]+$/;
+
 const requiredNameSchema = z
   .string()
   .trim()
   .min(1, "This field is required")
-  .max(80, "Use 80 characters or less");
+  .max(80, "Use 80 characters or less")
+  .regex(nameRegex, "Name can only contain letters (no numbers or special characters)");
 
 const optionalNameSchema = z
   .string()
   .trim()
-  .max(80, "Use 80 characters or less");
+  .max(80, "Use 80 characters or less")
+  .refine((val) => !val || nameRegex.test(val), {
+    message: "Name can only contain letters (no numbers or special characters)",
+  });
 
 export const facultyAccountSchema = z.object({
   firstName: requiredNameSchema,

@@ -307,6 +307,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const nameRegex = /^[a-zA-Z\sñÑ]+$/;
+    if (
+      !nameRegex.test(firstName.trim()) ||
+      !nameRegex.test(lastName.trim()) ||
+      (middleName?.trim() && !nameRegex.test(middleName.trim()))
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Names can only contain letters and spaces (no numbers or special characters).",
+        },
+        { status: 400 },
+      );
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!isValidEmailAddress(normalizedEmail)) {
