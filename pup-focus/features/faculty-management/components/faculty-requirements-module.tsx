@@ -80,7 +80,11 @@ export type StatusResponse = {
   };
 };
 
-const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
+const SEMESTER_OPTIONS = [
+  "1st Semester",
+  "2nd Semester",
+  "Summer Semester",
+] as const;
 type SemesterOption = (typeof SEMESTER_OPTIONS)[number];
 
 type RequirementFormState = {
