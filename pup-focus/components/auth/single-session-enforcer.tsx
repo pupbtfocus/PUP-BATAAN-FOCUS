@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { createClient, clearBrowserSupabaseSession } from "@/lib/supabase/client";
 import { WarningTriangle, LogOut } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
-import { resetDashboardNavigationState } from "@/config/routes";
+import { resetDashboardNavigationState, AUTH_ROUTES } from "@/config/routes";
 
 export function SingleSessionEnforcer() {
   const pathname = usePathname();
@@ -20,9 +20,12 @@ export function SingleSessionEnforcer() {
     !pathname ||
     pathname === "/" ||
     pathname === "/login" ||
-    pathname === "/sign-in" ||
-    pathname.startsWith("/auth/callback") ||
-    pathname.startsWith("/auth/confirm");
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/change-password") ||
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/forgot-password") ||
+    AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
   const handleLogout = useCallback(async () => {
     if (isLoggingOut) return;

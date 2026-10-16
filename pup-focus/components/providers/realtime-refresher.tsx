@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { AUTH_ROUTES } from "@/config/routes";
 
 const TABLES = [
   "submissions",
@@ -22,8 +23,23 @@ export const REALTIME_EVENT = "pupfocus:realtime-change";
 
 export function RealtimeRefresher() {
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
+    if (
+      !pathname ||
+      pathname === "/" ||
+      pathname === "/login" ||
+      pathname.startsWith("/sign-in") ||
+      pathname.startsWith("/auth/") ||
+      pathname.startsWith("/change-password") ||
+      pathname.startsWith("/reset-password") ||
+      pathname.startsWith("/forgot-password") ||
+      AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+    ) {
+      return;
+    }
+
     const supabase = createClient();
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -51,7 +67,7 @@ export function RealtimeRefresher() {
       if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
-  }, [router]);
+  }, [router, pathname]);
 
   return null;
 }
