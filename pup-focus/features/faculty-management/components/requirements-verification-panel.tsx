@@ -4195,7 +4195,10 @@ export function RequirementsPanel({
                           }
 
                           return (
-                            <div className="flex flex-col gap-1.5 py-0.5 max-w-[280px]">
+                            <div
+                              className="flex flex-col gap-1.5 py-0.5 min-w-[140px] max-w-[260px]"
+                              title={classList.map((c) => `${c.subject_code}: ${c.isDone ? "Done" : "Not Done"}`).join(", ")}
+                            >
                               <div className="flex items-center justify-between gap-2">
                                 <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
                                   {doneCount}/{totalClasses} {totalClasses === 1 ? "Subject" : "Subjects"} Done
@@ -4219,25 +4222,23 @@ export function RequirementsPanel({
                                 />
                               </div>
 
-                              {/* Per Subject Status Chips */}
-                              <div className="flex flex-wrap gap-1 pt-0.5">
-                                {classList.map((cls) => (
-                                  <span
-                                    key={cls.id}
-                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold border transition-colors ${
-                                      cls.isDone
-                                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-[#0b5336] dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/60"
-                                        : cls.validatedCount > 0
-                                        ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800/60"
-                                        : "bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
-                                    }`}
-                                    title={`${cls.subject_code} (${cls.section_code}): ${cls.validatedCount}/${cls.totalRequired} Validated`}
-                                  >
-                                    <span className="font-mono">{cls.subject_code}</span>:
-                                    <span>{cls.isDone ? "Done" : "Not Done"}</span>
-                                  </span>
-                                ))}
-                              </div>
+                              {/* Only show chips for subjects that are Done */}
+                              {classList.filter((cls) => cls.isDone).length > 0 ? (
+                                <div className="flex flex-wrap gap-1 pt-0.5">
+                                  {classList
+                                    .filter((cls) => cls.isDone)
+                                    .map((cls) => (
+                                      <span
+                                        key={cls.id}
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] font-bold border transition-colors bg-emerald-50 dark:bg-emerald-950/40 text-[#0b5336] dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/60"
+                                        title={`${cls.subject_code} (${cls.section_code}): All requirements validated (Done)`}
+                                      >
+                                        <AppIcon icon={Check} size="xs" color="inherit" strokeWidth={2.5} />
+                                        <span className="font-mono">{cls.subject_code}</span>
+                                      </span>
+                                    ))}
+                                </div>
+                              ) : null}
                             </div>
                           );
                         })()}
