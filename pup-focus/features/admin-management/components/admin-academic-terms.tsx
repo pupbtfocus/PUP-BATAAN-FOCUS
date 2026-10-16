@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 
 import {
   Archive,
@@ -78,6 +79,10 @@ export function AdminAcademicTerms({
   useEffect(() => {
     void loadTerms();
   }, []);
+
+  useRealtimeSync(() => {
+    void loadTerms({ silent: true });
+  });
 
   // 10-second countdown timer for action confirmation modals
   useEffect(() => {
@@ -185,14 +190,17 @@ export function AdminAcademicTerms({
       );
   }, [terms, currentScore]);
 
-  async function loadTerms() {
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
+  async function loadTerms(options?: { silent?: boolean }) {
+    if (!options?.silent) {
+      setIsLoading(true);
+      setError(null);
+      setSuccess(null);
+    }
 
     try {
       const response = await fetch("/api/staff/academic-terms", {
         credentials: "include",
+        cache: "no-store",
       });
       const data = await response.json();
 
@@ -219,7 +227,9 @@ export function AdminAcademicTerms({
           : "Failed to load academic terms",
       );
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -245,7 +255,8 @@ export function AdminAcademicTerms({
 
       setSuccess(`Created academic year ${computedNextAcademicYear}.`);
       setIsCreateModalOpen(false);
-      await loadTerms();
+      await loadTerms({ silent: true });
+      emitRealtimeSync({ source: "academic-term-created", timestamp: Date.now() });
     } catch (saveError) {
       setError(
         saveError instanceof Error
@@ -322,7 +333,8 @@ export function AdminAcademicTerms({
         `Set ${termToSetCurrent.academicYear} ${termToSetCurrent.semester} as the current academic term.`,
       );
       setTermToSetCurrent(null);
-      await loadTerms();
+      await loadTerms({ silent: true });
+      emitRealtimeSync({ source: "academic-term-set-current", timestamp: Date.now() });
     } catch (saveError) {
       setError(
         saveError instanceof Error
@@ -372,7 +384,8 @@ export function AdminAcademicTerms({
         `Deleted ${termToDelete.academicYear} ${termToDelete.semester}.`,
       );
       setTermToDelete(null);
-      await loadTerms();
+      await loadTerms({ silent: true });
+      emitRealtimeSync({ source: "academic-term-deleted", timestamp: Date.now() });
     } catch (deleteError) {
       setError(
         deleteError instanceof Error

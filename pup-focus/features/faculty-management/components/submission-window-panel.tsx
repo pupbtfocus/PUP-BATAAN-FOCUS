@@ -12,6 +12,7 @@ import type {
 import { ExtendSubmissionWindowModal } from "./extend-submission-window-modal";
 import { SubmissionScheduleLogsModal } from "./submission-schedule-logs-modal";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 
 function toDateTimeLocal(d: Date): string {
   const year = d.getFullYear();
@@ -493,12 +494,17 @@ export function SubmissionWindowPanel({
     }
   };
 
-  async function loadWindow() {
-    setIsLoading(true);
-    setError(null);
+  async function loadWindow(options?: { silent?: boolean }) {
+    if (!options?.silent) {
+      setIsLoading(true);
+      setError(null);
+    }
 
     try {
-      const response = await fetch("/api/staff/submission-window", { credentials: "include" });
+      const response = await fetch("/api/staff/submission-window", {
+        credentials: "include",
+        cache: "no-store",
+      });
       const body = await readApiBody(response);
 
       if (!response.ok) {
@@ -576,7 +582,9 @@ export function SubmissionWindowPanel({
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load submission window");
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
       void fetchActiveFacultySchedules();
     }
   }
@@ -593,6 +601,15 @@ export function SubmissionWindowPanel({
 
     return () => window.clearTimeout(timeoutId);
   }, [isSuperAdmin, fetchLogs, fetchExtensionRequests, fetchActiveFacultySchedules]);
+
+  useRealtimeSync(() => {
+    void loadWindow({ silent: true });
+    void fetchExtensionRequests();
+    void fetchActiveFacultySchedules();
+    if (isSuperAdmin) {
+      void fetchLogs();
+    }
+  });
 
   // Sync isEditingSchedule: lock inputs once a valid schedule loads
   useEffect(() => {

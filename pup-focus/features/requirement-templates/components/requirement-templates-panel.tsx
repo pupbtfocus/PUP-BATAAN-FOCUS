@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
   EditPencil,
   Eye,
@@ -20,6 +20,7 @@ import type { RequirementTemplate } from "@/features/requirement-templates/types
 import { RequirementTemplateModal } from "./requirement-template-modal";
 import { RequirementTemplateDetailsModal } from "./requirement-template-details-modal";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 
 interface RequirementTemplatesPanelProps {
   refreshTrigger?: number;
@@ -30,6 +31,7 @@ export function RequirementTemplatesPanel({
 }: RequirementTemplatesPanelProps) {
   const [templates, setTemplates] = useState<RequirementTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,11 +46,14 @@ export function RequirementTemplatesPanel({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState<string | null>(null);
 
-  const loadTemplates = async () => {
+  const loadTemplates = async (options?: { silent?: boolean }) => {
+    const isSilent = options?.silent ?? hasLoadedRef.current;
     try {
-      setIsLoading(true);
-      setError(null);
-      const res = await fetch("/api/staff/requirement-templates");
+      if (!isSilent) {
+        setIsLoading(true);
+        setError(null);
+      }
+      const res = await fetch("/api/staff/requirement-templates", { cache: "no-store" });
       if (!res.ok) {
         throw new Error("Failed to load requirement templates");
       }
@@ -71,16 +76,23 @@ export function RequirementTemplatesPanel({
       }
 
       setTemplates(deduplicated);
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error loading requirement templates");
     } finally {
-      setIsLoading(false);
+      if (!isSilent) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    void loadTemplates();
+    void loadTemplates({ silent: hasLoadedRef.current });
   }, [refreshTrigger]);
+
+  useRealtimeSync(() => {
+    void loadTemplates({ silent: true });
+  });
 
   // 10-second countdown timer for delete confirmation
   useEffect(() => {
@@ -169,7 +181,8 @@ export function RequirementTemplatesPanel({
           ? { ...prev, is_active: willBeActive, updated_at: new Date().toISOString() }
           : prev,
       );
-      await loadTemplates();
+      await loadTemplates({ silent: true });
+      emitRealtimeSync({ source: "template-updated", timestamp: Date.now() });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error updating template visibility");
     } finally {
@@ -195,7 +208,8 @@ export function RequirementTemplatesPanel({
       setSuccess(`Requirement template "${templateToDelete.title}" deleted.`);
       setTimeout(() => setSuccess(null), 4000);
       setTemplateToDelete(null);
-      await loadTemplates();
+      await loadTemplates({ silent: true });
+      emitRealtimeSync({ source: "template-deleted", timestamp: Date.now() });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error deleting template");
     } finally {

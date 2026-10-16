@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { useRealtimeSync } from "@/lib/realtime";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole, canManageAdminAccount } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
@@ -566,7 +566,8 @@ export function SuperAdminDashboard({
       setFacultyProfileImageFile(null);
       setFacultyProfileImageInputKey((value) => value + 1);
 
-      await loadFacultyFromDatabase();
+      await loadFacultyFromDatabase(true);
+      emitRealtimeSync({ source: "faculty-created", timestamp: Date.now() });
     } catch {
       setCreateFacultyError("An error occurred while creating the faculty account");
     } finally {
@@ -602,7 +603,8 @@ export function SuperAdminDashboard({
             setSelectedFacultyId(null);
           }
           setDeleteFacultySuccess("Faculty account deleted successfully");
-          await loadFacultyFromDatabase();
+          await loadFacultyFromDatabase(true);
+          emitRealtimeSync({ source: "faculty-deleted", timestamp: Date.now() });
         } else {
           setDeleteFacultyError(
             `Failed to delete faculty account (HTTP ${response.status})`,
@@ -619,7 +621,8 @@ export function SuperAdminDashboard({
           setSelectedFacultyId(null);
         }
         setDeleteFacultySuccess("Faculty account deleted successfully");
-        await loadFacultyFromDatabase();
+        await loadFacultyFromDatabase(true);
+        emitRealtimeSync({ source: "faculty-deleted", timestamp: Date.now() });
       } else {
         setDeleteFacultyError(data.error || "Failed to delete faculty account");
       }
@@ -670,7 +673,8 @@ export function SuperAdminDashboard({
           faculty.id === facultyId ? { ...faculty, is_active: false } : faculty,
         ),
       );
-      await loadFacultyFromDatabase();
+      await loadFacultyFromDatabase(true);
+      emitRealtimeSync({ source: "faculty-deactivated", timestamp: Date.now() });
     } catch (error) {
       setFacultyActionError(
         error instanceof Error
@@ -718,7 +722,8 @@ export function SuperAdminDashboard({
           faculty.id === facultyId ? { ...faculty, is_active: true } : faculty,
         ),
       );
-      await loadFacultyFromDatabase();
+      await loadFacultyFromDatabase(true);
+      emitRealtimeSync({ source: "faculty-activated", timestamp: Date.now() });
     } catch (error) {
       setFacultyActionError(
         error instanceof Error
@@ -881,12 +886,12 @@ export function SuperAdminDashboard({
     }
   }
 
-  async function loadAccountSettings() {
+  async function loadAccountSettings(silent = false) {
     try {
-      setIsLoadingSettings(true);
+      if (!silent) setIsLoadingSettings(true);
       setSettingsError(null);
 
-      const response = await fetch("/api/admin/account");
+      const response = await fetch("/api/admin/account", { cache: "no-store" });
       const data = (await response.json()) as any;
 
       if (!response.ok || !data.account) {
@@ -912,22 +917,32 @@ export function SuperAdminDashboard({
     } catch {
       setSettingsError("Error loading account settings");
     } finally {
-      setIsLoadingSettings(false);
+      if (!silent) setIsLoadingSettings(false);
     }
   }
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   async function refreshCurrentPanel() {
-    if (activeSection === "accounts") {
-      await loadAdminAccounts();
-    } else if (activeSection === "faculty" || activeSection === "verification") {
-      await loadFacultyFromDatabase();
-      setVerificationResetTrigger((prev) => prev + 1);
-    } else if (activeSection === "settings") {
-      await loadAccountSettings();
-    } else if (activeSection === "templates") {
-      setTemplatesRefreshTrigger((prev) => prev + 1);
-    } else if (activeSection === "dashboard") {
-      await Promise.all([loadAdminAccounts(), loadFacultyFromDatabase()]);
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      if (activeSection === "accounts") {
+        await loadAdminAccounts(true);
+      } else if (activeSection === "faculty" || activeSection === "verification") {
+        await loadFacultyFromDatabase(true);
+      } else if (activeSection === "settings") {
+        await loadAccountSettings(true);
+      } else if (activeSection === "templates" || activeSection === "programs") {
+        setTemplatesRefreshTrigger((prev) => prev + 1);
+      } else if (activeSection === "dashboard") {
+        await Promise.all([loadAdminAccounts(true), loadFacultyFromDatabase(true)]);
+      } else {
+        await Promise.all([loadAdminAccounts(true), loadFacultyFromDatabase(true)]);
+      }
+      emitRealtimeSync({ source: "manual-refresh", timestamp: Date.now() });
+    } finally {
+      setIsRefreshing(false);
     }
   }
 
@@ -1146,7 +1161,8 @@ export function SuperAdminDashboard({
       setEmail("");
       void (async () => {
         try {
-          await loadAdminAccounts();
+          await loadAdminAccounts(true);
+          emitRealtimeSync({ source: "staff-created", timestamp: Date.now() });
         } catch {
           // ignore refresh failure and keep the success state
         }
@@ -1321,7 +1337,8 @@ export function SuperAdminDashboard({
         ),
       );
       setAccountActionSuccess("Admin account deactivated successfully.");
-      await loadAdminAccounts();
+      await loadAdminAccounts(true);
+      emitRealtimeSync({ source: "staff-deactivated", timestamp: Date.now() });
     } catch {
       setAccountActionError(
         "Unexpected error while deactivating admin account.",
@@ -1365,7 +1382,8 @@ export function SuperAdminDashboard({
         ),
       );
       setAccountActionSuccess("Admin account activated successfully.");
-      await loadAdminAccounts();
+      await loadAdminAccounts(true);
+      emitRealtimeSync({ source: "staff-activated", timestamp: Date.now() });
     } catch {
       setAccountActionError("Unexpected error while activating admin account.");
     } finally {
@@ -1408,7 +1426,8 @@ export function SuperAdminDashboard({
         prev.filter((admin) => admin.profile_id !== profileId && admin.id !== profileId),
       );
       setAccountActionSuccess("Admin account deleted successfully.");
-      await loadAdminAccounts();
+      await loadAdminAccounts(true);
+      emitRealtimeSync({ source: "staff-deleted", timestamp: Date.now() });
     } catch {
       setAccountActionError("Unexpected error while deleting admin account.");
     } finally {
@@ -1783,11 +1802,11 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
-                      disabled={isLoadingAccounts || isLoadingFaculty}
+                      disabled={isRefreshing}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
-                      <Refresh className={`h-3.5 w-3.5 ${isLoadingAccounts || isLoadingFaculty ? "animate-spin" : ""}`} />
-                      <span>{isLoadingAccounts || isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
+                      <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                     </button>
                   </div>
                 </div>
@@ -1945,11 +1964,11 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
-                      disabled={isLoadingAccounts}
+                      disabled={isRefreshing}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
-                      <Refresh className={`h-3.5 w-3.5 ${isLoadingAccounts ? "animate-spin" : ""}`} />
-                      <span>{isLoadingAccounts ? "Refreshing..." : "Refresh"}</span>
+                      <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                     </button>
                   </div>
                 </div>
@@ -2023,11 +2042,11 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
-                      disabled={isLoadingFaculty}
+                      disabled={isRefreshing}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
-                      <Refresh className={`h-3.5 w-3.5 ${isLoadingFaculty ? "animate-spin" : ""}`} />
-                      <span>{isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
+                      <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                     </button>
                   </div>
                 </div>
@@ -2078,11 +2097,11 @@ export function SuperAdminDashboard({
                       <button
                         type="button"
                         onClick={() => void refreshCurrentPanel()}
-                        disabled={isLoadingFaculty}
+                        disabled={isRefreshing}
                         className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                       >
-                        <Refresh className={`h-3.5 w-3.5 ${isLoadingFaculty ? "animate-spin" : ""}`} />
-                        <span>{isLoadingFaculty ? "Refreshing..." : "Refresh"}</span>
+                        <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                        <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
                   </div>
@@ -2115,10 +2134,11 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
+                      disabled={isRefreshing}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
-                      <AppIcon icon={Refresh} size="sm" color="inherit" />
-                      <span>Refresh</span>
+                      <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                     </button>
                   </div>
                 </div>
@@ -2148,10 +2168,11 @@ export function SuperAdminDashboard({
                     <button
                       type="button"
                       onClick={() => void refreshCurrentPanel()}
+                      disabled={isRefreshing}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
-                      <AppIcon icon={Refresh} size="sm" color="inherit" />
-                      <span>Refresh</span>
+                      <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                     </button>
                   </div>
                 </div>
@@ -2436,7 +2457,7 @@ export function SuperAdminDashboard({
           details={adminDetails}
           isLoading={isLoadingAdminDetails}
           onClose={() => setAdminDetailsOpen(false)}
-          onSaved={() => void loadAdminAccounts()}
+          onSaved={() => void loadAdminAccounts(true)}
           editable={adminDetailsEditable}
           currentAdminEmail={currentAdminEmail}
         />
@@ -2555,8 +2576,8 @@ export function SuperAdminDashboard({
         onClose={() => setRegistrationLogsModalOpen(false)}
         targetRole={registrationLogsInitialRole}
         onInviteCancelled={() => {
-          void loadAdminAccounts();
-          void loadFacultyFromDatabase();
+          void loadAdminAccounts(true);
+          void loadFacultyFromDatabase(true);
         }}
       />
 

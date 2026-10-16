@@ -892,13 +892,17 @@ export function FacultyVerificationDrawer({
     return () => clearTimeout(timeout);
   }, [initialRequirementCode, isLoading, classGroups, selectedClassId]);
 
+  const hasLoadedCurrentRef = useRef(false);
+  const hasLoadedHistoryRef = useRef(false);
+
   const refreshCurrentSubmissions = useCallback(
     async (options?: { silent?: boolean }) => {
+      const isSilent = options?.silent ?? hasLoadedCurrentRef.current;
       if (!faculty.id) {
-        if (!options?.silent) setIsLoading(false);
+        if (!isSilent) setIsLoading(false);
         return;
       }
-      if (!options?.silent) {
+      if (!isSilent) {
         setIsLoading(true);
       }
       try {
@@ -913,11 +917,12 @@ export function FacultyVerificationDrawer({
           if (Array.isArray(subData.classes)) {
             setFacultyClasses(subData.classes);
           }
+          hasLoadedCurrentRef.current = true;
         }
       } catch (err) {
         console.error("Failed to load current submissions:", err);
       } finally {
-        if (!options?.silent) {
+        if (!isSilent) {
           setIsLoading(false);
         }
       }
@@ -968,7 +973,8 @@ export function FacultyVerificationDrawer({
   const refreshHistorySubmissions = useCallback(
     async (options?: { silent?: boolean }) => {
       if (activeTab !== "history" || !faculty.id || !selectedHistoryAy || !selectedHistorySem) return;
-      if (!options?.silent) {
+      const isSilent = options?.silent ?? hasLoadedHistoryRef.current;
+      if (!isSilent) {
         setIsLoadingHistory(true);
       }
       try {
@@ -979,11 +985,12 @@ export function FacultyVerificationDrawer({
         if (res.ok) {
           const data = await res.json();
           setHistorySubmissions(data.submissions || []);
+          hasLoadedHistoryRef.current = true;
         }
       } catch (err) {
         console.error("Failed to load history submissions:", err);
       } finally {
-        if (!options?.silent) {
+        if (!isSilent) {
           setIsLoadingHistory(false);
         }
       }
@@ -2176,19 +2183,6 @@ export function FacultyVerificationDrawer({
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
-                      disabled={isRefreshing || isLoading}
-                      onClick={handleRefresh}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
-                      title="Refresh current submissions"
-                    >
-                      <SystemRestart
-                        className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                      />
-                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                    </button>
-
-                    <button
-                      type="button"
                       disabled={isValidatingAll || selectedGroupPendingCount === 0}
                       onClick={triggerValidateAllPendingModal}
                       className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#073d2a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2684,7 +2678,6 @@ export function FacultyVerificationDrawer({
                     value={selectedHistoryAy}
                     onChange={(e) => {
                       setSelectedHistoryAy(e.target.value);
-                      setIsLoadingHistory(true);
                     }}
                     className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500"
                   >
@@ -2699,7 +2692,6 @@ export function FacultyVerificationDrawer({
                     value={selectedHistorySem}
                     onChange={(e) => {
                       setSelectedHistorySem(e.target.value as SemesterOption);
-                      setIsLoadingHistory(true);
                     }}
                     className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition focus:border-amber-500"
                   >
@@ -2710,19 +2702,6 @@ export function FacultyVerificationDrawer({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={isRefreshing || isLoadingHistory}
-                    onClick={handleRefresh}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3.5 py-1.5 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
-                    title="Refresh history"
-                  >
-                    <SystemRestart
-                      className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                    />
-                    <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                  </button>
-
                   <button
                     type="button"
                     disabled={isDownloadingHistoryZip}
@@ -4019,7 +3998,9 @@ export function RequirementsPanel({
                   setActivePanelTab("current");
                   setAcademicYear(activeTermAy);
                   setSemester(activeTermSem);
-                  void fetchAllStatuses(activeTermAy, activeTermSem);
+                  void fetchAllStatuses(activeTermAy, activeTermSem, {
+                    silent: Object.keys(facultyStatuses).length > 0,
+                  });
                 }}
                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition cursor-pointer ${
                   activePanelTab === "current"
@@ -4036,7 +4017,9 @@ export function RequirementsPanel({
                   setActivePanelTab("history");
                   setAcademicYear(historyAy);
                   setSemester(historySem);
-                  void fetchAllStatuses(historyAy, historySem);
+                  void fetchAllStatuses(historyAy, historySem, {
+                    silent: Object.keys(facultyStatuses).length > 0,
+                  });
                 }}
                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition cursor-pointer ${
                   activePanelTab === "history"
@@ -4066,7 +4049,9 @@ export function RequirementsPanel({
                     const newAy = e.target.value;
                     setHistoryAy(newAy);
                     setAcademicYear(newAy);
-                    void fetchAllStatuses(newAy, historySem);
+                    void fetchAllStatuses(newAy, historySem, {
+                      silent: Object.keys(facultyStatuses).length > 0,
+                    });
                   }}
                   className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
                 >
@@ -4083,7 +4068,9 @@ export function RequirementsPanel({
                     const newSem = e.target.value as SemesterOption;
                     setHistorySem(newSem);
                     setSemester(newSem);
-                    void fetchAllStatuses(historyAy, newSem);
+                    void fetchAllStatuses(historyAy, newSem, {
+                      silent: Object.keys(facultyStatuses).length > 0,
+                    });
                   }}
                   className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
                 >

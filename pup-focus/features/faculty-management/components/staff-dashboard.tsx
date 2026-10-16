@@ -21,7 +21,7 @@ import {
 import { extractFirstName } from "@/lib/faculty-profile";
 import { StaffSettings as AdminSettings } from "@/features/admin-management/components/staff-settings";
 import { createClient } from "@/lib/supabase/client";
-import { useRealtimeSync } from "@/lib/realtime";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import {
   facultyAccountSchema,
   type FacultyAccountFormInput,
@@ -415,9 +415,20 @@ export function AdminFacultyDashboard({
     }
   }
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   async function refreshCurrentPanel() {
-    await Promise.all([loadFacultyFromDatabase(), loadDashboardStats()]);
-    setVerificationResetTrigger((prev) => prev + 1);
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        loadFacultyFromDatabase({ silent: true }),
+        loadDashboardStats({ silent: true }),
+      ]);
+      emitRealtimeSync({ source: "manual-refresh", timestamp: Date.now() });
+    } finally {
+      setIsRefreshing(false);
+    }
   }
 
   const form = useForm<FacultyAccountFormInput>({
@@ -538,7 +549,9 @@ export function AdminFacultyDashboard({
       setProfileImageFile(null);
       setProfileImageInputKey((value) => value + 1);
 
-      await loadFacultyFromDatabase();
+      await loadFacultyFromDatabase({ silent: true });
+      void loadDashboardStats({ silent: true });
+      emitRealtimeSync({ source: "faculty-created", timestamp: Date.now() });
     } catch {
       setCreateError("An error occurred while creating the faculty account");
     } finally {
@@ -574,7 +587,9 @@ export function AdminFacultyDashboard({
             setSelectedFacultyId(null);
           }
           setDeleteSuccess("Faculty account deleted successfully");
-          await loadFacultyFromDatabase();
+          await loadFacultyFromDatabase({ silent: true });
+          void loadDashboardStats({ silent: true });
+          emitRealtimeSync({ source: "faculty-deleted", timestamp: Date.now() });
         } else {
           setDeleteError(
             `Failed to delete faculty account (HTTP ${response.status})`,
@@ -591,7 +606,9 @@ export function AdminFacultyDashboard({
           setSelectedFacultyId(null);
         }
         setDeleteSuccess("Faculty account deleted successfully");
-        await loadFacultyFromDatabase();
+        await loadFacultyFromDatabase({ silent: true });
+        void loadDashboardStats({ silent: true });
+        emitRealtimeSync({ source: "faculty-deleted", timestamp: Date.now() });
       } else {
         setDeleteError(data.error || "Failed to delete faculty account");
       }
@@ -642,8 +659,9 @@ export function AdminFacultyDashboard({
           faculty.id === facultyId ? { ...faculty, is_active: false } : faculty,
         ),
       );
-      await loadFacultyFromDatabase();
-      void loadDashboardStats();
+      await loadFacultyFromDatabase({ silent: true });
+      void loadDashboardStats({ silent: true });
+      emitRealtimeSync({ source: "faculty-deactivated", timestamp: Date.now() });
     } catch (error) {
       setFacultyActionError(
         error instanceof Error
@@ -691,8 +709,9 @@ export function AdminFacultyDashboard({
           faculty.id === facultyId ? { ...faculty, is_active: true } : faculty,
         ),
       );
-      await loadFacultyFromDatabase();
-      void loadDashboardStats();
+      await loadFacultyFromDatabase({ silent: true });
+      void loadDashboardStats({ silent: true });
+      emitRealtimeSync({ source: "faculty-activated", timestamp: Date.now() });
     } catch (error) {
       setFacultyActionError(
         error instanceof Error
@@ -838,14 +857,14 @@ export function AdminFacultyDashboard({
                           <button
                             type="button"
                             onClick={() => void refreshCurrentPanel()}
-                            disabled={isLoadingStats}
+                            disabled={isRefreshing}
                             title="Refresh dashboard"
                             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                           >
                             <Refresh
-                              className={`h-3.5 w-3.5 ${isLoadingStats ? "animate-spin" : ""}`}
+                              className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
                             />
-                            <span>{isLoadingStats ? "Refreshing..." : "Refresh"}</span>
+                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                           </button>
                         </div>
                       </div>
@@ -1168,11 +1187,11 @@ export function AdminFacultyDashboard({
                         <button
                           type="button"
                           onClick={() => void refreshCurrentPanel()}
-                          disabled={isLoading}
+                          disabled={isRefreshing}
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                         >
-                          <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                          <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
+                          <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                          <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                         </button>
                       </div>
                     </div>
@@ -1206,11 +1225,11 @@ export function AdminFacultyDashboard({
                           <button
                             type="button"
                             onClick={() => void refreshCurrentPanel()}
-                            disabled={isLoading}
+                            disabled={isRefreshing}
                             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                           >
-                            <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                            <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
+                            <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                           </button>
                         </div>
                       </div>

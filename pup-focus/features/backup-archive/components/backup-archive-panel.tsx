@@ -22,6 +22,7 @@ import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { useRealtimeSync } from "@/lib/realtime";
 import type {
   SystemBackup,
   ArchivedTermSummary,
@@ -44,6 +45,8 @@ export function BackupArchivePanel() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasLoadedRef = useRef(false);
   const [isGeneratingBackup, setIsGeneratingBackup] = useState(false);
   const [exportingTermKey, setExportingTermKey] = useState<string | null>(null);
   const [exportProgress, setExportProgress] = useState<string | null>(null);
@@ -71,9 +74,12 @@ export function BackupArchivePanel() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteCountdown, setDeleteCountdown] = useState<number>(10);
 
-  const loadBackupData = async () => {
+  const loadBackupData = async (options?: { silent?: boolean }) => {
+    const showLoading = !options?.silent && !hasLoadedRef.current;
     try {
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       setError(null);
       const res = await fetch("/api/staff/backups");
       if (!res.ok) {
@@ -92,16 +98,33 @@ export function BackupArchivePanel() {
       if (data.stats) {
         setStats(data.stats);
       }
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error loading backup data");
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     void loadBackupData();
   }, []);
+
+  useRealtimeSync(() => {
+    void loadBackupData({ silent: true });
+  });
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await loadBackupData({ silent: true });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // 10-second countdown timer for delete confirmation
   useEffect(() => {
@@ -251,7 +274,7 @@ export function BackupArchivePanel() {
       }
 
       // Sync updated list
-      await loadBackupData();
+      await loadBackupData({ silent: true });
     } catch (err) {
       setError(
         err instanceof Error
@@ -330,7 +353,7 @@ export function BackupArchivePanel() {
       setTimeout(() => setSuccess(null), 5000);
 
       // Refresh list so the newly created system_backups record appears
-      await loadBackupData();
+      await loadBackupData({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error exporting document vault ZIP");
     } finally {
@@ -388,7 +411,7 @@ export function BackupArchivePanel() {
       setTimeout(() => setSuccess(null), 4000);
 
       // Refresh list so the newly created system_backups record appears
-      await loadBackupData();
+      await loadBackupData({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error exporting document vault ZIP");
     } finally {
@@ -415,7 +438,7 @@ export function BackupArchivePanel() {
       setSuccess(`Backup record "${backupToDelete.backup_name}" deleted.`);
       setTimeout(() => setSuccess(null), 4000);
       setBackupToDelete(null);
-      await loadBackupData();
+      await loadBackupData({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error deleting backup");
     } finally {
@@ -519,17 +542,13 @@ export function BackupArchivePanel() {
 
           <button
             type="button"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.location.reload();
-              }
-            }}
-            disabled={isLoading}
+            onClick={() => void handleRefresh()}
+            disabled={isRefreshing}
             className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs disabled:opacity-50 active:scale-[0.98]"
             title="Refresh backups and terms"
           >
-            <Refresh className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
-            <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
+            <Refresh className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
           </button>
         </div>
 

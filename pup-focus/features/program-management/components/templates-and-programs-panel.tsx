@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Check,
   CheckCircle,
@@ -19,6 +19,7 @@ import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { RequirementTemplatesPanel } from "@/features/requirement-templates/components/requirement-templates-panel";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 
 export interface ProgramItem {
   id: string;
@@ -50,6 +51,7 @@ export function TemplatesAndProgramsPanel({
   refreshTrigger,
 }: TemplatesAndProgramsPanelProps) {
   const [activeTab, setActiveTab] = useState<"templates" | "programs">(initialTab);
+  const [internalRefreshTrigger, setInternalRefreshTrigger] = useState(0);
 
   // Sync if initialTab prop changes
   useEffect(() => {
@@ -62,6 +64,7 @@ export function TemplatesAndProgramsPanel({
   const [programs, setPrograms] = useState<ProgramItem[]>(DEFAULT_FALLBACK_PROGRAMS);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState<boolean>(true);
   const [isRefreshingPrograms, setIsRefreshingPrograms] = useState<boolean>(false);
+  const hasLoadedProgramsRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
 
@@ -97,8 +100,10 @@ export function TemplatesAndProgramsPanel({
     return () => clearInterval(timer);
   }, [deleteTarget]);
 
-  const loadPrograms = async (showLoadingSpinner = true) => {
-    if (showLoadingSpinner) setIsLoadingPrograms(true);
+  const loadPrograms = async (showLoadingSpinner = false) => {
+    if (showLoadingSpinner && !hasLoadedProgramsRef.current) {
+      setIsLoadingPrograms(true);
+    }
     setIsRefreshingPrograms(true);
     try {
       const pRes = await fetch("/api/programs?includeHidden=true", { cache: "no-store" });
@@ -106,6 +111,7 @@ export function TemplatesAndProgramsPanel({
         const pData = await pRes.json();
         if (Array.isArray(pData.programs) && pData.programs.length > 0) {
           setPrograms(pData.programs);
+          hasLoadedProgramsRef.current = true;
         }
       }
     } catch {
@@ -117,8 +123,12 @@ export function TemplatesAndProgramsPanel({
   };
 
   useEffect(() => {
-    void loadPrograms(true);
+    void loadPrograms(!hasLoadedProgramsRef.current);
   }, [refreshTrigger]);
+
+  useRealtimeSync(() => {
+    void loadPrograms(false);
+  });
 
   const filteredPrograms = useMemo(() => {
     return programs.filter((p) => {
@@ -162,6 +172,7 @@ export function TemplatesAndProgramsPanel({
         type: "success",
         message: `Program ${program.code} is now ${newStatus ? "hidden from dropdowns" : "active and visible"}.`,
       });
+      emitRealtimeSync({ source: "program-updated", timestamp: Date.now() });
     } catch (err) {
       setPrograms((prev) =>
         prev.map((p) => (p.id === program.id ? { ...p, is_hidden: program.is_hidden } : p))
@@ -229,6 +240,7 @@ export function TemplatesAndProgramsPanel({
           type: "success",
           message: `Program ${data.program?.code || programCodeInput} updated successfully.`,
         });
+        emitRealtimeSync({ source: "program-updated", timestamp: Date.now() });
       } else {
         const res = await fetch("/api/programs", {
           method: "POST",
@@ -261,6 +273,7 @@ export function TemplatesAndProgramsPanel({
           type: "success",
           message: `Program ${programCodeInput.toUpperCase()} added successfully!`,
         });
+        emitRealtimeSync({ source: "program-created", timestamp: Date.now() });
       }
     } catch (err) {
       setFeedback({
@@ -291,6 +304,7 @@ export function TemplatesAndProgramsPanel({
         type: "success",
         message: `Program ${deleteTarget.code} deleted successfully.`,
       });
+      emitRealtimeSync({ source: "program-deleted", timestamp: Date.now() });
     } catch (err) {
       setFeedback({
         type: "error",
@@ -316,16 +330,17 @@ export function TemplatesAndProgramsPanel({
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
+            disabled={isRefreshingPrograms}
             onClick={() => {
-              if (activeTab === "programs") {
-                void loadPrograms(false);
-              }
+              setInternalRefreshTrigger((prev) => prev + 1);
+              void loadPrograms(false);
+              emitRealtimeSync({ source: "manual-refresh", timestamp: Date.now() });
             }}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
             title="Refresh active panel data"
           >
             <AppIcon icon={Refresh} size="sm" className={isRefreshingPrograms ? "animate-spin" : ""} />
-            <span>Refresh</span>
+            <span>{isRefreshingPrograms ? "Refreshing..." : "Refresh"}</span>
           </button>
         </div>
       </div>
@@ -398,7 +413,7 @@ export function TemplatesAndProgramsPanel({
       {/* ─── TAB 1: REQUIREMENT TEMPLATES ────────────────────────── */}
       {activeTab === "templates" && (
         <div className="space-y-4">
-          <RequirementTemplatesPanel refreshTrigger={refreshTrigger} />
+          <RequirementTemplatesPanel refreshTrigger={(refreshTrigger ?? 0) + internalRefreshTrigger} />
         </div>
       )}
 
