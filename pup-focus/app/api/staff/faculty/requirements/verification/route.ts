@@ -440,7 +440,7 @@ export async function GET(request: NextRequest) {
       const { data: termSubmissions, error: fetchSubError } = await supabase
         .from("submissions")
         .select(
-          "id, requirement_code, status, submitted_at, faculty_assignment_id",
+          "id, requirement_code, status, submitted_at, faculty_assignment_id, class_id",
         )
         .eq("faculty_profile_id", facultyProfileId)
         .in("faculty_assignment_id", filteredAssignmentIds)
@@ -496,6 +496,77 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Query faculty classes for per-subject verification progress
+    let facultyClassesData: any[] = [];
+    try {
+      const { data: fcData } = await supabase
+        .from("faculty_classes")
+        .select("id, subject_code, description, section_code, units, is_archived, academic_year, semester")
+        .eq("faculty_profile_id", facultyProfileId)
+        .eq("is_archived", false);
+
+      if (fcData && fcData.length > 0) {
+        facultyClassesData = fcData.filter((fc: any) => {
+          if (fc.academic_year && selectedAcademicYear) {
+            const ayMatches = normalizeAcademicYear(fc.academic_year) === normalizeAcademicYear(selectedAcademicYear);
+            if (!ayMatches) return false;
+          }
+          if (fc.semester && effectiveSelectedSemester) {
+            const semMatches = normalizeSemester(fc.semester) === normalizeSemester(effectiveSelectedSemester);
+            if (!semMatches) return false;
+          }
+          return true;
+        });
+
+        // Fallback to all unarchived classes if scoped filter yielded 0
+        if (facultyClassesData.length === 0) {
+          facultyClassesData = fcData;
+        }
+      }
+    } catch {
+      // faculty_classes optional
+    }
+
+    const mandatoryTemplates = activeTemplateRows.filter((t) => t.is_mandatory);
+    const reqsToCheck = mandatoryTemplates.length > 0 ? mandatoryTemplates : activeTemplateRows;
+
+    const classProgressList = facultyClassesData.map((cls) => {
+      const classSubs = (submissionRows || []).filter((s: any) => s.class_id === cls.id);
+      const validatedReqs = new Set<string>();
+
+      for (const s of classSubs) {
+        const mappedStatus = toRequirementStatus(s.status);
+        if (mappedStatus === "validated") {
+          const code = matchRequirementCode(
+            s.requirement_code,
+            (s as any).requirement_id,
+            activeTemplateRows,
+          );
+          if (code) {
+            validatedReqs.add(code);
+          }
+        }
+      }
+
+      const validatedCount = reqsToCheck.filter((t) => validatedReqs.has(t.code)).length;
+      const totalRequired = reqsToCheck.length;
+      const isDone = totalRequired > 0 && validatedCount >= totalRequired;
+
+      return {
+        id: cls.id,
+        subject_code: cls.subject_code,
+        section_code: cls.section_code,
+        description: cls.description,
+        units: cls.units,
+        totalRequired,
+        validatedCount,
+        isDone,
+      };
+    });
+
+    const totalSubjects = classProgressList.length;
+    const doneSubjects = classProgressList.filter((c) => c.isDone).length;
+
     return NextResponse.json({
       availableAcademicYears,
       semesters: SEMESTER_OPTIONS,
@@ -507,6 +578,12 @@ export async function GET(request: NextRequest) {
       currentTermConfigured: Boolean(currentAcademicTerm),
       requirementStatus,
       requirementTemplates: activeTemplateRows,
+      classProgress: classProgressList,
+      subjectProgress: {
+        totalSubjects,
+        doneSubjects,
+        allDone: totalSubjects > 0 && doneSubjects === totalSubjects,
+      },
     });
   } catch (error) {
     console.error(

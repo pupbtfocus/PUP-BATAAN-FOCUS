@@ -181,6 +181,10 @@ export function AdminFacultyDashboard({
 
   const handleSelectFaculty = useCallback((facultyId: string | null) => {
     setSelectedFacultyId((prev) => (prev === facultyId ? prev : facultyId));
+    if (!facultyId) {
+      setInitialReviewFacultyId(null);
+      setInitialHighlightRequirementCode(null);
+    }
     if (typeof window !== "undefined") {
       try {
         const url = new URL(window.location.href);
@@ -1234,28 +1238,30 @@ export function AdminFacultyDashboard({
 
                 {activeSection === "requirements" ? (
                   <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                      <div>
-                        <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
-                          Requirements Verification
-                        </h1>
-                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-                          Review, validate, or request revisions for submitted faculty compliance documents for this academic term.
-                        </p>
+                    {/* Solid Amber Card Header - only show when in faculty list */}
+                    {!selectedFaculty ? (
+                      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+                            Requirements Verification
+                          </h1>
+                          <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+                            Review, validate, or request revisions for submitted faculty compliance documents for this academic term.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => void refreshCurrentPanel()}
+                            disabled={isLoading}
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                          >
+                            <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                            <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => void refreshCurrentPanel()}
-                          disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
-                        >
-                          <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                          <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
-                        </button>
-                      </div>
-                    </div>
+                    ) : null}
 
                     <RequirementsPanel
                       facultyAccounts={facultyAccounts}
