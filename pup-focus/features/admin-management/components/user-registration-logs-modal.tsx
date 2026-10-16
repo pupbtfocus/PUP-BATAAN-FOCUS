@@ -363,7 +363,12 @@ export function UserRegistrationLogsModal({
                     : "bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/60"
                 }`}
               >
-                <span>{feedbackMessage.text}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  {feedbackMessage.type === "success" && (
+                    <AppIcon icon={Check} size="sm" color="success" className="shrink-0" />
+                  )}
+                  <span>{feedbackMessage.text}</span>
+                </div>
                 <button
                   type="button"
                   onClick={() => setFeedbackMessage(null)}

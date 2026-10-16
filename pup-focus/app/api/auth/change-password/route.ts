@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
-import { formatPasswordError } from "@/lib/validation/password";
+import { formatPasswordError, validatePasswordRequirements } from "@/lib/validation/password";
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,6 +66,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate full password complexity requirements BEFORE verifying credentials.
+    // This prevents bumping user.last_sign_in_at on Supabase if the new password is invalid.
+    const validation = validatePasswordRequirements(newPassword);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        {
+          error: `Password must include:\n${validation.missingRequirements.map((r) => `• ${r}`).join("\n")}`,
+        },
+        { status: 400 },
+      );
+    }
+
     // Resolve user email
     if (!user.email) {
       const { data: adminUser } = await serviceClient.auth.admin.getUserById(user.id);
@@ -83,13 +95,19 @@ export async function POST(request: NextRequest) {
     );
 
     let isPasswordCorrect = false;
+    let verifiedLoginTime: string | null = null;
+
     for (const emailToVerify of candidateEmails) {
-      const { error } = await serviceClient.auth.signInWithPassword({
+      const { data: verifiedSignInData, error } = await serviceClient.auth.signInWithPassword({
         email: emailToVerify,
         password: oldPassword,
       });
-      if (!error) {
+      if (!error && verifiedSignInData?.user) {
         isPasswordCorrect = true;
+        verifiedLoginTime =
+          verifiedSignInData.user.last_sign_in_at ||
+          verifiedSignInData.session?.user?.last_sign_in_at ||
+          new Date().toISOString();
         break;
       }
     }
@@ -116,7 +134,10 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       return NextResponse.json(
-        { error: formatPasswordError(updateError.message) || "Failed to update password." },
+        {
+          error: formatPasswordError(updateError.message) || "Failed to update password.",
+          loginTime: verifiedLoginTime,
+        },
         { status: 400 },
       );
     }
@@ -146,11 +167,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const updatedLoginTime =
+      newUser?.last_sign_in_at ||
+      newSession?.user?.last_sign_in_at ||
+      verifiedLoginTime ||
+      new Date().toISOString();
+
     return NextResponse.json({
       success: true,
       message: "Password updated successfully.",
       session: newSession,
       user: newUser,
+      loginTime: updatedLoginTime,
     });
   } catch (err) {
     return NextResponse.json(

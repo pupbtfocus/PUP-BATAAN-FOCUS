@@ -27,6 +27,7 @@ import {
   validatePasswordRequirements,
   formatPasswordError,
 } from "@/lib/validation/password";
+import { recordActiveSessionLogin } from "@/components/auth/single-session-enforcer";
 
 const ROUTE_BY_ROLE: Record<string, string> = {
   [ROLE.ADMIN]: "/admin/dashboard",
@@ -334,6 +335,11 @@ export default function ChangePasswordPage() {
         (data.user?.user_metadata?.role as AppRole | undefined) ??
         (data.user?.app_metadata?.role as AppRole | undefined) ??
         ROLE.ADMIN;
+
+      if (data.user) {
+        const loginTime = data.user.last_sign_in_at || new Date().toISOString();
+        recordActiveSessionLogin(loginTime, data.user.id);
+      }
 
       const nextRoute = ROUTE_BY_ROLE[signedInRole] || "/sign-in";
       resetDashboardNavigationState();

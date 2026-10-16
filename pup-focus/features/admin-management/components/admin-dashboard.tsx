@@ -25,6 +25,11 @@ import { TemplatesAndProgramsPanel } from "@/features/program-management/compone
 import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
 import { SuperAdminSettings } from "@/features/admin-management/components/admin-settings";
 import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
+import {
+  recordActiveSessionLogin,
+  pauseSessionVerification,
+  resumeSessionVerification,
+} from "@/components/auth/single-session-enforcer";
 import { AddFacultyModal } from "@/features/faculty-management/components/faculty-modals/add-faculty-modal";
 import { EditFacultyModal } from "@/features/faculty-management/components/faculty-modals/edit-faculty-modal";
 import { FacultyDetailsModal } from "@/features/faculty-management/components/faculty-modals/faculty-details-modal";
@@ -1227,6 +1232,8 @@ export function SuperAdminDashboard({
         headers["Authorization"] = `Bearer ${token}`;
       }
 
+      pauseSessionVerification(15000);
+
       const response = await fetch("/api/auth/change-password", {
         method: "POST",
         headers,
@@ -1240,10 +1247,25 @@ export function SuperAdminDashboard({
       const data = await response.json();
 
       if (!response.ok) {
+        if (data?.loginTime) {
+          const currentUserId =
+            data.user?.id || data.session?.user?.id || sessionData?.session?.user?.id;
+          recordActiveSessionLogin(data.loginTime, currentUserId);
+        }
+        resumeSessionVerification();
         setPasswordError(data.error ?? "Failed to update password");
         setIsSavingPassword(false);
         return;
       }
+
+      const newLoginTime =
+        data.loginTime ||
+        data.user?.last_sign_in_at ||
+        data.session?.user?.last_sign_in_at ||
+        new Date().toISOString();
+      const currentUserId =
+        data.user?.id || data.session?.user?.id || sessionData?.session?.user?.id;
+      recordActiveSessionLogin(newLoginTime, currentUserId);
 
       if (data.session) {
         await supabase.auth.setSession(data.session).catch(() => null);
@@ -1257,6 +1279,7 @@ export function SuperAdminDashboard({
       setSettingsConfirmPassword("");
       setIsSavingPassword(false);
     } catch {
+      resumeSessionVerification();
       setPasswordError("Unexpected error while updating password");
       setIsSavingPassword(false);
     }
