@@ -50,7 +50,7 @@ import {
   DashboardMetricsSkeleton,
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
-import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, EditPencil, Eye, Hourglass, Lock, Menu, Minus, NavArrowLeft, NavArrowRight, OpenNewWindow, Page, Plus, Refresh, Reports, Settings, SystemRestart, TaskList, Trash, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, EditPencil, Eye, Folder, Hourglass, Lock, Menu, Minus, NavArrowLeft, NavArrowRight, OpenNewWindow, Page, Plus, Refresh, Reports, Settings, SystemRestart, TaskList, Trash, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { LogoutButton } from "@/components/shared/logout-button";
@@ -4072,7 +4072,7 @@ function FacultySubmissionPanelContent({
                             </p>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-3">
                             {displayedClasses.map((cls) => {
                               const isArchived = Boolean(cls.is_archived);
                               return (
@@ -4083,137 +4083,184 @@ function FacultySubmissionPanelContent({
                                     setRequirementStatuses([]);
                                     void fetchStatuses(activeAY, activeSem, cls.id);
                                   }}
-                                  className={`group relative flex flex-col justify-between rounded-2xl border-2 transition-all duration-200 cursor-pointer text-left overflow-hidden bg-white dark:bg-slate-900 ${
-                                    isArchived
-                                      ? "border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500/80 hover:shadow-md"
-                                      : "border-slate-200 dark:border-slate-800 hover:border-amber-500 dark:hover:border-amber-500 hover:shadow-lg hover:-translate-y-0.5"
-                                  }`}
+                                  className="group relative flex flex-col cursor-pointer text-left transition-all duration-200 hover:-translate-y-1"
                                 >
-                                  {/* Top Color Accent Strip */}
-                                  <div
-                                    className={`h-1.5 w-full transition-all duration-300 ${
-                                      isArchived
-                                        ? "bg-slate-300 dark:bg-slate-700 group-hover:bg-amber-500"
-                                        : "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 group-hover:from-[#780000] group-hover:via-amber-500 group-hover:to-[#780000]"
-                                    }`}
-                                  />
-
-                                  <div className="p-5 flex-1 flex flex-col justify-between">
-                                    <div>
-                                      {/* Top Row: Badges & Action Buttons */}
-                                      <div className="flex items-center justify-between gap-2 mb-3">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black tracking-wide bg-amber-400 text-slate-950 shadow-2xs">
-                                            {cls.section_code}
-                                          </span>
-                                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                            {cls.units} Units
-                                          </span>
-                                          {isArchived && (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
-                                              <AppIcon icon={Archive} size="xs" color="inherit" />
-                                              Archived
-                                            </span>
-                                          )}
-                                        </div>
-
-                                        {/* Action Buttons Toolbar with Labels */}
-                                        <div
-                                          className="flex items-center gap-1.5 shrink-0"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          {/* Edit button */}
-                                          <button
-                                            type="button"
-                                            onClick={(e) => handleOpenEditClass(cls, e)}
-                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs active:scale-95"
-                                            title="Edit class load"
-                                          >
-                                            <AppIcon icon={EditPencil} size="xs" color="inherit" />
-                                            <span>Edit</span>
-                                          </button>
-
-                                          {/* Archive / Unarchive button */}
-                                          <button
-                                            type="button"
-                                            disabled={classActionLoadingId === cls.id}
-                                            onClick={(e) => {
-                                              if (isArchived) {
-                                                handleToggleArchiveClass(cls, e);
-                                              } else {
-                                                handleOpenArchiveModal(cls, e);
-                                              }
-                                            }}
-                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs active:scale-95 border ${
-                                              isArchived
-                                                ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600/50 shadow-xs"
-                                                : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:border-slate-700"
-                                            }`}
-                                            title={
-                                              isArchived
-                                                ? "Unarchive / Restore to active loads"
-                                                : "Archive class (Mark done)"
-                                            }
-                                          >
-                                            {classActionLoadingId === cls.id ? (
-                                              <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
-                                            ) : isArchived ? (
-                                              <AppIcon icon={Refresh} size="xs" color="inherit" />
-                                            ) : (
-                                              <AppIcon icon={Archive} size="xs" color="inherit" />
-                                            )}
-                                            <span>{isArchived ? "Unarchive" : "Archive"}</span>
-                                          </button>
-
-                                          {/* Delete button */}
-                                          <button
-                                            type="button"
-                                            onClick={(e) => handleOpenDeleteModal(cls, e)}
-                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/60 transition cursor-pointer active:scale-95"
-                                            title="Delete class load"
-                                          >
-                                            <AppIcon icon={Trash} size="xs" color="inherit" />
-                                            <span>Delete</span>
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      {/* Subject Code & Description / Title */}
-                                      <div className="mt-2 space-y-1">
-                                        <h3 className="text-2xl font-black tracking-tight text-slate-950 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                                          {cls.subject_code}
-                                        </h3>
-                                        <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug">
-                                          {cls.description}
-                                        </p>
-                                      </div>
+                                  {/* Folder Top Tab with Smooth Slanted Shoulder */}
+                                  <div className="flex items-end -mb-[2px] relative z-10 self-start">
+                                    {/* Tab Left + Content */}
+                                    <div
+                                      className={`h-7.5 px-3.5 rounded-tl-xl flex items-center gap-2 text-xs font-black tracking-wide border-t-2 border-l-2 transition-colors duration-200 ${
+                                        isArchived
+                                          ? "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-400 dark:border-slate-600"
+                                          : "bg-amber-400 dark:bg-amber-500 text-slate-950 border-amber-500 dark:border-amber-600 shadow-2xs group-hover:bg-amber-300"
+                                      }`}
+                                    >
+                                      <AppIcon icon={Folder} size="xs" color="inherit" />
+                                      <span className="truncate max-w-[140px]">{cls.section_code}</span>
                                     </div>
 
-                                    {/* Bottom Footer */}
-                                    {isArchived ? (
-                                      <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400">
-                                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-                                          <AppIcon icon={Archive} size="sm" color="inherit" />
-                                          <span>Archived Load</span>
-                                        </span>
-                                        <button
-                                          type="button"
-                                          onClick={(e) => handleToggleArchiveClass(cls, e)}
-                                          className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 hover:underline font-bold"
-                                        >
-                                          <span>Restore to Active &rarr;</span>
-                                        </button>
+                                    {/* Tab Smooth Slant Shoulder */}
+                                    <div className="relative w-5 h-7.5 shrink-0 -ml-[1px]">
+                                      <svg
+                                        viewBox="0 0 20 30"
+                                        fill="none"
+                                        className={`w-full h-full ${
+                                          isArchived
+                                            ? "text-slate-200 dark:text-slate-800"
+                                            : "text-amber-400 dark:text-amber-500"
+                                        }`}
+                                      >
+                                        <path
+                                          d="M 0,0 L 2,0 C 8,0 13,8 16,18 L 20,30 L 0,30 Z"
+                                          fill="currentColor"
+                                        />
+                                        <path
+                                          d="M 0,1 L 2,1 C 8,1 13,9 16,19 L 20,30"
+                                          stroke={isArchived ? "currentColor" : "#f59e0b"}
+                                          strokeWidth="2"
+                                          fill="none"
+                                          className={isArchived ? "text-slate-400 dark:text-slate-600" : "text-amber-500 dark:text-amber-600"}
+                                        />
+                                      </svg>
+                                    </div>
+                                  </div>
+
+                                  {/* Folder Main Body */}
+                                  <div
+                                    className={`relative flex-1 flex flex-col justify-between rounded-2xl rounded-tl-none border-2 transition-all duration-200 overflow-hidden bg-white dark:bg-slate-900 shadow-xs group-hover:shadow-lg ${
+                                      isArchived
+                                        ? "border-slate-400 dark:border-slate-600 group-hover:border-slate-500"
+                                        : "border-amber-500 dark:border-amber-600 group-hover:border-amber-400"
+                                    }`}
+                                  >
+                                    <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+                                      <div className="space-y-3.5">
+                                        {/* Top Row: Units & Action Buttons */}
+                                        <div className="flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                              {cls.units} Units
+                                            </span>
+                                            {isArchived && (
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                                                <AppIcon icon={Archive} size="xs" color="inherit" />
+                                                Archived
+                                              </span>
+                                            )}
+                                          </div>
+
+                                          {/* Action Buttons Toolbar with Labels */}
+                                          <div
+                                            className="flex items-center gap-1.5 shrink-0"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            {/* Edit button */}
+                                            <button
+                                              type="button"
+                                              onClick={(e) => handleOpenEditClass(cls, e)}
+                                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs active:scale-95"
+                                              title="Edit class load"
+                                            >
+                                              <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                                              <span>Edit</span>
+                                            </button>
+
+                                            {/* Archive / Unarchive button */}
+                                            <button
+                                              type="button"
+                                              disabled={classActionLoadingId === cls.id}
+                                              onClick={(e) => {
+                                                if (isArchived) {
+                                                  handleToggleArchiveClass(cls, e);
+                                                } else {
+                                                  handleOpenArchiveModal(cls, e);
+                                                }
+                                              }}
+                                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs active:scale-95 border ${
+                                                isArchived
+                                                  ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600/50 shadow-xs"
+                                                  : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:border-slate-700"
+                                              }`}
+                                              title={
+                                                isArchived
+                                                  ? "Unarchive / Restore to active loads"
+                                                  : "Archive class (Mark done)"
+                                              }
+                                            >
+                                              {classActionLoadingId === cls.id ? (
+                                                <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
+                                              ) : isArchived ? (
+                                                <AppIcon icon={Refresh} size="xs" color="inherit" />
+                                              ) : (
+                                                <AppIcon icon={Archive} size="xs" color="inherit" />
+                                              )}
+                                              <span>{isArchived ? "Unarchive" : "Archive"}</span>
+                                            </button>
+
+                                            {/* Delete button (Solid Maroon) */}
+                                            <button
+                                              type="button"
+                                              onClick={(e) => handleOpenDeleteModal(cls, e)}
+                                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] transition cursor-pointer shadow-2xs active:scale-95"
+                                              title="Delete class load"
+                                            >
+                                              <AppIcon icon={Trash} size="xs" color="inherit" />
+                                              <span>Delete</span>
+                                            </button>
+                                          </div>
+                                        </div>
+
+                                        {/* Course Code & Subject Name Fields */}
+                                        <div className="space-y-2 pt-1">
+                                          <div>
+                                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
+                                              Course Code:
+                                            </span>
+                                            <h3 className="text-xl sm:text-2xl font-black text-slate-950 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                              {cls.subject_code}
+                                            </h3>
+                                          </div>
+
+                                          <div>
+                                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
+                                              Subject Name / Description:
+                                            </span>
+                                            <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug">
+                                              {cls.description}
+                                            </p>
+                                          </div>
+                                        </div>
                                       </div>
-                                    ) : (
-                                      <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-300">
-                                        <span className="text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-300">
-                                          View & Upload Documents
-                                        </span>
-                                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 group-hover:translate-x-0.5 transition-all">
-                                          <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
-                                        </span>
-                                      </div>
-                                    )}
+
+                                      {/* Bottom Footer */}
+                                      {isArchived ? (
+                                        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400">
+                                          <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                                            <AppIcon icon={Archive} size="sm" color="inherit" />
+                                            <span>Archived Load</span>
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => handleToggleArchiveClass(cls, e)}
+                                            className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 hover:underline font-bold"
+                                          >
+                                            <span>Restore to Active &rarr;</span>
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <div className="pt-2">
+                                          <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 group-hover:bg-amber-400 group-hover:border-amber-400 transition-all duration-200">
+                                            <span className="text-xs font-bold text-amber-900 dark:text-amber-200 group-hover:text-slate-950 flex items-center gap-2">
+                                              <AppIcon icon={Folder} size="xs" color="inherit" />
+                                              <span>View & Upload Documents</span>
+                                            </span>
+                                            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-white dark:bg-slate-900 group-hover:bg-slate-950 text-amber-700 dark:text-amber-400 group-hover:text-amber-300 transition-colors shadow-2xs">
+                                              <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               );
@@ -4228,7 +4275,7 @@ function FacultySubmissionPanelContent({
                   <div className="space-y-5">
                     {/* Class Context Navigation Bar */}
                     <div className="rounded-2xl border-2 border-amber-400/80 dark:border-amber-500/60 bg-amber-50/80 dark:bg-amber-950/20 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <button
                           type="button"
                           onClick={() => {
@@ -4243,51 +4290,53 @@ function FacultySubmissionPanelContent({
                           <span>Back to Class List</span>
                         </button>
                         {selectedClass && (
-                          <div className="min-w-0 truncate pl-1">
+                          <div className="min-w-0 flex-1 pl-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-slate-950">
+                              <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-slate-950 shrink-0">
                                 {selectedClass.section_code}
                               </span>
-                              <span className="text-sm sm:text-base font-black text-slate-950 dark:text-amber-100 truncate">
+                              <span className="text-sm sm:text-base font-black text-slate-950 dark:text-amber-100">
                                 {selectedClass.subject_code} &bull; {selectedClass.description}
                               </span>
-                              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
                                 ({selectedClass.units} Units)
                               </span>
                               {selectedClass.is_archived && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shrink-0">
                                   Archived
                                 </span>
                               )}
-                              <button
-                                type="button"
-                                onClick={(e) => handleOpenEditClass(selectedClass, e)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
-                                title="Edit this class load"
-                              >
-                                <AppIcon icon={EditPencil} size="xs" color="inherit" />
-                                <span>Edit</span>
-                              </button>
-                              <button
-                                type="button"
-                                disabled={classActionLoadingId === selectedClass.id}
-                                onClick={(e) => {
-                                  if (selectedClass.is_archived) {
-                                    handleToggleArchiveClass(selectedClass, e);
-                                  } else {
-                                    handleOpenArchiveModal(selectedClass, e);
-                                  }
-                                }}
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
-                                  selectedClass.is_archived
-                                    ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600/50 shadow-xs"
-                                    : "border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                                }`}
-                                title={selectedClass.is_archived ? "Restore to active loads" : "Archive class load"}
-                              >
-                                <AppIcon icon={selectedClass.is_archived ? Refresh : Archive} size="xs" color="inherit" />
-                                <span>{selectedClass.is_archived ? "Unarchive" : "Archive"}</span>
-                              </button>
+                              <div className="inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleOpenEditClass(selectedClass, e)}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                                  title="Edit this class load"
+                                >
+                                  <AppIcon icon={EditPencil} size="xs" color="inherit" />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={classActionLoadingId === selectedClass.id}
+                                  onClick={(e) => {
+                                    if (selectedClass.is_archived) {
+                                      handleToggleArchiveClass(selectedClass, e);
+                                    } else {
+                                      handleOpenArchiveModal(selectedClass, e);
+                                    }
+                                  }}
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
+                                    selectedClass.is_archived
+                                      ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600/50 shadow-xs"
+                                      : "border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                  }`}
+                                  title={selectedClass.is_archived ? "Restore to active loads" : "Archive class load"}
+                                >
+                                  <AppIcon icon={selectedClass.is_archived ? Refresh : Archive} size="xs" color="inherit" />
+                                  <span>{selectedClass.is_archived ? "Unarchive" : "Archive"}</span>
+                                </button>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -6130,7 +6179,7 @@ function FacultySubmissionPanelContent({
                       type="button"
                       disabled={isDeletingClass}
                       onClick={handleDeleteClassConfirm}
-                      className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
                     >
                       {isDeletingClass ? (
                         <>
