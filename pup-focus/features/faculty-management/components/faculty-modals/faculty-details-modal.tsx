@@ -2,24 +2,15 @@
 
 import { useState } from "react";
 import {
-  Check,
-  CheckCircle,
   EditPencil,
   GraduationCap,
-  Hourglass,
   Mail,
-  Minus,
-  Page,
-  ShieldCheck,
   User,
-  WarningCircle,
   Xmark,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
-import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
-import { SubmissionStatusBadge } from "@/features/submissions/components/submission-status-badge";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 
 export interface FacultyDetailsModalProps {
@@ -98,38 +89,6 @@ export function FacultyDetailsModal({
     }
   }
 
-  // Calculate compliance statistics matching Documents to be Submitted
-  const reqStatus = faculty.requirementStatus ?? {};
-  let validatedCount = 0;
-  let uploadedCount = 0;
-  let rejectedCount = 0;
-  let notSubmittedCount = 0;
-
-  DEFAULT_REQUIREMENTS.forEach((code) => {
-    const raw = reqStatus[code] ?? "not_submitted";
-    const status = raw.toLowerCase().trim();
-    if (status === "validated" || status === "approved") {
-      validatedCount++;
-    } else if (
-      status === "uploaded" ||
-      status === "pending" ||
-      status === "pending_review" ||
-      status === "revision_under_review" ||
-      status === "submitted"
-    ) {
-      uploadedCount++;
-    } else if (
-      status === "rejected" ||
-      status === "needs_revision" ||
-      status === "needs revision" ||
-      status === "revision_requested"
-    ) {
-      rejectedCount++;
-    } else {
-      notSubmittedCount++;
-    }
-  });
-
   return (
     <>
       <div
@@ -143,8 +102,9 @@ export function FacultyDetailsModal({
           <ModalHeader
             icon={User}
             title="Faculty Member Details"
-            subtitle="Full profile, login info, and compliance overview"
+            subtitle="Full profile, department, and account details"
             className="sticky top-0 z-10"
+            onClose={onClose}
           />
 
           {/* Content Body */}
@@ -286,135 +246,6 @@ export function FacultyDetailsModal({
                     </span>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Documents to be Submitted Section (Matching Faculty Documents View) */}
-            <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3">
-              <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0">
-                  <AppIcon icon={Page} size="sm" color="default" />
-                  <span>Documents to be Submitted</span>
-                </div>
-
-                {/* Status counts with circular icon badges in 1 straight horizontal line */}
-                <div className="flex items-center gap-2 sm:gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium shrink-0 whitespace-nowrap">
-                  <span className="inline-flex items-center gap-1.5" title="Validated">
-                    <span className="inline-flex items-center justify-center h-4.5 w-4.5 rounded-full bg-[#0b5336] text-white border border-[#08412a] shrink-0 shadow-2xs">
-                      <AppIcon icon={Check} size="xs" color="white" />
-                    </span>
-                    <span>
-                      <strong className="text-slate-900 dark:text-slate-100 font-semibold">{validatedCount}</strong> Validated
-                    </span>
-                  </span>
-
-                  <span className="inline-flex items-center gap-1.5" title="Uploaded / Pending">
-                    <span className="inline-flex items-center justify-center h-4.5 w-4.5 rounded-full bg-amber-500 text-slate-950 border border-amber-600 shrink-0 shadow-2xs">
-                      <AppIcon icon={Hourglass} size="xs" color="inherit" />
-                    </span>
-                    <span>
-                      <strong className="text-slate-900 dark:text-slate-100 font-semibold">{uploadedCount}</strong> Pending
-                    </span>
-                  </span>
-
-                  {rejectedCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5" title="Needs Revision">
-                      <span className="inline-flex items-center justify-center h-4.5 w-4.5 rounded-full bg-[#780000] text-white border border-[#5e0000] shrink-0 shadow-2xs">
-                        <AppIcon icon={Xmark} size="xs" color="white" />
-                      </span>
-                      <span>
-                        <strong className="text-slate-900 dark:text-slate-100 font-semibold">{rejectedCount}</strong> Needs Revision
-                      </span>
-                    </span>
-                  )}
-
-                  <span className="inline-flex items-center gap-1.5" title="Not Submitted">
-                    <span className="inline-flex items-center justify-center h-4.5 w-4.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700 shrink-0 shadow-2xs">
-                      <AppIcon icon={Minus} size="xs" color="inherit" />
-                    </span>
-                    <span>
-                      <strong className="text-slate-900 dark:text-slate-100 font-semibold">{notSubmittedCount}</strong> Not Submitted
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Unified Table Container Matching Documents to be Submitted */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-                <table className="w-full text-left text-xs sm:text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
-                      <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        Document
-                      </th>
-                      <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                    {DEFAULT_REQUIREMENTS.map((code, index) => {
-                      const label = REQUIREMENT_LABEL[code] ?? code;
-                      const raw = reqStatus[code] ?? "not_submitted";
-                      const s = raw.toLowerCase().trim();
-
-                      const isUploaded =
-                        s === "uploaded" ||
-                        s === "pending" ||
-                        s === "pending_review" ||
-                        s === "revision_under_review" ||
-                        s === "submitted";
-
-                      const isValidated = s === "validated" || s === "approved";
-
-                      const isRevision =
-                        s === "rejected" ||
-                        s === "needs_revision" ||
-                        s === "needs revision" ||
-                        s === "revision_requested";
-
-                      const statusBadgeKey = isValidated
-                        ? "Validated"
-                        : isRevision
-                        ? "Needs Revision"
-                        : isUploaded
-                        ? "Pending Review"
-                        : "Not Submitted";
-
-                      const statusBadgeLabel = isUploaded ? "Uploaded" : undefined;
-
-                      return (
-                        <tr
-                          key={code}
-                          className="bg-white hover:bg-slate-50/80 dark:bg-slate-900 dark:hover:bg-slate-800/40 transition-colors"
-                        >
-                          <td className="px-4 py-3 align-middle">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                                {index + 1}
-                              </span>
-                              <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-snug">
-                                {label}
-                              </span>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#780000] text-white border border-[#5e0000] shadow-2xs">
-                                Required
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 align-middle text-right shrink-0">
-                            <div className="inline-flex justify-end">
-                              <SubmissionStatusBadge
-                                status={statusBadgeKey}
-                                label={statusBadgeLabel}
-                                size="sm"
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
               </div>
             </div>
           </div>
