@@ -322,23 +322,28 @@ export default function Home() {
   }
 
   function handleTurnstileError(err?: unknown) {
-    console.error("[Auth] Turnstile challenge error:", err);
+    console.warn("[Auth] Turnstile challenge error:", err);
     setCaptchaToken(null);
+    const wasSubmitting = isSubmitting || pendingCredentialsRef.current !== null;
     setIsSubmitting(false);
     pendingCredentialsRef.current = null;
-    turnstileRef.current?.reset();
+
     const isDomainNotAllowed = String(err) === "110200";
-    const errorMsg = isDomainNotAllowed
-      ? "Turnstile domain not allowed (110200). Add 'localhost' to Cloudflare Allowed Domains or use testing sitekey in .env.local."
-      : "Security verification challenge failed. Please try again.";
-    setError(errorMsg);
-    setNotice({ type: "error", message: errorMsg });
-    setAuthModal({
-      title: "Login Failed",
-      message: errorMsg,
-      actionLabel: "Try Again",
-      variant: "error",
-    });
+    if (isDomainNotAllowed || wasSubmitting) {
+      const errorMsg = isDomainNotAllowed
+        ? "Turnstile domain not allowed (110200). Add 'localhost' to Cloudflare Allowed Domains or use testing sitekey in .env.local."
+        : "Security verification challenge failed. Please try again.";
+      setError(errorMsg);
+      setNotice({ type: "error", message: errorMsg });
+      if (wasSubmitting) {
+        setAuthModal({
+          title: "Login Failed",
+          message: errorMsg,
+          actionLabel: "Try Again",
+          variant: "error",
+        });
+      }
+    }
   }
 
   function handleTurnstileExpire() {
@@ -346,7 +351,6 @@ export default function Home() {
     setCaptchaToken(null);
     setIsSubmitting(false);
     pendingCredentialsRef.current = null;
-    turnstileRef.current?.reset();
   }
 
   async function performSignIn(token?: string) {
