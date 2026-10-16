@@ -15,7 +15,7 @@ import {
 } from "@/features/submissions/services/submission-window.service";
 
 type RequirementStatus = "not_submitted" | "uploaded" | "validated";
-type SemesterOption = "1st Semester" | "2nd Semester";
+type SemesterOption = "1st Semester" | "2nd Semester" | "Summer Semester";
 
 type SubmissionRow = {
   id: string;
@@ -25,7 +25,11 @@ type SubmissionRow = {
   document_versions?: Array<{ id: string }> | null;
 };
 
-const SEMESTER_OPTIONS: SemesterOption[] = ["1st Semester", "2nd Semester"];
+const SEMESTER_OPTIONS: SemesterOption[] = [
+  "1st Semester",
+  "2nd Semester",
+  "Summer Semester",
+];
 
 function matchRequirementCode(
   inputCode?: string | null,
@@ -91,6 +95,15 @@ function normalizeSemester(input: string | null): SemesterOption {
 
   if (normalized === "2nd semester" || normalized === "second semester") {
     return "2nd Semester";
+  }
+  if (
+    normalized === "summer semester" ||
+    normalized === "summer term" ||
+    normalized === "summer sem" ||
+    normalized === "summer" ||
+    normalized.includes("summer")
+  ) {
+    return "Summer Semester";
   }
 
   return "1st Semester";

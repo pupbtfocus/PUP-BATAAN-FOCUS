@@ -2697,6 +2697,7 @@ export function FacultyVerificationDrawer({
                   >
                     <option value="1st Semester">1st Semester</option>
                     <option value="2nd Semester">2nd Semester</option>
+                    <option value="Summer Semester">Summer Semester</option>
                   </select>
                 </div>
 
@@ -4060,6 +4061,7 @@ export function RequirementsPanel({
                 >
                   <option value="1st Semester">1st Semester</option>
                   <option value="2nd Semester">2nd Semester</option>
+                  <option value="Summer Semester">Summer Semester</option>
                   <option value="Summer Term">Summer Term</option>
                 </select>
               </div>

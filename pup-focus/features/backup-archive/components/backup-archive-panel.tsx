@@ -569,6 +569,7 @@ export function BackupArchivePanel() {
               <option value="all">All Semesters</option>
               <option value="1st Semester">1st Semester</option>
               <option value="2nd Semester">2nd Semester</option>
+              <option value="Summer Semester">Summer Semester</option>
             </select>
           </div>
 

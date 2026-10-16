@@ -144,6 +144,47 @@ export function AdminAcademicTerms({
     return nextAcademicYear;
   }, [terms, nextAcademicYear]);
 
+  // Active and upcoming terms: Current term strictly on TOP, Upcoming terms at the BOTTOM in sequential order
+  const activeAndUpcomingTerms = useMemo(() => {
+    const current = terms.find((t) => t.status === "Current");
+    const upcoming = terms
+      .filter((t) => {
+        if (t.status === "Current") return false;
+        const termScore = getTermScore(t.academicYear, t.semester);
+        const isClosedOrArchived =
+          t.status === "Archived" ||
+          (t.status as string) === "Completed" ||
+          (currentScore > 0 && termScore < currentScore);
+        return !isClosedOrArchived;
+      })
+      .sort(
+        (a, b) =>
+          getTermScore(a.academicYear, a.semester) -
+          getTermScore(b.academicYear, b.semester),
+      );
+
+    return current ? [current, ...upcoming] : upcoming;
+  }, [terms, currentScore]);
+
+  // Archive section: All completed, closed, and archived academic terms
+  const archivedTerms = useMemo(() => {
+    return terms
+      .filter((t) => {
+        if (t.status === "Current") return false;
+        const termScore = getTermScore(t.academicYear, t.semester);
+        return (
+          t.status === "Archived" ||
+          (t.status as string) === "Completed" ||
+          (currentScore > 0 && termScore < currentScore)
+        );
+      })
+      .sort(
+        (a, b) =>
+          getTermScore(b.academicYear, b.semester) -
+          getTermScore(a.academicYear, a.semester),
+      );
+  }, [terms, currentScore]);
+
   async function loadTerms() {
     setIsLoading(true);
     setError(null);
@@ -343,19 +384,26 @@ export function AdminAcademicTerms({
     }
   }
 
-  function renderStatusBadge(status: AcademicTermStatus) {
-    if (status === "Current") {
+  function renderStatusBadge(term: AcademicTermItem) {
+    if (term.status === "Current") {
       return (
         <span className="inline-flex items-center gap-1.5 bg-[#0b5336] text-white border border-[#08412a] px-2.5 py-0.5 text-xs font-semibold rounded-md shadow-2xs">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
           Current
         </span>
       );
     }
-    if (status === "Archived" || (status as string) === "Completed") {
+    const termScore = getTermScore(term.academicYear, term.semester);
+    const isPastOrClosed =
+      term.status === "Archived" ||
+      (term.status as string) === "Completed" ||
+      (currentScore > 0 && termScore < currentScore);
+
+    if (isPastOrClosed) {
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
-          Archived
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+          <AppIcon icon={Archive} size="xs" color="inherit" />
+          <span>Archived</span>
         </span>
       );
     }
@@ -464,9 +512,25 @@ export function AdminAcademicTerms({
         </div>
       ) : null}
 
-      {/* Adaptive Table Container */}
-      <div className="w-full overflow-x-auto rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
-        <table className="w-full text-left border-collapse min-w-[600px]">
+      {/* Active & Upcoming Terms (Current on Top, Upcoming at Bottom) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Active & Upcoming Terms
+            </h2>
+            <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-semibold border border-slate-200 dark:border-slate-700">
+              {activeAndUpcomingTerms.length}
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
+            Current active term is placed on top, upcoming terms follow below.
+          </span>
+        </div>
+
+        <div className="w-full overflow-x-auto rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
+          <table className="w-full text-left border-collapse min-w-[600px]">
             <thead className="border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-4">Academic Year</th>
@@ -482,30 +546,38 @@ export function AdminAcademicTerms({
                     Loading academic terms...
                   </td>
                 </tr>
-              ) : terms.length === 0 ? (
+              ) : activeAndUpcomingTerms.length === 0 ? (
                 <tr className="bg-white dark:bg-slate-900/40 py-2.5 px-4 text-xs">
                   <td colSpan={4} className="py-6 text-center text-slate-500 dark:text-slate-400">
-                    No academic terms have been created yet.
+                    No active or upcoming academic terms found.
                   </td>
                 </tr>
               ) : (
-                terms.map((term) => (
+                activeAndUpcomingTerms.map((term) => (
                   <tr
                     key={`${term.academicYear}-${term.semester}`}
-                    className="bg-white dark:bg-slate-900/60 border-b border-slate-300 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors py-2.5 px-4 text-xs"
+                    className={`border-b border-slate-300 dark:border-slate-800/60 transition-colors py-2.5 px-4 text-xs ${
+                      term.status === "Current"
+                        ? "bg-emerald-50/50 dark:bg-emerald-950/20 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30"
+                        : "bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    }`}
                   >
                     <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
-                      {term.academicYear}
+                      <div className="flex items-center gap-2">
+                        {term.status === "Current" && (
+                          <span className="flex h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                        )}
+                        <span>{term.academicYear}</span>
+                      </div>
                     </td>
                     <td className="py-2.5 px-4 text-slate-700 dark:text-slate-300 font-medium">
                       {term.semester}
                     </td>
                     <td className="py-2.5 px-4">
-                      {renderStatusBadge(term.status)}
+                      {renderStatusBadge(term)}
                     </td>
                     <td className="py-2.5 px-4 text-right">
                       <div className="inline-flex items-center gap-2 justify-end">
-                        {/* Submissions View Button */}
                         <button
                           type="button"
                           onClick={() =>
@@ -518,7 +590,7 @@ export function AdminAcademicTerms({
                           title={
                             term.status === "Current"
                               ? "View submissions for the current active academic term"
-                              : "Browse read-only historical submissions from this academic term"
+                              : "Browse submissions from this academic term"
                           }
                           className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-medium px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-2xs"
                         >
@@ -526,10 +598,8 @@ export function AdminAcademicTerms({
                           <span>Submissions</span>
                         </button>
 
-                        {/* Set Current Action with Term Progression Guardrails */}
                         {renderSetCurrentAction(term)}
 
-                        {/* Delete Action Guardrail: Disabled/Hidden if Current */}
                         {term.status !== "Current" && (
                           <button
                             type="button"
@@ -553,6 +623,106 @@ export function AdminAcademicTerms({
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Archive Section: All Completed, Closed, and Archived Terms */}
+      <div className="space-y-2 pt-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AppIcon icon={Archive} size="sm" className="text-slate-500 dark:text-slate-400" />
+            <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Archived & Closed Terms
+            </h2>
+            <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-semibold border border-slate-200 dark:border-slate-700">
+              {archivedTerms.length}
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
+            Past completed academic cycles preserved for audit and historical records.
+          </span>
+        </div>
+
+        <div className="w-full overflow-x-auto rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs dark:shadow-none overflow-hidden transition-colors">
+          <table className="w-full text-left border-collapse min-w-[600px]">
+            <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-950/60 text-slate-600 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+              <tr>
+                <th className="py-3 px-4">Academic Year</th>
+                <th className="py-3 px-4">Semester</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+              {isLoading ? (
+                <tr className="bg-white dark:bg-slate-900/40 py-2.5 px-4 text-xs">
+                  <td colSpan={4} className="py-6 text-center text-slate-500 dark:text-slate-400">
+                    Loading archived terms...
+                  </td>
+                </tr>
+              ) : archivedTerms.length === 0 ? (
+                <tr className="bg-white dark:bg-slate-900/40 py-2.5 px-4 text-xs">
+                  <td colSpan={4} className="py-6 text-center text-slate-500 dark:text-slate-400">
+                    No completed or archived terms found.
+                  </td>
+                </tr>
+              ) : (
+                archivedTerms.map((term) => (
+                  <tr
+                    key={`archived-${term.academicYear}-${term.semester}`}
+                    className="bg-white dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors py-2.5 px-4 text-xs"
+                  >
+                    <td className="py-2.5 px-4 font-semibold text-slate-800 dark:text-slate-200">
+                      {term.academicYear}
+                    </td>
+                    <td className="py-2.5 px-4 text-slate-600 dark:text-slate-400 font-medium">
+                      {term.semester}
+                    </td>
+                    <td className="py-2.5 px-4">
+                      {renderStatusBadge(term)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right">
+                      <div className="inline-flex items-center gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setHistoryModalData({
+                              isOpen: true,
+                              academicYear: term.academicYear,
+                              semester: term.semester,
+                            })
+                          }
+                          title="Browse read-only historical submissions from this academic term"
+                          className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-medium px-2.5 py-1 rounded-lg transition-all cursor-pointer shadow-2xs"
+                        >
+                          <AppIcon icon={Eye} size="xs" color="inherit" />
+                          <span>Submissions</span>
+                        </button>
+
+                        {renderSetCurrentAction(term)}
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClick(term)}
+                          disabled={!term.canDelete || isLoading || isSaving}
+                          title={
+                            term.deleteReason ||
+                            (!term.canDelete
+                              ? "Cannot delete term with existing data"
+                              : "Delete academic term")
+                          }
+                          className="bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-semibold px-3 py-1 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-[#780000] disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal: Create Next Academic Year */}
@@ -597,6 +767,19 @@ export function AdminAcademicTerms({
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
                         Auto-generated for Second Semester.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b5336] text-white border border-[#08412a] shadow-xs shrink-0">
+                      <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-200">
+                        {computedNextAcademicYear} • Summer Semester
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Auto-generated for Summer Semester.
                       </p>
                     </div>
                   </div>

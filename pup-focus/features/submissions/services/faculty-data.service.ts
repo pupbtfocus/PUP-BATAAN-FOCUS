@@ -14,6 +14,7 @@ import {
   normalizeSemester,
   normalizeTime24Hour,
   parseSubmissionOrigin,
+  type SubmissionWindowSemester,
 } from "@/features/submissions/services/submission-window.service";
 import { logger } from "@/lib/observability/logger";
 
@@ -81,7 +82,7 @@ export type SubmissionWindowStateData = {
   startTime: string | null;
   endTime: string | null;
   academicYear: string | null;
-  semester: "1st Semester" | "2nd Semester" | null;
+  semester: SubmissionWindowSemester | null;
   startTimeLabel?: string | null;
   endTimeLabel?: string | null;
   currentTimeLabel?: string | null;
@@ -95,7 +96,7 @@ export type SubmissionWindowStateData = {
 export type PastSubmissionData = {
   id: string;
   academicYear: string;
-  semester: "1st Semester" | "2nd Semester";
+  semester: SubmissionWindowSemester;
   requirementCode: RequirementCode | string;
   status: "Pending" | "Validated" | "Rejected";
   submittedAt: string;
@@ -117,7 +118,7 @@ export type FacultyInitialData = {
   requirementTemplates: RequirementTemplateData[];
   counts: StatusCountsData;
   academicYear: string;
-  semester: "1st Semester" | "2nd Semester";
+  semester: SubmissionWindowSemester;
   submissionWindow: SubmissionWindowStateData;
   pastSubmissions: PastSubmissionData[];
   hasActiveSchedule: boolean;
@@ -140,7 +141,7 @@ function normalizeAcademicYear(ay?: string | null): string {
 
 function toAcademicYearAndSemester(dateInput: string | null | undefined): {
   academicYear: string;
-  semester: "1st Semester" | "2nd Semester";
+  semester: SubmissionWindowSemester;
 } {
   const sourceDate = dateInput ? new Date(dateInput) : new Date();
   const date = Number.isNaN(sourceDate.getTime()) ? new Date() : sourceDate;
@@ -228,8 +229,7 @@ export async function getFacultyInitialData(
     dbTerm?.semester ||
     "1st Semester";
 
-  const activeSemester: "1st Semester" | "2nd Semester" =
-    normalizeSemester(rawSem).includes("2") ? "2nd Semester" : "1st Semester";
+  const activeSemester: SubmissionWindowSemester = normalizeSemester(rawSem);
 
   const normActiveYear = normalizeAcademicYear(activeAcademicYear);
   const normActiveSem = normalizeSemester(activeSemester);
@@ -810,8 +810,8 @@ export async function getFacultyInitialData(
 
     const matchedAssignment = assignmentRows.find((a) => a.id === row.faculty_assignment_id);
     let histAY = matchedAssignment?.academic_year || null;
-    let histSem: "1st Semester" | "2nd Semester" | null = matchedAssignment?.term
-      ? (normalizeSemester(matchedAssignment.term).includes("2") ? "2nd Semester" : "1st Semester")
+    let histSem: SubmissionWindowSemester | null = matchedAssignment?.term
+      ? normalizeSemester(matchedAssignment.term)
       : null;
 
     if (!histAY || !histSem) {

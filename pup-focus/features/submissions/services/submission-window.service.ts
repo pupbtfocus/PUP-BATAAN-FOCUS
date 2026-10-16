@@ -1,7 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DEFAULT_REQUIREMENTS, REQUIREMENT_LABEL } from "@/config/compliance";
 
-const SEMESTER_OPTIONS = ["1st Semester", "2nd Semester"] as const;
+const SEMESTER_OPTIONS = [
+  "1st Semester",
+  "2nd Semester",
+  "Summer Semester",
+] as const;
 
 type SubmissionWindowRow = {
   start_date: string;
@@ -220,6 +224,15 @@ export function normalizeSemester(
   if (normalized === "2nd semester" || normalized === "second semester") {
     return "2nd Semester";
   }
+  if (
+    normalized === "summer semester" ||
+    normalized === "summer term" ||
+    normalized === "summer sem" ||
+    normalized === "summer" ||
+    normalized.includes("summer")
+  ) {
+    return "Summer Semester";
+  }
 
   return "1st Semester";
 }
@@ -263,7 +276,7 @@ export function validateSubmissionWindow(
   if (!semester || !isValidSemester(semester)) {
     return {
       isValid: false,
-      error: "Semester must be either 1st Semester or 2nd Semester.",
+      error: "Semester must be 1st Semester, 2nd Semester, or Summer Semester.",
     };
   }
 
