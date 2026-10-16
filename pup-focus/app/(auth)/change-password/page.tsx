@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { ROLE, type AppRole } from "@/config/roles";
 import { CampusBackground } from "@/components/shared/campus-background";
 import { Logo } from "@/components/ui/logo";
-import { PupWebBadge } from "@/components/auth/pup-web-badge";
 import { AppIcon } from "@/components/ui/app-icon";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import Image from "next/image";
@@ -540,8 +539,6 @@ export default function ChangePasswordPage() {
           </div>
         </div>
       </div>
-
-      <PupWebBadge />
     </main>
   );
 }
