@@ -1,7 +1,7 @@
 // Usage (from /pup-focus):  node scripts/reset-db.mjs [--yes]
-// Wipes all submissions/data, empties ALL storage buckets, and deletes every
-// account except super_admin. Buckets and config tables (terms, programs,
-// curricula, requirement templates, submission windows, roles) are kept.
+// Wipes all submissions/data, empties ALL storage buckets, deletes every
+// account except super_admin, and resets academic terms and submission schedules.
+// Buckets and catalog config tables (programs, curricula, requirement templates, roles) are kept.
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -40,16 +40,20 @@ const NIL = "00000000-0000-0000-0000-000000000000";
 
 // Data tables wiped completely (children first). Missing tables are skipped.
 const DATA_TABLES = [
-  "review_decisions",
-  "document_versions",
-  "submissions",
-  "extension_requests",
-  "notifications",
-  "audit_logs",
-  "submission_window_logs",
-  "system_backups",
-  "faculty_program_assignments",
-  "admin_assignments",
+  { table: "review_decisions", filter: (q) => q.neq("id", NIL) },
+  { table: "document_versions", filter: (q) => q.neq("id", NIL) },
+  { table: "submissions", filter: (q) => q.neq("id", NIL) },
+  { table: "extension_requests", filter: (q) => q.neq("id", NIL) },
+  { table: "notifications", filter: (q) => q.neq("id", NIL) },
+  { table: "audit_logs", filter: (q) => q.neq("id", NIL) },
+  { table: "submission_window_logs", filter: (q) => q.neq("id", NIL) },
+  { table: "submission_window_terms", filter: (q) => q.neq("academic_year", "") },
+  { table: "submission_windows", filter: (q) => q.gte("id", 0) },
+  { table: "system_backups", filter: (q) => q.neq("id", NIL) },
+  { table: "faculty_classes", filter: (q) => q.neq("id", NIL) },
+  { table: "faculty_program_assignments", filter: (q) => q.neq("id", NIL) },
+  { table: "admin_assignments", filter: (q) => q.neq("id", NIL) },
+  { table: "academic_terms", filter: (q) => q.neq("academic_year", "") },
 ];
 // Account tables: rows tied to non-super-admin users are removed.
 const ACCOUNT_TABLES_BY_PROFILE = [
@@ -58,8 +62,8 @@ const ACCOUNT_TABLES_BY_PROFILE = [
   { table: "faculty", col: "profile_id" },
   { table: "profiles", col: "id" },
 ];
-// Intentionally untouched: roles, academic_terms, programs, curricula,
-// requirement_templates, compliance_template_items, submission_windows, submission_window_terms
+// Intentionally untouched: roles, programs, curricula,
+// requirement_templates, compliance_template_items
 
 function isSuper(u) {
   const r = u.user_metadata?.role ?? u.app_metadata?.role;
@@ -69,7 +73,7 @@ function isSuper(u) {
 async function confirm() {
   if (process.argv.includes("--yes")) return true;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const answer = await new Promise((r) => rl.question('Type "RESET" to wipe data, storage and all non-super-admin accounts: ', r));
+  const answer = await new Promise((r) => rl.question('Type "RESET" to wipe data, storage, schedules, terms, and all non-super-admin accounts: ', r));
   rl.close();
   return answer.trim() === "RESET";
 }
@@ -159,7 +163,11 @@ async function main() {
   }
 
   console.log("\nData tables:");
-  for (const t of DATA_TABLES) await wipeTable(t, (q) => q.neq("id", NIL));
+  for (const entry of DATA_TABLES) {
+    const table = typeof entry === "string" ? entry : entry.table;
+    const filter = typeof entry === "object" && entry.filter ? entry.filter : (q) => q.neq("id", NIL);
+    await wipeTable(table, filter);
+  }
 
   console.log("\nAccount tables:");
   for (const { table, col } of ACCOUNT_TABLES_BY_PROFILE) {

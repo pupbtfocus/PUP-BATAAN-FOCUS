@@ -2,6 +2,7 @@
   "private": true,
   "scripts": {
     "build": "cd pup-focus && npm run build",
-    "dev": "cd pup-focus && npm run dev"
+    "dev": "cd pup-focus && npm run dev",
+    "reset-db": "cd pup-focus && npm run reset-db"
   }
 }
