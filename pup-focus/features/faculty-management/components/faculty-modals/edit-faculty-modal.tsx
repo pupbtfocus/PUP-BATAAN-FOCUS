@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle, EditPencil, User, Xmark } from "iconoir-react";
+import { CheckCircle, EditPencil, ShieldCheck, User, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -733,45 +733,44 @@ export function EditFacultyModal({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+          onClick={handleCloseSuccess}
         >
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-150">
-            <ModalHeader
-              icon={CheckCircle}
-              title="Changes Saved"
-              subtitle="Faculty Profile Updated"
-              onClose={handleCloseSuccess}
-              className="-mx-6 -mt-6 mb-5 rounded-t-2xl"
-            />
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800/80 shadow-2xl rounded-3xl p-7 max-w-sm w-full mx-4 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="relative mb-5 flex items-center justify-center">
+              {/* Ambient Backdrop Glow */}
+              <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl dark:bg-emerald-500/30" />
 
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                <AppIcon
-                  icon={CheckCircle}
-                  size="md"
-                  className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
-                />
-                <div className="text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
-                  <p className="font-semibold text-sm">Update Successful</p>
-                  <p>
-                    Faculty details for{" "}
-                    <strong className="font-bold">{currentFullName}</strong> have been
-                    successfully updated.
-                  </p>
+              {/* Outer Layer Ring */}
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 p-3 ring-8 ring-emerald-500/5 dark:bg-emerald-500/20 dark:ring-emerald-500/10">
+                {/* Inner Shield Icon */}
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#0b5336] dark:bg-emerald-600 text-white shadow-lg shadow-emerald-950/30">
+                  <AppIcon icon={ShieldCheck} size="lg" color="inherit" strokeWidth={2.4} />
                 </div>
               </div>
-
-              <div className="flex items-center justify-end pt-2">
-                <Button
-                  type="button"
-                  variant="maroon"
-                  onClick={handleCloseSuccess}
-                  className="cursor-pointer px-6"
-                >
-                  OK
-                </Button>
-              </div>
             </div>
+
+            <h3 className="text-slate-900 dark:text-slate-100 font-bold text-lg tracking-tight mb-1">
+              Faculty Updated Successfully
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">
+              Faculty details for{" "}
+              <strong className="font-semibold text-slate-900 dark:text-slate-100">
+                {currentFullName}
+              </strong>{" "}
+              have been updated securely.
+            </p>
+
+            <button
+              type="button"
+              onClick={handleCloseSuccess}
+              className="w-full font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer bg-[#0b5336] hover:bg-[#08412a] border border-[#08412a] text-white shadow-emerald-950/25"
+            >
+              Done
+            </button>
           </div>
         </div>
       ) : null}
