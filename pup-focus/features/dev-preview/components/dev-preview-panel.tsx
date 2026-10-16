@@ -922,9 +922,9 @@ export function DevPreviewPanel() {
                           aria-label={showNewPass ? "Hide password" : "Show password"}
                         >
                           {showNewPass ? (
-                            <LucideEyeOff className="w-4 h-4" />
-                          ) : (
                             <LucideEye className="w-4 h-4" />
+                          ) : (
+                            <LucideEyeOff className="w-4 h-4" />
                           )}
                         </button>
                       </div>
@@ -957,9 +957,9 @@ export function DevPreviewPanel() {
                           aria-label={showConfirmPass ? "Hide password" : "Show password"}
                         >
                           {showConfirmPass ? (
-                            <LucideEyeOff className="w-4 h-4" />
-                          ) : (
                             <LucideEye className="w-4 h-4" />
+                          ) : (
+                            <LucideEyeOff className="w-4 h-4" />
                           )}
                         </button>
                       </div>
@@ -1768,9 +1768,9 @@ export function DevPreviewPanel() {
                         aria-label={showNewPass ? "Hide password" : "Show password"}
                       >
                         {showNewPass ? (
-                          <LucideEyeOff className="w-4 h-4" />
-                        ) : (
                           <LucideEye className="w-4 h-4" />
+                        ) : (
+                          <LucideEyeOff className="w-4 h-4" />
                         )}
                       </button>
                     </div>
@@ -1803,9 +1803,9 @@ export function DevPreviewPanel() {
                         aria-label={showConfirmPass ? "Hide password" : "Show password"}
                       >
                         {showConfirmPass ? (
-                          <LucideEyeOff className="w-4 h-4" />
-                        ) : (
                           <LucideEye className="w-4 h-4" />
+                        ) : (
+                          <LucideEyeOff className="w-4 h-4" />
                         )}
                       </button>
                     </div>
