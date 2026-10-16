@@ -87,8 +87,8 @@ temp/
 .env.*.local
 
 # Scripts and batch files
-scripts/
-**/scripts/
+scripts/*
+!scripts/ensure-deterministic-routes-manifest.mjs
 bat-scripts/
 **/bat-scripts/
 *.bat

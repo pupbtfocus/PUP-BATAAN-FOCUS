@@ -63,10 +63,10 @@ temp/
 pup-focus/scripts/create-qa-accounts.mjs
 scripts/create-qa-accounts.mjs
 
-# All scripts
-scripts/
-pup-focus/scripts/
-**/scripts/
+# All scripts and batch files
+scripts/*
+pup-focus/scripts/*
+!pup-focus/scripts/ensure-deterministic-routes-manifest.mjs
 bat-scripts/
 **/bat-scripts/
 *.bat
