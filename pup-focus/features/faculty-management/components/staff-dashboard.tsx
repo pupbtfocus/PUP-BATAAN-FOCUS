@@ -21,6 +21,7 @@ import {
 import { extractFirstName } from "@/lib/faculty-profile";
 import { StaffSettings as AdminSettings } from "@/features/admin-management/components/staff-settings";
 import { createClient } from "@/lib/supabase/client";
+import { useRealtimeSync } from "@/lib/realtime";
 import {
   facultyAccountSchema,
   type FacultyAccountFormInput,
@@ -318,9 +319,11 @@ export function AdminFacultyDashboard({
   const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
 
-  async function loadDashboardStats() {
+  async function loadDashboardStats(options?: { silent?: boolean }) {
     try {
-      setIsLoadingStats(true);
+      if (!options?.silent) {
+        setIsLoadingStats(true);
+      }
       const [res, winRes] = await Promise.all([
         fetch(`/api/staff/dashboard/stats?_t=${Date.now()}`, { cache: "no-store" }),
         fetch(`/api/staff/submission-window?_t=${Date.now()}`, { cache: "no-store", credentials: "include" }),
@@ -344,7 +347,9 @@ export function AdminFacultyDashboard({
     } catch (err) {
       console.warn("Failed to load dashboard stats:", err);
     } finally {
-      setIsLoadingStats(false);
+      if (!options?.silent) {
+        setIsLoadingStats(false);
+      }
     }
   }
 
@@ -374,15 +379,23 @@ export function AdminFacultyDashboard({
 
   useEffect(() => {
     if (activeSection === "dashboard") {
-      void loadDashboardStats();
+      void loadDashboardStats({ silent: Boolean(dashboardStats) });
     } else if (activeSection === "facultyManagement" || activeSection === "requirements") {
-      void loadFacultyFromDatabase();
+      void loadFacultyFromDatabase({ silent: facultyAccounts.length > 0 });
     }
   }, [activeSection, verificationResetTrigger]);
 
-  async function loadFacultyFromDatabase() {
+  // Realtime sync across Faculty, Staff, and Admin
+  useRealtimeSync(() => {
+    void loadDashboardStats({ silent: true });
+    void loadFacultyFromDatabase({ silent: true });
+  });
+
+  async function loadFacultyFromDatabase(options?: { silent?: boolean }) {
     try {
-      setIsLoading(true);
+      if (!options?.silent) {
+        setIsLoading(true);
+      }
       const response = await fetch(`/api/staff/faculty/list?_t=${Date.now()}`, {
         cache: "no-store",
       });
@@ -396,15 +409,13 @@ export function AdminFacultyDashboard({
     } catch (err) {
       console.error("Error loading faculty accounts:", err);
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
     }
   }
 
   async function refreshCurrentPanel() {
-    if (typeof window !== "undefined") {
-      window.location.reload();
-      return;
-    }
     await Promise.all([loadFacultyFromDatabase(), loadDashboardStats()]);
     setVerificationResetTrigger((prev) => prev + 1);
   }

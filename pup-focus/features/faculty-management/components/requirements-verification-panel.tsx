@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
 import JSZip from "jszip";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import {
   Archive,
   ChatBubble,
@@ -891,22 +892,22 @@ export function FacultyVerificationDrawer({
     return () => clearTimeout(timeout);
   }, [initialRequirementCode, isLoading, classGroups, selectedClassId]);
 
-  // 1. Fetch current term submissions (only on faculty/term change, without retriggering on history state updates)
-  useEffect(() => {
-    let isCancelled = false;
-    async function loadCurrentSubmissions() {
+  const refreshCurrentSubmissions = useCallback(
+    async (options?: { silent?: boolean }) => {
       if (!faculty.id) {
-        setIsLoading(false);
+        if (!options?.silent) setIsLoading(false);
         return;
       }
-      setIsLoading(true);
+      if (!options?.silent) {
+        setIsLoading(true);
+      }
       try {
         const subRes = await fetch(
-          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(activeAy)}&semester=${encodeURIComponent(activeSem)}`,
+          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(activeAy)}&semester=${encodeURIComponent(activeSem)}&_t=${Date.now()}`,
           { credentials: "include", cache: "no-store" }
         );
 
-        if (subRes.ok && !isCancelled) {
+        if (subRes.ok) {
           const subData = await subRes.json();
           setSubmissions(subData.submissions || []);
           if (Array.isArray(subData.classes)) {
@@ -916,17 +917,18 @@ export function FacultyVerificationDrawer({
       } catch (err) {
         console.error("Failed to load current submissions:", err);
       } finally {
-        if (!isCancelled) {
+        if (!options?.silent) {
           setIsLoading(false);
         }
       }
-    }
+    },
+    [faculty.id, activeAy, activeSem]
+  );
 
-    loadCurrentSubmissions();
-    return () => {
-      isCancelled = true;
-    };
-  }, [faculty.id, activeAy, activeSem]);
+  // 1. Fetch current term submissions (only on faculty/term change, without retriggering on history state updates)
+  useEffect(() => {
+    void refreshCurrentSubmissions();
+  }, [refreshCurrentSubmissions]);
 
   // 2. Fetch history academic years once on mount (isolated from current submissions to prevent double reload)
   useEffect(() => {
@@ -963,35 +965,45 @@ export function FacultyVerificationDrawer({
     };
   }, [faculty.id, activeAy, activeSem]);
 
-  // 3. Fetch history submissions on-demand when history tab is active
-  useEffect(() => {
-    if (activeTab !== "history" || !faculty.id || !selectedHistoryAy || !selectedHistorySem) return;
-    let isCancelled = false;
-    async function loadHistorySubmissions() {
-      setIsLoadingHistory(true);
+  const refreshHistorySubmissions = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (activeTab !== "history" || !faculty.id || !selectedHistoryAy || !selectedHistorySem) return;
+      if (!options?.silent) {
+        setIsLoadingHistory(true);
+      }
       try {
         const res = await fetch(
-          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(selectedHistoryAy)}&semester=${encodeURIComponent(selectedHistorySem)}`,
+          `/api/staff/faculty/submissions?facultyId=${encodeURIComponent(faculty.id)}&academicYear=${encodeURIComponent(selectedHistoryAy)}&semester=${encodeURIComponent(selectedHistorySem)}&_t=${Date.now()}`,
           { credentials: "include", cache: "no-store" }
         );
-        if (res.ok && !isCancelled) {
+        if (res.ok) {
           const data = await res.json();
           setHistorySubmissions(data.submissions || []);
         }
       } catch (err) {
         console.error("Failed to load history submissions:", err);
       } finally {
-        if (!isCancelled) {
+        if (!options?.silent) {
           setIsLoadingHistory(false);
         }
       }
-    }
+    },
+    [activeTab, faculty.id, selectedHistoryAy, selectedHistorySem]
+  );
 
-    loadHistorySubmissions();
-    return () => {
-      isCancelled = true;
-    };
-  }, [activeTab, faculty.id, selectedHistoryAy, selectedHistorySem]);
+  // 3. Fetch history submissions on-demand when history tab is active
+  useEffect(() => {
+    void refreshHistorySubmissions();
+  }, [refreshHistorySubmissions]);
+
+  // 4. Realtime synchronization for subjects (faculty_classes) & requirement uploads (submissions)
+  useRealtimeSync(() => {
+    void refreshCurrentSubmissions({ silent: true });
+    if (activeTab === "history") {
+      void refreshHistorySubmissions({ silent: true });
+    }
+    onStatusUpdated?.();
+  });
 
   const handleClose = () => {
     setSelectedClassId(null);
@@ -1006,10 +1018,6 @@ export function FacultyVerificationDrawer({
   };
 
   const handleRefresh = async () => {
-    if (typeof window !== "undefined") {
-      window.location.reload();
-      return;
-    }
     if (!faculty.id || isRefreshing) return;
     setIsRefreshing(true);
     try {
@@ -3527,33 +3535,30 @@ export function RequirementsPanel({
     }>
   >([]);
 
-  useEffect(() => {
-    let isCancelled = false;
-    async function loadTemplates() {
-      try {
-        const res = await fetch("/api/staff/requirement-templates");
-        if (res.ok && !isCancelled) {
-          const data = await res.json();
-          if (Array.isArray(data.templates) && data.templates.length > 0) {
-            setRequirementTemplates(
-              data.templates.map((t: any) => ({
-                code: t.code,
-                title: t.title,
-                is_mandatory: Boolean(t.is_mandatory),
-                is_active: t.is_active !== false,
-              }))
-            );
-          }
+  const loadTemplates = useCallback(async () => {
+    try {
+      const res = await fetch("/api/staff/requirement-templates", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.templates) && data.templates.length > 0) {
+          setRequirementTemplates(
+            data.templates.map((t: any) => ({
+              code: t.code,
+              title: t.title,
+              is_mandatory: Boolean(t.is_mandatory),
+              is_active: t.is_active !== false,
+            }))
+          );
         }
-      } catch {
-        // Fallback
       }
+    } catch {
+      // Fallback
     }
-    loadTemplates();
-    return () => {
-      isCancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    void loadTemplates();
+  }, [loadTemplates]);
 
   const [reviewingFaculty, setReviewingFaculty] = useState<FacultyAccount | null>(
     selectedFaculty || null
@@ -3617,13 +3622,16 @@ export function RequirementsPanel({
         return;
       }
 
-      setIsLoadingStatuses(true);
+      const hasExistingStatuses = Object.keys(facultyStatuses).length > 0;
+      if (!hasExistingStatuses) {
+        setIsLoadingStatuses(true);
+      }
       try {
         const res = await fetch(
           `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(
             targetFacultyId
-          )}`,
-          { credentials: "include" }
+          )}&_t=${Date.now()}`,
+          { credentials: "include", cache: "no-store" }
         );
         if (res.ok && isMounted) {
           const data = await res.json();
@@ -3634,8 +3642,10 @@ export function RequirementsPanel({
 
           setActiveTermAy(activeAy);
           setActiveTermSem(activeSem);
-          setAcademicYear(activeAy);
-          setSemester(activeSem);
+          if (activePanelTab === "current") {
+            setAcademicYear(activeAy);
+            setSemester(activeSem);
+          }
 
           if (Array.isArray(data.availableAcademicYears) && data.availableAcademicYears.length > 0) {
             setAvailableAcademicYears(data.availableAcademicYears);
@@ -3643,11 +3653,13 @@ export function RequirementsPanel({
               data.availableAcademicYears.find((y: string) => y !== activeAy) ||
               data.availableAcademicYears[0] ||
               "2025-2026";
-            setHistoryAy(pastYear);
+            setHistoryAy((prev) => prev || pastYear);
           }
 
           // Batch load status for all faculty
-          await fetchAllStatuses(activeAy, activeSem);
+          const targetAy = activePanelTab === "history" ? historyAy : activeAy;
+          const targetSem = activePanelTab === "history" ? historySem : activeSem;
+          await fetchAllStatuses(targetAy, targetSem, { silent: hasExistingStatuses });
         }
       } catch (err) {
         console.error("Failed to load active term:", err);
@@ -3663,11 +3675,17 @@ export function RequirementsPanel({
     };
   }, [facultyAccounts, reviewingFaculty?.id, selectedFaculty?.id, resetTrigger]);
 
-  async function fetchAllStatuses(ay: string, sem: SemesterOption) {
+  async function fetchAllStatuses(
+    ay: string,
+    sem: SemesterOption,
+    options?: { silent?: boolean }
+  ) {
     if (facultyAccounts.length === 0) return;
     const safeAy = ay || "2026-2027";
     const safeSem = sem || "1st Semester";
-    setIsLoadingStatuses(true);
+    if (!options?.silent) {
+      setIsLoadingStatuses(true);
+    }
     try {
       const results = await Promise.all(
         facultyAccounts.map(async (faculty) => {
@@ -3678,7 +3696,7 @@ export function RequirementsPanel({
                 faculty.id
               )}&academicYear=${encodeURIComponent(safeAy)}&semester=${encodeURIComponent(
                 safeSem
-              )}`,
+              )}&_t=${Date.now()}`,
               { credentials: "include", cache: "no-store" }
             );
             if (res.ok) {
@@ -3718,9 +3736,19 @@ export function RequirementsPanel({
     } catch (err) {
       console.error("Error fetching faculty statuses:", err);
     } finally {
-      setIsLoadingStatuses(false);
+      if (!options?.silent) {
+        setIsLoadingStatuses(false);
+      }
     }
   }
+
+  // Realtime sync for RequirementsPanel (subjects added/edited/archived & requirements uploaded/reviewed)
+  useRealtimeSync(() => {
+    void loadTemplates();
+    if (academicYear && semester) {
+      void fetchAllStatuses(academicYear, semester, { silent: true });
+    }
+  });
 
   // Map faculty account to verification status details
   const facultyStatusMap = useMemo(() => {
@@ -3976,7 +4004,7 @@ export function RequirementsPanel({
           }}
           onStatusUpdated={() => {
             if (academicYear && semester) {
-              fetchAllStatuses(academicYear, semester);
+              void fetchAllStatuses(academicYear, semester, { silent: true });
             }
           }}
         />

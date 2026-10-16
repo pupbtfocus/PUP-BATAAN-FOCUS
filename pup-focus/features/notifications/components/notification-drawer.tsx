@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
 import { REQUIREMENT_CODE, REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import type { AppNotification } from "@/features/notifications/services/notification.service";
+import { useRealtimeSync } from "@/lib/realtime";
 
 function formatRelativeTime(dateString: string): string {
   try {
@@ -262,6 +263,10 @@ export function NotificationDrawer() {
 
     return () => clearInterval(interval);
   }, [fetchNotifications]);
+
+  useRealtimeSync(() => {
+    void fetchNotifications();
+  });
 
   useEffect(() => {
     if (!isOpen) return;
