@@ -78,20 +78,6 @@ function isMissingFacultyAssignmentIdError(
   );
 }
 
-function isMissingCurriculumIdError(
-  error: { message?: string } | null,
-): boolean {
-  const message = (error?.message || "").toLowerCase();
-  return (
-    message.includes("curriculum_id") &&
-    (message.includes("submissions") ||
-      message.includes("faculty_program_assignments") ||
-      message.includes("schema cache") ||
-      message.includes("does not exist") ||
-      message.includes("column") ||
-      message.includes("no field"))
-  );
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -462,7 +448,6 @@ export async function POST(request: NextRequest) {
     // Program Assignment lookup
     let facultyAssignmentId: string | null = null;
     let programId: string | null = null;
-    let curriculumId: string | null = null;
 
     const { data: assignments } = await supabaseAdmin
       .from("faculty_program_assignments")
@@ -649,7 +634,6 @@ export async function POST(request: NextRequest) {
       id: string;
       status: string | null;
       requirement_code: string;
-      curriculum_id?: string | null;
       faculty_assignment_id?: string | null;
       submitted_at?: string | null;
       created_at?: string | null;

@@ -21,7 +21,7 @@ import { RequirementsPanel } from "@/features/faculty-management/components/requ
 import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { SubmissionWindowPanel } from "@/features/faculty-management/components/submission-window-panel";
 import { BackupArchivePanel } from "@/features/backup-archive/components/backup-archive-panel";
-import { TemplatesAndProgramsPanel, CurriculumManagementPanel } from "@/features/curriculum-management/components/curriculum-management-panel";
+import { TemplatesAndProgramsPanel } from "@/features/program-management/components/templates-and-programs-panel";
 import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
 import { SuperAdminSettings } from "@/features/admin-management/components/admin-settings";
 import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
@@ -62,7 +62,7 @@ export type SuperAdminSection =
   | "window"
   | "templates"
   | "backups"
-  | "curriculum"
+  | "programs"
   | "audit"
   | "settings"
   | "previews";
@@ -195,13 +195,8 @@ function normalizeSuperAdminSection(
     val === "archiving"
   )
     return "backups";
-  if (
-    val === "curriculum" ||
-    val === "curricula" ||
-    val === "curriculums" ||
-    val === "programs"
-  )
-    return "curriculum";
+  if (val === "programs" || val === "templates" || val === "templates-programs")
+    return "templates";
   if (val === "audit" || val === "auditlogs" || val === "audit-logs" || val === "logs") return "audit";
   if (val === "settings" || val === "super-admin-settings" || val === "admin-settings") return "settings";
   if (
@@ -2144,10 +2139,10 @@ export function SuperAdminDashboard({
               </article>
             ) : null}
 
-            {activeSection === "templates" || activeSection === "curriculum" ? (
+            {activeSection === "templates" || activeSection === "programs" ? (
               <TemplatesAndProgramsPanel
                 refreshTrigger={templatesRefreshTrigger}
-                initialTab={activeSection === "curriculum" ? "programs" : "templates"}
+                initialTab={activeSection === "programs" ? "programs" : "templates"}
               />
             ) : null}
 

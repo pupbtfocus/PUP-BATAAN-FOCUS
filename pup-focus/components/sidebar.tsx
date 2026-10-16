@@ -127,10 +127,7 @@ export function SidebarContent({
     activeSection === "backupArchive" ||
     activeSection === "backup-archive" ||
     activeSection === "archives";
-  const isCurriculumActive =
-    activeSection === "curriculum" ||
-    activeSection === "curriculums" ||
-    activeSection === "programs";
+  const isProgramsActive = activeSection === "programs";
   const isAuditActive =
     activeSection === "audit" ||
     activeSection === "auditLogs" ||
@@ -142,7 +139,7 @@ export function SidebarContent({
   const isSettingsActive = activeSection === "settings";
 
   const isAcademicCycleActive =
-    isTermsActive || isWindowActive || isTemplatesActive || isBackupsActive || isCurriculumActive;
+    isTermsActive || isWindowActive || isTemplatesActive || isBackupsActive || isProgramsActive;
   const isUserManagementActive = isAccountsActive || isFacultyActive;
 
   const [isUserManagementOpen, setIsUserManagementOpen] = useState<boolean>(
@@ -430,7 +427,7 @@ export function SidebarContent({
                 type="button"
                 onClick={() => handleSelect("templates")}
                 className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
-                  isTemplatesActive || isCurriculumActive
+                  isTemplatesActive || isProgramsActive
                     ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                     : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                 }`}
@@ -439,7 +436,7 @@ export function SidebarContent({
                 <Page
                   strokeWidth={2}
                   className={`h-4 w-4 shrink-0 ${
-                    isTemplatesActive || isCurriculumActive
+                    isTemplatesActive || isProgramsActive
                       ? "text-amber-300 stroke-[2]"
                       : "text-amber-200/70"
                   }`}

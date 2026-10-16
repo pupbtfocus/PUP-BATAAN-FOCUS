@@ -18,7 +18,6 @@ export type AdminSection =
   | "requirements"
   | "submissionWindow"
   | "academicTerms"
-  | "curriculum"
   | "templates"
   | "programs"
   | "settings"

@@ -57,7 +57,6 @@ export async function GET(req: NextRequest) {
         ...p,
         description: "",
         is_hidden: false,
-        curricula_count: 0,
       }));
 
       return NextResponse.json({ programs: formatted });
