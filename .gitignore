@@ -68,3 +68,6 @@ scripts/
 pup-focus/scripts/
 **/scripts/
 bat-scripts/
+**/bat-scripts/
+*.bat
+**/*.bat
