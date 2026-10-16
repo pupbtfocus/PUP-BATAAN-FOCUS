@@ -4,12 +4,13 @@ import React, { useEffect } from "react";
 import { CheckCircle, InfoCircle, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { cn } from "@/utils/cn";
+import { formatPasswordError } from "@/lib/validation/password";
 
 export type AlertType = "success" | "error" | "info" | "warning";
 
 export interface AlertPopupProps {
   type?: AlertType;
-  message: string | null | undefined;
+  message: React.ReactNode;
   onClose: () => void;
   position?: "top-right" | "top-center" | "inline";
   autoCloseMs?: number; // default 5000ms, 0 to disable
@@ -33,6 +34,9 @@ export function AlertPopup({
   }, [message, autoCloseMs, onClose]);
 
   if (!message) return null;
+
+  const displayMessage =
+    typeof message === "string" ? formatPasswordError(message) : message;
 
   const isSuccess = type === "success";
   const isError = type === "error";
@@ -65,19 +69,21 @@ export function AlertPopup({
       <div
         role="alert"
         className={cn(
-          "flex items-center justify-between gap-3 px-4 py-3 rounded-xl border backdrop-blur-md text-xs sm:text-sm font-medium shadow-lg transition-all",
+          "flex items-start justify-between gap-3 px-4 py-3 rounded-xl border backdrop-blur-md text-xs sm:text-sm font-medium shadow-lg transition-all",
           colorStyles,
           className,
         )}
       >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <AppIcon icon={icon} size="md" color={iconColor} className="shrink-0" />
-          <span className="leading-snug break-words">{message}</span>
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+          <AppIcon icon={icon} size="md" color={iconColor} className="shrink-0 mt-0.5" />
+          <div className="leading-snug break-words whitespace-pre-line">
+            {displayMessage}
+          </div>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="p-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shrink-0 shadow-xs"
+          className="p-1 rounded-lg border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition-colors cursor-pointer shrink-0 shadow-xs mt-0.5"
           aria-label="Close alert"
         >
           <AppIcon icon={Xmark} size="sm" color="inherit" />
