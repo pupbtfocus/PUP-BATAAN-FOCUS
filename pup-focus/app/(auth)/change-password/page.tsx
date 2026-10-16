@@ -22,6 +22,11 @@ import {
 } from "iconoir-react";
 
 import { resetDashboardNavigationState } from "@/config/routes";
+import { cn } from "@/utils/cn";
+import {
+  validatePasswordRequirements,
+  formatPasswordError,
+} from "@/lib/validation/password";
 
 const ROUTE_BY_ROLE: Record<string, string> = {
   [ROLE.ADMIN]: "/admin/dashboard",
@@ -33,6 +38,7 @@ const ROUTE_BY_ROLE: Record<string, string> = {
 export default function ChangePasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const passwordRequirements = validatePasswordRequirements(password);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -227,8 +233,12 @@ export default function ChangePasswordPage() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long.");
+
+    const validation = validatePasswordRequirements(password);
+    if (!validation.isValid) {
+      setError(
+        `Password must include:\n${validation.missingRequirements.map((r) => `• ${r}`).join("\n")}`
+      );
       return;
     }
     if (password !== confirm) {
@@ -279,7 +289,7 @@ export default function ChangePasswordPage() {
               resolvedRole = resData.role as AppRole;
             }
           } else {
-            const msg = resData.error || updateError.message;
+            const msg = formatPasswordError(resData.error || updateError.message);
             if (
               msg.toLowerCase().includes("session") ||
               msg.toLowerCase().includes("auth session missing")
@@ -295,12 +305,12 @@ export default function ChangePasswordPage() {
             return;
           }
         } catch {
-          setError(updateError.message);
+          setError(formatPasswordError(updateError.message));
           setIsSaving(false);
           return;
         }
       } else {
-        const msg = updateError.message;
+        const msg = formatPasswordError(updateError.message);
         if (
           msg.toLowerCase().includes("session") ||
           msg.toLowerCase().includes("auth session missing")
@@ -362,19 +372,19 @@ export default function ChangePasswordPage() {
       <div className="absolute inset-0 z-0 bg-transparent backdrop-blur-[6px]" />
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-      <div className="relative z-10 w-full max-w-md mx-auto my-auto pt-6 sm:pt-10 pb-14 sm:pb-8 px-4">
+      <div className="relative z-10 w-full max-w-[420px] mx-auto my-auto py-3 sm:py-5 px-4">
         <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden transition-all">
           {/* Email-style Maroon Header Banner (No Logo, matching Account Ready) */}
-          <div className="bg-gradient-to-br from-[#4d0000] to-[#780000] px-6 py-6 sm:px-8 sm:py-7 text-center">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#fff8e7]">
+          <div className="bg-gradient-to-br from-[#4d0000] to-[#780000] px-5 py-4 sm:px-6 sm:py-4.5 text-center">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#fff8e7]">
               Set New Password
             </h1>
-            <p className="mt-2 text-xs sm:text-sm text-[#f8e3bc] leading-relaxed max-w-sm mx-auto">
+            <p className="mt-1 text-xs text-[#f8e3bc] leading-relaxed max-w-sm mx-auto">
               Create a permanent password to secure your institutional account
             </p>
             {userEmail && (
-              <div className="mt-2.5 inline-block">
-                <span className="text-[11px] font-mono text-[#fff8e7]/90 bg-black/20 px-3 py-1 rounded-full border border-white/10">
+              <div className="mt-1.5 inline-block">
+                <span className="text-[10.5px] font-mono text-[#fff8e7]/90 bg-black/20 px-2.5 py-0.5 rounded-full border border-white/10">
                   {userEmail}
                 </span>
               </div>
@@ -382,7 +392,7 @@ export default function ChangePasswordPage() {
           </div>
 
           {/* Card Body */}
-          <div className="p-6 sm:p-7">
+          <div className="p-4 sm:p-5">
             {/* State 1: Checking Session Loading */}
             {isCheckingSession && (
               <div className="flex flex-col items-center text-center py-4 space-y-4">
@@ -408,8 +418,8 @@ export default function ChangePasswordPage() {
 
             {/* State 2: Session Missing or Expired */}
             {!isCheckingSession && hasSession === false && (
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-xs text-slate-700 dark:text-slate-300 text-left leading-relaxed">
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 text-xs text-slate-700 dark:text-slate-300 text-left leading-relaxed">
                   <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
                     Password Reset Session Expired
                   </p>
@@ -421,7 +431,7 @@ export default function ChangePasswordPage() {
 
                 <Link
                   href="/sign-in"
-                  className="w-full flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#780000]/30 cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-xs sm:text-sm py-2 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#780000]/30 cursor-pointer"
                 >
                   <span>Return to Sign In</span>
                   <ArrowRight className="w-4 h-4" />
@@ -429,7 +439,7 @@ export default function ChangePasswordPage() {
 
                 <Link
                   href="/change-password?preview=true"
-                  className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition py-1"
+                  className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition py-0.5"
                 >
                   <span>Preview New Design Form</span>
                 </Link>
@@ -438,11 +448,11 @@ export default function ChangePasswordPage() {
 
             {/* State 3: Active Session — Ready to set password */}
             {!isCheckingSession && hasSession === true && (
-              <form className="space-y-4" onSubmit={onSubmit}>
+              <form className="space-y-2.5" onSubmit={onSubmit}>
                 {/* New Password Field */}
-                <div className="space-y-1.5 text-left">
+                <div className="space-y-1 text-left">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs uppercase font-semibold tracking-wider text-slate-600 dark:text-slate-300">
+                    <label className="text-[11px] uppercase font-semibold tracking-wider text-slate-600 dark:text-slate-300">
                       New Password
                     </label>
                     <span className="text-[10px] text-slate-400 font-medium">Min. 8 characters</span>
@@ -456,7 +466,7 @@ export default function ChangePasswordPage() {
                       minLength={8}
                       placeholder="Enter new password"
                       autoComplete="new-password"
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-3.5 pr-10 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#780000]/20 focus:border-[#780000] dark:focus:border-amber-400 transition"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-3.5 pr-10 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#780000]/20 focus:border-[#780000] dark:focus:border-amber-400 transition"
                     />
                     <button
                       type="button"
@@ -474,10 +484,42 @@ export default function ChangePasswordPage() {
                   </div>
                 </div>
 
+                {/* Organized Password Requirements Checklist */}
+                <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 px-2.5 py-1.5 space-y-1 text-left">
+                  <p className="font-semibold text-slate-600 dark:text-slate-300 text-[10px] tracking-wider uppercase">
+                    Requirements:
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10.5px]">
+                    {passwordRequirements.requirements.map((req) => (
+                      <div
+                        key={req.id}
+                        className={cn(
+                          "flex items-center gap-1 transition-colors duration-150 whitespace-nowrap",
+                          req.isValid
+                            ? "text-emerald-700 dark:text-emerald-400 font-medium"
+                            : "text-slate-500 dark:text-slate-400"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "w-3 h-3 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 transition-colors",
+                            req.isValid
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-500/40"
+                              : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500"
+                          )}
+                        >
+                          {req.isValid ? "✓" : "•"}
+                        </span>
+                        <span>{req.shortLabel || req.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Confirm Password Field */}
-                <div className="space-y-1.5 text-left">
+                <div className="space-y-1 text-left">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs uppercase font-semibold tracking-wider text-slate-600 dark:text-slate-300">
+                    <label className="text-[11px] uppercase font-semibold tracking-wider text-slate-600 dark:text-slate-300">
                       Confirm Password
                     </label>
                     <span className="text-[10px] text-slate-400 font-medium">Must match</span>
@@ -491,7 +533,7 @@ export default function ChangePasswordPage() {
                       minLength={8}
                       placeholder="Confirm new password"
                       autoComplete="new-password"
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-3.5 pr-10 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#780000]/20 focus:border-[#780000] dark:focus:border-amber-400 transition"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-3.5 pr-10 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#780000]/20 focus:border-[#780000] dark:focus:border-amber-400 transition"
                     />
                     <button
                       type="button"
@@ -513,11 +555,11 @@ export default function ChangePasswordPage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="w-full flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#780000]/30 cursor-pointer disabled:opacity-50 mt-2"
+                  className="w-full flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-xs sm:text-sm py-2 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#780000]/30 cursor-pointer disabled:opacity-50 mt-1"
                 >
                   {isSaving ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       <span>Saving Password...</span>
                     </>
                   ) : (
@@ -531,8 +573,8 @@ export default function ChangePasswordPage() {
             )}
 
             {/* Footer Note */}
-            <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-center">
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
+            <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
                 If you have questions or need assistance, please contact your PUP Bataan campus administrator.
               </p>
             </div>

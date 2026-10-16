@@ -44,6 +44,8 @@ import { CancelledInviteModal } from "@/components/auth/cancelled-invite-modal";
 import { EmailVerificationCard } from "@/components/auth/email-verification-card";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { ArrowRight, Eye as LucideEye, EyeOff as LucideEyeOff, Check as LucideCheck, X as LucideX } from "lucide-react";
+import { validatePasswordRequirements } from "@/lib/validation/password";
+import { cn } from "@/utils/cn";
 import { FacultyIncompleteRequirementsModal } from "@/features/faculty-management/components/faculty-incomplete-requirements-modal";
 
 type PreviewTab =
@@ -80,6 +82,7 @@ export function DevPreviewPanel() {
   // First Login Change Password Preview State
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const newPasswordRequirements = validatePasswordRequirements(newPassword);
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [isSimulatingSave, setIsSimulatingSave] = useState(false);
@@ -161,10 +164,11 @@ export function DevPreviewPanel() {
     e.preventDefault();
     setDevToast(null);
 
-    if (newPassword.length < 8) {
+    const validation = validatePasswordRequirements(newPassword);
+    if (!validation.isValid) {
       setDevToast({
         type: "error",
-        message: "Password must be at least 8 characters long.",
+        message: `Password must include:\n${validation.missingRequirements.map((r) => `• ${r}`).join("\n")}`,
       });
       return;
     }
@@ -927,6 +931,38 @@ export function DevPreviewPanel() {
                             <LucideEyeOff className="w-4 h-4" />
                           )}
                         </button>
+                      </div>
+                    </div>
+
+                    {/* Organized Password Requirements Checklist */}
+                    <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 px-2.5 py-1.5 space-y-1 text-left">
+                      <p className="font-semibold text-slate-600 dark:text-slate-300 text-[10px] tracking-wider uppercase">
+                        Requirements:
+                      </p>
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10.5px]">
+                        {newPasswordRequirements.requirements.map((req) => (
+                          <div
+                            key={req.id}
+                            className={cn(
+                              "flex items-center gap-1 transition-colors duration-150 whitespace-nowrap",
+                              req.isValid
+                                ? "text-emerald-700 dark:text-emerald-400 font-medium"
+                                : "text-slate-500 dark:text-slate-400"
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "w-3 h-3 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 transition-colors",
+                                req.isValid
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-500/40"
+                                  : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500"
+                              )}
+                            >
+                              {req.isValid ? "✓" : "•"}
+                            </span>
+                            <span>{req.shortLabel || req.label}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
@@ -1773,6 +1809,38 @@ export function DevPreviewPanel() {
                           <LucideEyeOff className="w-4 h-4" />
                         )}
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Organized Password Requirements Checklist */}
+                  <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 px-2.5 py-1.5 space-y-1 text-left">
+                    <p className="font-semibold text-slate-600 dark:text-slate-300 text-[10px] tracking-wider uppercase">
+                      Requirements:
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10.5px]">
+                      {newPasswordRequirements.requirements.map((req) => (
+                        <div
+                          key={req.id}
+                          className={cn(
+                            "flex items-center gap-1 transition-colors duration-150 whitespace-nowrap",
+                            req.isValid
+                              ? "text-emerald-700 dark:text-emerald-400 font-medium"
+                              : "text-slate-500 dark:text-slate-400"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "w-3 h-3 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 transition-colors",
+                              req.isValid
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-500/40"
+                                : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500"
+                            )}
+                          >
+                            {req.isValid ? "✓" : "•"}
+                          </span>
+                          <span>{req.shortLabel || req.label}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
 

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { formatPasswordError } from "@/lib/validation/password";
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       return NextResponse.json(
-        { error: updateError.message || "Failed to update password." },
+        { error: formatPasswordError(updateError.message) || "Failed to update password." },
         { status: 400 },
       );
     }
