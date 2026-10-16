@@ -789,6 +789,8 @@ function FacultySubmissionPanelContent({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingClass, setIsDeletingClass] = useState(false);
   const [classActionLoadingId, setClassActionLoadingId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshingHistory, setIsRefreshingHistory] = useState(false);
 
   const activeFacultyClasses = useMemo(() => {
     return facultyClasses.filter((c) => !c.is_archived);
@@ -1041,8 +1043,8 @@ function FacultySubmissionPanelContent({
     }
   }, []);
   const handleWindowExpired = useCallback(() => {
-    void refetchSubmissionWindow();
-    void fetchStatuses();
+    void refetchSubmissionWindow({ silent: true });
+    void fetchStatuses(undefined, undefined, undefined, { silent: true });
   }, [refetchSubmissionWindow]);
   useEffect(() => {
     void fetchHistory();
@@ -1188,12 +1190,14 @@ function FacultySubmissionPanelContent({
       void fetchStatuses(
         submissionWindow.academicYear,
         submissionWindow.semester,
+        undefined,
+        { silent: true },
       );
     }
   }, [submissionWindow]);
   useEffect(() => {
     if (isHistoryModalOpen) {
-      void fetchHistory();
+      void fetchHistory({ silent: pastSubmissions.length > 0 });
     }
   }, [isHistoryModalOpen]);
   useEffect(() => {
@@ -1225,7 +1229,7 @@ function FacultySubmissionPanelContent({
   }, [historyAcademicYears, historySemesterOptions]);
   function openHistoryModal() {
     setIsHistoryModalOpen(true);
-    void fetchHistory();
+    void fetchHistory({ silent: pastSubmissions.length > 0 });
     try {
       const params = new URLSearchParams(searchParams?.toString() ?? "");
       params.set("view", "status");
@@ -1441,6 +1445,31 @@ function FacultySubmissionPanelContent({
     void fetchHistory({ silent: true });
     void refetchSubmissionWindow({ silent: true });
   });
+
+  const handleManualRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        fetchFacultyClasses({ silent: true }),
+        fetchStatuses(activeAY, activeSem, selectedClassId, { silent: true }),
+        fetchHistory({ silent: true }),
+        refetchSubmissionWindow({ silent: true }),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefreshHistory = async () => {
+    if (isRefreshingHistory) return;
+    setIsRefreshingHistory(true);
+    try {
+      await fetchHistory({ silent: true });
+    } finally {
+      setIsRefreshingHistory(false);
+    }
+  };
 
   const handleAddClassSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2887,9 +2916,16 @@ function FacultySubmissionPanelContent({
         }
         return [...prev, { code: form.requirementCode, status: "Pending" }];
       });
+      emitRealtimeSync({
+        source: "submission-uploaded",
+        table: "submissions",
+        classId: selectedClassId,
+        requirementCode: form.requirementCode,
+        timestamp: Date.now(),
+      });
       await Promise.all([
-        fetchStatuses(activeAY, activeSem, selectedClassId),
-        fetchHistory(),
+        fetchStatuses(activeAY, activeSem, selectedClassId, { silent: true }),
+        fetchHistory({ silent: true }),
       ]);
       router.refresh();
       setForm((prev) => ({
@@ -3444,19 +3480,15 @@ function FacultySubmissionPanelContent({
                     <div className="flex flex-wrap items-center justify-end gap-2.5 shrink-0 sm:ml-auto w-full sm:w-auto">
                       <button
                         type="button"
-                        onClick={() => {
-                          if (typeof window !== "undefined") {
-                            window.location.reload();
-                          }
-                        }}
-                        disabled={isLoadingStatuses}
+                        onClick={() => void handleManualRefresh()}
+                        disabled={isRefreshing}
                         title="Refresh dashboard"
                         className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                       >
                         <Refresh
-                          className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                          className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
                         />
-                        <span>{isLoadingStatuses ? "Refreshing..." : "Refresh"}</span>
+                        <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
                   </div>
@@ -4142,8 +4174,7 @@ function FacultySubmissionPanelContent({
                                   key={cls.id}
                                   onClick={() => {
                                     setSelectedClassId(cls.id);
-                                    setRequirementStatuses([]);
-                                    void fetchStatuses(activeAY, activeSem, cls.id);
+                                    void fetchStatuses(activeAY, activeSem, cls.id, { silent: true });
                                   }}
                                   className="group relative flex flex-col cursor-pointer text-left transition-all duration-200 hover:-translate-y-1"
                                 >
@@ -4342,8 +4373,7 @@ function FacultySubmissionPanelContent({
                           type="button"
                           onClick={() => {
                             setSelectedClassId(null);
-                            setRequirementStatuses([]);
-                            void fetchStatuses(activeAY, activeSem, null);
+                            void fetchStatuses(activeAY, activeSem, null, { silent: true });
                           }}
                           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
                           title="Return to Class List"
@@ -4411,8 +4441,7 @@ function FacultySubmissionPanelContent({
                           onChange={(e) => {
                             const newClassId = e.target.value;
                             setSelectedClassId(newClassId);
-                            setRequirementStatuses([]);
-                            void fetchStatuses(activeAY, activeSem, newClassId);
+                            void fetchStatuses(activeAY, activeSem, newClassId, { silent: true });
                           }}
                           className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
                         >
@@ -4503,19 +4532,15 @@ function FacultySubmissionPanelContent({
                       </p>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (typeof window !== "undefined") {
-                            window.location.reload();
-                          }
-                        }}
-                        disabled={isLoadingStatuses}
+                        onClick={() => void handleManualRefresh()}
+                        disabled={isRefreshing}
                         title="Refresh status"
                         className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
                       >
                         <Refresh
-                          className={`h-3.5 w-3.5 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                          className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
                         />
-                        <span>{isLoadingStatuses ? "Refreshing..." : "Refresh"}</span>
+                        <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
 
@@ -4545,19 +4570,15 @@ function FacultySubmissionPanelContent({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (typeof window !== "undefined") {
-                            window.location.reload();
-                          }
-                        }}
-                        disabled={isLoadingStatuses}
+                        onClick={() => void handleManualRefresh()}
+                        disabled={isRefreshing}
                         title="Refresh status"
                         className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
                       >
                         <Refresh
-                          className={`h-4 w-4 ${isLoadingStatuses ? "animate-spin" : ""}`}
+                          className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
                         />
-                        <span>{isLoadingStatuses ? "Refreshing..." : "Refresh"}</span>
+                        <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
                   </div>
@@ -5481,12 +5502,12 @@ function FacultySubmissionPanelContent({
                       </button>
                       <button
                         type="button"
-                        onClick={() => void fetchHistory()}
-                        disabled={isLoadingHistory || isBulkDownloading}
+                        onClick={() => void handleRefreshHistory()}
+                        disabled={isRefreshingHistory || isBulkDownloading}
                         className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold px-3.5 py-2 text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
                       >
-                        <AppIcon icon={Refresh} size="sm" color="inherit" className={isLoadingHistory ? "animate-spin" : ""} />
-                        <span>{isLoadingHistory ? "Refreshing..." : "Refresh"}</span>
+                        <AppIcon icon={Refresh} size="sm" color="inherit" className={isRefreshingHistory ? "animate-spin" : ""} />
+                        <span>{isRefreshingHistory ? "Refreshing..." : "Refresh"}</span>
                       </button>
                     </div>
                   </div>

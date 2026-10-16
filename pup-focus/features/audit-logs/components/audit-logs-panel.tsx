@@ -1,10 +1,11 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle, EditPencil, Eye, Filter, Hourglass, NavArrowLeft, NavArrowRight, Page, Refresh, Search, Settings, ShieldAlert, Trash, Upload, UserBadgeCheck, UserPlus, UserXmark, Xmark, XmarkCircle } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { AlertPopup } from "@/components/ui/alert-popup";
+import { useRealtimeSync } from "@/lib/realtime";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -250,6 +251,8 @@ export function AuditLogsPanel() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasLoadedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
@@ -272,12 +275,17 @@ export function AuditLogsPanel() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const fetchLogs = useCallback(async () => {
-    setIsLoading(true);
+  const fetchLogs = useCallback(async (options?: { silent?: boolean }) => {
+    const showLoading = !options?.silent && !hasLoadedRef.current;
+    if (showLoading) {
+      setIsLoading(true);
+    }
     setError(null);
-    setSelectedIds(new Set());
-    setSelectionMode(false);
-    setDeleteConfirmEntry(null);
+    if (!options?.silent) {
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+      setDeleteConfirmEntry(null);
+    }
 
     try {
       const params = new URLSearchParams({ page: String(page), limit: "20" });
@@ -297,10 +305,13 @@ export function AuditLogsPanel() {
       setLogs(data.logs);
       setTotal(data.total);
       setTotalPages(data.totalPages);
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch transaction logs");
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   }, [page, debouncedSearch, actionCategory]);
 
@@ -308,12 +319,18 @@ export function AuditLogsPanel() {
     void fetchLogs();
   }, [fetchLogs]);
 
-  function handleRefresh() {
-    if (typeof window !== "undefined") {
-      window.location.reload();
-      return;
+  useRealtimeSync(() => {
+    void fetchLogs({ silent: true });
+  });
+
+  async function handleRefresh() {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await fetchLogs({ silent: true });
+    } finally {
+      setIsRefreshing(false);
     }
-    void fetchLogs();
   }
 
   function handleCategoryChange(value: string) {
@@ -362,7 +379,7 @@ export function AuditLogsPanel() {
         throw new Error(d.error ?? "Failed to delete log entry");
       }
       setDeleteConfirmEntry(null);
-      await fetchLogs();
+      await fetchLogs({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete failed");
     } finally {
@@ -382,7 +399,8 @@ export function AuditLogsPanel() {
         throw new Error(d.error ?? "Failed to delete selected logs");
       }
       setSelectedIds(new Set());
-      await fetchLogs();
+      setSelectionMode(false);
+      await fetchLogs({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bulk delete failed");
     } finally {
@@ -430,12 +448,12 @@ export function AuditLogsPanel() {
 
             <button
               type="button"
-              onClick={handleRefresh}
-              disabled={isLoading}
+              onClick={() => void handleRefresh()}
+              disabled={isRefreshing}
               className="flex items-center gap-1.5 rounded-xl border border-slate-400 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 transition disabled:opacity-50 cursor-pointer"
             >
-              <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-              {isLoading ? "Loading…" : "Refresh"}
+              <Refresh className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? "Refreshing…" : "Refresh"}
             </button>
           </div>
         </div>

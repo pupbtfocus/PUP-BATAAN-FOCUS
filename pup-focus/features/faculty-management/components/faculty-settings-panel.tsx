@@ -472,10 +472,6 @@ export function FacultySettingsPanel({
   }
 
   async function refreshAccount() {
-    if (typeof window !== "undefined") {
-      window.location.reload();
-      return;
-    }
     try {
       setIsRefreshing(true);
       const response = await fetch("/api/faculty/account");
@@ -650,11 +646,7 @@ export function FacultySettingsPanel({
           <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 sm:ml-auto">
             <button
               type="button"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.location.reload();
-                }
-              }}
+              onClick={() => void refreshAccount()}
               disabled={isRefreshing}
               title="Refresh account details"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
