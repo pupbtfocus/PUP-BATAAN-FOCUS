@@ -11,6 +11,12 @@ import { createClient } from "@/lib/supabase/client";
 import { Camera, Check, CheckCircle, Circle, EditPencil, Eye, EyeClosed, Lock, Refresh, ShieldAlert, ShieldCheck, SystemRestart, User, WarningCircle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
+import {
+  recordActiveSessionLogin,
+  pauseSessionVerification,
+  resumeSessionVerification,
+} from "@/components/auth/single-session-enforcer";
+import { validatePasswordRequirements } from "@/lib/validation/password";
 
 type FacultyAccountResponse = {
   profileId: string;
@@ -356,11 +362,12 @@ export function FacultySettingsPanel({
       return;
     }
 
-    if (newPassword.length < 8) {
+    const validation = validatePasswordRequirements(newPassword);
+    if (!validation.isValid) {
       setFeedbackModal({
         isOpen: true,
-        title: "Password Too Short",
-        message: "New password must be at least 8 characters long.",
+        title: "Password Requirements Not Met",
+        message: `Password must include:\n${validation.missingRequirements.map((r) => `• ${r}`).join("\n")}`,
         type: "error",
       });
       return;
@@ -402,6 +409,8 @@ export function FacultySettingsPanel({
         headers["Authorization"] = `Bearer ${token}`;
       }
 
+      pauseSessionVerification(15000);
+
       const response = await fetch("/api/auth/change-password", {
         method: "POST",
         headers,
@@ -414,8 +423,23 @@ export function FacultySettingsPanel({
 
       const payload = await response.json();
       if (!response.ok) {
+        if (payload?.loginTime) {
+          const currentUserId =
+            payload.user?.id || payload.session?.user?.id || sessionData?.session?.user?.id;
+          recordActiveSessionLogin(payload.loginTime, currentUserId);
+        }
+        resumeSessionVerification();
         throw new Error(payload.error || "Failed to update password.");
       }
+
+      const newLoginTime =
+        payload.loginTime ||
+        payload.user?.last_sign_in_at ||
+        payload.session?.user?.last_sign_in_at ||
+        new Date().toISOString();
+      const currentUserId =
+        payload.user?.id || payload.session?.user?.id || sessionData?.session?.user?.id;
+      recordActiveSessionLogin(newLoginTime, currentUserId);
 
       if (payload.session) {
         await supabase.auth.setSession(payload.session).catch(() => null);
@@ -434,6 +458,7 @@ export function FacultySettingsPanel({
         type: "success",
       });
     } catch (err) {
+      resumeSessionVerification();
       setFeedbackModal({
         isOpen: true,
         title: "Password Update Failed",
@@ -555,15 +580,48 @@ export function FacultySettingsPanel({
     form.middleName !== account.middleName ||
     form.lastName !== account.lastName;
 
+  const passwordValidation = validatePasswordRequirements(newPassword);
   const isCurrentPasswordFilled = oldPassword.trim() !== "";
-  const isLengthValid = newPassword.length >= 8;
   const isMatching =
     newPassword.length > 0 &&
     confirmPassword.length > 0 &&
     newPassword === confirmPassword;
 
   const isPasswordFormValid =
-    isCurrentPasswordFilled && isLengthValid && isMatching;
+    isCurrentPasswordFilled && passwordValidation.isValid && isMatching;
+
+  const passwordRequirementsList = [
+    {
+      id: "length",
+      label: "At least 8 characters",
+      isValid: passwordValidation.hasMinLength,
+    },
+    {
+      id: "uppercase",
+      label: "One uppercase letter (A–Z)",
+      isValid: passwordValidation.hasUppercase,
+    },
+    {
+      id: "lowercase",
+      label: "One lowercase letter (a–z)",
+      isValid: passwordValidation.hasLowercase,
+    },
+    {
+      id: "number",
+      label: "One number (0–9)",
+      isValid: passwordValidation.hasNumber,
+    },
+    {
+      id: "special",
+      label: "One special character (!@#$%...)",
+      isValid: passwordValidation.hasSpecialChar,
+    },
+    {
+      id: "match",
+      label: "New passwords match",
+      isValid: isMatching,
+    },
+  ];
 
   return (
     <div className="space-y-5">
@@ -1060,56 +1118,88 @@ export function FacultySettingsPanel({
             </div>
 
             {/* Live Password Requirement Indicators */}
-            <div className="bg-slate-50 border border-slate-300 dark:bg-slate-950/60 dark:border-slate-800 p-4 rounded-xl space-y-2.5">
-              <p className="text-slate-900 dark:text-slate-100 font-bold text-xs sm:text-sm">
-                Password Requirements
-              </p>
-              <ul className="space-y-1.5 text-xs sm:text-sm">
-                <li
-                  className={`flex items-center gap-2 transition-colors ${
-                    isCurrentPasswordFilled
-                      ? "text-emerald-700 dark:text-emerald-400 font-medium"
-                      : "text-slate-600 dark:text-slate-400"
+            {/* Live Password Requirement Indicators */}
+            <div
+              className={`p-3.5 sm:p-4 rounded-2xl border transition-all duration-200 space-y-2.5 ${
+                isPasswordFormValid
+                  ? "bg-emerald-50/70 dark:bg-emerald-950/25 border-emerald-300 dark:border-emerald-800/80 shadow-xs"
+                  : "bg-slate-50/80 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800/80"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`h-5 w-5 rounded-md flex items-center justify-center transition-colors ${
+                      isPasswordFormValid
+                        ? "bg-emerald-500 text-white"
+                        : "bg-slate-200 dark:bg-slate-800 text-slate-500"
+                    }`}
+                  >
+                    <AppIcon
+                      icon={isPasswordFormValid ? Check : Lock}
+                      size="xs"
+                      color="inherit"
+                      strokeWidth={2.5}
+                    />
+                  </div>
+                  <span className="text-slate-900 dark:text-slate-100 font-bold text-xs sm:text-sm">
+                    Password Requirements
+                  </span>
+                </div>
+                <span
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full transition-colors ${
+                    isPasswordFormValid
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60"
+                      : "bg-slate-200/70 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                   }`}
                 >
-                  {isCurrentPasswordFilled ? (
-                    <AppIcon icon={Check} size="sm" color="success" />
-                  ) : (
-                    <AppIcon icon={Circle} size="md" color="muted" className="ml-0.5 mr-1" />
-                  )}
-                  <span>Current password required</span>
-                </li>
+                  {passwordRequirementsList.filter((r) => r.isValid).length}/{passwordRequirementsList.length} Met
+                </span>
+              </div>
 
-                <li
-                  className={`flex items-center gap-2 transition-colors ${
-                    isLengthValid
-                      ? "text-emerald-700 dark:text-emerald-400 font-medium"
-                      : "text-slate-600 dark:text-slate-400"
+              {/* Progress Bar */}
+              <div className="h-1 w-full rounded-full bg-slate-200/80 dark:bg-slate-800 overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-300 rounded-full ${
+                    isPasswordFormValid
+                      ? "bg-emerald-500"
+                      : passwordRequirementsList.some((r) => r.isValid)
+                      ? "bg-amber-500"
+                      : "bg-transparent"
                   }`}
-                >
-                  {isLengthValid ? (
-                    <AppIcon icon={Check} size="sm" color="success" />
-                  ) : (
-                    <AppIcon icon={Circle} size="md" color="muted" className="ml-0.5 mr-1" />
-                  )}
-                  <span>At least 8 characters</span>
-                </li>
+                  style={{
+                    width: `${
+                      (passwordRequirementsList.filter((r) => r.isValid).length /
+                        passwordRequirementsList.length) *
+                      100
+                    }%`,
+                  }}
+                />
+              </div>
 
-                <li
-                  className={`flex items-center gap-2 transition-colors ${
-                    isMatching
-                      ? "text-emerald-700 dark:text-emerald-400 font-medium"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  {isMatching ? (
-                    <AppIcon icon={Check} size="sm" color="success" />
-                  ) : (
-                    <AppIcon icon={Circle} size="md" color="muted" className="ml-0.5 mr-1" />
-                  )}
-                  <span>Passwords match</span>
-                </li>
-              </ul>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-0.5">
+                {passwordRequirementsList.map((req) => (
+                  <div
+                    key={req.id}
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all duration-150 ${
+                      req.isValid
+                        ? "bg-emerald-100/60 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50"
+                        : "bg-white/60 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/40"
+                    }`}
+                  >
+                    <div
+                      className={`h-4 w-4 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                        req.isValid
+                          ? "bg-emerald-600 text-white shadow-xs"
+                          : "border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-transparent"
+                      }`}
+                    >
+                      <AppIcon icon={Check} size="xs" color="inherit" strokeWidth={3} />
+                    </div>
+                    <span className="text-xs font-semibold">{req.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="pt-2 flex justify-end">
@@ -1158,13 +1248,13 @@ export function FacultySettingsPanel({
             ) : (
               <div className="relative mb-5 flex items-center justify-center">
                 {/* Ambient Backdrop Glow */}
-                <div className="absolute inset-0 rounded-full bg-slate-500/20 blur-xl dark:bg-slate-500/30" />
+                <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl dark:bg-emerald-500/30" />
 
                 {/* Outer Layer Ring */}
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-500/10 p-3 ring-8 ring-slate-500/5 dark:bg-slate-500/20 dark:ring-slate-500/10">
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 p-3 ring-8 ring-emerald-500/5 dark:bg-emerald-500/20 dark:ring-emerald-500/10">
                   {/* Inner Shield Icon */}
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg">
-                    <AppIcon icon={ShieldCheck} size="lg" color="inherit" strokeWidth={2.2} />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#0b5336] dark:bg-emerald-600 text-white shadow-lg shadow-emerald-950/30">
+                    <AppIcon icon={ShieldCheck} size="lg" color="inherit" strokeWidth={2.4} />
                   </div>
                 </div>
               </div>
@@ -1180,7 +1270,11 @@ export function FacultySettingsPanel({
             <button
               type="button"
               onClick={() => setFeedbackModal(null)}
-              className="w-full bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] text-white font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
+              className={`w-full font-semibold py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer ${
+                feedbackModal.type === "success"
+                  ? "bg-[#0b5336] hover:bg-[#08412a] border border-[#08412a] text-white shadow-emerald-950/25"
+                  : "bg-[#780000] hover:bg-[#5e0000] border border-[#5e0000] text-white"
+              }`}
             >
               {feedbackModal.type === "success" ? "Done" : "Dismiss"}
             </button>

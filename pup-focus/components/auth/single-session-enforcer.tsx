@@ -7,6 +7,38 @@ import { WarningTriangle, LogOut } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { resetDashboardNavigationState, AUTH_ROUTES } from "@/config/routes";
 
+let verificationPausedUntil = 0;
+
+export function pauseSessionVerification(durationMs = 15000) {
+  verificationPausedUntil = Date.now() + durationMs;
+}
+
+export function resumeSessionVerification() {
+  verificationPausedUntil = 0;
+}
+
+export function recordActiveSessionLogin(loginTime?: string | null, userId?: string | null) {
+  if (typeof window === "undefined") return;
+  const timeToSet = loginTime || new Date().toISOString();
+  resumeSessionVerification();
+  try {
+    sessionStorage.setItem("pup_focus_login_time", timeToSet);
+    localStorage.setItem("pup_focus_login_time", timeToSet);
+    if (userId) {
+      sessionStorage.setItem("pup_focus_login_user", userId);
+      localStorage.setItem("pup_focus_login_user", userId);
+    }
+    sessionStorage.removeItem("pup_focus_logged_out");
+    window.dispatchEvent(
+      new CustomEvent("pup_focus_session_sync", {
+        detail: { loginTime: timeToSet, userId },
+      })
+    );
+  } catch (err) {
+    console.warn("[SingleSessionEnforcer] Could not record active session login:", err);
+  }
+}
+
 export function SingleSessionEnforcer() {
   const pathname = usePathname();
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
@@ -75,8 +107,72 @@ export function SingleSessionEnforcer() {
     }
   }, [isLoggingOut]);
 
+  // Sync listener for local tab changes, storage events, and auth state changes
+  useEffect(() => {
+    const handleSessionSync = (event: Event) => {
+      const customEvent = event as CustomEvent<{ loginTime?: string; userId?: string }>;
+      const newTime = customEvent.detail?.loginTime;
+      if (newTime) {
+        myLoginTimeRef.current = newTime;
+        conflictDetectedRef.current = false;
+        setConflictModalOpen(false);
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "pup_focus_login_time" && e.newValue) {
+        if (
+          !myLoginTimeRef.current ||
+          new Date(e.newValue).getTime() >= new Date(myLoginTimeRef.current).getTime()
+        ) {
+          myLoginTimeRef.current = e.newValue;
+          conflictDetectedRef.current = false;
+          setConflictModalOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener("pup_focus_session_sync", handleSessionSync);
+    window.addEventListener("storage", handleStorageChange);
+
+    const supabase = createClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      if (session?.user?.last_sign_in_at) {
+        const serverSignIn = session.user.last_sign_in_at;
+        myLoginTimeRef.current = serverSignIn;
+        conflictDetectedRef.current = false;
+        setConflictModalOpen(false);
+        try {
+          sessionStorage.setItem("pup_focus_login_time", serverSignIn);
+          sessionStorage.setItem("pup_focus_login_user", session.user.id);
+          const currentLocal = localStorage.getItem("pup_focus_login_time");
+          if (
+            !currentLocal ||
+            new Date(serverSignIn).getTime() >= new Date(currentLocal).getTime()
+          ) {
+            localStorage.setItem("pup_focus_login_time", serverSignIn);
+            localStorage.setItem("pup_focus_login_user", session.user.id);
+          }
+        } catch {}
+      }
+    });
+
+    return () => {
+      window.removeEventListener("pup_focus_session_sync", handleSessionSync);
+      window.removeEventListener("storage", handleStorageChange);
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const verifySession = useCallback(async (force = false) => {
-    if (isPublicAuthPage || checkingRef.current || conflictDetectedRef.current) {
+    if (
+      isPublicAuthPage ||
+      checkingRef.current ||
+      conflictDetectedRef.current ||
+      Date.now() < verificationPausedUntil
+    ) {
       return;
     }
 
@@ -118,10 +214,18 @@ export function SingleSessionEnforcer() {
         return;
       }
 
-      let localLoginTime: string | null =
-        myLoginTimeRef.current || sessionStorage.getItem("pup_focus_login_time");
+      const sessionLoginTime = sessionStorage.getItem("pup_focus_login_time");
+      let localLoginTime: string | null = myLoginTimeRef.current;
 
-      // Same account re-signed in from another tab of THIS browser: adopt the newer shared timestamp
+      if (
+        !localLoginTime ||
+        (sessionLoginTime &&
+          new Date(sessionLoginTime).getTime() > new Date(localLoginTime).getTime())
+      ) {
+        localLoginTime = sessionLoginTime;
+      }
+
+      // Same account re-signed in or updated from another tab of THIS browser: adopt the newer shared timestamp
       if (
         sharedUserId === user.id &&
         sharedLoginTime &&

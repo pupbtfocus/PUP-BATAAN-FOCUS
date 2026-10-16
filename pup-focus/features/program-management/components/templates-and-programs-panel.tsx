@@ -341,7 +341,7 @@ export function TemplatesAndProgramsPanel({
         >
           <div className="flex items-center gap-2.5">
             {feedback.type === "success" ? (
-              <AppIcon icon={CheckCircle} size="sm" color="inherit" />
+              <AppIcon icon={CheckCircle} size="sm" color="success" />
             ) : (
               <AppIcon icon={WarningCircle} size="sm" color="inherit" />
             )}

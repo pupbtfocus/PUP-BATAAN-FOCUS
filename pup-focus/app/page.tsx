@@ -17,6 +17,7 @@ import { createClient, clearBrowserSupabaseSession } from "@/lib/supabase/client
 import { ROUTE_BY_ROLE, resetDashboardNavigationState } from "@/config/routes";
 import { ROLE, ROLE_LABEL, type AppRole, isQaFaculty } from "@/config/roles";
 import { isValidEmailAddress } from "@/lib/validation/email";
+import { recordActiveSessionLogin } from "@/components/auth/single-session-enforcer";
 
 const SUPER_ADMIN_EMAIL = APP_CONFIG.superAdminEmail;
 const PUBLIC_ENV = getPublicEnvSafe();
@@ -563,15 +564,7 @@ export default function Home() {
           new Date().toISOString();
       }
 
-      try {
-        localStorage.setItem("pup_focus_login_time", loginTime);
-        sessionStorage.setItem("pup_focus_login_time", loginTime);
-        localStorage.setItem("pup_focus_login_user", user.id);
-        sessionStorage.setItem("pup_focus_login_user", user.id);
-        sessionStorage.removeItem("pup_focus_logged_out");
-      } catch (storageErr) {
-        console.warn("[Auth] Could not save login time:", storageErr);
-      }
+      recordActiveSessionLogin(loginTime, user.id);
 
       await ensureMinLoadingTime();
       setIsSubmitting(false);
