@@ -8,6 +8,7 @@ import {
   ChatBubble,
   Check,
   CheckCircle,
+  ClockRotateRight,
   Download,
   EditPencil,
   Eye,
@@ -385,6 +386,7 @@ export interface FacultyVerificationDrawerProps {
   faculty: FacultyAccount;
   academicYear: string;
   semester: SemesterOption;
+  initialTab?: "current" | "history";
   initialRequirementCode?: string | null;
   requirementTemplates?: Array<{
     code: string;
@@ -411,6 +413,7 @@ export function FacultyVerificationDrawer({
   faculty,
   academicYear,
   semester,
+  initialTab = "current",
   initialRequirementCode,
   requirementTemplates: requirementTemplatesProp,
   onClose,
@@ -419,7 +422,7 @@ export function FacultyVerificationDrawer({
 }: FacultyVerificationDrawerProps) {
   const activeAy = academicYear || "2026-2027";
   const activeSem = semester || "1st Semester";
-  const [activeTab, setActiveTab] = useState<"current" | "history">("current");
+  const [activeTab, setActiveTab] = useState<"current" | "history">(initialTab);
   const [submissions, setSubmissions] = useState<FacultyRequirementSubmission[]>([]);
   const [facultyClasses, setFacultyClasses] = useState<
     Array<{
@@ -481,8 +484,12 @@ export function FacultyVerificationDrawer({
   const [historySubmissions, setHistorySubmissions] = useState<FacultyRequirementSubmission[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyAcademicYears, setHistoryAcademicYears] = useState<string[]>([]);
-  const [selectedHistoryAy, setSelectedHistoryAy] = useState<string>("");
-  const [selectedHistorySem, setSelectedHistorySem] = useState<SemesterOption>("1st Semester");
+  const [selectedHistoryAy, setSelectedHistoryAy] = useState<string>(
+    initialTab === "history" ? activeAy : ""
+  );
+  const [selectedHistorySem, setSelectedHistorySem] = useState<SemesterOption>(
+    initialTab === "history" ? activeSem : "1st Semester"
+  );
   const [isDownloadingHistoryZip, setIsDownloadingHistoryZip] = useState(false);
 
   // Revision Request Modal States
@@ -936,7 +943,7 @@ export function FacultyVerificationDrawer({
           const verData = await verRes.json();
           const years: string[] = verData.availableAcademicYears ?? [];
           if (years.length > 0) {
-            setHistoryAcademicYears(years);
+            setHistoryAcademicYears(Array.from(new Set([...years, activeAy])).sort().reverse());
             setSelectedHistoryAy((prev) => {
               if (prev) return prev;
               const pastYear =
@@ -3490,8 +3497,14 @@ export function RequirementsPanel({
     "all" | "completed" | "optional_review" | "pending_review" | "needs_revision" | "not_submitted"
   >("all");
 
+  const [activePanelTab, setActivePanelTab] = useState<"current" | "history">("current");
+  const [activeTermAy, setActiveTermAy] = useState("2026-2027");
+  const [activeTermSem, setActiveTermSem] = useState<SemesterOption>("2nd Semester");
+  const [historyAy, setHistoryAy] = useState("2025-2026");
+  const [historySem, setHistorySem] = useState<SemesterOption>("1st Semester");
+  const [availableAcademicYears, setAvailableAcademicYears] = useState<string[]>([]);
   const [academicYear, setAcademicYear] = useState("2026-2027");
-  const [semester, setSemester] = useState<SemesterOption>("1st Semester");
+  const [semester, setSemester] = useState<SemesterOption>("2nd Semester");
 
   const [facultyStatuses, setFacultyStatuses] = useState<
     Record<string, Record<string, RequirementStatus>>
@@ -3580,6 +3593,14 @@ export function RequirementsPanel({
     return Array.from(set).sort();
   }, [facultyAccounts]);
 
+  const allKnownYears = useMemo(() => {
+    const list = new Set<string>();
+    if (activeTermAy) list.add(activeTermAy);
+    availableAcademicYears.forEach((y) => list.add(y));
+    ["2026-2027", "2025-2026", "2024-2025", "2023-2024"].forEach((y) => list.add(y));
+    return Array.from(list).sort().reverse();
+  }, [activeTermAy, availableAcademicYears]);
+
   // Load active term & statuses on mount
   useEffect(() => {
     let isMounted = true;
@@ -3608,10 +3629,21 @@ export function RequirementsPanel({
           const activeAy =
             data.currentAcademicYear || data.selectedAcademicYear || "2026-2027";
           const activeSem: SemesterOption =
-            data.currentSemester || data.selectedSemester || "1st Semester";
+            data.currentSemester || data.selectedSemester || "2nd Semester";
 
+          setActiveTermAy(activeAy);
+          setActiveTermSem(activeSem);
           setAcademicYear(activeAy);
           setSemester(activeSem);
+
+          if (Array.isArray(data.availableAcademicYears) && data.availableAcademicYears.length > 0) {
+            setAvailableAcademicYears(data.availableAcademicYears);
+            const pastYear =
+              data.availableAcademicYears.find((y: string) => y !== activeAy) ||
+              data.availableAcademicYears[0] ||
+              "2025-2026";
+            setHistoryAy(pastYear);
+          }
 
           // Batch load status for all faculty
           await fetchAllStatuses(activeAy, activeSem);
@@ -3768,9 +3800,11 @@ export function RequirementsPanel({
         | "Not Submitted" = "Not Submitted";
       let statusBadgeClass =
         "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 font-semibold";
-      let actionButtonText = "Review Requirements";
+      let actionButtonText = activePanelTab === "history" ? "View Validation History" : "Review Requirements";
       let actionButtonClass =
-        "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+        activePanelTab === "history"
+          ? "bg-[#0b5336] hover:bg-[#08412a] text-white font-semibold"
+          : "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
 
       if (isAllMandatoryValidated && hasPendingUpload) {
         // All mandatory documents validated, but uploaded optional documents are pending admin review
@@ -3778,51 +3812,63 @@ export function RequirementsPanel({
         overallStatus = "Optional Review Pending";
         statusBadgeClass =
           "bg-indigo-600 text-white border border-indigo-700 shadow-2xs font-semibold";
-        actionButtonText = "Review Optional";
-        actionButtonClass =
-          "bg-indigo-600 hover:bg-indigo-500 text-white font-semibold";
+        if (activePanelTab !== "history") {
+          actionButtonText = "Review Optional";
+          actionButtonClass =
+            "bg-indigo-600 hover:bg-indigo-500 text-white font-semibold";
+        }
       } else if (hasPendingUpload) {
         // Any submission (mandatory or optional) pending admin review
         category = "pending_review";
         overallStatus = "Pending Review";
         statusBadgeClass =
           "bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs font-semibold";
-        actionButtonText = "Review Requirements";
-        actionButtonClass =
-          "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+        if (activePanelTab !== "history") {
+          actionButtonText = "Review Requirements";
+          actionButtonClass =
+            "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+        }
       } else if (hasNeedsRevision) {
         category = "needs_revision";
         overallStatus = "Needs Revision";
         statusBadgeClass =
           "bg-[#780000] text-white border border-[#5e0000] shadow-2xs font-semibold";
-        actionButtonText = "Review Requirements";
-        actionButtonClass =
-          "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+        if (activePanelTab !== "history") {
+          actionButtonText = "Review Requirements";
+          actionButtonClass =
+            "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+        }
       } else if (isAllMandatoryValidated) {
         // All required documents are validated and no submissions are pending review or rejected
         category = "completed";
         overallStatus = "Completed / Validated";
         statusBadgeClass =
           "bg-[#0b5336] text-white border border-[#08412a] shadow-2xs font-semibold";
-        actionButtonText = "View Requirements";
-        actionButtonClass =
-          "bg-[#0b5336] hover:bg-[#08412a] text-white font-semibold";
+        if (activePanelTab !== "history") {
+          actionButtonText = "View Requirements";
+          actionButtonClass =
+            "bg-[#0b5336] hover:bg-[#08412a] text-white font-semibold";
+        }
       } else if (totalValidatedCount > 0) {
         category = "pending_review";
         overallStatus = "Pending Review";
         statusBadgeClass =
           "bg-amber-500 text-slate-950 border border-amber-600 shadow-2xs font-semibold";
-        actionButtonText = "Review Requirements";
-        actionButtonClass =
-          "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+        if (activePanelTab !== "history") {
+          actionButtonText = "Review Requirements";
+          actionButtonClass =
+            "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+        }
       } else {
         category = "not_submitted";
         overallStatus = "Not Submitted";
         statusBadgeClass =
           "bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 font-semibold";
-        actionButtonText = "Review Requirements";
-        actionButtonClass =
-          "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+        if (activePanelTab !== "history") {
+          actionButtonText = "Review Requirements";
+          actionButtonClass =
+            "bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold";
+        }
       }
 
       map.set(faculty.id, {
@@ -3914,6 +3960,7 @@ export function RequirementsPanel({
           faculty={reviewingFaculty}
           academicYear={academicYear}
           semester={semester}
+          initialTab={activePanelTab}
           initialRequirementCode={initialRequirementCode}
           requirementTemplates={requirementTemplates}
           onBack={() => {
@@ -3934,6 +3981,91 @@ export function RequirementsPanel({
         />
       ) : (
         <>
+          {/* Top View Mode: Current Submissions vs. Validation History */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePanelTab("current");
+                  setAcademicYear(activeTermAy);
+                  setSemester(activeTermSem);
+                  void fetchAllStatuses(activeTermAy, activeTermSem);
+                }}
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition cursor-pointer ${
+                  activePanelTab === "current"
+                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-bold"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                }`}
+              >
+                <AppIcon icon={Page} size="xs" color="inherit" />
+                <span>Current Submissions</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePanelTab("history");
+                  setAcademicYear(historyAy);
+                  setSemester(historySem);
+                  void fetchAllStatuses(historyAy, historySem);
+                }}
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition cursor-pointer ${
+                  activePanelTab === "history"
+                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs font-bold"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                }`}
+              >
+                <AppIcon icon={Archive} size="xs" color="inherit" />
+                <span>Validation History</span>
+              </button>
+            </div>
+
+            {/* Academic Term Selector / Status Badge */}
+            {activePanelTab === "current" ? (
+              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-2xs">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Active Term: A.Y. {activeTermAy} &bull; {activeTermSem}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  Select Past Term:
+                </span>
+                <select
+                  value={historyAy}
+                  onChange={(e) => {
+                    const newAy = e.target.value;
+                    setHistoryAy(newAy);
+                    setAcademicYear(newAy);
+                    void fetchAllStatuses(newAy, historySem);
+                  }}
+                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+                >
+                  {allKnownYears.map((y) => (
+                    <option key={y} value={y}>
+                      A.Y. {y}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={historySem}
+                  onChange={(e) => {
+                    const newSem = e.target.value as SemesterOption;
+                    setHistorySem(newSem);
+                    setSemester(newSem);
+                    void fetchAllStatuses(historyAy, newSem);
+                  }}
+                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+                >
+                  <option value="1st Semester">1st Semester</option>
+                  <option value="2nd Semester">2nd Semester</option>
+                  <option value="Summer Term">Summer Term</option>
+                </select>
+              </div>
+            )}
+          </div>
+
           {/* 1. Top Control Bar */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-4 shadow-xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
@@ -4072,9 +4204,16 @@ export function RequirementsPanel({
           </div>
         </div>
 
-        {/* Active Term Indicator */}
+        {/* Term Indicator */}
         <div className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm font-medium tracking-wide shrink-0">
-          A.Y. {academicYear || "2026-2027"} &bull; {semester}
+          {activePanelTab === "history" ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-900 dark:text-amber-200 border border-amber-500/30 font-bold text-xs shadow-2xs">
+              <AppIcon icon={ClockRotateRight} size="xs" color="inherit" />
+              <span>Viewing Validation History: A.Y. {academicYear} &bull; {semester}</span>
+            </span>
+          ) : (
+            <span>A.Y. {academicYear || "2026-2027"} &bull; {semester}</span>
+          )}
         </div>
       </div>
 
