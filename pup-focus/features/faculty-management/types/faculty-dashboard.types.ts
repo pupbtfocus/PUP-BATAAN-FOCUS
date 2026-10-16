@@ -6,7 +6,11 @@ export type RequirementStatus =
   | "validated"
   | "rejected"
   | "needs_revision";
-export type SemesterOption = "1st Semester" | "2nd Semester";
+export type SemesterOption =
+  | "1st Semester"
+  | "2nd Semester"
+  | "Summer Semester"
+  | "Summer Term";
 
 export type AdminSection =
   | "dashboard"

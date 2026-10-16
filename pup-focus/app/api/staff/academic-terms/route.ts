@@ -74,7 +74,7 @@ export async function GET() {
     }
 
     const supabase = getServiceRoleClient();
-    const { data: termRows, error: termError } = await supabase
+    let { data: termRows, error: termError } = await supabase
       .from("academic_terms")
       .select("academic_year, semester, status")
       .order("academic_year", { ascending: false })
@@ -88,6 +88,53 @@ export async function GET() {
         },
         { status: 500 },
       );
+    }
+
+    // Ensure all existing academic years have Summer Semester
+    if (Array.isArray(termRows) && termRows.length > 0) {
+      const currentTerms = termRows;
+      const distinctYears = Array.from(
+        new Set(currentTerms.map((r) => r.academic_year)),
+      );
+      const missingSummerYears = distinctYears.filter((year) => {
+        const termsForYear = currentTerms.filter((r) => r.academic_year === year);
+        const hasSummer = termsForYear.some((r) =>
+          (r.semester || "").toLowerCase().includes("summer"),
+        );
+        return !hasSummer;
+      });
+
+      if (missingSummerYears.length > 0) {
+        const rowsToInsert = missingSummerYears.map((year) => {
+          const termsForYear = currentTerms.filter((r) => r.academic_year === year);
+          const allArchived = termsForYear.every(
+            (r) =>
+              r.status === "Archived" || (r.status as string) === "Completed",
+          );
+          return {
+            academic_year: year,
+            semester: "Summer Semester",
+            status: (allArchived ? "Archived" : "Upcoming") as AcademicTermStatus,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        });
+
+        const { error: insertMissingError } = await supabase
+          .from("academic_terms")
+          .insert(rowsToInsert);
+
+        if (!insertMissingError) {
+          const { data: refreshedRows } = await supabase
+            .from("academic_terms")
+            .select("academic_year, semester, status")
+            .order("academic_year", { ascending: false })
+            .order("semester", { ascending: true });
+          if (refreshedRows) {
+            termRows = refreshedRows;
+          }
+        }
+      }
     }
 
     const latestAcademicYear =
@@ -205,7 +252,7 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const sessionClient = await createServerSupabaseClient();
     const {
@@ -221,6 +268,52 @@ export async function POST() {
     }
 
     const supabase = getServiceRoleClient();
+
+    let body: any = null;
+    try {
+      body = await request.json();
+    } catch {
+      // No JSON body
+    }
+
+    if (body?.action === "add_summer" && body?.academicYear) {
+      const targetAy = String(body.academicYear).trim();
+      const { data: existingSummer } = await supabase
+        .from("academic_terms")
+        .select("semester")
+        .eq("academic_year", targetAy)
+        .ilike("semester", "%summer%")
+        .maybeSingle();
+
+      if (existingSummer) {
+        return NextResponse.json(
+          { error: "Summer Semester already exists for this academic year." },
+          { status: 409 },
+        );
+      }
+
+      const { error: insertErr } = await supabase
+        .from("academic_terms")
+        .insert({
+          academic_year: targetAy,
+          semester: "Summer Semester",
+          status: "Upcoming",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (insertErr) {
+        return NextResponse.json(
+          {
+            error: "Failed to add Summer Semester",
+            details: insertErr.message,
+          },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json({ success: true, added: true });
+    }
     const { data: existingTerms, error: existingError } = await supabase
       .from("academic_terms")
       .select("academic_year, status")
@@ -301,6 +394,13 @@ export async function POST() {
         academic_year: nextAcademicYear,
         semester: "2nd Semester",
         status: secondStatus,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        academic_year: nextAcademicYear,
+        semester: "Summer Semester",
+        status: "Upcoming" as AcademicTermStatus,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
