@@ -206,19 +206,20 @@ export async function GET(request: NextRequest) {
       (f) => f.isActive,
     ).length;
 
-    // 3. Fetch submissions with document versions and review decisions
+    // 3. Fetch submissions with review decisions
     const { data: rawSubmissions, error: subError } = await supabase
       .from("submissions")
       .select(`
         id,
         faculty_profile_id,
+        faculty_assignment_id,
         requirement_code,
         status,
         submitted_at,
         created_at,
         remarks,
         admin_remarks,
-        document_versions ( id, storage_path, version_number, created_at ),
+        storage_path,
         review_decisions ( id, decision, remarks, created_at )
       `)
       .order("submitted_at", { ascending: false });
@@ -291,9 +292,8 @@ export async function GET(request: NextRequest) {
     for (const sub of submissions) {
       const sStatus = sub.status;
       const isRev =
-        (sub.document_versions && sub.document_versions.length > 1) ||
-        (sub.review_decisions &&
-          sub.review_decisions.some((d) => d.decision === "rejected"));
+        Boolean(sub.review_decisions &&
+          sub.review_decisions.some((d: any) => d.decision === "rejected"));
 
       if (isValidatedStatus(sStatus)) {
         verifiedCount++;
@@ -318,7 +318,7 @@ export async function GET(request: NextRequest) {
           status: "Pending Review",
           isRevision: Boolean(isRev),
           facultyRemarks: sub.remarks || null,
-          fileCount: sub.document_versions?.length || 1,
+          fileCount: sub.storage_path ? 1 : 1,
         });
       } else if (isRejectedStatus(sStatus)) {
         rejectedCount++;
