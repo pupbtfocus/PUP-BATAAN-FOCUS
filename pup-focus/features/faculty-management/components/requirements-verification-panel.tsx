@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Image from "next/image";
 import JSZip from "jszip";
 import {
@@ -11,6 +11,7 @@ import {
   Download,
   EditPencil,
   Eye,
+  Folder,
   Group,
   Hourglass,
   InfoCircle,
@@ -47,7 +48,6 @@ import {
   DocumentPreviewModal,
   type DocumentPreviewSubmission,
 } from "@/features/submissions/components/document-preview-modal";
-import { SystemLoadingScreen } from "@/components/shared/system-loading-screen";
 
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
 
@@ -1578,64 +1578,101 @@ export function FacultyVerificationDrawer({
     faculty.program?.name || faculty.program?.code || "Department";
 
   return (
-    <>
-      <div className="w-full flex flex-col rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150">
+    <div className="space-y-4">
+      {/* Solid Amber Card Header matching Documents to be Submitted - Swapped to the top */}
+      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors">
+        <div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
+              Assigned Classes &amp; Subject Loads
+            </h1>
+          </div>
+          <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
+            Select a class load below to review and verify submitted requirements for A.Y. {academicYear} &bull; {semester}.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
+          <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
+            A.Y. {academicYear} • {semester} &bull; {classGroups.length} Registered Class Load{classGroups.length === 1 ? "" : "s"}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={isRefreshing || isLoading}
+              onClick={handleRefresh}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
+              title="Refresh current submissions"
+            >
+              <SystemRestart
+                className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isDownloadingZip}
+              onClick={handleDownloadZip}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-2 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
+            >
+              <AppIcon icon={Download} size="xs" color="inherit" className="text-slate-950" />
+              <span>{isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full flex flex-col rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs transition-all animate-in fade-in duration-150 overflow-hidden">
         <AlertPopup
           type={actionFeedback?.type}
           message={actionFeedback?.message}
           onClose={() => setActionFeedback(null)}
         />
-        {/* Inline Section Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-4 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl">
-          <div className="flex items-center gap-3.5 flex-wrap">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold transition cursor-pointer shadow-xs active:scale-[0.98]"
-              title="Return to Faculty List"
-            >
-              <AppIcon icon={NavArrowLeft} size="sm" color="inherit" />
-              <span>Back to Faculty List</span>
-            </button>
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
-                {faculty.profileImageUrl ? (
-                  <img
-                    src={faculty.profileImageUrl}
-                    alt={faculty.fullName}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span>{buildFacultyInitials(faculty.fullName)}</span>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                    {faculty.fullName}
-                  </h3>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                    {departmentLabel}
-                  </span>
+        {/* Inline Section Header - Only visible when in Class Selection Step */}
+        {selectedClassId === null ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 px-6 py-4 bg-slate-50/50 dark:bg-slate-950/30 rounded-t-2xl">
+            <div className="flex items-center gap-3.5 flex-wrap">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                title="Return to Faculty List"
+              >
+                <AppIcon icon={NavArrowLeft} size="sm" color="white" />
+                <span>Back to Faculty List</span>
+              </button>
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
+                  {faculty.profileImageUrl ? (
+                    <img
+                      src={faculty.profileImageUrl}
+                      alt={faculty.fullName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span>{buildFacultyInitials(faculty.fullName)}</span>
+                  )}
                 </div>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  Active Term: A.Y. {academicYear} &bull; {semester}
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      {faculty.fullName}
+                    </h3>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                      {departmentLabel}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    Active Term: A.Y. {academicYear} &bull; {semester}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleClose}
-            className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer shadow-xs"
-            aria-label="Back to faculty list"
-            title="Back to Faculty List"
-          >
-            <AppIcon icon={Xmark} size="md" color="inherit" />
-          </button>
-        </div>
+        ) : null}
 
         {/* Tab Switcher */}
         <div className="border-b border-slate-200 dark:border-slate-800/80 px-6 py-3 bg-white dark:bg-slate-900">
@@ -1677,53 +1714,20 @@ export function FacultyVerificationDrawer({
 
         {/* Body Content */}
         <div className="px-6 py-5">
-          {activeTab === "current" && isLoading ? (
-            <SystemLoadingScreen fullScreen={false} text="Loading faculty requirements..." />
-          ) : activeTab === "current" ? (
+          {activeTab === "current" ? (
             /* Tab 1: Current Submissions */
-            selectedClassId === null || !selectedGroup ? (
+            isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-64 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 animate-pulse p-5"
+                  />
+                ))}
+              </div>
+            ) : selectedClassId === null || !selectedGroup ? (
               /* Step 1: Class Selection Step (Default) */
-              <div className="space-y-5">
-                {/* Summary Header & Actions Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xs">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <span>Assigned Classes &amp; Subject Loads</span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                        {classGroups.length} {classGroups.length === 1 ? "Class" : "Classes"}
-                      </span>
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Select a class load below to review and verify submitted requirements for A.Y. {academicYear} &bull; {semester}.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={isRefreshing || isLoading}
-                      onClick={handleRefresh}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
-                      title="Refresh current submissions"
-                    >
-                      <SystemRestart
-                        className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                      />
-                      <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={isDownloadingZip}
-                      onClick={handleDownloadZip}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
-                    >
-                      <AppIcon icon={Download} size="xs" color="inherit" className="text-slate-950" />
-                      <span>{isDownloadingZip ? "Zipping..." : "Download All (ZIP)"}</span>
-                    </button>
-                  </div>
-                </div>
-
+              <div className="space-y-5 pt-1">
                 {/* Responsive Grid of Class Cards */}
                 {classGroups.length === 0 ? (
                   <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs py-14 text-center text-slate-500 dark:text-slate-400">
@@ -1738,7 +1742,7 @@ export function FacultyVerificationDrawer({
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-3">
                     {classGroups.map((group) => {
                       const groupPendingCount = group.submissions.filter((s) => {
                         const st = (s.status || "").toLowerCase();
@@ -1775,82 +1779,124 @@ export function FacultyVerificationDrawer({
                         <div
                           key={group.key}
                           onClick={() => setSelectedClassId(group.key)}
-                          className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 hover:border-amber-500/80 dark:hover:border-amber-500/70 hover:shadow-md transition-all duration-200 cursor-pointer text-left"
+                          className="group relative flex flex-col cursor-pointer text-left transition-all duration-200 hover:-translate-y-1"
                         >
-                          <div>
-                            {/* Subject Code & Section Code Badge */}
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                {group.isGeneral ? (
-                                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-100 tracking-wide shadow-2xs">
-                                    General
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-[#780000] text-white tracking-wide shadow-2xs">
-                                    {group.sectionCode}
-                                  </span>
-                                )}
-                                {!group.isGeneral && (
-                                  <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400">
-                                    {group.subjectCode}
-                                  </span>
-                                )}
-                              </div>
-
-                              {group.units !== null ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                  {group.units.toFixed(1)} Units
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                                  Institutional
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Description */}
-                            <h5 className="mt-3 text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
-                              {group.description}
-                            </h5>
-
-                            {/* Progress bar */}
-                            <div className="mt-4">
-                              <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                                <span>Validation Progress</span>
-                                <span className="font-bold text-slate-700 dark:text-slate-300">{progressPct}%</span>
-                              </div>
-                              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-300 rounded-full"
-                                  style={{ width: `${progressPct}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Card Footer: Progress Badge & Status Summary */}
-                          <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {groupPendingCount > 0 ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-2 py-0.5 text-[10.5px] font-bold">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                  {groupPendingCount} Pending Review
-                                </span>
-                              ) : null}
-                              {groupRevisionCount > 0 ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-300 px-2 py-0.5 text-[10.5px] font-bold">
-                                  {groupRevisionCount} Revision
-                                </span>
-                              ) : null}
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10.5px] font-bold">
-                                {groupValidatedCount} / {totalReqs} Validated
+                          {/* Folder Top Tab with Smooth Slanted Shoulder */}
+                          <div className="flex items-end -mb-[2px] relative z-10 self-start">
+                            {/* Tab Left + Content */}
+                            <div className="h-7.5 px-3.5 rounded-tl-xl flex items-center gap-2 text-xs font-black tracking-wide border-t-2 border-l-2 border-amber-500 dark:border-amber-600 bg-amber-400 dark:bg-amber-500 text-slate-950 shadow-2xs group-hover:bg-amber-300 transition-colors duration-200">
+                              <AppIcon icon={Folder} size="xs" color="inherit" />
+                              <span className="truncate max-w-[150px]">
+                                {group.isGeneral ? "General Requirements" : group.sectionCode}
                               </span>
                             </div>
 
-                            <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0">
-                              <span>Open</span>
-                              <NavArrowRight className="h-3.5 w-3.5" />
-                            </span>
+                            {/* Tab Smooth Slant Shoulder */}
+                            <div className="relative w-5 h-7.5 shrink-0 -ml-[1px]">
+                              <svg
+                                viewBox="0 0 20 30"
+                                fill="none"
+                                className="w-full h-full text-amber-400 dark:text-amber-500"
+                              >
+                                <path
+                                  d="M 0,0 L 2,0 C 8,0 13,8 16,18 L 20,30 L 0,30 Z"
+                                  fill="currentColor"
+                                />
+                                <path
+                                  d="M 0,1 L 2,1 C 8,1 13,9 16,19 L 20,30"
+                                  stroke="#f59e0b"
+                                  strokeWidth="2"
+                                  fill="none"
+                                  className="text-amber-500 dark:text-amber-600"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+
+                          {/* Folder Main Body */}
+                          <div className="relative flex-1 flex flex-col justify-between rounded-2xl rounded-tl-none border-2 border-amber-500 dark:border-amber-600 transition-all duration-200 overflow-hidden bg-white dark:bg-slate-900 shadow-xs group-hover:shadow-lg group-hover:border-amber-400">
+                            <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+                              <div className="space-y-3.5">
+                                {/* Top Row: Units & Status Badges */}
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {group.units !== null ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                        {group.units.toFixed(1)} Units
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                        Institutional
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    {groupPendingCount > 0 && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 text-[10.5px] font-bold">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                        {groupPendingCount} Pending
+                                      </span>
+                                    )}
+                                    {groupRevisionCount > 0 && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-300 px-2.5 py-0.5 text-[10.5px] font-bold">
+                                        {groupRevisionCount} Revision
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Course Code & Subject Name Fields */}
+                                <div className="space-y-2 pt-1">
+                                  <div>
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
+                                      Course Code:
+                                    </span>
+                                    <h3 className="text-xl sm:text-2xl font-black text-slate-950 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                      {group.isGeneral ? "General Requirements" : group.subjectCode}
+                                    </h3>
+                                  </div>
+
+                                  <div>
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
+                                      Subject Name / Description:
+                                    </span>
+                                    <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug">
+                                      {group.description}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Validation Progress Bar */}
+                                <div className="pt-1">
+                                  <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                                    <span>Validation Progress</span>
+                                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                                      {progressPct}% ({groupValidatedCount}/{totalReqs} Validated)
+                                    </span>
+                                  </div>
+                                  <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-300 rounded-full"
+                                      style={{ width: `${progressPct}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Bottom Action Footer */}
+                              <div className="pt-2">
+                                <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 group-hover:bg-amber-400 group-hover:border-amber-400 transition-all duration-200">
+                                  <span className="text-xs font-bold text-amber-900 dark:text-amber-200 group-hover:text-slate-950 flex items-center gap-2">
+                                    <AppIcon icon={Folder} size="xs" color="inherit" />
+                                    <span>View & Verify Documents</span>
+                                  </span>
+                                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-white dark:bg-slate-900 group-hover:bg-slate-950 text-amber-700 dark:text-amber-400 group-hover:text-amber-300 transition-colors shadow-2xs">
+                                    <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       );
@@ -1862,52 +1908,74 @@ export function FacultyVerificationDrawer({
               /* Step 2: Class Detail Step */
               <div className="space-y-4">
                 {/* Top Navigation Bar: Back Button, Header Banner & Dropdown Switcher */}
-                <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
-                  <div className="flex flex-wrap items-center gap-3">
+                <div className="rounded-2xl border-2 border-amber-400/80 dark:border-amber-500/60 bg-amber-50/80 dark:bg-amber-950/20 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <button
                       type="button"
                       onClick={() => setSelectedClassId(null)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                      title="Return to Class List"
                     >
-                      <NavArrowLeft className="h-4 w-4" />
+                      <AppIcon icon={NavArrowLeft} size="sm" color="white" />
                       <span>Back to Class List</span>
                     </button>
 
-                    <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+                    <div className="h-6 w-px bg-amber-400/60 dark:bg-amber-600/40 hidden sm:block shrink-0" />
 
-                    {/* Active Class Header Banner */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      {selectedGroup.isGeneral ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-100 tracking-wide shadow-2xs">
-                          General
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-[#780000] text-white tracking-wide shadow-2xs">
-                          {selectedGroup.sectionCode}
-                        </span>
-                      )}
-                      {!selectedGroup.isGeneral && (
-                        <span className="text-xs font-bold font-mono text-amber-700 dark:text-amber-400">
-                          {selectedGroup.subjectCode}
-                        </span>
-                      )}
-                      {!selectedGroup.isGeneral && (
-                        <span className="text-slate-300 dark:text-slate-700">&bull;</span>
-                      )}
-                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                        {selectedGroup.description}
-                      </span>
-                      {selectedGroup.units !== null ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                          {selectedGroup.units.toFixed(1)} Units
-                        </span>
-                      ) : null}
+                    {/* Faculty Profile & Active Class Header */}
+                    <div className="min-w-0 flex-1 pl-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Faculty Name & Photo */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
+                            {faculty.profileImageUrl ? (
+                              <img
+                                src={faculty.profileImageUrl}
+                                alt={faculty.fullName}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span>{buildFacultyInitials(faculty.fullName)}</span>
+                            )}
+                          </div>
+                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                            {faculty.fullName}
+                          </span>
+                        </div>
+
+                        <span className="text-slate-400 dark:text-slate-600 font-bold hidden sm:inline">&bull;</span>
+
+                        {selectedGroup.isGeneral ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-slate-800 text-slate-100 tracking-wide shadow-2xs">
+                            General
+                          </span>
+                        ) : (
+                          <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-slate-950 shrink-0">
+                            {selectedGroup.sectionCode}
+                          </span>
+                        )}
+                        {!selectedGroup.isGeneral && (
+                          <span className="text-sm sm:text-base font-black text-slate-950 dark:text-amber-100">
+                            {selectedGroup.subjectCode} &bull; {selectedGroup.description}
+                          </span>
+                        )}
+                        {selectedGroup.isGeneral && (
+                          <span className="text-sm sm:text-base font-black text-slate-950 dark:text-amber-100">
+                            {selectedGroup.description}
+                          </span>
+                        )}
+                        {selectedGroup.units !== null ? (
+                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+                            ({selectedGroup.units.toFixed(1)} Units)
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
 
                   {/* Quick Dropdown Select */}
                   {classGroups.length > 1 && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0 sm:ml-auto">
                       <label
                         htmlFor="quick-class-switcher"
                         className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0"
@@ -1918,7 +1986,7 @@ export function FacultyVerificationDrawer({
                         id="quick-class-switcher"
                         value={selectedGroup.key}
                         onChange={(e) => setSelectedClassId(e.target.value)}
-                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-semibold outline-none transition focus:border-amber-500 cursor-pointer shadow-2xs"
+                        className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-semibold outline-none transition focus:border-amber-500 cursor-pointer shadow-2xs"
                       >
                         {classGroups.map((g) => (
                           <option key={g.key} value={g.key}>
@@ -2152,7 +2220,7 @@ export function FacultyVerificationDrawer({
                     </div>
                   </div>
                 ) : (
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+                  <div className="overflow-hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 shadow-xs">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300 min-w-[880px]">
                         <thead className="bg-slate-50/60 dark:bg-slate-950/50 border-b border-slate-200/80 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -2657,10 +2725,16 @@ export function FacultyVerificationDrawer({
 
               {/* Past Submissions Compressed List Table */}
               {isLoadingHistory || !selectedHistoryAy ? (
-                <SystemLoadingScreen
-                  fullScreen={false}
-                  text="Loading verification history..."
-                />
+                <div className="space-y-3 pt-2">
+                  <div className="overflow-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 animate-pulse space-y-4">
+                    <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="h-10 bg-slate-100 dark:bg-slate-800/60 rounded" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
                   <div className="overflow-x-auto">
@@ -3368,11 +3442,28 @@ export function FacultyVerificationDrawer({
           </div>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
 
 export const FacultyDetailInlineSection = FacultyVerificationDrawer;
+
+export interface FacultyClassProgress {
+  id: string;
+  subject_code: string;
+  section_code: string;
+  description: string;
+  units: number | null;
+  totalRequired: number;
+  validatedCount: number;
+  isDone: boolean;
+}
+
+export interface FacultySubjectProgress {
+  totalSubjects: number;
+  doneSubjects: number;
+  allDone: boolean;
+}
 
 export interface RequirementsPanelProps {
   facultyAccounts: FacultyAccount[];
@@ -3404,6 +3495,12 @@ export function RequirementsPanel({
 
   const [facultyStatuses, setFacultyStatuses] = useState<
     Record<string, Record<string, RequirementStatus>>
+  >({});
+  const [facultyClassProgress, setFacultyClassProgress] = useState<
+    Record<string, FacultyClassProgress[]>
+  >({});
+  const [facultySubjectProgress, setFacultySubjectProgress] = useState<
+    Record<string, FacultySubjectProgress>
   >({});
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
 
@@ -3455,15 +3552,23 @@ export function RequirementsPanel({
     }
   }, [selectedFaculty]);
 
+  const initialOpenedRef = useRef<string | null>(null);
+
   // Auto-open review drawer if initialReviewFacultyId is provided
   useEffect(() => {
-    if (initialReviewFacultyId && facultyAccounts.length > 0) {
+    if (
+      initialReviewFacultyId &&
+      facultyAccounts.length > 0 &&
+      initialOpenedRef.current !== initialReviewFacultyId
+    ) {
       const target = facultyAccounts.find((f) => f.id === initialReviewFacultyId);
       if (target) {
-        setReviewingFaculty((prev) => (prev?.id === target.id ? prev : target));
+        initialOpenedRef.current = initialReviewFacultyId;
+        setReviewingFaculty(target);
+        onSelectFaculty?.(target.id);
       }
     }
-  }, [initialReviewFacultyId, facultyAccounts]);
+  }, [initialReviewFacultyId, facultyAccounts, onSelectFaculty]);
 
   // Derive unique programs from facultyAccounts
   const availablePrograms = useMemo(() => {
@@ -3533,7 +3638,7 @@ export function RequirementsPanel({
     try {
       const results = await Promise.all(
         facultyAccounts.map(async (faculty) => {
-          if (!faculty?.id) return { facultyId: "", status: null };
+          if (!faculty?.id) return { facultyId: "", status: null, classProgress: [], subjectProgress: null };
           try {
             const res = await fetch(
               `/api/staff/faculty/requirements/verification?facultyId=${encodeURIComponent(
@@ -3545,23 +3650,38 @@ export function RequirementsPanel({
             );
             if (res.ok) {
               const data = await res.json();
-              return { facultyId: faculty.id, status: data.requirementStatus };
+              return {
+                facultyId: faculty.id,
+                status: data.requirementStatus,
+                classProgress: data.classProgress || [],
+                subjectProgress: data.subjectProgress || null,
+              };
             }
           } catch {
             // Handled
           }
-          return { facultyId: faculty.id, status: null };
+          return { facultyId: faculty.id, status: null, classProgress: [], subjectProgress: null };
         })
       );
 
       const statusMap: Record<string, Record<string, RequirementStatus>> =
         {};
+      const classProgressMap: Record<string, FacultyClassProgress[]> = {};
+      const subjectProgressMap: Record<string, FacultySubjectProgress> = {};
       for (const item of results) {
         if (item.status) {
           statusMap[item.facultyId] = item.status;
         }
+        if (item.classProgress) {
+          classProgressMap[item.facultyId] = item.classProgress;
+        }
+        if (item.subjectProgress) {
+          subjectProgressMap[item.facultyId] = item.subjectProgress;
+        }
       }
       setFacultyStatuses(statusMap);
+      setFacultyClassProgress(classProgressMap);
+      setFacultySubjectProgress(subjectProgressMap);
     } catch (err) {
       console.error("Error fetching faculty statuses:", err);
     } finally {
@@ -3614,6 +3734,10 @@ export function RequirementsPanel({
 
     for (const faculty of facultyAccounts) {
       const statusRecord = facultyStatuses[faculty.id];
+      const classList = facultyClassProgress[faculty.id] || [];
+      const subjectProg = facultySubjectProgress[faculty.id];
+      const hasSubjects = (subjectProg ? subjectProg.totalSubjects : classList.length) > 0;
+      const isAllSubjectsDone = hasSubjects && (subjectProg ? subjectProg.allDone : classList.every((c) => c.isDone));
 
       const validatedMandatoryCount = statusRecord
         ? mandatoryTemplates.filter((t) => statusRecord[t.code] === "validated").length
@@ -3626,8 +3750,9 @@ export function RequirementsPanel({
         (s) => s === "rejected" || s === "needs_revision"
       );
 
-      const isAllMandatoryValidated =
-        validatedMandatoryCount === totalMandatoryCount && totalMandatoryCount > 0;
+      const isAllMandatoryValidated = hasSubjects
+        ? isAllSubjectsDone
+        : (validatedMandatoryCount === totalMandatoryCount && totalMandatoryCount > 0);
 
       let category:
         | "completed"
@@ -3714,7 +3839,7 @@ export function RequirementsPanel({
     }
 
     return map;
-  }, [facultyAccounts, facultyStatuses, requirementTemplates]);
+  }, [facultyAccounts, facultyStatuses, requirementTemplates, facultyClassProgress, facultySubjectProgress]);
 
   // Tab counters
   const statusCounts = useMemo(() => {
@@ -3792,10 +3917,12 @@ export function RequirementsPanel({
           initialRequirementCode={initialRequirementCode}
           requirementTemplates={requirementTemplates}
           onBack={() => {
+            initialOpenedRef.current = "__closed__";
             setReviewingFaculty(null);
             onSelectFaculty?.(null);
           }}
           onClose={() => {
+            initialOpenedRef.current = "__closed__";
             setReviewingFaculty(null);
             onSelectFaculty?.(null);
           }}
@@ -3990,6 +4117,7 @@ export function RequirementsPanel({
                   const statInfo = facultyStatusMap.get(faculty.id);
                   const validatedMandatoryCount = statInfo?.validatedMandatoryCount ?? 0;
                   const totalMandatoryCount = statInfo?.totalMandatoryCount ?? DEFAULT_REQUIREMENTS.length;
+                  const totalValidatedCount = statInfo?.totalValidatedCount ?? 0;
                   const overallStatus = statInfo?.overallStatus ?? "Not Submitted";
                   const statusBadgeClass = statInfo?.statusBadgeClass ?? "";
                   const actionButtonText = statInfo?.actionButtonText ?? "Review Requirements";
@@ -4040,25 +4168,83 @@ export function RequirementsPanel({
                       </td>
                       <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                         {isLoadingStatuses && !statusRecord ? (
-                          <span className="text-slate-500 dark:text-slate-400 italic text-[11px]">
-                            Loading...
-                          </span>
-                        ) : (
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-slate-900 dark:text-slate-100">
-                              {validatedMandatoryCount}/{totalMandatoryCount} Validated
-                            </span>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                              {Math.round((validatedMandatoryCount / totalMandatoryCount) * 100)}% Complete
-                            </span>
+                          <div className="space-y-1.5 py-1">
+                            <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                            <div className="h-2 w-36 bg-slate-100 dark:bg-slate-800/60 rounded animate-pulse" />
                           </div>
-                        )}
+                        ) : (() => {
+                          const classList = facultyClassProgress[faculty.id] || [];
+                          const subjectProg = facultySubjectProgress[faculty.id];
+                          const totalClasses = subjectProg ? subjectProg.totalSubjects : classList.length;
+                          const doneCount = subjectProg ? subjectProg.doneSubjects : classList.filter((c) => c.isDone).length;
+                          const progressPct = totalClasses > 0 ? Math.round((doneCount / totalClasses) * 100) : 0;
+
+                          if (totalClasses === 0) {
+                            return (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-slate-400 dark:text-slate-500 italic">
+                                  No subjects assigned
+                                </span>
+                                {totalValidatedCount > 0 ? (
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                                    {totalValidatedCount} general requirements validated
+                                  </span>
+                                ) : null}
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="flex flex-col gap-1.5 py-0.5 max-w-[280px]">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                  {doneCount}/{totalClasses} {totalClasses === 1 ? "Subject" : "Subjects"} Done
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                                  {progressPct}%
+                                </span>
+                              </div>
+
+                              {/* Progress Track */}
+                              <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200/60 dark:border-slate-700/60">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${
+                                    doneCount === totalClasses && totalClasses > 0
+                                      ? "bg-[#0b5336]"
+                                      : doneCount > 0
+                                      ? "bg-amber-500"
+                                      : "bg-transparent"
+                                  }`}
+                                  style={{ width: `${progressPct}%` }}
+                                />
+                              </div>
+
+                              {/* Per Subject Status Chips */}
+                              <div className="flex flex-wrap gap-1 pt-0.5">
+                                {classList.map((cls) => (
+                                  <span
+                                    key={cls.id}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold border transition-colors ${
+                                      cls.isDone
+                                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-[#0b5336] dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/60"
+                                        : cls.validatedCount > 0
+                                        ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800/60"
+                                        : "bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+                                    }`}
+                                    title={`${cls.subject_code} (${cls.section_code}): ${cls.validatedCount}/${cls.totalRequired} Validated`}
+                                  >
+                                    <span className="font-mono">{cls.subject_code}</span>:
+                                    <span>{cls.isDone ? "Done" : "Not Done"}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3 font-medium text-center">
                         {isLoadingStatuses && !statusRecord ? (
-                          <span className="text-slate-500 dark:text-slate-400 italic text-[11px] block text-center">
-                            ...
-                          </span>
+                          <div className="h-6 w-24 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse mx-auto" />
                         ) : (
                           <div className="flex items-center justify-center">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusBadgeClass}`}>
@@ -4082,6 +4268,7 @@ export function RequirementsPanel({
                         <button
                           type="button"
                           onClick={() => {
+                            initialOpenedRef.current = faculty.id;
                             setReviewingFaculty(faculty);
                             onSelectFaculty?.(faculty.id);
                           }}
