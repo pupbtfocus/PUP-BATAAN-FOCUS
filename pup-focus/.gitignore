@@ -86,5 +86,10 @@ temp/
 # System files
 .env.*.local
 
-# Scripts
+# Scripts and batch files
 scripts/
+**/scripts/
+bat-scripts/
+**/bat-scripts/
+*.bat
+**/*.bat
