@@ -103,6 +103,7 @@ export function SidebarContent({
       (roleTitle || "").toLowerCase().includes("super") ||
         (roleTitle || "").toLowerCase() === "admin",
     );
+  const isStaff = (roleTitle || "").toLowerCase().includes("staff");
 
   // Check active states supporting both short and legacy tokens
   const isDashboardActive = activeSection === "dashboard";
@@ -344,127 +345,129 @@ export function SidebarContent({
         />
 
         {/* 4. Collapsible Parent Item: Academic Cycle Management */}
-        <div className="space-y-1">
-          <button
-            type="button"
-            onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
-            className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
-              isAcademicCycleActive
-                ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
-                : "text-amber-100/80 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <Calendar
-                strokeWidth={2}
-                className={`h-5 w-5 shrink-0 ${
-                  isAcademicCycleActive
-                    ? "text-amber-300 stroke-[2]"
-                    : "text-amber-200/70"
-                }`}
-              />
-              <span className="truncate">Academic Cycle</span>
-            </div>
-            {isAcademicCycleOpen ? (
-              <NavArrowDown
-                strokeWidth={2}
-                className={`h-4 w-4 shrink-0 transition-transform ${
-                  isAcademicCycleActive ? "text-amber-300" : "text-amber-200/60"
-                }`}
-              />
-            ) : (
-              <NavArrowRight
-                strokeWidth={2}
-                className={`h-4 w-4 shrink-0 transition-transform ${
-                  isAcademicCycleActive ? "text-amber-300" : "text-amber-200/60"
-                }`}
-              />
-            )}
-          </button>
-
-          {/* Child Sub-items (Indented with left border indicator) */}
-          {isAcademicCycleOpen && (
-            <div className="ml-3 pl-2.5 border-l border-amber-400/40 flex flex-col gap-1 mt-1">
-              <button
-                type="button"
-                onClick={() =>
-                  handleSelect(isSuperAdmin ? "terms" : "academicTerms")
-                }
-                className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
-                  isTermsActive
-                    ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
-                    : "text-amber-100/80 hover:bg-white/10 hover:text-white"
-                }`}
-              >
+        {!isStaff && (
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => setIsAcademicCycleOpen((prev) => !prev)}
+              className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer rounded-lg ${
+                isAcademicCycleActive
+                  ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                  : "text-amber-100/80 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
                 <Calendar
                   strokeWidth={2}
-                  className={`h-4 w-4 shrink-0 ${
-                    isTermsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
-                  }`}
-                />
-                <span className="whitespace-nowrap">Academic Year & Semester</span>
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  handleSelect(isSuperAdmin ? "window" : "submissionWindow")
-                }
-                className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
-                  isWindowActive
-                    ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
-                    : "text-amber-100/80 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <Hourglass
-                  strokeWidth={2}
-                  className={`h-4 w-4 shrink-0 ${
-                    isWindowActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
-                  }`}
-                />
-                <span className="whitespace-nowrap">Submission Schedule</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelect("templates")}
-                className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
-                  isTemplatesActive || isProgramsActive
-                    ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
-                    : "text-amber-100/80 hover:bg-white/10 hover:text-white"
-                }`}
-                title="Requirement Templates & Academic Programs"
-              >
-                <Page
-                  strokeWidth={2}
-                  className={`h-4 w-4 shrink-0 ${
-                    isTemplatesActive || isProgramsActive
+                  className={`h-5 w-5 shrink-0 ${
+                    isAcademicCycleActive
                       ? "text-amber-300 stroke-[2]"
                       : "text-amber-200/70"
                   }`}
                 />
-                <span className="whitespace-nowrap">Templates & Programs</span>
-              </button>
-              {isSuperAdmin && (
+                <span className="truncate">Academic Cycle</span>
+              </div>
+              {isAcademicCycleOpen ? (
+                <NavArrowDown
+                  strokeWidth={2}
+                  className={`h-4 w-4 shrink-0 transition-transform ${
+                    isAcademicCycleActive ? "text-amber-300" : "text-amber-200/60"
+                  }`}
+                />
+              ) : (
+                <NavArrowRight
+                  strokeWidth={2}
+                  className={`h-4 w-4 shrink-0 transition-transform ${
+                    isAcademicCycleActive ? "text-amber-300" : "text-amber-200/60"
+                  }`}
+                />
+              )}
+            </button>
+
+            {/* Child Sub-items (Indented with left border indicator) */}
+            {isAcademicCycleOpen && (
+              <div className="ml-3 pl-2.5 border-l border-amber-400/40 flex flex-col gap-1 mt-1">
                 <button
                   type="button"
-                  onClick={() => handleSelect("backups")}
+                  onClick={() =>
+                    handleSelect(isSuperAdmin ? "terms" : "academicTerms")
+                  }
                   className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
-                    isBackupsActive
+                    isTermsActive
                       ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
                       : "text-amber-100/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
-                  <Archive
+                  <Calendar
                     strokeWidth={2}
                     className={`h-4 w-4 shrink-0 ${
-                      isBackupsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                      isTermsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
                     }`}
                   />
-                  <span className="whitespace-nowrap">Backups & Archive</span>
+                  <span className="whitespace-nowrap">Academic Year & Semester</span>
                 </button>
-              )}
-            </div>
-          )}
-        </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSelect(isSuperAdmin ? "window" : "submissionWindow")
+                  }
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                    isWindowActive
+                      ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                      : "text-amber-100/80 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <Hourglass
+                    strokeWidth={2}
+                    className={`h-4 w-4 shrink-0 ${
+                      isWindowActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                    }`}
+                  />
+                  <span className="whitespace-nowrap">Submission Schedule</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelect("templates")}
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                    isTemplatesActive || isProgramsActive
+                      ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                      : "text-amber-100/80 hover:bg-white/10 hover:text-white"
+                  }`}
+                  title="Requirement Templates & Academic Programs"
+                >
+                  <Page
+                    strokeWidth={2}
+                    className={`h-4 w-4 shrink-0 ${
+                      isTemplatesActive || isProgramsActive
+                        ? "text-amber-300 stroke-[2]"
+                        : "text-amber-200/70"
+                    }`}
+                  />
+                  <span className="whitespace-nowrap">Templates & Programs</span>
+                </button>
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelect("backups")}
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer rounded-md whitespace-nowrap ${
+                      isBackupsActive
+                        ? "bg-amber-400/20 text-white font-semibold border-l-2 border-amber-400 shadow-xs"
+                        : "text-amber-100/80 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <Archive
+                      strokeWidth={2}
+                      className={`h-4 w-4 shrink-0 ${
+                        isBackupsActive ? "text-amber-300 stroke-[2]" : "text-amber-200/70"
+                      }`}
+                    />
+                    <span className="whitespace-nowrap">Backups & Archive</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 5. Transaction Log (Admin Module) */}
         {isSuperAdmin && (

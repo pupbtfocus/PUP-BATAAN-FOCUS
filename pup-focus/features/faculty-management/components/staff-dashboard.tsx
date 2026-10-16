@@ -19,7 +19,6 @@ import {
   type AdminNotificationItem,
 } from "@/features/notifications/components/admin-notification-drawer";
 import { extractFirstName } from "@/lib/faculty-profile";
-import { AdminAcademicTerms } from "@/features/admin-management/components/admin-academic-terms";
 import { StaffSettings as AdminSettings } from "@/features/admin-management/components/staff-settings";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -34,15 +33,9 @@ import type {
 } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { FacultyTable } from "./faculty-table";
 import { AddFacultyModal } from "./faculty-modals/add-faculty-modal";
-import { EditFacultyModal } from "./faculty-modals/edit-faculty-modal";
 import { FacultyDetailsModal } from "./faculty-modals/faculty-details-modal";
-import { DeleteFacultyModal } from "./faculty-modals/delete-faculty-modal";
 import { InviteStatusModal } from "./faculty-modals/invite-status-modal";
-import { SubmissionWindowPanel } from "./submission-window-panel";
 import { RequirementsPanel } from "./requirements-verification-panel";
-import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
-import { SubmissionScheduleLogsModal } from "./submission-schedule-logs-modal";
-import { TemplatesAndProgramsPanel } from "@/features/program-management/components/templates-and-programs-panel";
 
 function normalizeAdminSection(raw?: string | null): AdminSection | null {
   if (!raw) return null;
@@ -56,31 +49,15 @@ function normalizeAdminSection(raw?: string | null): AdminSection | null {
     return "facultyManagement";
   if (
     val === "requirements" ||
-    val === "requirements-verification"
+    val === "requirements-verification" ||
+    val === "verification"
   )
     return "requirements";
-  if (
-    val === "submissionwindow" ||
-    val === "submission-window"
-  )
-    return "submissionWindow";
-  if (
-    val === "academicterms" ||
-    val === "academic-terms"
-  )
-    return "academicTerms";
-  if (
-    val === "programs" ||
-    val === "templates" ||
-    val === "templates-programs"
-  )
-    return "templates";
   if (
     val === "settings" ||
     val === "admin-settings"
   )
     return "settings";
-  if (val === "details") return "details";
   return null;
 }
 
@@ -279,12 +256,12 @@ export function AdminFacultyDashboard({
     }
 
     if (notification.type?.includes("WINDOW") || notification.title?.toLowerCase().includes("window")) {
-      handleSetActiveSection("submissionWindow");
+      handleSetActiveSection("requirements");
       return;
     }
 
     if (notification.type?.includes("TERM") || notification.title?.toLowerCase().includes("term")) {
-      handleSetActiveSection("academicTerms");
+      handleSetActiveSection("requirements");
       return;
     }
 
@@ -817,7 +794,7 @@ export function AdminFacultyDashboard({
         )}
 
         {/* Scrollable Main Content Area */}
-        <div className="md:ml-72 flex min-h-full w-full md:w-[calc(100%-18rem)] flex-col">
+        <div className="flex min-h-full w-full flex-col">
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l-0 bg-slate-100 dark:bg-[#0b0f19] shadow-sm transition-colors duration-200">
             <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-100 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
               <div className="max-w-7xl mx-auto w-full">
@@ -1176,22 +1153,7 @@ export function AdminFacultyDashboard({
                         >
                           + Add Faculty
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setRegistrationLogsModalOpen(true)}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
-                        >
-                          <Page className="h-3.5 w-3.5 text-slate-950" />
-                          <span>User Registration Logs</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setScheduleLogsModalOpen(true)}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/50 px-4 py-2 text-xs font-bold transition cursor-pointer shadow-sm active:scale-[0.98]"
-                        >
-                          <ClockRotateRight className="h-3.5 w-3.5 text-slate-950" />
-                          <span>Submission Schedule Logs</span>
-                        </button>
+
                         <button
                           type="button"
                           onClick={() => void refreshCurrentPanel()}
@@ -1208,26 +1170,9 @@ export function AdminFacultyDashboard({
                       facultyAccounts={facultyAccounts}
                       isLoading={isLoading}
                       onSelectFaculty={handleSelectFaculty}
-                      onDeleteFaculty={onDeleteFaculty}
                       onViewDetails={(facultyId) => {
                         setViewDetailsFacultyId(facultyId);
                         setViewDetailsModalOpen(true);
-                      }}
-                      onEditFaculty={(facultyId) => {
-                        setDetailsFacultyId(facultyId);
-                        setDetailsModalOpen(true);
-                      }}
-                      onActivate={onActivateFaculty}
-                      onDeactivate={onDeactivateFaculty}
-                      loadingFacultyIds={loadingFacultyIds}
-                      deletingFacultyIds={deletingFacultyIds}
-                      deleteError={deleteError}
-                      deleteSuccess={deleteSuccess}
-                      facultyActionError={facultyActionError}
-                      onClearDeleteMessages={() => {
-                        setDeleteError(null);
-                        setDeleteSuccess(null);
-                        setFacultyActionError(null);
                       }}
                     />
                   </article>
@@ -1271,77 +1216,7 @@ export function AdminFacultyDashboard({
                   </article>
                 ) : null}
 
-                {activeSection === "submissionWindow" ? (
-                  <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                      <div>
-                        <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
-                          Submission Schedule
-                        </h1>
-                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-                          Set and manage submission opening dates, closing deadlines, and faculty extension requests.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => void refreshCurrentPanel()}
-                          disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
-                        >
-                          <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                          <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
-                        </button>
-                      </div>
-                    </div>
 
-                    <SubmissionWindowPanel
-                      isSuperAdmin={false}
-                      onWindowChange={() =>
-                        setVerificationResetTrigger((prev) => prev + 1)
-                      }
-                      onNavigateToRequirements={() => handleSetActiveSection("requirements")}
-                    />
-                  </article>
-                ) : null}
-
-                {activeSection === "academicTerms" ? (
-                  <article className="space-y-4 p-2 sm:p-4 md:p-5">
-                    {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                      <div>
-                        <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
-                          Academic Year and Semester
-                        </h1>
-                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-                          Manage academic years, semester cycles, and activate the current operational term.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => void refreshCurrentPanel()}
-                          disabled={isLoading}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
-                        >
-                          <Refresh className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                          <span>{isLoading ? "Refreshing..." : "Refresh"}</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <AdminAcademicTerms
-                      adminName={(currentAdminName || adminName) ?? "Admin"}
-                      isSuperAdmin={false}
-                      onNavigateToRequirements={() => handleSetActiveSection("requirements")}
-                    />
-                  </article>
-                ) : null}
-
-                {activeSection === "templates" || activeSection === "programs" ? (
-                  <TemplatesAndProgramsPanel />
-                ) : null}
 
                 {activeSection === "settings" ? (
                   <article className="space-y-4 p-2 sm:p-4 md:p-5">
@@ -1368,29 +1243,8 @@ export function AdminFacultyDashboard({
           facultyAccounts={facultyAccounts}
           isOpen={viewDetailsModalOpen}
           onClose={() => setViewDetailsModalOpen(false)}
-          onEdit={(facultyId) => {
-            setViewDetailsModalOpen(false);
-            setDetailsFacultyId(facultyId);
-            setDetailsModalOpen(true);
-          }}
         />
       ) : null}
-
-      {detailsModalOpen && detailsFacultyId ? (
-        <EditFacultyModal
-          facultyId={detailsFacultyId}
-          facultyAccounts={facultyAccounts}
-          onClose={() => setDetailsModalOpen(false)}
-          onSave={refreshCurrentPanel}
-        />
-      ) : null}
-
-      <DeleteFacultyModal
-        pendingFacultyAction={pendingFacultyAction}
-        pendingFaculty={pendingFaculty}
-        onCancel={() => setPendingFacultyAction(null)}
-        onConfirm={confirmPendingFacultyAction}
-      />
 
       <InviteStatusModal
         isOpen={inviteModalOpen}
@@ -1422,20 +1276,6 @@ export function AdminFacultyDashboard({
         profileImageFile={profileImageFile}
         onProfileImageChange={setProfileImageFile}
         profileImageInputKey={profileImageInputKey}
-      />
-
-      <UserRegistrationLogsModal
-        isOpen={registrationLogsModalOpen}
-        onClose={() => setRegistrationLogsModalOpen(false)}
-        targetRole="faculty"
-        onInviteCancelled={() => {
-          void loadFacultyFromDatabase();
-        }}
-      />
-
-      <SubmissionScheduleLogsModal
-        isOpen={scheduleLogsModalOpen}
-        onClose={() => setScheduleLogsModalOpen(false)}
       />
     </div>
   );

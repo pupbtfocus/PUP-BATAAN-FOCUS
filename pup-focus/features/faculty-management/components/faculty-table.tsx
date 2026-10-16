@@ -13,17 +13,17 @@ export interface FacultyTableProps {
   facultyAccounts: FacultyAccount[];
   isLoading: boolean;
   onSelectFaculty: (facultyId: string) => void;
-  onDeleteFaculty: (facultyId: string) => void;
   onViewDetails: (facultyId: string) => void;
+  onDeleteFaculty?: (facultyId: string) => void;
   onEditFaculty?: (facultyId: string) => void;
-  onActivate: (facultyId: string) => void;
-  onDeactivate: (facultyId: string) => void;
-  loadingFacultyIds: Set<string>;
-  deletingFacultyIds: Set<string>;
-  deleteError: string | null;
-  deleteSuccess: string | null;
-  facultyActionError: string | null;
-  onClearDeleteMessages: () => void;
+  onActivate?: (facultyId: string) => void;
+  onDeactivate?: (facultyId: string) => void;
+  loadingFacultyIds?: Set<string>;
+  deletingFacultyIds?: Set<string>;
+  deleteError?: string | null;
+  deleteSuccess?: string | null;
+  facultyActionError?: string | null;
+  onClearDeleteMessages?: () => void;
   programs?: Array<{ id: string; code: string; name: string }>;
 }
 
@@ -55,7 +55,7 @@ export function FacultyTable({
   deleteError,
   deleteSuccess,
   facultyActionError,
-  onClearDeleteMessages,
+  onClearDeleteMessages = () => {},
   programs: initialPrograms,
 }: FacultyTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -276,64 +276,66 @@ export function FacultyTable({
                             <AppIcon icon={Eye} size="sm" color="inherit" className="text-slate-950" />
                             <span>View Details</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onEditFaculty
-                                ? onEditFaculty(faculty.id)
-                                : onViewDetails(faculty.id)
-                            }
-                            title="Edit Faculty"
-                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
-                          >
-                            <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
-                            <span>Edit</span>
-                          </button>
-                          {faculty.is_active ? (
+                          {onEditFaculty ? (
                             <button
                               type="button"
-                              onClick={() => onDeactivate(faculty.id)}
-                              disabled={loadingFacultyIds.has(faculty.id)}
-                              title="Deactivate Faculty"
+                              onClick={() => onEditFaculty(faculty.id)}
+                              title="Edit Faculty"
+                              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
+                            >
+                              <AppIcon icon={EditPencil} size="sm" color="inherit" className="text-slate-950" />
+                              <span>Edit</span>
+                            </button>
+                          ) : null}
+                          {onActivate && onDeactivate ? (
+                            faculty.is_active ? (
+                              <button
+                                type="button"
+                                onClick={() => onDeactivate(faculty.id)}
+                                disabled={loadingFacultyIds?.has(faculty.id)}
+                                title="Deactivate Faculty"
+                                className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
+                              >
+                                <AppIcon icon={UserXmark} size="sm" color="white" />
+                                <span>
+                                  {loadingFacultyIds?.has(faculty.id)
+                                    ? "Deactivating..."
+                                    : "Deactivate"}
+                                </span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => onActivate(faculty.id)}
+                                disabled={loadingFacultyIds?.has(faculty.id)}
+                                title="Activate Faculty"
+                                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
+                              >
+                                <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" className="text-slate-950" />
+                                <span>
+                                  {loadingFacultyIds?.has(faculty.id)
+                                    ? "Activating..."
+                                    : "Activate"}
+                                </span>
+                              </button>
+                            )
+                          ) : null}
+                          {onDeleteFaculty ? (
+                            <button
+                              type="button"
+                              onClick={() => onDeleteFaculty(faculty.id)}
+                              disabled={deletingFacultyIds?.has(faculty.id)}
+                              title="Delete Faculty"
                               className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                             >
-                              <AppIcon icon={UserXmark} size="sm" color="white" />
+                              <AppIcon icon={Trash} size="sm" color="white" />
                               <span>
-                                {loadingFacultyIds.has(faculty.id)
-                                  ? "Deactivating..."
-                                  : "Deactivate"}
+                                {deletingFacultyIds?.has(faculty.id)
+                                  ? "Deleting..."
+                                  : "Delete"}
                               </span>
                             </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => onActivate(faculty.id)}
-                              disabled={loadingFacultyIds.has(faculty.id)}
-                              title="Activate Faculty"
-                              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold border border-amber-600/30 text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
-                            >
-                              <AppIcon icon={UserBadgeCheck} size="sm" color="inherit" className="text-slate-950" />
-                              <span>
-                                {loadingFacultyIds.has(faculty.id)
-                                  ? "Activating..."
-                                  : "Activate"}
-                              </span>
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => onDeleteFaculty(faculty.id)}
-                            disabled={deletingFacultyIds.has(faculty.id)}
-                            title="Delete Faculty"
-                            className="bg-[#780000] hover:bg-[#5e0000] text-white font-semibold border border-[#5e0000] text-xs rounded-md px-2.5 py-1 transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
-                          >
-                            <AppIcon icon={Trash} size="sm" color="white" />
-                            <span>
-                              {deletingFacultyIds.has(faculty.id)
-                                ? "Deleting..."
-                                : "Delete"}
-                            </span>
-                          </button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
