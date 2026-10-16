@@ -1382,7 +1382,7 @@ export function AdminSettings({
                 )}
               </div>
               <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed max-w-xl">
-                Receive dashboard alerts when faculty upload new curriculum and syllabi files.
+                Receive dashboard alerts when faculty upload new course syllabus files.
               </p>
             </div>
 

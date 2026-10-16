@@ -42,7 +42,7 @@ import { SubmissionWindowPanel } from "./submission-window-panel";
 import { RequirementsPanel } from "./requirements-verification-panel";
 import { UserRegistrationLogsModal } from "@/features/admin-management/components/user-registration-logs-modal";
 import { SubmissionScheduleLogsModal } from "./submission-schedule-logs-modal";
-import { CurriculumManagementPanel } from "@/features/curriculum-management/components/curriculum-management-panel";
+import { TemplatesAndProgramsPanel } from "@/features/program-management/components/templates-and-programs-panel";
 
 function normalizeAdminSection(raw?: string | null): AdminSection | null {
   if (!raw) return null;
@@ -70,14 +70,11 @@ function normalizeAdminSection(raw?: string | null): AdminSection | null {
   )
     return "academicTerms";
   if (
-    val === "curriculum" ||
-    val === "curricula" ||
-    val === "curriculums" ||
     val === "programs" ||
     val === "templates" ||
     val === "templates-programs"
   )
-    return "curriculum";
+    return "templates";
   if (
     val === "settings" ||
     val === "admin-settings"
@@ -1342,8 +1339,8 @@ export function AdminFacultyDashboard({
                   </article>
                 ) : null}
 
-                {activeSection === "curriculum" || activeSection === "templates" || activeSection === "programs" ? (
-                  <CurriculumManagementPanel />
+                {activeSection === "templates" || activeSection === "programs" ? (
+                  <TemplatesAndProgramsPanel />
                 ) : null}
 
                 {activeSection === "settings" ? (

@@ -713,5 +713,3 @@ export function TemplatesAndProgramsPanel({
   );
 }
 
-// Backward compatible export for existing routes/imports
-export const CurriculumManagementPanel = TemplatesAndProgramsPanel;

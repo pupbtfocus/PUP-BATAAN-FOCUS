@@ -1,7 +1,7 @@
 // Usage (from /pup-focus):  node scripts/reset-db.mjs [--yes]
 // Wipes all submissions/data, empties ALL storage buckets, deletes every
 // account except super_admin, and resets academic terms and submission schedules.
-// Buckets and catalog config tables (programs, curricula, requirement templates, roles) are kept.
+// Buckets and catalog config tables (programs, requirement templates, roles) are kept.
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -62,8 +62,7 @@ const ACCOUNT_TABLES_BY_PROFILE = [
   { table: "faculty", col: "profile_id" },
   { table: "profiles", col: "id" },
 ];
-// Intentionally untouched: roles, programs, curricula,
-// requirement_templates, compliance_template_items
+// Intentionally untouched: roles, programs, requirement_templates, compliance_template_items
 
 function isSuper(u) {
   const r = u.user_metadata?.role ?? u.app_metadata?.role;

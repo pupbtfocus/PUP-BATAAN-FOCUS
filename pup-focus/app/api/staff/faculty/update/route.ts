@@ -280,7 +280,6 @@ export async function PATCH(request: NextRequest) {
             .from("faculty_program_assignments")
             .update({
               program_id: resolvedProgramId,
-              curriculum_id: null,
             })
             .eq("id", primaryId);
 
