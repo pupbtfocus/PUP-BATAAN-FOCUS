@@ -466,9 +466,9 @@ export default function ChangePasswordPage() {
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? (
-                        <EyeOffIcon className="w-4 h-4" />
-                      ) : (
                         <EyeIcon className="w-4 h-4" />
+                      ) : (
+                        <EyeOffIcon className="w-4 h-4" />
                       )}
                     </button>
                   </div>
@@ -501,9 +501,9 @@ export default function ChangePasswordPage() {
                       aria-label={showConfirm ? "Hide password" : "Show password"}
                     >
                       {showConfirm ? (
-                        <EyeOffIcon className="w-4 h-4" />
-                      ) : (
                         <EyeIcon className="w-4 h-4" />
+                      ) : (
+                        <EyeOffIcon className="w-4 h-4" />
                       )}
                     </button>
                   </div>

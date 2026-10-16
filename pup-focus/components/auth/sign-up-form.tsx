@@ -259,9 +259,9 @@ export function SignUpForm() {
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 !text-amber-400/80 hover:!text-amber-300 transition-colors cursor-pointer"
             >
               {showPassword ? (
-                <AppIcon icon={EyeClosed} size="sm" color="inherit" />
-              ) : (
                 <AppIcon icon={Eye} size="sm" color="inherit" />
+              ) : (
+                <AppIcon icon={EyeClosed} size="sm" color="inherit" />
               )}
             </button>
           </div>

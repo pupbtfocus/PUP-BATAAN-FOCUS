@@ -251,9 +251,9 @@ export function LoginForm({
               className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 !text-amber-400/80 hover:!text-amber-300 transition-colors cursor-pointer"
             >
               {showPassword ? (
-                <AppIcon icon={EyeClosed} size="md" color="inherit" strokeWidth={2.2} />
-              ) : (
                 <AppIcon icon={Eye} size="md" color="inherit" strokeWidth={2.2} />
+              ) : (
+                <AppIcon icon={EyeClosed} size="md" color="inherit" strokeWidth={2.2} />
               )}
             </button>
           </div>
