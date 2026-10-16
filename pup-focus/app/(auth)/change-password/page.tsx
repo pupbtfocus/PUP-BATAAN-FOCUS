@@ -431,6 +431,7 @@ export default function ChangePasswordPage() {
 
                 <Link
                   href="/sign-in"
+                  prefetch={false}
                   className="w-full flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5E0000] text-white font-medium text-xs sm:text-sm py-2 px-4 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#780000]/30 cursor-pointer"
                 >
                   <span>Return to Sign In</span>
@@ -439,6 +440,7 @@ export default function ChangePasswordPage() {
 
                 <Link
                   href="/change-password?preview=true"
+                  prefetch={false}
                   className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition py-0.5"
                 >
                   <span>Preview New Design Form</span>
