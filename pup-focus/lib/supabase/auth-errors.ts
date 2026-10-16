@@ -35,8 +35,16 @@ export function patchRefreshTokenErrorConsoleFilter() {
   anyConsole.__hasRefreshTokenFilter = true;
 
   const originalConsoleError = console.error.bind(console);
+  const originalConsoleWarn = console.warn.bind(console);
   console.error = (...args: any[]) => {
     if (args.length > 0 && isInvalidRefreshTokenError(args[0])) {
+      return;
+    }
+    if (
+      typeof args[0] === "string" &&
+      args[0].includes("[Cloudflare Turnstile]")
+    ) {
+      originalConsoleWarn(...args);
       return;
     }
     originalConsoleError(...args);

@@ -32,8 +32,11 @@ declare global {
         params: {
           sitekey: string;
           callback?: (token: string) => void;
-          "error-callback"?: (error?: unknown) => void;
+          "error-callback"?: (error?: unknown) => boolean | void;
           "expired-callback"?: () => void;
+          "refresh-expired"?: "auto" | "manual" | "never";
+          retry?: "auto" | "never";
+          "retry-interval"?: number;
           theme?: "light" | "dark" | "auto";
           size?: "normal" | "flexible" | "compact" | "invisible";
           action?: string;
@@ -135,6 +138,9 @@ export const Turnstile = forwardRef<TurnstileInstance, TurnstileProps>(
 
           widgetIdRef.current = window.turnstile.render(containerRef.current, {
             sitekey: siteKey,
+            "refresh-expired": "auto",
+            retry: "auto",
+            "retry-interval": 2000,
             callback: (token: string) => {
               if (isMounted) {
                 console.log("[Turnstile] Challenge completed, token received");
@@ -143,15 +149,29 @@ export const Turnstile = forwardRef<TurnstileInstance, TurnstileProps>(
             },
             "error-callback": (err: unknown) => {
               if (isMounted) {
-                if (String(err) === "110200") {
-                  console.error(
+                const code = String(err ?? "");
+                if (code === "110200") {
+                  console.warn(
                     `[Turnstile] Challenge error 110200: Domain "${typeof window !== "undefined" ? window.location.hostname : ""}" is not allowed for sitekey "${siteKey}". Add "localhost" to Allowed Domains in Cloudflare Turnstile dashboard, or set NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA in .env.local for local development.`
                   );
                 } else {
-                  console.error("[Turnstile] Challenge error callback:", err);
+                  console.warn("[Turnstile] Challenge error callback:", err);
                 }
                 onErrorRef.current?.(err);
+
+                if (code !== "110200") {
+                  setTimeout(() => {
+                    if (isMounted && widgetIdRef.current && window.turnstile) {
+                      try {
+                        window.turnstile.reset(widgetIdRef.current);
+                      } catch {
+                        // Ignore reset errors
+                      }
+                    }
+                  }, 1500);
+                }
               }
+              return true;
             },
             "expired-callback": () => {
               if (isMounted) {
