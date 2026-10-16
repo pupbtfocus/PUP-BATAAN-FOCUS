@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { useRealtimeSync } from "@/lib/realtime";
 import { isValidEmailAddress } from "@/lib/validation/email";
 import { ROLE, ROLE_LABEL, type AppRole, canManageAdminAccount } from "@/config/roles";
 import { AuditLogsPanel } from "@/features/audit-logs/components/audit-logs-panel";
@@ -476,9 +477,9 @@ export function SuperAdminDashboard({
     [facultyAccounts, pendingFacultyAction]
   );
 
-  async function loadFacultyFromDatabase() {
+  async function loadFacultyFromDatabase(silent = false) {
     try {
-      setIsLoadingFaculty(true);
+      if (!silent) setIsLoadingFaculty(true);
       const response = await fetch(`/api/admin/faculty/list?_t=${Date.now()}`, {
         cache: "no-store",
       });
@@ -492,7 +493,7 @@ export function SuperAdminDashboard({
     } catch (err) {
       console.error("Error loading faculty accounts in super-admin:", err);
     } finally {
-      setIsLoadingFaculty(false);
+      if (!silent) setIsLoadingFaculty(false);
     }
   }
 
@@ -812,9 +813,9 @@ export function SuperAdminDashboard({
     setCreateAdminProfileImagePreview(null);
   }
 
-  async function loadAdminAccounts() {
+  async function loadAdminAccounts(silent = false) {
     try {
-      setIsLoadingAccounts(true);
+      if (!silent) setIsLoadingAccounts(true);
       setAccountsError(null);
 
       let response = await fetch(`/api/admin/accounts?_t=${Date.now()}`, {
@@ -876,7 +877,7 @@ export function SuperAdminDashboard({
     } catch {
       setAccountsError("Error loading admin accounts");
     } finally {
-      setIsLoadingAccounts(false);
+      if (!silent) setIsLoadingAccounts(false);
     }
   }
 
@@ -916,14 +917,11 @@ export function SuperAdminDashboard({
   }
 
   async function refreshCurrentPanel() {
-    if (typeof window !== "undefined") {
-      window.location.reload();
-      return;
-    }
     if (activeSection === "accounts") {
       await loadAdminAccounts();
     } else if (activeSection === "faculty" || activeSection === "verification") {
       await loadFacultyFromDatabase();
+      setVerificationResetTrigger((prev) => prev + 1);
     } else if (activeSection === "settings") {
       await loadAccountSettings();
     } else if (activeSection === "templates") {
@@ -940,11 +938,17 @@ export function SuperAdminDashboard({
 
   useEffect(() => {
     if (activeSection === "faculty" || activeSection === "verification") {
-      void loadFacultyFromDatabase();
+      void loadFacultyFromDatabase(facultyAccounts.length > 0);
     } else if (activeSection === "accounts") {
-      void loadAdminAccounts();
+      void loadAdminAccounts(adminAccounts.length > 0);
     }
   }, [activeSection]);
+
+  // Realtime sync across Faculty, Staff, and Super Admin
+  useRealtimeSync(() => {
+    void loadFacultyFromDatabase(true);
+    void loadAdminAccounts(true);
+  });
 
   useEffect(() => {
     void loadAccountSettings();
@@ -2485,7 +2489,16 @@ export function SuperAdminDashboard({
           facultyId={detailsFacultyId}
           facultyAccounts={facultyAccounts}
           onClose={() => setDetailsFacultyModalOpen(false)}
-          onSave={refreshCurrentPanel}
+          onSave={async (updatedFaculty) => {
+            if (updatedFaculty) {
+              setFacultyAccounts((prev) =>
+                prev.map((f) =>
+                  f.id === updatedFaculty.id ? { ...f, ...updatedFaculty } : f,
+                ),
+              );
+            }
+            await loadFacultyFromDatabase(true);
+          }}
         />
       ) : null}
 

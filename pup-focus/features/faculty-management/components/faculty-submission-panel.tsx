@@ -19,6 +19,7 @@ import { FacultyExtensionRequestModal } from "@/features/submissions/components/
 import { TermCompletionResetModal } from "@/features/submissions/components/term-completion-reset-modal";
 import { extractFirstName, buildFacultyInitials } from "@/lib/faculty-profile";
 import { createClient } from "@/lib/supabase/client";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 import {
   DEFAULT_REQUIREMENTS,
   REQUIREMENT_LABEL,
@@ -839,11 +840,13 @@ function FacultySubmissionPanelContent({
   function dismissIncompleteRequirementsAlert() {
     setIsRequirementAlertOpen(false);
   }
-  async function fetchHistory() {
+  async function fetchHistory(options?: { silent?: boolean }) {
     try {
-      setIsLoadingHistory(true);
+      if (!options?.silent) {
+        setIsLoadingHistory(true);
+      }
       setHistoryError(null);
-      const response = await fetch("/api/faculty/submissions/history", {
+      const response = await fetch(`/api/faculty/submissions/history?_t=${Date.now()}`, {
         cache: "no-store",
         headers: { "Cache-Control": "no-cache" },
       });
@@ -866,7 +869,9 @@ function FacultySubmissionPanelContent({
     } catch {
       setHistoryError("Error loading submission history");
     } finally {
-      setIsLoadingHistory(false);
+      if (!options?.silent) {
+        setIsLoadingHistory(false);
+      }
     }
   }
   async function handleBulkDownload() {
@@ -928,9 +933,16 @@ function FacultySubmissionPanelContent({
       setBulkDownloadProgressText("");
     }
   }
-  async function fetchStatuses(year?: string, sem?: string, classId?: string | null) {
+  async function fetchStatuses(
+    year?: string,
+    sem?: string,
+    classId?: string | null,
+    options?: { silent?: boolean },
+  ) {
     try {
-      setIsLoadingStatuses(true);
+      if (!options?.silent) {
+        setIsLoadingStatuses(true);
+      }
       setStatusError(null);
       const params = new URLSearchParams();
       const targetYear =
@@ -953,6 +965,7 @@ function FacultySubmissionPanelContent({
       if (targetClassId) {
         params.set("classId", targetClassId);
       }
+      params.set("_t", String(Date.now()));
       const response = await fetch(
         `/api/faculty/submissions/status?${params.toString()}`,
         {
@@ -1001,13 +1014,17 @@ function FacultySubmissionPanelContent({
     } catch {
       setStatusError("Error loading requirement statuses");
     } finally {
-      setIsLoadingStatuses(false);
+      if (!options?.silent) {
+        setIsLoadingStatuses(false);
+      }
     }
   }
-  const refetchSubmissionWindow = useCallback(async () => {
-    setIsLoadingSubmissionWindow(true);
+  const refetchSubmissionWindow = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setIsLoadingSubmissionWindow(true);
+    }
     try {
-      const response = await fetch("/api/faculty/submissions/window", {
+      const response = await fetch(`/api/faculty/submissions/window?_t=${Date.now()}`, {
         cache: "no-store",
         headers: { "Cache-Control": "no-cache" },
       });
@@ -1018,7 +1035,9 @@ function FacultySubmissionPanelContent({
     } catch {
       // Keep UI usable even if window info fails to load.
     } finally {
-      setIsLoadingSubmissionWindow(false);
+      if (!options?.silent) {
+        setIsLoadingSubmissionWindow(false);
+      }
     }
   }, []);
   const handleWindowExpired = useCallback(() => {
@@ -1388,10 +1407,12 @@ function FacultySubmissionPanelContent({
     return facultyClasses.find((c) => c.id === selectedClassId) || null;
   }, [facultyClasses, selectedClassId]);
 
-  const fetchFacultyClasses = useCallback(async () => {
+  const fetchFacultyClasses = useCallback(async (options?: { silent?: boolean }) => {
     try {
-      setIsLoadingClasses(true);
-      const res = await fetch(`/api/faculty/classes`, {
+      if (!options?.silent) {
+        setIsLoadingClasses(true);
+      }
+      const res = await fetch(`/api/faculty/classes?_t=${Date.now()}`, {
         cache: "no-store",
       });
       if (res.ok) {
@@ -1401,7 +1422,9 @@ function FacultySubmissionPanelContent({
     } catch (err) {
       console.error("Failed to load faculty classes:", err);
     } finally {
-      setIsLoadingClasses(false);
+      if (!options?.silent) {
+        setIsLoadingClasses(false);
+      }
     }
   }, []);
 
@@ -1410,6 +1433,14 @@ function FacultySubmissionPanelContent({
       void fetchFacultyClasses();
     }
   }, [isMounted, fetchFacultyClasses]);
+
+  // Realtime synchronization for classes, submissions, reviews, windows, and templates
+  useRealtimeSync(() => {
+    void fetchFacultyClasses({ silent: true });
+    void fetchStatuses(undefined, undefined, undefined, { silent: true });
+    void fetchHistory({ silent: true });
+    void refetchSubmissionWindow({ silent: true });
+  });
 
   const handleAddClassSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1448,9 +1479,15 @@ function FacultySubmissionPanelContent({
 
       const resData = await res.json();
       const newClass: FacultyClass = resData.class;
-      await fetchFacultyClasses();
+      await fetchFacultyClasses({ silent: true });
       setSelectedClassId(newClass.id);
-      void fetchStatuses(activeAY, activeSem, newClass.id);
+      void fetchStatuses(activeAY, activeSem, newClass.id, { silent: true });
+      emitRealtimeSync({
+        source: "class-created",
+        table: "faculty_classes",
+        classId: newClass.id,
+        timestamp: Date.now(),
+      });
       setIsAddClassModalOpen(false);
       setClassForm({
         subject_code: "",
@@ -1514,7 +1551,13 @@ function FacultySubmissionPanelContent({
         throw new Error(errData.error || `Failed to update class (HTTP ${res.status})`);
       }
 
-      await fetchFacultyClasses();
+      await fetchFacultyClasses({ silent: true });
+      emitRealtimeSync({
+        source: "class-updated",
+        table: "faculty_classes",
+        classId: classToEdit.id,
+        timestamp: Date.now(),
+      });
       setIsEditClassModalOpen(false);
       setClassToEdit(null);
       setSubmissionMessage(`Class ${editClassForm.subject_code.trim()} updated successfully.`);
@@ -1550,6 +1593,12 @@ function FacultySubmissionPanelContent({
       if (willArchive && selectedClassId === cls.id) {
         setSelectedClassId(null);
       }
+      emitRealtimeSync({
+        source: "class-archived",
+        table: "faculty_classes",
+        classId: cls.id,
+        timestamp: Date.now(),
+      });
       setSubmissionMessage(
         willArchive
           ? `Class ${cls.subject_code} (${cls.section_code}) has been archived.`
@@ -1603,6 +1652,12 @@ function FacultySubmissionPanelContent({
       if (selectedClassId === classToDelete.id) {
         setSelectedClassId(null);
       }
+      emitRealtimeSync({
+        source: "class-deleted",
+        table: "faculty_classes",
+        classId: classToDelete.id,
+        timestamp: Date.now(),
+      });
       setIsDeleteModalOpen(false);
       setSubmissionMessage(`Class ${classToDelete.subject_code} (${classToDelete.section_code}) deleted.`);
       setClassToDelete(null);
@@ -2416,9 +2471,16 @@ function FacultySubmissionPanelContent({
       });
 
       // Background sync
+      emitRealtimeSync({
+        source: "submission-uploaded",
+        table: "submissions",
+        classId,
+        requirementCode,
+        timestamp: Date.now(),
+      });
       router.refresh();
-      void fetchStatuses(academicYear, semester, classId);
-      void fetchHistory();
+      void fetchStatuses(academicYear, semester, classId, { silent: true });
+      void fetchHistory({ silent: true });
     } catch (error) {
       if (progressTimer) clearInterval(progressTimer);
       const errMsg = error instanceof Error ? error.message : "An unexpected error occurred";

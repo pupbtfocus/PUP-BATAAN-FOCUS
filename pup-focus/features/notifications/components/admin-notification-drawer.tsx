@@ -23,6 +23,7 @@ import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { REQUIREMENT_LABEL, type RequirementCode } from "@/config/compliance";
 import { cn } from "@/utils/cn";
+import { useRealtimeSync } from "@/lib/realtime";
 
 export interface AdminNotificationItem {
   id: string;
@@ -114,6 +115,10 @@ export function AdminNotificationDrawer({
 
     return () => clearInterval(interval);
   }, [fetchNotifications]);
+
+  useRealtimeSync(() => {
+    void fetchNotifications();
+  });
 
   useEffect(() => {
     if (!isOpen) return;

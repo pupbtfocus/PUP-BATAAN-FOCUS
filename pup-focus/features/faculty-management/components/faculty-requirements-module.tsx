@@ -20,6 +20,7 @@ import {
 import { DocumentPreviewModal, type DocumentPreviewSubmission } from "@/features/submissions/components/document-preview-modal";
 import type { SubmissionWindowState } from "@/features/submissions/services/submission-window.service";
 import { createClient } from "@/lib/supabase/client";
+import { emitRealtimeSync, useRealtimeSync } from "@/lib/realtime";
 
 export type { SubmissionWindowState };
 
@@ -242,10 +243,12 @@ export function FacultyRequirementsModule({
     };
   }, [activeRequirementItems, requirementStatuses]);
 
-  async function loadStatuses() {
+  async function loadStatuses(options?: { silent?: boolean }) {
     try {
-      setIsLoading(true);
-      const response = await fetch("/api/faculty/submissions/status", {
+      if (!options?.silent) {
+        setIsLoading(true);
+      }
+      const response = await fetch(`/api/faculty/submissions/status?_t=${Date.now()}`, {
         cache: "no-store",
       });
       if (!response.ok) {
@@ -264,13 +267,15 @@ export function FacultyRequirementsModule({
     } catch {
       setMessage("Unable to load current requirement status right now.");
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
     }
   }
 
   async function loadSubmissionWindow() {
     try {
-      const response = await fetch("/api/faculty/submissions/window", {
+      const response = await fetch(`/api/faculty/submissions/window?_t=${Date.now()}`, {
         cache: "no-store",
       });
       if (response.ok) {
@@ -288,6 +293,11 @@ export function FacultyRequirementsModule({
       void loadSubmissionWindow();
     }
   }, [initialStatuses, initialSubmissionWindow]);
+
+  useRealtimeSync(() => {
+    void loadStatuses({ silent: true });
+    void loadSubmissionWindow();
+  });
 
   useEffect(() => {
     if (!submissionWindow) return;

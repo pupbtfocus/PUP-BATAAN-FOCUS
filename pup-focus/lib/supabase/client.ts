@@ -96,6 +96,27 @@ function createMissingSupabaseClient() {
     rpc() {
       return queryChain;
     },
+    channel() {
+      const mockChannel: any = {
+        on() {
+          return mockChannel;
+        },
+        subscribe(cb?: (status: string) => void) {
+          cb?.("SUBSCRIBED");
+          return mockChannel;
+        },
+        send() {
+          return Promise.resolve("ok");
+        },
+        unsubscribe() {
+          return Promise.resolve("ok");
+        },
+      };
+      return mockChannel;
+    },
+    removeChannel() {
+      return Promise.resolve("ok");
+    },
   };
 }
 
