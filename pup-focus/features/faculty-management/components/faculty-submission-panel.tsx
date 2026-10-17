@@ -3134,7 +3134,7 @@ function FacultySubmissionPanelContent({
           <button
             type="button"
             onClick={() => setIsUploadSectionVisible(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-500/70 bg-amber-50/90 dark:bg-slate-900/90 hover:bg-amber-100 dark:hover:bg-slate-850 text-slate-900 dark:text-amber-100 text-xs font-bold shadow-xs transition cursor-pointer active:scale-95"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border-2 border-amber-500 bg-white dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-slate-800 text-slate-950 dark:text-amber-100 text-xs font-extrabold shadow-xs transition cursor-pointer active:scale-95"
             title="Show document upload progress and status"
           >
             <div className="p-1 rounded-md bg-amber-500 text-slate-950 font-bold shrink-0">
@@ -3169,8 +3169,8 @@ function FacultySubmissionPanelContent({
     }
 
     return (
-      <div className="rounded-2xl border-2 border-amber-500/70 bg-gradient-to-br from-amber-50/80 via-white to-amber-100/40 dark:from-slate-900 dark:via-slate-900/90 dark:to-amber-950/30 p-4 sm:p-5 shadow-sm space-y-3 transition-all my-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-amber-200/70 dark:border-amber-900/50">
+      <div className="rounded-2xl border-2 border-amber-500 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3 transition-all my-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold shadow-xs">
               <AppIcon icon={CloudUpload} size="sm" color="inherit" />
@@ -4525,7 +4525,7 @@ function FacultySubmissionPanelContent({
                   /* ─── STEP 2: CLASS REQUIREMENTS UPLOAD ZONE ─────────────────── */
                   <div className="space-y-5">
                     {/* Class Context Navigation Bar */}
-                    <div className="rounded-2xl border-2 border-amber-400/80 dark:border-amber-500/60 bg-amber-50/80 dark:bg-amber-950/20 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                    <div className="rounded-2xl border-2 border-amber-500 bg-white dark:bg-slate-900 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <button
                           type="button"
@@ -4562,7 +4562,7 @@ function FacultySubmissionPanelContent({
                                 <button
                                   type="button"
                                   onClick={(e) => handleOpenEditClass(selectedClass, e)}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 text-[11px] font-extrabold text-slate-950 transition cursor-pointer shadow-2xs active:scale-95"
                                   title="Edit this class load"
                                 >
                                   <AppIcon icon={EditPencil} size="xs" color="inherit" />
@@ -4578,10 +4578,10 @@ function FacultySubmissionPanelContent({
                                       handleOpenArchiveModal(selectedClass, e);
                                     }
                                   }}
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
+                                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-extrabold transition cursor-pointer shadow-2xs active:scale-95 ${
                                     selectedClass.is_archived
-                                      ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600/50 shadow-xs"
-                                      : "border-slate-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                      ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600"
+                                      : "border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                                   }`}
                                   title={selectedClass.is_archived ? "Restore to active loads" : "Archive class load"}
                                 >

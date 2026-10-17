@@ -170,12 +170,12 @@ export async function GET(request: NextRequest) {
     }
 
     const facultyIds = Array.from(new Set([user.id, profile.id]));
-    const windowState = await getSubmissionWindow();
+    const windowConfig = await getSubmissionWindow(supabase);
     const activeWindowTerm =
-      windowState.academicYear && windowState.semester
+      windowConfig?.academicYear && windowConfig?.semester
         ? {
-            academicYear: windowState.academicYear,
-            semester: (windowState.semester.toLowerCase().includes("2nd")
+            academicYear: windowConfig.academicYear,
+            semester: (windowConfig.semester.toLowerCase().includes("2nd")
               ? "2nd Semester"
               : "1st Semester") as "1st Semester" | "2nd Semester",
           }
