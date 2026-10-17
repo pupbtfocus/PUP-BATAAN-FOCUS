@@ -111,6 +111,8 @@ export type PastSubmissionData = {
   is_read?: boolean;
   isViewed?: boolean;
   viewed_at?: string;
+  fileName?: string;
+  storagePath?: string;
   classId?: string | null;
   class_id?: string | null;
 };
