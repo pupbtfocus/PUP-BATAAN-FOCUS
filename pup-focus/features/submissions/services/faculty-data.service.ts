@@ -415,23 +415,38 @@ export async function getFacultyInitialData(
   try {
     const { data, error } = await supabase
       .from("submissions")
-      .select("id, requirement_code, status, due_at, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, storage_path, file_name, class_id, is_archived")
-      .or(`faculty_profile_id.in.(${facultyIdList.join(",")}),user_id.in.(${facultyIdList.join(",")})`)
-      .order("submitted_at", { ascending: false });
+      .select("*")
+      .in("faculty_profile_id", facultyIdList)
+      .order("submitted_at", { ascending: false, nullsFirst: false });
 
     if (!error && data) {
       rawSubmissions = (data as any[]).filter((s) => s.is_archived !== true);
-    } else {
-      const { data: fallbackData } = await supabase
-        .from("submissions")
-        .select("id, requirement_code, status, due_at, submitted_at, created_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, storage_path, file_name, class_id")
-        .in("faculty_profile_id", facultyIdList)
-        .order("submitted_at", { ascending: false });
-      if (fallbackData) rawSubmissions = fallbackData;
     }
   } catch {}
 
   const submissionIds = rawSubmissions.map((s) => s.id);
+
+  const docVersionsMap = new Map<string, { storage_path?: string; mime_type?: string }>();
+  if (submissionIds.length > 0) {
+    try {
+      const { data: docVersions } = await supabase
+        .from("document_versions")
+        .select("submission_id, storage_path, mime_type")
+        .in("submission_id", submissionIds)
+        .order("version_number", { ascending: false });
+
+      if (docVersions) {
+        for (const doc of docVersions) {
+          if (!docVersionsMap.has(doc.submission_id)) {
+            docVersionsMap.set(doc.submission_id, {
+              storage_path: doc.storage_path,
+              mime_type: doc.mime_type,
+            });
+          }
+        }
+      }
+    } catch {}
+  }
 
   // 6.1 Query approved extension requests for this faculty user
   let approvedExtensions: any[] = [];
@@ -777,7 +792,7 @@ export async function getFacultyInitialData(
     ).length,
   };
 
-  // 9. Historical Submissions (Validated / Approved only)
+  // 9. Historical & Active Submissions across all classes
   const pastSubmissions: PastSubmissionData[] = [];
   for (const row of rawSubmissions) {
     if (!row || !row.requirement_code) continue;
@@ -787,13 +802,43 @@ export async function getFacultyInitialData(
     const latestReview = reviews[0];
     const latestReviewWithRemarks = reviews.find((r) => r.remarks && r.remarks.trim() !== "");
 
-    if (
-      latestReview?.decision !== "validated" &&
-      rawSt !== "validated" &&
-      rawSt !== "approved"
-    ) {
+    const docVer = docVersionsMap.get(row.id);
+    const resolvedStorage = docVer?.storage_path || row.storage_path || undefined;
+
+    const hasFile = Boolean(
+      row.submitted_at ||
+      resolvedStorage ||
+      row.file_name ||
+      rawSt === "uploaded" ||
+      rawSt === "submitted" ||
+      rawSt === "under_review" ||
+      rawSt === "pending_review" ||
+      rawSt === "validated" ||
+      rawSt === "approved" ||
+      rawSt === "rejected",
+    );
+
+    if (!hasFile) {
       continue;
     }
+
+    const isValidated =
+      latestReview?.decision === "validated" ||
+      rawSt === "validated" ||
+      rawSt === "approved";
+    const isRejected =
+      !isValidated &&
+      (latestReview?.decision === "rejected" ||
+        rawSt === "rejected" ||
+        rawSt === "returned" ||
+        rawSt === "needs_revision" ||
+        rawSt === "revision_required");
+
+    const resolvedStatus: "Pending" | "Validated" | "Rejected" = isValidated
+      ? "Validated"
+      : isRejected
+        ? "Rejected"
+        : "Pending";
 
     const adminFeedback =
       latestReviewWithRemarks?.remarks?.trim() ||
@@ -811,10 +856,10 @@ export async function getFacultyInitialData(
     const facultyNote = row.remarks?.trim() || undefined;
 
     const matchedAssignment = assignmentRows.find((a) => a.id === row.faculty_assignment_id);
-    let histAY = matchedAssignment?.academic_year || null;
+    let histAY = matchedAssignment?.academic_year || activeAcademicYear || null;
     let histSem: SubmissionWindowSemester | null = matchedAssignment?.term
       ? normalizeSemester(matchedAssignment.term)
-      : null;
+      : activeSemester || null;
 
     if (!histAY || !histSem) {
       const dateTerm = toAcademicYearAndSemester(row.submitted_at || row.created_at);
@@ -822,12 +867,18 @@ export async function getFacultyInitialData(
       histSem = histSem || dateTerm.semester;
     }
 
+    const storagePath = resolvedStorage;
+    const fileName =
+      row.file_name || (storagePath ? storagePath.split("/").pop() : undefined);
+
     pastSubmissions.push({
       id: row.id,
       academicYear: histAY,
       semester: histSem || "1st Semester",
-      requirementCode: row.requirement_code,
-      status: "Validated",
+      requirementCode:
+        matchRequirementCode(row.requirement_code, row.requirement_id, activeTemplates) ||
+        row.requirement_code,
+      status: resolvedStatus,
       submittedAt: row.submitted_at || row.created_at || new Date().toISOString(),
       updatedAt: (row as any).updated_at || undefined,
       dateValidated,
@@ -836,6 +887,8 @@ export async function getFacultyInitialData(
       admin_remarks: adminFeedback,
       adminRemarks: adminFeedback,
       feedback: adminFeedback,
+      fileName,
+      storagePath,
       reviewedAt: (latestReviewWithRemarks || latestReview)?.created_at
         ? new Date((latestReviewWithRemarks || latestReview)!.created_at!).toISOString().split("T")[0]
         : undefined,

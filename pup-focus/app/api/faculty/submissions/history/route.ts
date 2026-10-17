@@ -9,6 +9,7 @@ import {
   type RequirementCode,
 } from "@/config/compliance";
 import { logger } from "@/lib/observability/logger";
+import { getSubmissionWindow } from "@/features/submissions/services/submission-window.service";
 
 type HistoryStatus = "Pending" | "Validated" | "Rejected";
 
@@ -61,9 +62,18 @@ type SubmissionRow = {
   class_id?: string | null;
 };
 
-function normalizeRequirementCode(rawCode?: string | null): RequirementCode | string {
+function normalizeRequirementCode(
+  rawCode?: string | null,
+  activeTemplateCodes: string[] = [],
+): RequirementCode | string {
   if (!rawCode) return "document";
   const s = rawCode.toLowerCase().trim().replace(/[-_\s]+/g, "");
+  for (const code of activeTemplateCodes) {
+    const tplClean = code.toLowerCase().trim().replace(/[-_\s]+/g, "");
+    if (s === tplClean || rawCode.toLowerCase().trim() === code.toLowerCase().trim()) {
+      return code;
+    }
+  }
   if (s.includes("gradesheet") || s.includes("grade")) return REQUIREMENT_CODE.GRADE_SHEET;
   if (s.includes("syllabus") || s.includes("enhancedsyllabus")) return REQUIREMENT_CODE.ENHANCED_SYLLABUS;
   if (s.includes("orientation") || s.includes("classorientation")) return REQUIREMENT_CODE.CLASS_ORIENTATION;
@@ -160,35 +170,39 @@ export async function GET(request: NextRequest) {
     }
 
     const facultyIds = Array.from(new Set([user.id, profile.id]));
+    const windowState = await getSubmissionWindow();
+    const activeWindowTerm =
+      windowState.academicYear && windowState.semester
+        ? {
+            academicYear: windowState.academicYear,
+            semester: (windowState.semester.toLowerCase().includes("2nd")
+              ? "2nd Semester"
+              : "1st Semester") as "1st Semester" | "2nd Semester",
+          }
+        : null;
 
-    // 3. Query ONLY validated/approved submission records for this faculty member
+    let activeTemplateCodes: string[] = [];
+    try {
+      const { data: tplRows } = await supabase
+        .from("requirement_templates")
+        .select("code")
+        .eq("is_active", true);
+      if (tplRows) {
+        activeTemplateCodes = tplRows.map((r: any) => String(r.code || "")).filter(Boolean);
+      }
+    } catch {}
+
+    // 3. Query submission records for this faculty member across all classes
     let rawSubmissions: SubmissionRow[] = [];
     try {
       const { data: subData, error: subError } = await supabase
         .from("submissions")
-        .select(
-          "id, requirement_code, status, remarks, admin_remarks, submitted_at, updated_at, created_at, is_read, viewed_at, faculty_assignment_id, storage_path, file_path, class_id",
-        )
-        .or(
-          `faculty_profile_id.in.(${facultyIds.join(",")}),user_id.in.(${facultyIds.join(",")}),created_by.in.(${facultyIds.join(",")})`,
-        )
-        .in("status", ["validated", "approved"])
-        .order("updated_at", { ascending: false });
+        .select("*")
+        .in("faculty_profile_id", facultyIds)
+        .order("submitted_at", { ascending: false, nullsFirst: false });
 
       if (!subError && subData) {
-        rawSubmissions = subData as SubmissionRow[];
-      } else {
-        const { data: fallbackData } = await supabase
-          .from("submissions")
-          .select(
-            "id, requirement_code, status, remarks, admin_remarks, submitted_at, updated_at, created_at, faculty_assignment_id",
-          )
-          .in("faculty_profile_id", facultyIds)
-          .in("status", ["validated", "approved"])
-          .order("updated_at", { ascending: false });
-        if (fallbackData) {
-          rawSubmissions = fallbackData as SubmissionRow[];
-        }
+        rawSubmissions = (subData as any[]).filter((s) => s.is_archived !== true) as SubmissionRow[];
       }
     } catch (queryErr) {
       logger.error("history_submissions_query_failed", {
@@ -299,7 +313,27 @@ export async function GET(request: NextRequest) {
     for (const row of rawSubmissions) {
       if (!row || !row.requirement_code) continue;
 
-      const normCode = normalizeRequirementCode(row.requirement_code);
+      const doc = docVersionsMap.get(row.id);
+      const storagePath = doc?.storage_path || row.storage_path || row.file_path;
+      const rawSt = (row.status || "").toLowerCase().trim();
+      const hasFile = Boolean(
+        row.submitted_at ||
+        storagePath ||
+        row.file_name ||
+        rawSt === "uploaded" ||
+        rawSt === "submitted" ||
+        rawSt === "under_review" ||
+        rawSt === "pending_review" ||
+        rawSt === "validated" ||
+        rawSt === "approved" ||
+        rawSt === "rejected",
+      );
+      if (!hasFile) continue;
+
+      const normCode = normalizeRequirementCode(
+        row.requirement_code,
+        activeTemplateCodes,
+      );
 
       const reviews = reviewDecisionsMap.get(row.id) || [];
       const sortedReviews = [...reviews].sort((a, b) => {
@@ -314,16 +348,8 @@ export async function GET(request: NextRequest) {
 
       let term = assignmentMap.get(row.faculty_assignment_id || "");
 
-      if (!term && (row.submitted_at || row.created_at)) {
-        const subTime = new Date(
-          row.submitted_at || row.created_at || "",
-        ).getTime();
-        const winStartFallback = new Date(
-          "2026-08-05T00:00:00+08:00",
-        ).getTime();
-        if (!isNaN(subTime) && subTime >= winStartFallback) {
-          term = { academicYear: "2026-2027", semester: "2nd Semester" };
-        }
+      if (!term && activeWindowTerm) {
+        term = activeWindowTerm;
       }
 
       if (!term) {
@@ -343,9 +369,8 @@ export async function GET(request: NextRequest) {
 
       const facultyNote = rawFacultyNote || undefined;
 
-      const doc = docVersionsMap.get(row.id);
-      const storagePath = doc?.storage_path || row.storage_path || row.file_path;
-      const fileName = storagePath ? storagePath.split("/").pop() : undefined;
+      const fileName =
+        row.file_name || (storagePath ? storagePath.split("/").pop() : undefined);
 
       const dateValidated =
         (latestReviewWithRemarks || latestReview)?.created_at ||
@@ -354,12 +379,14 @@ export async function GET(request: NextRequest) {
         row.created_at ||
         new Date().toISOString();
 
+      const resolvedStatus = toHistoryStatus(row.status, latestReview);
+
       history.push({
         id: row.id,
         academicYear: term.academicYear,
         semester: term.semester,
         requirementCode: normCode,
-        status: "Validated",
+        status: resolvedStatus,
         submittedAt:
           row.submitted_at || row.created_at || new Date().toISOString(),
         updatedAt: row.updated_at || undefined,

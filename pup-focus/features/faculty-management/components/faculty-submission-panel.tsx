@@ -760,6 +760,9 @@ function FacultySubmissionPanelContent({
   const [facultyClasses, setFacultyClasses] = useState<FacultyClass[]>([]);
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const selectedClassIdRef = useRef<string | null>(null);
+  selectedClassIdRef.current = selectedClassId;
+  const classStatusesCacheRef = useRef<Record<string, RequirementStatus[]>>({});
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
   const [isSubmittingClass, setIsSubmittingClass] = useState(false);
   const [classForm, setClassForm] = useState({
@@ -963,7 +966,8 @@ function FacultySubmissionPanelContent({
       if (targetSem) {
         params.set("semester", targetSem);
       }
-      const targetClassId = classId !== undefined ? classId : selectedClassId;
+      const targetClassId =
+        classId !== undefined ? classId : selectedClassIdRef.current;
       if (targetClassId) {
         params.set("classId", targetClassId);
       }
@@ -978,11 +982,16 @@ function FacultySubmissionPanelContent({
       if (response.ok) {
         const data = await response.json();
         const statuses: RequirementStatus[] = data.requirementStatuses || [];
-        setRequirementStatuses(statuses);
+        if (targetClassId) {
+          classStatusesCacheRef.current[targetClassId] = statuses;
+        }
+        if ((targetClassId || null) === (selectedClassIdRef.current || null)) {
+          setRequirementStatuses(statuses);
+          setStatusCounts(data.counts || null);
+        }
         if (Array.isArray(data.requirementTemplates) && data.requirementTemplates.length > 0) {
           setRequirementTemplates(data.requirementTemplates);
         }
-        setStatusCounts(data.counts || null);
         if (data.academicYear) setStatusAcademicYear(data.academicYear);
         if (data.semester) setStatusSemester(data.semester);
         if (typeof data.hasActiveSchedule === "boolean") {
@@ -1281,6 +1290,7 @@ function FacultySubmissionPanelContent({
   }
   const filteredPastSubmissions = useMemo(() => {
     return pastSubmissions.filter((submission) => {
+      if (submission.status !== "Validated") return false;
       const matchesYear =
         historyAcademicYear === "All" ||
         submission.academicYear === historyAcademicYear;
@@ -1438,6 +1448,15 @@ function FacultySubmissionPanelContent({
     }
   }, [isMounted, fetchFacultyClasses]);
 
+  useEffect(() => {
+    if (!isMounted || facultyClasses.length === 0) return;
+    for (const cls of facultyClasses) {
+      if (!classStatusesCacheRef.current[cls.id]) {
+        void fetchStatuses(activeAY, activeSem, cls.id, { silent: true });
+      }
+    }
+  }, [isMounted, facultyClasses, activeAY, activeSem]);
+
   // Realtime synchronization for classes, submissions, reviews, windows, and templates
   useRealtimeSync(() => {
     void fetchFacultyClasses({ silent: true });
@@ -1509,6 +1528,8 @@ function FacultySubmissionPanelContent({
       const resData = await res.json();
       const newClass: FacultyClass = resData.class;
       await fetchFacultyClasses({ silent: true });
+      selectedClassIdRef.current = newClass.id;
+      classStatusesCacheRef.current[newClass.id] = [];
       setRequirementStatuses([]);
       setIsUploadSectionVisible(false);
       setSelectedClassId(newClass.id);
@@ -2520,38 +2541,68 @@ function FacultySubmissionPanelContent({
       );
 
       // Update requirement statuses with real submission ID
+      const nowIso = new Date().toISOString();
       setRequirementStatuses((prev) => {
         const exists = prev.some((r) => r.code === requirementCode);
-        if (exists) {
-          return prev.map((r) =>
-            r.code === requirementCode
-              ? {
-                  ...r,
-                  status: "Pending" as const,
-                  submittedAt: new Date().toISOString(),
-                  latestSubmissionId: result.submissionId,
-                  fileName: file.name,
-                  isRevision: isRevision || Boolean(r.feedback),
-                  hasPriorRevision: true,
-                  classId,
-                  class_id: classId,
-                }
-              : r,
-          );
+        const updated = exists
+          ? prev.map((r) =>
+              r.code === requirementCode
+                ? {
+                    ...r,
+                    status: "Pending" as const,
+                    submittedAt: nowIso,
+                    latestSubmissionId: result.submissionId,
+                    fileName: file.name,
+                    isRevision: isRevision || Boolean(r.feedback),
+                    hasPriorRevision: true,
+                    classId,
+                    class_id: classId,
+                  }
+                : r,
+            )
+          : [
+              ...prev,
+              {
+                code: requirementCode,
+                status: "Pending" as const,
+                submittedAt: nowIso,
+                latestSubmissionId: result.submissionId,
+                fileName: file.name,
+                isRevision,
+                hasPriorRevision: isRevision,
+                classId,
+                class_id: classId,
+              } as RequirementStatus,
+            ];
+        if (classId) {
+          classStatusesCacheRef.current[classId] = updated;
         }
+        return updated;
+      });
+
+      setPastSubmissions((prev) => {
+        const filtered = prev.filter(
+          (s) =>
+            !(
+              s.requirementCode === requirementCode &&
+              ((s as any).classId || (s as any).class_id) === classId
+            ),
+        );
         return [
-          ...prev,
           {
-            code: requirementCode,
-            status: "Pending" as const,
-            submittedAt: new Date().toISOString(),
-            latestSubmissionId: result.submissionId,
+            id: result.submissionId || `temp-${taskId}`,
+            academicYear,
+            semester: semester as "1st Semester" | "2nd Semester",
+            requirementCode,
+            status: "Pending",
+            submittedAt: nowIso,
             fileName: file.name,
-            isRevision,
-            hasPriorRevision: isRevision,
-            classId,
-            class_id: classId,
-          } as RequirementStatus,
+            note: remarks || undefined,
+            remarks: remarks || undefined,
+            classId: classId || undefined,
+            class_id: classId || undefined,
+          } as PastSubmission,
+          ...filtered,
         ];
       });
 
@@ -2663,36 +2714,66 @@ function FacultySubmissionPanelContent({
     setIsUploadSectionVisible(true);
 
     // Optimistically update requirement status to Pending immediately
+    const optimisticIso = new Date().toISOString();
     setRequirementStatuses((prev) => {
       const exists = prev.some((r) => r.code === targetReqCode);
-      if (exists) {
-        return prev.map((r) =>
-          r.code === targetReqCode
-            ? {
-                ...r,
-                status: "Pending" as const,
-                submittedAt: new Date().toISOString(),
-                fileName: targetFile.name,
-                isRevision: isRev || Boolean(r.feedback),
-                hasPriorRevision: true,
-                classId: targetClassId,
-                class_id: targetClassId,
-              }
-            : r,
-        );
+      const updated = exists
+        ? prev.map((r) =>
+            r.code === targetReqCode
+              ? {
+                  ...r,
+                  status: "Pending" as const,
+                  submittedAt: optimisticIso,
+                  fileName: targetFile.name,
+                  isRevision: isRev || Boolean(r.feedback),
+                  hasPriorRevision: true,
+                  classId: targetClassId,
+                  class_id: targetClassId,
+                }
+              : r,
+          )
+        : [
+            ...prev,
+            {
+              code: targetReqCode,
+              status: "Pending" as const,
+              submittedAt: optimisticIso,
+              fileName: targetFile.name,
+              isRevision: isRev,
+              hasPriorRevision: isRev,
+              classId: targetClassId,
+              class_id: targetClassId,
+            } as RequirementStatus,
+          ];
+      if (targetClassId) {
+        classStatusesCacheRef.current[targetClassId] = updated;
       }
+      return updated;
+    });
+
+    setPastSubmissions((prev) => {
+      const filtered = prev.filter(
+        (s) =>
+          !(
+            s.requirementCode === targetReqCode &&
+            ((s as any).classId || (s as any).class_id) === targetClassId
+          ),
+      );
       return [
-        ...prev,
         {
-          code: targetReqCode,
-          status: "Pending" as const,
-          submittedAt: new Date().toISOString(),
+          id: `temp-${taskId}`,
+          academicYear: activeAY,
+          semester: activeSem as "1st Semester" | "2nd Semester",
+          requirementCode: targetReqCode,
+          status: "Pending",
+          submittedAt: optimisticIso,
           fileName: targetFile.name,
-          isRevision: isRev,
-          hasPriorRevision: isRev,
-          classId: targetClassId,
-          class_id: targetClassId,
-        } as RequirementStatus,
+          note: targetRemarks || undefined,
+          remarks: targetRemarks || undefined,
+          classId: targetClassId || undefined,
+          class_id: targetClassId || undefined,
+        } as PastSubmission,
+        ...filtered,
       ];
     });
 
@@ -4245,7 +4326,10 @@ function FacultySubmissionPanelContent({
                                 <div
                                   key={cls.id}
                                   onClick={() => {
-                                    setRequirementStatuses([]);
+                                    selectedClassIdRef.current = cls.id;
+                                    setRequirementStatuses(
+                                      classStatusesCacheRef.current[cls.id] || [],
+                                    );
                                     setIsUploadSectionVisible(false);
                                     setSelectedClassId(cls.id);
                                     void fetchStatuses(activeAY, activeSem, cls.id, { silent: true });
@@ -4446,6 +4530,7 @@ function FacultySubmissionPanelContent({
                         <button
                           type="button"
                           onClick={() => {
+                            selectedClassIdRef.current = null;
                             setIsUploadSectionVisible(false);
                             setSelectedClassId(null);
                             void fetchStatuses(activeAY, activeSem, null, { silent: true });
@@ -4515,7 +4600,10 @@ function FacultySubmissionPanelContent({
                           value={selectedClassId}
                           onChange={(e) => {
                             const newClassId = e.target.value;
-                            setRequirementStatuses([]);
+                            selectedClassIdRef.current = newClassId;
+                            setRequirementStatuses(
+                              classStatusesCacheRef.current[newClassId] || [],
+                            );
                             setIsUploadSectionVisible(false);
                             setSelectedClassId(newClassId);
                             void fetchStatuses(activeAY, activeSem, newClassId, { silent: true });

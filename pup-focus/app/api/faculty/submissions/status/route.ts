@@ -464,37 +464,11 @@ export async function GET(request: NextRequest) {
     try {
       const { data, error } = await supabase
         .from("submissions")
-        .select(
-          "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, is_read, viewed_at, faculty_assignment_id, class_id, storage_path, file_name, created_at, updated_at, is_archived",
-        )
-        .or(
-          `faculty_profile_id.in.(${facultyIdList.join(",")}),user_id.in.(${facultyIdList.join(",")}),created_by.in.(${facultyIdList.join(",")})`,
-        )
+        .select("*")
+        .in("faculty_profile_id", facultyIdList)
         .order("submitted_at", { ascending: false, nullsFirst: false });
 
-      if (error) {
-        // Fallback without is_read / viewed_at if columns don't exist
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from("submissions")
-          .select(
-            "id, requirement_code, status, due_at, submitted_at, remarks, admin_remarks, faculty_assignment_id, class_id, storage_path, file_name, is_archived",
-          )
-          .in("faculty_profile_id", facultyIdList)
-          .order("submitted_at", { ascending: false, nullsFirst: false });
-
-        if (fallbackError) {
-          const { data: minimalData } = await supabase
-            .from("submissions")
-            .select(
-              "id, requirement_code, status, due_at, submitted_at, faculty_assignment_id, class_id, storage_path, file_name, is_archived",
-            )
-            .in("faculty_profile_id", facultyIdList)
-            .order("submitted_at", { ascending: false, nullsFirst: false });
-          rawSubmissions = ((minimalData as any[]) || []).filter((s) => s.is_archived !== true);
-        } else if (fallbackData) {
-          rawSubmissions = (fallbackData as any[]).filter((s) => s.is_archived !== true);
-        }
-      } else if (data) {
+      if (!error && data) {
         rawSubmissions = (data as any[]).filter((s) => s.is_archived !== true);
       }
     } catch (queryErr) {
