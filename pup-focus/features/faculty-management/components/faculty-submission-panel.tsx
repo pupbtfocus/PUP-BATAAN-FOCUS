@@ -51,7 +51,7 @@ import {
   DashboardMetricsSkeleton,
   SubmissionWindowSkeleton,
 } from "@/features/submissions/components/submission-skeletons";
-import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, EditPencil, Eye, Folder, Hourglass, Lock, Menu, Minus, NavArrowLeft, NavArrowRight, OpenNewWindow, Page, Plus, Refresh, Reports, Settings, SystemRestart, TaskList, Trash, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Activity, Archive, Calendar, Check, CheckCircle, ClockRotateRight, CloudUpload, Download, EditPencil, Eye, FilterList, Folder, Hourglass, Lock, Menu, Minus, NavArrowLeft, NavArrowRight, OpenNewWindow, Page, Plus, Refresh, Reports, Search, Settings, SystemRestart, TaskList, Trash, Upload, ViewGrid, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ModalHeader } from "@/components/ui/modal-header";
 import { LogoutButton } from "@/components/shared/logout-button";
@@ -74,6 +74,7 @@ export interface FacultyClass {
   is_archived?: boolean;
   created_at?: string;
 }
+export const CLASS_UNIT_OPTIONS = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0];
 export interface BackgroundUploadTask {
   id: string;
   requirementCode: string;
@@ -773,8 +774,10 @@ function FacultySubmissionPanelContent({
   });
   const [classFormError, setClassFormError] = useState<string | null>(null);
 
-  // Class Edit, Archive, and Delete States
+  // Class Edit, Archive, Delete, and Filter States
   const [classTab, setClassTab] = useState<"active" | "archived">("active");
+  const [classSearchQuery, setClassSearchQuery] = useState("");
+  const [classSectionFilter, setClassSectionFilter] = useState<string>("ALL");
   const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
   const [classToEdit, setClassToEdit] = useState<FacultyClass | null>(null);
   const [editClassForm, setEditClassForm] = useState({
@@ -803,9 +806,28 @@ function FacultySubmissionPanelContent({
     return facultyClasses.filter((c) => Boolean(c.is_archived));
   }, [facultyClasses]);
 
-  const displayedClasses = useMemo(() => {
-    return classTab === "active" ? activeFacultyClasses : archivedFacultyClasses;
+  const uniqueClassSections = useMemo(() => {
+    const baseList = classTab === "active" ? activeFacultyClasses : archivedFacultyClasses;
+    return Array.from(
+      new Set(baseList.map((c) => c.section_code.trim()).filter(Boolean)),
+    ).sort();
   }, [classTab, activeFacultyClasses, archivedFacultyClasses]);
+
+  const displayedClasses = useMemo(() => {
+    const baseList = classTab === "active" ? activeFacultyClasses : archivedFacultyClasses;
+    const trimmedSearch = classSearchQuery.trim().toLowerCase();
+    return baseList.filter((cls) => {
+      if (classSectionFilter !== "ALL" && cls.section_code.trim() !== classSectionFilter) {
+        return false;
+      }
+      if (!trimmedSearch) return true;
+      return (
+        cls.subject_code.toLowerCase().includes(trimmedSearch) ||
+        cls.description.toLowerCase().includes(trimmedSearch) ||
+        cls.section_code.toLowerCase().includes(trimmedSearch)
+      );
+    });
+  }, [classTab, activeFacultyClasses, archivedFacultyClasses, classSectionFilter, classSearchQuery]);
 
   const [hasPromptedTermCompletion, setHasPromptedTermCompletion] =
     useState(false);
@@ -4222,7 +4244,7 @@ function FacultySubmissionPanelContent({
                           No Classes or Subject Loads Added Yet
                         </h3>
                         <p className="mt-2 max-w-md text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                          Faculty requirements are organized per assigned subject load. Please add your first class section (e.g., COMP 023 • BSIT-BT 4-1) to unlock the document upload zone.
+                          Faculty requirements are organized per assigned subject load. Please add your first class section (e.g., COMP 023 • BSIT 4-1) to unlock the document upload zone.
                         </p>
                         <button
                           type="button"
@@ -4238,84 +4260,162 @@ function FacultySubmissionPanelContent({
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {/* Header & Filter Tabs */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h2 className="text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                                Assigned Subject Loads
-                              </h2>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                                {facultyClasses.length} Total
-                              </span>
+                        {/* Header, Count Badges & Filter Controls */}
+                        <div className="flex flex-col gap-3 rounded-2xl border-2 border-amber-500 bg-white p-4 shadow-sm">
+                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h2 className="text-sm font-black uppercase tracking-wider text-[#780000]">
+                                  Assigned Subject Loads
+                                </h2>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#780000] text-white shadow-xs">
+                                  {displayedClasses.length} of {classTab === "active" ? activeFacultyClasses.length : archivedFacultyClasses.length} Subjects
+                                </span>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-400 text-amber-950 border border-amber-500 shadow-xs">
+                                  {facultyClasses.length} Total Load{facultyClasses.length === 1 ? "" : "s"}
+                                </span>
+                              </div>
+                              <p className="text-xs font-medium text-slate-600 mt-1">
+                                Click any class to upload requirements, or filter and manage loads below.
+                              </p>
                             </div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                              Click any class to upload requirements, or manage loads using edit, archive, and delete actions.
-                            </p>
+
+                            {/* Active / Archive Toggle Pills */}
+                            <div className="inline-flex items-center p-1 bg-amber-50 rounded-xl border-2 border-amber-300 self-start lg:self-auto">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setClassTab("active");
+                                  setClassSectionFilter("ALL");
+                                }}
+                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                                  classTab === "active"
+                                    ? "bg-[#780000] text-white shadow-xs"
+                                    : "text-amber-950 hover:bg-amber-200"
+                                }`}
+                              >
+                                <span>Active</span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                                    classTab === "active"
+                                      ? "bg-amber-400 text-amber-950"
+                                      : "bg-amber-200 text-amber-950"
+                                  }`}
+                                >
+                                  {activeFacultyClasses.length}
+                                </span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setClassTab("archived");
+                                  setClassSectionFilter("ALL");
+                                }}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                                  classTab === "archived"
+                                    ? "bg-[#780000] text-white shadow-xs"
+                                    : "text-amber-950 hover:bg-amber-200"
+                                }`}
+                              >
+                                <AppIcon icon={Archive} size="sm" color="inherit" />
+                                <span>Archived</span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                                    classTab === "archived"
+                                      ? "bg-amber-400 text-amber-950"
+                                      : "bg-amber-200 text-amber-950"
+                                  }`}
+                                >
+                                  {archivedFacultyClasses.length}
+                                </span>
+                              </button>
+                            </div>
                           </div>
 
-                          {/* Active / Archive Toggle Pills */}
-                          <div className="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
-                            <button
-                              type="button"
-                              onClick={() => setClassTab("active")}
-                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                classTab === "active"
-                                  ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-amber-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
-                                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                              }`}
-                            >
-                              <span>Active</span>
-                              <span
-                                className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-                                  classTab === "active"
-                                    ? "bg-amber-500 text-slate-950"
-                                    : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-                                }`}
-                              >
-                                {activeFacultyClasses.length}
+                          {/* Search & Section Filter Row */}
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-amber-200">
+                            <div className="relative flex-1">
+                              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#780000]">
+                                <AppIcon icon={Search} size="sm" color="inherit" />
                               </span>
-                            </button>
+                              <input
+                                type="text"
+                                value={classSearchQuery}
+                                onChange={(e) => setClassSearchQuery(e.target.value)}
+                                placeholder="Search by subject code, description, or section..."
+                                className="w-full rounded-xl border-2 border-amber-300 bg-white pl-9 pr-8 py-2 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:border-[#780000] focus:outline-none"
+                              />
+                              {classSearchQuery && (
+                                <button
+                                  type="button"
+                                  onClick={() => setClassSearchQuery("")}
+                                  className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 hover:text-[#780000] cursor-pointer"
+                                  title="Clear search"
+                                >
+                                  <AppIcon icon={Xmark} size="sm" color="inherit" />
+                                </button>
+                              )}
+                            </div>
 
-                            <button
-                              type="button"
-                              onClick={() => setClassTab("archived")}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                classTab === "archived"
-                                  ? "bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
-                                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                              }`}
-                            >
-                              <AppIcon icon={Archive} size="sm" color="inherit" />
-                              <span>Archived</span>
-                              <span
-                                className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-                                  classTab === "archived"
-                                    ? "bg-amber-400 text-slate-950 dark:bg-amber-400 dark:text-slate-950"
-                                    : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-                                }`}
-                              >
-                                {archivedFacultyClasses.length}
-                              </span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex items-center">
+                                <span className="pointer-events-none absolute left-3 text-[#780000]">
+                                  <AppIcon icon={FilterList} size="sm" color="inherit" />
+                                </span>
+                                <select
+                                  value={classSectionFilter}
+                                  onChange={(e) => setClassSectionFilter(e.target.value)}
+                                  aria-label="Filter by section"
+                                  className="rounded-xl border-2 border-amber-300 bg-amber-50 pl-9 pr-8 py-2 text-xs font-black text-amber-950 focus:border-[#780000] focus:outline-none cursor-pointer"
+                                >
+                                  <option value="ALL">
+                                    All Sections ({classTab === "active" ? activeFacultyClasses.length : archivedFacultyClasses.length})
+                                  </option>
+                                  {uniqueClassSections.map((sec) => (
+                                    <option key={sec} value={sec}>
+                                      {sec}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {(classSearchQuery.trim() !== "" || classSectionFilter !== "ALL") && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setClassSearchQuery("");
+                                    setClassSectionFilter("ALL");
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-xl bg-amber-400 hover:bg-amber-500 px-3 py-2 text-xs font-black text-amber-950 border border-amber-500 transition-colors cursor-pointer shrink-0"
+                                >
+                                  <AppIcon icon={Xmark} size="xs" color="inherit" />
+                                  Reset
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
 
                         {/* Class Grid or Empty View */}
                         {displayedClasses.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 p-8 text-center">
-                            <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center mb-3">
+                          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-amber-400 bg-white p-8 text-center">
+                            <div className="h-12 w-12 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center mb-3">
                               <AppIcon icon={classTab === "archived" ? Archive : TaskList} size="md" color="inherit" />
                             </div>
-                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                              {classTab === "archived"
-                                ? "No Archived Subject Loads"
-                                : "No Active Subject Loads"}
+                            <h4 className="text-sm font-black text-[#780000]">
+                              {classSearchQuery.trim() !== "" || classSectionFilter !== "ALL"
+                                ? "No Matching Subject Loads Found"
+                                : classTab === "archived"
+                                  ? "No Archived Subject Loads"
+                                  : "No Active Subject Loads"}
                             </h4>
-                            <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-                              {classTab === "archived"
-                                ? "Classes you archive when completed or done will appear here. You can unarchive and return them to active anytime."
-                                : "All assigned classes have been archived. You can unarchive them from the Archived tab or add a new class load."}
+                            <p className="mt-1 max-w-sm text-xs font-medium text-slate-600">
+                              {classSearchQuery.trim() !== "" || classSectionFilter !== "ALL"
+                                ? "Try adjusting your search keywords or section filter to see your assigned subjects."
+                                : classTab === "archived"
+                                  ? "Classes you archive when completed or done will appear here. You can unarchive and return them to active anytime."
+                                  : "All assigned classes have been archived. You can unarchive them from the Archived tab or add a new class load."}
                             </p>
                           </div>
                         ) : (
@@ -4500,13 +4600,13 @@ function FacultySubmissionPanelContent({
                                         </div>
                                       ) : (
                                         <div className="pt-2">
-                                          <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 group-hover:bg-amber-400 group-hover:border-amber-400 transition-all duration-200">
-                                            <span className="text-xs font-bold text-amber-900 dark:text-amber-200 group-hover:text-slate-950 flex items-center gap-2">
+                                          <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-400 group-hover:bg-amber-500 border border-amber-500 transition-all duration-200 shadow-2xs">
+                                            <span className="text-xs font-extrabold text-amber-950 flex items-center gap-2">
                                               <AppIcon icon={Folder} size="xs" color="inherit" />
                                               <span>View & Upload Documents</span>
                                             </span>
-                                            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-white dark:bg-slate-900 group-hover:bg-slate-950 text-amber-700 dark:text-amber-400 group-hover:text-amber-300 transition-colors shadow-2xs">
-                                              <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
+                                            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#780000] text-white group-hover:bg-[#5e0000] transition-colors shadow-2xs">
+                                              <AppIcon icon={NavArrowRight} size="xs" color="white" />
                                             </span>
                                           </div>
                                         </div>
@@ -4524,8 +4624,99 @@ function FacultySubmissionPanelContent({
                 ) : (
                   /* ─── STEP 2: CLASS REQUIREMENTS UPLOAD ZONE ─────────────────── */
                   <div className="space-y-5">
-                    {/* Class Context Navigation Bar */}
-                    <div className="rounded-2xl border-2 border-amber-500 bg-white dark:bg-slate-900 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                    {/* Solid Amber Card Header */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 bg-amber-400 p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors">
+                      <div>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h1 className="text-2xl sm:text-3xl font-black text-amber-950 tracking-tight">
+                            Documents to be Submitted
+                          </h1>
+                          {isAllValidated && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b5336] text-white text-xs font-bold shadow-xs">
+                              <AppIcon icon={CheckCircle} size="sm" color="inherit" />
+                              Done All for This Semester
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 font-medium leading-relaxed">
+                          View, upload, and track the status of your required faculty compliance documents for this academic term.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
+                        <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
+                          <p className="text-xs sm:text-sm text-amber-950/90 font-semibold">
+                            A.Y. {activeAY} • {activeSem}
+                            {hasActiveGracePeriod && !isAllValidated ? (
+                              <span className="ml-2 font-semibold">
+                                • (Personal Schedule Active)
+                              </span>
+                            ) : isWindowNotConfigured && !isAllValidated && !isEffectivelyOpen ? (
+                              <span className="ml-2 font-semibold">
+                                • (Awaiting Schedule)
+                              </span>
+                            ) : isWindowClosed && !isAllValidated && !isEffectivelyOpen ? (
+                              <span className="ml-2 font-semibold">
+                                • (Submission Window Closed)
+                              </span>
+                            ) : null}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => void handleManualRefresh()}
+                            disabled={isRefreshing}
+                            title="Refresh status"
+                            className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
+                          >
+                            <Refresh
+                              className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+                            />
+                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                          </button>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 shrink-0 sm:ml-auto w-full sm:w-auto">
+                          <button
+                            type="button"
+                            onClick={openHistoryModal}
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                            title="View validated documents history"
+                          >
+                            <AppIcon icon={CheckCircle} size="md" color="white" />
+                            <span>Validation History</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              window.open(
+                                "https://www.pup.edu.ph/about/calendar",
+                                "_blank",
+                                "noopener,noreferrer",
+                              )
+                            }
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
+                          >
+                            <Logo size={18} className="shrink-0" />
+                            <span>University Calendar</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleManualRefresh()}
+                            disabled={isRefreshing}
+                            title="Refresh status"
+                            className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+                          >
+                            <Refresh
+                              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                            />
+                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Class Context Navigation Bar (Between Header & Status Filter/Counts) */}
+                    <div className="rounded-2xl border-2 border-amber-500 bg-white p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <button
                           type="button"
@@ -4544,17 +4735,17 @@ function FacultySubmissionPanelContent({
                         {selectedClass && (
                           <div className="min-w-0 flex-1 pl-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-slate-950 shrink-0">
+                              <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-amber-400 text-amber-950 shrink-0">
                                 {selectedClass.section_code}
                               </span>
-                              <span className="text-sm sm:text-base font-black text-slate-950 dark:text-amber-100">
+                              <span className="text-sm sm:text-base font-black text-[#780000]">
                                 {selectedClass.subject_code} &bull; {selectedClass.description}
                               </span>
-                              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+                              <span className="text-xs font-semibold text-slate-600 shrink-0">
                                 ({selectedClass.units} Units)
                               </span>
                               {selectedClass.is_archived && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shrink-0">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-amber-100 text-amber-950 border border-amber-300 shrink-0">
                                   Archived
                                 </span>
                               )}
@@ -4562,7 +4753,7 @@ function FacultySubmissionPanelContent({
                                 <button
                                   type="button"
                                   onClick={(e) => handleOpenEditClass(selectedClass, e)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 text-[11px] font-extrabold text-slate-950 transition cursor-pointer shadow-2xs active:scale-95"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-400 text-[11px] font-extrabold text-amber-950 transition cursor-pointer shadow-2xs active:scale-95"
                                   title="Edit this class load"
                                 >
                                   <AppIcon icon={EditPencil} size="xs" color="inherit" />
@@ -4580,8 +4771,8 @@ function FacultySubmissionPanelContent({
                                   }}
                                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-extrabold transition cursor-pointer shadow-2xs active:scale-95 ${
                                     selectedClass.is_archived
-                                      ? "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600"
-                                      : "border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                      ? "bg-amber-500 hover:bg-amber-400 text-amber-950 border-amber-600"
+                                      : "border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950"
                                   }`}
                                   title={selectedClass.is_archived ? "Restore to active loads" : "Archive class load"}
                                 >
@@ -4608,7 +4799,7 @@ function FacultySubmissionPanelContent({
                             setSelectedClassId(newClassId);
                             void fetchStatuses(activeAY, activeSem, newClassId, { silent: true });
                           }}
-                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+                          className="rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-950 outline-none focus:border-[#780000] cursor-pointer shadow-2xs"
                         >
                           {facultyClasses.map((c) => (
                             <option key={c.id} value={c.id}>
@@ -4633,16 +4824,16 @@ function FacultySubmissionPanelContent({
 
                     {/* Archived Class Warning Banner */}
                     {selectedClass?.is_archived && (
-                      <div className="mb-6 rounded-2xl border-2 border-amber-500/80 bg-amber-100/90 dark:bg-amber-950/60 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-amber-950 dark:text-amber-100 shadow-md">
+                      <div className="rounded-2xl border-2 border-amber-500 bg-amber-100 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-amber-950 shadow-md">
                         <div className="flex items-center gap-3.5">
-                          <div className="p-2.5 rounded-xl bg-amber-400 text-slate-950 shrink-0 shadow-xs">
+                          <div className="p-2.5 rounded-xl bg-amber-400 text-amber-950 shrink-0 shadow-xs">
                             <AppIcon icon={Lock} size="md" color="inherit" />
                           </div>
                           <div>
-                            <p className="font-extrabold text-sm sm:text-base text-amber-950 dark:text-amber-100">
+                            <p className="font-extrabold text-sm sm:text-base text-amber-950">
                               Archived Class Load (Uploads Locked)
                             </p>
-                            <p className="text-xs sm:text-sm text-amber-900/90 dark:text-amber-200/90 font-medium">
+                            <p className="text-xs sm:text-sm text-amber-900 font-medium">
                               This class is currently in the archive. Document uploads, revisions, and extension requests are locked. Unarchive the class to resume submitting documents.
                             </p>
                           </div>
@@ -4650,7 +4841,7 @@ function FacultySubmissionPanelContent({
                         <button
                           type="button"
                           onClick={() => handleToggleArchiveClass(selectedClass)}
-                          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer shrink-0 border border-amber-600/40 active:scale-95"
+                          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer shrink-0 border border-amber-600/40 active:scale-95"
                         >
                           <AppIcon icon={Archive} size="sm" color="inherit" />
                           <span>Unarchive Class</span>
@@ -4658,96 +4849,6 @@ function FacultySubmissionPanelContent({
                       </div>
                     )}
 
-                    {/* Solid Amber Card Header */}
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500 dark:border-amber-500/70 bg-amber-400 dark:bg-[#2a1705] p-5 sm:p-6 shadow-md shadow-amber-500/10 space-y-3 transition-colors mb-6">
-                      <div>
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-amber-100 tracking-tight">
-                            Documents to be Submitted
-                          </h1>
-                          {isAllValidated && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b5336] text-white text-xs font-bold shadow-xs">
-                              <AppIcon icon={CheckCircle} size="sm" color="inherit" />
-                              Done All for This Semester
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-1.5 text-sm sm:text-base text-amber-950/90 dark:text-amber-200/90 font-medium leading-relaxed">
-                          View, upload, and track the status of your required faculty compliance documents for this academic term.
-                        </p>
-                      </div>
-
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-                    <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
-                      <p className="text-xs sm:text-sm text-amber-950/90 dark:text-amber-300/80 font-semibold">
-                        A.Y. {activeAY} • {activeSem}
-                        {hasActiveGracePeriod && !isAllValidated ? (
-                          <span className="ml-2 font-semibold">
-                            • (Personal Schedule Active)
-                          </span>
-                        ) : isWindowNotConfigured && !isAllValidated && !isEffectivelyOpen ? (
-                          <span className="ml-2 font-semibold">
-                            • (Awaiting Schedule)
-                          </span>
-                        ) : isWindowClosed && !isAllValidated && !isEffectivelyOpen ? (
-                          <span className="ml-2 font-semibold">
-                            • (Submission Window Closed)
-                          </span>
-                        ) : null}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => void handleManualRefresh()}
-                        disabled={isRefreshing}
-                        title="Refresh status"
-                        className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98] shrink-0"
-                      >
-                        <Refresh
-                          className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                        />
-                        <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 shrink-0 sm:ml-auto w-full sm:w-auto">
-                      <button
-                        type="button"
-                        onClick={openHistoryModal}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
-                        title="View validated documents history"
-                      >
-                        <AppIcon icon={CheckCircle} size="md" color="white" />
-                        <span>Validation History</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          window.open(
-                            "https://www.pup.edu.ph/about/calendar",
-                            "_blank",
-                            "noopener,noreferrer",
-                          )
-                        }
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] rounded-xl px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shadow-xs active:scale-[0.98]"
-                      >
-                        <Logo size={18} className="shrink-0" />
-                        <span>University Calendar</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleManualRefresh()}
-                        disabled={isRefreshing}
-                        title="Refresh status"
-                        className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-4 py-2 sm:px-4.5 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
-                      >
-                        <Refresh
-                          className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-                        />
-                        <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
                 {/* Clean Header Progress & Status Counts with Legend */}
                 {displayedStatusCounts && !isLoadingStatuses && (
                   <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium pt-1">
@@ -6101,7 +6202,7 @@ function FacultySubmissionPanelContent({
                         required
                         value={classForm.subject_code}
                         onChange={(e) => setClassForm((prev) => ({ ...prev, subject_code: e.target.value }))}
-                        placeholder="e.g. COMP 023"
+                        placeholder="Enter subject code"
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
                       />
                     </div>
@@ -6115,7 +6216,7 @@ function FacultySubmissionPanelContent({
                         required
                         value={classForm.description}
                         onChange={(e) => setClassForm((prev) => ({ ...prev, description: e.target.value }))}
-                        placeholder="e.g. Social and Professional Issues in Computing"
+                        placeholder="Enter description / subject title"
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
                       />
                     </div>
@@ -6130,7 +6231,7 @@ function FacultySubmissionPanelContent({
                           required
                           value={classForm.section_code}
                           onChange={(e) => setClassForm((prev) => ({ ...prev, section_code: e.target.value }))}
-                          placeholder="e.g. BSIT-BT 4-1"
+                          placeholder="e.g. BSIT 4-1"
                           className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono"
                         />
                       </div>
@@ -6139,16 +6240,18 @@ function FacultySubmissionPanelContent({
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                           Units <span className="text-rose-500">*</span>
                         </label>
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="0.5"
-                          max="12"
+                        <select
                           required
                           value={classForm.units}
-                          onChange={(e) => setClassForm((prev) => ({ ...prev, units: Number(e.target.value) || 3.0 }))}
-                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
-                        />
+                          onChange={(e) => setClassForm((prev) => ({ ...prev, units: Number(e.target.value) }))}
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition cursor-pointer"
+                        >
+                          {CLASS_UNIT_OPTIONS.map((u) => (
+                            <option key={u} value={u} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                              {u.toFixed(1)} Units
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
@@ -6239,7 +6342,7 @@ function FacultySubmissionPanelContent({
                         required
                         value={editClassForm.subject_code}
                         onChange={(e) => setEditClassForm((prev) => ({ ...prev, subject_code: e.target.value }))}
-                        placeholder="e.g. COMP 023"
+                        placeholder="Enter subject code"
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono font-bold"
                       />
                     </div>
@@ -6253,7 +6356,7 @@ function FacultySubmissionPanelContent({
                         required
                         value={editClassForm.description}
                         onChange={(e) => setEditClassForm((prev) => ({ ...prev, description: e.target.value }))}
-                        placeholder="e.g. Social and Professional Issues in Computing"
+                        placeholder="Enter description / subject title"
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
                       />
                     </div>
@@ -6268,7 +6371,7 @@ function FacultySubmissionPanelContent({
                           required
                           value={editClassForm.section_code}
                           onChange={(e) => setEditClassForm((prev) => ({ ...prev, section_code: e.target.value }))}
-                          placeholder="e.g. BSIT-BT 4-1"
+                          placeholder="e.g. BSIT 4-1"
                           className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition font-mono"
                         />
                       </div>
@@ -6277,16 +6380,24 @@ function FacultySubmissionPanelContent({
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                           Units <span className="text-rose-500">*</span>
                         </label>
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="0.5"
-                          max="12"
+                        <select
                           required
                           value={editClassForm.units}
-                          onChange={(e) => setEditClassForm((prev) => ({ ...prev, units: Number(e.target.value) || 3.0 }))}
-                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
-                        />
+                          onChange={(e) => setEditClassForm((prev) => ({ ...prev, units: Number(e.target.value) }))}
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition cursor-pointer"
+                        >
+                          {(() => {
+                            const current = Number(editClassForm.units);
+                            const options = current && !CLASS_UNIT_OPTIONS.includes(current)
+                              ? [...CLASS_UNIT_OPTIONS, current].sort((a, b) => a - b)
+                              : CLASS_UNIT_OPTIONS;
+                            return options.map((u) => (
+                              <option key={u} value={u} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                                {u.toFixed(1)} Units
+                              </option>
+                            ));
+                          })()}
+                        </select>
                       </div>
                     </div>
 
