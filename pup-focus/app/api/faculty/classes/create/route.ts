@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     if (!section_code || typeof section_code !== "string" || !section_code.trim()) {
       return NextResponse.json(
-        { error: "Section Code is required (e.g. BSIT-BT 4-1)." },
+        { error: "Section Code is required (e.g. BSIT 4-1)." },
         { status: 400 }
       );
     }
