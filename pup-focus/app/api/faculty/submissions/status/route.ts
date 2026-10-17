@@ -519,13 +519,9 @@ export async function GET(request: NextRequest) {
       } catch {}
     }
 
+    const allFacultyRawSubmissions = [...rawSubmissions];
     if (requestedClassId) {
-      const classMatches = rawSubmissions.filter((s: any) => s.class_id === requestedClassId);
-      if (classMatches.length > 0) {
-        rawSubmissions = classMatches;
-      } else {
-        rawSubmissions = rawSubmissions.filter((s: any) => s.class_id === requestedClassId || !s.class_id);
-      }
+      rawSubmissions = rawSubmissions.filter((s: any) => s.class_id === requestedClassId);
     }
 
     // 5.1 Query approved extension requests for this faculty user
@@ -737,7 +733,7 @@ export async function GET(request: NextRequest) {
     const nowMs = Date.now();
     let activePersonalDeadlineIso: string | null = null;
     let activePersonalDeadlineMs: number | null = null;
-    for (const sub of (submissions || [])) {
+    for (const sub of (allFacultyRawSubmissions || [])) {
       if (sub.due_at) {
         const remarksText = typeof sub.remarks === "string" ? sub.remarks : "";
         if (remarksText.includes("[origin:CLOSED]") || remarksText.includes("closed by admin")) continue;
