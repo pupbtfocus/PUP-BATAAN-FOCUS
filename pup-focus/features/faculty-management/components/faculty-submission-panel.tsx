@@ -3367,10 +3367,10 @@ function FacultySubmissionPanelContent({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed left-2 sm:left-3 top-2.5 z-[55] md:hidden inline-flex items-center justify-center p-1.5 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer shadow-2xs"
+          className="fixed left-3 top-2 z-[55] md:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-400 bg-[#680000] hover:bg-[#550000] text-amber-100 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer shadow-xs"
           aria-label="Open Navigation Menu"
         >
-          <AppIcon icon={Menu} size="lg" color="inherit" />
+          <AppIcon icon={Menu} size="md" color="inherit" />
         </button>
       )}
       {/* Desktop Sidebar (hidden on mobile) */}
