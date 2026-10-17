@@ -111,6 +111,8 @@ export type PastSubmissionData = {
   is_read?: boolean;
   isViewed?: boolean;
   viewed_at?: string;
+  classId?: string | null;
+  class_id?: string | null;
 };
 
 export type FacultyInitialData = {
@@ -840,6 +842,8 @@ export async function getFacultyInitialData(
       is_read: Boolean(row.is_read),
       isViewed: Boolean(row.is_read),
       viewed_at: row.viewed_at || undefined,
+      classId: (row as any).class_id || undefined,
+      class_id: (row as any).class_id || undefined,
     });
   }
 

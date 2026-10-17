@@ -1509,6 +1509,7 @@ function FacultySubmissionPanelContent({
       const resData = await res.json();
       const newClass: FacultyClass = resData.class;
       await fetchFacultyClasses({ silent: true });
+      setRequirementStatuses([]);
       setSelectedClassId(newClass.id);
       void fetchStatuses(activeAY, activeSem, newClass.id, { silent: true });
       emitRealtimeSync({
@@ -1721,7 +1722,13 @@ function FacultySubmissionPanelContent({
     }
 
     return activeCodes.map((code) => {
-      const live = requirementStatuses.find((r) => r.code === code);
+      const liveCandidate = requirementStatuses.find((r) => r.code === code);
+      const live =
+        selectedClassId && liveCandidate
+          ? ((liveCandidate as any).classId || (liveCandidate as any).class_id) === selectedClassId
+            ? liveCandidate
+            : undefined
+          : liveCandidate;
       const match = pastSubmissions.find((s) => {
         if (s.requirementCode !== code) return false;
         const subSem = normalizeSemester(s.semester);
@@ -1730,7 +1737,7 @@ function FacultySubmissionPanelContent({
         if (!matchTerm) return false;
         if (selectedClassId) {
           const sClass = (s as any).classId || (s as any).class_id;
-          return sClass === selectedClassId || !sClass;
+          return sClass === selectedClassId;
         }
         return true;
       });
@@ -1947,11 +1954,55 @@ function FacultySubmissionPanelContent({
     displayedStatusCounts?.total ?? activeTemplates.length;
   const validatedCount = displayedStatusCounts?.validated ?? 0;
 
-  // Semester compliance is met when ALL required/mandatory requirements are Validated or Exempted!
-  const isAllValidated =
+  const isSelectedClassAllValidated =
     mandatoryTemplates.length > 0
       ? mandatoryValidatedCount >= mandatoryTemplates.length
       : totalRequirements > 0 && validatedCount === totalRequirements;
+
+  // Semester compliance across the entire term is met only when ALL active classes have all required/mandatory requirements Validated!
+  const isAllClassesValidated = useMemo(() => {
+    const activeClasses = facultyClasses.filter((c) => !c.is_archived);
+    if (activeClasses.length === 0) return false;
+
+    const normActiveAY = normalizeAcademicYear(activeAY);
+    const normActiveSem = normalizeSemester(activeSem);
+    const mandatoryCodes = mandatoryTemplates.map((t) => t.code);
+    if (mandatoryCodes.length === 0) return false;
+
+    return activeClasses.every((cls) => {
+      return mandatoryCodes.every((code) => {
+        const hasValidatedInPast = pastSubmissions.some((s) => {
+          if (s.requirementCode !== code || s.status !== "Validated") return false;
+          const matchTerm =
+            normalizeSemester(s.semester) === normActiveSem &&
+            normalizeAcademicYear(s.academicYear) === normActiveAY;
+          if (!matchTerm) return false;
+          const sClass = (s as any).classId || (s as any).class_id;
+          return sClass === cls.id;
+        });
+        if (hasValidatedInPast) return true;
+
+        const hasValidatedInLive = requirementStatuses.some((r) => {
+          if (r.code !== code) return false;
+          if (r.status !== "Validated" && r.status !== "Exempted") return false;
+          const rClass = (r as any).classId || (r as any).class_id;
+          return rClass === cls.id;
+        });
+        return hasValidatedInLive;
+      });
+    });
+  }, [
+    facultyClasses,
+    activeAY,
+    activeSem,
+    mandatoryTemplates,
+    pastSubmissions,
+    requirementStatuses,
+  ]);
+
+  const isAllValidated = selectedClassId
+    ? isSelectedClassAllValidated
+    : isAllClassesValidated;
 
   // True when the global window is off but this specific faculty has an active grace period / personal deadline
   const now = Date.now();
@@ -2145,7 +2196,7 @@ function FacultySubmissionPanelContent({
   useEffect(() => {
     if (
       isMounted &&
-      isAllValidated &&
+      isAllClassesValidated &&
       !isTermResetAcknowledged &&
       !hasPromptedTermCompletion
     ) {
@@ -2155,7 +2206,7 @@ function FacultySubmissionPanelContent({
     }
   }, [
     isMounted,
-    isAllValidated,
+    isAllClassesValidated,
     isTermResetAcknowledged,
     hasPromptedTermCompletion,
   ]);
@@ -2481,6 +2532,8 @@ function FacultySubmissionPanelContent({
                   fileName: file.name,
                   isRevision: isRevision || Boolean(r.feedback),
                   hasPriorRevision: true,
+                  classId,
+                  class_id: classId,
                 }
               : r,
           );
@@ -2495,7 +2548,9 @@ function FacultySubmissionPanelContent({
             fileName: file.name,
             isRevision,
             hasPriorRevision: isRevision,
-          },
+            classId,
+            class_id: classId,
+          } as RequirementStatus,
         ];
       });
 
@@ -2619,6 +2674,8 @@ function FacultySubmissionPanelContent({
                 fileName: targetFile.name,
                 isRevision: isRev || Boolean(r.feedback),
                 hasPriorRevision: true,
+                classId: targetClassId,
+                class_id: targetClassId,
               }
             : r,
         );
@@ -2632,7 +2689,9 @@ function FacultySubmissionPanelContent({
           fileName: targetFile.name,
           isRevision: isRev,
           hasPriorRevision: isRev,
-        },
+          classId: targetClassId,
+          class_id: targetClassId,
+        } as RequirementStatus,
       ];
     });
 
@@ -3255,7 +3314,7 @@ function FacultySubmissionPanelContent({
             window={effectiveSubmissionWindow}
             isLoading={isLoadingSubmissionWindow}
             onExpired={handleWindowExpired}
-            isAllValidated={isAllValidated}
+            isAllValidated={isAllClassesValidated}
           />
         </div>
         <div className="my-2.5 h-px w-full bg-white/10" />
@@ -3290,7 +3349,7 @@ function FacultySubmissionPanelContent({
                   }`}
                 />
                 <span className="truncate">{label}</span>
-                {key === "status" && isAllValidated && (
+                {key === "status" && isAllClassesValidated && (
                   <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full bg-[#0b5336] text-[10px] font-bold text-white shadow-2xs">
                     Done
                   </span>
@@ -3373,7 +3432,7 @@ function FacultySubmissionPanelContent({
                 window={effectiveSubmissionWindow}
                 isLoading={isLoadingSubmissionWindow}
                 onExpired={handleWindowExpired}
-                isAllValidated={isAllValidated}
+                isAllValidated={isAllClassesValidated}
               />
             </div>
             <div className="my-2 h-px w-full bg-amber-400/50" />
@@ -3411,7 +3470,7 @@ function FacultySubmissionPanelContent({
                       }`}
                     />
                     <span className="truncate">{label}</span>
-                    {key === "status" && isAllValidated && (
+                    {key === "status" && isAllClassesValidated && (
                       <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full bg-[#0b5336] text-[10px] font-bold text-white shadow-2xs">
                         Done
                       </span>
@@ -4173,6 +4232,7 @@ function FacultySubmissionPanelContent({
                                 <div
                                   key={cls.id}
                                   onClick={() => {
+                                    setRequirementStatuses([]);
                                     setSelectedClassId(cls.id);
                                     void fetchStatuses(activeAY, activeSem, cls.id, { silent: true });
                                   }}
@@ -4440,6 +4500,7 @@ function FacultySubmissionPanelContent({
                           value={selectedClassId}
                           onChange={(e) => {
                             const newClassId = e.target.value;
+                            setRequirementStatuses([]);
                             setSelectedClassId(newClassId);
                             void fetchStatuses(activeAY, activeSem, newClassId, { silent: true });
                           }}

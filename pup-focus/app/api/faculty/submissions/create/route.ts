@@ -604,7 +604,7 @@ export async function POST(request: NextRequest) {
 
       if (payload.classId) {
         const subClass = (sub as any).class_id;
-        return subClass === payload.classId || !subClass;
+        return subClass === payload.classId;
       }
       return true;
     });
