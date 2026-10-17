@@ -51,9 +51,9 @@ export function AppShell({
         {/* Continuous bottom amber border (starts at the sidebar's outer edge calc(18rem-4px) to form a seamless 90-degree corner) */}
         <div className={`absolute ${fullBleed ? "left-0 md:left-[calc(18rem-4px)]" : "left-0"} right-0 bottom-0 h-1 bg-amber-500 pointer-events-none`} />
 
-        <div className="relative flex w-full h-full items-center justify-between pl-4 pr-3 sm:pr-6">
+        <div className="relative flex w-full h-full items-center justify-between pl-3 sm:pl-4 pr-3 sm:pr-6">
           {/* Left: Brand aligned with sidebar column (seamless maroon canopy) */}
-          <div className="flex items-center gap-2.5 z-10 min-w-0 md:w-64">
+          <div className={`flex items-center gap-2 sm:gap-2.5 z-10 min-w-0 md:w-64 ${fullBleed ? "pl-11 sm:pl-12 md:pl-0" : ""}`}>
             <BrandMark size={36} className="shrink-0" />
             <div className="flex flex-col min-w-0">
               <span className="font-extrabold text-base sm:text-lg tracking-tight text-white whitespace-nowrap leading-tight">
