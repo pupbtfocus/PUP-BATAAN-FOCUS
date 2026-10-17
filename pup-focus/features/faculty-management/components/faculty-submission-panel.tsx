@@ -1510,6 +1510,7 @@ function FacultySubmissionPanelContent({
       const newClass: FacultyClass = resData.class;
       await fetchFacultyClasses({ silent: true });
       setRequirementStatuses([]);
+      setIsUploadSectionVisible(false);
       setSelectedClassId(newClass.id);
       void fetchStatuses(activeAY, activeSem, newClass.id, { silent: true });
       emitRealtimeSync({
@@ -3042,6 +3043,10 @@ function FacultySubmissionPanelContent({
   };
 
   const renderUploadNotificationSection = () => {
+    const classUploadTasks = selectedClassId
+      ? uploadTasks.filter((t) => t.classId === selectedClassId)
+      : uploadTasks;
+
     if (!isUploadSectionVisible) {
       return (
         <div className="my-2 flex items-center justify-start">
@@ -3055,21 +3060,21 @@ function FacultySubmissionPanelContent({
               <AppIcon icon={CloudUpload} size="xs" color="inherit" />
             </div>
             <span>Document Upload Progress & Status</span>
-            {uploadTasks.some((t) => t.status === "uploading") && (
+            {classUploadTasks.some((t) => t.status === "uploading") && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 animate-pulse shrink-0">
                 <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
-                ({uploadTasks.filter((t) => t.status === "uploading").length})
+                ({classUploadTasks.filter((t) => t.status === "uploading").length})
               </span>
             )}
-            {uploadTasks.some((t) => t.status === "error") && (
+            {classUploadTasks.some((t) => t.status === "error") && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#780000] text-white shrink-0">
                 <AppIcon icon={WarningCircle} size="xs" color="inherit" />
-                {uploadTasks.filter((t) => t.status === "error").length} Failed
+                {classUploadTasks.filter((t) => t.status === "error").length} Failed
               </span>
             )}
-            {uploadTasks.length > 0 ? (
+            {classUploadTasks.length > 0 ? (
               <span className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold shrink-0">
-                ({uploadTasks.filter((t) => t.status === "done").length}/{uploadTasks.length} Done)
+                ({classUploadTasks.filter((t) => t.status === "done").length}/{classUploadTasks.length} Done)
               </span>
             ) : (
               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
@@ -3092,7 +3097,7 @@ function FacultySubmissionPanelContent({
             <div>
               <h3 className="font-extrabold text-sm sm:text-base text-slate-950 dark:text-amber-100 flex items-center gap-2">
                 Document Upload Progress & Status
-                {uploadTasks.some((t) => t.status === "uploading") && (
+                {classUploadTasks.some((t) => t.status === "uploading") && (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 animate-pulse">
                     <AppIcon icon={SystemRestart} size="xs" color="inherit" className="animate-spin" />
                     Uploading in background
@@ -3108,17 +3113,25 @@ function FacultySubmissionPanelContent({
             <button
               type="button"
               onClick={() => setIsUploadSectionVisible(false)}
-              className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
+              className="text-xs font-extrabold px-3 py-1.5 rounded-xl border border-amber-600 bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer shadow-xs active:scale-95 inline-flex items-center gap-1.5"
               title="Hide document upload progress section"
             >
               <AppIcon icon={Minus} size="xs" color="inherit" />
               <span>Hide</span>
             </button>
-            {uploadTasks.some((t) => t.status === "done" || t.status === "error") && (
+            {classUploadTasks.some((t) => t.status === "done" || t.status === "error") && (
               <button
                 type="button"
-                onClick={() => setUploadTasks((prev) => prev.filter((t) => t.status === "uploading"))}
-                className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs"
+                onClick={() =>
+                  setUploadTasks((prev) =>
+                    prev.filter(
+                      (t) =>
+                        (selectedClassId && t.classId !== selectedClassId) ||
+                        t.status === "uploading",
+                    ),
+                  )
+                }
+                className="text-xs font-extrabold px-3 py-1.5 rounded-xl border border-[#5e0000] bg-[#780000] hover:bg-[#5e0000] text-white transition cursor-pointer shadow-xs active:scale-95"
               >
                 Clear Completed
               </button>
@@ -3127,7 +3140,7 @@ function FacultySubmissionPanelContent({
         </div>
 
         {/* Task items list or empty state */}
-        {uploadTasks.length === 0 ? (
+        {classUploadTasks.length === 0 ? (
           <div className="p-5 rounded-xl border border-dashed border-amber-300/80 dark:border-amber-900/60 bg-white/70 dark:bg-slate-950/40 text-center space-y-1">
             <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
               No Active Document Uploads
@@ -3138,7 +3151,7 @@ function FacultySubmissionPanelContent({
           </div>
         ) : (
           <div className="space-y-2">
-            {uploadTasks.map((task) => (
+            {classUploadTasks.map((task) => (
               <div
                 key={task.id}
                 className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border transition-all ${
@@ -4233,6 +4246,7 @@ function FacultySubmissionPanelContent({
                                   key={cls.id}
                                   onClick={() => {
                                     setRequirementStatuses([]);
+                                    setIsUploadSectionVisible(false);
                                     setSelectedClassId(cls.id);
                                     void fetchStatuses(activeAY, activeSem, cls.id, { silent: true });
                                   }}
@@ -4432,6 +4446,7 @@ function FacultySubmissionPanelContent({
                         <button
                           type="button"
                           onClick={() => {
+                            setIsUploadSectionVisible(false);
                             setSelectedClassId(null);
                             void fetchStatuses(activeAY, activeSem, null, { silent: true });
                           }}
@@ -4501,6 +4516,7 @@ function FacultySubmissionPanelContent({
                           onChange={(e) => {
                             const newClassId = e.target.value;
                             setRequirementStatuses([]);
+                            setIsUploadSectionVisible(false);
                             setSelectedClassId(newClassId);
                             void fetchStatuses(activeAY, activeSem, newClassId, { silent: true });
                           }}
@@ -4961,11 +4977,11 @@ function FacultySubmissionPanelContent({
                                           (t) =>
                                             t.requirementCode === req.code &&
                                             t.status === "uploading" &&
-                                            (t.classId === selectedClassId || !t.classId),
+                                            (selectedClassId ? t.classId === selectedClassId : !t.classId),
                                         );
                                         if (ongoingUpload) {
                                           return (
-                                            <div className="inline-flex items-center justify-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 font-bold w-36 h-8 rounded-xl text-xs shadow-xs px-2 animate-pulse">
+                                            <div className="inline-flex items-center justify-center gap-1.5 bg-amber-500 border border-amber-600 text-slate-950 font-bold w-36 h-8 rounded-xl text-xs shadow-xs px-2">
                                               <AppIcon
                                                 icon={SystemRestart}
                                                 size="xs"
