@@ -690,9 +690,9 @@ export function EditFacultyModal({
                     onClick={() => void handleResendVerificationOnly()}
                     disabled={isResendingVerification || isSaving || !isEmailValid}
                     title="Send a verification email to this address without modifying account data"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/30 px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 shadow-2xs shrink-0 whitespace-nowrap"
                   >
-                    <AppIcon icon={SendMail} size="xs" color="inherit" />
+                    <AppIcon icon={SendMail} size="xs" color="inherit" className="text-slate-950" />
                     <span>
                       {isResendingVerification
                         ? "Sending..."
