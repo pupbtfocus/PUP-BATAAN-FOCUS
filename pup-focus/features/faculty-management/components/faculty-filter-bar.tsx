@@ -1,5 +1,8 @@
 "use client";
 
+import { Download, Page } from "iconoir-react";
+import { AppIcon } from "@/components/ui/app-icon";
+
 export interface FacultyFilterBarProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
@@ -9,6 +12,8 @@ export interface FacultyFilterBarProps {
   onProgramFilterChange?: (program: string) => void;
   programs?: Array<{ id: string; code: string; name: string }>;
   placeholder?: string;
+  onExportPdf?: () => void;
+  onExportExcel?: () => void;
 }
 
 export function FacultyFilterBar({
@@ -20,6 +25,8 @@ export function FacultyFilterBar({
   onProgramFilterChange,
   programs = [],
   placeholder = "Search faculty by name or email...",
+  onExportPdf,
+  onExportExcel,
 }: FacultyFilterBarProps) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white text-slate-900 border-2 border-amber-400 dark:border-amber-500/60 shadow-xs dark:bg-slate-900 dark:text-slate-100 rounded-xl mb-6 transition-colors">
@@ -87,6 +94,33 @@ export function FacultyFilterBar({
           </div>
         ) : null}
       </div>
+
+      {(onExportPdf || onExportExcel) && (
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+          {onExportPdf && (
+            <button
+              type="button"
+              onClick={onExportPdf}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
+              title="Export Faculty List to PDF"
+            >
+              <AppIcon icon={Page} size="xs" color="white" />
+              <span>Export PDF</span>
+            </button>
+          )}
+          {onExportExcel && (
+            <button
+              type="button"
+              onClick={onExportExcel}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
+              title="Export Faculty List to Excel"
+            >
+              <AppIcon icon={Download} size="xs" color="white" />
+              <span>Export Excel</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

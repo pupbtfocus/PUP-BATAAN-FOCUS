@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { EditPencil, Eye, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoir-react";
+import { Download, EditPencil, Eye, Page, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { ROLE, type AppRole, canManageAdminAccount } from "@/config/roles";
+import { exportReportToExcel, exportReportToPdf } from "@/lib/report-export";
 
 export interface AdminAccount {
   id?: string;
@@ -143,6 +144,8 @@ export function AdminFilterBar({
   onRoleFilterChange,
   statusFilter,
   onStatusFilterChange,
+  onExportPdf,
+  onExportExcel,
   placeholder = "Search staff by name or email...",
 }: {
   searchTerm: string;
@@ -151,6 +154,8 @@ export function AdminFilterBar({
   onRoleFilterChange: (role: "all" | string) => void;
   statusFilter: "all" | "active" | "inactive";
   onStatusFilterChange: (status: "all" | "active" | "inactive") => void;
+  onExportPdf?: () => void;
+  onExportExcel?: () => void;
   placeholder?: string;
 }) {
   return (
@@ -212,6 +217,33 @@ export function AdminFilterBar({
           </div>
         </div>
       </div>
+
+      {(onExportPdf || onExportExcel) && (
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+          {onExportPdf && (
+            <button
+              type="button"
+              onClick={onExportPdf}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
+              title="Export Staff List to PDF"
+            >
+              <AppIcon icon={Page} size="xs" color="white" />
+              <span>Export PDF</span>
+            </button>
+          )}
+          {onExportExcel && (
+            <button
+              type="button"
+              onClick={onExportExcel}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
+              title="Export Staff List to Excel"
+            >
+              <AppIcon icon={Download} size="xs" color="white" />
+              <span>Export Excel</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -265,6 +297,45 @@ export function AdminAccountsTable({
       return name.includes(query) || email.includes(query);
     });
   }, [adminAccounts, searchTerm, roleFilter, statusFilter]);
+
+  const buildStaffReportPayload = () => {
+    const activeCount = filteredAccounts.filter((a) => a.is_active).length;
+    const inactiveCount = filteredAccounts.length - activeCount;
+
+    return {
+      title: "Staff & Administrative Directory Report",
+      subtitle: `Role Filter: ${roleFilter === "all" ? "All Roles" : roleFilter} • Status: ${statusFilter.toUpperCase()}`,
+      fileName: `PUP_FOCUS_Staff_Report_${new Date().toISOString().slice(0, 10)}`,
+      summaryStats: [
+        { label: "Total Listed Staff", value: filteredAccounts.length, tone: "default" as const },
+        { label: "Active Staff", value: activeCount, tone: "success" as const },
+        { label: "Inactive Staff", value: inactiveCount, tone: "danger" as const },
+      ],
+      columns: [
+        { header: "#", key: "index", align: "center" as const },
+        { header: "Staff Name", key: "name" },
+        { header: "Email Address", key: "email" },
+        { header: "Role", key: "role", align: "center" as const },
+        { header: "Status", key: "status", align: "center" as const },
+        { header: "Last Login", key: "lastLogin" },
+      ],
+      rows: filteredAccounts.map((admin, index) => {
+        const isSuperAdmin =
+          (admin.role || "").toLowerCase() === "admin" ||
+          (admin.role || "").toLowerCase().includes("super") ||
+          admin.email?.toLowerCase() === "pupbataanfocus.superadmin@gmail.com" ||
+          admin.email?.toLowerCase() === "pupbataanfocus.admin@gmail.com";
+        return {
+          index: index + 1,
+          name: formatAdminName(admin),
+          email: admin.email || "—",
+          role: isSuperAdmin ? "Admin" : "Staff",
+          status: admin.is_active ? "Active" : "Inactive",
+          lastLogin: formatLastLogin(admin.last_sign_in_at || admin.lastLoginAt),
+        };
+      }),
+    };
+  };
 
   return (
     <div className="space-y-3">
@@ -327,6 +398,8 @@ export function AdminAccountsTable({
         onRoleFilterChange={setRoleFilter}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        onExportPdf={() => exportReportToPdf(buildStaffReportPayload())}
+        onExportExcel={() => exportReportToExcel(buildStaffReportPayload())}
       />
 
       {/* Clean Data Table */}

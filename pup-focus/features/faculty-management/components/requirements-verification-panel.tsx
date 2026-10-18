@@ -50,6 +50,7 @@ import {
   DocumentPreviewModal,
   type DocumentPreviewSubmission,
 } from "@/features/submissions/components/document-preview-modal";
+import { exportReportToExcel, exportReportToPdf } from "@/lib/report-export";
 
 export type DetectedFileType = "pdf" | "image" | "excel" | "word" | "other";
 
@@ -3958,8 +3959,86 @@ export function RequirementsPanel({
     { id: "not_submitted", label: "Not Submitted" },
   ];
 
+  const [reportScope, setReportScope] = useState<"all" | "completed" | "not_completed">("all");
+
   const currentStatusOption =
     statusFilterOptions.find((opt) => opt.id === statusFilter) || statusFilterOptions[0];
+
+  const buildVerificationReportPayload = (
+    scopeOverride?: "all" | "completed" | "not_completed"
+  ) => {
+    const scope = scopeOverride ?? reportScope;
+    const baseList = filteredFaculty.filter((f) => {
+      const statInfo = facultyStatusMap.get(f.id);
+      const isDone = statInfo?.category === "completed";
+      if (scope === "completed") return isDone;
+      if (scope === "not_completed") return !isDone;
+      return true;
+    });
+
+    let completedCount = 0;
+    let notCompletedCount = 0;
+    filteredFaculty.forEach((f) => {
+      const statInfo = facultyStatusMap.get(f.id);
+      if (statInfo?.category === "completed") completedCount += 1;
+      else notCompletedCount += 1;
+    });
+
+    const scopeLabel =
+      scope === "completed"
+        ? "Completed (Done) Faculty Only"
+        : scope === "not_completed"
+        ? "Not Completed Faculty Only"
+        : "All Listed Faculty (Completed & Not Completed)";
+
+    return {
+      title: `Requirements Verification Report — ${scopeLabel}`,
+      subtitle: `Term: A.Y. ${academicYear || "2026-2027"} • ${semester} • Program: ${selectedProgram}`,
+      fileName: `PUP_FOCUS_Verification_${scope}_${academicYear}_${new Date()
+        .toISOString()
+        .slice(0, 10)}`,
+      summaryStats: [
+        { label: "Total Faculty in View", value: filteredFaculty.length, tone: "default" as const },
+        { label: "Completed (Done)", value: completedCount, tone: "success" as const },
+        { label: "Not Completed", value: notCompletedCount, tone: "danger" as const },
+        { label: "Exported Rows", value: baseList.length, tone: "warning" as const },
+      ],
+      columns: [
+        { header: "#", key: "index", align: "center" as const },
+        { header: "Faculty Member", key: "name" },
+        { header: "Email Address", key: "email" },
+        { header: "Program", key: "program", align: "center" as const },
+        { header: "Mandatory Progress", key: "progress", align: "center" as const },
+        { header: "Completion Status", key: "completion", align: "center" as const },
+        { header: "Detailed Status", key: "detailedStatus", align: "center" as const },
+      ],
+      rows: baseList.map((faculty, index) => {
+        const statInfo = facultyStatusMap.get(faculty.id);
+        const classList = facultyClassProgress[faculty.id] || [];
+        const subjectProg = facultySubjectProgress[faculty.id];
+        const totalSubjects = subjectProg ? subjectProg.totalSubjects : classList.length;
+        const doneSubjects = subjectProg
+          ? subjectProg.doneSubjects
+          : classList.filter((c) => c.isDone).length;
+
+        const isCompleted = statInfo?.category === "completed";
+        const progressText =
+          totalSubjects > 0
+            ? `${doneSubjects}/${totalSubjects} Subjects Done (${statInfo?.validatedMandatoryCount ?? 0}/${statInfo?.totalMandatoryCount ?? 6} Req)`
+            : `${statInfo?.validatedMandatoryCount ?? 0}/${statInfo?.totalMandatoryCount ?? 6} Validated`;
+
+        return {
+          index: index + 1,
+          name: faculty.fullName,
+          email: faculty.email || "—",
+          program: faculty.program?.code || faculty.program?.name || "N/A",
+          progress: progressText,
+          completion: isCompleted ? "Completed" : "Not Completed",
+          detailedStatus: statInfo?.overallStatus || "Not Submitted",
+        };
+      }),
+    };
+  };
 
   return (
     <div className="w-full">
@@ -4084,8 +4163,8 @@ export function RequirementsPanel({
           </div>
 
           {/* 1. Top Control Bar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-4 shadow-xs">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full sm:w-auto flex-wrap">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 p-4 rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 mb-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 w-full lg:w-auto flex-wrap">
           {/* Search Input */}
           <input
             type="text"
@@ -4221,16 +4300,44 @@ export function RequirementsPanel({
           </div>
         </div>
 
-        {/* Term Indicator */}
-        <div className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm font-medium tracking-wide shrink-0">
-          {activePanelTab === "history" ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-900 dark:text-amber-200 border border-amber-500/30 font-bold text-xs shadow-2xs">
-              <AppIcon icon={ClockRotateRight} size="xs" color="inherit" />
-              <span>Viewing Validation History: A.Y. {academicYear} &bull; {semester}</span>
-            </span>
-          ) : (
-            <span>A.Y. {academicYear || "2026-2027"} &bull; {semester}</span>
-          )}
+        {/* Report Export Controls (All / Completed / Not Completed -> PDF or Excel) */}
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end shrink-0">
+          <select
+            value={reportScope}
+            onChange={(e) =>
+              setReportScope(e.target.value as "all" | "completed" | "not_completed")
+            }
+            aria-label="Report Completion Scope"
+            className="h-9 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-amber-500 cursor-pointer"
+          >
+            <option value="all">Report: All Faculty ({statusCounts.all})</option>
+            <option value="completed">
+              Report: Completed / Done ({statusCounts.completed})
+            </option>
+            <option value="not_completed">
+              Report: Not Completed ({statusCounts.all - statusCounts.completed})
+            </option>
+          </select>
+
+          <button
+            type="button"
+            onClick={() => exportReportToPdf(buildVerificationReportPayload())}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#780000] hover:bg-[#5e0000] text-white border border-[#5e0000] px-3 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
+            title="Export Verification Report to PDF"
+          >
+            <AppIcon icon={Page} size="xs" color="white" />
+            <span>Export PDF</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => exportReportToExcel(buildVerificationReportPayload())}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#0b5336] hover:bg-[#08412a] text-white border border-[#08412a] px-3 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
+            title="Export Verification Report to Excel"
+          >
+            <AppIcon icon={Download} size="xs" color="white" />
+            <span>Export Excel</span>
+          </button>
         </div>
       </div>
 
