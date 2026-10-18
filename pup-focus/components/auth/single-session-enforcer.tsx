@@ -291,8 +291,11 @@ export function SingleSessionEnforcer() {
         } catch {}
       }
     } catch (err) {
-      // Do not block normal use on network hiccups
-      console.warn("[SingleSessionEnforcer] Check failed:", err);
+      // Do not block normal use or log noise when in-flight fetch is aborted during page navigation
+      const msg = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+      if (!msg.includes("failed to fetch") && !msg.includes("aborted") && !msg.includes("networkerror")) {
+        console.warn("[SingleSessionEnforcer] Check failed:", err);
+      }
     } finally {
       checkingRef.current = false;
     }
