@@ -64,14 +64,16 @@ type PreviewTab =
 export function DevPreviewPanel() {
   const [activeTab, setActiveTab] = useState<PreviewTab>("gmail");
 
-  // Database Capacity Alert Preview State (Supabase Free Tier: 500 MB DB + 1 GB File Storage)
+  // Database & File Storage Alert Preview State (Auto-detects Free vs Pro Tier)
+  const [simulatedTier, setSimulatedTier] = useState<"free" | "pro">("free");
   const [simulatedDbPercent, setSimulatedDbPercent] = useState<number>(92);
   const [simulatedBucketPercent, setSimulatedBucketPercent] = useState<number>(85);
   const [isTriggeringLiveDbAlert, setIsTriggeringLiveDbAlert] = useState(false);
 
-  const simulatedMaxDbMb = 500; // 500 MB Postgres Database limit
-  const simulatedMaxBucketMb = 1024; // 1 GB (1024 MB) File Storage limit
-  const simulatedMaxMb = simulatedMaxDbMb + simulatedMaxBucketMb; // 1524 MB combined
+  const simulatedMaxDbMb = simulatedTier === "pro" ? 8192 : 500; // 8 GB (8192 MB) Pro vs 500 MB Free
+  const simulatedMaxBucketMb = simulatedTier === "pro" ? 102400 : 1024; // 100 GB (102400 MB) Pro vs 1 GB (1024 MB) Free
+  const simulatedMaxUploadMb = simulatedTier === "pro" ? 5120 : 50; // 5 GB Pro vs 50 MB Free
+  const simulatedMaxMb = simulatedMaxDbMb + simulatedMaxBucketMb;
 
   const simulatedTablesMb = Number(((simulatedDbPercent / 100) * simulatedMaxDbMb).toFixed(1));
   const simulatedBucketMb = Number(((simulatedBucketPercent / 100) * simulatedMaxBucketMb).toFixed(1));
@@ -79,6 +81,7 @@ export function DevPreviewPanel() {
   const simulatedPeakPercent = Math.max(simulatedDbPercent, simulatedBucketPercent);
 
   const simulatedDbStatus: DbStatusData = {
+    detectedTier: simulatedTier,
     usedBytes: Math.round(simulatedUsedMb * 1024 * 1024),
     maxBytes: simulatedMaxMb * 1024 * 1024,
     usedMb: simulatedUsedMb,
@@ -93,7 +96,7 @@ export function DevPreviewPanel() {
     bucketMb: simulatedBucketMb,
     maxBucketMb: simulatedMaxBucketMb,
     bucketUsagePercent: simulatedBucketPercent,
-    maxUploadFileMb: 50,
+    maxUploadFileMb: simulatedMaxUploadMb,
     tableCount: 20,
     bucketCount: 3,
     objectCount: 418,
@@ -113,7 +116,7 @@ export function DevPreviewPanel() {
     try {
       const peak = Math.max(dbPct, bucketPct);
       const res = await fetch(
-        `/api/admin/db-status?simulatePercent=${peak}&simulateDbPercent=${dbPct}&simulateBucketPercent=${bucketPct}&_t=${Date.now()}`,
+        `/api/admin/db-status?simulateTier=${simulatedTier}&simulatePercent=${peak}&simulateDbPercent=${dbPct}&simulateBucketPercent=${bucketPct}&_t=${Date.now()}`,
         {
           cache: "no-store",
         }
@@ -121,7 +124,7 @@ export function DevPreviewPanel() {
       if (res.ok) {
         setDevToast({
           type: "success",
-          message: `Simulated Supabase Free Tier check (DB: ${dbPct}%, Buckets: ${bucketPct}%) sent! Check the top-right Notifications bell.`,
+          message: `Simulated Database & File Storage check (${simulatedTier.toUpperCase()} Tier — DB: ${dbPct}%, Buckets: ${bucketPct}%) sent! Check the top-right Notifications bell.`,
         });
       } else {
         setDevToast({
@@ -1869,14 +1872,42 @@ export function DevPreviewPanel() {
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <AppIcon icon={Database} size="md" color="default" />
-                  <span>Supabase Free Tier Capacity Simulator (500 MB DB + 1 GB File Storage)</span>
+                  <span>
+                    Database &amp; File Storage Simulator (
+                    {simulatedTier === "pro" ? "Pro Tier: 8 GB DB + 100 GB Files" : "Free Tier: 500 MB DB + 1 GB Files"})
+                  </span>
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Simulate Postgres Database (500 MB limit) and Bucket File Storage (1 GB / 1,024 MB limit, 50 MB max/upload). Exceeding either limit locks the project into read-only mode.
+                  Auto-detects plan limits from database &amp; bucket settings. Switch between Free Tier (500 MB DB / 1 GB Files) and Pro Tier (8 GB DB / 100 GB Files) below.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setSimulatedTier("free")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      simulatedTier === "free"
+                        ? "bg-[#800000] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    Free Tier (500 MB / 1 GB)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSimulatedTier("pro")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      simulatedTier === "pro"
+                        ? "bg-[#800000] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    Pro Tier (8 GB / 100 GB)
+                  </button>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -1922,16 +1953,16 @@ export function DevPreviewPanel() {
               </div>
             </div>
 
-            {/* Dual Sliders for Supabase Free Tier Limits */}
+            {/* Dual Sliders for Database & File Storage Limits */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-              {/* Slider 1: 500 MB Database Limit */}
+              {/* Slider 1: Database Limit */}
               <div className="space-y-1.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 p-3">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">
                     1. Postgres Database (20 Tables): <strong>{simulatedDbPercent}%</strong>
                   </span>
                   <span className="font-bold text-[#800000] dark:text-amber-400">
-                    {simulatedTablesMb} MB / {simulatedMaxDbMb} MB
+                    {simulatedTablesMb} MB / {simulatedMaxDbMb} MB {simulatedTier === "pro" ? "(8 GB)" : ""}
                   </span>
                 </div>
                 <input
@@ -1943,18 +1974,18 @@ export function DevPreviewPanel() {
                   className="w-full accent-[#800000] cursor-pointer"
                 />
                 <p className="text-[10.5px] text-slate-500">
-                  Supabase Free Tier Database Limit: 500 MB
+                  Auto-detected {simulatedTier === "pro" ? "Pro Tier Database Limit: 8 GB (8,192 MB)" : "Free Tier Database Limit: 500 MB"}
                 </p>
               </div>
 
-              {/* Slider 2: 1 GB (1024 MB) File Storage Limit */}
+              {/* Slider 2: File Storage Limit */}
               <div className="space-y-1.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 p-3">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">
                     2. Bucket File Storage (3 Buckets): <strong>{simulatedBucketPercent}%</strong>
                   </span>
                   <span className="font-bold text-[#800000] dark:text-amber-400">
-                    {simulatedBucketMb} MB / {simulatedMaxBucketMb} MB (1 GB)
+                    {simulatedBucketMb} MB / {simulatedMaxBucketMb} MB ({simulatedTier === "pro" ? "100 GB" : "1 GB"})
                   </span>
                 </div>
                 <input
@@ -1966,7 +1997,7 @@ export function DevPreviewPanel() {
                   className="w-full accent-[#800000] cursor-pointer"
                 />
                 <p className="text-[10.5px] text-slate-500">
-                  Supabase Free Tier File Storage Limit: 1 GB (50 MB max per file upload)
+                  Auto-detected {simulatedTier === "pro" ? "Pro Tier File Storage Limit: 100 GB (5 GB max/upload)" : "Free Tier File Storage Limit: 1 GB (50 MB max/upload)"}
                 </p>
               </div>
             </div>
@@ -2041,8 +2072,8 @@ export function DevPreviewPanel() {
                     <div className="flex items-start justify-between gap-3">
                       <h4 className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-snug">
                         {simulatedDbStatus.status === "critical"
-                          ? `Critical Alert: Supabase Free Tier Storage at ${simulatedPeakPercent}%`
-                          : `Storage Warning: Supabase Free Tier Usage Reached ${simulatedPeakPercent}%`}
+                          ? `Critical Alert: Database & File Storage at ${simulatedPeakPercent}%`
+                          : `Storage Warning: Database & File Storage Reached ${simulatedPeakPercent}%`}
                       </h4>
                       <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
                         <span className="text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
@@ -2058,7 +2089,7 @@ export function DevPreviewPanel() {
                       </span>
                     </div>
                     <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                      Postgres Database ({simulatedDbStatus.tableCount} tables): {simulatedTablesMb} MB / {simulatedMaxDbMb} MB ({simulatedDbPercent}%) • File Storage ({simulatedDbStatus.bucketCount} buckets): {simulatedBucketMb} MB / {simulatedMaxBucketMb} MB ({simulatedBucketPercent}%). Exceeding Supabase Free Tier limits (500 MB DB or 1 GB File Storage) will lock the project into read-only mode. Please archive completed terms or clean up files in Backups &amp; Archive.
+                      Postgres Database ({simulatedDbStatus.tableCount} tables): {simulatedTablesMb} MB / {simulatedMaxDbMb} MB ({simulatedDbPercent}%) • File Storage ({simulatedDbStatus.bucketCount} buckets): {simulatedBucketMb} MB / {simulatedMaxBucketMb} MB ({simulatedBucketPercent}%). Exceeding {simulatedTier === "pro" ? "Pro Tier (8 GB DB or 100 GB File Storage)" : "Free Tier (500 MB DB or 1 GB File Storage)"} limits will lock the project into read-only mode. Please archive completed terms or clean up files in Backups &amp; Archive.
                     </p>
                     <div className="mt-2.5 flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/60">
                       <div className="flex items-center gap-1.5 min-w-0 text-slate-500 dark:text-slate-400">

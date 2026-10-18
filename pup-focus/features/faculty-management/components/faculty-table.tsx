@@ -5,6 +5,7 @@ import { EditPencil, Eye, Trash, UserBadgeCheck, UserXmark, Xmark } from "iconoi
 import { AppIcon } from "@/components/ui/app-icon";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { buildFacultyInitials } from "@/lib/faculty-profile";
+import { exportReportToExcel, exportReportToPdf } from "@/lib/report-export";
 import type { FacultyAccount } from "@/features/faculty-management/types/faculty-dashboard.types";
 import { FacultyFilterBar } from "./faculty-filter-bar";
 import { FacultyStatsCards } from "./faculty-stats-cards";
@@ -119,6 +120,38 @@ export function FacultyTable({
     });
   }, [facultyAccounts, searchTerm, statusFilter, programFilter]);
 
+  const buildFacultyReportPayload = () => {
+    const activeCount = filteredFacultyAccounts.filter((f) => f.is_active).length;
+    const inactiveCount = filteredFacultyAccounts.length - activeCount;
+
+    return {
+      title: "Faculty Directory Report",
+      subtitle: `Program: ${programFilter === "all" ? "All Programs" : programFilter} • Status: ${statusFilter.toUpperCase()}`,
+      fileName: `PUP_FOCUS_Faculty_List_${new Date().toISOString().slice(0, 10)}`,
+      summaryStats: [
+        { label: "Total Listed Faculty", value: filteredFacultyAccounts.length, tone: "default" as const },
+        { label: "Active Faculty", value: activeCount, tone: "success" as const },
+        { label: "Inactive Faculty", value: inactiveCount, tone: "danger" as const },
+      ],
+      columns: [
+        { header: "#", key: "index", align: "center" as const },
+        { header: "Faculty Member", key: "name" },
+        { header: "Email Address", key: "email" },
+        { header: "Program", key: "program", align: "center" as const },
+        { header: "Status", key: "status", align: "center" as const },
+        { header: "Last Login", key: "lastLogin" },
+      ],
+      rows: filteredFacultyAccounts.map((faculty, index) => ({
+        index: index + 1,
+        name: faculty.fullName,
+        email: faculty.email || "—",
+        program: faculty.program?.code || faculty.program?.name || "Unassigned",
+        status: faculty.is_active ? "Active" : "Inactive",
+        lastLogin: formatLastLogin(faculty.lastLoginAt),
+      })),
+    };
+  };
+
   return (
     <div className="space-y-3">
       <AlertPopup
@@ -152,6 +185,8 @@ export function FacultyTable({
         programFilter={programFilter}
         onProgramFilterChange={setProgramFilter}
         programs={programs}
+        onExportPdf={() => exportReportToPdf(buildFacultyReportPayload())}
+        onExportExcel={() => exportReportToExcel(buildFacultyReportPayload())}
       />
 
       <div className="w-full overflow-x-auto rounded-xl border-2 border-amber-400 dark:border-amber-500/60 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xs overflow-hidden transition-colors">

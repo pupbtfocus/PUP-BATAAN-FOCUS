@@ -6,6 +6,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { useRealtimeSync } from "@/lib/realtime";
 
 export interface DbStatusData {
+  detectedTier?: "free" | "pro";
   usedBytes: number;
   maxBytes: number;
   usedMb: number;
@@ -35,6 +36,14 @@ interface DatabaseCapacityAlertProps {
   showCard?: boolean;
   refreshTrigger?: number;
   overrideStatus?: DbStatusData | null;
+}
+
+function formatCapacityMb(mb: number): string {
+  if (mb >= 1024) {
+    const gb = mb / 1024;
+    return `${Number.isInteger(gb) ? gb : gb.toFixed(1)} GB`;
+  }
+  return `${mb} MB`;
 }
 
 export function DatabaseCapacityAlert({
@@ -90,8 +99,10 @@ export function DatabaseCapacityAlert({
   const isWarning = dbStatus.status === "warning";
   const isNearFull = isCritical || isWarning;
 
-  const maxDbMb = dbStatus.maxDbMb ?? 500;
-  const maxBucketMb = dbStatus.maxBucketMb ?? 1024;
+  const isProTier = dbStatus.detectedTier === "pro" || (dbStatus.maxDbMb ?? 500) > 500;
+  const maxDbMb = dbStatus.maxDbMb ?? (isProTier ? 8192 : 500);
+  const maxBucketMb = dbStatus.maxBucketMb ?? (isProTier ? 102400 : 1024);
+  const maxUploadFileMb = dbStatus.maxUploadFileMb ?? (isProTier ? 5120 : 50);
   const dbMb = dbStatus.dbMb ?? Number(((dbStatus.usagePercent / 100) * maxDbMb).toFixed(1));
   const bucketMb = dbStatus.bucketMb ?? Number(((dbStatus.usagePercent / 100) * maxBucketMb * 0.75).toFixed(1));
   const dbUsagePercent =
@@ -113,9 +124,14 @@ export function DatabaseCapacityAlert({
         }`}
       >
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            Supabase Free Tier Storage
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Database &amp; File Storage
+            </span>
+            <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              {isProTier ? "Pro Tier" : "Free Tier"}
+            </span>
+          </div>
           <HardDrive
             className={`h-5 w-5 ${
               isCritical
@@ -146,14 +162,14 @@ export function DatabaseCapacityAlert({
             </span>
           </div>
 
-          {/* 1. Database Limit: 500 MB */}
+          {/* 1. Database Limit */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[11px]">
               <span className="font-medium text-slate-600 dark:text-slate-300">
                 Postgres DB ({tableCount} tables)
               </span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {dbMb} / {maxDbMb} MB ({dbUsagePercent}%)
+                {formatCapacityMb(dbMb)} / {formatCapacityMb(maxDbMb)} ({dbUsagePercent}%)
               </span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
@@ -170,14 +186,14 @@ export function DatabaseCapacityAlert({
             </div>
           </div>
 
-          {/* 2. File Storage Limit: 1 GB (1024 MB) */}
+          {/* 2. File Storage Limit */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[11px]">
               <span className="font-medium text-slate-600 dark:text-slate-300">
                 File Buckets ({bucketCount} buckets)
               </span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {bucketMb} / {maxBucketMb} MB ({bucketUsagePercent}%)
+                {formatCapacityMb(bucketMb)} / {formatCapacityMb(maxBucketMb)} ({bucketUsagePercent}%)
               </span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
@@ -196,7 +212,7 @@ export function DatabaseCapacityAlert({
 
           <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              500 MB DB + 1 GB Files (50 MB/upload max)
+              {formatCapacityMb(maxDbMb)} DB + {formatCapacityMb(maxBucketMb)} Files ({formatCapacityMb(maxUploadFileMb)}/upload max)
             </p>
             {onManageStorage && (
               <button
@@ -239,8 +255,8 @@ export function DatabaseCapacityAlert({
               <Database className="h-4 w-4 shrink-0" />
               <span>
                 {isCritical
-                  ? `Critical Alert: Supabase Free Tier Storage is About to Be Full (${dbStatus.usagePercent}%)`
-                  : `Storage Warning: Supabase Free Tier Usage is High (${dbStatus.usagePercent}%)`}
+                  ? `Critical Alert: Database & File Storage is About to Be Full (${dbStatus.usagePercent}%)`
+                  : `Storage Warning: Database & File Storage Usage is High (${dbStatus.usagePercent}%)`}
               </span>
             </p>
           </div>
@@ -249,7 +265,7 @@ export function DatabaseCapacityAlert({
               isCritical ? "text-amber-100" : "text-slate-900/90 font-medium"
             }`}
           >
-            Postgres DB ({tableCount} tables): <strong>{dbMb} / {maxDbMb} MB ({dbUsagePercent}%)</strong> • File Storage ({bucketCount} buckets): <strong>{bucketMb} / {maxBucketMb} MB ({bucketUsagePercent}%)</strong>. Exceeding Free Tier limits locks the database into read-only mode — please archive completed terms or clean up files.
+            Postgres DB ({tableCount} tables): <strong>{formatCapacityMb(dbMb)} / {formatCapacityMb(maxDbMb)} ({dbUsagePercent}%)</strong> • File Storage ({bucketCount} buckets): <strong>{formatCapacityMb(bucketMb)} / {formatCapacityMb(maxBucketMb)} ({bucketUsagePercent}%)</strong>. Exceeding {isProTier ? "Pro Tier" : "Free Tier"} limits locks the database into read-only mode — please archive completed terms or clean up files.
           </p>
         </div>
       </div>
@@ -286,5 +302,3 @@ export function DatabaseCapacityAlert({
     </div>
   );
 }
-
-

@@ -26,6 +26,7 @@ import { TemplatesAndProgramsPanel } from "@/features/program-management/compone
 import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
 import { SuperAdminSettings } from "@/features/admin-management/components/admin-settings";
 import { DatabaseCapacityAlert } from "@/features/admin-management/components/database-capacity-alert";
+import { SuperAdminComplianceAnalytics } from "@/features/admin-management/components/super-admin-compliance-analytics";
 import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
 import {
   recordActiveSessionLogin,
@@ -1818,34 +1819,120 @@ export function SuperAdminDashboard({
                 {/* TIER 2: Stat Grid */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Card 1: Active Admin Accounts */}
-                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors">
+                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Admin Accounts</span>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Admin Accounts
+                      </span>
                       <Shield className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {adminAccounts.filter((a) => a.is_active).length} Active
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {adminAccounts.length} total administrative accounts
-                      </p>
+                    <div className="space-y-2.5">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                          {adminAccounts.filter((a) => a.is_active).length} Active
+                        </h3>
+                        <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                          {adminAccounts.length > 0
+                            ? `${Math.round(
+                                (adminAccounts.filter((a) => a.is_active).length /
+                                  adminAccounts.length) *
+                                  100
+                              )}% Active`
+                            : "0%"}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
+                          style={{
+                            width: `${
+                              adminAccounts.length > 0
+                                ? Math.min(
+                                    100,
+                                    Math.max(
+                                      4,
+                                      (adminAccounts.filter((a) => a.is_active).length /
+                                        adminAccounts.length) *
+                                        100
+                                    )
+                                  )
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                      <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {adminAccounts.length} total administrative accounts
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleSetActiveSection("accounts")}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                        >
+                          <span>Directory</span>
+                          <NavArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
                   {/* Card 2: Faculty Accounts */}
-                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors">
+                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Faculty Accounts</span>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Faculty Accounts
+                      </span>
                       <Group className="h-5 w-5 text-slate-400" strokeWidth={2} />
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {facultyAccounts.filter((f) => f.is_active).length} Active
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {facultyAccounts.length} total faculty members
-                      </p>
+                    <div className="space-y-2.5">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                          {facultyAccounts.filter((f) => f.is_active).length} Active
+                        </h3>
+                        <span className="inline-flex items-center rounded-full bg-[#0b5336] text-white border border-[#08412a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                          {facultyAccounts.length > 0
+                            ? `${Math.round(
+                                (facultyAccounts.filter((f) => f.is_active).length /
+                                  facultyAccounts.length) *
+                                  100
+                              )}% Active`
+                            : "0%"}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-[#0b5336] transition-all duration-500"
+                          style={{
+                            width: `${
+                              facultyAccounts.length > 0
+                                ? Math.min(
+                                    100,
+                                    Math.max(
+                                      4,
+                                      (facultyAccounts.filter((f) => f.is_active).length /
+                                        facultyAccounts.length) *
+                                        100
+                                    )
+                                  )
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                      <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {facultyAccounts.length} total faculty members
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleSetActiveSection("faculty")}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[#800000] dark:text-amber-400 hover:underline cursor-pointer shrink-0"
+                        >
+                          <span>Manage</span>
+                          <NavArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -1856,87 +1943,16 @@ export function SuperAdminDashboard({
                   />
                 </section>
 
-                {/* TIER 3: Admin Accounts Overview */}
-                <section className="w-full space-y-4">
-                  <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs transition-colors overflow-hidden">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-400 dark:border-slate-800">
-                      <div>
-                        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                          Administrative Accounts
-                        </h2>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Active system administrators and credentials
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleSetActiveSection("accounts")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 dark:border-amber-400 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-[0.98] self-start sm:self-auto"
-                      >
-                        <span>Manage Accounts</span>
-                        <AppIcon icon={NavArrowRight} size="sm" color="inherit" />
-                      </button>
-                    </div>
-                    {adminAccounts.length > 0 ? (
-                      <div className="divide-y divide-slate-400 dark:divide-slate-800 mt-2">
-                        {adminAccounts.slice(0, 5).map((admin) => {
-                          const avatarUrl =
-                            admin.profileImageUrl ||
-                            admin.avatar_url ||
-                            admin.profile?.avatar_url ||
-                            admin.profile?.picture;
-                          const hasAvatar =
-                            Boolean(avatarUrl) && !failedImageIds.has(admin.profile_id);
-
-                          return (
-                            <div key={admin.profile_id} className="py-3 flex items-center justify-between gap-3 min-w-0">
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-400 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs font-bold shadow-sm">
-                                  {hasAvatar ? (
-                                    <img
-                                      src={avatarUrl!}
-                                      alt=""
-                                      className="h-full w-full object-cover"
-                                      onError={() =>
-                                        setFailedImageIds((prev) =>
-                                          new Set(prev).add(admin.profile_id)
-                                        )
-                                      }
-                                    />
-                                  ) : (
-                                    getInitials(
-                                      admin.full_name,
-                                      admin.role === ROLE.ADMIN ? "SA" : "AD"
-                                    )
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate">
-                                    {formatAdminName(admin)}
-                                  </p>
-                                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate" title={admin.email}>
-                                    {admin.email}
-                                  </p>
-                                </div>
-                              </div>
-                              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border shadow-2xs shrink-0 ${
-                                admin.is_active
-                                  ? "bg-[#0b5336] text-white border-[#08412a]"
-                                  : "bg-[#780000] text-white border-[#5e0000]"
-                              }`}>
-                                {admin.is_active ? "Active" : "Inactive"}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="py-8 text-center">
-                        <p className="text-xs text-slate-500 dark:text-slate-400">No admin accounts found.</p>
-                      </div>
-                    )}
-                  </div>
-                </section>
+                {/* TIER 2.5: Term Submission Scale & Distribution */}
+                <SuperAdminComplianceAnalytics
+                  facultyAccounts={facultyAccounts}
+                  isLoadingFaculty={isLoadingFaculty}
+                  onInspectFaculty={(facultyId) => {
+                    handleSelectFaculty(facultyId);
+                    handleSetActiveSection("verification");
+                  }}
+                  onNavigateSection={(sec) => handleSetActiveSection(sec)}
+                />
               </article>
             ) : null}
 

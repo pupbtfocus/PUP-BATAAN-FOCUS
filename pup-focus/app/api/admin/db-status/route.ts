@@ -8,9 +8,16 @@ import { getServiceRoleClient } from "@/lib/supabase/service-role";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const DEFAULT_MAX_DB_BYTES = 500 * 1024 * 1024; // 500 MB default database capacity
-const DEFAULT_MAX_BUCKET_BYTES = 1024 * 1024 * 1024; // 1 GB default bucket storage capacity
-const DEFAULT_MAX_TOTAL_BYTES = DEFAULT_MAX_DB_BYTES + DEFAULT_MAX_BUCKET_BYTES; // 1.5 GB combined or override via MAX_DB_SIZE_BYTES
+// Free Tier Defaults: 500 MB DB + 1 GB File Storage (50 MB max upload)
+const FREE_MAX_DB_BYTES = 500 * 1024 * 1024;
+const FREE_MAX_BUCKET_BYTES = 1024 * 1024 * 1024;
+const FREE_MAX_UPLOAD_MB = 50;
+
+// Pro Tier Defaults: 8 GB DB + 100 GB File Storage (5 GB / 5,120 MB max upload)
+const PRO_MAX_DB_BYTES = 8 * 1024 * 1024 * 1024;
+const PRO_MAX_BUCKET_BYTES = 100 * 1024 * 1024 * 1024;
+const PRO_MAX_UPLOAD_MB = 5120;
+
 const WARNING_THRESHOLD = 0.8; // 80%
 const CRITICAL_THRESHOLD = 0.9; // 90%
 
@@ -49,20 +56,34 @@ interface CapacityBreakdown {
   tableCount: number;
   bucketCount: number;
   objectCount: number;
+  detectedTier: "free" | "pro";
+  maxDbBytes: number;
+  maxBucketBytes: number;
+  maxUploadFileMb: number;
 }
 
 async function scanStorageBucketsViaApi(
   supabase: ReturnType<typeof getServiceRoleClient>
-): Promise<{ bucketBytes: number; bucketCount: number; objectCount: number }> {
+): Promise<{
+  bucketBytes: number;
+  bucketCount: number;
+  objectCount: number;
+  maxBucketFileLimitBytes: number;
+}> {
   let bucketBytes = 0;
   let bucketCount = 0;
   let objectCount = 0;
+  let maxBucketFileLimitBytes = 0;
 
   try {
     const { data: buckets } = await supabase.storage.listBuckets();
     if (Array.isArray(buckets)) {
       bucketCount = buckets.length;
       for (const bucket of buckets) {
+        const fileLimit = Number((bucket as { file_size_limit?: number | null }).file_size_limit || 0);
+        if (fileLimit > maxBucketFileLimitBytes) {
+          maxBucketFileLimitBytes = fileLimit;
+        }
         try {
           const { data: rootItems } = await supabase.storage
             .from(bucket.name)
@@ -79,7 +100,6 @@ async function scanStorageBucketsViaApi(
               bucketBytes += size;
               objectCount += 1;
             } else if (!item.id) {
-              // Folder — scan 1 level deep
               const { data: subItems } = await supabase.storage
                 .from(bucket.name)
                 .list(item.name, { limit: 1000 });
@@ -107,7 +127,6 @@ async function scanStorageBucketsViaApi(
     // Ignore storage API errors
   }
 
-  // Also include file sizes tracked in submissions / submission_files / system_backups if bucket scan returned 0
   if (bucketBytes === 0) {
     try {
       const { data: submissions } = await supabase
@@ -155,12 +174,15 @@ async function scanStorageBucketsViaApi(
     }
   }
 
-  return { bucketBytes, bucketCount, objectCount };
+  return { bucketBytes, bucketCount, objectCount, maxBucketFileLimitBytes };
 }
 
 async function computeAllTablesAndBucketsCapacity(
   supabase: ReturnType<typeof getServiceRoleClient>
 ): Promise<CapacityBreakdown> {
+  const envTier = (process.env.SUPABASE_PLAN || process.env.SUPABASE_TIER || "").toLowerCase().trim();
+  const isEnvPro = envTier === "pro" || envTier === "team" || envTier === "enterprise";
+
   // 1. Try detailed RPC (`get_storage_capacity_breakdown`) first
   try {
     const { data: breakdown, error } = await supabase.rpc("get_storage_capacity_breakdown");
@@ -171,13 +193,39 @@ async function computeAllTablesAndBucketsCapacity(
       const tableCount = Number(b.tableCount) || ALL_PUBLIC_TABLES.length;
       let bucketCount = Number(b.bucketCount) || 0;
       let objectCount = Number(b.objectCount) || 0;
+      let maxBucketFileLimitBytes = 0;
 
       if (bucketBytes === 0 && bucketCount === 0) {
         const scanned = await scanStorageBucketsViaApi(supabase);
         bucketBytes = scanned.bucketBytes;
         bucketCount = scanned.bucketCount;
         objectCount = scanned.objectCount;
+        maxBucketFileLimitBytes = scanned.maxBucketFileLimitBytes;
       }
+
+      const rpcIsPro =
+        String(b.detectedTier || "").toLowerCase() === "pro" ||
+        isEnvPro ||
+        dbBytes > FREE_MAX_DB_BYTES ||
+        bucketBytes > FREE_MAX_BUCKET_BYTES ||
+        maxBucketFileLimitBytes > 50 * 1024 * 1024;
+
+      const detectedTier: "free" | "pro" = rpcIsPro ? "pro" : "free";
+      const maxDbBytes = Number(b.maxDbBytes) > FREE_MAX_DB_BYTES || rpcIsPro
+        ? Number(b.maxDbBytes) > FREE_MAX_DB_BYTES
+          ? Number(b.maxDbBytes)
+          : PRO_MAX_DB_BYTES
+        : FREE_MAX_DB_BYTES;
+      const maxBucketBytes = Number(b.maxBucketBytes) > FREE_MAX_BUCKET_BYTES || rpcIsPro
+        ? Number(b.maxBucketBytes) > FREE_MAX_BUCKET_BYTES
+          ? Number(b.maxBucketBytes)
+          : PRO_MAX_BUCKET_BYTES
+        : FREE_MAX_BUCKET_BYTES;
+      const maxUploadFileMb = rpcIsPro
+        ? Number(b.maxUploadFileMb) > FREE_MAX_UPLOAD_MB
+          ? Number(b.maxUploadFileMb)
+          : PRO_MAX_UPLOAD_MB
+        : FREE_MAX_UPLOAD_MB;
 
       if (dbBytes > 0) {
         return {
@@ -186,6 +234,10 @@ async function computeAllTablesAndBucketsCapacity(
           tableCount,
           bucketCount,
           objectCount,
+          detectedTier,
+          maxDbBytes,
+          maxBucketBytes,
+          maxUploadFileMb,
         };
       }
     }
@@ -230,12 +282,22 @@ async function computeAllTablesAndBucketsCapacity(
 
   const scannedBuckets = await scanStorageBucketsViaApi(supabase);
 
+  const isProDetected =
+    isEnvPro ||
+    dbBytes > FREE_MAX_DB_BYTES ||
+    scannedBuckets.bucketBytes > FREE_MAX_BUCKET_BYTES ||
+    scannedBuckets.maxBucketFileLimitBytes > 50 * 1024 * 1024;
+
   return {
     dbBytes,
     bucketBytes: scannedBuckets.bucketBytes,
     tableCount: countedTables || ALL_PUBLIC_TABLES.length,
     bucketCount: scannedBuckets.bucketCount,
     objectCount: scannedBuckets.objectCount,
+    detectedTier: isProDetected ? "pro" : "free",
+    maxDbBytes: isProDetected ? PRO_MAX_DB_BYTES : FREE_MAX_DB_BYTES,
+    maxBucketBytes: isProDetected ? PRO_MAX_BUCKET_BYTES : FREE_MAX_BUCKET_BYTES,
+    maxUploadFileMb: isProDetected ? PRO_MAX_UPLOAD_MB : FREE_MAX_UPLOAD_MB,
   };
 }
 
@@ -270,11 +332,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const maxDbBytes = Number(process.env.MAX_DB_SIZE_BYTES || DEFAULT_MAX_DB_BYTES); // 500 MB
-    const maxBucketBytes = Number(process.env.MAX_BUCKET_SIZE_BYTES || DEFAULT_MAX_BUCKET_BYTES); // 1 GB (1024 MB)
-    const maxBytes = maxDbBytes + maxBucketBytes; // 1.5 GB (1524 MB) combined
-
     const capacity = await computeAllTablesAndBucketsCapacity(supabase);
+
+    const simulateTierParam = request.nextUrl.searchParams.get("simulateTier")?.toLowerCase();
+    const detectedTier: "free" | "pro" =
+      simulateTierParam === "pro"
+        ? "pro"
+        : simulateTierParam === "free"
+        ? "free"
+        : capacity.detectedTier;
+
+    const maxDbBytes = Number(
+      process.env.MAX_DB_SIZE_BYTES ||
+        (detectedTier === "pro" ? PRO_MAX_DB_BYTES : capacity.maxDbBytes)
+    );
+    const maxBucketBytes = Number(
+      process.env.MAX_BUCKET_SIZE_BYTES ||
+        (detectedTier === "pro" ? PRO_MAX_BUCKET_BYTES : capacity.maxBucketBytes)
+    );
+    const maxUploadFileMb =
+      detectedTier === "pro" ? PRO_MAX_UPLOAD_MB : capacity.maxUploadFileMb;
+    const maxBytes = maxDbBytes + maxBucketBytes;
 
     let dbBytes = capacity.dbBytes;
     let bucketBytes = capacity.bucketBytes;
@@ -310,7 +388,6 @@ export async function GET(request: NextRequest) {
 
     const dbUsagePercent = Math.min(100, Math.round(dbRatio * 1000) / 10);
     const bucketUsagePercent = Math.min(100, Math.round(bucketRatio * 1000) / 10);
-    // Overall alert percentage reflects whichever Supabase Free Tier limit (500 MB DB or 1 GB Storage) is closer to full
     const usagePercent = Math.min(100, Math.round(highestRatio * 1000) / 10);
 
     const status: "healthy" | "warning" | "critical" =
@@ -323,11 +400,11 @@ export async function GET(request: NextRequest) {
     const usedMb = Number((usedBytes / (1024 * 1024)).toFixed(2));
     const maxMb = Number((maxBytes / (1024 * 1024)).toFixed(0));
     const dbMb = Number((dbBytes / (1024 * 1024)).toFixed(2));
-    const maxDbMb = Number((maxDbBytes / (1024 * 1024)).toFixed(0)); // 500 MB
+    const maxDbMb = Number((maxDbBytes / (1024 * 1024)).toFixed(0));
     const bucketMb = Number((bucketBytes / (1024 * 1024)).toFixed(2));
-    const maxBucketMb = Number((maxBucketBytes / (1024 * 1024)).toFixed(0)); // 1024 MB (1 GB)
+    const maxBucketMb = Number((maxBucketBytes / (1024 * 1024)).toFixed(0));
 
-    // Create an in-app notification in the Notification Bell Drawer when either 500 MB DB or 1 GB Storage is about to be full
+    // Create an in-app notification in the Notification Bell Drawer when database or file storage is about to be full
     if (status !== "healthy") {
       const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
       const { data: recentAlert } = isSimulated
@@ -344,9 +421,9 @@ export async function GET(request: NextRequest) {
       if (!recentAlert) {
         const alertTitle =
           status === "critical"
-            ? `Critical Alert: Supabase Free Tier Storage at ${usagePercent}%`
-            : `Storage Warning: Supabase Free Tier Usage Reached ${usagePercent}%`;
-        const alertMessage = `Postgres Database (${capacity.tableCount} tables): ${dbMb} MB / ${maxDbMb} MB (${dbUsagePercent}%) • File Storage (${capacity.bucketCount || 1} buckets): ${bucketMb} MB / ${maxBucketMb} MB (${bucketUsagePercent}%). Exceeding Supabase Free Tier limits (500 MB DB or 1 GB File Storage) will lock the project into read-only mode. Please archive completed terms or clean up files in Backups & Archive.`;
+            ? `Critical Alert: Database & File Storage at ${usagePercent}%`
+            : `Storage Warning: Database & File Storage Reached ${usagePercent}%`;
+        const alertMessage = `Postgres Database (${capacity.tableCount} tables): ${dbMb} MB / ${maxDbMb} MB (${dbUsagePercent}%) • File Storage (${capacity.bucketCount || 1} buckets): ${bucketMb} MB / ${maxBucketMb} MB (${bucketUsagePercent}%). Please archive completed academic terms or clean up files in Backups & Archive.`;
 
         await supabase.from("notifications").insert({
           user_id: user.id,
@@ -367,6 +444,7 @@ export async function GET(request: NextRequest) {
             bucketMb,
             maxBucketMb,
             bucketUsagePercent,
+            detectedTier,
             tableCount: capacity.tableCount,
             bucketCount: capacity.bucketCount,
             objectCount: capacity.objectCount,
@@ -425,7 +503,8 @@ export async function GET(request: NextRequest) {
       bucketMb,
       maxBucketMb,
       bucketUsagePercent,
-      maxUploadFileMb: 50,
+      maxUploadFileMb,
+      detectedTier,
       tableCount: capacity.tableCount,
       bucketCount: capacity.bucketCount,
       objectCount: capacity.objectCount,
@@ -442,5 +521,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
-
