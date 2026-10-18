@@ -25,6 +25,7 @@ import { BackupArchivePanel } from "@/features/backup-archive/components/backup-
 import { TemplatesAndProgramsPanel } from "@/features/program-management/components/templates-and-programs-panel";
 import { DevPreviewPanel } from "@/features/dev-preview/components/dev-preview-panel";
 import { SuperAdminSettings } from "@/features/admin-management/components/admin-settings";
+import { DatabaseCapacityAlert } from "@/features/admin-management/components/database-capacity-alert";
 import { HighlightedSystemTitle } from "@/components/shared/highlighted-system-title";
 import {
   recordActiveSessionLogin,
@@ -1786,6 +1787,9 @@ export function SuperAdminDashboard({
       <div className="md:ml-72 flex min-h-full w-full md:w-[calc(100%-18rem)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-l-0 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
           <div className="min-h-0 flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+            <DatabaseCapacityAlert
+              onManageStorage={() => handleSetActiveSection("backups")}
+            />
             {activeSection === "dashboard" ? (
               <article className="space-y-6">
                 {/* Solid Amber Card Header */}
@@ -1812,7 +1816,7 @@ export function SuperAdminDashboard({
                 </div>
 
                 {/* TIER 2: Stat Grid */}
-                <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Card 1: Active Admin Accounts */}
                   <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
@@ -1844,6 +1848,12 @@ export function SuperAdminDashboard({
                       </p>
                     </div>
                   </div>
+
+                  {/* Card 3: Database Capacity */}
+                  <DatabaseCapacityAlert
+                    showCard
+                    onManageStorage={() => handleSetActiveSection("backups")}
+                  />
                 </section>
 
                 {/* TIER 3: Admin Accounts Overview */}
