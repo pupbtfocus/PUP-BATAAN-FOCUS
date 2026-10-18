@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Bell,
   CheckCircle,
+  Database,
   DoubleCheck,
   Hourglass,
   InfoCircle,
@@ -238,6 +239,12 @@ export function AdminNotificationDrawer({
           notification.title?.toLowerCase().includes("term")
         ) {
           router.push("/admin/dashboard?tab=terms");
+        } else if (
+          notification.type === "DB_CAPACITY_ALERT" ||
+          notification.type?.includes("DB_CAPACITY") ||
+          notification.title?.toLowerCase().includes("database")
+        ) {
+          router.push("/admin/dashboard?tab=backups");
         } else if (
           notification.type?.includes("FACULTY") ||
           notification.title?.toLowerCase().includes("faculty")
@@ -493,6 +500,10 @@ export function AdminNotificationDrawer({
                 ) : (
                   filteredNotifications.map((notif) => {
                     const isUnread = !notif.isRead;
+                    const isDbCapacityAlert =
+                      notif.type === "DB_CAPACITY_ALERT" ||
+                      notif.type?.includes("DB_CAPACITY") ||
+                      notif.title?.toLowerCase().includes("database");
                     const reqLabel =
                       notif.requirementLabel ||
                       (notif.requirementCode ? REQUIREMENT_LABEL[notif.requirementCode] : null);
@@ -512,7 +523,9 @@ export function AdminNotificationDrawer({
                         <div
                           className={cn(
                             "mt-0.5 p-2 rounded-xl border shrink-0 flex items-center justify-center shadow-2xs",
-                            notif.isExtensionRequest || notif.type === "EXTENSION_REQUEST"
+                            isDbCapacityAlert
+                              ? "bg-[#780000] text-amber-300 border-amber-400/70"
+                              : notif.isExtensionRequest || notif.type === "EXTENSION_REQUEST"
                               ? "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
                               : notif.isRevision
                               ? "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
@@ -525,7 +538,9 @@ export function AdminNotificationDrawer({
                         >
                           <AppIcon
                             icon={
-                              notif.isExtensionRequest || notif.type === "EXTENSION_REQUEST"
+                              isDbCapacityAlert
+                                ? Database
+                                : notif.isExtensionRequest || notif.type === "EXTENSION_REQUEST"
                                 ? Hourglass
                                 : notif.isRevision
                                 ? WarningTriangle
@@ -564,7 +579,12 @@ export function AdminNotificationDrawer({
 
                           {/* Requirement / Type Badges */}
                           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                            {notif.isExtensionRequest || notif.type === "EXTENSION_REQUEST" ? (
+                            {isDbCapacityAlert ? (
+                              <span className="inline-flex items-center gap-1 rounded-md border border-amber-400/60 bg-[#780000] px-2 py-0.5 text-[10px] font-bold text-white">
+                                <AppIcon icon={WarningTriangle} size="xs" color="inherit" />
+                                DB Tables + Bucket Storage Alert
+                              </span>
+                            ) : notif.isExtensionRequest || notif.type === "EXTENSION_REQUEST" ? (
                               <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
                                 <AppIcon icon={Hourglass} size="xs" color="inherit" />
                                 Extension Request
@@ -601,13 +621,17 @@ export function AdminNotificationDrawer({
                           {/* Footer / Actions */}
                           <div className="mt-2.5 flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/60">
                             <div className="flex items-center gap-1.5 min-w-0 text-slate-500 dark:text-slate-400">
-                              <AppIcon icon={User} size="xs" color="muted" className="shrink-0" />
+                              <AppIcon icon={isDbCapacityAlert ? Database : User} size="xs" color="muted" className="shrink-0" />
                               <span className="text-xs font-medium truncate">
-                                {notif.facultyName ? notif.facultyName : "System Notification"}
+                                {isDbCapacityAlert
+                                  ? "Super Admin Storage Monitor"
+                                  : notif.facultyName
+                                  ? notif.facultyName
+                                  : "System Notification"}
                               </span>
                             </div>
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 shadow-xs transition-colors shrink-0">
-                              <span>Review submission</span>
+                              <span>{isDbCapacityAlert ? "Manage Storage & Archive" : "Review submission"}</span>
                               <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
                             </span>
                           </div>

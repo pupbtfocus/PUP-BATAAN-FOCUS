@@ -21,6 +21,7 @@ import {
   Page,
   Group,
   Activity,
+  Database,
 } from "iconoir-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Logo } from "@/components/ui/logo";
@@ -47,16 +48,96 @@ import { ArrowRight, Eye as LucideEye, EyeOff as LucideEyeOff, Check as LucideCh
 import { validatePasswordRequirements } from "@/lib/validation/password";
 import { cn } from "@/utils/cn";
 import { FacultyIncompleteRequirementsModal } from "@/features/faculty-management/components/faculty-incomplete-requirements-modal";
+import {
+  DatabaseCapacityAlert,
+  type DbStatusData,
+} from "@/features/admin-management/components/database-capacity-alert";
 
 type PreviewTab =
   | "gmail"
   | "verification"
   | "change-password"
   | "login-feedback"
-  | "modals";
+  | "modals"
+  | "db-capacity";
 
 export function DevPreviewPanel() {
   const [activeTab, setActiveTab] = useState<PreviewTab>("gmail");
+
+  // Database Capacity Alert Preview State (Supabase Free Tier: 500 MB DB + 1 GB File Storage)
+  const [simulatedDbPercent, setSimulatedDbPercent] = useState<number>(92);
+  const [simulatedBucketPercent, setSimulatedBucketPercent] = useState<number>(85);
+  const [isTriggeringLiveDbAlert, setIsTriggeringLiveDbAlert] = useState(false);
+
+  const simulatedMaxDbMb = 500; // 500 MB Postgres Database limit
+  const simulatedMaxBucketMb = 1024; // 1 GB (1024 MB) File Storage limit
+  const simulatedMaxMb = simulatedMaxDbMb + simulatedMaxBucketMb; // 1524 MB combined
+
+  const simulatedTablesMb = Number(((simulatedDbPercent / 100) * simulatedMaxDbMb).toFixed(1));
+  const simulatedBucketMb = Number(((simulatedBucketPercent / 100) * simulatedMaxBucketMb).toFixed(1));
+  const simulatedUsedMb = Number((simulatedTablesMb + simulatedBucketMb).toFixed(1));
+  const simulatedPeakPercent = Math.max(simulatedDbPercent, simulatedBucketPercent);
+
+  const simulatedDbStatus: DbStatusData = {
+    usedBytes: Math.round(simulatedUsedMb * 1024 * 1024),
+    maxBytes: simulatedMaxMb * 1024 * 1024,
+    usedMb: simulatedUsedMb,
+    maxMb: simulatedMaxMb,
+    dbBytes: Math.round(simulatedTablesMb * 1024 * 1024),
+    maxDbBytes: simulatedMaxDbMb * 1024 * 1024,
+    dbMb: simulatedTablesMb,
+    maxDbMb: simulatedMaxDbMb,
+    dbUsagePercent: simulatedDbPercent,
+    bucketBytes: Math.round(simulatedBucketMb * 1024 * 1024),
+    maxBucketBytes: simulatedMaxBucketMb * 1024 * 1024,
+    bucketMb: simulatedBucketMb,
+    maxBucketMb: simulatedMaxBucketMb,
+    bucketUsagePercent: simulatedBucketPercent,
+    maxUploadFileMb: 50,
+    tableCount: 20,
+    bucketCount: 3,
+    objectCount: 418,
+    usagePercent: simulatedPeakPercent,
+    status:
+      simulatedPeakPercent >= 90
+        ? "critical"
+        : simulatedPeakPercent >= 80
+        ? "warning"
+        : "healthy",
+    warningThresholdPercent: 80,
+    criticalThresholdPercent: 90,
+  };
+
+  const handleTriggerLiveDbAlert = async (dbPct: number, bucketPct: number) => {
+    setIsTriggeringLiveDbAlert(true);
+    try {
+      const peak = Math.max(dbPct, bucketPct);
+      const res = await fetch(
+        `/api/admin/db-status?simulatePercent=${peak}&simulateDbPercent=${dbPct}&simulateBucketPercent=${bucketPct}&_t=${Date.now()}`,
+        {
+          cache: "no-store",
+        }
+      );
+      if (res.ok) {
+        setDevToast({
+          type: "success",
+          message: `Simulated Supabase Free Tier check (DB: ${dbPct}%, Buckets: ${bucketPct}%) sent! Check the top-right Notifications bell.`,
+        });
+      } else {
+        setDevToast({
+          type: "error",
+          message: "Failed to trigger live DB status check.",
+        });
+      }
+    } catch {
+      setDevToast({
+        type: "error",
+        message: "Error connecting to /api/admin/db-status.",
+      });
+    } finally {
+      setIsTriggeringLiveDbAlert(false);
+    }
+  };
 
   // Login Success, Fail & Loading Preview State
   const [authFeedbackModal, setAuthFeedbackModal] = useState<AuthModalState | null>(null);
@@ -326,6 +407,19 @@ export function DevPreviewPanel() {
         >
           <AppIcon icon={Eye} size="md" color="inherit" />
           <span>Modals Showcase</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("db-capacity")}
+          className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === "db-capacity"
+              ? "bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-300 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+          }`}
+        >
+          <AppIcon icon={Database} size="md" color="inherit" />
+          <span>DB Capacity Alert</span>
         </button>
       </div>
 
@@ -1739,6 +1833,267 @@ export function DevPreviewPanel() {
               >
                 Launch Cancelled Invite Modal
               </button>
+            </div>
+
+            {/* Modal Card 13: Super Admin Database Capacity Alert */}
+            <div className="rounded-2xl border border-amber-300 dark:border-amber-700/60 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[#800000] dark:text-amber-400">
+                  <AppIcon icon={Database} size="lg" color="inherit" />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Database Almost Full Alert
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Test the Super Admin storage capacity alert banner (80% Warning / 90% Critical), dashboard storage card, and live notification trigger.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("db-capacity")}
+                className="w-full py-2 px-3 text-xs font-bold rounded-lg bg-[#780000] hover:bg-[#5e0000] text-white border border-amber-400/60 transition cursor-pointer shadow-xs active:scale-[0.98]"
+              >
+                Open DB Capacity Tester
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: DATABASE CAPACITY ALERT PREVIEW */}
+      {activeTab === "db-capacity" && (
+        <div className="space-y-5">
+          {/* Controls Card */}
+          <div className="rounded-2xl border-2 border-amber-400 dark:border-amber-500/60 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <AppIcon icon={Database} size="md" color="default" />
+                  <span>Supabase Free Tier Capacity Simulator (500 MB DB + 1 GB File Storage)</span>
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Simulate Postgres Database (500 MB limit) and Bucket File Storage (1 GB / 1,024 MB limit, 50 MB max/upload). Exceeding either limit locks the project into read-only mode.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSimulatedDbPercent(25);
+                    setSimulatedBucketPercent(18);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                    simulatedPeakPercent < 80
+                      ? "bg-[#0b5336] text-white border-[#08412a] shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  Healthy (25% DB / 18% Files)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSimulatedDbPercent(84);
+                    setSimulatedBucketPercent(72);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                    simulatedPeakPercent >= 80 && simulatedPeakPercent < 90
+                      ? "bg-amber-500 text-slate-950 border-amber-600 shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  Warning (84% DB / 72% Files)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSimulatedDbPercent(95);
+                    setSimulatedBucketPercent(91);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                    simulatedPeakPercent >= 90
+                      ? "bg-[#780000] text-white border-amber-400 shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  Critical / Almost Full (95% DB / 91% Files)
+                </button>
+              </div>
+            </div>
+
+            {/* Dual Sliders for Supabase Free Tier Limits */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {/* Slider 1: 500 MB Database Limit */}
+              <div className="space-y-1.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    1. Postgres Database (20 Tables): <strong>{simulatedDbPercent}%</strong>
+                  </span>
+                  <span className="font-bold text-[#800000] dark:text-amber-400">
+                    {simulatedTablesMb} MB / {simulatedMaxDbMb} MB
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={100}
+                  value={simulatedDbPercent}
+                  onChange={(e) => setSimulatedDbPercent(Number(e.target.value))}
+                  className="w-full accent-[#800000] cursor-pointer"
+                />
+                <p className="text-[10.5px] text-slate-500">
+                  Supabase Free Tier Database Limit: 500 MB
+                </p>
+              </div>
+
+              {/* Slider 2: 1 GB (1024 MB) File Storage Limit */}
+              <div className="space-y-1.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    2. Bucket File Storage (3 Buckets): <strong>{simulatedBucketPercent}%</strong>
+                  </span>
+                  <span className="font-bold text-[#800000] dark:text-amber-400">
+                    {simulatedBucketMb} MB / {simulatedMaxBucketMb} MB (1 GB)
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={100}
+                  value={simulatedBucketPercent}
+                  onChange={(e) => setSimulatedBucketPercent(Number(e.target.value))}
+                  className="w-full accent-[#800000] cursor-pointer"
+                />
+                <p className="text-[10.5px] text-slate-500">
+                  Supabase Free Tier File Storage Limit: 1 GB (50 MB max per file upload)
+                </p>
+              </div>
+            </div>
+
+            {/* Live Notification & API Trigger */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Test the real backend endpoint &amp; top-right Notification Bell Drawer at <strong>{simulatedPeakPercent}% peak usage</strong> (DB: {simulatedDbPercent}%, Buckets: {simulatedBucketPercent}%):
+              </p>
+              <button
+                type="button"
+                disabled={isTriggeringLiveDbAlert}
+                onClick={() => void handleTriggerLiveDbAlert(simulatedDbPercent, simulatedBucketPercent)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600 px-3.5 py-2 text-xs font-bold transition cursor-pointer disabled:opacity-50 shadow-xs"
+              >
+                <AppIcon icon={Refresh} size="sm" color="inherit" className={isTriggeringLiveDbAlert ? "animate-spin" : ""} />
+                <span>
+                  {isTriggeringLiveDbAlert
+                    ? "Sending to Notification Bell..."
+                    : `Send Alert to Notification Bell (${simulatedPeakPercent}%)`}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Preview 1: Top Alert Banner */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              1. Super Admin Top Banner Preview
+            </h4>
+            {simulatedDbStatus.status === "healthy" ? (
+              <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-4 text-center text-xs text-slate-500">
+                At {simulatedPeakPercent}% peak usage (Healthy), the top alert banner stays hidden so it does not clutter the Super Admin workspace. Increase either DB or Bucket usage to &ge;80% above to see the banner.
+              </div>
+            ) : (
+              <DatabaseCapacityAlert
+                overrideStatus={simulatedDbStatus}
+                onManageStorage={() =>
+                  setDevToast({
+                    type: "success",
+                    message: "Action: Navigates Super Admin directly to Backups & Archive.",
+                  })
+                }
+              />
+            )}
+          </div>
+
+          {/* Preview 2: Notification Bell Drawer Alert Item Preview */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              2. In-App Notification Bell Drawer Alert Preview
+            </h4>
+            {simulatedDbStatus.status === "healthy" ? (
+              <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-4 text-center text-xs text-slate-500">
+                At {simulatedPeakPercent}% peak usage (Healthy), no capacity alert is pushed to the Notification Bell. Set to &ge;80% to preview the notification item.
+              </div>
+            ) : (
+              <div className="max-w-xl rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                <article
+                  onClick={() =>
+                    setDevToast({
+                      type: "success",
+                      message: "Notification clicked: Navigates Super Admin to Backups & Archive.",
+                    })
+                  }
+                  className="group relative flex items-start gap-3.5 px-4 sm:px-5 pt-3.5 pb-3 transition-all duration-150 cursor-pointer text-left bg-amber-500/[0.04] hover:bg-amber-500/[0.08] dark:bg-amber-500/[0.06] dark:hover:bg-amber-500/[0.12] border-l-4 border-l-amber-500"
+                >
+                  <div className="mt-0.5 p-2 rounded-xl border shrink-0 flex items-center justify-center shadow-2xs bg-[#780000] text-amber-300 border-amber-400/70">
+                    <AppIcon icon={Database} size="md" color="inherit" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <h4 className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-snug">
+                        {simulatedDbStatus.status === "critical"
+                          ? `Critical Alert: Supabase Free Tier Storage at ${simulatedPeakPercent}%`
+                          : `Storage Warning: Supabase Free Tier Usage Reached ${simulatedPeakPercent}%`}
+                      </h4>
+                      <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                          Just now
+                        </span>
+                        <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0 shadow-xs" />
+                      </div>
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-400/60 bg-[#780000] px-2 py-0.5 text-[10px] font-bold text-white">
+                        <AppIcon icon={WarningTriangle} size="xs" color="inherit" />
+                        DB Tables + Bucket Storage Alert
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Postgres Database ({simulatedDbStatus.tableCount} tables): {simulatedTablesMb} MB / {simulatedMaxDbMb} MB ({simulatedDbPercent}%) • File Storage ({simulatedDbStatus.bucketCount} buckets): {simulatedBucketMb} MB / {simulatedMaxBucketMb} MB ({simulatedBucketPercent}%). Exceeding Supabase Free Tier limits (500 MB DB or 1 GB File Storage) will lock the project into read-only mode. Please archive completed terms or clean up files in Backups &amp; Archive.
+                    </p>
+                    <div className="mt-2.5 flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/60">
+                      <div className="flex items-center gap-1.5 min-w-0 text-slate-500 dark:text-slate-400">
+                        <AppIcon icon={Database} size="xs" color="muted" className="shrink-0" />
+                        <span className="text-xs font-medium truncate">
+                          Super Admin Storage Monitor
+                        </span>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-600/40 shadow-xs transition-colors shrink-0">
+                        <span>Manage Storage &amp; Archive</span>
+                        <AppIcon icon={NavArrowRight} size="xs" color="inherit" />
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            )}
+          </div>
+
+          {/* Preview 3: Dashboard Stat Card */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              3. Super Admin Dashboard Storage Card Preview
+            </h4>
+            <div className="max-w-md">
+              <DatabaseCapacityAlert
+                showCard
+                overrideStatus={simulatedDbStatus}
+                onManageStorage={() =>
+                  setDevToast({
+                    type: "success",
+                    message: "Action: Navigates Super Admin directly to Backups & Archive.",
+                  })
+                }
+              />
             </div>
           </div>
         </div>
